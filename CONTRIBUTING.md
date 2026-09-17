@@ -63,6 +63,7 @@ app/
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── location/route.ts # POST /me/location
 │   │   │   ├── about/route.ts   # PUT /me/about
+│   │   │   ├── about/photo/route.ts  # GET /me/about/photo same-origin proxy
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
@@ -132,7 +133,8 @@ app/
 │   │   ├── view-key/
 │   │   │   └── [viewKey]/
 │   │   │       ├── route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
-│   │   │       └── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
+│   │   │       ├── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
+│   │   │       └── about/photo/route.ts  # GET /view-key/:viewKey/about/photo → api GET /view/:viewKey/about/photo
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe

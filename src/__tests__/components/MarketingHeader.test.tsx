@@ -75,6 +75,7 @@ describe('MarketingHeader', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(<MarketingHeader />);

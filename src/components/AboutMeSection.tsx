@@ -1,9 +1,18 @@
 'use client';
 
-import { Check, Link2, Loader2, Pencil, X } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
+import { Check, ImagePlus, Link2, Loader2, Pencil, X } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactElement,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
+import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 
 /** Max length of an About me note, matching the API. */
@@ -15,6 +24,9 @@ const COPY_RESET_MS = 1200;
 /** Owner can edit; public only shows filled text. */
 export type AboutMeSectionMode = 'owner' | 'public';
 
+/** JPEG payload sent on owner save (preview URL stripped). */
+export type AboutMeSavePhoto = { contentType: string; data: string };
+
 /** Props for {@link AboutMeSection}. */
 export type AboutMeSectionProps = {
   /** Current About me text; whitespace-only or equal to `name` counts as unfilled. */
@@ -25,16 +37,24 @@ export type AboutMeSectionProps = {
   name?: string | null;
   /** Absolute URL to copy; omit or empty string hides the copy control. */
   profileUrl?: string;
-  /** Persist edited text (owner mode). Return `false` to keep the editor open. */
-  onSave?: (text: string) => Promise<boolean | void>;
+  /** True when the live profile note has a photo. */
+  hasPhoto?: boolean;
+  /** Load stored photo bytes (owner: GET /me/about/photo; view/member: public). */
+  loadPhoto?: () => Promise<Blob>;
+  /**
+   * Owner save. `photo` omitted = keep stored photo; `null` = clear;
+   * object = replace with prepared JPEG payload.
+   */
+  onSave?: (text: string, photo?: AboutMeSavePhoto | null) => Promise<boolean | void>;
 };
 
 /**
  * About me block for profile cards: heading plus text or empty prompt,
- * optional owner edit (pencil / write), and optional copy-profile-link.
+ * optional photo, optional owner edit (pencil / write), and optional
+ * copy-profile-link.
  *
  * @param props - About me value, owner vs public mode, optional display name,
- * optional profile URL and save.
+ * optional photo loaders, optional profile URL and save.
  * @returns The section, or `null` in public mode when unfilled and there is no copy URL.
  */
 export function AboutMeSection({
@@ -42,24 +62,44 @@ export function AboutMeSection({
   mode,
   name,
   profileUrl,
+  hasPhoto,
+  loadPhoto,
   onSave,
 }: AboutMeSectionProps): ReactElement | null {
   const { t } = useTranslations();
   const textareaId = useId();
   const copyMounted = useRef(true);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadPhotoRef = useRef(loadPhoto);
+  const storedObjectUrlRef = useRef<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [storedPhotoUrl, setStoredPhotoUrl] = useState<string | null>(null);
+  const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+
+  loadPhotoRef.current = loadPhoto;
 
   const trimmedAbout = typeof aboutMe === 'string' ? aboutMe.trim() : '';
   const trimmedName = (name ?? '').trim();
-  const filled =
+  const textFilled =
     trimmedAbout !== '' &&
     (trimmedName === '' || trimmedAbout.toLowerCase() !== trimmedName.toLowerCase());
+  const filled = textFilled || hasPhoto === true || (storedPhotoUrl !== null && !photoRemoved);
   const canCopy = typeof profileUrl === 'string' && profileUrl.length > 0;
+  const keptPhoto = hasPhoto === true && !photoRemoved && photoDraft === null;
+  const previewSrc = photoDraft?.previewUrl ?? (keptPhoto ? storedPhotoUrl : null);
+
+  const revokeStoredObjectUrl = useCallback((): void => {
+    if (storedObjectUrlRef.current !== null) {
+      URL.revokeObjectURL(storedObjectUrlRef.current);
+      storedObjectUrlRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     copyMounted.current = true;
@@ -68,8 +108,45 @@ export function AboutMeSection({
       if (copyTimer.current !== null) {
         clearTimeout(copyTimer.current);
       }
+      revokeStoredObjectUrl();
     };
-  }, []);
+  }, [revokeStoredObjectUrl]);
+
+  useEffect(() => {
+    if (hasPhoto !== true) {
+      return;
+    }
+    const load = loadPhotoRef.current;
+    if (load === undefined) {
+      return;
+    }
+    let cancelled = false;
+    let created: string | null = null;
+    void Promise.resolve(load())
+      .then((blob) => {
+        if (cancelled) {
+          return;
+        }
+        created = URL.createObjectURL(blob);
+        revokeStoredObjectUrl();
+        storedObjectUrlRef.current = created;
+        setStoredPhotoUrl(created);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStoredPhotoUrl(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (created !== null) {
+        URL.revokeObjectURL(created);
+        if (storedObjectUrlRef.current === created) {
+          storedObjectUrlRef.current = null;
+        }
+      }
+    };
+  }, [hasPhoto, revokeStoredObjectUrl]);
 
   const flashCopied = useCallback((): void => {
     setCopied(true);
@@ -107,12 +184,16 @@ export function AboutMeSection({
 
   const startEdit = useCallback((): void => {
     setDraft(aboutMe ?? '');
+    setPhotoDraft(null);
+    setPhotoRemoved(false);
     setError(null);
     setEditing(true);
   }, [aboutMe]);
 
   const cancelEdit = useCallback((): void => {
     setDraft(aboutMe ?? '');
+    setPhotoDraft(null);
+    setPhotoRemoved(false);
     setError(null);
     setEditing(false);
   }, [aboutMe]);
@@ -124,10 +205,26 @@ export function AboutMeSection({
     setSaving(true);
     setError(null);
     try {
-      const saved = await onSave(draft);
+      let saved: boolean | void;
+      if (photoDraft !== null) {
+        saved = await onSave(draft, { contentType: photoDraft.contentType, data: photoDraft.data });
+      } else if (photoRemoved) {
+        saved = await onSave(draft, null);
+      } else {
+        saved = await onSave(draft);
+      }
       if (saved === false) {
         return;
       }
+      if (photoDraft !== null) {
+        revokeStoredObjectUrl();
+        setStoredPhotoUrl(photoDraft.previewUrl);
+      } else if (photoRemoved) {
+        revokeStoredObjectUrl();
+        setStoredPhotoUrl(null);
+      }
+      setPhotoDraft(null);
+      setPhotoRemoved(false);
       setEditing(false);
     } catch (err) {
       /* name 409 stays on /profile with the editor open; NameForm is on this card */
@@ -138,11 +235,52 @@ export function AboutMeSection({
     } finally {
       setSaving(false);
     }
-  }, [draft, onSave, t]);
+  }, [draft, onSave, photoDraft, photoRemoved, revokeStoredObjectUrl, t]);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file === undefined) {
+      return;
+    }
+    void (async () => {
+      try {
+        const result = await prepareForumPhoto(file);
+        if (!result.ok) {
+          setError(
+            result.error === 'tooLarge'
+              ? t('profile.about.errorTooLarge')
+              : t('profile.about.errorUnsupported'),
+          );
+          return;
+        }
+        setPhotoDraft(result.photo);
+        setPhotoRemoved(false);
+        setError(null);
+      } catch {
+        setError(t('profile.about.errorUnsupported'));
+      }
+    })();
+  };
+
+  const removePhoto = (): void => {
+    setPhotoDraft(null);
+    setPhotoRemoved(true);
+  };
 
   if (mode === 'public' && !filled && !canCopy) {
     return null;
   }
+
+  const displayPhoto =
+    !editing && storedPhotoUrl !== null ? (
+      // eslint-disable-next-line @next/next/no-img-element -- blob URL from loadPhoto
+      <img
+        src={storedPhotoUrl}
+        alt={t('profile.about.photoAlt')}
+        className="w-full rounded-2xl object-cover"
+      />
+    ) : null;
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
@@ -155,6 +293,27 @@ export function AboutMeSection({
       {mode === 'owner' && editing ? (
         <div className="flex flex-col items-stretch gap-3">
           <div className="flex items-start gap-2">
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={saving}
+              aria-label={t('profile.about.attach')}
+              title={t('profile.about.attach')}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+            >
+              <ImagePlus aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              disabled={saving}
+              onChange={handleFileChange}
+            />
             <label htmlFor={textareaId} className="sr-only">
               {t('profile.about.heading')}
             </label>
@@ -195,6 +354,29 @@ export function AboutMeSection({
               <X aria-hidden="true" className="h-4 w-4" />
             </IconButton>
           </div>
+          {photoDraft !== null || keptPhoto ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {previewSrc !== null ? (
+                // eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto
+                <img
+                  src={previewSrc}
+                  alt={t('profile.about.previewAlt')}
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
+              ) : null}
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={saving}
+                aria-label={t('profile.about.removePhoto')}
+                title={t('profile.about.removePhoto')}
+                onClick={removePhoto}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : null}
           {error !== null ? (
             <p role="alert" className="text-center text-sm text-app-danger">
               {error}
@@ -203,7 +385,12 @@ export function AboutMeSection({
         </div>
       ) : mode === 'owner' && filled ? (
         <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-fg">{aboutMe}</p>
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            {textFilled ? (
+              <p className="whitespace-pre-wrap text-sm text-app-fg">{aboutMe}</p>
+            ) : null}
+            {displayPhoto}
+          </div>
           <IconButton
             type="button"
             variant="secondary"
@@ -223,7 +410,10 @@ export function AboutMeSection({
           </Button>
         </div>
       ) : filled ? (
-        <p className="whitespace-pre-wrap text-sm text-app-fg">{aboutMe}</p>
+        <>
+          {textFilled ? <p className="whitespace-pre-wrap text-sm text-app-fg">{aboutMe}</p> : null}
+          {displayPhoto}
+        </>
       ) : null}
 
       {canCopy ? (

@@ -1,8 +1,13 @@
 import { cleanup, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileScreen } from '@/components/ViewProfileScreen';
+import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { ViewProfile } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/lib/api', () => ({
+  fetchViewAboutMePhoto: vi.fn(),
+}));
 
 const VIEW_KEY = 'a'.repeat(64);
 
@@ -14,7 +19,25 @@ const named: ViewProfile = {
   createdAt: 1,
   hasPasskey: false,
   aboutMe: null,
+  aboutMeHasPhoto: false,
 };
+
+beforeEach(() => {
+  vi.mocked(fetchViewAboutMePhoto).mockReset();
+  vi.mocked(fetchViewAboutMePhoto).mockResolvedValue(
+    new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }),
+  );
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => 'blob:about-me',
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
+});
 
 afterEach(cleanup);
 
@@ -106,5 +129,22 @@ describe('ViewProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
     });
+  });
+
+  it('shows the About me photo when aboutMeHasPhoto is true', async () => {
+    renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, aboutMeHasPhoto: true }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    expect(vi.mocked(fetchViewAboutMePhoto)).toHaveBeenCalledWith(VIEW_KEY);
+    expect(screen.queryByRole('button', { name: 'Write your About me' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit About me' })).toBeNull();
   });
 });

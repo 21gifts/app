@@ -1,7 +1,33 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AboutMeSection } from '@/components/AboutMeSection';
+import { prepareForumPhoto } from '@/lib/forum-photo';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/lib/forum-photo', () => ({
+  prepareForumPhoto: vi.fn(),
+}));
+
+const prepareMock = vi.mocked(prepareForumPhoto);
+
+/** jsdom's URL may omit createObjectURL / revokeObjectURL. */
+function stubUrlObjectMethods(): void {
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => 'blob:about-me',
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
+}
+
+function jpegFile(): File {
+  return new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', { type: 'image/jpeg' });
+}
 
 const PROFILE_URL = 'https://example.test/view/abc';
 
@@ -32,6 +58,8 @@ function stubExecCommand(impl: (commandId: string) => boolean): ReturnType<typeo
 
 beforeEach(() => {
   vi.useRealTimers();
+  prepareMock.mockReset();
+  stubUrlObjectMethods();
 });
 
 afterEach(() => {
@@ -276,5 +304,279 @@ describe('AboutMeSection', () => {
       vi.advanceTimersByTime(1200);
     });
     expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+  });
+
+  it('treats a photo-only owner note as filled and shows the loaded image', async () => {
+    const loadPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />);
+    expect(screen.getByText('About me')).toBeTruthy();
+    expect(screen.queryByText('Tell others who you are.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit About me' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Write your About me' })).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+  });
+
+  it('stays filled when loadPhoto rejects and does not show an image or save error', async () => {
+    const loadPhoto = vi.fn().mockRejectedValue(new Error('fail'));
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />);
+    expect(screen.getByText('About me')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit About me' })).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('About me photo')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('treats hasPhoto without loadPhoto as filled and does not render an image', () => {
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} hasPhoto />);
+    expect(screen.getByText('About me')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit About me' })).toBeTruthy();
+    expect(screen.queryByAltText('About me photo')).toBeNull();
+  });
+
+  it('shows the edit photo strip without a preview while stored bytes are still loading', () => {
+    const loadPhoto = vi.fn().mockReturnValue(new Promise<Blob>(() => undefined));
+    renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe="Kept." hasPhoto loadPhoto={loadPhoto} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
+    expect(screen.getByRole('button', { name: 'Remove photo' })).toBeTruthy();
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+  });
+
+  it('shows a public photo-only About me without edit controls', async () => {
+    const loadPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    renderWithLocale(
+      <AboutMeSection mode="public" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />,
+    );
+    expect(screen.getByText('About me')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Write your About me' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit About me' })).toBeNull();
+  });
+
+  it('calls onSave with null after the owner removes an existing photo', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const loadPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe="Kept."
+        hasPhoto
+        loadPhoto={loadPhoto}
+        onSave={onSave}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith('Kept.', null);
+    });
+  });
+
+  it('calls onSave with the prepared JPEG after the owner attaches a photo', async () => {
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input.accept).toBe('image/jpeg,image/png,image/webp');
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.any(String), {
+        contentType: 'image/jpeg',
+        data: 'abc',
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+  });
+
+  it('alerts unsupported copy when prepareForumPhoto rejects the file', async () => {
+    prepareMock.mockResolvedValue({ ok: false, error: 'unsupported' });
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+  });
+
+  it('alerts too-large copy when prepareForumPhoto reports tooLarge', async () => {
+    prepareMock.mockResolvedValue({ ok: false, error: 'tooLarge' });
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    });
+  });
+
+  it('alerts unsupported copy when prepareForumPhoto throws', async () => {
+    prepareMock.mockRejectedValue(new Error('decode'));
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+  });
+
+  it('ignores an empty file change', () => {
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [] },
+    });
+    expect(prepareMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('ignores a loadPhoto resolve that settles after unmount', async () => {
+    let resolveLoad!: (blob: Blob) => void;
+    const loadPhoto = vi.fn(
+      () =>
+        new Promise<Blob>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />,
+    );
+    unmount();
+    resolveLoad(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it('ignores a loadPhoto reject that settles after unmount', async () => {
+    let rejectLoad!: (error: Error) => void;
+    const loadPhoto = vi.fn(
+      () =>
+        new Promise<Blob>((_resolve, reject) => {
+          rejectLoad = reject;
+        }),
+    );
+    const { unmount } = renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />,
+    );
+    unmount();
+    rejectLoad(new Error('fail'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it('stays in edit mode when onSave returns false', async () => {
+    const onSave = vi.fn().mockResolvedValue(false);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith('Hello');
+    });
+    expect(screen.getByRole('button', { name: 'Save About me' })).toBeTruthy();
+  });
+
+  it('cancels an attach and restores the previous empty prompt', async () => {
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByText('Tell others who you are.')).toBeTruthy();
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+  });
+
+  it('revokes the stored object URL on unmount', async () => {
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    const loadPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    const { unmount } = renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} hasPhoto loadPhoto={loadPhoto} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    unmount();
+    expect(revoke).toHaveBeenCalled();
+  });
+
+  it('does not show a save error when onSave throws MissingRequirementsError without rules', async () => {
+    const onSave = vi.fn().mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save About me' })).toBeTruthy();
+  });
+
+  it('shows the save error when onSave throws MissingRequirementsError for rules', async () => {
+    const onSave = vi.fn().mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
+    });
   });
 });

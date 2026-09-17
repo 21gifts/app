@@ -906,6 +906,20 @@ test('Function: proxyMeAboutPut — PUT /me/about without bearer is 401', async 
   expect(res.status()).toBe(401);
 });
 
+test('Function: proxyMeAboutPhotoGet — GET /me/about/photo without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/me/about/photo');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyViewAboutPhotoGet — GET /view-key/[viewKey]/about/photo without a file is 404', async ({
+  request,
+}) => {
+  const res = await request.get('/view-key/[viewKey]/about/photo');
+  expect(res.status()).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: PUT — PUT /me/about without bearer is 401', async ({ request }) => {
   const res = await request.put('/me/about', { data: { text: 'Hi' } });
   expect(res.status()).toBe(401);
@@ -933,6 +947,49 @@ test('Function: AboutMeSection — signed-in profile shows the empty About me pr
   await page.goto('/profile');
   await expect(page.getByText('Tell others who you are.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write your About me' })).toBeVisible();
+});
+
+test('Function: fetchAboutMePhoto — signed-in profile About me photo is visible after attach', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
+  await page.getByRole('button', { name: 'Write your About me' }).click();
+  await page.getByRole('button', { name: 'Add a photo' }).click();
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('textbox', { name: 'About me' }).fill('I build on Bitcoin');
+  await page.getByRole('button', { name: 'Save About me' }).click();
+  await expect(page.getByAltText('About me photo')).toBeVisible();
+});
+
+test('Function: fetchViewAboutMePhoto — public view shows the About me photo', async ({
+  page,
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const named = await request.post('/me/name', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { name: 'Ada' },
+  });
+  expect(named.status()).toBe(200);
+  const put = await request.put('/me/about', {
+    headers: { authorization: `Bearer ${token}` },
+    data: {
+      text: 'Hello from Ada.',
+      photo: { contentType: 'image/jpeg', data: '/9j/4AAQ' },
+    },
+  });
+  expect(put.status()).toBe(200);
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  const viewKey = ((await me.json()) as { viewKey: string }).viewKey;
+  await page.goto(`/view/${viewKey}`);
+  await expect(page.getByAltText('About me photo')).toBeVisible();
 });
 
 test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {

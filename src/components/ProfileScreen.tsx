@@ -15,7 +15,7 @@ import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { putAboutMe } from '@/lib/api';
+import { fetchAboutMePhoto, putAboutMe } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -53,11 +53,16 @@ export function ProfileScreen(): ReactElement {
           mode="owner"
           aboutMe={account.aboutMe}
           name={account.name}
+          hasPhoto={account.aboutMeHasPhoto === true}
+          loadPhoto={() => fetchAboutMePhoto(session)}
           /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
           {...(origin !== '' ? { profileUrl: `${origin}/view/${account.viewKey}` } : {})}
-          onSave={async (text) => {
+          onSave={async (text, photo) => {
             try {
-              const updated = await putAboutMe(session, text);
+              const updated =
+                photo === undefined
+                  ? await putAboutMe(session, text)
+                  : await putAboutMe(session, text, photo);
               if (useAuthStore.getState().session !== session) {
                 return false;
               }
@@ -65,7 +70,11 @@ export function ProfileScreen(): ReactElement {
               if (current === null) {
                 return false;
               }
-              setAccount({ ...current, aboutMe: updated.aboutMe });
+              setAccount({
+                ...current,
+                aboutMe: updated.aboutMe,
+                aboutMeHasPhoto: updated.aboutMeHasPhoto,
+              });
             } catch (err) {
               if (useAuthStore.getState().session !== session) {
                 return false;

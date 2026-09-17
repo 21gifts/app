@@ -3872,6 +3872,7 @@ describe('ForumBoard', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(
@@ -3934,6 +3935,7 @@ describe('ForumBoard', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(
@@ -3988,6 +3990,7 @@ describe('ForumBoard', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(

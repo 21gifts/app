@@ -24,6 +24,7 @@ const baseAccount: Account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: 'name',
   missing: ['name', 'lightning-address', 'rules'],
 };

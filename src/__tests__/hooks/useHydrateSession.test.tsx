@@ -29,6 +29,7 @@ const account = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: null,
   missing: [],
 };

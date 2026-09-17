@@ -55,6 +55,7 @@ const account: Account = {
   setup: null,
   missing: [],
   aboutMe: null,
+  aboutMeHasPhoto: false,
 };
 
 const profile: MemberProfile = {
@@ -69,6 +70,7 @@ const profile: MemberProfile = {
   replyCount: 0,
   trust: NULL_TRUST,
   aboutMe: null,
+  aboutMeHasPhoto: false,
 };
 
 beforeEach(() => {

@@ -14,6 +14,7 @@ import {
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
   proxyMeLocationPost,
+  proxyMeAboutPhotoGet,
   proxyMeAboutPut,
   proxyMeNamePost,
   proxyMeRulesAgreementPost,
@@ -49,6 +50,7 @@ import {
   proxyTrustProposeModeratorPost,
   proxyTrustProposalsGet,
   proxyTrustVerifyPost,
+  proxyViewAboutPhotoGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
 
@@ -101,6 +103,12 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('PUT');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/about');
+  });
+
+  it('proxyMeAboutPhotoGet hits GET /me/about/photo', async () => {
+    const fetchMock = stubApi();
+    await proxyMeAboutPhotoGet(new Request('http://localhost/me/about/photo'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/about/photo');
   });
 
   it('proxyMeSetupSkipPost hits POST /me/setup/skip', async () => {
@@ -407,6 +415,22 @@ describe('api proxy wrappers', () => {
     const viewKey = 'a'.repeat(64);
     await proxyViewGet(new Request(`http://localhost/view-key/${viewKey}`), viewKey);
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}`);
+  });
+
+  it('proxyViewAboutPhotoGet hits /view/:viewKey/about/photo (encoded)', async () => {
+    const fetchMock = stubApi();
+    const viewKey = 'a'.repeat(64);
+    await proxyViewAboutPhotoGet(
+      new Request(`http://localhost/view-key/${viewKey}/about/photo`),
+      viewKey,
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/about/photo`);
+  });
+
+  it('proxyViewAboutPhotoGet encodes the view key', async () => {
+    const fetchMock = stubApi();
+    await proxyViewAboutPhotoGet(new Request('http://localhost/view-key/a%2Fb/about/photo'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/view/a%2Fb/about/photo');
   });
 
   it('proxyViewActivityGet hits /view/:viewKey/activity', async () => {

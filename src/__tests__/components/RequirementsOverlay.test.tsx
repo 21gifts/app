@@ -27,6 +27,7 @@ const account: Account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: null,
   missing: ['name', 'rules'],
 };
