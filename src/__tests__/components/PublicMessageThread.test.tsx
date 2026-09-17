@@ -244,6 +244,32 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('maps a pay rate-limit onto the pay error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
+    });
+  });
+
+  it("maps an author's-wallet pay failure onto the pay error", async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(
+      new Error("The author's wallet cannot receive this Bitcoin payment"),
+    );
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/wallet cannot receive/i);
+    });
+  });
+
   it('cancels an open pay sheet', async () => {
     signIn();
     renderThread();

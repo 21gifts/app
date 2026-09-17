@@ -106,6 +106,20 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
+/**
+ * True when the api rejected a zap because the author's wallet cannot receive.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like an author's-wallet error.
+ */
+function isAuthorWalletError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+}
+
 /* v8 ignore start -- ForumBoard defaults for a composerHidden permalink board */
 const IDLE_BOARD = {
   error: false,
@@ -652,7 +666,13 @@ export function PublicMessageThread(props: {
             setPayError('request');
             return null;
           }
-          setPayError('request');
+          setPayError(
+            isRateLimitError(err)
+              ? 'rateLimit'
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
+          );
         } finally {
           if (generation === payPollGeneration.current) {
             setPayBusy(false);
