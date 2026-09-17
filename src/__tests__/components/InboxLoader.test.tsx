@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchConversations: vi.fn(),
   fetchConversation: vi.fn(),
+  fetchModeratorGroup: vi.fn(),
   postConversationInvoice: vi.fn(),
   markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@/lib/app-badge', () => ({
 import {
   fetchConversation,
   fetchConversations,
+  fetchModeratorGroup,
   postConversationInvoice,
   markConversationRead,
   postConversationMessage,
@@ -40,6 +42,7 @@ import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge'
 
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
+const groupMock = vi.mocked(fetchModeratorGroup);
 const invoiceMock = vi.mocked(postConversationInvoice);
 const markReadMock = vi.mocked(markConversationRead);
 const postMock = vi.mocked(postConversationMessage);
@@ -317,23 +320,13 @@ describe('InboxLoader', () => {
     });
   });
 
-  it('does not open a thread when the opened id is not in the conversation list', async () => {
+  it('opens a thread when the opened id is not in the conversation list', async () => {
     searchParams.set('c', 'missing');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue([MESSAGE]);
-    postMock.mockResolvedValue({
-      id: 'm2',
-      name: 'Ada',
-      text: 'Follow up',
-      createdAt: '2026-08-28T13:00:00.000Z',
-      fromMe: true,
-      sats: 0,
-    });
     renderWithLocale(<InboxLoader />);
-    expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
-    expect(screen.getByText('21.gifts')).toBeTruthy();
-    expect(screen.queryByLabelText('Your message')).toBeNull();
-    expect(threadMock).not.toHaveBeenCalled();
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
   });
 
   it('validates empty and too-long drafts', async () => {
@@ -794,5 +787,36 @@ describe('InboxLoader', () => {
       expect(refreshMock).toHaveBeenCalled();
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('opens an unlisted PM for a moderator after the staff-room id differs', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'missing');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    expect(groupMock).toHaveBeenCalledWith('sess');
+    expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
+  });
+
+  it('does not open an unlisted staff-room id for a moderator', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'conv-mods');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('21.gifts')).toBeTruthy();
+    await waitFor(() => {
+      expect(groupMock).toHaveBeenCalledWith('sess');
+    });
+    expect(threadMock).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
   });
 });

@@ -1145,7 +1145,8 @@ const de = {
   'moderate.listLabel': 'Ausgeblendete Notizen',
   'moderate.groupLabel': 'Moderatoren',
   'moderate.groupLead': 'Geschlossener Staff-Raum für bestätigte Moderatorinnen und Moderatoren.',
-  'moderate.groupError': 'Der Staff-Raum konnte nicht geladen werden. Bitte versuche es erneut.',
+  'moderate.groupError':
+    'Der Staff-Raum konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.hiddenBy': 'Ausgeblendet von {name}',
   'moderate.unnamed': 'Unbenannt',
   'moderate.proposals.heading': 'Offene Vorschläge',

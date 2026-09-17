@@ -81,8 +81,8 @@ function isAbortError(err: unknown): boolean {
  * Client loader for the signed-in inbox on `/messages`.
  *
  * Reads the session from the auth store, fetches the conversation list, and
- * opens `?c=` only when that id is in the loaded inbox list (a
- * `moderator_group` UUID never opens here). The composer sends free text
+ * opens `?c=` unless the loaded list has that id as `moderator_group`
+ * (new empty PMs are not yet listed). The composer sends free text
  * directly, or mints an invoice from its amount field and long-polls for the
  * paid gift row. Renders nothing when there is no session.
  * Founder/moderator get the origin filter; members see the full inbound list.
@@ -112,6 +112,7 @@ export function InboxLoader(): ReactElement | null {
   const [formError, setFormError] = useState<InboxFormError>(null);
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
   const listFetchGen = useRef(0);
@@ -126,17 +127,31 @@ export function InboxLoader(): ReactElement | null {
     setFormError(null);
     setInvoice(null);
     setPayWaiting(false);
+    setStaffRoomId(null);
     payPollRef.current?.abort();
     payPollRef.current = null;
   }
   /* v8 ignore stop */
   openIdRef.current = openId;
 
+  const listed =
+    conversations === null || openId === null || openId === ''
+      ? undefined
+      : conversations.find((row) => row.id === openId);
+  const waitingStaffRoom =
+    account?.role === 'moderator' &&
+    conversations !== null &&
+    openId !== null &&
+    openId !== '' &&
+    listed === undefined &&
+    staffRoomId === null;
   const threadAllowed =
     conversations !== null &&
     openId !== null &&
     openId !== '' &&
-    conversations.some((row) => row.id === openId && row.kind !== 'moderator_group');
+    listed?.kind !== 'moderator_group' &&
+    staffRoomId !== openId &&
+    !waitingStaffRoom;
 
   useEffect(() => {
     if (session === null) {
@@ -177,6 +192,34 @@ export function InboxLoader(): ReactElement | null {
       cancelled = true;
     };
   }, [session, attempt]);
+
+  useEffect(() => {
+    if (
+      session === null ||
+      account?.role !== 'moderator' ||
+      openId === null ||
+      openId === '' ||
+      conversations === null ||
+      listed !== undefined
+    ) {
+      return;
+    }
+    let cancelled = false;
+    void fetchModeratorGroup(session)
+      .then((row) => {
+        if (!cancelled) {
+          setStaffRoomId(row.id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStaffRoomId('');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, account?.role, openId, conversations, listed]);
 
   useEffect(() => {
     if (session === null || openId === null || openId === '' || !threadAllowed) {

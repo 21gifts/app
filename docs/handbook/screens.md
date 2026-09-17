@@ -1123,7 +1123,7 @@ Signed-in basis account. Copy **This page is for founders and moderators.** No t
 
 ### Variant: moderator
 
-Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for confirmed moderators.**
+Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for confirmed moderators.**
 
 ![21.gifts moderation moderator](images/moderate-moderator.png)
 
