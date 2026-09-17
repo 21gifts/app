@@ -346,6 +346,7 @@ describe('AboutMeSection', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
     expect(screen.getByRole('button', { name: 'Remove photo' })).toBeTruthy();
+    expect(screen.queryByText('Remove photo')).toBeNull();
     expect(screen.queryByAltText('Selected photo')).toBeNull();
   });
 
@@ -401,6 +402,8 @@ describe('AboutMeSection', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     expect(input.accept).toBe('image/jpeg,image/png,image/webp');
