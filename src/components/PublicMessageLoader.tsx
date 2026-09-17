@@ -89,9 +89,10 @@ function PublicThreadCard({
   }, [note.id, photoCount]);
 
   const photoUrl = photoUrls[0];
-  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => photoUrls[index]).filter(
-    (url): url is string => url !== undefined,
-  );
+  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
+    index,
+    url: photoUrls[index],
+  })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
 
   const card = (
     <Card
@@ -126,10 +127,10 @@ function PublicThreadCard({
         />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
         <div>
-          {loadedPhotoUrls.map((url, index) => (
+          {loadedPhotoUrls.map(({ index, url }) => (
             /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
             <img
-              key={url}
+              key={`${note.id}:${index}`}
               src={url}
               alt={t('forum.photoAlt', { name: note.name })}
               className="max-h-80 w-full rounded-xl object-contain"

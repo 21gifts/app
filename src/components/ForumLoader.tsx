@@ -1045,11 +1045,11 @@ export function ForumLoader(): ReactElement | null {
         setVideoDraft(null);
         const nextPhotos = photoDraftsRef.current.slice(0, 10);
         let nextError: ForumFormError = null;
-        for (const file of files) {
-          if (nextPhotos.length >= 10) {
-            nextError = 'tooMany';
-            continue;
-          }
+        const remaining = 10 - nextPhotos.length;
+        if (files.length > remaining) {
+          nextError = 'tooMany';
+        }
+        for (const file of files.slice(0, Math.max(0, remaining))) {
           try {
             const result = await prepareForumPhoto(file);
             if (generation !== pickGeneration.current) {

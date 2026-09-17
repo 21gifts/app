@@ -286,6 +286,20 @@ describe('PublicMessageLoader', () => {
     expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
   });
 
+  it('keeps the original still index when an earlier extra still fails to load', async () => {
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 2, text: '' });
+    fetchPhoto
+      .mockRejectedValueOnce(new Error('gone'))
+      .mockResolvedValueOnce(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(1);
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('data-photo-index')).toBe('1');
+    expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
+    expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+  });
+
   it('renders a video when hasVideo is true', async () => {
     fetchMessage.mockResolvedValue({
       ...sample,

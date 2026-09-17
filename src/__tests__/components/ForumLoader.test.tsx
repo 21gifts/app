@@ -1512,6 +1512,38 @@ describe('ForumLoader', () => {
     expect(prepareMock).toHaveBeenCalledTimes(10);
   });
 
+  it('sets tooMany from one pick of eleven even when the tenth prepare fails', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockImplementation(async (file: File) => {
+      if (file.name === '9.jpg') {
+        return { ok: false, error: 'unsupported' };
+      }
+      return {
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: file.name,
+          previewUrl: `data:image/jpeg;base64,${file.name}`,
+        },
+      };
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const eleven = Array.from(
+      { length: 11 },
+      (_, index) => new File([new Uint8Array([index])], `${index}.jpg`, { type: 'image/jpeg' }),
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: eleven } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    });
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(9);
+    expect(prepareMock).toHaveBeenCalledTimes(10);
+  });
+
   it('clears photo drafts when a video is picked', async () => {
     fetchMock.mockResolvedValue([]);
     const photo = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
