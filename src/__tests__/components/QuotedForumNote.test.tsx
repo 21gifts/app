@@ -391,7 +391,13 @@ describe('ForumQuotedBody', () => {
   it('collapses long remaining text behind Show more on the feed', () => {
     const text = `${'a'.repeat(280)} TAILTOKEN`;
     renderWithLocale(
-      <ForumQuotedBody text={text} knownNotes={[]} excludeId={PARENT_ID} rateDay={null} fiat="USD" />,
+      <ForumQuotedBody
+        text={text}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
     );
     expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
     expect(screen.queryByText(/TAILTOKEN/)).toBeNull();

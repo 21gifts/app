@@ -117,10 +117,7 @@ function QuotedForumNote({
       ) : null}
       {note.text !== '' ? (
         truncate ? (
-          <ForumNoteText
-            text={note.text}
-            className="whitespace-pre-wrap text-sm text-app-fg"
-          />
+          <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
         ) : (
           <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
         )
@@ -236,10 +233,7 @@ export function ForumQuotedBody({
     <>
       {displayText !== '' ? (
         truncate ? (
-          <ForumNoteText
-            text={displayText}
-            className="whitespace-pre-wrap text-sm text-app-fg"
-          />
+          <ForumNoteText text={displayText} className="whitespace-pre-wrap text-sm text-app-fg" />
         ) : (
           <p className="whitespace-pre-wrap text-sm text-app-fg">{displayText}</p>
         )
