@@ -491,7 +491,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ] [ PM ]  [ N reactions ]
 ```
 
-- Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when the conversion is non-null — **not a button**. Otherwise ₿-only, no ` · —`.
+- Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when the conversion is non-null — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). Otherwise ₿-only, no ` · —`.
 - Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
@@ -767,9 +767,9 @@ Do not use orange. This is law, not a gift CTA.
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`).
 4. Body `text-sm text-app-fg whitespace-pre-wrap`.
-5. Footer: `flex flex-wrap items-center gap-5` + amount + IconButtons (pay, copy, PM, delete when present) + reply count `ml-auto text-xs text-app-subtle`. Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
+5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (pay, copy, PM, delete when present) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
-Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). The action row (amount, Gift pay, copy, PM, delete, reply count) is a sibling after that control, still inside the `li`. Inner controls `stopPropagation`. Focus ring on the expandable region.
+Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). Gift/copy/PM/delete stay sibling IconButtons that do not expand. The action row is a sibling after that control, still inside the `li`. Inner pay/copy/PM/delete controls `stopPropagation`. Focus ring on the expandable region.
 
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 

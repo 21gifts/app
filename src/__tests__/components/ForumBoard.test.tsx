@@ -632,7 +632,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.getByText('₿21').closest('p')?.className).toContain('font-medium');
+    expect(screen.getByText('₿21').closest('button')?.className).toContain('font-medium');
     expect(screen.queryByText('$0.02')).toBeNull();
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
@@ -2252,6 +2252,37 @@ describe('ForumBoard', () => {
         .getByRole('button', { name: 'Show reactions' })
         .contains(screen.getByRole('button', { name: 'Copy link to this note' })),
     ).toBe(false);
+  });
+
+  it('expands via the ₿ amount and reply-count buttons', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, sats: 21, replyCount: 2 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Show reactions' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '₿21' }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: '2 reactions' }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('expands and collapses via the card aria-label, not pay/role/copy', () => {
