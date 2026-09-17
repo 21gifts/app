@@ -175,7 +175,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
     expect(fetchReplies).toHaveBeenCalledWith('sess', MESSAGE_ID);
     expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
@@ -186,7 +186,7 @@ describe('PublicMessageThread', () => {
   it('invoices 21 sats when the pay amount is left empty', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
@@ -197,7 +197,7 @@ describe('PublicMessageThread', () => {
   it('requests a pay invoice for a typed amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(payAmountInput(), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -212,7 +212,7 @@ describe('PublicMessageThread', () => {
   it('rejects a non-numeric pay amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(payAmountInput(), { target: { value: 'nope' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -223,7 +223,7 @@ describe('PublicMessageThread', () => {
   it('rejects a zero pay amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.change(payAmountInput(), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -235,7 +235,7 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('nope'));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
@@ -246,7 +246,7 @@ describe('PublicMessageThread', () => {
   it('cancels an open pay sheet', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect(payAmountInput()).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
@@ -257,7 +257,7 @@ describe('PublicMessageThread', () => {
   it('opens the overlay when pay is missing a Lightning Address', async () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
@@ -269,7 +269,7 @@ describe('PublicMessageThread', () => {
   it('keeps the board when the account snapshot is cleared', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     useAuthStore.setState({ session: 'sess', account: null });
     await waitFor(() => {
       expect(screen.getByText('Hello from Carol')).toBeTruthy();
@@ -281,14 +281,14 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
     await waitFor(() => {
-      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
     });
   });
 
@@ -301,7 +301,7 @@ describe('PublicMessageThread', () => {
     });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
@@ -315,7 +315,7 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42, replyCount: 0 });
     signIn();
     renderThread({ root: { ...root, replyCount: 5 } });
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
@@ -328,7 +328,7 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
@@ -342,8 +342,8 @@ describe('PublicMessageThread', () => {
   it('lets a verified member reply without paying', async () => {
     signIn({ role: 'verified' });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: MESSAGE_ID });
@@ -354,8 +354,8 @@ describe('PublicMessageThread', () => {
   it('lets a founder reply without paying', async () => {
     signIn({ role: 'founder' });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: MESSAGE_ID });
@@ -366,8 +366,8 @@ describe('PublicMessageThread', () => {
   it('invoices 1 sat when a non-exempt member replies with text and an empty amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
@@ -377,8 +377,8 @@ describe('PublicMessageThread', () => {
   it('tries an unpaid reply when the public note omits accountId', async () => {
     signIn();
     renderThread({ root: { ...root, accountId: undefined } });
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'thanks', inReplyTo: MESSAGE_ID });
@@ -391,8 +391,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderThread({ root: { ...root, accountId: undefined } });
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
@@ -402,7 +402,7 @@ describe('PublicMessageThread', () => {
   it('invoices a gift-only reply when text and amount are empty', async () => {
     signIn({ role: 'founder' });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
@@ -412,8 +412,8 @@ describe('PublicMessageThread', () => {
   it('invoices the typed reply amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
@@ -424,8 +424,8 @@ describe('PublicMessageThread', () => {
   it('sends 1 sat when the reply amount is 0', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
@@ -436,8 +436,8 @@ describe('PublicMessageThread', () => {
   it('rejects an overflowing reply amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: '999999999999999999999' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -448,15 +448,15 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchGiftStats).mockRejectedValue(new Error('offline'));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     expect(screen.getByText('₿21')).toBeTruthy();
   });
 
   it('rejects a non-numeric reply amount', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: 'x' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -466,8 +466,8 @@ describe('PublicMessageThread', () => {
   it('does not post a reply longer than the forum limit', async () => {
     signIn({ role: 'founder' });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), {
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
@@ -477,8 +477,8 @@ describe('PublicMessageThread', () => {
   it('opens the overlay when a reply is missing a Lightning Address', async () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -489,8 +489,8 @@ describe('PublicMessageThread', () => {
     signIn({ role: 'founder' });
     vi.mocked(postMessage).mockRejectedValue(new Error('Too many messages'));
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
@@ -502,8 +502,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'reply');
@@ -526,8 +526,8 @@ describe('PublicMessageThread', () => {
       setup: 'name',
     });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(screen.getByRole('dialog', { name: /rules/i })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
@@ -557,8 +557,8 @@ describe('PublicMessageThread', () => {
       payable: false,
     });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
@@ -579,8 +579,8 @@ describe('PublicMessageThread', () => {
       setup: null,
     });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -605,8 +605,8 @@ describe('PublicMessageThread', () => {
     });
     vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['rules']));
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
@@ -629,8 +629,8 @@ describe('PublicMessageThread', () => {
     });
     signIn({ name: null, missing: [] });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
@@ -650,8 +650,8 @@ describe('PublicMessageThread', () => {
     });
     signIn({ name: null, missing: [] });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
@@ -670,7 +670,7 @@ describe('PublicMessageThread', () => {
       setup: null,
     });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
@@ -697,7 +697,7 @@ describe('PublicMessageThread', () => {
     });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
@@ -719,7 +719,7 @@ describe('PublicMessageThread', () => {
     });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
@@ -735,8 +735,8 @@ describe('PublicMessageThread', () => {
     signIn({ role: 'founder' });
     vi.mocked(postMessage).mockRejectedValue(new MissingRequirementsError(['name']));
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
@@ -745,8 +745,8 @@ describe('PublicMessageThread', () => {
     signIn({ role: 'founder' });
     vi.mocked(postMessage).mockRejectedValue(new Error('offline'));
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
@@ -756,7 +756,7 @@ describe('PublicMessageThread', () => {
   it('opens a private thread with the note author', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
     await waitFor(() => {
       expect(openConversation).toHaveBeenCalledWith('sess', MESSAGE_ID);
@@ -781,7 +781,7 @@ describe('PublicMessageThread', () => {
     const onRootDeleted = vi.fn();
     signIn({ role: 'moderator' });
     renderThread({ onRootDeleted });
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
@@ -795,29 +795,29 @@ describe('PublicMessageThread', () => {
     signIn({ role: 'moderator' });
     renderThread();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Delete reply' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Delete reply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete reaction' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
       expect(deleteMessage).toHaveBeenCalledWith('sess', REPLY_ID);
     });
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
     });
   });
 
   it('collapses and re-expands the thread', async () => {
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText('Write a reply')).toBeNull();
+      expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
     expect(fetchReplies).toHaveBeenCalledTimes(2);
   });
@@ -827,13 +827,13 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await waitFor(() => {
-      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(fetchReplies).toHaveBeenCalledTimes(2);
     });
-    expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+    expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
   });
 
   it('shows a replies error and retries', async () => {
@@ -841,11 +841,11 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await waitFor(() => {
-      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
   });
 
@@ -876,7 +876,7 @@ describe('PublicMessageThread', () => {
     useAuthStore.setState({ session: null, account });
     renderThread();
     await waitFor(() => {
-      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
     });
   });
 
@@ -884,8 +884,8 @@ describe('PublicMessageThread', () => {
     signIn();
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
@@ -901,8 +901,8 @@ describe('PublicMessageThread', () => {
       }),
     );
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(postMessage).toHaveBeenCalledTimes(1);
@@ -923,7 +923,7 @@ describe('PublicMessageThread', () => {
     vi.mocked(openConversation).mockRejectedValue(new Error('offline'));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
     await waitFor(() => {
       expect(openConversation).toHaveBeenCalled();
@@ -937,7 +937,7 @@ describe('PublicMessageThread', () => {
   it('dismisses the requirements overlay', async () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
@@ -955,7 +955,7 @@ describe('PublicMessageThread', () => {
     );
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
@@ -967,8 +967,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
@@ -977,8 +977,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('offline'));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
@@ -989,8 +989,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'thanks' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
@@ -1006,11 +1006,11 @@ describe('PublicMessageThread', () => {
       }),
     );
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
-    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     await act(async () => {
       resolvePost({
         ...root,
@@ -1028,11 +1028,11 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('offline'));
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
-    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByText('Could not load replies. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load reactions. Please try again.')).toBeTruthy();
     });
   });
 
@@ -1051,7 +1051,7 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
@@ -1068,7 +1068,7 @@ describe('PublicMessageThread', () => {
     );
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reply');
+    await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));

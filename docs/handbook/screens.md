@@ -1071,7 +1071,7 @@ Valid known UUID. Thread may be parent-only when replies are empty. Card with au
 
 ### Variant: signed-in
 
-Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada**, copy link, and **Write a reply** (auto-expanded). Gift/PM hidden on own unpaid note.
+Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada**, copy link, and **Write a reaction** (auto-expanded). Gift/PM hidden on own unpaid note.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
 

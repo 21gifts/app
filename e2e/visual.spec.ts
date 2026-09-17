@@ -3009,7 +3009,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
-    await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
     await shotScreen(page, 'state-messages-id-signed-in');
   });
 

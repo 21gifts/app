@@ -713,7 +713,7 @@
 
 - **Purpose:** Signed-in permalink thread: one root on `ForumBoard` with `composerHidden`, auto-expand via `fetchReplies`, and the same pay, reply, PM, overlay, photo, and poll behavior as `MemberProfileScreen`. Staff `onDeleted` on the root calls `onRootDeleted` (loader → missing); a nested reply is dropped from the list. Passes `permalinkTargetId` so only a matching nested reply is ringed.
 - **Inputs:** `{ root, highlightId, onRootDeleted }` as in `src/components/PublicMessageThread.tsx`: `root` is `ForumMessage`, `highlightId` is `string | null` (route id when it is a reply UUID), `onRootDeleted` is `() => void`. Session and account from the auth store.
-- **Returns / side effects:** React tree. Auto-expands the root so **Write a reply** is available. Passes `permalinkTargetId={highlightId}`. No top-level composer or feed filters.
+- **Returns / side effects:** React tree. Auto-expands the root so **Write a reaction** is available. Passes `permalinkTargetId={highlightId}`. No top-level composer or feed filters.
 - **Used by:** `PublicMessageLoader`.
 
 ## Function: ViewProfilePage

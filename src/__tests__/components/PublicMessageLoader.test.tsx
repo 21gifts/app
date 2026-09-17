@@ -573,7 +573,7 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
   });
 
-  it('auto-expands the signed-in thread so Write a reply is ready', async () => {
+  it('auto-expands the signed-in thread so Write a reaction is ready', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: {
@@ -596,7 +596,7 @@ describe('PublicMessageLoader', () => {
     fetchMessage.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
     await waitFor(() => {
       expect(fetchRepliesBearer).toHaveBeenCalledWith('sess', MESSAGE_ID);
