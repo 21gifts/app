@@ -89,8 +89,10 @@ app/
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx     # GET /messages/[id] — public forum note; per-note Open Graph
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice payable-reply pay sheet
-│   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
-│   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
+│   │   │       ├── photo/
+│   │   │       │   ├── route.ts         # GET /messages/[id]/photo same-origin proxy
+│   │   │       │   └── [file]/route.ts  # GET /messages/[id]/photo/{n}.jpg extra stills
+│   │   │       └── [file]/route.ts      # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
 │   │   ├── translate/route.ts    # GET availability + POST LibreTranslate-compatible proxy

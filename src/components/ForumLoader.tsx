@@ -1031,7 +1031,6 @@ export function ForumLoader(): ReactElement | null {
           if (!result.ok) {
             revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
             setVideoDraft(null);
-            setPhotoDrafts([]);
             setFormError(result.error);
             return;
           }

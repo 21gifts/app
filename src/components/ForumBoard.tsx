@@ -837,10 +837,10 @@ export function ForumBoard({
       >
         {displayed.map((message) => {
           const photoCount = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-          const loadedPhotoUrls = Array.from(
-            { length: photoCount },
-            (_, index) => photoUrls[`${message.id}:${index}`],
-          ).filter((url): url is string => url !== undefined);
+          const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
+            index,
+            url: photoUrls[`${message.id}:${index}`],
+          })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
           const photoUrl = photoUrls[`${message.id}:0`];
           const videoSrc =
             message.hasVideo && !deadVideoIds.has(message.id)
@@ -941,10 +941,10 @@ export function ForumBoard({
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
                   <div>
-                    {loadedPhotoUrls.map((url, index) => (
+                    {loadedPhotoUrls.map(({ index, url }) => (
                       /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
                       <img
-                        key={url}
+                        key={`${message.id}:${index}`}
                         src={url}
                         alt={t('forum.photoAlt', { name: message.name })}
                         className="mt-2 max-h-80 w-full rounded-xl object-contain"

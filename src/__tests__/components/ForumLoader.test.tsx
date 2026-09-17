@@ -1546,6 +1546,39 @@ describe('ForumLoader', () => {
     expect(screen.queryByAltText('Selected photo')).toBeNull();
   });
 
+  it('keeps photo drafts when video preparation fails', async () => {
+    fetchMock.mockResolvedValue([]);
+    const photo = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const video = new File([new Uint8Array([2])], 'clip.mp4', { type: 'video/mp4' });
+    isVideoMock.mockReturnValueOnce(false).mockReturnValueOnce(true);
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'first',
+        previewUrl: 'data:image/jpeg;base64,first',
+      },
+    });
+    prepareVideoMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [photo] } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, { target: { files: [video] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
+    });
+    expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    expect(document.querySelector('form video')).toBeNull();
+  });
+
   it('ignores a failed photo fetch', async () => {
     fetchMock.mockResolvedValue([
       {
