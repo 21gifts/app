@@ -23,6 +23,7 @@ const outfit = Outfit({
 
 const description =
   'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.';
+const title = '21.gifts — peer-to-peer Bitcoin gifts';
 
 /**
  * Document-level metadata the App Router applies to every route's `<head>`,
@@ -30,7 +31,7 @@ const description =
  */
 export const metadata: Metadata = {
   metadataBase: new URL('https://21.gifts'),
-  title: '21.gifts',
+  title,
   description,
   manifest: '/manifest.webmanifest',
   appleWebApp: {
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://21.gifts',
     siteName: '21.gifts',
-    title: '21.gifts',
+    title,
     description,
     images: [
       {
@@ -62,7 +63,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '21.gifts',
+    title,
     description,
     images: [
       {
@@ -72,6 +73,34 @@ export const metadata: Metadata = {
     ],
   },
 };
+
+/**
+ * Organization and WebSite JSON-LD injected into every route's `<head>`.
+ */
+export const SITE_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://21.gifts/#organization',
+      name: '21.gifts',
+      alternateName: ['21gifts'],
+      url: 'https://21.gifts/',
+      logo: 'https://21.gifts/favicon.svg',
+      sameAs: ['https://github.com/21gifts'],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://21.gifts/#website',
+      name: '21.gifts',
+      alternateName: ['21gifts'],
+      url: 'https://21.gifts/',
+      description,
+      publisher: { '@id': 'https://21.gifts/#organization' },
+      inLanguage: ['en', 'de', 'es', 'fil'],
+    },
+  ],
+} as const;
 
 /**
  * Root viewport: device-width at scale 1. Form controls use 16px type so
@@ -102,6 +131,12 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(SITE_JSON_LD).replace(/</g, '\\u003c'),
+          }}
+        />
       </head>
       <body className="bg-app-bg font-sans text-app-fg antialiased">
         <AppHeightSync />

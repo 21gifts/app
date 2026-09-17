@@ -50,7 +50,7 @@ const en = {
   'home.headline1': 'Direct human-to-human gifts',
   'home.headline2': 'in Bitcoin',
   'home.lead':
-    'Ask for help or send help, with no organization in the middle. Funds flow directly from donor to receiver — the platform never holds the Bitcoin.',
+    '21.gifts is where you ask for help or send help, with no organization in the middle. Funds flow directly from donor to receiver — the platform never holds the Bitcoin.',
   'home.ctaAsk': 'Ask for help',
   'home.ctaSend': 'Send help',
   'home.howKicker': 'How it works',
@@ -603,7 +603,7 @@ const de = {
   'home.headline1': 'Direkte Geschenke von Mensch zu Mensch',
   'home.headline2': 'in Bitcoin',
   'home.lead':
-    'Bitten Sie um Hilfe oder senden Sie Hilfe — ohne Organisation dazwischen. Das Geld fliesst direkt von der gebenden zur empfangenden Person; durch die Hände der Plattform geht es nie.',
+    '21.gifts ist der Ort, an dem Sie um Hilfe bitten oder Hilfe senden — ohne Organisation dazwischen. Das Geld fliesst direkt von der gebenden zur empfangenden Person; durch die Hände der Plattform geht es nie.',
   'home.ctaAsk': 'Hilfe erbitten',
   'home.ctaSend': 'Hilfe senden',
   'home.howKicker': "So funktioniert's",
@@ -1155,7 +1155,7 @@ const es = {
   'home.headline1': 'Regalos directos de persona a persona',
   'home.headline2': 'en Bitcoin',
   'home.lead':
-    'Pide ayuda o envía ayuda, sin ninguna organización de por medio. El dinero va directamente de quien da a quien recibe — la plataforma nunca retiene el Bitcoin.',
+    '21.gifts es el lugar para pedir ayuda o enviar ayuda, sin ninguna organización de por medio. El dinero va directamente de quien da a quien recibe — la plataforma nunca retiene el Bitcoin.',
   'home.ctaAsk': 'Pedir ayuda',
   'home.ctaSend': 'Enviar ayuda',
   'home.howKicker': 'Cómo funciona',
@@ -1694,7 +1694,7 @@ const fil = {
   'home.headline1': 'Direktang regalo mula sa tao patungo sa tao',
   'home.headline2': 'sa Bitcoin',
   'home.lead':
-    'Humingi ng tulong o magpadala ng tulong, nang walang organisasyong namamagitan. Diretso ang pera mula sa nagbibigay patungo sa tumatanggap — hindi kailanman hawak ng platform ang Bitcoin.',
+    'Ang 21.gifts ang lugar kung saan humihingi o magpapadala ng tulong, nang walang organisasyong namamagitan. Diretso ang pera mula sa nagbibigay patungo sa tumatanggap — hindi kailanman hawak ng platform ang Bitcoin.',
   'home.ctaAsk': 'Humiling ng tulong',
   'home.ctaSend': 'Magpadala ng tulong',
   'home.howKicker': 'Paano ito gumagana',
