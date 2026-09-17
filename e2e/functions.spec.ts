@@ -6885,3 +6885,166 @@ test('Function: ForumNoteText — Show more expands the long welcome note', asyn
   await expect(page.getByText(tail)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
 });
+
+async function seedWelcomeLinkNote(page: Page, text: string): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-link',
+            name: 'Ada',
+            text,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+}
+
+test('Function: splitNoteLinks — welcome note autolinks an internal url and still unfurls a quoted note', async ({
+  page,
+}) => {
+  await seedWelcomeLinkNote(page, `New:\nhttp://21.gifts/trust-chain`);
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'http://21.gifts/trust-chain' })).toHaveAttribute(
+    'href',
+    '/trust-chain',
+  );
+  await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quotedNote),
+    });
+  });
+  await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-quote',
+            name: 'Ada',
+            text: `just for information: ${QUOTED_NOTE_URL}`,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('just for information:')).toBeVisible();
+  await expect(page.getByText('A Quick Technical Note')).toBeVisible();
+  await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
+});
+
+test('Function: isInternalAppUrl — clicking a 21.gifts url opens trust-chain without a warning', async ({
+  page,
+}) => {
+  await seedWelcomeLinkNote(page, 'New:\nhttp://21.gifts/trust-chain');
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('link', { name: 'http://21.gifts/trust-chain' }).click();
+  await expect(page.getByRole('dialog', { name: 'Open external link?' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
+});
+
+test('Function: LinkedText — external url warns, Close stays, Open link calls window.open', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const calls: Array<[unknown, unknown, unknown]> = [];
+    (window as unknown as { __openCalls: typeof calls }).__openCalls = calls;
+    window.open = (url, target, features) => {
+      calls.push([url, target, features]);
+      return null;
+    };
+  });
+  await seedWelcomeLinkNote(page, 'New:\nhttps://example.com/phish');
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('link', { name: 'https://example.com/phish' }).click();
+  await expect(page.getByRole('dialog', { name: 'Open external link?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('dialog', { name: 'Open external link?' })).toHaveCount(0);
+  expect(
+    await page.evaluate(() => (window as unknown as { __openCalls: unknown[] }).__openCalls),
+  ).toEqual([]);
+  await page.getByRole('link', { name: 'https://example.com/phish' }).click();
+  await page.getByRole('button', { name: 'Open link' }).click();
+  await expect(page.getByRole('dialog', { name: 'Open external link?' })).toHaveCount(0);
+  expect(
+    await page.evaluate(() => (window as unknown as { __openCalls: unknown[] }).__openCalls),
+  ).toEqual([['https://example.com/phish', '_blank', 'noopener,noreferrer']]);
+});
+
+test('Function: ExternalLinkWarning — dialog shows title, body, url, Open link, and icon Close', async ({
+  page,
+}) => {
+  await seedWelcomeLinkNote(page, 'New:\nhttps://example.com/phish');
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('link', { name: 'https://example.com/phish' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Open external link?' });
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Open external link?' })).toBeVisible();
+  await expect(
+    page.getByText('This address is not 21.gifts. Open it only if you trust it.'),
+  ).toBeVisible();
+  await expect(dialog.getByText('https://example.com/phish')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
+  await expect(page.getByText('Close', { exact: true })).toHaveCount(0);
+});

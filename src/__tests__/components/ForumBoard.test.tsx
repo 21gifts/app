@@ -827,7 +827,7 @@ describe('ForumBoard', () => {
     const preWrap = screen.getByText(
       (content) => content.includes('Line one') && content.includes('Line two'),
     );
-    expect(preWrap.className).toContain('whitespace-pre-wrap');
+    expect(preWrap.closest('p')?.className).toContain('whitespace-pre-wrap');
   });
 
   it('renders newest-first props with newest listitem at the top', () => {

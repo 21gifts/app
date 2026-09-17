@@ -555,6 +555,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('dialog', { name: 'Introduce yourself' })",
   },
   {
+    route: '/welcome',
+    id: 'overlay-external-link',
+    image: 'welcome-overlay-external-link.png',
+    visual: 'state-welcome-overlay-external-link',
+    needle: "getByRole('dialog', { name: 'Open external link?' })",
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',

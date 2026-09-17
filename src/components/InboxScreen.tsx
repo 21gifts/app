@@ -3,6 +3,7 @@
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
+import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
@@ -359,15 +360,14 @@ export function InboxScreen({
                   </time>
                 </div>
                 {message.text !== '' ? (
-                  <p
+                  <LinkedText
+                    text={message.text}
                     className={
                       message.fromMe
                         ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
                         : 'mt-2 whitespace-pre-wrap text-sm text-app-fg'
                     }
-                  >
-                    {message.text}
-                  </p>
+                  />
                 ) : message.sats > 0 ? (
                   /* v8 ignore next 12 -- inbound vs outbound gift-only class names */
                   <p

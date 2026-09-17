@@ -669,6 +669,14 @@ Named member with living-room rules agreed, a Wallet of Satoshi address, and `ha
 
 ![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
 
+### Variant: overlay-external-link
+
+Named member with living-room rules dismissed and a paid forum note whose body is `New:` plus `https://example.com/phish`. Clicking that URL opens `ExternalLinkWarning` dialog **Open external link?** with the catalog body, the destination URL as `break-all` text, labeled **Open link**, and icon-only Close. Internal 21.gifts URLs on the same board do not open this overlay.
+
+- **Actions:** Close dismisses without opening. **Open link** (`Button` `type="button"` `size="lg"`) confirms and hands the https URL to `openInSystemBrowser`.
+
+![21.gifts welcome overlay external link](images/welcome-overlay-external-link.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.

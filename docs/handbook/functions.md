@@ -809,9 +809,9 @@
 
 ## Function: ForumNoteText
 
-- **Purpose:** Client paragraph for remaining note/reply text on the feed and profile (via `ForumQuotedBody` / `QuotedForumNote` when `truncate` is true) and for translated bodies. Empty text returns null. Bodies longer than 280 characters render a collapsed preview, `…`, and inline **Show more** (`forum.showMore`, app inline link). Expand in place; no Show less. Click and keydown `stopPropagation` so the parent card `role="button"` does not toggle replies. On `/messages/[id]`, the original body is a `<p>` (`ForumQuotedBody` with `truncate={false}`); translations still render through this component.
+- **Purpose:** Client paragraph for remaining note/reply text on the feed and profile (via `ForumQuotedBody` / `QuotedForumNote` when `truncate` is true) and for translated bodies. Empty text returns null. Bodies autolink http(s) URLs via `LinkedText`. Bodies longer than 280 characters render a collapsed preview, `…`, and inline **Show more** (`forum.showMore`, app inline link). Expand in place; no Show less. Click and keydown `stopPropagation` so the parent card `role="button"` does not toggle replies. On `/messages/[id]`, the original body is `LinkedText` (`ForumQuotedBody` with `truncate={false}`); translations still render through this component.
 - **Inputs:** `ForumNoteTextProps` — `text`, `className`.
-- **Returns / side effects:** A `<p className={className}>`, or `null` when `text === ''`. Local React expand state only. No navigation.
+- **Returns / side effects:** `LinkedText` (`<p>` plus optional overlay), or `null` when `text === ''`. Local React expand state only.
 - **Used by:** `ForumQuotedBody` / `QuotedForumNote` (remaining text and nested quoted note bodies when `truncate` is true) and `NoteTranslate` (translated body).
 
 ## Function: ForumBoard
@@ -1285,10 +1285,38 @@
 
 ## Function: ForumQuotedBody
 
-- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs. Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`); caption sits beside that link (`ForumNoteText` when truncate, else a paragraph, no nested unfurl); ₿ amount is a second permalink link without that aria-label. NoteTranslate on stripped display text only. Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more). Permalink passes `truncate={false}` so the original stays full.
+- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs. Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`); caption sits beside that link (`ForumNoteText` when truncate, else `LinkedText`, no nested unfurl); ₿ amount is a second permalink link without that aria-label. NoteTranslate on stripped display text only. Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more, bodies autolinked). Permalink passes `truncate={false}` so the original stays full (`LinkedText`).
 - **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional onActivate.
 - **Returns / side effects:** React element or null when text==='' and no resolved quotes.
 - **Used by:** `ForumBoard`, `PublicMessageLoader`.
+
+## Function: splitNoteLinks
+
+- **Purpose:** Split a note body into plain-text runs and http(s) URLs. Trailing prose punctuation is not part of the URL. `javascript:` / `data:` and scheme-less text are not links. Each URL is classified internal vs external.
+- **Inputs:** `text` string, optional `currentOrigin` (page origin; that hostname is also internal).
+- **Returns / side effects:** `NoteLinkSegment[]` covering `text` in order. No I/O.
+- **Used by:** `LinkedText`.
+
+## Function: isInternalAppUrl
+
+- **Purpose:** True when an absolute http(s) URL is an in-app 21.gifts page (`21.gifts`, `www.21.gifts`, or the current origin hostname). `api.21.gifts` and other subdomains are external. Userinfo does not change the hostname check.
+- **Inputs:** `href` string, optional `currentOrigin`.
+- **Returns / side effects:** Boolean. No I/O.
+- **Used by:** `splitNoteLinks`.
+
+## Function: LinkedText
+
+- **Purpose:** Render a note/About-me/inbox body with clickable http(s) URLs. Internal URLs are Next.js `Link`s to `pathname+search+hash` (no warning). External URLs are `<a href>` that `preventDefault` on a primary click and open `ExternalLinkWarning`. Clicks `stopPropagation` so a forum card does not toggle. Optional `suffix` sits in the same `<p>` after the runs (Show more).
+- **Inputs:** `text`, `className` for the wrapping `<p>`, optional `linkClassName` (default underline, inherit colour), optional `currentOrigin`, optional `suffix`.
+- **Returns / side effects:** Fragment: `<p>` plus optional overlay. Confirm on `https:` calls `openInSystemBrowser`; other http uses `window.open`.
+- **Used by:** `ForumNoteText`, `ForumQuotedBody` (when `truncate` is false), `InboxScreen`, `AboutMeSection`.
+
+## Function: ExternalLinkWarning
+
+- **Purpose:** Confirm overlay before leaving 21.gifts for an external http(s) URL. Same overlay chrome as `IntroduceYourselfOverlay` (`bg-app-overlay`, `Card maxWidth="sm"`, icon-only Close, labeled **Open link**). The destination URL is shown as user content, not a catalog string. No Skip.
+- **Inputs:** `url`, `onCancel`, `onConfirm`.
+- **Returns / side effects:** Dialog. Close/`onCancel` does not open the URL. **Open link** calls `onConfirm`. Dialog click `stopPropagation`.
+- **Used by:** `LinkedText`.
 
 ## Function: visibleForumMessages
 

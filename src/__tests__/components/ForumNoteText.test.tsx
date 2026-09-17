@@ -21,6 +21,13 @@ describe('ForumNoteText', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('autolinks an http url in short text', () => {
+    renderWithLocale(<ForumNoteText text="see https://example.com/x" className="body" />);
+    expect(screen.getByRole('link', { name: 'https://example.com/x' }).getAttribute('href')).toBe(
+      'https://example.com/x',
+    );
+  });
+
   it('renders text at the preview limit without Show more', () => {
     const text = 'a'.repeat(280);
     const { container } = renderWithLocale(<ForumNoteText text={text} className="body" />);

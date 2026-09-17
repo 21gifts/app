@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react';
+import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { forumTextPreview } from '@/lib/forum-text-preview';
 
@@ -29,27 +30,33 @@ export function ForumNoteText({ text, className }: ForumNoteTextProps): ReactEle
   }
 
   if (!truncated || expanded) {
-    return <p className={className}>{text}</p>;
+    return <LinkedText text={text} className={className} />;
   }
 
   return (
-    <p className={className}>
-      {preview}…{' '}
-      <button
-        type="button"
-        className="text-sm font-medium text-app-fg underline underline-offset-2"
-        aria-expanded={false}
-        onClick={(event: MouseEvent<HTMLButtonElement>) => {
-          event.stopPropagation();
-          event.preventDefault();
-          setExpanded(true);
-        }}
-        onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
-          event.stopPropagation();
-        }}
-      >
-        {t('forum.showMore')}
-      </button>
-    </p>
+    <LinkedText
+      text={preview}
+      className={className}
+      suffix={
+        <>
+          …{' '}
+          <button
+            type="button"
+            className="text-sm font-medium text-app-fg underline underline-offset-2"
+            aria-expanded={false}
+            onClick={(event: MouseEvent<HTMLButtonElement>) => {
+              event.stopPropagation();
+              event.preventDefault();
+              setExpanded(true);
+            }}
+            onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
+              event.stopPropagation();
+            }}
+          >
+            {t('forum.showMore')}
+          </button>
+        </>
+      }
+    />
   );
 }

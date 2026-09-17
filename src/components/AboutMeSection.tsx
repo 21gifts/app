@@ -10,6 +10,7 @@ import {
   type ChangeEvent,
   type ReactElement,
 } from 'react';
+import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
@@ -414,8 +415,8 @@ export function AboutMeSection({
       ) : mode === 'owner' && filled ? (
         <div className="flex items-start gap-2">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            {textFilled ? (
-              <p className="whitespace-pre-wrap text-sm text-app-fg">{aboutMe}</p>
+            {textFilled && aboutMe !== null ? (
+              <LinkedText text={aboutMe} className="whitespace-pre-wrap text-sm text-app-fg" />
             ) : null}
             {displayPhoto}
           </div>
@@ -439,7 +440,9 @@ export function AboutMeSection({
         </div>
       ) : filled ? (
         <>
-          {textFilled ? <p className="whitespace-pre-wrap text-sm text-app-fg">{aboutMe}</p> : null}
+          {textFilled && aboutMe !== null ? (
+            <LinkedText text={aboutMe} className="whitespace-pre-wrap text-sm text-app-fg" />
+          ) : null}
           {displayPhoto}
         </>
       ) : null}
