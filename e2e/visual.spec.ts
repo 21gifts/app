@@ -6376,6 +6376,7 @@ test.describe('moderate group screens', () => {
       text: string;
       createdAt: string;
       fromMe: boolean;
+      sats: number;
     }>,
   ): Promise<void> {
     await page.route('**/conversations/conv-mod', async (route) => {
