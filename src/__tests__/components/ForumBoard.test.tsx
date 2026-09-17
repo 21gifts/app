@@ -4047,9 +4047,9 @@ describe('ForumBoard', () => {
     expect(target).toBe(document.querySelector('[data-reply-id="r1"]'));
     expect(target?.className).toContain('ring-1');
     expect(target?.className).toContain('ring-app-fg');
-    expect(document.querySelector('[data-reply-id="r2"]')?.hasAttribute('data-permalink-target')).toBe(
-      false,
-    );
+    expect(
+      document.querySelector('[data-reply-id="r2"]')?.hasAttribute('data-permalink-target'),
+    ).toBe(false);
     const parent = document.querySelector('[data-message-id="m1"]');
     expect(parent?.hasAttribute('data-permalink-target')).toBe(false);
     expect(parent?.className).not.toContain('ring-app-fg');
