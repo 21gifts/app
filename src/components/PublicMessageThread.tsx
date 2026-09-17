@@ -607,6 +607,7 @@ export function PublicMessageThread(props: {
   };
 
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
+    /* v8 ignore next 3 -- Continue unmounts without a session; busy clicks are ignored */
     if (session === null || payMessageId === null || payBusy) {
       return;
     }

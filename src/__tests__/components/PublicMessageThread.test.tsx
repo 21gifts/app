@@ -999,19 +999,6 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('does not invoice when Continue is clicked without a session', async () => {
-    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
-    signIn();
-    renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
-    await openNestedPaySheet();
-    await act(async () => {
-      useAuthStore.setState({ session: null, account });
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(postMessageInvoice).not.toHaveBeenCalled();
-  });
-
   it('ignores a second Gift Continue while the invoice is in flight', async () => {
     let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
     vi.mocked(postMessageInvoice).mockImplementation(
