@@ -241,13 +241,55 @@ describe('NotificationsLoader', () => {
     expect(push).toHaveBeenCalledWith('/messages/parent-1');
   });
 
-  it('opens a moderator appointment row on /welcome', async () => {
+  it('opens a moderator appointment row on /welcome after mark-read resolves', async () => {
+    let resolveRead!: (value: Notification) => void;
+    markReadMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve;
+        }),
+    );
     listMock.mockResolvedValue({ notifications: [APPOINTED], unreadCount: 1 });
-    markReadMock.mockResolvedValue({ ...APPOINTED, readAt: '2026-08-28T13:00:00.000Z' });
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByRole('button', { name: /You are a moderator/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /You are a moderator/ }));
     expect(markReadMock).toHaveBeenCalledWith('sess', 'n-mod');
-    expect(push).toHaveBeenCalledWith('/welcome');
+    expect(push).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveRead({ ...APPOINTED, readAt: '2026-08-28T13:00:00.000Z' });
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/welcome');
+    });
+  });
+
+  it('still opens /welcome when appointment mark-read fails', async () => {
+    listMock.mockResolvedValue({ notifications: [APPOINTED], unreadCount: 1 });
+    markReadMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByRole('button', { name: /You are a moderator/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /You are a moderator/ }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/welcome');
+    });
+  });
+
+  it('does not open /welcome if the session changes during appointment mark-read', async () => {
+    let resolveRead!: (value: Notification) => void;
+    markReadMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve;
+        }),
+    );
+    listMock.mockResolvedValue({ notifications: [APPOINTED], unreadCount: 1 });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByRole('button', { name: /You are a moderator/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /You are a moderator/ }));
+    useAuthStore.setState({ session: null, account: null });
+    await act(async () => {
+      resolveRead({ ...APPOINTED, readAt: '2026-08-28T13:00:00.000Z' });
+    });
+    expect(push).not.toHaveBeenCalled();
   });
 });

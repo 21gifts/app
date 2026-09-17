@@ -15,8 +15,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * payments, and moderator appointment). After a successful list fetch, marks all
  * as read fire-and-forget and clears the home-screen badge (`setUnreadAppBadge(0)`).
  * Renders nothing when there is no session. There is no composer; opening a
- * `moderator_appointed` row goes to `/welcome`, and any other row goes to the
- * public forum note.
+ * `moderator_appointed` row waits for `markNotificationRead` (then still goes
+ * to `/welcome` if that POST fails, and skips navigation if the session
+ * changed), and any other row goes to the public forum note without waiting.
  *
  * @returns The notifications screen, or `null` without a session.
  */
@@ -83,8 +84,25 @@ export function NotificationsLoader(): ReactElement | null {
         setAttempt((n) => n + 1);
       }}
       onOpen={(row) => {
-        void markNotificationRead(session, row.id).catch(() => undefined);
-        router.push(row.type === 'moderator_appointed' ? '/welcome' : '/messages/' + row.parentId);
+        const dest = row.type === 'moderator_appointed' ? '/welcome' : '/messages/' + row.parentId;
+        if (row.type !== 'moderator_appointed') {
+          void markNotificationRead(session, row.id).catch(() => undefined);
+          router.push(dest);
+          return;
+        }
+        void markNotificationRead(session, row.id)
+          .then(() => {
+            if (useAuthStore.getState().session !== session) {
+              return;
+            }
+            router.push(dest);
+          })
+          .catch(() => {
+            if (useAuthStore.getState().session !== session) {
+              return;
+            }
+            router.push(dest);
+          });
       }}
     />
   );

@@ -2077,7 +2077,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment), then `bumpUnreadAppBadgeEpoch` + `setUnreadAppBadge(0)`, and again after `markAllNotificationsRead` resolves so a parallel Menu unread fetch cannot restore a stale count. There is no composer; opening a `moderator_appointed` row goes to `/welcome`, and any other row goes to `/messages/{parentId}` after `markNotificationRead`.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment), then `bumpUnreadAppBadgeEpoch` + `setUnreadAppBadge(0)`, and again after `markAllNotificationsRead` resolves so a parallel Menu unread fetch cannot restore a stale count. There is no composer; opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed), and any other row goes to `/messages/{parentId}` without waiting on `markNotificationRead`.
 - **Inputs:** None (session from the auth store).
 - **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget and clears the home-screen badge. Does not clear the badge on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
