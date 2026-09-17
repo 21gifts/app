@@ -2393,6 +2393,7 @@ describe('ForumBoard', () => {
           sats: 43,
           payable: true,
           hasPhoto: false,
+          photoCount: 0,
           hasVideo: false,
           videoContentType: null,
           role: 'founder',
