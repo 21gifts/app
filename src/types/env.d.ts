@@ -37,8 +37,8 @@ declare global {
        */
       TRANSLATE_URL?: string;
       /**
-       * Required DeepL auth key. Missing or empty disables translation even when
-       * the URL is set. Tests assign it.
+       * Required DeepL auth key. Missing or blank after trim disables translation
+       * even when the URL is set. Tests assign it.
        */
       TRANSLATE_API_KEY?: string;
       /** Set by CI systems (GitHub Actions sets `"true"`); read by `playwright.config.ts`. */
