@@ -6,7 +6,7 @@ vi.mock('next/font/google', () => ({
   Outfit: (): { variable: string } => ({ variable: '__outfit_variable' }),
 }));
 
-import RootLayout, { metadata, viewport } from '@/app/layout';
+import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
@@ -33,7 +33,9 @@ beforeEach(() => {
 
 describe('metadata', () => {
   it('exposes the product title', () => {
-    expect(metadata.title).toBe('21.gifts');
+    expect(metadata.title).toBe('21.gifts — peer-to-peer Bitcoin gifts');
+    expect(metadata.openGraph?.title).toBe('21.gifts — peer-to-peer Bitcoin gifts');
+    expect(metadata.twitter?.title).toBe('21.gifts — peer-to-peer Bitcoin gifts');
   });
 
   it('describes the product without charity-speak', () => {
@@ -94,6 +96,18 @@ describe('metadata', () => {
   });
 });
 
+describe('SITE_JSON_LD', () => {
+  it('names the organization 21.gifts with alternateName 21gifts', () => {
+    const organization = SITE_JSON_LD['@graph'][0];
+    const website = SITE_JSON_LD['@graph'][1];
+
+    expect(organization.name).toBe('21.gifts');
+    expect(organization.alternateName).toContain('21gifts');
+    expect(organization.alternateName).not.toContain('21 gifts');
+    expect(website.url).toBe('https://21.gifts/');
+  });
+});
+
 describe('viewport', () => {
   it('sets device-width at scale 1 and leaves pinch-zoom available', () => {
     expect(viewport).toEqual({
@@ -127,16 +141,23 @@ describe('RootLayout', () => {
     };
     const children = Array.isArray(htmlProps.children) ? htmlProps.children : [htmlProps.children];
     const head = children.find((child) => child.type === 'head') as ReactElement<{
-      children: ReactElement<{ dangerouslySetInnerHTML: { __html: string } }>[];
+      children: ReactElement<{
+        type?: string;
+        dangerouslySetInnerHTML: { __html: string };
+      }>[];
     }>;
     const scripts = Array.isArray(head.props.children)
       ? head.props.children
       : [head.props.children];
-    expect(scripts).toHaveLength(2);
+    expect(scripts).toHaveLength(3);
     expect(scripts[0]?.type).toBe('script');
     expect(scripts[0]?.props.dangerouslySetInnerHTML.__html).toBe(APP_HEIGHT_BOOTSTRAP_SCRIPT);
     expect(scripts[1]?.type).toBe('script');
     expect(scripts[1]?.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
+    expect(scripts[2]?.type).toBe('script');
+    expect(scripts[2]?.props.type).toBe('application/ld+json');
+    expect(scripts[2]?.props.dangerouslySetInnerHTML.__html).toContain('21gifts');
+    expect(scripts[2]?.props.dangerouslySetInnerHTML.__html).toContain('@graph');
   });
 
   it('wraps children LocaleProvider → NumberFormatProvider → FiatPreferenceProvider → ThemeProvider with AppHeightSync first on body', async () => {

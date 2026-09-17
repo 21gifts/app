@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink } from '@/components/ui';
@@ -5,6 +6,15 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
 import { PROJECT_DONATE_ADDRESS } from '@/lib/project-donate';
 import { translate } from '@/lib/translate';
+
+/**
+ * Canonical `/` for the marketing landing (does not override the root title).
+ */
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 /**
  * Marketing landing at `/`: pitch, how it works, why, project donate (`#project`),
