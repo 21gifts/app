@@ -1315,7 +1315,7 @@
 
 - **Purpose:** Confirm overlay before leaving 21.gifts for an external http(s) URL. Same overlay chrome as `IntroduceYourselfOverlay` (`bg-app-overlay`, `Card maxWidth="sm"`, icon-only Close, labeled **Open link**). The destination URL is shown as user content, not a catalog string. No Skip.
 - **Inputs:** `url`, `onCancel`, `onConfirm`.
-- **Returns / side effects:** Dialog. Close/`onCancel` does not open the URL. **Open link** calls `onConfirm`. Dialog click `stopPropagation`.
+- **Returns / side effects:** Dialog. Close/`onCancel` does not open the URL. **Open link** calls `onConfirm`. Dialog click and keydown `stopPropagation` so a parent forum card does not toggle.
 - **Used by:** `LinkedText`.
 
 ## Function: visibleForumMessages

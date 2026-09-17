@@ -69,4 +69,19 @@ describe('ExternalLinkWarning', () => {
     fireEvent.click(screen.getByRole('dialog', { name: 'Open external link?' }));
     expect(parentClick).not.toHaveBeenCalled();
   });
+
+  it('stops keydown on the dialog so a parent card does not toggle', () => {
+    const parentKey = vi.fn();
+    renderWithLocale(
+      <div onKeyDown={parentKey}>
+        <ExternalLinkWarning
+          url="https://example.com/phish"
+          onCancel={vi.fn()}
+          onConfirm={vi.fn()}
+        />
+      </div>,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Open link' }), { key: 'Enter' });
+    expect(parentKey).not.toHaveBeenCalled();
+  });
 });

@@ -37,6 +37,9 @@ export function ExternalLinkWarning({
       onClick={(event) => {
         event.stopPropagation();
       }}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+      }}
     >
       <Card maxWidth="sm" chrome={false}>
         <div className="flex w-full items-start justify-between gap-3">
