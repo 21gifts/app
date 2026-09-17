@@ -263,10 +263,12 @@ describe('PublicMessageThread', () => {
 
   it('shows a pay error when the invoice request fails', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('nope'));
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
     });
@@ -274,10 +276,12 @@ describe('PublicMessageThread', () => {
 
   it('maps a pay rate-limit onto the pay error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
     });
@@ -1031,10 +1035,12 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new MissingRequirementsError(['lightning-address']),
     );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
