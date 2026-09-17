@@ -6,6 +6,7 @@ import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/component
 import {
   fetchConversation,
   fetchConversations,
+  markConversationRead,
   postConversationInvoice,
   postConversationMessage,
 } from '@/lib/api';
@@ -108,6 +109,8 @@ export function InboxLoader(): ReactElement | null {
   const [payWaiting, setPayWaiting] = useState(false);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
+  const listFetchGen = useRef(0);
+  const markedReadGen = useRef(new Map<string, number>());
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
   if (openIdRef.current !== openId) {
     setMessages(null);
@@ -131,6 +134,8 @@ export function InboxLoader(): ReactElement | null {
     let cancelled = false;
     setLoading(true);
     setError(false);
+    const gen = listFetchGen.current + 1;
+    listFetchGen.current = gen;
     void (async () => {
       try {
         const next = await fetchConversations(session);
@@ -138,7 +143,12 @@ export function InboxLoader(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setConversations(next);
+        setConversations(
+          next.map((row) => {
+            const markedGen = markedReadGen.current.get(row.id);
+            return markedGen !== undefined && gen <= markedGen ? { ...row, unread: false } : row;
+          }),
+        );
       } catch {
         /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
@@ -176,6 +186,14 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setMessages(next);
+        void markConversationRead(session, openId).catch(() => undefined);
+        markedReadGen.current.set(openId, listFetchGen.current);
+        setConversations((prev) => {
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
+        });
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {
@@ -335,6 +353,7 @@ export function InboxLoader(): ReactElement | null {
                   lastSats: created.sats,
                   lastAt: created.createdAt,
                   lastFromMe: true,
+                  unread: false,
                 }
               : row,
           );

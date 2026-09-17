@@ -37,6 +37,7 @@ const THREAD: Conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const DIRECT: Conversation = {
@@ -47,6 +48,7 @@ const DIRECT: Conversation = {
   lastAt: '2026-08-28T13:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const DAMUS: Conversation = {
@@ -57,6 +59,7 @@ const DAMUS: Conversation = {
   lastAt: '2026-08-28T14:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
@@ -948,6 +951,8 @@ describe('InboxScreen', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[{ ...DIRECT, lastText: '', lastSats: 21, lastFromMe: true }]}
+  it('styles an unread inbound row with a semibold name and foreground lastText', () => {
+        conversations={[{ ...THREAD, unread: true }]}
         error={false}
         loading={false}
         onRetry={() => undefined}
@@ -985,6 +990,18 @@ describe('InboxScreen', () => {
         onOpen={() => undefined}
         onBack={() => undefined}
         messages={[MESSAGE]}
+    const row = screen.getByRole('button', { name: '21.gifts, Unread' });
+    expect(row.getAttribute('aria-label')).toBe('21.gifts, Unread');
+    expect(within(row).getByText('21.gifts').className).toContain('font-semibold');
+    const lastText = screen.getByText('Hello team', { exact: true });
+    expect(lastText.className).toContain('text-app-fg');
+    expect(lastText.className).not.toContain('text-app-muted');
+    expect(row.querySelector('.tabular-nums')).toBeNull();
+    expect(within(row).queryByText('Unread')).toBeNull();
+  it('keeps a read inbound row medium and muted without an unread aria-label', () => {
+        conversations={[THREAD]}
+        openId={null}
+        messages={null}
         messagesLoading={false}
         messagesError={false}
         onRetryMessages={() => undefined}
@@ -1031,5 +1048,14 @@ describe('InboxScreen', () => {
     );
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
+    const row = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(row.getAttribute('aria-label')).toBeNull();
+    expect(within(row).getByText('21.gifts').className).toContain('font-medium');
+    expect(within(row).getByText('21.gifts').className).not.toContain('font-semibold');
+    const lastText = screen.getByText('Hello team', { exact: true });
+    expect(lastText.className).toContain('text-app-muted');
+    expect(lastText.className).not.toContain('text-app-fg');
+    expect(row.querySelector('.tabular-nums')).toBeNull();
   });
 });

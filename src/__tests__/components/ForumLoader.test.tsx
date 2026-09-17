@@ -4199,6 +4199,7 @@ describe('ForumLoader', () => {
       lastAt: '2026-08-28T11:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4305,6 +4306,7 @@ describe('ForumLoader', () => {
       lastAt: '2026-08-28T11:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');

@@ -354,6 +354,7 @@ test('inbox thread shows Hello team', async ({ page }) => {
 });
 
 test('inbox gift-only last preview shows ₿21', async ({ page }) => {
+test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -379,6 +380,17 @@ test('inbox gift-only last preview shows ₿21', async ({ page }) => {
       }),
     });
   });
+
+  const readPosts: string[] = [];
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    readPosts.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
   await page.route(/\/conversations$/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
@@ -397,6 +409,8 @@ test('inbox gift-only last preview shows ₿21', async ({ page }) => {
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: true,
             lastSats: 21,
+            unread: true,
+        unreadCount: 1,
           },
         ],
       }),
@@ -644,6 +658,16 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '21.gifts, Unread' })).toBeVisible();
+  expect(readPosts).toEqual([]);
+  const readPost = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
+  );
+  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await readPost;
+  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
+  expect(readPosts).toHaveLength(1);
 });
 
 test('public message default shows Hello from Ada', async ({ page }) => {

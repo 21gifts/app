@@ -320,6 +320,10 @@
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId }` for the inbox pay sheet.
 - **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationInvoice` in the inbox composer.
+## Endpoint: POST /conversations/[id]/read
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/read` (mark one conversation read).
+- **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
+- **Used by:** `markConversationRead` from `InboxLoader` after a successful thread fetch.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications

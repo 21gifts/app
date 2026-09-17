@@ -28,6 +28,7 @@ import {
   proxyConversationGet,
   proxyConversationInvoicePost,
   proxyConversationPost,
+  proxyConversationReadPost,
   proxyConversationsGet,
   proxyConversationsPost,
   proxyNotificationReadPost,
@@ -314,6 +315,13 @@ describe('api proxy wrappers', () => {
       'c1',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/c1/invoice');
+  it('proxyConversationReadPost encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationReadPost(
+      new Request('http://localhost/conversations/a%2Fb/read', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/a%2Fb/read');
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
   });
 

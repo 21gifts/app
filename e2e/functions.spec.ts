@@ -590,6 +590,11 @@ test('Function: proxyConversationInvoicePost — POST /conversations/[id]/invoic
 }) => {
   expect(
     (await request.post('/conversations/[id]/invoice', { data: { sats: 21 } })).status(),
+test('Function: proxyConversationReadPost — POST /conversations/[id]/read without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.post('/conversations/[id]/read', { data: {} })).status(),
   ).toBeGreaterThanOrEqual(400);
 });
 
@@ -2697,6 +2702,15 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
     });
   });
   await page.route(/\/conversations$/, async (route) => {
+test('Function: markConversationRead — opening a thread POSTs read', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+      body: JSON.stringify({ ok: true }),
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2712,6 +2726,8 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
             lastSats: 0,
           },
         ],
+            unread: true,
+        unreadCount: 1,
       }),
     });
   });
@@ -2728,6 +2744,7 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
             createdAt: '2026-08-28T12:00:00.000Z',
             fromMe: false,
             sats: 0,
+            name: 'Ada',
           },
         ],
       }),
@@ -2735,6 +2752,14 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
   });
   await page.goto('/messages?c=conv-21');
   await expect(page.getByLabel(/amount/i)).toBeVisible();
+  await page.goto('/messages');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  const readPost = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
+  );
+  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await readPost;
+  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
 });
 
 test('Function: postConversationMessage — composer is visible on a thread', async ({ page }) => {
@@ -4838,6 +4863,46 @@ test('Function: useUnreadCount — menu shows unread notification count', async 
   await page.goto('/profile');
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
+test('Function: useUnreadCount — menu shows inbox unread count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'c1',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: 'Hi',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            unread: true,
+          },
+          {
+            id: 'c2',
+            kind: 'member_member',
+            name: 'Carol',
+            lastText: 'Hey',
+            lastAt: '2026-08-28T13:00:00.000Z',
+            lastFromMe: false,
+            unread: true,
+          },
+        ],
+        unreadCount: 2,
+      }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Messages, 2 unread' })).toBeVisible();
 });
 
 test('Function: resyncPushSubscription — signed-in chrome still shows Menu', async ({ page }) => {

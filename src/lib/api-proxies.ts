@@ -462,6 +462,17 @@ export async function proxyConversationInvoicePost(
   conversationId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}/invoice`);
+ * Proxies POST /conversations/:id/read to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param conversationId - Conversation UUID.
+ * @returns The upstream response.
+ */
+export async function proxyConversationReadPost(
+  request: Request,
+  conversationId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}/read`);
 }
 
 /**

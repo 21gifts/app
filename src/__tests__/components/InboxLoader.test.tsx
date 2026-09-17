@@ -20,6 +20,7 @@ vi.mock('@/lib/api', () => ({
   fetchConversations: vi.fn(),
   fetchConversation: vi.fn(),
   postConversationInvoice: vi.fn(),
+  markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
 }));
 
@@ -27,12 +28,14 @@ import {
   fetchConversation,
   fetchConversations,
   postConversationInvoice,
+  markConversationRead,
   postConversationMessage,
 } from '@/lib/api';
 
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
 const invoiceMock = vi.mocked(postConversationInvoice);
+const markReadMock = vi.mocked(markConversationRead);
 const postMock = vi.mocked(postConversationMessage);
 
 const account: Account = {
@@ -61,6 +64,7 @@ const THREAD: Conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const OLDER: Conversation = {
@@ -71,6 +75,7 @@ const OLDER: Conversation = {
   lastAt: '2026-08-27T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const MESSAGE: ConversationMessage = {
@@ -86,6 +91,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
   searchParams.delete('c');
+  markReadMock.mockResolvedValue(undefined);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -177,6 +183,9 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+    });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Follow up  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
@@ -617,5 +626,59 @@ describe('InboxLoader', () => {
     });
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByText('Hello')).toBeNull();
+  });
+
+  it('still renders the thread when markConversationRead fails', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([{ ...THREAD, unread: true }]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    markReadMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears unread on the list row after opening a thread', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([{ ...THREAD, unread: true }]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+    });
+    searchParams.delete('c');
+    view.rerender(<InboxLoader />);
+    const row = await screen.findByRole('button', { name: /21\.gifts/ });
+    expect(row.getAttribute('aria-label')).toBeNull();
+    expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
+  });
+
+  it('keeps a thread read when a slower list fetch still reports unread', async () => {
+    searchParams.set('c', 'conv-1');
+    let resolveList!: (value: Conversation[]) => void;
+    listMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    threadMock.mockResolvedValue([MESSAGE]);
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+    });
+    await act(async () => {
+      resolveList([{ ...THREAD, unread: true }]);
+    });
+    searchParams.delete('c');
+    view.rerender(<InboxLoader />);
+    const row = await screen.findByRole('button', { name: /21\.gifts/ });
+    expect(row.getAttribute('aria-label')).toBeNull();
+    expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
   });
 });

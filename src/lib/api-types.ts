@@ -491,6 +491,7 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * the session (including staff sending as the platform account). `lastSats`
  * is the satoshis on that last message (0 for text-only). `accountId` is the
  * optional 21.gifts counterpart id on list rows.
+ * `unread` is true when the viewer has inbound mail newer than last-read.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -502,13 +503,18 @@ export const conversationSchema = z.object({
   lastSats: z.number().int().nonnegative(),
   /** Optional 21.gifts counterpart id on list rows. */
   accountId: z.string().min(1).optional(),
+  unread: z.boolean().default(false),
 });
 
 /**
  * Runtime schema for `GET /conversations`.
+ *
+ * `unreadCount` defaults to 0 so an older api that omits the field still
+ * parses.
  */
 export const conversationListSchema = z.object({
   conversations: z.array(conversationSchema),
+  unreadCount: z.number().int().nonnegative().default(0),
 });
 
 /**

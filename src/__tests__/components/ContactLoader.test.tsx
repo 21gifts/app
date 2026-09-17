@@ -116,6 +116,7 @@ describe('ContactLoader', () => {
         lastAt: '2026-08-28T14:00:00.000Z',
         lastFromMe: true,
         lastSats: 0,
+        unread: false,
       },
     ]);
     renderWithLocale(<ContactLoader />);
@@ -145,6 +146,7 @@ describe('ContactLoader', () => {
         lastAt: '2026-08-28T14:00:00.000Z',
         lastFromMe: false,
         lastSats: 0,
+        unread: false,
       },
     ]);
     renderWithLocale(<ContactLoader />);
@@ -171,6 +173,7 @@ describe('ContactLoader', () => {
         lastAt: '2026-08-28T14:00:00.000Z',
         lastFromMe: false,
         lastSats: 0,
+        unread: false,
       },
     ]);
     renderWithLocale(<ContactLoader />);

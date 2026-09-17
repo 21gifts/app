@@ -616,12 +616,12 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right → Menu includes **Home** first (Home, Profile, Living room rules, Trust Chain, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {sha}** line (`app.version`)). Profile is one line (User + Profile; ₿ totals on the right only when a side is non-zero). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Ada’s default welcome-menu shot has zeros, so no ₿ totals on the right. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {sha}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. With both totals zero, the Profile link’s accessible name is Profile; otherwise it includes only the visible non-zero indicator labels. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
+Open **Menu** top-right → Menu includes **Home** first (Home, Profile, Living room rules, Trust Chain, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {sha}** line (`app.version`)). Profile is one line (User + Profile; ₿ totals on the right only when a side is non-zero). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot has zeros, so no ₿ totals on the right. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {sha}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. With both totals zero, the Profile link’s accessible name is Profile; otherwise it includes only the visible non-zero indicator labels. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 ![21.gifts welcome menu](images/welcome-menu.png)
 
 ### Variant: menu-unread
 
-Open **Menu** with `unreadCount` 3 stubbed on `GET /forum/notifications` → Notifications shows **3** on the right (`nav.notificationsUnread`, accessible name Notifications, 3 unread). Other Menu rows match `menu-open` (Ada’s totals still zero).
+Open **Menu** with `unreadCount` 3 stubbed on `GET /forum/notifications` → Notifications shows **3** on the right (`nav.notificationsUnread`, accessible name Notifications, 3 unread). Messages shows a count on the right only when inbox unread > 0; Ada’s default inbox unread is 0 so no number. Other Menu rows match `menu-open` (Ada’s totals still zero).
 
 ![21.gifts welcome menu unread](images/welcome-menu-unread.png)
 
