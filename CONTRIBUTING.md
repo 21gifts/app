@@ -98,7 +98,7 @@ app/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   └── [id]/
 │   │   │       ├── route.ts     # GET/POST /conversations/[id]
-│   │   │       └── invoice/route.ts  # POST /conversations/:id/invoice
+│   │   │       ├── invoice/route.ts  # POST /conversations/:id/invoice
 │   │   │       └── read/route.ts # POST /conversations/[id]/read
 │   │   ├── forum/
 │   │   │   ├── messages/

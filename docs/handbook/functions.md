@@ -387,7 +387,7 @@
 - **Purpose:** Set or clear the installed PWA home-screen unread badge via the Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`). When `count > 0` and `setAppBadge` exists, sets that number; otherwise clears when `clearAppBadge` exists. Missing APIs are a no-op. Rejections are swallowed so unsupported or denied badge writes never throw into the UI.
 - **Inputs:** `count` (number) — notification unread plus inbox unread conversations. Positive values request a badge; `0` (and any non-positive) request a clear.
 - **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
-- **Used by:** `useUnreadCount`, `NotificationsLoader`, `InboxLoader`, `refreshUnreadAppBadge`, `useAuthStore.clearAuth`.
+- **Used by:** `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`, `useAuthStore.clearAuth`.
 
 ## Function: bumpUnreadAppBadgeEpoch
 
@@ -401,7 +401,7 @@
 - **Purpose:** Read the current home-screen badge epoch. Capture before an async unread fetch; skip `setUnreadAppBadge` if it changed.
 - **Inputs:** None.
 - **Returns / side effects:** Current epoch number. No network.
-- **Used by:** `useUnreadCount`.
+- **Used by:** `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
 
 ## Function: refreshUnreadAppBadge
 
