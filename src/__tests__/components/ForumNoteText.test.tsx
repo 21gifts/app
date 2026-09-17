@@ -28,6 +28,14 @@ describe('ForumNoteText', () => {
     );
   });
 
+  it('does not autolink a truncated url prefix', () => {
+    const href = `https://example.com/${'a'.repeat(300)}`;
+    renderWithLocale(<ForumNoteText text={href} className="body" />);
+    expect(screen.queryByRole('link')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(screen.getByRole('link', { name: href }).getAttribute('href')).toBe(href);
+  });
+
   it('renders text at the preview limit without Show more', () => {
     const text = 'a'.repeat(280);
     const { container } = renderWithLocale(<ForumNoteText text={text} className="body" />);

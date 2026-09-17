@@ -22,5 +22,18 @@ export function forumTextPreview(
     preview = preview.slice(0, lastWs);
   }
   preview = preview.replace(/[ \t]+$/, '');
+  preview = dropIncompleteTrailingUrl(preview, text);
   return { preview, truncated: true };
+}
+
+function dropIncompleteTrailingUrl(preview: string, text: string): string {
+  const next = text[preview.length];
+  if (next === ' ' || next === '\t' || next === '\n' || next === '\r') {
+    return preview;
+  }
+  const match = /https?:\/\/\S*$/iu.exec(preview);
+  if (match === null) {
+    return preview;
+  }
+  return preview.slice(0, match.index).replace(/[ \t]+$/u, '');
 }

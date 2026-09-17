@@ -802,7 +802,7 @@
 
 ## Function: forumTextPreview
 
-- **Purpose:** Collapse a public forum note or reply body to a 280-character UTF-16 `.length` preview (`FORUM_TEXT_PREVIEW_LIMIT`) for the feed/profile timeline analog. Word/line boundary cut when the last space or newline in the slice sits at index `>= floor(limit * 0.8)`; trailing spaces/tabs trimmed; no ellipsis in the helper.
+- **Purpose:** Collapse a public forum note or reply body to a 280-character UTF-16 `.length` preview (`FORUM_TEXT_PREVIEW_LIMIT`) for the feed/profile timeline analog. Word/line boundary cut when the last space or newline in the slice sits at index `>= floor(limit * 0.8)`; trailing spaces/tabs trimmed; no ellipsis in the helper. If the hard cut splits an http(s) URL (no whitespace across the boundary), that incomplete trailing URL is dropped from the preview so `LinkedText` cannot autolink a shorter href.
 - **Inputs:** `text` — full body; optional `limit` (default 280).
 - **Returns / side effects:** `{ preview, truncated }`. Does not append `…`. No network.
 - **Used by:** `ForumNoteText`.

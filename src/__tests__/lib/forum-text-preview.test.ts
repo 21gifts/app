@@ -68,4 +68,16 @@ describe('forumTextPreview', () => {
       truncated: true,
     });
   });
+
+  it('drops a trailing http(s) URL that the hard cut splits', () => {
+    const href = `https://example.com/${'a'.repeat(300)}`;
+    expect(forumTextPreview(href)).toEqual({ preview: '', truncated: true });
+  });
+
+  it('keeps a complete http(s) URL that fits in the preview', () => {
+    const text = `see https://example.com/x ${'a'.repeat(300)}`;
+    const result = forumTextPreview(text);
+    expect(result.truncated).toBe(true);
+    expect(result.preview).toContain('https://example.com/x');
+  });
 });
