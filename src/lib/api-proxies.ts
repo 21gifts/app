@@ -211,9 +211,9 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies GET /trust-chain to the 21.gifts api (public; no auth required).
+ * Proxies GET /trust-chain to the 21.gifts api (Bearer forwarded).
  *
- * @param request - Incoming App Router request.
+ * @param request - Incoming App Router request (Bearer session).
  * @returns The upstream response.
  */
 export async function proxyTrustChainGet(request: Request): Promise<Response> {

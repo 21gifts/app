@@ -94,7 +94,7 @@ function edgeHops(fromX: number, toX: number): number {
  * loads the person's neighborhood (`onExpand`). Modifier-click keeps the
  * member-card link.
  *
- * @param props - Public Trust Chain payload and optional expand handler.
+ * @param props - Signed-in Trust Chain payload and optional expand handler.
  * @returns The diagram.
  */
 export function TrustChainDiagram({
@@ -265,18 +265,18 @@ export function TrustChainDiagram({
               {lift > 0 ? (
                 <path
                   d={`M ${x1} ${y1} Q ${midX} ${y1 - lift} ${x2} ${y2}`}
-                  className="stroke-paper/40"
+                  className="stroke-app-fg/40"
                   fill="none"
                 />
               ) : (
-                <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-paper/40" />
+                <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-app-fg/40" />
               )}
-              <polygon points={arrowHeadPoints(x1, y1, x2, y2)} className="fill-paper/40" />
+              <polygon points={arrowHeadPoints(x1, y1, x2, y2)} className="fill-app-fg/40" />
               <text
                 x={midX}
                 y={labelY}
                 textAnchor="middle"
-                className="fill-paper"
+                className="fill-app-fg"
                 fontSize="12"
                 pointerEvents="none"
               >
@@ -327,13 +327,13 @@ export function TrustChainDiagram({
                 width={TRUST_NODE_WIDTH}
                 height={TRUST_NODE_HEIGHT}
                 rx={12}
-                className="fill-ink stroke-paper/20"
+                className="fill-app-card stroke-app-border"
               />
               <text
                 x={node.x + TRUST_NODE_WIDTH / 2}
                 y={node.y + 30}
                 textAnchor="middle"
-                className="fill-paper"
+                className="fill-app-fg"
                 fontSize="14"
               >
                 {label}
@@ -342,7 +342,7 @@ export function TrustChainDiagram({
                 x={node.x + TRUST_NODE_WIDTH / 2}
                 y={node.y + 50}
                 textAnchor="middle"
-                className="fill-paper"
+                className="fill-app-fg"
                 fontSize="12"
               >
                 {busy ? t('trustChain.loading') : t(roleMessageKey(node.role))}

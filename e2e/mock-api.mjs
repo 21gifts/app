@@ -1307,6 +1307,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'GET' && pathName === '/trust-chain') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
     json(res, 200, { nodes: [], edges: [] });
     return;
   }

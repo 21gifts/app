@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TrustChainLoader } from '@/app/(marketing)/trust-chain/trust-chain-loader';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TrustChainLoader } from '@/app/trust-chain/trust-chain-loader';
 import type { TrustChain } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const EMPTY: TrustChain = { nodes: [], edges: [] };
@@ -27,18 +28,31 @@ import { fetchTrustChain } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchTrustChain);
 
+beforeEach(() => {
+  useAuthStore.setState({ session: 'tok', account: null });
+});
+
 afterEach(() => {
   cleanup();
   fetchMock.mockReset();
+  useAuthStore.setState({ session: null, account: null });
 });
 
 describe('TrustChainLoader', () => {
+  it('renders nothing without a session', () => {
+    useAuthStore.setState({ session: null, account: null });
+    const { container } = renderWithLocale(<TrustChainLoader />);
+    expect(container.firstChild).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('renders a populated chain', async () => {
     fetchMock.mockResolvedValue(POPULATED);
     renderWithLocale(<TrustChainLoader />);
     await waitFor(() => {
       expect(screen.getByTestId('trust-node-f')).toBeTruthy();
     });
+    expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
   it('renders loaded empty copy', async () => {
@@ -47,6 +61,7 @@ describe('TrustChainLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No one is on the Trust Chain yet.')).toBeTruthy();
     });
+    expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
   it('shows a fetch error and retries', async () => {
@@ -61,6 +76,8 @@ describe('TrustChainLoader', () => {
       expect(screen.getByText('No one is on the Trust Chain yet.')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'tok');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'tok');
   });
 
   it('uses the fallback error copy for a non-Error rejection', async () => {
@@ -83,7 +100,7 @@ describe('TrustChainLoader', () => {
     view.unmount();
     resolveStale?.(EMPTY);
     await Promise.resolve();
-    expect(fetchMock).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
   it('loads one hop when a node is clicked', async () => {
@@ -97,7 +114,7 @@ describe('TrustChainLoader', () => {
     await waitFor(() => {
       expect(screen.getByTestId('trust-node-m')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenLastCalledWith('f');
+    expect(fetchMock).toHaveBeenLastCalledWith('tok', 'f');
   });
 
   it('shows the load error when a hop fails', async () => {
@@ -115,7 +132,7 @@ describe('TrustChainLoader', () => {
     fetchMock.mockResolvedValueOnce(HOP);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenLastCalledWith('f');
+      expect(fetchMock).toHaveBeenLastCalledWith('tok', 'f');
     });
     expect(screen.queryByText('Could not load the Trust Chain. Please try again.')).toBeNull();
     expect(screen.getByTestId('trust-node-f')).toBeTruthy();
@@ -216,6 +233,6 @@ describe('TrustChainLoader', () => {
     view.unmount();
     rejectStale?.(new Error('gone'));
     await Promise.resolve();
-    expect(fetchMock).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 });

@@ -5,13 +5,19 @@ import { TrustChainScreen } from '@/components/TrustChainScreen';
 import { fetchTrustChain } from '@/lib/api';
 import type { TrustChain } from '@/lib/api-types';
 import { mergeTrustChain } from '@/lib/trust-chain';
+import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Client loader for `/trust-chain`: founder seeds first, then one hop per click.
+ * Client loader for signed-in `/trust-chain`: founder seeds first, then one hop per click.
  *
- * @returns The Trust Chain screen, including loading and error states.
+ * Reads the session from the auth store. Renders nothing when there is no
+ * session; OnboardingGate owns the redirect.
+ *
+ * @returns The Trust Chain screen, including loading and error states, or `null`
+ *   without a session.
  */
-export function TrustChainLoader(): ReactElement {
+export function TrustChainLoader(): ReactElement | null {
+  const session = useAuthStore((s) => s.session);
   const [chain, setChain] = useState<TrustChain | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,12 +26,15 @@ export function TrustChainLoader(): ReactElement {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (session === null) {
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
     void (async () => {
       try {
-        const next = await fetchTrustChain();
+        const next = await fetchTrustChain(session);
         if (!cancelled) {
           setChain(next);
         }
@@ -47,7 +56,11 @@ export function TrustChainLoader(): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [session, attempt]);
+
+  if (session === null) {
+    return null;
+  }
 
   return (
     <TrustChainScreen
@@ -67,7 +80,7 @@ export function TrustChainLoader(): ReactElement {
           setExpandingId(retryId);
           void (async () => {
             try {
-              const hop = await fetchTrustChain(retryId);
+              const hop = await fetchTrustChain(session, retryId);
               setChain((current) => {
                 /* v8 ignore next 3 — hop retry starts from a visible node */
                 if (current === null) {
@@ -95,7 +108,7 @@ export function TrustChainLoader(): ReactElement {
         setExpandingId(accountId);
         void (async () => {
           try {
-            const hop = await fetchTrustChain(accountId);
+            const hop = await fetchTrustChain(session, accountId);
             setChain((current) => {
               /* v8 ignore next 3 — hop only starts from a visible node */
               if (current === null) {

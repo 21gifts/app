@@ -6025,35 +6025,54 @@ test('Function: proxyMessagesDelete — unauthenticated deletion is forwarded an
   expect(response.status()).toBe(401);
 });
 
-test('Function: proxyTrustChainGet — GET /trust/graph is empty', async ({ request }) => {
-  const res = await request.get('/trust/graph');
+test('Function: proxyTrustChainGet — GET /trust/graph without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/trust/graph')).status()).toBe(401);
+});
+
+test('Function: proxyTrustChainGet — GET /trust/graph with bearer is 200', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.get('/trust/graph', { headers: { authorization: `Bearer ${token}` } });
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ nodes: [], edges: [] });
 });
 
 test('Function: fetchTrustChain — trust chain page shows the empty copy', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
   await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
 });
 
 test('Function: TrustChainPage — trust chain heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
 });
 
+test('Function: TrustChainPage — unauthenticated visit shows login', async ({ page }) => {
+  await page.goto('/trust-chain');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Trust Chain' })).toHaveCount(0);
+  await expect(page.getByTestId('trust-node-f1')).toHaveCount(0);
+});
+
 test('Function: TrustChainLoader — trust chain page shows the empty copy', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
 });
 
 test('Function: TrustChainScreen — empty chain hides the diagram', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
   await expect(page.locator('svg[aria-label]')).toHaveCount(0);
 });
 
 test('Function: mergeTrustChain — clicking a founder loads the next hop', async ({ page }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     const url = new URL(route.request().url());
     const around = url.searchParams.get('around');
@@ -6083,6 +6102,7 @@ test('Function: mergeTrustChain — clicking a founder loads the next hop', asyn
 });
 
 test('Function: TrustChainDiagram — a mocked chain renders named nodes', async ({ page }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -6104,6 +6124,7 @@ test('Function: TrustChainDiagram — a mocked chain renders named nodes', async
 test('Function: layoutTrustChain — appointed moderator sits to the right of the founder', async ({
   page,
 }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -6133,6 +6154,7 @@ test('Function: layoutTrustChain — appointed moderator sits to the right of th
 test('Function: layoutTrustChain — stacked moderator sits above a verified sibling even when the verified edge is listed first', async ({
   page,
 }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,

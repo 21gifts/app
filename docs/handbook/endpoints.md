@@ -324,10 +324,10 @@
 
 ## Endpoint: GET /trust/graph
 
-- **Purpose:** Same-origin proxy of api `GET /trust-chain` (public nodes and stored edges). Lives at `/trust/graph` so it does not collide with the marketing page `/trust-chain`.
-- **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchTrustChain` on `/trust-chain` (forwards `?around=`).
-- **Auth:** none.
+- **Purpose:** Same-origin Bearer proxy of api `GET /trust-chain` (nodes and stored edges). Lives at `/trust/graph` so it does not collide with the signed-in HTML page `/trust-chain`.
+- **Errors:** Upstream 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchTrustChain` on signed-in `/trust-chain` (forwards `?around=`).
+- **Auth:** Bearer.
 
 ## Endpoint: POST /trust/verify
 

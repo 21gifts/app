@@ -207,7 +207,7 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 | Token          | px      | rem          | Weight | Line-height            | Letter-spacing              | Max measure                                        | Tailwind recipe                                                   | Use                                                                                                                                                                      |
 | -------------- | ------- | ------------ | ------ | ---------------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`, `/trust-chain`). 404 “404” stays `text-5xl` = 48px / 600                                                            |
+| **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`). 404 “404” stays `text-5xl` = 48px / 600                                                                            |
 | **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, contact, inbox, notifications, setup. **Not login** (see **card-title**)                             |
 | **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`). Keep this smaller step so the card is an action, not a billboard                                                       |
 | **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                                                  |
@@ -328,7 +328,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
 - Canvas: `min-h-[var(--app-height)] bg-ink text-paper [color-scheme:dark]`.
-- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/trust-chain`, `/handbook`, `/404`.
+- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
 **App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Unsigned app: Wordmark or `HomeWordmark` + LanguageSwitcher. Signed-in: `ProfileChromeLeft` or Wordmark + `SignedInChrome` Menu. ThemeSwitcher and LanguagePreferenceSwitcher are Profile identity-card settings rows, not chrome.
@@ -341,7 +341,6 @@ flowchart TB
     A["/about"]
     S["/stats"]
     SD["/stats/day"]
-    TC["/trust-chain"]
     H["/handbook/*"]
     F["/404"]
   end
@@ -355,6 +354,7 @@ flowchart TB
     P["/profile"]
     MEM["/members/accountId"]
     N["/notifications"]
+    TC["/trust-chain"]
     MO["/moderate"]
     MOH["/moderate/hidden"]
     C["/contact"]
@@ -403,10 +403,10 @@ flowchart TB
 
 Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `align="center"` centers short cards inside the inner scroller (never `justify-center` on `<main>`). Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/moderate/hidden`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                 | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                 |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/moderate/hidden`, `/trust-chain`, `/contact`, `/messages`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
+| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                 | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                                 |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` + `Wordmark href="/welcome"`.
 
@@ -433,7 +433,7 @@ Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`
 ```mermaid
 flowchart LR
   subgraph marketingShell [Marketing shell — always ink]
-    MH[MarketingHeader: HomeWordmark + nav incl. Trust Chain + orange Log in + Language]
+    MH[MarketingHeader: HomeWordmark + nav + orange Log in + Language]
     MC[Page]
     MF[MarketingFooter: Wordmark + links + verse + GitHub]
   end
@@ -837,11 +837,10 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 
 ### Marketing header / footer / CTA pair
 
-**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `HomeWordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, Trust Chain, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
-
+**Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: `HomeWordmark tone="dark"`. Right: `nav` (how, why, faq, about, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
 Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile.
 
-**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, Trust Chain, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
+**Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
 
 **Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`.
 
@@ -904,7 +903,7 @@ Handbook states: loading, empty, error + **Try again**, populated charts.
 
 ### `/trust-chain`
 
-Marketing shell, always ink. `MarketingHeader` → display/h1 Trust Chain (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`), lead, then `TrustChainLoader` / `TrustChainScreen` / `TrustChainDiagram`. First paint is founder seeds; a click loads one hop; several people hanging off one person stack top to bottom; drag moves a person. Empty / loading / error + **Try again**; hop-error keeps the diagram. Modifier-click opens `/members/{id}`.
+Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"`; heading at in-app title (`text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl`), lead `text-app-muted`; `TrustChainLoader` / `TrustChainScreen` / `TrustChainDiagram`; app tokens not paper/ink; founder seeds then hop-on-click; empty/loading/error + **Try again**; hop-error keeps the diagram. Modifier-click opens `/members/{id}`.
 
 Handbook states: default, expanded, empty, loading, error, hop-error.
 

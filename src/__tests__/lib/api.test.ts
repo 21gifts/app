@@ -2429,39 +2429,52 @@ describe('fetchTrustChain', () => {
 
   it('returns the validated graph', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: chain });
-    await expect(fetchTrustChain()).resolves.toEqual(chain);
-    expect(fetchMock).toHaveBeenCalledWith('/trust/graph');
+    await expect(fetchTrustChain('sess')).resolves.toEqual(chain);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/graph', {
+      headers: { Authorization: 'Bearer sess' },
+    });
   });
 
   it('requests one hop when around is set', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: chain });
-    await expect(fetchTrustChain('acc/1')).resolves.toEqual(chain);
-    expect(fetchMock).toHaveBeenCalledWith('/trust/graph?around=acc%2F1');
+    await expect(fetchTrustChain('sess', 'acc/1')).resolves.toEqual(chain);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/graph?around=acc%2F1', {
+      headers: { Authorization: 'Bearer sess' },
+    });
   });
 
   it('omits the query when around is empty', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: chain });
-    await expect(fetchTrustChain('')).resolves.toEqual(chain);
-    expect(fetchMock).toHaveBeenCalledWith('/trust/graph');
+    await expect(fetchTrustChain('sess', '')).resolves.toEqual(chain);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/graph', {
+      headers: { Authorization: 'Bearer sess' },
+    });
   });
 
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: {} });
-    await expect(fetchTrustChain()).rejects.toThrow(
+    await expect(fetchTrustChain('sess')).rejects.toThrow(
+      'Could not load the Trust Chain. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchTrustChain('sess')).rejects.toThrow(
       'Could not load the Trust Chain. Please try again.',
     );
   });
 
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    await expect(fetchTrustChain()).rejects.toThrow(
+    await expect(fetchTrustChain('sess')).rejects.toThrow(
       'Could not load the Trust Chain. Please try again.',
     );
   });
 
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { nodes: [] } });
-    await expect(fetchTrustChain()).rejects.toThrow(
+    await expect(fetchTrustChain('sess')).rejects.toThrow(
       'Could not load the Trust Chain. Please try again.',
     );
   });
