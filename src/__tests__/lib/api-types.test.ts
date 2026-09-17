@@ -222,6 +222,33 @@ describe('conversationSchema', () => {
       }),
     ).toThrow();
   });
+
+  it('accepts an optional accountId', () => {
+    const row = {
+      id: 'c1',
+      kind: 'member_member' as const,
+      name: 'Bob',
+      lastText: 'Hi',
+      lastAt: '2026-08-28T12:00:00.000Z',
+      lastFromMe: false,
+      accountId: 'acc_1',
+    };
+    expect(conversationSchema.parse(row)).toEqual(row);
+  });
+
+  it('rejects an empty accountId', () => {
+    expect(() =>
+      conversationSchema.parse({
+        id: 'c1',
+        kind: 'member_member',
+        name: 'Bob',
+        lastText: 'Hi',
+        lastAt: '2026-08-28T12:00:00.000Z',
+        lastFromMe: false,
+        accountId: '',
+      }),
+    ).toThrow();
+  });
 });
 
 describe('conversationMessageSchema', () => {
@@ -257,6 +284,31 @@ describe('conversationMessageSchema', () => {
         name: 'Ada',
         text: 'Hello',
         createdAt: '2026-08-28T12:00:00.000Z',
+      }),
+    ).toThrow();
+  });
+
+  it('accepts an optional accountId', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+      accountId: 'acc_1',
+    };
+    expect(conversationMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('rejects an empty accountId', () => {
+    expect(() =>
+      conversationMessageSchema.parse({
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        fromMe: false,
+        accountId: '',
       }),
     ).toThrow();
   });

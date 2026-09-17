@@ -499,6 +499,7 @@ const en = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'You',
   'inbox.sentPreview': 'You: {text}',
+  'inbox.authorProfile': 'View profile',
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
@@ -1051,6 +1052,7 @@ const de = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'Du',
   'inbox.sentPreview': 'Du: {text}',
+  'inbox.authorProfile': 'Profil anzeigen',
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
@@ -1593,6 +1595,7 @@ const es = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'Tú',
   'inbox.sentPreview': 'Tú: {text}',
+  'inbox.authorProfile': 'Ver perfil',
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
@@ -2140,6 +2143,7 @@ const fil = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'Ikaw',
   'inbox.sentPreview': 'Ikaw: {text}',
+  'inbox.authorProfile': 'Tingnan ang profile',
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',
