@@ -557,7 +557,7 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 ### `AppShell` / `PageChrome`
 
-**Anatomy.** `AppShell` owns the app `<main>`: optional absolute `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
+**Anatomy.** `AppShell` owns the app `<main>`: optional `topLeft` / `topRight` (page-absolute by default; under `fill` + `align="center"` the first eligible Card hosts them in-flow), `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
 
 **Tokens.** `h-[var(--app-height)]` (`fill`) or `min-h-[var(--app-height)]` (`flow`), `px-6`, `bg` inherited from `body`. Never Tailwind viewport-height utilities on app routes.
 
