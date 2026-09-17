@@ -8,7 +8,7 @@ import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
 
 /**
- * `/donate` — Send help explainer: pick a forum message, then send Bitcoin.
+ * `/donate` — Send help explainer: open the forum, show reactions, then send Bitcoin on a payable reaction.
  *
  * @returns The donate screen.
  */

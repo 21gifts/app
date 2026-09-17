@@ -1044,6 +1044,37 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('uses visible reactions-feed sats for Gift, not a stale expanded copy', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED, payable: true, sats: 0 }]);
+    vi.mocked(fetchMemberReplies).mockResolvedValue([
+      { ...PAYABLE_NESTED, payable: true, sats: 21 },
+    ]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...PAYABLE_NESTED,
+      payable: true,
+      sats: 42,
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote({ ...note, replyCount: 1 });
+    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
+    const replyCard = screen.getByText('Payable nested reply.').closest('li') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        PAYABLE_NESTED.id,
+        expect.objectContaining({ sinceSats: 21 }),
+      );
+    });
+  });
+
   it('cancels a reactions-feed Gift when the activity panel is collapsed', async () => {
     const payableActivity = { ...activityReply, payable: true, sats: 0 };
     vi.mocked(fetchMemberReplies).mockResolvedValue([payableActivity]);

@@ -207,7 +207,7 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
-- **What the user sees:** Fill `AppShell` with `HomeWordmark` top-left (`/` when unsigned, `/welcome` when a session is hydrated); light language switcher top-right (not marketing header). Heading **Send help**, short lead about picking a forum message then sending Bitcoin, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **What the user sees:** Fill `AppShell` with `HomeWordmark` top-left (`/` when unsigned, `/welcome` when a session is hydrated); light language switcher top-right (not marketing header). Heading **Send help**, short lead about opening **Show reactions** then sending Bitcoin on a payable reaction, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
 - **Actions:** Change language. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
 - **Calls:** `AppShell`, `HomeWordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`.
 

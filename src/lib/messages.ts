@@ -137,7 +137,8 @@ const en = {
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
-  'donate.lead': 'Pick a message in the forum and send Bitcoin to the person who wrote it.',
+  'donate.lead':
+    'Open the forum, pick a message, open Show reactions, then send Bitcoin on a reaction.',
   'donate.continue': 'Open the forum',
 
   'notFound.body': 'This page does not exist.',
@@ -712,7 +713,7 @@ const de = {
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
-    'Wählen Sie eine Nachricht im Forum und senden Sie der Person, die sie geschrieben hat, Bitcoin.',
+    'Öffnen Sie das Forum, wählen Sie eine Nachricht, öffnen Sie «Reaktionen anzeigen» und senden Sie Bitcoin auf einer Reaktion.',
   'donate.continue': 'Forum öffnen',
   'notFound.body': 'Diese Seite gibt es nicht.',
   'notFound.back': 'Zur Startseite',
@@ -1290,7 +1291,8 @@ const es = {
     'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Las cantidades pequeñas llegan rápido y cuestan poco. Llega a quien recibe, no a nosotros. Nadie puede emitir más ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
-  'donate.lead': 'Elige un mensaje en el foro y envía Bitcoin a la persona que lo escribió.',
+  'donate.lead':
+    'Abre el foro, elige un mensaje, abre Mostrar reacciones y envía Bitcoin en una reacción.',
   'donate.continue': 'Abrir el foro',
   'notFound.body': 'Esta página no existe.',
   'notFound.back': 'Volver al inicio',
@@ -1854,7 +1856,8 @@ const fil = {
     'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Mabilis at mura ang pagpapadala ng maliliit na halaga. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
-  'donate.lead': 'Pumili ng mensahe sa forum at magpadala ng Bitcoin sa taong sumulat nito.',
+  'donate.lead':
+    'Buksan ang forum, pumili ng mensahe, buksan ang Ipakita ang mga reaksyon, at magpadala ng Bitcoin sa isang reaksyon.',
   'donate.continue': 'Buksan ang forum',
   'notFound.body': 'Walang ganitong page.',
   'notFound.back': 'Bumalik sa home',
