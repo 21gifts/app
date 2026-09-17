@@ -1281,6 +1281,8 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-proposals-confirming.png',
     visual: 'state-moderate-proposals-confirming',
     needle: "getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled()",
+  },
+  {
     route: '/moderate/group',
     id: 'default',
     image: 'moderate-group.png',
@@ -1313,7 +1315,8 @@ export const SCREEN_VARIANTS = [
     id: 'error',
     image: 'moderate-group-error.png',
     visual: 'state-moderate-group-error',
-    needle: 'Try again',  },
+    needle: 'Try again',
+  },
   {
     route: '/404',
     id: 'default',

@@ -2158,7 +2158,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/conversations/:id` with `{ text }`.
 - **Inputs:** Session token, conversation id, text.
 - **Returns / side effects:** Created message, or throws api/visitor copy.
-- **Used by:** `InboxLoader`.
+- **Used by:** `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: postConversationInvoice
 
@@ -2302,8 +2302,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes or proposals. Renders `null` without a session. No un-hide control.
-- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`. A **Moderators** `ButtonLink` → `/moderate/group` is shown only when `role === 'moderator'`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes or the group thread. Renders `null` without a session. No un-hide control.- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. A **Moderators** `ButtonLink` → `/moderate/group` is shown only when `role === 'moderator'`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread. Renders `null` without a session. No un-hide control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
 - **Used by:** `ModeratePage`.
 

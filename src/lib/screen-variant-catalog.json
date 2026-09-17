@@ -1035,6 +1035,9 @@
     "id": "/moderate/proposals:confirming",
     "label": "/moderate/proposals confirming",
     "visual": "state-moderate-proposals-confirming",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:default",
     "label": "/moderate/group default",
     "visual": "screen-moderate-group",
@@ -1061,7 +1064,8 @@
   {
     "id": "/moderate/group:error",
     "label": "/moderate/group error",
-    "visual": "state-moderate-group-error",    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+    "visual": "state-moderate-group-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/404:default",
