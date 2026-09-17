@@ -64,6 +64,8 @@ describe('AppShell', () => {
     expect(scroller?.className).not.toContain('items-center');
     expect(scroller?.className).not.toContain('justify-center');
     const inner = scroller?.firstElementChild;
+    expect(inner?.className).toContain('flex');
+    expect(inner?.className).toContain('flex-col');
     expect(inner?.className).toContain('min-h-full');
     expect(inner?.className).toContain('items-center');
     expect(inner?.className).toContain('justify-center');

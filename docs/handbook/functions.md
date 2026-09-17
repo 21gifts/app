@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation page, not a GET proxy. The marketing page `/trust-chain` is `TrustChainPage`, not this GET.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -115,8 +115,8 @@
 
 ## Function: FiatPicker
 
-- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not mount it.
-- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); required `ariaLabel`.
+- **Purpose:** Four-way CHF | EUR | USD | PHP control, no ₿. Optional `shell` default `'dark'` AND optional `tone` default `'gift'` (chart, stats, day). Profile settings (`FiatPreferenceSwitcher`) pass `tone="neutral"`. Required `ariaLabel` (Profile and the activity chart pass catalog `profile.fiatCurrency`). Chart scale stays a separate ₿ | selected fiat control. Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not mount it.
+- **Inputs:** `value` (`FiatCode`) and `onChange`; optional `shell` (`'app' | 'dark'`, default `'dark'`); optional `tone` (`'gift' | 'neutral'`, default `'gift'`); required `ariaLabel`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `StatsDashboard`, `DayLoader`.
 
@@ -157,7 +157,7 @@
 
 ## Function: LanguagePreferenceSwitcher
 
-- **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` for English / Deutsch / Español / Filipino (two-column track so the four endonyms fit the identity card). Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
+- **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` (default one-row `rounded-full` track, same as ThemeSwitcher) for English / Deutsch / Español / Filipino. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
 - **Inputs:** None. Reads current locale via `useTranslations`. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
 - **Returns / side effects:** Settings row matching `PushToggle` chrome. On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh).
 - **Used by:** `ProfileScreen`.
@@ -220,7 +220,7 @@
 
 ## Function: FiatPreferenceSwitcher
 
-- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"`. Writes the same `fiat` cookie as the activity chart, `/stats`, and `/stats/[day]`.
+- **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"` `tone="neutral"` (same chrome as ThemeSwitcher / NumberFormatSwitcher / LanguagePreferenceSwitcher; selected is `bg-app-btn`, not orange). Writes the same `fiat` cookie as the activity chart, `/stats`, and `/stats/[day]`. Chart / stats / day FiatPicker keep default `tone="gift"`.
 - **Inputs:** None. Uses `useFiatPreference` and `useTranslations`.
 - **Returns / side effects:** Settings section. `onChange` persists via the cookie.
 - **Used by:** `ProfileScreen`.
@@ -257,14 +257,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -331,14 +331,14 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/trust-chain`.
 
 ## Function: SignedInChrome
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -352,7 +352,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
 - **Inputs:** Catalog `profile.back` via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfileScreen
 
@@ -604,7 +604,8 @@
 - **Inputs:** `children`, required `mode` (`fill` | `flow`), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`, fill only).
 - **Returns / side effects:** A `<main>` layout with absolute chrome slots and optional header/footer portals. No network.
 - **Used by:**
-  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, profile, contact, view, members, inbox, notifications, public note)
+  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note)
+  - **Flow app routes** (`ProfilePage`, `ViewProfilePage`, `MemberProfilePage`)
   - **`PageChrome`** (flow-mode wrapper used by welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
 
@@ -649,7 +650,7 @@
 - **Purpose:** Text brand mark `21.gifts` (header 17px/700, footer 15px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
 - **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `size` (`header` / `footer`, default `header`), optional `className`, optional `onClick` forwarded to the link only.
 - **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
-- **Used by:** `MarketingHeader`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, `ForumHomeWordmark`, and `AppShell` top-left.
+- **Used by:** `HomeWordmark`, `ForumHomeWordmark`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, unsigned `PublicMessageChrome` / `RulesPageChrome`, and `AppShell` top-left.
 
 ## Function: ForumHomeWordmark
 
@@ -657,6 +658,13 @@
 - **Inputs:** None. Uses `Wordmark` and `FORUM_HOME_EVENT`.
 - **Returns / side effects:** A client wordmark link. Dispatch only; no fetch of its own.
 - **Used by:** `WelcomePage`.
+
+## Function: HomeWordmark
+
+- **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
+- **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Uses `useHydrateSession` and `useAuthStore`.
+- **Returns / side effects:** A client `Wordmark` link. Hydrates the session; no other network of its own.
+- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`.
 
 ## Function: PublicMessageChrome
 
@@ -704,7 +712,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `Wordmark` → `/` top-left and light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader
@@ -786,7 +794,7 @@
 
 ## Function: ForumBoard
 
-- **Purpose:** Presentational public forum: each post card body without the action row is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` wrapping header, media, body text, and `NoteTranslate`, not an `IconButton`; pay, copy-link, and PM sit outside that control as sibling `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/No gifts yet/All/Most popular `SegmentedControl tone="neutral"` (unpaid segment chip when `unpaidNewCount` > 0 and unpaid is not selected), list of posts (name, optional Founder / Moderator / Verified role pill on notes **and replies** when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), labeled **Translate** / Show original / Show translation under note and reply bodies via `NoteTranslate` (not in the footer icon row), ₿ amount plus optional preferred-fiat `·` `formatFiatDisplay` only when `satsToFiatAmount` is non-null (else ₿-only, no em dash) with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), in-card reply composer (textarea plus **Amount** sats field `id="forum-reply-amount"`), and pay-on-note sheet: amount form with a live equivalent in the preferred fiat only when the conversion is non-null (no picker; after mint the equivalent uses the invoice amount, not an empty draft's 21-sat default), then iOS-phone amount CTA **Pay** (`forum.payNow`) mints the invoice and keeps the amount form (it does not `window.location.assign`; wallet `Button` then sets `window.location.href` to `walletofsatoshi:`; no QR); Android-phone (`isSmartphoneUserAgent`) amount CTA stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the same wallet `Button` and the Android Intent href (not the invoice card); desktop and iPad (`!isSmartphoneUserAgent`) amount CTA stays **Continue** (`forum.payContinue`) and after mint show the invoice card with QR + the same wallet `Button` (`forum.payOpenWallet` / aria `forum.payOpenWalletAria`; no custom-scheme `<a>`); top-left back control cancels. Gift-only replies show **send ₿…** (`forum.giftReply`) plus the same optional preferred-fiat `·` as notes; a reply with text and sats shows both. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty, `forum.emptyPaid` when Active or Most popular hide every loaded row (Most popular remains paid-only; Active also keeps unpaid founder/moderator notes), and `forum.emptyUnpaid` for No gifts yet when that filter hides all loaded rows. Props `messages` are newest-first (API window); Active, No gifts yet, and All keep that order (newest at the top). Most popular stays sats-descending. The composer sits under the mode selector / filters, above the newest-first list; replies remain oldest-first. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged. When `newPostsAvailable` is true, a labeled primary `Button` (`forum.newPosts`, decorative lucide `ArrowUp`) is `fixed` under the chrome; the node is omitted when the flag is false. Listens for `FORUM_COMPOSE_EVENT` / `requestForumCompose`: focuses and `scrollIntoView`s the new-post textarea and consumes pending compose only when that textarea exists (`composerHidden` boards keep the flag).
+- **Purpose:** Presentational public forum: each post card body without the action row is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` wrapping header, media, body text, and `NoteTranslate`, not an `IconButton`; the footer ₿ amount button and the reply-count button (when shown) also call `onToggleExpand`; pay, copy-link, PM, and delete sit outside that control as sibling `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/No gifts yet/All/Most popular `SegmentedControl tone="neutral"` (unpaid segment chip when `unpaidNewCount` > 0 and unpaid is not selected), list of posts (name, optional Founder / Moderator / Verified role pill on notes **and replies** when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), labeled **Translate** / Show original / Show translation under note and reply bodies via `NoteTranslate` (not in the footer icon row), ₿ amount plus optional preferred-fiat `·` `formatFiatDisplay` only when `satsToFiatAmount` is non-null (else ₿-only, no em dash) with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), in-card reply composer (textarea plus **Amount** sats field `id="forum-reply-amount"`), and pay-on-note sheet: amount form with a live equivalent in the preferred fiat only when the conversion is non-null (no picker; after mint the equivalent uses the invoice amount, not an empty draft's 21-sat default), then iOS-phone amount CTA **Pay** (`forum.payNow`) mints the invoice and keeps the amount form (it does not `window.location.assign`; wallet `Button` then sets `window.location.href` to `walletofsatoshi:`; no QR); Android-phone (`isSmartphoneUserAgent`) amount CTA stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the same wallet `Button` and the Android Intent href (not the invoice card); desktop and iPad (`!isSmartphoneUserAgent`) amount CTA stays **Continue** (`forum.payContinue`) and after mint show the invoice card with QR + the same wallet `Button` (`forum.payOpenWallet` / aria `forum.payOpenWalletAria`; no custom-scheme `<a>`); top-left back control cancels. Gift-only replies show **send ₿…** (`forum.giftReply`) plus the same optional preferred-fiat `·` as notes; a reply with text and sats shows both. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty, `forum.emptyPaid` when Active or Most popular hide every loaded row (Most popular remains paid-only; Active also keeps unpaid founder/moderator notes), and `forum.emptyUnpaid` for No gifts yet when that filter hides all loaded rows. Props `messages` are newest-first (API window); Active, No gifts yet, and All keep that order (newest at the top). Most popular stays sats-descending. The composer sits under the mode selector / filters, above the newest-first list; replies remain oldest-first. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged. When `newPostsAvailable` is true, a labeled primary `Button` (`forum.newPosts`, decorative lucide `ArrowUp`) is `fixed` under the chrome; the node is omitted when the flag is false. Listens for `FORUM_COMPOSE_EVENT` / `requestForumCompose`: focuses and `scrollIntoView`s the new-post textarea and consumes pending compose only when that textarea exists (`composerHidden` boards keep the flag).
 - **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), optional `newPostsAvailable` / `onShowNewPosts` (pill omitted when the flag is falsy), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, optional `unpaidNewCount` (default 0), required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, optional `composerHidden` (hides the new-post composer; the textarea is absent so compose-pending is not consumed), plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, optional `rateDay` (`FiatRateDay | null`; omit/`null` → ₿-only), `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer with optional `replyAmountDraft` / `onReplyAmountDraftChange`, `replyFormError` including `amount` for a non-numeric or overflowing paid-reply sats field), PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`), and optional `onDeleted` (founder/moderator `DeletePostControl` on the parent footer and on nested replies with `kind="reply"`). Gift-only replies (`text === ''` and `sats > 0`) render `forum.giftReply` with `formatBitcoin` plus the same optional preferred-fiat `·` `formatFiatDisplay` suffix as notes (₿-only when conversion is null, no em dash); text plus a gift shows that formatted amount under the text. PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
 - **Returns / side effects:** React tree. Copy-link uses `parentId ?? messageId`: reply cards copy `/messages/{parentId}`; top-level notes copy `/messages/{messageId}`. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. ForumBoard itself does not fetch; nested `NoteTranslate` GETs `/translate` on mount and POSTs on **Translate**. No mode state of its own. After `onPaySubmit` resolves to an invoice, ForumBoard does not `window.location.assign`; on a smartphone the amount form stays and the wallet `Button` sets `window.location.href` to the WoS href; on desktop/iPad the invoice card shows QR plus that same `Button`. A `FORUM_COMPOSE_EVENT` focuses the new-post composer when it is mounted; a `composerHidden` board leaves pending compose set for a later visible board.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
@@ -1017,9 +1025,9 @@
 
 ## Function: fetchTrustChain
 
-- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) and parse the public Trust Chain graph. Optional `around` loads one hop (`?around=`).
-- **Inputs:** optional `around` account id.
-- **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down or the body is invalid.
+- **Purpose:** GET `/trust/graph` (same-origin proxy of api `GET /trust-chain`) with Bearer and parse the Trust Chain graph. Optional `around` loads one hop (`?around=`).
+- **Inputs:** Bearer `sessionToken`, optional `around` account id.
+- **Returns / side effects:** `TrustChain`. Throws visitor copy when the api is down, the body is invalid, or the response is 401/403.
 - **Used by:** `TrustChainLoader`.
 
 ## Function: postTrustVerify
@@ -1073,24 +1081,24 @@
 
 ## Function: TrustChainScreen
 
-- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy. A hop-load error with nodes already on screen keeps the diagram and shows the catalog error plus **Try again** above it.
+- **Purpose:** Localized `/trust-chain` body: title, lead, loading/error/empty/diagram, and Verified / Moderator / Founder copy. A hop-load error with nodes already on screen keeps the diagram and shows the catalog error plus **Try again** above it. App theme tokens (`app-fg` / `app-muted`), not marketing display type.
 - **Inputs:** `chain`, `error`, `loading`, optional `expandingId`, `onExpand`, `onRetry`.
-- **Returns / side effects:** Marketing screen element.
+- **Returns / side effects:** Signed-in screen element.
 - **Used by:** `TrustChainLoader`.
 
 ## Function: TrustChainLoader
 
-- **Purpose:** Client loader for `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain. Retry with nodes already on screen re-fetches that `?around=` hop (does not re-fetch seeds); the banner stays gone only if the hop succeeds.
-- **Inputs:** none (fetches on mount).
-- **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states.
+- **Purpose:** Client loader for signed-in `/trust-chain`: founder seeds first, then one hop per click, merged into the visible graph. A failed hop keeps the chain. Retry with nodes already on screen re-fetches that `?around=` hop (does not re-fetch seeds); the banner stays gone only if the hop succeeds. Does not fetch when the session is null.
+- **Inputs:** Session from the auth store.
+- **Returns / side effects:** Loading, error+retry, empty, diagram, or diagram-plus-hop-error states, or `null` without a session.
 - **Used by:** `TrustChainPage`.
 
 ## Function: TrustChainPage
 
-- **Purpose:** Marketing page at `/trust-chain`.
+- **Purpose:** Signed-in page at `/trust-chain`. Any logged-in completed account may view (not staff-only).
 - **Inputs:** none.
-- **Returns / side effects:** `TrustChainLoader` inside the dark marketing shell.
-- **Used by:** App Router `src/app/(marketing)/trust-chain/page.tsx`.
+- **Returns / side effects:** Fill `AppShell` (`align="start"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `TrustChainLoader`. Graph HTTP is under `/trust/graph` (no `route.ts` beside this page).
+- **Used by:** App Router `src/app/trust-chain/page.tsx`.
 
 ## Function: MemberTrustActions
 
@@ -1234,10 +1242,10 @@
 
 ## Function: formatForumTime
 
-- **Purpose:** Formats a forum message timestamp as UTC medium date + short time via `Intl.DateTimeFormat`, or returns the original ISO string when the instant is invalid.
+- **Purpose:** Formats a forum message timestamp as medium date + short time in the runtime local timezone via `Intl.DateTimeFormat`, or returns the original ISO string when the instant is invalid.
 - **Inputs:** `iso` string, `locale` BCP 47 tag.
-- **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
-- **Used by:** `ForumBoard`.
+- **Returns / side effects:** Display string. Uses the runtime default timezone (visitor system timezone), not UTC.
+- **Used by:** `ForumBoard`, `InboxScreen`, `ModerateScreen`, `NotificationsScreen`, `PublicMessageLoader`.
 
 ## Function: visibleForumMessages
 
@@ -1628,14 +1636,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with wordmark, section nav (How / Why / FAQ / About / Stats / Trust Chain / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
+- **Purpose:** Sticky marketing header with `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated), section nav (How / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
 - **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
 - **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound` (no extra props).
 
 ## Function: MarketingLayout
 
-- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, `/stats`, and `/trust-chain`.
+- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, and `/stats`.
 - **Inputs:** `children`. Awaits `MarketingFooter()` (does not render it as a JSX child).
 - **Returns / side effects:** Wrapper div with header, page, and awaited footer.
 - **Used by:** Marketing route group.
@@ -1670,8 +1678,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: proxyTrustChainGet
 
-- **Purpose:** Same-origin proxy helper for api `GET /trust-chain`.
-- **Inputs:** Incoming `Request`.
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /trust-chain`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/trust/graph`.
 
@@ -2062,7 +2070,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsScreen
 
-- **Purpose:** Presentational notifications list of living-room posts, replies, and payments (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin`; post text or **Photo**, reply text or **Photo reply**, zap amount as stored, time; unread semibold). No composer, no thread view, and no filter.
+- **Purpose:** Presentational notifications list of living-room posts, replies, and payments (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin`; post text or **Photo**, reply text or **Photo reaction**, zap amount as stored, time; unread semibold). No composer, no thread view, and no filter.
 - **Inputs:** List state from `NotificationsLoader` (`notifications`, `error`, `loading`, `onRetry`, `onOpen`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `NotificationsLoader`.
@@ -2111,24 +2119,38 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModeratePage
 
-- **Purpose:** Next.js page for `/moderate` (signed-in hidden-notes list for founders and moderators). Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateScreen`. Hidden HTTP is under `/forum/messages/hidden` (no `route.ts` beside this page).
+- **Purpose:** Next.js page for `/moderate` (signed-in moderation hub for founders and moderators). HTML `/moderate` is the hub, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateScreen`. Hidden HTTP lives under `/forum/messages/hidden` (no `route.ts` beside this page); the hub itself does not fetch.
 - **Inputs:** None.
-- **Returns / side effects:** The moderation screen inside fill AppShell.
+- **Returns / side effects:** The moderation hub inside fill AppShell.
 - **Used by:** Route `/moderate`.
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client list of hidden living-room notes. Staff (founder or moderator) fetch `listHiddenMessages` and show the lead copy plus the newest-hidden-first list (or empty / loading / try-again). Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes. Renders `null` without a session. No un-hide control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
+- **Used by:** `ModeratePage`.
+
+## Function: HiddenNotesPage
+
+- **Purpose:** Next.js page for `/moderate/hidden` (signed-in hidden-notes list for founders and moderators). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `HiddenNotesScreen`. Hidden HTTP is under `/forum/messages/hidden` (no `route.ts` beside this page).
+- **Inputs:** None.
+- **Returns / side effects:** The hidden-notes screen inside fill AppShell.
+- **Used by:** Route `/moderate/hidden`.
+
+## Function: HiddenNotesScreen
+
+- **Purpose:** Client list of hidden living-room notes. Staff (founder or moderator) fetch `listHiddenMessages` and show the lead copy plus the newest-hidden-first list (or empty / loading / try-again). Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/messages/hidden` only when the role is founder or moderator.
-- **Used by:** `ModeratePage`.
+- **Used by:** `HiddenNotesPage`.
 
 ## Function: listHiddenMessages
 
 - **Purpose:** GET `/forum/messages/hidden` with Bearer and parse `hiddenListSchema.messages`. HTTP 401/403 throw `Failed to list hidden notes: status`; other failures visitor copy `Could not load hidden notes. Please try again.`
 - **Inputs:** Session token.
 - **Returns / side effects:** Hidden-note array, or throws.
-- **Used by:** `ModerateScreen`.
+- **Used by:** `HiddenNotesScreen`.
 
 ## Function: HandbookScreensPage
 

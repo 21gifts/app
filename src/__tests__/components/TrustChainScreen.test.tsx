@@ -31,7 +31,9 @@ describe('TrustChainScreen', () => {
     );
     const heading = screen.getByRole('heading', { name: 'Trust Chain' });
     expect(heading).toBeTruthy();
-    expect(heading.className).toContain('leading-tight');
+    expect(heading.className).toContain('text-app-fg');
+    expect(heading.className).toContain('text-2xl');
+    expect(heading.className).not.toContain('text-paper');
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
@@ -48,8 +50,13 @@ describe('TrustChainScreen', () => {
         onExpand={() => undefined}
       />,
     );
-    expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Could not load the Trust Chain. Please try again.',
+    );
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    expect(retry.className).not.toContain('bg-app-accent');
+    expect(retry.className).not.toContain('text-ink');
+    fireEvent.click(retry);
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
   });
@@ -64,7 +71,9 @@ describe('TrustChainScreen', () => {
         onExpand={() => undefined}
       />,
     );
-    expect(screen.getByText('Could not load the Trust Chain. Please try again.')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Could not load the Trust Chain. Please try again.',
+    );
     expect(screen.getByTestId('trust-node-f')).toBeTruthy();
   });
 

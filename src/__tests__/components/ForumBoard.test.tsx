@@ -632,7 +632,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.getByText('₿21').closest('p')?.className).toContain('font-medium');
+    expect(screen.getByText('₿21').closest('button')?.className).toContain('font-medium');
     expect(screen.queryByText('$0.02')).toBeNull();
     expect(screen.getByText(formatForumTime(SAMPLE.createdAt, 'en'))).toBeTruthy();
     const preWrap = screen.getByText(
@@ -2183,7 +2183,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('0 replies')).toBeTruthy();
+    expect(screen.getByText('0 reactions')).toBeTruthy();
 
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
@@ -2204,7 +2204,7 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.getByText('2 replies')).toBeTruthy();
+    expect(screen.getByText('2 reactions')).toBeTruthy();
   });
 
   it('omits the replyCount text on top-level cards that have a parentId', () => {
@@ -2223,7 +2223,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByText('0 replies')).toBeNull();
+    expect(screen.queryByText('0 reactions')).toBeNull();
   });
 
   it('keeps pay and copy outside the expand control', () => {
@@ -2244,14 +2244,45 @@ describe('ForumBoard', () => {
     );
     expect(
       screen
-        .getByRole('button', { name: 'Show replies' })
+        .getByRole('button', { name: 'Show reactions' })
         .contains(screen.getByRole('button', { name: 'Send Bitcoin' })),
     ).toBe(false);
     expect(
       screen
-        .getByRole('button', { name: 'Show replies' })
+        .getByRole('button', { name: 'Show reactions' })
         .contains(screen.getByRole('button', { name: 'Copy link to this note' })),
     ).toBe(false);
+  });
+
+  it('expands via the ₿ amount and reply-count buttons', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, sats: 21, replyCount: 2 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Show reactions' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '₿21' }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: '2 reactions' }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+    onToggleExpand.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('expands and collapses via the card aria-label, not pay/role/copy', () => {
@@ -2272,13 +2303,13 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
     onToggleExpand.mockClear();
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Show replies' }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Show reactions' }), { key: 'Enter' });
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
     onToggleExpand.mockClear();
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Show replies' }), { key: ' ' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Show reactions' }), { key: ' ' });
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
     onToggleExpand.mockClear();
 
@@ -2559,7 +2590,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByPlaceholderText('Write a reply')).toBeNull();
+    expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
 
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
@@ -2582,8 +2613,8 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Hide replies' })).toBeTruthy();
+    expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hide reactions' })).toBeTruthy();
   });
 
   it('retries reply loading from the error state', () => {
@@ -2638,7 +2669,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const form = screen.getByPlaceholderText('Write a reply').closest('form');
+    const form = screen.getByPlaceholderText('Write a reaction').closest('form');
     expect(form).not.toBeNull();
     fireEvent.submit(form as HTMLFormElement);
     expect(onReplyPost).not.toHaveBeenCalled();
@@ -2667,7 +2698,7 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    const pending = screen.getByPlaceholderText('Write a reply').closest('form');
+    const pending = screen.getByPlaceholderText('Write a reaction').closest('form');
     expect(pending).not.toBeNull();
     fireEvent.submit(pending as HTMLFormElement);
     expect(onReplyPost).not.toHaveBeenCalled();
@@ -2696,7 +2727,7 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    const loading = screen.getByPlaceholderText('Write a reply').closest('form');
+    const loading = screen.getByPlaceholderText('Write a reaction').closest('form');
     expect(loading).not.toBeNull();
     fireEvent.submit(loading as HTMLFormElement);
     expect(onReplyPost).not.toHaveBeenCalled();
@@ -3073,7 +3104,7 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
 
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
@@ -3603,11 +3634,11 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     expect(document.querySelector('[data-reply-id]')).toBeNull();
   });
 
-  it('shows an icon-only Delete reply on nested replies when onDeleted is provided', () => {
+  it('shows an icon-only Delete reaction on nested replies when onDeleted is provided', () => {
     useAuthStore.setState({
       session: 'token',
       account: {
@@ -3662,14 +3693,14 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r1"]');
     expect(replyCard).not.toBeNull();
     expect(
-      within(replyCard as HTMLElement).getByRole('button', { name: 'Delete reply' }),
+      within(replyCard as HTMLElement).getByRole('button', { name: 'Delete reaction' }),
     ).toBeTruthy();
-    expect(within(replyCard as HTMLElement).queryByText('Delete reply')).toBeNull();
+    expect(within(replyCard as HTMLElement).queryByText('Delete reaction')).toBeNull();
     expect(screen.getByRole('button', { name: 'Delete post' })).toBeTruthy();
     expect(screen.queryByText('Delete post')).toBeNull();
   });
 
-  it('hides Delete reply on nested replies when onDeleted is omitted', () => {
+  it('hides Delete reaction on nested replies when onDeleted is omitted', () => {
     useAuthStore.setState({
       session: 'token',
       account: {
@@ -3720,10 +3751,10 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
   });
 
-  it('shows Delete reply on own replies that have no PM', () => {
+  it('shows Delete reaction on own replies that have no PM', () => {
     useAuthStore.setState({
       session: 'token',
       account: {
@@ -3767,7 +3798,7 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-own"]');
     expect(replyCard).not.toBeNull();
     expect(
-      within(replyCard as HTMLElement).getByRole('button', { name: 'Delete reply' }),
+      within(replyCard as HTMLElement).getByRole('button', { name: 'Delete reaction' }),
     ).toBeTruthy();
     expect(
       within(replyCard as HTMLElement).queryByRole('button', { name: 'Send a private message' }),

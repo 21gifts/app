@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
+import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
-import { Wordmark } from '@/components/ui';
 
 /**
  * Capability-URL referrer policy so the view key is not sent as Referer.
@@ -23,12 +23,7 @@ export default async function ViewProfilePage({
 }): Promise<ReactElement> {
   const { viewKey } = await params;
   return (
-    <AppShell
-      mode="fill"
-      align="center"
-      topLeft={<Wordmark href="/" />}
-      topRight={<LanguageSwitcher tone="light" />}
-    >
+    <AppShell mode="flow" topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
       <ViewProfileLoader viewKey={viewKey} />
     </AppShell>
   );

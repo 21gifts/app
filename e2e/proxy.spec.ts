@@ -41,7 +41,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
     (await request.get('/forum/members/[accountId]/activity')).status(),
   ).toBeGreaterThanOrEqual(400);
   expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
-  expect((await request.get('/trust/graph')).status()).toBe(200);
+  expect((await request.get('/trust/graph')).status()).toBe(401);
   expect((await request.post('/trust/verify')).status()).toBe(401);
   expect((await request.post('/trust/propose-moderator')).status()).toBe(401);
   expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);

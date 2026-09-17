@@ -553,20 +553,23 @@ const TRUST_CHAIN_LOAD_ERROR = 'Could not load the Trust Chain. Please try again
 const TRUST_ACTION_ERROR = 'Could not update this member. Please try again.';
 
 /**
- * Fetches the public Trust Chain graph (who verified or appointed whom).
+ * Fetches the Trust Chain graph (who verified or appointed whom).
  *
+ * @param sessionToken - Bearer session from a completed login.
  * @param around - Optional account id; loads one hop when set.
  * @returns The {@link TrustChain} payload.
  * @throws Error with visitor-facing copy when the api is unavailable or the
- * body fails {@link trustChainSchema}.
+ * body fails {@link trustChainSchema} (including 401/403).
  */
-export async function fetchTrustChain(around?: string): Promise<TrustChain> {
+export async function fetchTrustChain(sessionToken: string, around?: string): Promise<TrustChain> {
   try {
     const path =
       around === undefined || around === ''
         ? '/trust/graph'
         : `/trust/graph?around=${encodeURIComponent(around)}`;
-    const response = await fetch(path);
+    const response = await fetch(path, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
     if (!response.ok) {
       throw new Error(TRUST_CHAIN_LOAD_ERROR);
     }

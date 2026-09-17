@@ -55,15 +55,23 @@ async function stubHiddenList(page: import('@playwright/test').Page): Promise<vo
   });
 }
 
-test('Function: ModeratePage — staff see the hidden-note list', async ({ page }) => {
+test('Function: ModeratePage — staff see the moderation hub', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubHiddenList(page);
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-  await expect(page.getByText('Hidden note')).toBeVisible();
-  await expect(page.getByText('Hidden by Ada')).toBeVisible();
+  await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveAttribute(
+    'href',
+    '/moderate/hidden',
+  );
+  await expect(page.getByText('Hidden by Ada')).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('link', { name: 'Hidden notes' }).click();
+  await expect(page.getByRole('heading', { name: 'Hidden notes' })).toBeVisible();
+  await expect(page.getByText('Hidden by Ada')).toBeVisible();
 });
 
 test('Function: ModerateScreen — basis visitors see the forbidden copy', async ({ page }) => {
@@ -71,16 +79,32 @@ test('Function: ModerateScreen — basis visitors see the forbidden copy', async
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
   await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
-  await expect(page.getByText('Hidden note')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveCount(0);
+});
+
+test('Function: HiddenNotesPage — staff see the hidden-note list', async ({ page }) => {
+  await seedAdaSession(page, 'founder');
+  await stubHiddenList(page);
+  await page.goto('/moderate/hidden');
+  await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
+  await expect(page.getByText('Hidden by Ada')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
+});
+
+test('Function: HiddenNotesScreen — basis visitors see the forbidden copy', async ({ page }) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/moderate/hidden');
+  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Hidden notes' })).toHaveCount(0);
 });
 
 test('Function: listHiddenMessages — staff list shows a hidden note', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await stubHiddenList(page);
-  await page.goto('/moderate');
-  await expect(page.getByText('Hidden note')).toBeVisible();
+  await page.goto('/moderate/hidden');
+  await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
 });
 

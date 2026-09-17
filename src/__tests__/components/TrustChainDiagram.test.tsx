@@ -50,6 +50,11 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByText('confirmed')).toBeTruthy();
     expect(screen.getByText('appointed')).toBeTruthy();
     expect(screen.queryByTestId('trust-node-ghost')).toBeNull();
+    const stroke = document.querySelector('svg line, svg path');
+    expect(stroke?.getAttribute('class')).toContain('stroke-app-fg/40');
+    const rect = document.querySelector('svg rect');
+    expect(rect?.getAttribute('class')).toContain('fill-app-card');
+    expect(rect?.getAttribute('class')).toContain('stroke-app-border');
   });
 
   it('calls onExpand on a plain click and skips it while that node is expanding', () => {

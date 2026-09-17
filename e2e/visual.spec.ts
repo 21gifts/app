@@ -591,44 +591,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate');
   });
 
-  test('screen /trust-chain', async ({ page }) => {
-    await page.route('**/trust/graph**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(TRUST_CHAIN_SEED),
-      });
-    });
-    await page.goto('/trust-chain');
-    await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
-    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
-    await shotScreen(page, 'screen-trust-chain');
-  });
-
-  test('state /trust-chain expanded', async ({ page }) => {
-    await page.route('**/trust/graph**', async (route) => {
-      const url = new URL(route.request().url());
-      const around = url.searchParams.get('around');
-      const body =
-        around === 'm1'
-          ? TRUST_CHAIN_AROUND_MODERATOR
-          : around === 'f1'
-            ? TRUST_CHAIN_AROUND_FOUNDER
-            : TRUST_CHAIN_SEED;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
-    await page.goto('/trust-chain');
-    await page.getByTestId('trust-node-f1').click();
-    await expect(page.getByTestId('trust-node-m1')).toBeVisible();
-    await page.getByTestId('trust-node-m1').click();
-    await expect(page.getByTestId('trust-node-v1')).toBeVisible();
-    await shotScreen(page, 'state-trust-chain-expanded');
-  });
-
   test('screen /stats', async ({ page }) => {
     await page.route('**/gifts/stats', async (route) => {
       await route.fulfill({
@@ -931,7 +893,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
-    await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
     await shotScreen(page, 'state-welcome-expanded');
   });
 
@@ -1336,8 +1298,8 @@ test.describe('onboarding screens', () => {
     const group = page.getByRole('group', { name: 'Fiat currency' }).last();
     await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
     await group.scrollIntoViewIfNeeded();
-    // Viewport: the identity card scrolls inside a 720px shell, so fullPage
-    // still crops above this row.
+    // Viewport-only capture after document scroll keeps the Fiat currency row
+    // in frame.
     await shotScreen(page, 'state-profile-fiat', false);
   });
 
@@ -1646,7 +1608,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 replies' }).click();
+    await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
@@ -1777,7 +1739,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 replies' }).click();
+    await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('Loading…')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Loading…').scrollIntoViewIfNeeded();
@@ -1899,7 +1861,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 replies' }).click();
+    await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -2063,7 +2025,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '3 replies' }).click();
+    await page.getByRole('button', { name: '3 reactions' }).click();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
@@ -2297,9 +2259,9 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
-    await page.getByRole('button', { name: 'Show replies' }).click();
-    await expect(page.getByLabel('Your reply')).toBeVisible();
-    await page.getByLabel('Your reply').fill('Hello');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(
@@ -3682,7 +3644,7 @@ test.describe('welcome forum variants', () => {
       if (state !== 'moderation') {
         await page.getByRole('button', { name: 'Delete post', exact: true }).click();
         await expect(
-          page.getByRole('group', { name: 'Delete this post and its replies from 21.gifts?' }),
+          page.getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' }),
         ).toBeVisible();
       }
       if (state === 'deleting' || state === 'delete-error') {
@@ -3692,7 +3654,7 @@ test.describe('welcome forum variants', () => {
         } else {
           await expect(
             page
-              .getByRole('group', { name: 'Delete this post and its replies from 21.gifts?' })
+              .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
               .getByRole('alert'),
           ).toHaveText('Could not delete the post. Please try again.');
         }
@@ -3800,12 +3762,14 @@ test.describe('welcome forum variants', () => {
       });
       await page.goto('/welcome');
       await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
-      await page.getByRole('button', { name: 'Show replies', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Show reactions', exact: true }).click();
+      await expect(
+        page.getByRole('button', { name: 'Delete reaction', exact: true }),
+      ).toBeVisible();
       if (state !== 'reply-moderation') {
-        await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+        await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
         await expect(
-          page.getByRole('group', { name: 'Delete this reply from 21.gifts?' }),
+          page.getByRole('group', { name: 'Delete this reaction from 21.gifts?' }),
         ).toBeVisible();
       }
       if (state === 'reply-deleting' || state === 'reply-delete-error') {
@@ -3815,9 +3779,9 @@ test.describe('welcome forum variants', () => {
         } else {
           await expect(
             page
-              .getByRole('group', { name: 'Delete this reply from 21.gifts?' })
+              .getByRole('group', { name: 'Delete this reaction from 21.gifts?' })
               .getByRole('alert'),
-          ).toHaveText('Could not delete the reply. Please try again.');
+          ).toHaveText('Could not delete the reaction. Please try again.');
         }
       }
       if (state === 'reply-moderation') await shotScreen(page, 'state-welcome-reply-moderation');
@@ -5151,16 +5115,10 @@ test.describe('moderate screens', () => {
 
   test('screen /moderate', async ({ page }) => {
     await seedAda(page, 'founder');
-    await page.route('**/forum/messages/hidden', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ messages: [HIDDEN] }),
-      });
-    });
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-    await expect(page.getByText('Hidden note')).toBeVisible();
+    await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
 
@@ -5170,8 +5128,72 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
   });
+});
 
-  test('moderate empty', async ({ page }) => {
+test.describe('moderate hidden screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const HIDDEN = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  test('screen /moderate/hidden', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [HIDDEN] }),
+      });
+    });
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
+    await expect(page.getByText('Hidden by Ada')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-hidden');
+  });
+
+  test('moderate hidden forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-hidden-forbidden');
+  });
+
+  test('moderate hidden empty', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async (route) => {
       await route.fulfill({
@@ -5180,22 +5202,22 @@ test.describe('moderate screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
-    await page.goto('/moderate');
+    await page.goto('/moderate/hidden');
     await expect(page.getByText('No hidden notes.')).toBeVisible();
-    await shotScreen(page, 'state-moderate-empty');
+    await shotScreen(page, 'state-moderate-hidden-empty');
   });
 
-  test('moderate loading', async ({ page }) => {
+  test('moderate hidden loading', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async () => {
       /* hang */
     });
-    await page.goto('/moderate');
+    await page.goto('/moderate/hidden');
     await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
-    await shotScreen(page, 'state-moderate-loading');
+    await shotScreen(page, 'state-moderate-hidden-loading');
   });
 
-  test('moderate error', async ({ page }) => {
+  test('moderate hidden error', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async (route) => {
       await route.fulfill({
@@ -5204,9 +5226,130 @@ test.describe('moderate screens', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/moderate');
+    await page.goto('/moderate/hidden');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await shotScreen(page, 'state-moderate-error');
+    await shotScreen(page, 'state-moderate-hidden-error');
+  });
+});
+
+test.describe('trust-chain screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  test('screen /trust-chain', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/trust/graph**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(TRUST_CHAIN_SEED),
+      });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
+    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+    await shotScreen(page, 'screen-trust-chain');
+  });
+
+  test('state /trust-chain expanded', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/trust/graph**', async (route) => {
+      const url = new URL(route.request().url());
+      const around = url.searchParams.get('around');
+      const body =
+        around === 'm1'
+          ? TRUST_CHAIN_AROUND_MODERATOR
+          : around === 'f1'
+            ? TRUST_CHAIN_AROUND_FOUNDER
+            : TRUST_CHAIN_SEED;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    await page.goto('/trust-chain');
+    await page.getByTestId('trust-node-f1').click();
+    await expect(page.getByTestId('trust-node-m1')).toBeVisible();
+    await page.getByTestId('trust-node-m1').click();
+    await expect(page.getByTestId('trust-node-v1')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-expanded');
+  });
+
+  test('trust-chain empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/trust/graph', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ nodes: [], edges: [] }),
+      });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-empty');
+  });
+
+  test('trust-chain loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/trust/graph', () => new Promise(() => undefined));
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('paragraph').filter({ hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-loading');
+  });
+
+  test('trust-chain error', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/trust/graph', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/trust-chain');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-error');
+  });
+
+  test('trust-chain hop-error', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/trust/graph**', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get('around')) {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(TRUST_CHAIN_SEED),
+      });
+    });
+    await page.goto('/trust-chain');
+    await page.getByTestId('trust-node-f1').click();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
+    await shotScreen(page, 'state-trust-chain-hop-error');
   });
 });
 
@@ -5236,55 +5379,6 @@ test.describe('stats variant baselines', () => {
     await expect(page.getByLabel('Spend by person in USD')).toBeVisible();
     await expect(page.getByLabel('Spend by month in USD')).toBeVisible();
     await shotScreen(page, 'state-stats-usd-scale');
-  });
-
-  test('trust-chain empty', async ({ page }) => {
-    await page.route('**/trust/graph', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ nodes: [], edges: [] }),
-      });
-    });
-    await page.goto('/trust-chain');
-    await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
-    await shotScreen(page, 'state-trust-chain-empty');
-  });
-
-  test('trust-chain loading', async ({ page }) => {
-    await page.route('**/trust/graph', () => new Promise(() => undefined));
-    await page.goto('/trust-chain');
-    await expect(page.getByText('Loading…')).toBeVisible();
-    await shotScreen(page, 'state-trust-chain-loading');
-  });
-
-  test('trust-chain error', async ({ page }) => {
-    await page.route('**/trust/graph', async (route) => {
-      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-    });
-    await page.goto('/trust-chain');
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await shotScreen(page, 'state-trust-chain-error');
-  });
-
-  test('trust-chain hop-error', async ({ page }) => {
-    await page.route('**/trust/graph**', async (route) => {
-      const url = new URL(route.request().url());
-      if (url.searchParams.get('around')) {
-        await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-        return;
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(TRUST_CHAIN_SEED),
-      });
-    });
-    await page.goto('/trust-chain');
-    await page.getByTestId('trust-node-f1').click();
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await expect(page.getByTestId('trust-node-f1')).toBeVisible();
-    await shotScreen(page, 'state-trust-chain-hop-error');
   });
 
   test('stats empty', async ({ page }) => {

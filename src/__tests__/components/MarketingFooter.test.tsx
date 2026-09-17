@@ -21,11 +21,9 @@ describe('MarketingFooter', () => {
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
   });
 
-  it('links Trust Chain to /trust-chain', async () => {
+  it('does not link Trust Chain', async () => {
     render(await MarketingFooter());
-    expect(screen.getByRole('link', { name: 'Trust Chain' }).getAttribute('href')).toBe(
-      '/trust-chain',
-    );
+    expect(screen.queryByRole('link', { name: 'Trust Chain' })).toBeNull();
   });
 
   it('links Handbook to /handbook', async () => {

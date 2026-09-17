@@ -177,9 +177,9 @@
 
 ## Endpoint: GET /forum/messages/hidden
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for founders and moderators). App path is `/forum/messages/hidden` so HTML `/moderate` can serve the page.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for founders and moderators). App path is `/forum/messages/hidden` so HTML `/moderate/hidden` can serve the page.
 - **Errors:** Upstream 401/403, or 502 if the api is unreachable.
-- **Used by:** `listHiddenMessages` via `ModerateScreen` on `/moderate`.
+- **Used by:** `listHiddenMessages` via `HiddenNotesScreen` on `/moderate/hidden`.
 - **Auth:** Bearer; staff role (founder|moderator) on the api.
 
 ## Endpoint: POST /forum/messages
@@ -324,10 +324,10 @@
 
 ## Endpoint: GET /trust/graph
 
-- **Purpose:** Same-origin proxy of api `GET /trust-chain` (public nodes and stored edges). Lives at `/trust/graph` so it does not collide with the marketing page `/trust-chain`.
-- **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchTrustChain` on `/trust-chain` (forwards `?around=`).
-- **Auth:** none.
+- **Purpose:** Same-origin Bearer proxy of api `GET /trust-chain` (nodes and stored edges). Lives at `/trust/graph` so it does not collide with the signed-in HTML page `/trust-chain`.
+- **Errors:** Upstream 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchTrustChain` on signed-in `/trust-chain` (forwards `?around=`).
+- **Auth:** Bearer.
 
 ## Endpoint: POST /trust/verify
 

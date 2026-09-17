@@ -29,4 +29,22 @@ describe('FiatPicker', () => {
     expect(group.className).not.toContain('border-paper/20');
     expect(screen.getByRole('button', { name: 'EUR' }).getAttribute('aria-pressed')).toBe('true');
   });
+
+  it('uses a rounded-full track and app-btn selected when tone is neutral', () => {
+    render(
+      <FiatPicker
+        value="USD"
+        onChange={() => undefined}
+        shell="app"
+        tone="neutral"
+        ariaLabel="Profile fiat"
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Profile fiat' });
+    expect(group.className).toContain('rounded-full');
+    const usd = screen.getByRole('button', { name: 'USD' });
+    expect(usd.className).toContain('bg-app-btn');
+    expect(usd.className).not.toContain('bg-app-accent');
+    expect(usd.className).not.toContain('bg-accent');
+  });
 });

@@ -1037,7 +1037,7 @@ test('Function: fetchMemberReplies — member replies open from the count', asyn
 }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
-  await page.getByRole('button', { name: '1 replies' }).click();
+  await page.getByRole('button', { name: '1 reactions' }).click();
   await expect(page.getByText('A reply from Carol.')).toBeVisible();
 });
 
@@ -1376,8 +1376,8 @@ test('Function: MemberProfileScreen — public card shows About me, copy-profile
   await expect(page.getByText('Hello from Carol.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Show replies' })).toHaveCount(0);
-  await expect(page.getByLabel('Your reply')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Show reactions' })).toHaveCount(0);
+  await expect(page.getByLabel('Your reaction')).toHaveCount(0);
 });
 
 test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay from the posts feed', async ({
@@ -1479,9 +1479,9 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await page.getByRole('button', { name: '1 posts' }).click();
   await expect(page.getByText('Hello from my profile note.')).toBeVisible();
-  await page.getByRole('button', { name: 'Show replies' }).click();
-  await expect(page.getByLabel('Your reply')).toBeVisible();
-  await page.getByLabel('Your reply').fill('Hello');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await expect(page.getByLabel('Your reaction')).toBeVisible();
+  await page.getByLabel('Your reaction').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -4296,6 +4296,77 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
   await expect(page.getByText(/2026/)).toBeVisible();
 });
 
+test.describe('welcome clock uses the browser local timezone', () => {
+  test.use({ timezoneId: 'Europe/Zurich' });
+
+  test('Function: formatForumTime — welcome clock uses the browser local timezone', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          linkingKey: null,
+          role: 'basis',
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          forumLawsDismissed: false,
+          createdAt: 1,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Ada',
+              text: 'Hello from Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 1,
+              payable: true,
+              hasPhoto: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    const { localString, utcString } = await page.evaluate(() => {
+      const instant = new Date('2026-08-28T12:00:00.000Z');
+      const localString = new Intl.DateTimeFormat('en', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(instant);
+      const utcString = new Intl.DateTimeFormat('en', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'UTC',
+      }).format(instant);
+      return { localString, utcString };
+    });
+    await expect(page.getByText(localString, { exact: true })).toBeVisible();
+    expect(localString).not.toBe(utcString);
+    await expect(page.getByText(utcString, { exact: true })).toHaveCount(0);
+  });
+});
+
 test('Function: visibleForumMessages — Active, All, and Most popular filter the welcome list', async ({
   page,
 }) => {
@@ -4697,6 +4768,26 @@ test('Function: ButtonLink — landing Ask for help is a link', async ({ page })
 test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+});
+
+test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ page }) => {
+  await page.goto('/donate');
+  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/');
+});
+
+test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/donate');
+  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/welcome');
+  await page.getByRole('link', { name: '21.gifts' }).click();
+  await expect(page).toHaveURL(/\/welcome/);
 });
 
 test('Function: SegmentedControl — welcome shows Active / All / Most popular', async ({ page }) => {
@@ -5180,8 +5271,8 @@ test('Function: fetchReplies — expanding a welcome note loads replies', async 
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
-  await expect(page.getByPlaceholder('Write a reply')).toBeVisible();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
@@ -5934,35 +6025,54 @@ test('Function: proxyMessagesDelete — unauthenticated deletion is forwarded an
   expect(response.status()).toBe(401);
 });
 
-test('Function: proxyTrustChainGet — GET /trust/graph is empty', async ({ request }) => {
-  const res = await request.get('/trust/graph');
+test('Function: proxyTrustChainGet — GET /trust/graph without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/trust/graph')).status()).toBe(401);
+});
+
+test('Function: proxyTrustChainGet — GET /trust/graph with bearer is 200', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.get('/trust/graph', { headers: { authorization: `Bearer ${token}` } });
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ nodes: [], edges: [] });
 });
 
 test('Function: fetchTrustChain — trust chain page shows the empty copy', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
   await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
 });
 
 test('Function: TrustChainPage — trust chain heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByRole('heading', { name: 'Trust Chain' })).toBeVisible();
 });
 
+test('Function: TrustChainPage — unauthenticated visit shows login', async ({ page }) => {
+  await page.goto('/trust-chain');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Trust Chain' })).toHaveCount(0);
+  await expect(page.getByTestId('trust-node-f1')).toHaveCount(0);
+});
+
 test('Function: TrustChainLoader — trust chain page shows the empty copy', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
 });
 
 test('Function: TrustChainScreen — empty chain hides the diagram', async ({ page }) => {
+  await seedAdaSession(page);
   await page.goto('/trust-chain');
   await expect(page.getByText('No one is on the Trust Chain yet.')).toBeVisible();
   await expect(page.locator('svg[aria-label]')).toHaveCount(0);
 });
 
 test('Function: mergeTrustChain — clicking a founder loads the next hop', async ({ page }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     const url = new URL(route.request().url());
     const around = url.searchParams.get('around');
@@ -5992,6 +6102,7 @@ test('Function: mergeTrustChain — clicking a founder loads the next hop', asyn
 });
 
 test('Function: TrustChainDiagram — a mocked chain renders named nodes', async ({ page }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -6013,6 +6124,7 @@ test('Function: TrustChainDiagram — a mocked chain renders named nodes', async
 test('Function: layoutTrustChain — appointed moderator sits to the right of the founder', async ({
   page,
 }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -6042,6 +6154,7 @@ test('Function: layoutTrustChain — appointed moderator sits to the right of th
 test('Function: layoutTrustChain — stacked moderator sits above a verified sibling even when the verified edge is listed first', async ({
   page,
 }) => {
+  await seedAdaSession(page);
   await page.route('**/trust/graph**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -6209,9 +6322,9 @@ test('Function: DeletePostControl — ordinary members have no reply delete acti
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByText('A reply')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Delete reply', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete reaction', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
 });
 
@@ -6273,12 +6386,12 @@ test('Function: DeletePostControl — moderator deletes a reply', async ({ page 
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
-  await page.getByRole('button', { name: 'Show replies' }).click();
-  await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
   await page.getByRole('button', { name: 'Cancel deletion' }).click();
   expect(deletes).toBe(0);
   await expect(page.getByText('Reply to moderate')).toBeVisible();
-  await page.getByRole('button', { name: 'Delete reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm deletion' }).click();
   await expect(page.getByText('Reply to moderate')).not.toBeVisible();
   await expect(page.getByText('Post to moderate')).toBeVisible();

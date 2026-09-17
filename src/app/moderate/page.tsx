@@ -6,14 +6,14 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/moderate` — signed-in hidden-notes list for founders and moderators.
+ * `/moderate` — signed-in moderation hub for founders and moderators.
  *
- * Requires name + address + living-room rules agreement via
- * {@link OnboardingGate} `screen="welcome"`, same as `/notifications`. There is
- * no `route.ts` beside this page (Next.js forbids that); hidden-note HTTP lives
- * under `/forum/messages/hidden`.
+ * `/moderate` is the hub; `/moderate/hidden` is the hidden-notes list. Requires
+ * name + address + living-room rules agreement via {@link OnboardingGate}
+ * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids
+ * that); hidden-note HTTP lives under `/forum/messages/hidden`.
  *
- * @returns The moderation screen.
+ * @returns The moderation hub.
  */
 export default function ModeratePage(): ReactElement {
   return (

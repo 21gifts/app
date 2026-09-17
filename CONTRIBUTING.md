@@ -51,7 +51,7 @@ app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`, `/trust-chain`
+│   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
 │   │   ├── setup/
@@ -117,6 +117,9 @@ app/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
+│   │   ├── trust-chain/
+│   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
+│   │   │   └── trust-chain-loader.tsx
 │   │   ├── manifest.ts          # Web App Manifest (MetadataRoute.Manifest default export)
 │   │   ├── view/
 
@@ -144,7 +147,7 @@ app/
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
-│   │   ├── TrustChainScreen.tsx  # Public /trust-chain body
+│   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
@@ -197,7 +200,7 @@ app/
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
-│   │   ├── forum-time.ts        # UTC display timestamps for forum rows
+│   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos

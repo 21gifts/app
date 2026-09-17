@@ -10,7 +10,7 @@ import type { TrustChain } from '@/lib/api-types';
  * Localized `/trust-chain` body: heading, load states, diagram, and role copy.
  *
  * @param props - Fetched graph plus loader status, hop expand, and retry.
- * @returns The marketing Trust Chain screen.
+ * @returns The signed-in Trust Chain screen.
  */
 export function TrustChainScreen({
   chain,
@@ -34,32 +34,29 @@ export function TrustChainScreen({
   if (error !== null && !hasNodes) {
     body = (
       <div className="mt-12 space-y-4">
-        <p className="text-paper/80">{t('trustChain.error')}</p>
-        <Button
-          type="button"
-          variant="accent"
-          tone="dark"
-          disabled={expandingId !== null}
-          onClick={onRetry}
-        >
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('trustChain.error')}
+        </p>
+        <Button type="button" variant="secondary" disabled={expandingId !== null} onClick={onRetry}>
           {t('trustChain.retry')}
         </Button>
       </div>
     );
   } else if (loading && !hasNodes) {
-    body = <p className="mt-12 text-paper/60">{t('trustChain.loading')}</p>;
+    body = <p className="mt-12 text-app-muted">{t('trustChain.loading')}</p>;
   } else if (chain === null || chain.nodes.length === 0) {
-    body = <p className="mt-12 text-paper/60">{t('trustChain.empty')}</p>;
+    body = <p className="mt-12 text-app-muted">{t('trustChain.empty')}</p>;
   } else {
     body = (
       <div className="mt-12 space-y-4">
         {error !== null ? (
           <div className="space-y-4">
-            <p className="text-paper/80">{t('trustChain.error')}</p>
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('trustChain.error')}
+            </p>
             <Button
               type="button"
-              variant="accent"
-              tone="dark"
+              variant="secondary"
               disabled={expandingId !== null}
               onClick={onRetry}
             >
@@ -73,24 +70,24 @@ export function TrustChainScreen({
   }
 
   return (
-    <div>
-      <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+    <div className="w-full pt-24 pb-8">
+      <h1 className="text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('trustChain.title')}
       </h1>
-      <p className="mt-3 max-w-2xl text-lg text-paper/60">{t('trustChain.lead')}</p>
+      <p className="mt-3 max-w-2xl text-lg text-app-muted">{t('trustChain.lead')}</p>
       {body}
-      <section className="mt-16 space-y-8 text-paper">
+      <section className="mt-16 space-y-8 text-app-fg">
         <div>
           <h2 className="text-xl font-semibold">{t('forum.role.verified')}</h2>
-          <p className="mt-2 text-paper/70">{t('trustChain.explainVerified')}</p>
+          <p className="mt-2 text-app-muted">{t('trustChain.explainVerified')}</p>
         </div>
         <div>
           <h2 className="text-xl font-semibold">{t('forum.role.moderator')}</h2>
-          <p className="mt-2 text-paper/70">{t('trustChain.explainModerator')}</p>
+          <p className="mt-2 text-app-muted">{t('trustChain.explainModerator')}</p>
         </div>
         <div>
           <h2 className="text-xl font-semibold">{t('forum.role.founder')}</h2>
-          <p className="mt-2 text-paper/70">{t('trustChain.explainFounder')}</p>
+          <p className="mt-2 text-app-muted">{t('trustChain.explainFounder')}</p>
         </div>
       </section>
     </div>
