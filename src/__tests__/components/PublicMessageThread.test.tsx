@@ -167,6 +167,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -858,6 +859,19 @@ describe('PublicMessageThread', () => {
     });
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+  });
+
+  it('does not refetch a photo when the session token changes', async () => {
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    signIn();
+    renderThread({ root: { ...root, hasPhoto: true } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+    useAuthStore.setState({ session: 'sess-2', account });
+    await waitFor(() => {
+      expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
     });
   });
 

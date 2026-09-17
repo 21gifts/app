@@ -226,7 +226,6 @@ export function PublicMessageThread(props: {
         }
       })
       .catch(() => {
-        /* v8 ignore next 3 -- unmount abort after a failed stats fetch */
         if (!cancelled) {
           setRateDay(null);
         }
@@ -245,11 +244,9 @@ export function PublicMessageThread(props: {
     const missing = listed.filter(
       (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
     );
-    /* v8 ignore start -- photoIdsKey is empty when every photo is already loaded */
     if (missing.length === 0) {
       return;
     }
-    /* v8 ignore stop */
     void (async () => {
       for (const message of missing) {
         /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
@@ -380,11 +377,9 @@ export function PublicMessageThread(props: {
           /* v8 ignore stop */
           if (next !== null && next.sats > baselineSats) {
             setNote((prev) => {
-              /* v8 ignore start -- poll body for a different note id */
               if (prev.id !== next.id) {
                 return prev;
               }
-              /* v8 ignore stop */
               return {
                 ...prev,
                 ...next,
@@ -414,7 +409,6 @@ export function PublicMessageThread(props: {
                   setReplies(repliesNext);
                 }
               } catch {
-                /* v8 ignore next 3 -- expand generation advanced during the post-pay refetch */
                 if (expandGen.current === gen) {
                   setRepliesError(true);
                 }
@@ -433,7 +427,7 @@ export function PublicMessageThread(props: {
         if (generation !== payPollGeneration.current || signal.aborted) {
           return;
         }
-        /* v8 ignore start -- poll delay and superseded-generation check */
+        /* v8 ignore start -- 2s pay-poll wait; abort after delay is an unmount race */
         await new Promise((resolve) => {
           setTimeout(resolve, PAY_POLL_MS);
         });
@@ -798,7 +792,6 @@ export function PublicMessageThread(props: {
           setReplies(next);
         }
       } catch {
-        /* v8 ignore next 3 -- expand generation advanced during retry */
         if (expandGen.current === gen) {
           setRepliesError(true);
         }
