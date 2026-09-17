@@ -2055,7 +2055,9 @@ test('Function: topicPath — welcome chapter heading is visible', async ({ page
 test('Function: topicVariant — pay-qr contents link is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(
-    page.getByRole('navigation', { name: 'Contents' }).getByRole('link', { name: 'pay-qr' }),
+    page
+      .getByRole('navigation', { name: 'Contents' })
+      .getByRole('link', { name: 'pay-qr', exact: true }),
   ).toBeVisible();
 });
 
@@ -2099,7 +2101,7 @@ test('Function: parseScreenVariantDescriptions — pay-qr description is visible
   page,
 }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByText(/Bitcoin payment QR/)).toBeVisible();
+  await expect(page.getByText(/invoice card shows the Bitcoin payment QR/)).toBeVisible();
 });
 
 test('Function: topicImageSrc — screens viewer shows an image', async ({ page }) => {

@@ -353,6 +353,299 @@ test('inbox thread shows Hello team', async ({ page }) => {
   await expect(page.getByText('Hello team')).toBeVisible();
 });
 
+test('inbox gift-only last preview shows ₿21', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-bob',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: '',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: true,
+            lastSats: 21,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByText('₿21')).toBeVisible();
+});
+
+test('inbox gift-only bubble shows send ₿21', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: '21.gifts',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+          {
+            id: 'm-gift',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:05:00.000Z',
+            fromMe: true,
+            sats: 21,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByText('send ₿21')).toBeVisible();
+});
+
+test('inbox inbound text+sats shows Hi and ₿21', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hi',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 21,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: '21.gifts',
+            text: 'Hi',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 21,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByText('Hi')).toBeVisible();
+  await expect(page.getByText('₿21')).toBeVisible();
+});
+
+test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: '21.gifts',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21\/invoice$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
+    });
+  });
+  await page.route(/sinceMessageId=/, async () => {
+    /* hang — keep the pay sheet open */
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByText('Hello team')).toBeVisible();
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+});
+
 test('public message default shows Hello from Ada', async ({ page }) => {
   await page.route(`**/public-messages/${ID}/replies`, async (route) => {
     await route.fulfill({

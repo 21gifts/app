@@ -962,9 +962,33 @@ List fetch failed. Button **Try again**. Chooser absent.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible. Chooser absent.
+Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible with the labeled **Amount** field next to it. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
+
+### Variant: sent-sats
+
+Member list. One conversation (**Bob**), gift-only last preview **₿21** (empty lastText, lastFromMe, lastSats 21). Chooser absent.
+
+![21.gifts inbox sent sats](images/messages-sent-sats.png)
+
+### Variant: thread-gift
+
+Open official thread. fromMe gift-only bubble **send ₿21**. Labeled **Amount** field still visible next to the composer. Chooser absent.
+
+![21.gifts inbox thread gift](images/messages-thread-gift.png)
+
+### Variant: thread-text-sats
+
+Open thread. Inbound **Hi** with amount **₿21** under the body. Composer and labeled **Amount** field visible.
+
+![21.gifts inbox thread text sats](images/messages-thread-text-sats.png)
+
+### Variant: thread-pay-qr
+
+Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button; smartphone has the wallet **Pay** button and no QR. **Waiting for payment…** is acceptable while the pay poll hangs.
+
+![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
 
 ## Screen: /notifications
 

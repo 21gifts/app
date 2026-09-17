@@ -798,6 +798,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:sent-sats",
+    "label": "/messages sent-sats",
+    "visual": "state-messages-sent-sats",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-gift",
+    "label": "/messages thread-gift",
+    "visual": "state-messages-thread-gift",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-text-sats",
+    "label": "/messages thread-text-sats",
+    "visual": "state-messages-thread-text-sats",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-pay-qr",
+    "label": "/messages thread-pay-qr",
+    "visual": "state-messages-thread-pay-qr",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",
