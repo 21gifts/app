@@ -858,7 +858,7 @@ const de = {
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
-  'forum.errorTooMany': 'Du kannst bis zu 10 Fotos hinzufügen',
+  'forum.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'forum.copyLink': 'Link zu dieser Notiz kopieren',
   'forum.replyCount': '{count} Reaktionen',
   'forum.replyComposerLabel': 'Ihre Reaktion',

@@ -1063,6 +1063,48 @@ describe('PublicMessageThread', () => {
     expect(fetchMessagePhoto).not.toHaveBeenCalled();
   });
 
+  it('falls back to hasPhoto when photoCount is omitted', async () => {
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    signIn();
+    renderThread({
+      root: { ...root, hasPhoto: true, text: '', photoCount: undefined as unknown as number },
+    });
+    await waitFor(() => {
+      expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+  });
+
+  it('does not fetch a photo for a no-photo reply when photoCount is omitted', async () => {
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.mocked(fetchReplies).mockResolvedValue([
+      {
+        ...giftReply,
+        hasPhoto: false,
+        photoCount: undefined as unknown as number,
+      },
+    ]);
+    signIn();
+    renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
+    await waitFor(() => {
+      expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Pater Severin')).toBeTruthy();
+    });
+    useAuthStore.setState({ session: 'sess-2', account });
+    await waitFor(() => {
+      expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
+    });
+    expect(fetchMessagePhoto).not.toHaveBeenCalledWith('sess', REPLY_ID, 0);
+    expect(fetchMessagePhoto).not.toHaveBeenCalledWith('sess-2', REPLY_ID, 0);
+  });
+
   it('loads a photo blob URL when the root has a photo', async () => {
     vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
     signIn();

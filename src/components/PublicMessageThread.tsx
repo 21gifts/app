@@ -222,7 +222,6 @@ export function PublicMessageThread(props: {
   const photoIdsKey = photoSource
     .map((message) => ({
       id: message.id,
-      /* v8 ignore next -- fixtures always set photoCount after schema transform */
       count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
     }))
     .filter(({ count }) => count > 0)
@@ -255,7 +254,6 @@ export function PublicMessageThread(props: {
     const listed = photoSourceRef.current;
     let cancelled = false;
     const missing = listed.flatMap((message) => {
-      /* v8 ignore next -- no-photo siblings do not change photoIdsKey, so this effect never lists them */
       const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
       return Array.from({ length: count }, (_, index) => ({
         id: message.id,
