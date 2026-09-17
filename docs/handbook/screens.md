@@ -500,6 +500,12 @@ Visitor is scrolled down the forum list. A silent refresh found a newer note id.
 
 ![21.gifts welcome new posts](images/welcome-new-posts.png)
 
+### Variant: moderator-appointed
+
+Signed-in member with an unread `moderator_appointed` notification. Labeled **You are a moderator** pill is visible under the header. Idle screenshots omit the pill. When **New posts** is also shown, this pill stays at `top-14` and **New posts** moves to `top-28` (not a separate variant).
+
+![21.gifts welcome moderator appointed](images/welcome-moderator-appointed.png)
+
 ### Variant: photo
 
 On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.

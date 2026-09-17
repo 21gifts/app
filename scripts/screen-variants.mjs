@@ -1213,6 +1213,13 @@ export const SCREEN_VARIANTS = [
     needle: 'New posts',
   },
   {
+    route: '/welcome',
+    id: 'moderator-appointed',
+    image: 'welcome-moderator-appointed.png',
+    visual: 'state-welcome-moderator-appointed',
+    needle: 'You are a moderator',
+  },
+  {
     route: '/messages/[id]',
     id: 'translate',
     image: 'messages-id-translate.png',
