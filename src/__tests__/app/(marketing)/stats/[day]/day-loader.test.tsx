@@ -162,6 +162,16 @@ describe('DayLoader', () => {
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 
+  it('hides the fiat switcher before session hydration and still follows preferred CHF', async () => {
+    hydrateReady = false;
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
+    await waitFor(() => {
+      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+    });
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
+  });
+
   it('follows preferred CHF in the day summary', async () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
