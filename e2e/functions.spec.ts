@@ -4843,12 +4843,19 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
-test('Function: AppShell — signed-in profile Menu sits inside the card', async ({ page }) => {
+test('Function: AppShell — signed-in notifications Menu sits inside the card', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
   const menu = page.getByRole('button', { name: 'Menu' });
-  await expect(menu).toBeVisible();
-  const section = page.locator('section').first();
+  const section = page.locator('section').filter({ has: menu });
   await expect(section).toBeVisible();
   const menuBox = await menu.boundingBox();
   const sectionBox = await section.boundingBox();
