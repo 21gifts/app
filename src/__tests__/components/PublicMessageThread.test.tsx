@@ -808,6 +808,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('retries pay after the lightning-address overlay is satisfied', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
@@ -817,7 +818,8 @@ describe('PublicMessageThread', () => {
     });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    submitComposer();
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
