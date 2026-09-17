@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -200,6 +200,11 @@ export function ProposalsScreen(): ReactElement | null {
                         type="button"
                         variant="secondary"
                         disabled={confirming}
+                        icon={
+                          confirming ? (
+                            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                          ) : undefined
+                        }
                         onClick={() => {
                           confirmProposal(row.subject.id);
                         }}

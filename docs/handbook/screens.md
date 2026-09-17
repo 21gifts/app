@@ -1106,6 +1106,12 @@ Staff (founder) Confirm as moderator failed. Copy **Could not update this member
 
 ![21.gifts open proposals confirm error](images/moderate-proposals-confirm-error.png)
 
+### Variant: confirming
+
+Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spinner; proposal row still visible.
+
+![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
+
 ## Screen: /messages/[id]
 
 - **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control, no FiatPicker on this page. Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).

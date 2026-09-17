@@ -5549,6 +5549,18 @@ test.describe('moderate proposals screens', () => {
     await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-moderate-proposals-confirm-error');
   });
+
+  test('moderate proposals confirming', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.route('**/trust/confirm-moderator', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/proposals');
+    await page.getByRole('button', { name: 'Confirm as moderator' }).click();
+    await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-proposals-confirming');
+  });
 });
 
 test.describe('trust-chain screens', () => {

@@ -906,6 +906,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/proposals:confirming",
+    "label": "/moderate/proposals confirming",
+    "visual": "state-moderate-proposals-confirming",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/404:default",
     "label": "/404 default",
     "visual": "screen-404",

@@ -2185,7 +2185,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Client confirm queue of open moderator proposals. Staff (founder or moderator) fetch `fetchTrustProposals` and show subject name, **Proposed by {name}**, time, and **Confirm as moderator** (`postTrustConfirm`) or **Waiting for another moderator to confirm.** when `proposedBy.id === account.id`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. A failed confirm shows `trustChain.actionFailed`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is founder or moderator. Confirm posts `POST /trust/confirm-moderator`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is founder or moderator. Confirm posts `POST /trust/confirm-moderator`. While that POST is in flight, Confirm is disabled and shows the Loader2 spinner (same as RulesSetup busy).
 - **Used by:** `ProposalsPage`.
 
 ## Function: listHiddenMessages

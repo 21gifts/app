@@ -175,6 +175,20 @@ describe('ProposalsScreen', () => {
     expect(screen.getByText('Rose')).toBeTruthy();
   });
 
+  it('disables Confirm as moderator and shows a spinner while confirm is in flight', async () => {
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    confirmMock.mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(<ProposalsScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm as moderator' }));
+    const button = screen.getByRole('button', {
+      name: 'Confirm as moderator',
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.querySelector('.animate-spin')).toBeTruthy();
+    fireEvent.click(button);
+    expect(confirmMock).toHaveBeenCalledTimes(1);
+  });
+
   it('falls back to Unnamed for proposal names', async () => {
     proposalsMock.mockResolvedValue([
       {

@@ -1143,6 +1143,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not update this member. Please try again.',
   },
   {
+    route: '/moderate/proposals',
+    id: 'confirming',
+    image: 'moderate-proposals-confirming.png',
+    visual: 'state-moderate-proposals-confirming',
+    needle: "getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled()",
+  },
+  {
     route: '/404',
     id: 'default',
     image: 'not-found.png',
