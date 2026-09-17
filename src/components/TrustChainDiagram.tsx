@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import type { TrustChain, TrustChainEdge, TrustChainNode } from '@/lib/api-types';
+import type { TrustChain, TrustChainNode } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
 import {
   layoutTrustChain,
@@ -32,22 +32,6 @@ function roleMessageKey(role: TrustChainNode['role']): MessageKey {
     return 'forum.role.moderator';
   }
   return 'forum.role.verified';
-}
-
-/**
- * Catalog key for an edge midpoint label.
- *
- * @param kind - Directed edge kind.
- * @returns The matching `trustChain.edge.*` message key.
- */
-function edgeMessageKey(kind: TrustChainEdge['kind']): MessageKey {
-  if (kind === 'verify') {
-    return 'trustChain.edge.verify';
-  }
-  if (kind === 'moderator_propose') {
-    return 'trustChain.edge.propose';
-  }
-  return 'trustChain.edge.appoint';
 }
 
 /**
@@ -259,7 +243,6 @@ export function TrustChainDiagram({
           const midX = (x1 + x2) / 2;
           const sameRow = Math.abs(from.y - to.y) < 1;
           const lift = sameRow && hops >= 2 ? TRUST_CHAIN_ARC_LIFT + (hops - 2) * 16 : 0;
-          const labelY = sameRow ? y1 - (lift === 0 ? 8 : lift / 2) - 6 : (y1 + y2) / 2 - 6;
           return (
             <g key={`${edge.from}-${edge.to}-${edge.kind}`}>
               {lift > 0 ? (
@@ -272,16 +255,6 @@ export function TrustChainDiagram({
                 <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-app-fg/40" />
               )}
               <polygon points={arrowHeadPoints(x1, y1, x2, y2)} className="fill-app-fg/40" />
-              <text
-                x={midX}
-                y={labelY}
-                textAnchor="middle"
-                className="fill-app-fg"
-                fontSize="12"
-                pointerEvents="none"
-              >
-                {t(edgeMessageKey(edge.kind))}
-              </text>
             </g>
           );
         })}
