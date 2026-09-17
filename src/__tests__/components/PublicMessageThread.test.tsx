@@ -321,6 +321,28 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('opens the overlay when Gift Continue is missing a Lightning Address', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn({ lightningAddress: null, missing: ['lightning-address'] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('rejects an overflowing composer amount', async () => {
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    submitComposer('9007199254740993');
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
+  });
+
   it('keeps the board when the account snapshot is cleared', async () => {
     signIn();
     renderThread();
