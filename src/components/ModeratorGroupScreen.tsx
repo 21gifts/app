@@ -34,7 +34,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const isModerator = account?.role === 'moderator';
   const [group, setGroup] = useState<Conversation | null>(null);
   const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [messages, setMessages] = useState<ConversationMessage[] | null>(null);
   const [draft, setDraft] = useState('');
@@ -46,7 +45,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
       return;
     }
     let cancelled = false;
-    setLoading(true);
     setError(false);
     void (async () => {
       try {
@@ -67,10 +65,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
         setGroup(null);
         setMessages(null);
         setError(true);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
       }
     })();
     return () => {
@@ -104,15 +98,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
       <Card maxWidth="xl">
         {heading}
         <p className="text-center text-sm text-app-muted">{t('moderate.forbidden')}</p>
-      </Card>
-    );
-  }
-
-  if (loading && group === null) {
-    return (
-      <Card maxWidth="xl">
-        {heading}
-        <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>
       </Card>
     );
   }

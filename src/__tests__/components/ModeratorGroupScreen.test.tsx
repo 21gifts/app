@@ -79,6 +79,7 @@ const MESSAGE: ConversationMessage = {
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockClear();
+  push.mockReset();
   groupMock.mockResolvedValue(GROUP);
   threadMock.mockResolvedValue([MESSAGE]);
   useAuthStore.setState({ session: 'sess', account });
@@ -225,6 +226,13 @@ describe('ModeratorGroupScreen', () => {
       await Promise.resolve();
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('goes back to the hub from the in-card control', async () => {
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Moderation' }));
+    expect(push).toHaveBeenCalledWith('/moderate');
   });
 
   it('validates empty and too-long drafts then posts', async () => {
