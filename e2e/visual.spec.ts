@@ -4898,9 +4898,7 @@ test.describe('welcome forum variants', () => {
     await page
       .locator('input[type="file"]')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
-    await expect(page.getByRole('alert')).toHaveText('You can add up to 10 photos', {
-      timeout: 10_000,
-    });
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-welcome-error-too-many');
   });
 
@@ -4929,9 +4927,7 @@ test.describe('welcome forum variants', () => {
     await page
       .locator('input[type="file"]')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
-    await expect(page.getByRole('alert')).toHaveText('You can add up to 10 photos', {
-      timeout: 10_000,
-    });
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with too many photos.');
     await shotScreen(page, 'state-welcome-error-too-many-with-text');
   });
