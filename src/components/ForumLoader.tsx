@@ -19,7 +19,6 @@ import {
   fetchPublicMessage,
   fetchReplies,
   markNotificationRead,
-  openConversation,
   fetchGiftStats,
   postMessage,
   postMessageInvoice,
@@ -256,8 +255,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  * unpaid and while unpaid as the list refreshes; mode itself is still not
  * persisted), payable-reply invoice + sats-poll state, expand/replies
  * (`fetchReplies`, reply composer via invoice or unpaid `postMessage` when
- * exempt), PM
- * (`openConversation` → `/messages?c=`), and persists dismiss of the
+ * exempt), and persists dismiss of the
  * living-room laws hint on the account. After a successful top-level post or
  * reply, sets `hasPosted: true` on the session account when the session token
  * is unchanged and an account is still present (no persist-flag POST). Also
@@ -335,7 +333,6 @@ export function ForumLoader(): ReactElement | null {
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
-  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
     'name' | 'rules' | 'lightning-address' | null
@@ -1676,24 +1673,6 @@ export function ForumLoader(): ReactElement | null {
         onReplyPost={onReplyPost}
         replyPosting={replyPosting}
         replyFormError={replyFormError}
-        ownName={account?.name ?? null}
-        ownAccountId={account?.id ?? null}
-        pmBusyId={pmBusyId}
-        onPm={(messageId) => {
-          /* v8 ignore next 3 -- second PM click while the first is in flight */
-          if (pmBusyId !== null) {
-            return;
-          }
-          setPmBusyId(messageId);
-          void (async () => {
-            try {
-              const thread = await openConversation(session, messageId);
-              router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
-            } catch {
-              setPmBusyId(null);
-            }
-          })();
-        }}
       />
     </>
   );

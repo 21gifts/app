@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumLoader } from '@/components/ForumLoader';
 import type {
   Account,
-  Conversation,
   ForumMessage,
   GiftStats,
   Notification,
@@ -41,7 +40,6 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchNotifications: vi.fn(),
   markNotificationRead: vi.fn(),
-  openConversation: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -67,7 +65,6 @@ import {
   fetchPublicMessage,
   fetchReplies,
   markNotificationRead,
-  openConversation,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -88,7 +85,6 @@ const invoiceMock = vi.mocked(postMessageInvoice);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
 const photoMock = vi.mocked(fetchMessagePhoto);
 const repliesMock = vi.mocked(fetchReplies);
-const openConversationMock = vi.mocked(openConversation);
 const prepareMock = vi.mocked(prepareForumPhoto);
 const isVideoMock = vi.mocked(isForumVideoFile);
 const prepareVideoMock = vi.mocked(prepareForumVideo);
@@ -4352,75 +4348,6 @@ describe('ForumLoader', () => {
     }
   });
 
-  it("opens a private thread from another person's note", async () => {
-    fetchMock.mockResolvedValue([
-      SAMPLE,
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
-    openConversationMock.mockResolvedValue({
-      id: 'conv-bob',
-      kind: 'member_member',
-      name: 'Bob',
-      lastText: '',
-      lastAt: '2026-08-28T11:00:00.000Z',
-      lastFromMe: false,
-      lastSats: 0,
-      unread: false,
-    });
-    renderWithLocale(<ForumLoader />);
-    await revealAll();
-    await waitFor(() => {
-      expect(screen.getByText('Hello from Bob')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversationMock).toHaveBeenCalledWith('sess', 'm-bob');
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
-    });
-  });
-
-  it('leaves the board in place when opening a PM fails', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
-    openConversationMock.mockRejectedValue(new Error('Cannot message yourself'));
-    renderWithLocale(<ForumLoader />);
-    await revealAll();
-    await waitFor(() => {
-      expect(screen.getByText('Hello from Bob')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversationMock).toHaveBeenCalled();
-    });
-    expect(push).not.toHaveBeenCalled();
-    expect(screen.getByText('Hello from Bob')).toBeTruthy();
-  });
-
   it('updates the reply draft from the expanded composer', async () => {
     fetchMock.mockResolvedValue([SAMPLE]);
     repliesMock.mockResolvedValue([]);
@@ -4439,56 +4366,6 @@ describe('ForumLoader', () => {
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe(
       'A reply draft',
     );
-  });
-
-  it('ignores a second PM click while a request is in flight', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
-    let resolveOpen: ((value: Conversation) => void) | undefined;
-    openConversationMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveOpen = resolve;
-        }),
-    );
-    renderWithLocale(<ForumLoader />);
-    await revealAll();
-    await waitFor(() => {
-      expect(screen.getByText('Hello from Bob')).toBeTruthy();
-    });
-    const pm = screen.getByRole('button', { name: 'Send a private message' });
-    fireEvent.click(pm);
-    await waitFor(() => {
-      expect(pm.querySelector('.animate-spin')).toBeTruthy();
-    });
-    fireEvent.click(pm);
-    expect(openConversationMock).toHaveBeenCalledTimes(1);
-    resolveOpen?.({
-      id: 'conv-bob',
-      kind: 'member_member',
-      name: 'Bob',
-      lastText: '',
-      lastAt: '2026-08-28T11:00:00.000Z',
-      lastFromMe: false,
-      lastSats: 0,
-      unread: false,
-    });
-    await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-bob');
-    });
   });
 
   it('refetches when the document becomes visible again after being hidden', async () => {

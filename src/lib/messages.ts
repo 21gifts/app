@@ -101,7 +101,7 @@ const en = {
     'Yes. If you lose your login and any platform sync, the account cannot be recovered at this stage. Keep a backup of the device you log in with.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
-    'Open Send help, pick a message in the forum, open its replies, and choose Send Bitcoin on a reply. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
+    'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
   'home.faq6Q': 'Why only Bitcoin?',
   'home.faq6A':
     'Bitcoin is fast, cheap to send, and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
@@ -677,7 +677,7 @@ const de = {
     'Ja. Wenn Sie Ihr Login und jede Plattform-Synchronisation verlieren, lässt sich das Konto derzeit nicht wiederherstellen. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
-    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie die Antworten und tippen Sie bei einer Antwort auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Antwort geschrieben hat.',
+    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
   'home.faq6Q': 'Warum nur Bitcoin?',
   'home.faq6A':
     'Bitcoin ist schnell, günstig und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
@@ -1257,7 +1257,7 @@ const es = {
     'Sí. Si pierdes tu acceso y cualquier sincronización de plataforma, por ahora la cuenta no se puede recuperar. Guarda una copia de seguridad del dispositivo con el que inicias sesión.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
-    'Abre Enviar ayuda, elige un mensaje en el foro, abre sus respuestas y pulsa Enviar Bitcoin en una respuesta. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió la respuesta.',
+    'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió la reacción.',
   'home.faq6Q': '¿Por qué solo Bitcoin?',
   'home.faq6A':
     'Bitcoin es rápido, barato de enviar y resistente a la censura. Wallet of Satoshi hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
@@ -1820,7 +1820,7 @@ const fil = {
     'Oo. Kung mawala ang login mo at ang anumang platform sync, hindi pa mababawi ang account sa ngayon. Mag-backup ng device na ginagamit mo sa pag-log in.',
   'home.faq5Q': 'Paano ako magpapadala ng regalo?',
   'home.faq5A':
-    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang mga sagot, at i-tap ang Magpadala ng Bitcoin sa isang sagot. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng sagot ang Bitcoin.',
+    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng reaksyon ang Bitcoin.',
   'home.faq6Q': 'Bakit Bitcoin lang?',
   'home.faq6A':
     'Mabilis ang Bitcoin, mura ang pagpapadala, at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng Wallet of Satoshi ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
