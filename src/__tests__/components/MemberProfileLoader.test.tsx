@@ -25,6 +25,12 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
 }));
 
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
 const memberId = '22222222-2222-4222-8222-222222222222';
 
 const profile: MemberProfile = {
@@ -57,6 +63,7 @@ const EMPTY_ACTIVITY: AccountActivity = {
 };
 
 beforeEach(() => {
+  hydrateReady = true;
   replace.mockClear();
   vi.clearAllMocks();
   vi.mocked(fetchMemberActivity).mockResolvedValue(EMPTY_ACTIVITY);

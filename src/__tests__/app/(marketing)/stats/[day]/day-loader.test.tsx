@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DayLoader } from '@/app/(marketing)/stats/[day]/day-loader';
 import type { GiftDay } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -13,6 +13,12 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchGiftDay: vi.fn(),
+}));
+
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
 }));
 
 import { fetchGiftDay } from '@/lib/api';
@@ -74,6 +80,10 @@ const ALICE: GiftDay = {
   ],
   fx: FX_ALL,
 };
+
+beforeEach(() => {
+  hydrateReady = true;
+});
 
 afterEach(() => {
   cleanup();

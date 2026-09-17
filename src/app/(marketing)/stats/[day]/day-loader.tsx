@@ -7,6 +7,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { GiftDayTable } from '@/components/GiftDayTable';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
+import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { fetchGiftDay } from '@/lib/api';
 import { formatGroupedNumber } from '@/lib/number-format';
 import type { GiftDay } from '@/lib/api-types';
@@ -43,7 +44,7 @@ function dayTotal(payload: GiftDay, fiat: FiatCode): string | null {
 /**
  * Client loader for `/stats/[day]`: fetches that day's gifts and a date input.
  *
- * FiatPicker sits on the loaded table only when unsigned (`session === null`).
+ * FiatPicker sits on the loaded table only when hydration is ready AND session is null.
  *
  * @param props - UTC `day`.
  * @returns Loading, error, empty, or table UI.
@@ -52,8 +53,9 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
-  const showFiatSwitcher = session === null;
+  const showFiatSwitcher = ready && session === null;
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

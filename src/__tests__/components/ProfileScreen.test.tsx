@@ -67,6 +67,12 @@ vi.mock('@/lib/push', () => ({
   vapidPublicKeyToBytes: vi.fn(),
 }));
 
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
 const FX_ALL = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
@@ -82,6 +88,7 @@ const FX_ALL = {
 const VIEW_KEY = 'a'.repeat(64);
 
 beforeEach(() => {
+  hydrateReady = true;
   replace.mockReset();
   vi.mocked(fetchAccountActivity).mockReset();
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);

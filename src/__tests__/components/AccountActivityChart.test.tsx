@@ -1,10 +1,21 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatFiatTick, formatUsdTick } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
+beforeEach(() => {
+  hydrateReady = true;
+  useAuthStore.setState({ session: null, account: null });
+});
 
 afterEach(() => {
   cleanup();
@@ -161,6 +172,13 @@ describe('AccountActivityChart', () => {
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
+  });
+
+  it('hides the fiat switcher while hydration is not ready and still shows empty copy', () => {
+    hydrateReady = false;
+    renderWithLocale(<AccountActivityChart received={[]} />);
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
   });
 
   it('hides the fiat switcher on a populated signed-in chart and keeps Chart scale', () => {

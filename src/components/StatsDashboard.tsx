@@ -5,6 +5,7 @@ import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
+import { useHydrateSession } from '@/hooks/useHydrateSession';
 import type { GiftStats } from '@/lib/api-types';
 import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
 import {
@@ -572,8 +573,9 @@ function StatsCharts({
  * Gift statistics dashboard: KPI cards and diagrams (₿ plus one selected fiat).
  *
  * FiatPicker (CHF | EUR | USD | PHP) sits above the KPI cards only when
- * unsigned (`session === null`). Signed-in visitors display and scale with
- * the preferred code from `useFiatPreference` and cannot change it here.
+ * hydration is ready AND session is null. Signed-in visitors display and
+ * scale with the preferred code from `useFiatPreference` and cannot change
+ * it here.
  *
  * @param props - Stats payload plus loading/error/retry.
  * @returns The dashboard element.
@@ -586,8 +588,9 @@ export function StatsDashboard({
 }: StatsDashboardProps): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
-  const showFiatSwitcher = session === null;
+  const showFiatSwitcher = ready && session === null;
 
   if (loading && stats === null && error === null) {
     return <p className="text-paper/60">Loading…</p>;

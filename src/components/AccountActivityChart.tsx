@@ -6,6 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { SegmentedControl } from '@/components/ui';
+import { useHydrateSession } from '@/hooks/useHydrateSession';
 import {
   activityMaxY,
   activityValue,
@@ -71,7 +72,8 @@ function selectedFiatUnsummable(
 
 /**
  * Compact dual-line cumulative chart of Given and Received. FiatPicker only
- * when `session === null` (unsigned public view). Signed-in mounts omit it.
+ * when hydration is ready AND session is null (unsigned public view).
+ * Signed-in mounts omit it.
  * Fiat code comes from {@link useFiatPreference}. Populated series still get
  * a ₿ | selected-fiat scale.
  *
@@ -88,8 +90,9 @@ export function AccountActivityChart({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
-  const showFiatSwitcher = session === null;
+  const showFiatSwitcher = ready && session === null;
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignActivitySeries(received, donated);
   const emptySats =
