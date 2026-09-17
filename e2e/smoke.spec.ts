@@ -25,6 +25,25 @@ test('healthz returns ok', async ({ request }) => {
   expect(await res.json()).toEqual({ status: 'ok' });
 });
 
+test('homepage sends HSTS', async ({ request }) => {
+  const res = await request.get('/');
+
+  expect(res.status()).toBe(200);
+  expect(res.headers()['strict-transport-security']).toBe(
+    'max-age=63072000; includeSubDomains; preload',
+  );
+});
+
+test('http x-forwarded-proto upgrades to https://21.gifts/', async ({ request }) => {
+  const res = await request.get('/', {
+    headers: { 'x-forwarded-proto': 'http' },
+    maxRedirects: 0,
+  });
+
+  expect(res.status()).toBe(308);
+  expect(res.headers()['location']).toBe('https://21.gifts/');
+});
+
 test('favicon.ico is served as an image', async ({ request }) => {
   const res = await request.get('/favicon.ico');
 
