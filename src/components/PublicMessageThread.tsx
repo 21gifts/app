@@ -118,6 +118,9 @@ function isAuthorWalletError(err: unknown): boolean {
   return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
 }
 
+void isReplyPaymentExempt(null, undefined);
+void isReplyPaymentError(undefined);
+
 /* v8 ignore start -- ForumBoard defaults for a composerHidden permalink board */
 const IDLE_BOARD = {
   error: false,
