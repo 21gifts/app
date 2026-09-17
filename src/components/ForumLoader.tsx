@@ -254,7 +254,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  * yet/All/Most popular feed mode, and `21gifts.forum-unpaid-seen` (hydrates the
  * last-visit stamp on mount, not in the state initializer; stamps on entering
  * unpaid and while unpaid as the list refreshes; mode itself is still not
- * persisted), pay-on-note invoice + sats-poll state, expand/replies
+ * persisted), payable-reply invoice + sats-poll state, expand/replies
  * (`fetchReplies`, reply composer via invoice or unpaid `postMessage` when
  * exempt), PM
  * (`openConversation` → `/messages?c=`), and persists dismiss of the
@@ -961,6 +961,13 @@ export function ForumLoader(): ReactElement | null {
                 )
                 .filter((row) => !deletedIds.current.has(row.id));
             });
+            setReplies((prev) => {
+              /* v8 ignore next 3 -- poll can finish after the thread is collapsed */
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+            });
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);
@@ -1189,7 +1196,9 @@ export function ForumLoader(): ReactElement | null {
     if (payMessageId === null || payBusy) {
       return;
     }
-    const listed = messages?.find((message) => message.id === payMessageId);
+    const listed =
+      messages?.find((message) => message.id === payMessageId) ??
+      replies?.find((message) => message.id === payMessageId);
     /* v8 ignore next 3 -- sheet only opens on a payable row */
     if (listed === undefined || listed.payable !== true) {
       return;
@@ -1268,7 +1277,8 @@ export function ForumLoader(): ReactElement | null {
     if (
       payMessageId !== null &&
       messages !== null &&
-      !visibleForumMessages(messages, next).some((message) => message.id === payMessageId)
+      !visibleForumMessages(messages, next).some((message) => message.id === payMessageId) &&
+      (replies === null || !replies.some((message) => message.id === payMessageId))
     ) {
       clearPaySheet();
       setFeedMode(next);
@@ -1554,6 +1564,9 @@ export function ForumLoader(): ReactElement | null {
                       return prev.filter((row) => !deletedIds.current.has(row.id));
                     });
                   }
+                  if (payMessageIdRef.current === messageId) {
+                    clearPaySheet();
+                  }
                   /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
                   if (parentId === undefined) {
                     return;
@@ -1575,11 +1588,12 @@ export function ForumLoader(): ReactElement | null {
                   return;
                 }
                 setMessages((prev) => prev!.filter((row) => row.id !== messageId));
-                if (expandedIdRef.current === messageId) {
+                const wasExpanded = expandedIdRef.current === messageId;
+                if (wasExpanded) {
                   setExpandedId(null);
                   setReplies(null);
                 }
-                if (payMessageIdRef.current === messageId) {
+                if (payMessageIdRef.current === messageId || wasExpanded) {
                   clearPaySheet();
                 }
               },

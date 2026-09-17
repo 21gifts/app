@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
@@ -201,6 +201,24 @@ async function expandNote(feedNote: ForumMessage = note): Promise<void> {
   });
 }
 
+const PAYABLE_NESTED: ForumMessage = {
+  ...stalePinReply,
+  id: 'r-pay',
+  text: 'Payable nested reply.',
+  payable: true,
+  sats: 7,
+};
+
+async function expandAndClickReplyGift(
+  feedNote: ForumMessage = { ...note, replyCount: 1 },
+): Promise<HTMLElement> {
+  vi.mocked(fetchReplies).mockResolvedValue([PAYABLE_NESTED]);
+  await expandNote(feedNote);
+  const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+  return replyCard;
+}
+
 function expandCard(text: string): HTMLLIElement {
   const row = screen.getByText(text).closest('li');
   expect(row).toBeTruthy();
@@ -210,8 +228,8 @@ function expandCard(text: string): HTMLLIElement {
   return row as HTMLLIElement;
 }
 
-async function renderTwoPostFeed(): Promise<void> {
-  vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost, note]);
+async function renderTwoPostFeed(posts: ForumMessage[] = [secondPost, note]): Promise<void> {
+  vi.mocked(fetchMemberPosts).mockResolvedValue(posts);
   renderWithLocale(
     <MemberProfileScreen
       profile={{ ...profileWithNote, postCount: 2 }}
@@ -409,6 +427,31 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates a replies-feed card after a pay-sheet gift confirms', async () => {
+    const payableActivity = { ...activityReply, payable: true, sats: 0 };
+    vi.mocked(fetchMemberReplies).mockResolvedValue([
+      payableActivity,
+      { ...activityReply, id: '77777777-7777-4777-8777-777777777777', text: 'Another reply.' },
+    ]);
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableActivity, sats: 21 });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 replies' }));
+    expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
+    const replyCard = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalled();
+    });
   });
 
   it('does not refetch replies when reopening an in-flight feed', async () => {
@@ -709,12 +752,11 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
@@ -729,11 +771,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
     });
   });
 
@@ -751,12 +792,11 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
     });
     expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
@@ -785,11 +825,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
@@ -818,11 +857,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       rejectInvoice(new Error('fail'));
     });
@@ -851,10 +889,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
     unmount();
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
@@ -883,10 +920,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'x' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: 'x' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
@@ -899,10 +935,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByText(/could not start the bitcoin payment/i)).toBeTruthy();
     });
@@ -970,11 +1005,11 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    const replyCard = await expandAndClickReplyGift();
+    expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
   it('posts a reply on the expanded profile note', async () => {
@@ -1016,7 +1051,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('does not mark hasPosted on a swapped session after a paid poll', async () => {
-    let resolvePoll!: (value: typeof note) => void;
+    let resolvePoll!: (value: typeof PAYABLE_NESTED) => void;
     vi.mocked(fetchPublicMessage).mockReturnValue(
       new Promise((resolve) => {
         resolvePoll = resolve;
@@ -1029,16 +1064,15 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalled();
     });
     useAuthStore.setState({ session: 'other', account: { ...account, id: 'other-acc' } });
     await act(async () => {
-      resolvePoll({ ...note, sats: 42 });
+      resolvePoll({ ...PAYABLE_NESTED, sats: 42 });
     });
     expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
   });
@@ -1093,7 +1127,11 @@ describe('MemberProfileScreen', () => {
   });
 
   it('polls the parent after paying a profile note from the gift button', async () => {
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
+    vi.mocked(fetchReplies).mockResolvedValue([
+      PAYABLE_NESTED,
+      { ...PAYABLE_NESTED, id: 'r-other', text: 'Other nested.', payable: false, sats: 0 },
+    ]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...PAYABLE_NESTED, sats: 28 });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -1101,12 +1139,16 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await expandNote({ ...note, replyCount: 2 });
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(fetchPublicMessage).toHaveBeenCalled();
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        PAYABLE_NESTED.id,
+        expect.objectContaining({ sinceSats: 7 }),
+      );
     });
     await waitFor(() => {
       expect(screen.queryByText('Pay ₿21')).toBeNull();
@@ -1114,16 +1156,23 @@ describe('MemberProfileScreen', () => {
   });
 
   it('polls a posts-feed note after pay', async () => {
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...secondPost, sats: 21 });
-    await renderTwoPostFeed();
-    const row = screen.getByText('Second post from Carol.').closest('li');
-    const pay = row?.querySelector<HTMLButtonElement>('[aria-label="Send Bitcoin"]');
-    expect(pay).toBeTruthy();
-    fireEvent.click(pay as HTMLButtonElement);
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED }]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...PAYABLE_NESTED, sats: 28 });
+    await renderTwoPostFeed([
+      { ...secondPost, replyCount: 1 },
+      { ...note, replyCount: 1 },
+    ]);
+    expandCard('Second post from Carol.');
+    await screen.findByText('Payable nested reply.');
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(fetchPublicMessage).toHaveBeenCalled();
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        PAYABLE_NESTED.id,
+        expect.objectContaining({ sinceSats: 7 }),
+      );
     });
     await waitFor(() => {
       expect(screen.queryByText('Pay ₿21')).toBeNull();
@@ -1137,7 +1186,7 @@ describe('MemberProfileScreen', () => {
         rejectPoll = reject;
       }),
     );
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42 });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...PAYABLE_NESTED, sats: 28 });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -1145,14 +1194,13 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       rejectPoll(new Error('poll failed'));
     });
@@ -1174,11 +1222,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
@@ -1200,11 +1247,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       rejectInvoice(new Error('gone'));
     });
@@ -1212,37 +1258,57 @@ describe('MemberProfileScreen', () => {
   });
 
   it('keeps a later gift sheet when an earlier pay poll confirms', async () => {
-    let resolveA!: (value: typeof secondPost) => void;
+    const firstReply: ForumMessage = {
+      ...PAYABLE_NESTED,
+      id: 'r-pay-first',
+      text: 'First payable reply.',
+    };
+    const secondReply: ForumMessage = {
+      ...PAYABLE_NESTED,
+      id: 'r-pay-second',
+      text: 'Second payable reply.',
+    };
+    let resolveA!: (value: ForumMessage) => void;
+    vi.mocked(fetchReplies).mockImplementation((_session, messageId) =>
+      Promise.resolve(messageId === secondPost.id ? [firstReply] : [secondReply]),
+    );
     vi.mocked(fetchPublicMessage).mockImplementation((id) => {
-      if (id === secondPost.id) {
+      if (id === firstReply.id) {
         return new Promise((resolve) => {
           resolveA = resolve;
         });
       }
-      return Promise.resolve({ ...note, sats: note.sats + 21 });
+      return Promise.resolve({ ...secondReply, sats: secondReply.sats + 21 });
     });
-    await renderTwoPostFeed();
-    const rowA = screen.getByText('Second post from Carol.').closest('li');
-    const payA = rowA?.querySelector<HTMLButtonElement>('[aria-label="Send Bitcoin"]');
-    expect(payA).toBeTruthy();
-    fireEvent.click(payA as HTMLButtonElement);
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await renderTwoPostFeed([
+      { ...secondPost, replyCount: 1 },
+      { ...note, replyCount: 1 },
+    ]);
+    expandCard('Second post from Carol.');
+    await screen.findByText('First payable reply.');
+    const firstReplyCard = document.querySelector('[data-reply-id="r-pay-first"]') as HTMLElement;
+    fireEvent.click(within(firstReplyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(within(firstReplyCard).getByLabelText('Amount'), {
+      target: { value: '21' },
+    });
+    fireEvent.click(within(firstReplyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
     });
-    const rowB = screen.getByText('Hello from my profile note.').closest('li');
-    const payB = rowB?.querySelector<HTMLButtonElement>('[aria-label="Send Bitcoin"]');
-    expect(payB).toBeTruthy();
-    fireEvent.click(payB as HTMLButtonElement);
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
+    expandCard('Hello from my profile note.');
+    await screen.findByText('Second payable reply.');
+    const secondReplyCard = document.querySelector('[data-reply-id="r-pay-second"]') as HTMLElement;
+    fireEvent.click(within(secondReplyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    expect(within(secondReplyCard).getByLabelText('Amount')).toBeTruthy();
+    fireEvent.change(within(secondReplyCard).getByLabelText('Amount'), {
+      target: { value: '7' },
+    });
     await act(async () => {
-      resolveA({ ...secondPost, sats: 21 });
+      resolveA({ ...firstReply, sats: 28 });
       await Promise.resolve();
     });
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
-    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('7');
+    expect(within(secondReplyCard).getByLabelText('Amount')).toBeTruthy();
+    expect((within(secondReplyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('7');
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
   });
 
@@ -1260,16 +1326,18 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await expandNote();
+    vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED }]);
+    await expandNote({ ...note, replyCount: 1 });
     fillPaidReply('reply', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(fetchPublicMessage).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(within(replyCard).getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
   it('drops a late paid-reply invoice error after Gift is opened', async () => {
@@ -1286,15 +1354,17 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await expandNote();
+    vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED }]);
+    await expandNote({ ...note, replyCount: 1 });
     fillPaidReply('reply', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     await act(async () => {
       rejectInvoice(new Error('fail'));
     });
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(within(replyCard).getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
   it('does not bump another post reply count when posting on a posts-feed card', async () => {
@@ -2361,16 +2431,15 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(postMessageInvoice).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
     });
   });
 
@@ -2394,10 +2463,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
@@ -2425,10 +2493,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
@@ -2476,10 +2543,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '0' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
@@ -2658,11 +2724,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    await openPostsShowingNote();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     await waitFor(() => {
@@ -2969,5 +3034,47 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByAltText('About me photo')).toBeTruthy();
     });
+  });
+
+  it('requests a pay invoice from a payable nested reply', async () => {
+    const payableReply: ForumMessage = {
+      ...stalePinReply,
+      id: '99999999-9999-4999-8999-999999999999',
+      text: 'Payable nested reply.',
+      payable: true,
+      sats: 7,
+    };
+    vi.mocked(fetchReplies).mockResolvedValue([payableReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableReply, sats: 28 });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    await screen.findByText('Payable nested reply.');
+    const replyCard = document.querySelector(
+      '[data-reply-id="99999999-9999-4999-8999-999999999999"]',
+    ) as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    expect(within(replyCard).queryByText('Send Bitcoin')).toBeNull();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', payableReply.id, 21);
+    });
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        payableReply.id,
+        expect.objectContaining({ sinceSats: 7 }),
+      );
+    });
+    await waitFor(() => {
+      expect(within(replyCard).queryByLabelText('Amount')).toBeNull();
+    });
+    expect(screen.getByLabelText('Your reply')).toBeTruthy();
   });
 });

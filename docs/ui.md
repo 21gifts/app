@@ -486,14 +486,14 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 **Visitor amounts.** Always `formatBitcoin(sats, numberFormat)` from `src/lib/stats-money.ts`. Leading `₿` (U+20BF), `NumberFormatStyle` grouping (`ch` / `us` / `de`), no fraction, no extra ₿. Class: `tabular-nums lining-nums`. JSON fields remain `sats` / `totalSats`.
 
-**Pay control is not a second ₿.** Note footer:
+**Pay control is not a second ₿.** Post footer has no Gift. Nested replies and top-level cards with `parentId` (profile replies feed) show Gift when `payable`:
 
 ```
-[ ₿21 ]  [ Gift IconButton aria-label=Send Bitcoin ] [ Copy ]  [ N reactions ]```
+[ ₿21 ]  [ Copy ]  [ N reactions ]
+```
 
 - Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when the conversion is non-null — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). Otherwise ₿-only, no ` · —`.
-- Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
-- Do not put the amount inside the pay control.
+- Pay: `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.- Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
 Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; after mint the line uses the invoice amount). Pay sheet confirm sentence (`forum.payConfirm`) is one `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) mints the invoice and keeps the amount form (no `location.assign`); Android phone (`isSmartphoneUserAgent`) stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the wallet `Button` (Intent href; no QR, no invoice card); desktop and iPad stay **Continue** (`forum.payContinue`) and after mint show the invoice card with QR. Wallet CTA is a **Pay** `Button` (`variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent) that sets `window.location.href` to the WoS href (not a custom-scheme `<a>` / `ButtonLink`). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + that Button.
@@ -767,12 +767,12 @@ Do not use orange. This is law, not a gift CTA.
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`).
 4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text.
-5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (pay, copy, delete when present) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
+5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (copy, delete when present; Gift only when `parentId` is set and `payable`) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
-Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). Gift/copy/delete stay sibling IconButtons that do not expand. The action row is a sibling after that control, still inside the `li`. Inner pay/copy/delete controls `stopPropagation`. Focus ring on the expandable region.
+Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). Copy/delete stay sibling IconButtons that do not expand. Gift is only on a payable reply, never on a post. The action row is a sibling after that control, still inside the `li`. Inner pay/copy/delete controls `stopPropagation`. Focus ring on the expandable region.
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies use the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`) in `className="mt-2"`. Not a labeled button.
+**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies: Gift `IconButton` (`forum.pay`) when `payable`, plus the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Row is `mt-2`; `flex flex-wrap items-start gap-5` when Gift and trash are both visible. The pay sheet can sit inside that reply `li` when its id is `payMessageId`. No nested reply composer. Not a labeled button.
 
 ### Inbox thread bubbles
 
@@ -945,7 +945,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Laws `Banner`.
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null + Gift pay (`forum.pay` = “Send Bitcoin”). Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Posts do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
 
@@ -1037,7 +1037,7 @@ WCAG 2.2 AA.
 - **Reduced motion 2.3.3.** Global CSS in `globals.css`. Keep `scrollIntoView` auto; no theme fade.
 - **Focus order:** unsigned chrome is Wordmark then switchers. Signed-in `ProfileChromeLeft` is back **then** wordmark, then main title → fields → primary action → Menu. Menu open: focus stays on trigger; Escape closes.
 - **`aria-label`:** required on every `IconButton`; catalog key, all four locales. Decorative glyphs `aria-hidden`.
-- **Color not the only encoding:** profile Given/Received have text labels; forum payable is a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off + filled vs outline bell.
+- **Color not the only encoding:** profile Given/Received have text labels; forum payable replies are a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off + filled vs outline bell.
 - **QR:** `role="img"` + catalog label (`QrCode`). Not mounted on smartphone UA.
 - **Expandable notes:** `aria-expanded`. Keyboard Enter/Space.
 - **Language listbox:** combobox/listbox.
@@ -1059,7 +1059,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 3. **Orange is shell-split.** Marketing: primary filled CTA + kickers + stats paint. App: gift-money **fill** only. Never orange text on paper. THE TEST bar is the only decorative orange on `/rules`.
 4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. Signed-in links to `/welcome` except `/setup/*` (span); marketing, login, donate, and view follow it via `HomeWordmark`.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
-6. **Pay control is lucide Gift, not ₿.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`).
+6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts do not show Send Bitcoin.
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
 8. **Empty profile chart is copy plus FiatPicker**, not an axis; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.

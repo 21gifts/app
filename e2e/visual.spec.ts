@@ -902,7 +902,6 @@ test.describe('onboarding screens', () => {
       'aria-pressed',
       'true',
     );
-    await expect(page.getByRole('button', { name: 'Send Bitcoin' }).first()).toBeVisible();
     await shotScreen(page, 'screen-welcome');
   });
 
@@ -3856,8 +3855,13 @@ test.describe('welcome forum variants', () => {
   }
 
   async function stubPayInvoice(page: Page): Promise<void> {
-    await page.route(/\/messages$/, async (route) => {
-      if (route.request().method() !== 'GET') {
+    await page.route('**/messages', async (route) => {
+      const url = route.request().url();
+      if (
+        url.includes('/invoice') ||
+        url.includes('/replies') ||
+        route.request().method() !== 'GET'
+      ) {
         await route.continue();
         return;
       }
@@ -3875,12 +3879,34 @@ test.describe('welcome forum variants', () => {
               payable: true,
               hasPhoto: false,
               role: 'basis',
+              replyCount: 1,
             },
           ],
         }),
       });
     });
-    await page.route('**/messages/m-pay/invoice', async (route) => {
+    await page.route('**/messages/m-pay/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-pay',
+              name: 'Carol',
+              text: 'A payable reply',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/r-pay/invoice', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -3916,8 +3942,10 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
-    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Show replies' }).click();
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   }
@@ -4791,8 +4819,10 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
-    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Show replies' }).click();
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await replyCard.getByLabel('Amount').fill('21');
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('button', { name: 'Pay', exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
@@ -4838,8 +4868,13 @@ test.describe('welcome forum variants', () => {
   test('welcome pay-author-wallet', async ({ page }) => {
     await stubWalletLocationAssign(page);
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
-      if (route.request().method() !== 'GET') {
+    await page.route('**/messages', async (route) => {
+      const url = route.request().url();
+      if (
+        url.includes('/invoice') ||
+        url.includes('/replies') ||
+        route.request().method() !== 'GET'
+      ) {
         await route.continue();
         return;
       }
@@ -4857,12 +4892,34 @@ test.describe('welcome forum variants', () => {
               payable: true,
               hasPhoto: false,
               role: 'basis',
+              replyCount: 1,
             },
           ],
         }),
       });
     });
-    await page.route('**/messages/m-pay/invoice', async (route) => {
+    await page.route('**/messages/m-pay/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-pay',
+              name: 'Carol',
+              text: 'A payable reply',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/r-pay/invoice', async (route) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
@@ -4874,8 +4931,10 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByRole('button', { name: 'All' }).click();
-    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Show replies' }).click();
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),

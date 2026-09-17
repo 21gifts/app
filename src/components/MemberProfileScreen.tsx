@@ -435,6 +435,20 @@ export function MemberProfileScreen({
                   : row,
               );
             });
+            setActivityReplies((prev) => {
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) =>
+                row.id === next.id ? { ...row, ...next } : row,
+              );
+            });
+            setReplies((prev) => {
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+            });
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);
@@ -714,9 +728,15 @@ export function MemberProfileScreen({
     }
     const token = session;
     const messageId = payMessageId;
-    const parent = posts?.find((message) => message.id === messageId);
-    /* v8 ignore next -- pay sheet only opens on a listed note */
-    const baselineSats = parent === undefined ? 0 : parent.sats;
+    const listed =
+      posts?.find((message) => message.id === messageId) ??
+      activityReplies?.find((message) => message.id === messageId) ??
+      replies?.find((message) => message.id === messageId);
+    /* v8 ignore next 3 -- sheet only opens on a payable row */
+    if (listed === undefined || listed.payable !== true) {
+      return;
+    }
+    const baselineSats = listed.sats;
     const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);

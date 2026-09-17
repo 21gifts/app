@@ -1198,6 +1198,20 @@ describe('ForumBoard', () => {
 
   it('opens pay when Send Bitcoin is clicked on a payable note', () => {
     const onPayOpen = vi.fn();
+    const onToggleExpand = vi.fn();
+    const payableReply: ForumMessage = {
+      id: 'r-pay',
+      name: 'Bob',
+      text: 'A payable reply',
+      createdAt: '2026-08-28T12:30:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -1210,13 +1224,47 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
+        expandedId="m1"
+        replies={[payableReply]}
         onPayOpen={onPayOpen}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Send Bitcoin' })).toHaveLength(1);
+    expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    expect(onPayOpen).toHaveBeenCalledWith('r-pay');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
+  });
+
+  it('opens pay when Send Bitcoin is clicked on a payable reply card', () => {
+    const onPayOpen = vi.fn();
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onPayOpen={onPayOpen}
+        onToggleExpand={onToggleExpand}
         {...modeProps('all')}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    expect(screen.queryByText('Send Bitcoin')).toBeNull();
     expect(onPayOpen).toHaveBeenCalledWith('m1');
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('shows a photo draft preview and clear control', () => {
@@ -1314,7 +1362,7 @@ describe('ForumBoard', () => {
     const onPayCancel = vi.fn();
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1355,7 +1403,7 @@ describe('ForumBoard', () => {
     });
     const { unmount } = renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1375,7 +1423,7 @@ describe('ForumBoard', () => {
     unmount();
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1408,7 +1456,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1437,7 +1485,7 @@ describe('ForumBoard', () => {
   it('shows a live CHF equivalent on the German pay sheet without a picker', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1476,7 +1524,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1536,7 +1584,7 @@ describe('ForumBoard', () => {
   it('shows pay amount error', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1557,7 +1605,7 @@ describe('ForumBoard', () => {
   it('shows pay request error', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1578,7 +1626,7 @@ describe('ForumBoard', () => {
   it('shows pay rate-limit error', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1601,7 +1649,7 @@ describe('ForumBoard', () => {
   it('shows pay author-wallet error', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1625,7 +1673,7 @@ describe('ForumBoard', () => {
     const onPayCancel = vi.fn();
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1657,7 +1705,7 @@ describe('ForumBoard', () => {
   it('shows a fiat equivalent on the pay confirm line', async () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1692,7 +1740,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1724,7 +1772,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1759,7 +1807,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1787,7 +1835,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -1815,7 +1863,7 @@ describe('ForumBoard', () => {
   it('shows German invoice sheet labels', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[SAMPLE]}
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -2591,6 +2639,19 @@ describe('ForumBoard', () => {
   });
 
   it('keeps pay and copy outside the expand control', () => {
+    const payableReply: ForumMessage = {
+      id: 'r-pay',
+      name: 'Bob',
+      text: 'A payable reply',
+      createdAt: '2026-08-28T12:30:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -2603,17 +2664,18 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
+        expandedId="m1"
+        replies={[payableReply]}
         {...modeProps('all')}
       />,
     );
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    const gift = within(replyCard).getByRole('button', { name: 'Send Bitcoin' });
+    expect(screen.getByRole('button', { name: 'Hide reactions' }).contains(gift)).toBe(false);
     expect(
       screen
-        .getByRole('button', { name: 'Show reactions' })
-        .contains(screen.getByRole('button', { name: 'Send Bitcoin' })),
-    ).toBe(false);
-    expect(
-      screen
-        .getByRole('button', { name: 'Show reactions' })
+        .getByRole('button', { name: 'Hide reactions' })
         .contains(screen.getByRole('button', { name: 'Copy link to this note' })),
     ).toBe(false);
   });
@@ -2643,15 +2705,26 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: '2 reactions' }));
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
     onToggleExpand.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    expect(onToggleExpand).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('expands and collapses via the card aria-label, not pay/role/copy', () => {
     const onToggleExpand = vi.fn();
-    renderWithLocale(
+    const payableReply: ForumMessage = {
+      id: 'r-pay',
+      name: 'Bob',
+      text: 'A payable reply',
+      createdAt: '2026-08-28T12:30:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    const { rerender } = renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, role: 'verified' }]}
         error={false}
@@ -2677,14 +2750,40 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
     onToggleExpand.mockClear();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
 
     expect(screen.queryByText('Copy link to this note')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, role: 'verified' }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[payableReply]}
+            onToggleExpand={onToggleExpand}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    onToggleExpand.mockClear();
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
@@ -4088,5 +4187,179 @@ describe('ForumBoard', () => {
     const parent = document.querySelector('[data-message-id="m1"]');
     expect(parent?.hasAttribute('data-permalink-target')).toBe(false);
     expect(parent?.className).not.toContain('ring-app-fg');
+  });
+
+  it('shows Gift on a payable reply and opens the pay sheet on that reply', () => {
+    const onPayOpen = vi.fn();
+    const onToggleExpand = vi.fn();
+    const payableReply: ForumMessage = {
+      id: 'r-pay',
+      name: 'Bob',
+      text: 'A payable reply',
+      createdAt: '2026-08-28T12:30:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[payableReply]}
+        onPayOpen={onPayOpen}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    expect(within(replyCard).queryByText('Send Bitcoin')).toBeNull();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    expect(onPayOpen).toHaveBeenCalledWith('r-pay');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+    expect(within(replyCard).queryByPlaceholderText('Write a reply')).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Post' })).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[payableReply]}
+            payMessageId="r-pay"
+            payDraft="21"
+            onPayOpen={onPayOpen}
+            onToggleExpand={onToggleExpand}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const openCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(within(openCard).getByLabelText('Amount')).toBeTruthy();
+    expect(within(openCard).getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+  });
+
+  it('omits Gift on an unpayable reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, payable: false }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+  });
+
+  it('keeps Gift and Delete reply on a payable nested reply', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'founder',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-pay',
+            name: 'Bob',
+            text: 'A payable reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(within(replyCard).getByRole('button', { name: 'Delete reply' })).toBeTruthy();
+    expect(within(replyCard).queryByText('Send Bitcoin')).toBeNull();
   });
 });
