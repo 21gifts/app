@@ -23,9 +23,12 @@ afterEach(cleanup);
 
 describe('ProfilePage', () => {
   it('renders the profile card behind signed-in chrome', () => {
-    renderWithLocale(<ProfilePage />);
+    const { container } = renderWithLocale(<ProfilePage />);
     expect(screen.getByTestId('profile-screen')).toBeTruthy();
     expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
+    const main = container.querySelector('main');
+    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).not.toContain('overflow-hidden');
   });
 });

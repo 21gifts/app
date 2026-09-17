@@ -18,12 +18,7 @@ export default async function MemberProfilePage({
 }): Promise<ReactElement> {
   const { accountId } = await params;
   return (
-    <AppShell
-      mode="fill"
-      align="center"
-      topLeft={<ProfileChromeLeft />}
-      topRight={<SignedInChrome />}
-    >
+    <AppShell mode="flow" topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="profile">
         <MemberProfileLoader accountId={accountId} />
       </OnboardingGate>

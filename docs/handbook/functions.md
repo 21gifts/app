@@ -604,7 +604,8 @@
 - **Inputs:** `children`, required `mode` (`fill` | `flow`), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`, fill only).
 - **Returns / side effects:** A `<main>` layout with absolute chrome slots and optional header/footer portals. No network.
 - **Used by:**
-  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, profile, contact, view, members, inbox, notifications, public note)
+  - **Fill app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note)
+  - **Flow app routes** (`ProfilePage`, `ViewProfilePage`, `MemberProfilePage`)
   - **`PageChrome`** (flow-mode wrapper used by welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
 

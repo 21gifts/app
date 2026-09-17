@@ -30,9 +30,9 @@ export interface AppShellProps {
   /** Optional extra class on `<main>` — never viewport height classes. */
   className?: string;
   /**
-   * `fill` only. `center` wraps children in a `min-h-full` flex center inside the
-   * overflow scroller (short cards). Never put justify-center on the scroller or
-   * `<main>`. `flow` ignores this.
+   * `fill` only. `center` wraps children in a `min-h-full` column flex center
+   * inside the overflow scroller (short cards). Never put justify-center on the
+   * scroller or `<main>`. `flow` ignores this.
    */
   align?: AppShellAlign;
 }
@@ -114,7 +114,7 @@ export function AppShell({
         <header ref={setHeaderEl} className="flex-none w-full empty:hidden" />
         <div className="min-h-0 w-full flex-1 overflow-y-auto">
           {align === 'center' ? (
-            <div className="flex min-h-full items-center justify-center">{children}</div>
+            <div className="flex min-h-full flex-col items-center justify-center">{children}</div>
           ) : (
             children
           )}
