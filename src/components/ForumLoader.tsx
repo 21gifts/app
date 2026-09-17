@@ -1288,6 +1288,13 @@ export function ForumLoader(): ReactElement | null {
     if (replyPosting) {
       return;
     }
+    if (
+      payMessageId !== null &&
+      replies !== null &&
+      replies.some((row) => row.id === payMessageId)
+    ) {
+      clearPaySheet();
+    }
     if (expandedId === messageId) {
       setExpandedId(null);
       setReplies(null);

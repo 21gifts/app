@@ -1196,7 +1196,7 @@ describe('ForumBoard', () => {
     expect(onPayOpen).not.toHaveBeenCalled();
   });
 
-  it('opens pay when Send Bitcoin is clicked on a payable note', () => {
+  it('opens pay when Send Bitcoin is clicked on a payable nested reply', () => {
     const onPayOpen = vi.fn();
     const onToggleExpand = vi.fn();
     const payableReply: ForumMessage = {

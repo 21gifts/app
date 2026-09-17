@@ -88,7 +88,7 @@ app/
 │   │   │   ├── page.tsx         # GET /messages — signed-in PN inbox
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx     # GET /messages/[id] — public forum note; per-note Open Graph
-│   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice pay-on-note
+│   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice payable-reply pay sheet
 │   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
 │   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
@@ -174,7 +174,7 @@ app/
 │   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + pay-on-note + expand/replies + copy-link + author profile links
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + payable-reply pay sheet + expand/replies + copy-link + author profile links
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome forum
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
@@ -299,7 +299,7 @@ English, concise, describe _what_ changed.
 ```
 # Good
 Add /healthz route handler
-Wire pay-on-note invoice sheet
+Wire payable-reply invoice sheet
 Fix wordmark scaling on small screens
 
 # Bad

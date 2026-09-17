@@ -798,6 +798,13 @@ export function MemberProfileScreen({
     if (replyPosting) {
       return;
     }
+    if (
+      payMessageId !== null &&
+      replies !== null &&
+      replies.some((row) => row.id === payMessageId)
+    ) {
+      handlePayCancel();
+    }
     if (expandedId === messageId) {
       ++expandGen.current;
       setExpandedId(null);

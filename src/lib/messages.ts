@@ -66,7 +66,7 @@ const en = {
   'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
-    'Once you are logged in, write a post in the forum. Others can send Bitcoin to that post — it lands in your Wallet of Satoshi, not ours. The platform never touches the money.',
+    'Once you are logged in, write a post in the forum. Others can send Bitcoin to a payable reaction — it lands in the author’s Wallet of Satoshi, not ours. The platform never touches the money.',
   'home.whyKicker': 'Why this exists',
   'home.whyTitle': 'The shortest possible path from one person to another',
   'home.why1Title': 'Truly peer-to-peer',
@@ -84,7 +84,7 @@ const en = {
   'home.projectKicker': 'The project',
   'home.projectTitle': 'Donate to this project',
   'home.projectLead':
-    'Gifts in the forum go to the person who wrote the post. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
+    'Gifts in the forum go to the person who wrote the reaction. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Common questions, answered briefly',
   'home.faq1Q': 'Who can use this?',
@@ -643,7 +643,7 @@ const de = {
   'home.step2BodyAfter': '. Von da an kann Ihnen jede Person aus Wallet of Satoshi Bitcoin senden.',
   'home.step3Title': 'Schreiben und Hilfe empfangen',
   'home.step3Body':
-    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an diesen Beitrag senden — es landet in Ihrer Wallet of Satoshi, nicht bei uns. Die Plattform berührt das Geld nie.',
+    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an eine zahlbare Reaktion senden — es landet in der Wallet of Satoshi der Autorin oder des Autors, nicht bei uns. Die Plattform berührt das Geld nie.',
   'home.whyKicker': 'Warum es das gibt',
   'home.whyTitle': 'Der kürzeste Weg von einer Person zur anderen',
   'home.why1Title': 'Wirklich von Mensch zu Mensch',
@@ -661,7 +661,7 @@ const de = {
   'home.projectKicker': 'Das Projekt',
   'home.projectTitle': 'An dieses Projekt spenden',
   'home.projectLead':
-    'Geschenke im Forum gehen an die Person, die den Beitrag geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
+    'Geschenke im Forum gehen an die Person, die die Reaktion geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
@@ -1222,7 +1222,7 @@ const es = {
     '. A partir de ahí, cualquiera podrá enviarte Bitcoin desde Wallet of Satoshi.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
-    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a esa publicación — llega a tu Wallet of Satoshi, no a la nuestra. La plataforma nunca toca el dinero.',
+    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a una reacción pagable — llega a la Wallet of Satoshi de quien la escribió, no a la nuestra. La plataforma nunca toca el dinero.',
   'home.whyKicker': 'Por qué existe',
   'home.whyTitle': 'El camino más corto de una persona a otra',
   'home.why1Title': 'De persona a persona, de verdad',
@@ -1240,7 +1240,7 @@ const es = {
   'home.projectKicker': 'El proyecto',
   'home.projectTitle': 'Dona a este proyecto',
   'home.projectLead':
-    'Los regalos del foro van a la persona que escribió la publicación. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
+    'Los regalos del foro van a la persona que escribió la reacción. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Preguntas frecuentes, en breve',
   'home.faq1Q': '¿Quién puede usarlo?',
@@ -1785,7 +1785,7 @@ const fil = {
     '. Mula roon, puwede ka nang padalhan ng Bitcoin ng kahit sino mula sa Wallet of Satoshi.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
-    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa post na iyon — sa Wallet of Satoshi mo ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
+    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa isang nababayarang reaksyon — sa Wallet of Satoshi ng may-akda ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
   'home.whyKicker': 'Bakit ito umiiral',
   'home.whyTitle': 'Ang pinakamaikling daan mula sa isang tao patungo sa iba',
   'home.why1Title': 'Tunay na peer-to-peer',
@@ -1803,7 +1803,7 @@ const fil = {
   'home.projectKicker': 'Ang proyekto',
   'home.projectTitle': 'Mag-donate sa proyektong ito',
   'home.projectLead':
-    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng post. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
+    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng reaksyon. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Mga karaniwang tanong, maikling sagot',
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',

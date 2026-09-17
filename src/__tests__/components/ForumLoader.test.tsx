@@ -2198,6 +2198,24 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('clears a reply pay sheet when the thread is collapsed', async () => {
+    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    clickGiftOnReply();
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
   it('clears the pay sheet when a public fetch returns more sats', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);
