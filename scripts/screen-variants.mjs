@@ -381,10 +381,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'photos',
+    image: 'welcome-photos.png',
+    visual: 'state-welcome-photos',
+    needle: 'welcome photos',
+  },
+  {
+    route: '/welcome',
     id: 'photo-and-text',
     image: 'welcome-photo-and-text.png',
     visual: 'state-welcome-photo-and-text',
     needle: 'Hello with this photo.',
+  },
+  {
+    route: '/welcome',
+    id: 'photos-and-text',
+    image: 'welcome-photos-and-text.png',
+    visual: 'state-welcome-photos-and-text',
+    needle: 'Hello with these photos.',
   },
   {
     route: '/welcome',
@@ -402,10 +416,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-photos',
+    image: 'welcome-composer-photos.png',
+    visual: 'state-welcome-composer-photos',
+    needle: 'welcome composer-photos',
+  },
+  {
+    route: '/welcome',
     id: 'composer-photo-and-text',
     image: 'welcome-composer-photo-and-text.png',
     visual: 'state-welcome-composer-photo-and-text',
     needle: 'Caption with selected photo.',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-photos-and-text',
+    image: 'welcome-composer-photos-and-text.png',
+    visual: 'state-welcome-composer-photos-and-text',
+    needle: 'Caption with selected photos.',
   },
   {
     route: '/welcome',
@@ -479,10 +507,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'error-too-many',
+    image: 'welcome-error-too-many.png',
+    visual: 'state-welcome-error-too-many',
+    needle: 'You can add up to 10 photos',
+  },
+  {
+    route: '/welcome',
     id: 'error-too-large-with-text',
     image: 'welcome-error-too-large-with-text.png',
     visual: 'state-welcome-error-too-large-with-text',
     needle: 'Caption with a photo that is too large.',
+  },
+  {
+    route: '/welcome',
+    id: 'error-too-many-with-text',
+    image: 'welcome-error-too-many-with-text.png',
+    visual: 'state-welcome-error-too-many-with-text',
+    needle: 'Caption with too many photos.',
   },
   {
     route: '/welcome',
@@ -630,6 +672,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-photo.png',
     visual: 'state-members-posts-open-photo',
     needle: 'Photo from Carol',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-photos',
+    image: 'members-posts-open-photos.png',
+    visual: 'state-members-posts-open-photos',
+    needle: 'state /members posts-open-photos',
   },
   {
     route: '/members/[accountId]',

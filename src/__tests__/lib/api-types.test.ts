@@ -636,6 +636,15 @@ describe('forumMessageSchema', () => {
     });
   });
 
+  it('keeps an explicit photoCount of 2', () => {
+    expect(forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: 2 }).photoCount).toBe(2);
+  });
+
+  it('rejects photoCount 11 and -1', () => {
+    expect(() => forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: 11 })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: -1 })).toThrow();
+  });
+
   it('accepts an empty text when hasVideo is true', () => {
     const videoOnly = { ...base, text: '', hasVideo: true };
     expect(forumMessageSchema.parse(videoOnly)).toEqual({

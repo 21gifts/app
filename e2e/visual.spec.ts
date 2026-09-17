@@ -1712,6 +1712,109 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-photo');
   });
 
+  test('state /members posts-open-photos', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const postId = '44444444-4444-4444-8444-444444444444';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: postId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Second post from Carol.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: true,
+              photoCount: 2,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/messages/${postId}/photo`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.route(`**/messages/${postId}/photo/1.jpg`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('Second post from Carol.')).toBeVisible();
+    const photos = page.getByAltText('Photo from Carol');
+    await expect(photos).toHaveCount(2);
+    await photos.first().scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-photos');
+  });
+
   test('state /members replies-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
@@ -4336,6 +4439,56 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-photo');
   });
 
+  test('welcome photos', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-photo',
+              name: 'Ada',
+              text: '',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: true,
+              photoCount: 2,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.route(/\/messages\/m-photo\/photo\/1\.jpg/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-photos');
+  });
+
   test('welcome photo-and-text', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages$/, async (route) => {
@@ -4391,6 +4544,56 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByLabel('Your message')).toHaveValue('');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-photo-and-text');
+  });
+
+  test('welcome photos-and-text', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-photos-text',
+              name: 'Ada',
+              text: 'Hello with these photos.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: true,
+              photoCount: 2,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/m-photos-text\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.route(/\/messages\/m-photos-text\/photo\/1\.jpg/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: Buffer.from(
+          '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+          'base64',
+        ),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
+    await expect(page.getByText('Hello with these photos.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-photos-and-text');
   });
 
   async function emptyForum(page: Page): Promise<void> {
@@ -4462,6 +4665,18 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-photo');
   });
 
+  test('welcome composer-photos', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    await shotScreen(page, 'state-welcome-composer-photos');
+  });
+
   test('welcome composer-photo-and-text', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
@@ -4472,6 +4687,20 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByAltText('Selected photo')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photo.');
     await shotScreen(page, 'state-welcome-composer-photo-and-text');
+  });
+
+  test('welcome composer-photos-and-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with selected photos.');
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photos.');
+    await shotScreen(page, 'state-welcome-composer-photos-and-text');
   });
 
   test('welcome composer-video', async ({ page }) => {
@@ -4661,6 +4890,20 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-error-too-large');
   });
 
+  test('welcome error-too-many', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByRole('alert')).toHaveText('You can add up to 10 photos', {
+      timeout: 10_000,
+    });
+    await shotScreen(page, 'state-welcome-error-too-many');
+  });
+
   test('welcome error-too-large-with-text', async ({ page }) => {
     await seedAda(page);
     await stubTooLargeJpeg(page);
@@ -4675,6 +4918,22 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-too-large-with-text');
+  });
+
+  test('welcome error-too-many-with-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Caption with too many photos.');
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByRole('alert')).toHaveText('You can add up to 10 photos', {
+      timeout: 10_000,
+    });
+    await expect(page.getByLabel('Your message')).toHaveValue('Caption with too many photos.');
+    await shotScreen(page, 'state-welcome-error-too-many-with-text');
   });
 
   test('welcome error-request-photo-and-text', async ({ page }) => {

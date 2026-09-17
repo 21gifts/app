@@ -2103,6 +2103,25 @@ describe('ForumBoard', () => {
     );
   });
 
+  it('shows formError tooMany alert', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooMany"
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
   it('disables submit and shows a spinner while posting', () => {
     renderWithLocale(
       <ForumBoard
