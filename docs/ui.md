@@ -995,7 +995,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. `PublicMessageLoader`: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (cookie, otherwise locale default), no pay, no composer, no copy, no FiatPicker. Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (cookie, otherwise locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (gift when payable, copy, PM, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 

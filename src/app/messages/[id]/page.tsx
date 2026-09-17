@@ -24,10 +24,12 @@ export async function generateMetadata({
 }
 
 /**
- * `/messages/[id]` — public read-only HTML note by forum message UUID.
+ * `/messages/[id]` — public permalink HTML note by forum message UUID.
  *
- * JSON for the same note is `/public-messages/[id]`. No OnboardingGate, pay,
- * or composer. Body chrome is {@link PublicMessageChrome}.
+ * JSON for the same note is `/public-messages/[id]`. Unsigned visitors see a
+ * read-only thread. Signed-in pay, reply, copy, and PM run through
+ * {@link PublicMessageLoader} → `PublicMessageThread`. No OnboardingGate
+ * and no top-level composer. Body chrome is {@link PublicMessageChrome}.
  *
  * @param props - Dynamic route params (`id`).
  * @returns The public message screen.
