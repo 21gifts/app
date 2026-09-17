@@ -1104,6 +1104,25 @@ describe('MemberProfileScreen', () => {
     expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
+  it('cancels an expanded-thread Gift when Posts is collapsed', async () => {
+    vi.mocked(fetchPublicMessage).mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(within(replyCard).getByRole('button', { name: 'Back' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: true }));
+    expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
   it('shows pay author-wallet copy when Gift Continue is rejected', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new Error("The author's wallet cannot receive this Bitcoin payment"),
