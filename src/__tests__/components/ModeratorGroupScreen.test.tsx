@@ -202,6 +202,9 @@ describe('ModeratorGroupScreen', () => {
         }),
     );
     const view = renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(threadMock).toHaveBeenCalled();
+    });
     view.unmount();
     await act(async () => {
       resolveThread?.([MESSAGE]);
@@ -220,6 +223,9 @@ describe('ModeratorGroupScreen', () => {
         }),
     );
     const view = renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(threadMock).toHaveBeenCalled();
+    });
     view.unmount();
     await act(async () => {
       rejectThread?.(new Error('boom'));
