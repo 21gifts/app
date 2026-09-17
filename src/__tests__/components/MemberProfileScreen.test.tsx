@@ -1119,8 +1119,11 @@ describe('MemberProfileScreen', () => {
       expect(within(replyCard).getByRole('button', { name: 'Back' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: true }));
-    expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(replyCard).queryByRole('button', { name: 'Back' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: false }));
+    expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
+    const reopened = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(within(reopened).queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
   it('shows pay author-wallet copy when Gift Continue is rejected', async () => {
