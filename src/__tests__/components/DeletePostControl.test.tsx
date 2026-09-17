@@ -119,9 +119,9 @@ describe('DeletePostControl', () => {
     vi.mocked(deleteMessage).mockResolvedValue(undefined);
     const onDeleted = vi.fn();
     renderWithLocale(<DeletePostControl kind="reply" messageId="r1" onDeleted={onDeleted} />);
-    expect(screen.queryByText('Delete reply')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete reply' }));
-    expect(screen.getByRole('group', { name: 'Delete this reply from 21.gifts?' })).toBeTruthy();
+    expect(screen.queryByText('Delete reaction')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete reaction' }));
+    expect(screen.getByRole('group', { name: 'Delete this reaction from 21.gifts?' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('r1'));
     expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
@@ -129,19 +129,19 @@ describe('DeletePostControl', () => {
   it('uses the German reply idle name', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<DeletePostControl kind="reply" messageId="r1" onDeleted={vi.fn()} />, 'de');
-    expect(screen.queryByText('Antwort löschen')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Antwort löschen' })).toBeTruthy();
+    expect(screen.queryByText('Reaktion löschen')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reaktion löschen' })).toBeTruthy();
   });
   it('shows the reply error and retries', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(deleteMessage).mockRejectedValueOnce(new Error('denied'));
     const onDeleted = vi.fn();
     renderWithLocale(<DeletePostControl kind="reply" messageId="r1" onDeleted={onDeleted} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete reply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete reaction' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain(
-        'Could not delete the reply. Please try again.',
+        'Could not delete the reaction. Please try again.',
       );
     });
     expect(onDeleted).not.toHaveBeenCalled();

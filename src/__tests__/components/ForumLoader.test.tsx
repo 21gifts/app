@@ -1384,16 +1384,16 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'draft' } });
-    expect(screen.getByLabelText('Your reply')).toHaveProperty('value', 'draft');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'draft' } });
+    expect(screen.getByLabelText('Your reaction')).toHaveProperty('value', 'draft');
   });
 
   it('does not fetch the next photo after unmount when the current fetch fails', async () => {
@@ -2347,9 +2347,9 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     await revealAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     const replyLoads = repliesMock.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
@@ -2965,17 +2965,17 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'wait' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'wait' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
-    expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(screen.getByLabelText('Your reaction')).toBeTruthy();
   });
 
   it('collapses an expanded thread', async () => {
@@ -2986,12 +2986,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
-    expect(screen.queryByLabelText('Your reply')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(screen.queryByLabelText('Your reaction')).toBeNull();
   });
 
   it('loads replies via fetchReplies when a row is expanded', async () => {
@@ -3016,11 +3016,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
       expect(repliesMock).toHaveBeenCalledWith('sess', 'm1');
       expect(screen.getByText('A reply')).toBeTruthy();
-      expect(screen.getByPlaceholderText('Write a reply')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
   });
 
@@ -3062,13 +3062,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show reactions' })[0]!);
     await waitFor(() => {
       expect(screen.getByText('A reply')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(screen.queryByText('A reply')).toBeNull();
-    expect(screen.getByText('Loading replies…')).toBeTruthy();
+    expect(screen.getByText('Loading reactions…')).toBeTruthy();
   });
 
   // Composer is disabled while replies are missing/loading (submit never
@@ -3105,18 +3105,18 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show reactions' })[0]!);
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Ada reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Ada reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Ada reply', inReplyTo: 'm1' });
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(screen.queryByText('Ada reply')).toBeNull();
-    expect(screen.getByText('Loading replies…')).toBeTruthy();
+    expect(screen.getByText('Loading reactions…')).toBeTruthy();
     await act(async () => {
       resolvePost?.({
         id: 'r-ada',
@@ -3133,7 +3133,7 @@ describe('ForumLoader', () => {
       });
     });
     expect(screen.queryByText('Ada reply')).toBeNull();
-    expect(screen.getByText('1 replies')).toBeTruthy();
+    expect(screen.getByText('1 reactions')).toBeTruthy();
   });
 
   it('does not apply a reply error after expanding a different note', async () => {
@@ -3167,22 +3167,22 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show reactions' })[0]!);
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Ada reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Ada reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
-    expect(screen.getByLabelText('Your reply')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     await act(async () => {
       rejectPost?.(new Error('boom'));
     });
     expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.queryByText('Loading replies…')).toBeNull();
+    expect(screen.queryByText('Loading reactions…')).toBeNull();
   });
 
   it('does not increment replyCount when the posted reply is already listed', async () => {
@@ -3207,17 +3207,17 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getByText('1 replies')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    expect(screen.getByText('1 reactions')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
       expect(screen.getByText('A reply')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'A reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'A reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'A reply', inReplyTo: 'm1' });
     });
-    expect(screen.getByText('1 replies')).toBeTruthy();
+    expect(screen.getByText('1 reactions')).toBeTruthy();
     expect(screen.getAllByText('A reply')).toHaveLength(1);
   });
 
@@ -3257,18 +3257,18 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    expect(screen.getAllByText('0 replies')).toHaveLength(2);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Show replies' })[0]!);
+    expect(screen.getAllByText('0 reactions')).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show reactions' })[0]!);
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Fresh reply', inReplyTo: 'm1' });
       expect(screen.getByText('Fresh reply')).toBeTruthy();
-      expect(screen.getByText('1 replies')).toBeTruthy();
-      expect(screen.getByText('0 replies')).toBeTruthy();
+      expect(screen.getByText('1 reactions')).toBeTruthy();
+      expect(screen.getByText('0 reactions')).toBeTruthy();
     });
     expect(useAuthStore.getState().account?.hasPosted).toBe(true);
   });
@@ -3287,12 +3287,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Fresh reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
     });
@@ -3336,16 +3336,16 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     useAuthStore.setState({ session: 'sess', account: null });
     invoiceMock.mockResolvedValue({ pr: 'lnbc1n1example', amountSats: 1 });
     publicFetchMock.mockResolvedValue({ ...SAMPLE, sats: 1, replyCount: 1 });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Fresh reply' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Fresh reply' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'Fresh reply');
     });
@@ -3360,13 +3360,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi Bob');
     });
@@ -3383,13 +3383,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob');
     });
@@ -3406,12 +3406,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
     });
@@ -3428,11 +3428,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
     });
@@ -3453,11 +3453,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
     });
@@ -3474,11 +3474,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
     });
@@ -3499,13 +3499,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
@@ -3529,13 +3529,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     await act(async () => {
       rejectInvoice(new Error('fail'));
@@ -3552,15 +3552,15 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     if (text !== '') {
-      fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: text } });
+      fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
     }
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: sats } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
   }
 
   it('opens the overlay when a paid reply invoice returns missing_requirements', async () => {
@@ -3655,12 +3655,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Staff reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Staff reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'Staff reply',
@@ -3692,12 +3692,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
     });
@@ -3726,19 +3726,19 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
     });
     expect(invoiceMock).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(
-        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
       ).toBeTruthy();
     });
 
@@ -3750,7 +3750,7 @@ describe('ForumLoader', () => {
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
     expect(screen.getByText('Hello from Bob')).toBeTruthy();
     expect(
-      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
     ).toBeTruthy();
   });
 
@@ -3777,28 +3777,28 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
     });
     await waitFor(() => {
       expect(
-        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
       ).toBeTruthy();
     });
 
     const replyCard = document.querySelector('[data-reply-id="r-mod"]') as HTMLElement;
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
       expect(screen.queryByText('Mod reply')).toBeNull();
       expect(
-        within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 replies'),
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 reactions'),
       ).toBeTruthy();
     });
 
@@ -3809,7 +3809,7 @@ describe('ForumLoader', () => {
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
     expect(
-      within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 replies'),
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 reactions'),
     ).toBeTruthy();
 
     fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 1 }]);
@@ -3817,7 +3817,7 @@ describe('ForumLoader', () => {
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeLater));
     expect(
-      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
     ).toBeTruthy();
   });
 
@@ -3844,18 +3844,18 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Mod reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Mod reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Mod reply', inReplyTo: 'm-bob' });
     });
     await waitFor(() => {
       expect(
-        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
       ).toBeTruthy();
     });
 
@@ -3867,16 +3867,16 @@ describe('ForumLoader', () => {
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
     expect(screen.getByText('Hello from Bob')).toBeTruthy();
     expect(
-      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
     ).toBeTruthy();
 
     const replyCard = document.querySelector('[data-reply-id="r-mod"]') as HTMLElement;
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
       expect(screen.queryByText('Mod reply')).toBeNull();
       expect(
-        within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 replies'),
+        within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 reactions'),
       ).toBeTruthy();
     });
 
@@ -3885,7 +3885,7 @@ describe('ForumLoader', () => {
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeZero));
     expect(
-      within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 replies'),
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 reactions'),
     ).toBeTruthy();
 
     fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 1 }]);
@@ -3893,7 +3893,7 @@ describe('ForumLoader', () => {
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeLater));
     expect(
-      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 replies'),
+      within(screen.getByText('Hello from Bob').closest('li')!).getByText('1 reactions'),
     ).toBeTruthy();
   });
 
@@ -3919,12 +3919,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Staff reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Staff reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'Staff reply',
@@ -3955,12 +3955,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'own' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'own', inReplyTo: 'm1' });
     });
@@ -3977,12 +3977,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
     });
@@ -3997,14 +3997,14 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'abc' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
@@ -4016,13 +4016,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'abc' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
@@ -4035,13 +4035,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
     });
@@ -4056,12 +4056,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1);
     });
@@ -4075,16 +4075,16 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.change(screen.getByLabelText('Amount'), {
       target: { value: '9007199254740992' },
     });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reply');
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
@@ -4098,12 +4098,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'own' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'own' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'own');
     });
@@ -4121,7 +4121,7 @@ describe('ForumLoader', () => {
         await Promise.resolve();
       });
       await revealAll();
-      fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
       await act(async () => {
         await Promise.resolve();
       });
@@ -4213,12 +4213,14 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'A reply draft' } });
-    expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).value).toBe(
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'A reply draft' },
+    });
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe(
       'A reply draft',
     );
   });
@@ -5392,12 +5394,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -5411,12 +5413,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
 
@@ -5478,12 +5480,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
@@ -5520,12 +5522,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();
@@ -5554,12 +5556,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
-      expect(screen.getByLabelText('Your reply')).toBeTruthy();
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
-    fireEvent.submit(screen.getByLabelText('Your reply').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
@@ -5580,14 +5582,14 @@ it('removes a moderated open post, closes its pay/reply state, and prevents stal
   await revealAll();
   await screen.findByText('Hello from Ada');
   fireEvent.click(screen.getByText('Hello from Ada'));
-  await screen.findByLabelText('Your reply');
+  await screen.findByLabelText('Your reaction');
   const postCard = screen.getByText('Hello from Ada').closest('li')!;
   fireEvent.click(within(postCard).getByRole('button', { name: 'Send Bitcoin' }));
   fireEvent.click(within(postCard).getByRole('button', { name: 'Delete post' }));
   fireEvent.click(within(postCard).getByRole('button', { name: 'Confirm deletion' }));
   await waitFor(() => expect(screen.queryByText('Hello from Ada')).toBeNull());
   expect(screen.getByText('Keep this post')).toBeTruthy();
-  expect(screen.queryByLabelText('Your reply')).toBeNull();
+  expect(screen.queryByLabelText('Your reaction')).toBeNull();
   expect(screen.queryByLabelText('Amount')).toBeNull();
   const before = fetchMock.mock.calls.length;
   const event = new Event('pageshow');
@@ -5607,7 +5609,7 @@ it('does not treat a session-deleted id as unseen on silent refresh', async () =
   await revealAll();
   await screen.findByText('Hello from Ada');
   fireEvent.click(screen.getByText('Hello from Ada'));
-  await screen.findByLabelText('Your reply');
+  await screen.findByLabelText('Your reaction');
   const postCard = screen.getByText('Hello from Ada').closest('li')!;
   fireEvent.click(within(postCard).getByRole('button', { name: 'Send Bitcoin' }));
   fireEvent.click(within(postCard).getByRole('button', { name: 'Delete post' }));
@@ -5666,19 +5668,19 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
   await revealAll();
   await screen.findByText('Hello from Ada');
   const postCard = screen.getByText('Hello from Ada').closest('li')!;
-  fireEvent.click(within(postCard).getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(within(postCard).getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
-  expect(within(postCard).getByText('1 replies')).toBeTruthy();
+  expect(within(postCard).getByText('1 reactions')).toBeTruthy();
   const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
-  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
   fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
   await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
   expect(screen.getByText('Keep this post')).toBeTruthy();
   expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
   const keptCard = screen.getByText('Hello from Ada').closest('li')!;
-  expect(within(keptCard).getByText('0 replies')).toBeTruthy();
-  expect(screen.getByLabelText('Your reply')).toBeTruthy();
+  expect(within(keptCard).getByText('0 reactions')).toBeTruthy();
+  expect(screen.getByLabelText('Your reaction')).toBeTruthy();
 
   const beforeRefresh = fetchMock.mock.calls.length;
   const event = new Event('pageshow');
@@ -5688,17 +5690,17 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
   expect(screen.queryByText('A reply')).toBeNull();
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
 
   const stillExpanded = screen.getByText('Hello from Ada').closest('li')!;
-  fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Hide replies' }));
-  fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Hide reactions' }));
+  fireEvent.click(within(stillExpanded).getByRole('button', { name: 'Show reactions' }));
   await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
   expect(screen.queryByText('A reply')).toBeNull();
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
 });
 
@@ -5710,14 +5712,14 @@ it('lets a later server reply raise the count after a session delete', async () 
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
-  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
   fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
   await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
 
   fetchMock.mockResolvedValueOnce([{ ...SAMPLE, replyCount: 2 }]);
@@ -5727,7 +5729,7 @@ it('lets a later server reply raise the count after a session delete', async () 
   fireEvent(window, event);
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 reactions'),
   ).toBeTruthy();
 
   fetchMock.mockResolvedValueOnce([{ ...SAMPLE, replyCount: 1 }]);
@@ -5735,14 +5737,14 @@ it('lets a later server reply raise the count after a session delete', async () 
   fireEvent(window, event);
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeCatchUp));
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 reactions'),
   ).toBeTruthy();
   const card = screen.getByText('Hello from Ada').closest('li')!;
-  fireEvent.click(within(card).getByRole('button', { name: 'Hide replies' }));
-  fireEvent.click(within(card).getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(within(card).getByRole('button', { name: 'Hide reactions' }));
+  fireEvent.click(within(card).getByRole('button', { name: 'Show reactions' }));
   await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 reactions'),
   ).toBeTruthy();
 });
 
@@ -5763,11 +5765,11 @@ it('drops overlapping nested reply deletes without restoring the first', async (
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   fireEvent.click(
     within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', {
-      name: 'Delete reply',
+      name: 'Delete reaction',
     }),
   );
   fireEvent.click(
@@ -5777,7 +5779,7 @@ it('drops overlapping nested reply deletes without restoring the first', async (
   );
   fireEvent.click(
     within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', {
-      name: 'Delete reply',
+      name: 'Delete reaction',
     }),
   );
   fireEvent.click(
@@ -5794,7 +5796,7 @@ it('drops overlapping nested reply deletes without restoring the first', async (
   expect(screen.queryByText('Second reply')).toBeNull();
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
 });
 
@@ -5809,11 +5811,11 @@ it('decrements the reply count twice when two nested replies are deleted in sequ
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   fireEvent.click(
     within(document.querySelector('[data-reply-id="r1"]') as HTMLElement).getByRole('button', {
-      name: 'Delete reply',
+      name: 'Delete reaction',
     }),
   );
   fireEvent.click(
@@ -5824,11 +5826,11 @@ it('decrements the reply count twice when two nested replies are deleted in sequ
   await waitFor(() => expect(screen.queryByText('A reply')).toBeNull());
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 reactions'),
   ).toBeTruthy();
   fireEvent.click(
     within(document.querySelector('[data-reply-id="r2"]') as HTMLElement).getByRole('button', {
-      name: 'Delete reply',
+      name: 'Delete reaction',
     }),
   );
   fireEvent.click(
@@ -5839,7 +5841,7 @@ it('decrements the reply count twice when two nested replies are deleted in sequ
   await waitFor(() => expect(screen.queryByText('Second reply')).toBeNull());
   expect(screen.getByText('Hello from Ada')).toBeTruthy();
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
   expect(deleteMessage).toHaveBeenCalledWith('token', 'r1');
   expect(deleteMessage).toHaveBeenCalledWith('token', 'r2');
@@ -5859,20 +5861,20 @@ it('still hides a reply deleted after the thread is collapsed', async () => {
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
   const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
-  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reply' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
   fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Hide replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
   await act(async () => {
     finishDelete();
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await waitFor(() => expect(repliesMock.mock.calls.length).toBeGreaterThan(1));
   expect(screen.queryByText('A reply')).toBeNull();
   expect(
-    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 replies'),
+    within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
 });
 
@@ -5883,7 +5885,7 @@ it('hides reply deletion for ordinary members', async () => {
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
   await revealAll();
   await screen.findByText('Hello from Ada');
-  fireEvent.click(screen.getByRole('button', { name: 'Show replies' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
   await screen.findByText('A reply');
-  expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
 });
