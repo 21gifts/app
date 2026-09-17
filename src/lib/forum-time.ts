@@ -1,7 +1,7 @@
 /**
  * Formats a forum message timestamp for display.
  *
- * Always uses UTC so Playwright screenshots do not depend on the host timezone.
+ * Uses the runtime local timezone (the visitor's system timezone), not UTC.
  *
  * @param iso - ISO-8601 timestamp from the api.
  * @param locale - Active UI locale (BCP 47).
@@ -15,6 +15,5 @@ export function formatForumTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
-    timeZone: 'UTC',
   }).format(instant);
 }

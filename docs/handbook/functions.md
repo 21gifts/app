@@ -1241,10 +1241,10 @@
 
 ## Function: formatForumTime
 
-- **Purpose:** Formats a forum message timestamp as UTC medium date + short time via `Intl.DateTimeFormat`, or returns the original ISO string when the instant is invalid.
+- **Purpose:** Formats a forum message timestamp as medium date + short time in the runtime local timezone via `Intl.DateTimeFormat`, or returns the original ISO string when the instant is invalid.
 - **Inputs:** `iso` string, `locale` BCP 47 tag.
-- **Returns / side effects:** Display string. Always uses `timeZone: 'UTC'` so screenshots are host-independent.
-- **Used by:** `ForumBoard`.
+- **Returns / side effects:** Display string. Uses the runtime default timezone (visitor system timezone), not UTC.
+- **Used by:** `ForumBoard`, `InboxScreen`, `ModerateScreen`, `NotificationsScreen`, `PublicMessageLoader`.
 
 ## Function: visibleForumMessages
 
