@@ -302,6 +302,34 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('invoices from Gift on a nested reply', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', REPLY_ID, 21);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+  });
+
+  it('maps a pay missing-requirements miss onto the pay error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError([]));
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
   it('cancels an open pay sheet', async () => {
     vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
