@@ -303,6 +303,7 @@ const en = {
   'forum.translateShowOriginal': 'Show original',
   'forum.translateShowTranslation': 'Show translation',
   'forum.translateError': 'Could not translate this note. Please try again.',
+  'forum.showMore': 'Show more',
 
   'requirements.nameTitle': 'Add your name',
   'requirements.rulesTitle': 'Agree to the living room rules',
@@ -862,6 +863,7 @@ const de = {
   'forum.translateShowOriginal': 'Original anzeigen',
   'forum.translateShowTranslation': 'Übersetzung anzeigen',
   'forum.translateError': 'Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen.',
+  'forum.showMore': 'Mehr anzeigen',
 
   'requirements.nameTitle': 'Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
@@ -1421,6 +1423,7 @@ const es = {
   'forum.translateShowOriginal': 'Mostrar original',
   'forum.translateShowTranslation': 'Mostrar traducción',
   'forum.translateError': 'No se pudo traducir esta nota. Inténtalo de nuevo.',
+  'forum.showMore': 'Mostrar más',
 
   'requirements.nameTitle': 'Añade tu nombre',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
@@ -1974,6 +1977,7 @@ const fil = {
   'forum.translateShowOriginal': 'Ipakita ang orihinal',
   'forum.translateShowTranslation': 'Ipakita ang pagsasalin',
   'forum.translateError': 'Hindi maisalin ang notang ito. Pakisubukan muli.',
+  'forum.showMore': 'Magpakita pa',
 
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',

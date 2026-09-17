@@ -9,6 +9,7 @@ import {
   type MouseEvent,
   type ReactElement,
 } from 'react';
+import { ForumNoteText } from '@/components/ForumNoteText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
@@ -100,7 +101,10 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
       {status === 'success' && translatedText !== null ? (
         <>
           {showTranslation ? (
-            <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{translatedText}</p>
+            <ForumNoteText
+              text={translatedText}
+              className="mt-2 whitespace-pre-wrap text-sm text-app-fg"
+            />
           ) : null}
           <button
             type="button"
