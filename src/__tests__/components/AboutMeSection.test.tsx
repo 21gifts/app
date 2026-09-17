@@ -420,6 +420,184 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('disables save while prepareForumPhoto is in flight and then saves the JPEG', async () => {
+    let resolvePrep!: (value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void;
+    prepareMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePrep = resolve;
+        }),
+    );
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    const save = screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement;
+    const attach = screen.getByRole('button', { name: 'Add a photo' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    expect(attach.disabled).toBe(true);
+    await act(async () => {
+      resolvePrep({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+        },
+      });
+    });
+    await waitFor(() => {
+      expect(
+        (screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.any(String), {
+        contentType: 'image/jpeg',
+        data: 'abc',
+      });
+    });
+  });
+
+  it('ignores a stale prepare after a newer pick starts', async () => {
+    let resolveFirst: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'second',
+        previewUrl: 'data:image/jpeg;base64,second',
+      },
+    });
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    });
+    resolveFirst?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'first',
+        previewUrl: 'data:image/jpeg;base64,first',
+      },
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.any(String), {
+        contentType: 'image/jpeg',
+        data: 'second',
+      });
+    });
+  });
+
+  it('ignores a stale prepare rejection after a newer pick starts', async () => {
+    let rejectFirst: ((reason: Error) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'second',
+        previewUrl: 'data:image/jpeg;base64,second',
+      },
+    });
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+    });
+    rejectFirst?.(new Error('decode'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByAltText('Selected photo') as HTMLImageElement).src).toContain('second');
+  });
+
+  it('ignores a stale prepare after unmount', async () => {
+    let resolvePrep: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrep = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    unmount();
+    resolvePrep?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'late',
+        previewUrl: 'data:image/jpeg;base64,late',
+      },
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it('ignores a stale prepare after cancel', async () => {
+    let resolvePrep: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrep = resolve;
+        }),
+    );
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    resolvePrep?.({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'late',
+        previewUrl: 'data:image/jpeg;base64,late',
+      },
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    expect(screen.getByText('Tell others who you are.')).toBeTruthy();
+  });
+
   it('alerts unsupported copy when prepareForumPhoto rejects the file', async () => {
     prepareMock.mockResolvedValue({ ok: false, error: 'unsupported' });
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);

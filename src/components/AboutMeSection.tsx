@@ -73,6 +73,7 @@ export function AboutMeSection({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadPhotoRef = useRef(loadPhoto);
   const storedObjectUrlRef = useRef<string | null>(null);
+  const photoGeneration = useRef(0);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
@@ -81,6 +82,7 @@ export function AboutMeSection({
   const [storedPhotoUrl, setStoredPhotoUrl] = useState<string | null>(null);
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [preparingPhoto, setPreparingPhoto] = useState(false);
 
   loadPhotoRef.current = loadPhoto;
 
@@ -105,6 +107,7 @@ export function AboutMeSection({
     copyMounted.current = true;
     return () => {
       copyMounted.current = false;
+      photoGeneration.current += 1;
       if (copyTimer.current !== null) {
         clearTimeout(copyTimer.current);
       }
@@ -191,6 +194,8 @@ export function AboutMeSection({
   }, [aboutMe]);
 
   const cancelEdit = useCallback((): void => {
+    photoGeneration.current += 1;
+    setPreparingPhoto(false);
     setDraft(aboutMe ?? '');
     setPhotoDraft(null);
     setPhotoRemoved(false);
@@ -243,9 +248,15 @@ export function AboutMeSection({
     if (file === undefined) {
       return;
     }
+    const generation = photoGeneration.current + 1;
+    photoGeneration.current = generation;
+    setPreparingPhoto(true);
     void (async () => {
       try {
         const result = await prepareForumPhoto(file);
+        if (generation !== photoGeneration.current) {
+          return;
+        }
         if (!result.ok) {
           setError(
             result.error === 'tooLarge'
@@ -258,7 +269,14 @@ export function AboutMeSection({
         setPhotoRemoved(false);
         setError(null);
       } catch {
+        if (generation !== photoGeneration.current) {
+          return;
+        }
         setError(t('profile.about.errorUnsupported'));
+      } finally {
+        if (generation === photoGeneration.current) {
+          setPreparingPhoto(false);
+        }
       }
     })();
   };
@@ -297,7 +315,7 @@ export function AboutMeSection({
               type="button"
               variant="secondary"
               size="md"
-              disabled={saving}
+              disabled={saving || preparingPhoto}
               aria-label={t('profile.about.attach')}
               title={t('profile.about.attach')}
               onClick={() => {
@@ -329,7 +347,7 @@ export function AboutMeSection({
               type="button"
               variant="primary"
               size="md"
-              disabled={saving}
+              disabled={saving || preparingPhoto}
               aria-label={t('profile.about.save')}
               title={t('profile.about.save')}
               onClick={() => {
