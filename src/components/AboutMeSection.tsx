@@ -74,6 +74,7 @@ export function AboutMeSection({
   const loadPhotoRef = useRef(loadPhoto);
   const storedObjectUrlRef = useRef<string | null>(null);
   const photoGeneration = useRef(0);
+  const loadGeneration = useRef(0);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
@@ -123,11 +124,13 @@ export function AboutMeSection({
     if (load === undefined) {
       return;
     }
+    const generation = loadGeneration.current + 1;
+    loadGeneration.current = generation;
     let cancelled = false;
     let created: string | null = null;
     void Promise.resolve(load())
       .then((blob) => {
-        if (cancelled) {
+        if (cancelled || generation !== loadGeneration.current) {
           return;
         }
         created = URL.createObjectURL(blob);
@@ -136,7 +139,7 @@ export function AboutMeSection({
         setStoredPhotoUrl(created);
       })
       .catch(() => {
-        if (!cancelled) {
+        if (!cancelled && generation === loadGeneration.current) {
           setStoredPhotoUrl(null);
         }
       });
@@ -222,9 +225,11 @@ export function AboutMeSection({
         return;
       }
       if (photoDraft !== null) {
+        loadGeneration.current += 1;
         revokeStoredObjectUrl();
         setStoredPhotoUrl(photoDraft.previewUrl);
       } else if (photoRemoved) {
+        loadGeneration.current += 1;
         revokeStoredObjectUrl();
         setStoredPhotoUrl(null);
       }
@@ -282,6 +287,8 @@ export function AboutMeSection({
   };
 
   const removePhoto = (): void => {
+    photoGeneration.current += 1;
+    setPreparingPhoto(false);
     setPhotoDraft(null);
     setPhotoRemoved(true);
   };
@@ -386,7 +393,7 @@ export function AboutMeSection({
                 type="button"
                 variant="secondary"
                 size="md"
-                disabled={saving}
+                disabled={saving || preparingPhoto}
                 aria-label={t('profile.about.removePhoto')}
                 title={t('profile.about.removePhoto')}
                 onClick={removePhoto}

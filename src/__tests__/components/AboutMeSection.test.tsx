@@ -462,6 +462,32 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('disables remove while a replacement photo is still preparing', async () => {
+    prepareMock.mockImplementation(() => new Promise(() => undefined));
+    const loadPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }));
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe="Kept."
+        hasPhoto
+        loadPhoto={loadPhoto}
+        onSave={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    expect(
+      (screen.getByRole('button', { name: 'Remove photo' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
   it('ignores a stale prepare after a newer pick starts', async () => {
     let resolveFirst: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
     prepareMock.mockImplementationOnce(
