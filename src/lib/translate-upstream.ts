@@ -29,10 +29,10 @@ export function getTranslateUpstream(): { url: URL; apiKey: string } | null {
       return null;
     }
     const rawApiKey = process.env.TRANSLATE_API_KEY;
-    if (rawApiKey === undefined || rawApiKey === '') {
+    if (rawApiKey === undefined || rawApiKey.trim() === '') {
       return null;
     }
-    return { url, apiKey: rawApiKey };
+    return { url, apiKey: rawApiKey.trim() };
   } catch {
     return null;
   }

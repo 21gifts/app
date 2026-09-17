@@ -66,14 +66,26 @@ describe('getTranslateUpstream', () => {
     });
   });
 
-  it.each([undefined, ''])('returns null when the API key is missing or empty (%j)', (value) => {
+  it.each([undefined, '', '   '])(
+    'returns null when the API key is missing or blank (%j)',
+    (value) => {
+      process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+      if (value === undefined) {
+        delete process.env.TRANSLATE_API_KEY;
+      } else {
+        process.env.TRANSLATE_API_KEY = value;
+      }
+      expect(getTranslateUpstream()).toBeNull();
+    },
+  );
+
+  it('trims surrounding whitespace from the API key', () => {
     process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
-    if (value === undefined) {
-      delete process.env.TRANSLATE_API_KEY;
-    } else {
-      process.env.TRANSLATE_API_KEY = value;
-    }
-    expect(getTranslateUpstream()).toBeNull();
+    process.env.TRANSLATE_API_KEY = '  secret-key  ';
+    expect(getTranslateUpstream()).toEqual({
+      url: new URL('https://api.deepl.com/v2/translate'),
+      apiKey: 'secret-key',
+    });
   });
 });
 
