@@ -1017,7 +1017,11 @@ describe('MemberProfileScreen', () => {
       { ...PAYABLE_NESTED, payable: false, sats: 21 },
     ]);
     vi.mocked(fetchReplies).mockResolvedValue([{ ...PAYABLE_NESTED, payable: true, sats: 0 }]);
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...PAYABLE_NESTED, payable: true, sats: 21 });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...PAYABLE_NESTED,
+      payable: true,
+      sats: 21,
+    });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profileWithNote, replyCount: 1 }}
@@ -2616,7 +2620,6 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByRole('button', { name: 'Message' })).toBeNull();
     expect(openConversation).not.toHaveBeenCalled();
   });
-
 
   it('does not retry replies after the session disappears', async () => {
     vi.mocked(fetchReplies).mockRejectedValueOnce(new Error('fail'));
