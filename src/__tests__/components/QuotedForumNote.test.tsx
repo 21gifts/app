@@ -337,11 +337,10 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(screen.getByText('caption', { exact: false })).toBeTruthy();
     });
-    expect(
-      screen.getByRole('link', { name: `https://21.gifts/messages/${PARENT_ID}` }).getAttribute(
-        'href',
-      ),
-    ).toBe(`/messages/${PARENT_ID}`);
+    const nestedLink = screen.getByRole('link', {
+      name: `https://21.gifts/messages/${PARENT_ID}`,
+    });
+    expect(nestedLink.getAttribute('href')).toBe(`/messages/${PARENT_ID}`);
     expect(screen.queryByText('Good morning everyone especially to our sponsor.')).toBeNull();
   });
 
