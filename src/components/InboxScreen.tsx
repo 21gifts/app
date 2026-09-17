@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Send } from 'lucide-react';
+import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
