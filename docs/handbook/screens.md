@@ -987,41 +987,61 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ## Screen: /moderate
 
-- **URL:** `/moderate` — signed-in hidden-notes list for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
-- **Actions:** Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
+- **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes. JSON for the list lives under `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
+- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
+
+### Variant: default
+
+Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, and labeled **Hidden notes** control → `/moderate/hidden`.
+
+![21.gifts moderation](images/moderate.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for founders and moderators.** No tools list.
+
+![21.gifts moderation forbidden](images/moderate-forbidden.png)
+
+## Screen: /moderate/hidden
+
+- **URL:** `/moderate/hidden` — signed-in hidden-notes list for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. No un-hide control. No hidden photo/video fetch.
+- **Actions:** In-card icon back to the hub `/moderate`. Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `HiddenNotesPage`, `HiddenNotesScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. List only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
 Staff (founder) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
 
-![21.gifts moderation](images/moderate.png)
+![21.gifts hidden notes](images/moderate-hidden.png)
 
 ### Variant: forbidden
 
 Signed-in basis account. Copy **This page is for founders and moderators.** No list.
 
-![21.gifts moderation forbidden](images/moderate-forbidden.png)
+![21.gifts hidden notes forbidden](images/moderate-hidden-forbidden.png)
 
 ### Variant: empty
 
 Staff (founder) loaded list with zero hidden notes. Copy **No hidden notes.**
 
-![21.gifts moderation empty](images/moderate-empty.png)
+![21.gifts hidden notes empty](images/moderate-hidden-empty.png)
 
 ### Variant: loading
 
 Staff (founder) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
 
-![21.gifts moderation loading](images/moderate-loading.png)
+![21.gifts hidden notes loading](images/moderate-hidden-loading.png)
 
 ### Variant: error
 
 Staff (founder) list fetch failed. Button **Try again**.
 
-![21.gifts moderation error](images/moderate-error.png)
+![21.gifts hidden notes error](images/moderate-hidden-error.png)
 
 ## Screen: /messages/[id]
 
