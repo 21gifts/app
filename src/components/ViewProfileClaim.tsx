@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, IconButton } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
@@ -117,9 +117,9 @@ export function ViewProfileClaim({
 
   if (inApp || passkey.status === 'unsupported') {
     return (
-      <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+      <Card chrome={false}>
         <InAppBrowserView />
-      </section>
+      </Card>
     );
   }
 

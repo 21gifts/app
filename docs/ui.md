@@ -394,14 +394,14 @@ flowchart TB
 
 **Safe area / visualViewport.** `AppShell` plus `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`) is the height source. `--app-height` follows `visualViewport.height` only when scale is 1 (keyboard / browser chrome). Do not follow a pinch-zoom visual viewport. `html { touch-action: manipulation }` disables double-tap-zoom; pinch-zoom stays. Do not add `env(safe-area-inset-*)` here.
 
-**`AppShell` slots.** `AppShell` owns the app `<main>`: optional absolute `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
+**`AppShell` slots.** `AppShell` owns the app `<main>`: optional `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
 
 ```
 [ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Language ]
 [                         children                                      ]
 ```
 
-Absolute chrome stays `top-4` / `left-5` / `right-5` (16px / 20px). `fill` + `align="center"` centers short cards inside the inner scroller (never `justify-center` on `<main>`). Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
+On `fill` + `align="center"`, the first eligible `Card` (`chrome` not `false`) hosts `topLeft` / `topRight` as an in-flow header inside the `rounded-3xl` border. Page-absolute chrome (`top-4` / `left-5` / `right-5`, 16px / 20px) is hidden while that Card holds the claim. Overlay cards, public-note cards (`Card chrome={false}`), `flow`, and `fill` + `align="start"` keep page-absolute chrome. `fill` + `center` with no claiming Card keeps page-absolute chrome and adds `pt-24` on the inner scroller so content clears it. Never `justify-center` on `<main>` or the overflow scroller. Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
 | Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -605,11 +605,11 @@ export function Wordmark(props: {
 
 **Anatomy.** `<section>` panel: children in a column, centered, `gap-6`, `p-8`, `rounded-3xl`, `border border-app-border bg-app-card shadow-sm`, `w-full` + max width.
 
-**API.** `maxWidth?: 'sm' | 'md' | 'xl'` default `sm`. `className?`.
+**API.** `maxWidth?: 'sm' | 'md' | 'xl'` default `sm`. `className?`. `chrome?: boolean` default `true` (`false` never claims page chrome).
 
 **States.** None. Nested notes use `app-card-muted`, not a second `Card`.
 
-**Do not** put page chrome inside `Card`.
+On `AppShell` `fill` + `align="center"`, the first Card with `chrome` not `false` hosts page chrome as its top row, inside `rounded-3xl`. Overlay cards, public-note cards, `flow`, and `fill` + `start` stay page-absolute `top-4 left-5 right-5`. `fill` + `center` without a claim uses inner `pt-24` so absolute chrome does not sit on the panel corners.
 
 ### `Button` (labeled)
 

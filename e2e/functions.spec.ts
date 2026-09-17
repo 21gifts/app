@@ -4843,6 +4843,31 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
+test('Function: AppShell — signed-in profile Menu sits inside the card', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const menu = page.getByRole('button', { name: 'Menu' });
+  await expect(menu).toBeVisible();
+  const section = page.locator('section').first();
+  await expect(section).toBeVisible();
+  const menuBox = await menu.boundingBox();
+  const sectionBox = await section.boundingBox();
+  expect(menuBox).not.toBeNull();
+  expect(sectionBox).not.toBeNull();
+  const menuX = menuBox?.x ?? 0;
+  const menuY = menuBox?.y ?? 0;
+  const menuRight = menuX + (menuBox?.width ?? 0);
+  const menuBottom = menuY + (menuBox?.height ?? 0);
+  const sectionX = sectionBox?.x ?? 0;
+  const sectionY = sectionBox?.y ?? 0;
+  const sectionRight = sectionX + (sectionBox?.width ?? 0);
+  const sectionBottom = sectionY + (sectionBox?.height ?? 0);
+  expect(menuX).toBeGreaterThanOrEqual(sectionX - 1);
+  expect(menuY).toBeGreaterThanOrEqual(sectionY - 1);
+  expect(menuRight).toBeLessThanOrEqual(sectionRight + 1);
+  expect(menuBottom).toBeLessThanOrEqual(sectionBottom + 1);
+});
+
 test('Function: AppShellTopLeft — rules setup shows the wordmark', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
