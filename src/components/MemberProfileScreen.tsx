@@ -406,8 +406,8 @@ export function MemberProfileScreen({
   const openActivity = (next: 'posts' | 'replies'): void => {
     if (
       payMessageId !== null &&
-      ((replies?.some((row) => row.id === payMessageId) ?? false) ||
-        (activityReplies?.some((row) => row.id === payMessageId) ?? false))
+      ((replies !== null && replies.some((row) => row.id === payMessageId)) ||
+        (activityReplies !== null && activityReplies.some((row) => row.id === payMessageId)))
     ) {
       handlePayCancel();
     }
