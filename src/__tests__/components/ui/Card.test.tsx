@@ -30,4 +30,11 @@ describe('Card', () => {
     renderWithLocale(<Card className="">Plain</Card>);
     expect(screen.getByText('Plain').closest('section')?.className).not.toContain('undefined');
   });
+
+  it('without AppShell renders only children, no chrome header', () => {
+    renderWithLocale(<Card>Body</Card>);
+    const section = screen.getByText('Body').closest('section');
+    expect(section?.querySelector('.justify-between')).toBeNull();
+    expect(section?.textContent).toBe('Body');
+  });
 });

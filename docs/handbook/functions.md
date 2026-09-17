@@ -559,9 +559,9 @@
 
 ## Function: Card
 
-- **Purpose:** Primary app content panel using semantic card tokens (`bg-app-card`, border, shadow) with optional max-width (`sm` / `md` / `xl`).
-- **Inputs:** `children`, optional `className`, optional `maxWidth` (default `sm`).
-- **Returns / side effects:** A `<section>` wrapper. No network. Shared shell for login, public note, and profile-style panels.
+- **Purpose:** Primary app content panel using semantic card tokens (`bg-app-card`, border, shadow) with optional max-width (`sm` / `md` / `xl`). Under `AppShell` `fill` + `align="center"`, the first Card with `chrome` not `false` claims page chrome and renders `topLeft` / `topRight` as its in-flow header inside `rounded-3xl`.
+- **Inputs:** `children`, optional `className`, optional `maxWidth` (default `sm`), optional `chrome` (default `true`; `false` never claims — overlays, public notes, secondary cards).
+- **Returns / side effects:** A `<section>` wrapper. On a successful chrome claim, the first child is the in-card header row; unmount releases the claim. No network. Shared shell for login, public note, and profile-style panels.
 - **Used by:** `PublicMessageLoader`, `LoginCard`, profile and setup screens.
 
 ## Function: Field
@@ -600,14 +600,15 @@
 
 ## Function: AppShell
 
-- **Purpose:** App page shell driven by `--app-height`: `fill` locks height with header / scroll / footer slots; `flow` uses min-height and document scroll. Prefer this over Tailwind viewport-height utilities on app routes.
+- **Purpose:** App page shell driven by `--app-height`: `fill` locks height with header / scroll / footer slots; `flow` uses min-height and document scroll. Prefer this over Tailwind viewport-height utilities on app routes. On `fill` + `align="center"`, the first eligible `Card` may claim `topLeft` / `topRight` and host them inside the panel; page-absolute chrome is hidden while claimed.
 - **Inputs:** `children`, required `mode` (`fill` | `flow`), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`, fill only).
-- **Returns / side effects:** A `<main>` layout with absolute chrome slots and optional header/footer portals. No network.
+- **Returns / side effects:** A `<main>` layout with chrome slots and optional header/footer portals. Unclaimed `fill` + `center` adds `pt-24` on the inner wrapper; claimed omits page-absolute `top-4 left-5` / `right-5`. Never `justify-center` on `<main>` or the overflow scroller. No network.
 - **Used by:**
   - **Fill app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note)
   - **Flow app routes** (`ProfilePage`, `ViewProfilePage`, `MemberProfilePage`)
   - **`PageChrome`** (flow-mode wrapper used by welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
+  - **`Card`** (chrome claim under fill+center)
 
 ## Function: AppShellHeader
 
@@ -631,7 +632,7 @@
 
 ## Function: AppShellTopLeft
 
-- **Purpose:** Registers absolute top-left chrome into the nearest `AppShell` via DOM portal; child registration wins over the page `topLeft` prop. Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers top-left chrome into the nearest `AppShell` via DOM portal; child registration wins over the page `topLeft` prop. The host is page-absolute, or the claiming Card header under `fill` + `align="center"`. Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (back control + wordmark, etc.).
 - **Returns / side effects:** Portal into the shell top-left host when present; otherwise the children. Layout only.
 - **Used by:**
@@ -1074,7 +1075,7 @@
 
 ## Function: TrustChainDiagram
 
-- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, arrow, kind label: verified / proposed / appointed). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
 - **Inputs:** `chain: TrustChain`, optional `expandingId`, optional `onExpand`.
 - **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
 - **Used by:** `TrustChainScreen`.

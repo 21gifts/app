@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Card } from '@/components/ui';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 
 /**
@@ -37,7 +38,7 @@ export function ViewProfileScreen({
   const profileUrl = origin !== '' ? `${origin}/view/${viewKey}` : '';
 
   return (
-    <section className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+    <Card>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('profile.title')}
       </h1>
@@ -75,6 +76,6 @@ export function ViewProfileScreen({
           <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noAddress')}</p>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

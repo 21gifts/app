@@ -44,8 +44,8 @@ function edgeMessageKey(kind: TrustChainEdge['kind']): MessageKey {
   if (kind === 'verify') {
     return 'trustChain.edge.verify';
   }
-  if (kind === 'moderator_confirm') {
-    return 'trustChain.edge.confirm';
+  if (kind === 'moderator_propose') {
+    return 'trustChain.edge.propose';
   }
   return 'trustChain.edge.appoint';
 }
