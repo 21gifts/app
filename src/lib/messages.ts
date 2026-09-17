@@ -278,6 +278,7 @@ const en = {
   'forum.attach': 'Add a photo or video',
   'forum.previewAlt': 'Selected photo',
   'forum.photoAlt': 'Photo from {name}',
+  'forum.quotedNote': 'Open linked note from {name}',
   'forum.removePhoto': 'Remove photo',
   'forum.removeVideo': 'Remove video',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
@@ -499,6 +500,7 @@ const en = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'You',
   'inbox.sentPreview': 'You: {text}',
+  'inbox.authorProfile': 'View profile',
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
@@ -824,6 +826,7 @@ const de = {
   'forum.attach': 'Foto oder Video hinzufügen',
   'forum.previewAlt': 'Ausgewähltes Foto',
   'forum.photoAlt': 'Foto von {name}',
+  'forum.quotedNote': 'Verknüpfte Notiz von {name} öffnen',
   'forum.removePhoto': 'Foto entfernen',
   'forum.removeVideo': 'Video entfernen',
   'forum.errorUnsupported':
@@ -1051,6 +1054,7 @@ const de = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'Du',
   'inbox.sentPreview': 'Du: {text}',
+  'inbox.authorProfile': 'Profil anzeigen',
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
@@ -1371,6 +1375,7 @@ const es = {
   'forum.attach': 'Añadir una foto o un vídeo',
   'forum.previewAlt': 'Foto seleccionada',
   'forum.photoAlt': 'Foto de {name}',
+  'forum.quotedNote': 'Abrir la nota enlazada de {name}',
   'forum.removePhoto': 'Quitar foto',
   'forum.removeVideo': 'Quitar vídeo',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
@@ -1593,6 +1598,7 @@ const es = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'Tú',
   'inbox.sentPreview': 'Tú: {text}',
+  'inbox.authorProfile': 'Ver perfil',
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
@@ -1912,6 +1918,7 @@ const fil = {
   'forum.attach': 'Magdagdag ng litrato o bidyo',
   'forum.previewAlt': 'Napiling litrato',
   'forum.photoAlt': 'Litrato mula kay {name}',
+  'forum.quotedNote': 'Buksan ang naka-link na nota mula kay {name}',
   'forum.removePhoto': 'Alisin ang litrato',
   'forum.removeVideo': 'Alisin ang bidyo',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
@@ -2140,6 +2147,7 @@ const fil = {
   'inbox.origin.damus': 'Damus',
   'inbox.you': 'Ikaw',
   'inbox.sentPreview': 'Ikaw: {text}',
+  'inbox.authorProfile': 'Tingnan ang profile',
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',

@@ -1,11 +1,21 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { InboxScreen } from '@/components/InboxScreen';
 import type { Conversation, ConversationMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
+}));
+
+beforeEach(() => {
+  push.mockClear();
+});
 
 afterEach(cleanup);
 
@@ -696,5 +706,196 @@ describe('InboxScreen', () => {
     expect(bubble.className).toContain('self-end');
     expect(bubble.className).toContain('bg-app-btn');
     expect(bubble.className).not.toContain('bg-app-card-muted');
+  });
+
+  it('links the open-thread heading name with accountId to the member profile', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...DIRECT, accountId: 'acc_bob' }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    const heading = screen.getByRole('heading', { name: 'Bob' });
+    expect(heading).toBeTruthy();
+    fireEvent.click(within(heading).getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_bob');
+  });
+
+  it('links incoming message author names with accountId to the member profile', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-1"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[{ ...MESSAGE, accountId: 'acc_ada' }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_ada');
+  });
+
+  it('links heading then incoming author when both have accountId', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...DIRECT, accountId: 'acc_bob' }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[{ ...MESSAGE, accountId: 'acc_ada' }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    const buttons = screen.getAllByRole('button', { name: 'View profile' });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[0]!);
+    expect(push).toHaveBeenCalledWith('/members/acc_bob');
+    fireEvent.click(buttons[1]!);
+    expect(push).toHaveBeenCalledWith('/members/acc_ada');
+  });
+
+  it('keeps fromMe names as You without a profile button', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-1"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[{ ...MESSAGE, fromMe: true, accountId: 'acc_me' }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getByText('You')).toBeTruthy();
+    expect(screen.queryByText('Ada')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+  });
+
+  it('keeps names as plain text when accountId is missing', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-1"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
+    expect(screen.getByText('Ada')).toBeTruthy();
+  });
+
+  it('keeps names as plain text when accountId is empty', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...DIRECT, accountId: '' }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[{ ...MESSAGE, accountId: '' }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Bob' })).toBeTruthy();
+    expect(screen.getByText('Ada')).toBeTruthy();
+  });
+
+  it('keeps Damus headings as plain text', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DAMUS]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-3"
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'npub1abc…xyz' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
   });
 });
