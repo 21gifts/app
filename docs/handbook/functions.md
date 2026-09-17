@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, and `/trust/graph`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, and `/trust/proposals` which re-exports `proxyTrustProposalsGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm queue, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
@@ -331,14 +331,14 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/trust-chain`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/trust-chain`.
 
 ## Function: SignedInChrome
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -352,20 +352,20 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
 - **Inputs:** Catalog `profile.back` via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, an icon-only Web Push bell (`PushToggle`), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
 - **Returns / side effects:** Heading **Profile**, compact chart (empty: FiatPicker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG), About me, name form, location form, address form, push bell under the address form, Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: AboutMeSection
 
-- **Purpose:** Profile-card About me block: heading plus filled text or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is non-empty and not equal to the display name case-insensitive. Owner mode can edit (write / pencil, save, cancel) via `onSave`. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text and no copy URL renders `null`.
-- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `profileUrl`, optional `onSave`.
-- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save.
+- **Purpose:** Profile-card About me block: heading plus filled text and/or photo, or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`, attach a JPEG/PNG/WebP with ImagePlus (`prepareForumPhoto`, no video), preview, and remove. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`.
+- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets).
+- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save. Loads a blob URL when `hasPhoto` and `loadPhoto` are set; revokes it on unmount.
 - **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`).
 
 ## Function: PushToggle
@@ -676,7 +676,7 @@
 
 ## Function: PublicMessagePage
 
-- **Purpose:** Next.js page for `/messages/[id]` — public read-only HTML note by UUID. No `OnboardingGate`, no pay, no composer. Wrapped in `PublicMessageChrome` (signed-in or unsigned chrome depending on hydrated session).
+- **Purpose:** Next.js page for `/messages/[id]` — public HTML note by UUID. Unsigned visitors see a read-only thread. Signed-in pay, reply, copy, and PM run through `PublicMessageLoader` → `PublicMessageThread`. No `OnboardingGate` and no top-level composer. Wrapped in `PublicMessageChrome` (signed-in or unsigned chrome depending on hydrated session).
 - **Inputs:** Dynamic route params (`id`).
 - **Returns / side effects:** `PublicMessageLoader` inside `PublicMessageChrome` (chrome is no longer always unsigned Wordmark + LanguageSwitcher). Also exports `generateMetadata` for per-note Open Graph / Twitter tags.
 - **Used by:** Route `/messages/[id]`.
@@ -704,10 +704,17 @@
 
 ## Function: PublicMessageLoader
 
-- **Purpose:** Client loader for the public thread page: validates UUID, fetches `fetchPublicMessage(routeId)`; if `parentId` is set, fetches that parent (`null` → missing) then `fetchPublicReplies(parent.id)`; else `fetchPublicReplies(root.id)`. Ready only with root + replies (empty replies → parent only). Replies throw → error + **Try again** (whole chain). Vertical stack: parent `Card` then reply Cards with `pl-4`. Gift-only replies (empty text, sats > 0): sats line via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null, no empty `<p>`. When the route id is a reply, that reply card (or wrapper) has `data-permalink-target="true"` and `ring-1 ring-app-fg`. Auth CTA once below the stack from `useHydrateSession`. Photo/video per card via `fetchPublicMessagePhoto`. Labeled **Translate** under note and reply bodies via `NoteTranslate` when the language differs from the UI locale. Each card is ₿ plus optional preferred-fiat `·` `formatFiatDisplay` when `satsToFiatAmount` is non-null (`useFiatPreference`; cookie, otherwise locale default; `fetchGiftStats` / `latestRateDay`); otherwise ₿-only, no ` · —`. No pay, composer, or copy. `/messages/<uuid>` HTTP(S) URLs in a body unfurl into a nested post and the URL is removed from the visible text once that note loads.
-- **Inputs:** `id` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready stack. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on note and reply bodies (GET `/translate` on mount, POST on **Translate**). No pay, composer, copy, or FiatPicker.
+- **Purpose:** Client loader for the public thread page: validates UUID, fetches `fetchPublicMessage(routeId)`; if `parentId` is set, fetches that parent (`null` → missing) then `fetchPublicReplies(parent.id)`; else `fetchPublicReplies(root.id)`. Ready only with root + replies (empty replies → parent only). Replies throw → error + **Try again** (whole chain). Unsigned visitors (`!ready` or no session or no account) keep the `PublicThreadCard` stack (no pay/copy): vertical stack parent `Card` then reply Cards with `pl-4`. Gift-only replies (empty text, sats > 0): sats line via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null, no empty `<p>`. When the route id is a reply, that unsigned reply card (or wrapper) has `data-permalink-target="true"` and `ring-1 ring-app-fg`. Photo/video per unsigned card via `fetchPublicMessagePhoto`. Labeled **Translate** under unsigned note and reply bodies via `NoteTranslate` when the language differs from the UI locale. Each unsigned card is ₿ plus optional preferred-fiat `·` `formatFiatDisplay` when `satsToFiatAmount` is non-null (`useFiatPreference`; cookie, otherwise locale default; `fetchGiftStats` / `latestRateDay`); otherwise ₿-only, no ` · —`. When `ready && session && account` and the root is loaded, mounts `PublicMessageThread` instead of the unsigned cards. Auth CTA once below either stack from `useHydrateSession` (**Log in** or **Back to the forum**).
+- **Inputs:** `id` string from the route. Also reads `session` and `account` from the auth store and hydrate `ready`.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready unsigned stack or signed-in `PublicMessageThread`. Malformed UUID → missing without an api call. Photo blob URLs revoked on unmount or id change. Inline `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides the player and falls back to the photo when present. `NoteTranslate` on unsigned note and reply bodies (GET `/translate` on mount, POST on **Translate**). Unsigned stack has no pay, composer, copy, or FiatPicker. Hydrate-not-ready still shows `forum.loading` under the unsigned cards.
 - **Used by:** `PublicMessagePage`.
+
+## Function: PublicMessageThread
+
+- **Purpose:** Signed-in permalink thread: one root on `ForumBoard` with `composerHidden`, auto-expand via `fetchReplies`, and the same pay, reply, PM, overlay, photo, and poll behavior as `MemberProfileScreen`. Staff `onDeleted` on the root calls `onRootDeleted` (loader → missing); a nested reply is dropped from the list. Passes `permalinkTargetId` so only a matching nested reply is ringed.
+- **Inputs:** `{ root, highlightId, onRootDeleted }` as in `src/components/PublicMessageThread.tsx`: `root` is `ForumMessage`, `highlightId` is `string | null` (route id when it is a reply UUID), `onRootDeleted` is `() => void`. Session and account from the auth store.
+- **Returns / side effects:** React tree. Auto-expands the root so **Write a reaction** is available. Passes `permalinkTargetId={highlightId}`. No top-level composer or feed filters.
+- **Used by:** `PublicMessageLoader`.
 
 ## Function: ViewProfilePage
 
@@ -725,8 +732,8 @@
 
 ## Function: ViewProfileScreen
 
-- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text or omits the heading when unfilled), name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without edit or Message actions. Unset location shows `location.unset`. Copy-profile-link on the card (`profile.copyLink`).
-- **Inputs:** `{ profile, viewKey, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`. `viewKey` builds the copy URL `/view/<viewKey>`. `profile` includes `aboutMe` and `location`.
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text and/or photo, or omits the heading when neither), name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without edit or Message actions. Unset location shows `location.unset`. Copy-profile-link on the card (`profile.copyLink`).
+- **Inputs:** `{ profile, viewKey, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`. `viewKey` builds the copy URL `/view/<viewKey>`. `profile` includes `aboutMe`, `aboutMeHasPhoto`, and `location`. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` with `loadPhoto` (`fetchViewAboutMePhoto`).
 - **Returns / side effects:** No menu, logout, back, edit forms, or Message. Copy-profile-link on the card; URL/key never shown as visible text. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
 
@@ -796,9 +803,9 @@
 ## Function: ForumBoard
 
 - **Purpose:** Presentational public forum: each post card body without the action row is the expand/collapse control (`forum.expand` / `forum.collapse`, `role="button"` wrapping header, media, body text, and `NoteTranslate`, not an `IconButton`; the footer ₿ amount button and the reply-count button (when shown) also call `onToggleExpand`; pay, copy-link, PM, and delete sit outside that control as sibling `IconButton`s that `stopPropagation`). Optional dismissible living-room laws hint box (X control; two laws plus links to `/rules` and `/contact`) when `lawsVisible`, Active/No gifts yet/All/Most popular `SegmentedControl tone="neutral"` (unpaid segment chip when `unpaidNewCount` > 0 and unpaid is not selected), list of posts (name, optional Founder / Moderator / Verified role pill on notes **and replies** when `role` is one of those three (`basis` has no pill), timestamp, optional inline photo from blob URLs then caption text below the photo, optional inline `<video>` playback for notes with video (player keeps the clip aspect ratio with `max-h-80 max-w-full`, no full-width black canvas), labeled **Translate** / Show original / Show translation under note and reply bodies via `NoteTranslate` (not in the footer icon row), ₿ amount plus optional preferred-fiat `·` `formatFiatDisplay` only when `satsToFiatAmount` is non-null (else ₿-only, no em dash) with a Gift pay icon when the note is payable) or empty/loading/error, messenger-style composer (**Add a photo or video** ImagePlus left of the textarea, **Post** Send icon to the right, optional photo draft preview with **Remove photo** X, optional video draft preview with **Remove video** X — icon-only, catalog `aria-label`s, `maxLength` 500), in-card reply composer (textarea plus **Amount** sats field `id="forum-reply-amount"`), and pay-on-note sheet: amount form with a live equivalent in the preferred fiat only when the conversion is non-null (no picker; after mint the equivalent uses the invoice amount, not an empty draft's 21-sat default), then iOS-phone amount CTA **Pay** (`forum.payNow`) mints the invoice and keeps the amount form (it does not `window.location.assign`; wallet `Button` then sets `window.location.href` to `walletofsatoshi:`; no QR); Android-phone (`isSmartphoneUserAgent`) amount CTA stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the same wallet `Button` and the Android Intent href (not the invoice card); desktop and iPad (`!isSmartphoneUserAgent`) amount CTA stays **Continue** (`forum.payContinue`) and after mint show the invoice card with QR + the same wallet `Button` (`forum.payOpenWallet` / aria `forum.payOpenWalletAria`; no custom-scheme `<a>`); top-left back control cancels. Gift-only replies show **send ₿…** (`forum.giftReply`) plus the same optional preferred-fiat `·` as notes; a reply with text and sats shows both. Clicking a role pill toggles a short explanation under that card header (one open at a time). Selector stays visible in every board state. Uses `forum.empty` when the loaded list is empty, `forum.emptyPaid` when Active or Most popular hide every loaded row (Most popular remains paid-only; Active also keeps unpaid founder/moderator notes), and `forum.emptyUnpaid` for No gifts yet when that filter hides all loaded rows. Props `messages` are newest-first (API window); Active, No gifts yet, and All keep that order (newest at the top). Most popular stays sats-descending. The composer sits under the mode selector / filters, above the newest-first list; replies remain oldest-first. When `onRefresh` is passed, pull-to-refresh from the top of the page calls it; while `refreshing` (or a pull that reached the arm threshold) a visually hidden (`sr-only`) `role="status"` with `forum.refreshing` is mounted for assistive tech only — idle markup has no status node so welcome screenshots stay unchanged. When `newPostsAvailable` is true, a labeled primary `Button` (`forum.newPosts`, decorative lucide `ArrowUp`) is `fixed` under the chrome; the node is omitted when the flag is false. When `moderatorAppointedAvailable` is true, a labeled primary `Button` (`forum.moderatorAppointed`, size `sm` with `shadow-lg`, decorative lucide `ArrowUp`) in the same visual language as New posts is `fixed` at `top-14` and calls `onShowModeratorAppointed`; the node is omitted when the flag is falsy. When both this and `newPostsAvailable` are true, the moderator pill stays at `top-14` and New posts moves to `top-28`. Listens for `FORUM_COMPOSE_EVENT` / `requestForumCompose`: focuses and `scrollIntoView`s the new-post textarea and consumes pending compose only when that textarea exists (`composerHidden` boards keep the flag). `/messages/<uuid>` HTTP(S) URLs in a body unfurl into a nested post and the URL is removed from the visible text once that note loads.
-- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), optional `newPostsAvailable` / `onShowNewPosts` (pill omitted when the flag is falsy), optional `moderatorAppointedAvailable` / `onShowModeratorAppointed` (pill omitted when the flag is falsy), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, optional `unpaidNewCount` (default 0), required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, optional `composerHidden` (hides the new-post composer; the textarea is absent so compose-pending is not consumed), plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, optional `rateDay` (`FiatRateDay | null`; omit/`null` → ₿-only), `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer with optional `replyAmountDraft` / `onReplyAmountDraftChange`, `replyFormError` including `amount` for a non-numeric or overflowing paid-reply sats field), PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`), and optional `onDeleted` (founder/moderator `DeletePostControl` on the parent footer and on nested replies with `kind="reply"`). Gift-only replies (`text === ''` and `sats > 0`) render `forum.giftReply` with `formatBitcoin` plus the same optional preferred-fiat `·` `formatFiatDisplay` suffix as notes (₿-only when conversion is null, no em dash); text plus a gift shows that formatted amount under the text. PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
+- **Inputs:** `ForumBoardProps` — `messages`, `error` (boolean load-failure flag), `loading`, optional `refreshing` / `onRefresh` (omit `onRefresh` to disable pull-to-refresh), optional `newPostsAvailable` / `onShowNewPosts` (pill omitted when the flag is falsy), optional `moderatorAppointedAvailable` / `onShowModeratorAppointed` (pill omitted when the flag is falsy), `posting`, `draft`, `onDraftChange`, `onPost`, `onRetry`, `formError` (`empty` / `tooLong` / `request` / `rateLimit` / `unsupported` / `tooLarge`), controlled `mode` / `onModeChange`, optional `unpaidNewCount` (default 0), required `lawsVisible` / `onDismissLaws`, `photoDraft`, `videoDraft`, `onPickPhoto`, `onClearPhoto`, `photoUrls`, `videoUrls`, optional `composerHidden` (hides the new-post composer; the textarea is absent so compose-pending is not consumed), plus pay sheet props (`payMessageId`, `payDraft`, `payBusy`, `payError` (`amount` / `request` / `rateLimit` / `authorWallet`), `payInvoice`, `payWaiting`, optional `rateDay` (`FiatRateDay | null`; omit/`null` → ₿-only), `onPayOpen`, `onPayDraftChange`, `onPaySubmit`, `onPayCancel`), expand/replies (`expandedId`, `onToggleExpand`, `replies`, `repliesLoading`, `repliesError`, `onRetryReplies`, reply composer with optional `replyAmountDraft` / `onReplyAmountDraftChange`, `replyFormError` including `amount` for a non-numeric or overflowing paid-reply sats field), PM (`ownName`, `ownAccountId`, `onPm`, `pmBusyId`), optional `onDeleted` (founder/moderator `DeletePostControl` on the parent footer and on nested replies with `kind="reply"`), and optional `permalinkTargetId` (nested reply ring only: `data-permalink-target="true"` and `ring-1 ring-app-fg`; parent notes are not ringed). Gift-only replies (`text === ''` and `sats > 0`) render `forum.giftReply` with `formatBitcoin` plus the same optional preferred-fiat `·` `formatFiatDisplay` suffix as notes (₿-only when conversion is null, no em dash); text plus a gift shows that formatted amount under the text. PM is hidden when `message.accountId` matches `ownAccountId`; otherwise the display name is the fallback. The video-draft X still calls `onClearPhoto` (same handler as the photo-draft X).
 - **Returns / side effects:** React tree. Copy-link uses `parentId ?? messageId`: reply cards copy `/messages/{parentId}`; top-level notes copy `/messages/{messageId}`. Filters via `visibleForumMessages`. Load error copy is `forum.error` via `t()`, never `Error.message`. Formats timestamps via `formatForumTime`. Hides empty text paragraphs; never points `<img src>` at `/messages/.../photo` without a blob URL. Inline feed `<video>` keeps the clip aspect ratio (`max-h-80 max-w-full`, no full-width black canvas). A failed `<video>` `error` event hides that player (photo fallback when a blob URL exists). Clicking a role pill toggles a short explanation under that card header (one open at a time). Dismiss control calls `onDismissLaws` only; persistence is owned by `ForumLoader`. ForumBoard itself does not fetch; nested `NoteTranslate` GETs `/translate` on mount and POSTs on **Translate**. No mode state of its own. After `onPaySubmit` resolves to an invoice, ForumBoard does not `window.location.assign`; on a smartphone the amount form stays and the wallet `Button` sets `window.location.href` to the WoS href; on desktop/iPad the invoice card shows QR plus that same `Button`. A `FORUM_COMPOSE_EVENT` focuses the new-post composer when it is mounted; a `composerHidden` board leaves pending compose set for a later visible board.
-- **Used by:** `ForumLoader`, `MemberProfileScreen`.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 
 ## Function: ContactLoader
 
@@ -956,8 +963,8 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, Lightning Address, role pill, copy-profile-link, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text or omits the heading when unfilled. Message `IconButton` (`profile.message`) sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use pay, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, founder, or verified may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so feed amounts are ₿ plus optional preferred-fiat `·` when the conversion is non-null (no FiatPicker on the feed). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
-- **Inputs:** `MemberProfile` (includes `aboutMe` and `location`) plus received and donated series; session/account from the auth store.
+- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, Lightning Address, role pill, copy-profile-link, and post/reply count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text and/or photo, or omits the heading when neither. Message `IconButton` (`profile.message`) sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is founder/moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts use pay, expand, and reply behavior; reply cards are not payable and expanding one with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, founder, or verified may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so feed amounts are ₿ plus optional preferred-fiat `·` when the conversion is non-null (no FiatPicker on the feed). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Inputs:** `MemberProfile` (includes `aboutMe`, `aboutMeHasPhoto`, and `location`) plus received and donated series; session/account from the auth store. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` / `profileMessage.hasPhoto` with `loadPhoto` (`fetchMessagePhoto`).
 - **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; fetches `GET /gifts/stats` into `rateDay`; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
 
@@ -1050,7 +1057,7 @@
 - **Purpose:** POST `/trust/confirm-moderator` with `{ accountId }` (caller must not be the proposer).
 - **Inputs:** Bearer `sessionToken`, subject `accountId`.
 - **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
-- **Used by:** `MemberTrustActions`.
+- **Used by:** `MemberTrustActions`, `ProposalsScreen`.
 
 ## Function: postTrustAppoint
 
@@ -1058,6 +1065,13 @@
 - **Inputs:** Bearer `sessionToken`, subject `accountId`.
 - **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
 - **Used by:** `MemberTrustActions`.
+
+## Function: fetchTrustProposals
+
+- **Purpose:** GET `/trust/proposals` (same-origin Bearer proxy of api `GET /trust/proposals`) and parse `moderatorProposalsResponseSchema.proposals`. Next.js forbids a `route.ts` beside `/moderate/proposals`, so the proxy lives at this path.
+- **Inputs:** Bearer `sessionToken`.
+- **Returns / side effects:** Open-proposal array. Throws visitor copy `Could not load moderator proposals. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `ProposalsScreen`.
 
 ## Function: mergeTrustChain
 
@@ -1211,7 +1225,7 @@
 - **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL.
 - **Inputs:** `file` accepted by `isForumPhotoFile`.
 - **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
-- **Used by:** `ForumLoader`.
+- **Used by:** `ForumLoader`, `AboutMeSection`.
 
 ## Function: parseNumberFormat
 
@@ -1539,10 +1553,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: putAboutMe
 
-- **Purpose:** PUT `/me/about` with bearer + `{ text }` and return the updated account.
-- **Inputs:** `sessionToken`, `text`.
-- **Returns / side effects:** Updated `Account`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
+- **Purpose:** PUT `/me/about` with bearer + `{ text, photo? }` and return the updated account. `photo` omitted keeps a stored image; `null` clears it; `{ contentType, data }` replaces it (same JPEG payload as a forum post).
+- **Inputs:** `sessionToken`, `text`, optional `photo` (`{ contentType, data } | null`).
+- **Returns / side effects:** Updated `Account` including `aboutMe` and `aboutMeHasPhoto`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
 - **Used by:** `ProfileScreen`.
+
+## Function: fetchAboutMePhoto
+
+- **Purpose:** GET `/me/about/photo` with the bearer session and return the raw image bytes as a `Blob` for `URL.createObjectURL` rendering.
+- **Inputs:** `sessionToken`.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load. Please try again.`) on non-ok, empty body, or network failure — does not leak status codes.
+- **Used by:** `ProfileScreen` via `AboutMeSection` `loadPhoto`.
+
+## Function: fetchViewAboutMePhoto
+
+- **Purpose:** GET `/view-key/:viewKey/about/photo` without Authorization and return the raw image bytes as a `Blob`.
+- **Inputs:** `viewKey` (64 lowercase hex). Encoded in the path.
+- **Returns / side effects:** `Blob`. Throws visitor copy (`Could not load. Please try again.`) on non-ok, empty body, or network failure.
+- **Used by:** `ViewProfileScreen` via `AboutMeSection` `loadPhoto`.
 
 ## Function: dismissForumLaws
 
@@ -1698,6 +1726,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/trust/graph`.
 
+## Function: proxyTrustProposalsGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /trust/proposals`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/trust/proposals`.
+
 ## Function: proxyTrustVerifyPost
 
 - **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/verify`.
@@ -1778,9 +1813,23 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: proxyMeAboutPut
 
 - **Purpose:** Same-origin Bearer proxy of api `PUT /me/about`.
-- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text, photo? }`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** App Router `PUT` on `/me/about`.
+
+## Function: proxyMeAboutPhotoGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw profile-note photo bytes).
+- **Inputs:** Incoming `Request` with Bearer session.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest` to `/me/about/photo`.
+- **Used by:** App Router `GET` on `/me/about/photo`.
+
+## Function: proxyViewAboutPhotoGet
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/about/photo` (raw profile-note photo bytes). Browser path is `/view-key/:viewKey/about/photo`; upstream is `/view/:viewKey/about/photo`.
+- **Inputs:** Incoming `Request`, plus `viewKey` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** App Router `GET` on `/view-key/[viewKey]/about/photo`.
 
 ## Function: proxyMeForumLawsDismissedPost
 
@@ -2141,7 +2190,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes or proposals. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
 - **Used by:** `ModeratePage`.
@@ -2159,6 +2208,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/messages/hidden` only when the role is founder or moderator.
 - **Used by:** `HiddenNotesPage`.
+
+## Function: ProposalsPage
+
+- **Purpose:** Next.js page for `/moderate/proposals` (signed-in staff confirm queue). HTML `/moderate/proposals` is the queue, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ProposalsScreen`. Proposal HTTP lives under `/trust/proposals` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The open-proposals screen inside fill AppShell.
+- **Used by:** Route `/moderate/proposals`.
+
+## Function: ProposalsScreen
+
+- **Purpose:** Client confirm queue of open moderator proposals. Staff (founder or moderator) fetch `fetchTrustProposals` and show subject name, **Proposed by {name}**, time, and **Confirm as moderator** (`postTrustConfirm`) or **Waiting for another moderator to confirm.** when `proposedBy.id === account.id`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. A failed confirm shows `trustChain.actionFailed`.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is founder or moderator. Confirm posts `POST /trust/confirm-moderator`. While that POST is in flight, Confirm is disabled and shows the Loader2 spinner (same as RulesSetup busy).
+- **Used by:** `ProposalsPage`.
 
 ## Function: listHiddenMessages
 

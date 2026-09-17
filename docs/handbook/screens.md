@@ -845,7 +845,7 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`, default `tone="gift"`; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`, default `tone="gift"`; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, enable or disable Web Push notifications via an icon-only bell (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). Location save is `POST /me/location` (`setLocation`).
 - **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {sha}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; toggle Web Push on the notifications row under the address form (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); pick CHF|EUR|USD|PHP on the chart FiatPicker (`shell="app"`, default `tone="gift"`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Used by:** Route `/profile` (`ProfilePage`).
@@ -897,6 +897,12 @@ Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 o
 Owner card with a real bio not equal to the display name. Seed GET /me with `name: 'Ada'`, `aboutMe: 'I build on Bitcoin'`, setup complete. Shows filled About me text plus the icon-only pencil (`Edit About me`), not the empty CTA (`Tell others who you are.` / **Write your About me**).
 
 ![21.gifts profile About me filled](images/profile-about-filled.png)
+
+### Variant: about-photo
+
+Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA.
+
+![21.gifts profile About me photo](images/profile-about-photo.png)
 
 ### Variant: about-editing
 
@@ -1000,15 +1006,15 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ## Screen: /moderate
 
-- **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes. JSON for the list lives under `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, and a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain.
-- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page.
+- **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
+- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, and labeled **Hidden notes** control → `/moderate/hidden`.
+Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, and labeled **Open proposals** control → `/moderate/proposals`.
 
 ![21.gifts moderation](images/moderate.png)
 
@@ -1056,11 +1062,67 @@ Staff (founder) list fetch failed. Button **Try again**.
 
 ![21.gifts hidden notes error](images/moderate-hidden-error.png)
 
+## Screen: /moderate/proposals
+
+- **URL:** `/moderate/proposals` — signed-in staff confirm queue. Same onboarding gate as `/moderate`. JSON is `/trust/proposals`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open proposals**. Staff rows: subject name (link `/members/{id}`), **Proposed by {name}**, time, **Confirm as moderator** or **Waiting for another moderator to confirm.** Empty / Loading… / error+Try again. Failed confirm: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only (no Open proposals row).
+- **Actions:** In-card icon back to hub. Staff confirm / Try again. Open Menu. Back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ProposalsPage`, `ProposalsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchTrustProposals`, `postTrustConfirm`.
+- **Auth:** Bearer; list only for founder|moderator.
+
+### Variant: default
+
+Staff (founder) loaded queue with at least one open proposal (subject **Rose**, **Proposed by Bob**, **Confirm as moderator**).
+
+![21.gifts open proposals](images/moderate-proposals.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for founders and moderators.** No list.
+
+![21.gifts open proposals forbidden](images/moderate-proposals-forbidden.png)
+
+### Variant: empty
+
+Staff (founder) loaded list with zero open proposals. Copy **No open proposals.**
+
+![21.gifts open proposals empty](images/moderate-proposals-empty.png)
+
+### Variant: loading
+
+Staff (founder) waiting on `GET /trust/proposals`. Copy **Loading…**
+
+![21.gifts open proposals loading](images/moderate-proposals-loading.png)
+
+### Variant: error
+
+Staff (founder) list fetch failed. Copy **Could not load open proposals. Please try again.** Button **Try again**.
+
+![21.gifts open proposals error](images/moderate-proposals-error.png)
+
+### Variant: waiting-confirm
+
+Staff (founder) row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button.
+
+![21.gifts open proposals waiting confirm](images/moderate-proposals-waiting-confirm.png)
+
+### Variant: confirm-error
+
+Staff (founder) Confirm as moderator failed. Copy **Could not update this member. Please try again.**
+
+![21.gifts open proposals confirm error](images/moderate-proposals-confirm-error.png)
+
+### Variant: confirming
+
+Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spinner; proposal row still visible.
+
+![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
+
 ## Screen: /messages/[id]
 
-- **Purpose:** Public read-only HTML thread by forum message UUID. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). No `OnboardingGate`, no pay sheet, no composer, no copy control, no FiatPicker on this page. Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
-- **Inputs:** Dynamic route `id` (UUID). Note from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Replies from `GET /public-messages/:id/replies` (`fetchPublicReplies`) using the parent id. If the opened note has `parentId`, a second public GET loads that parent, then its replies. Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags.
-- **Actions:** Change language (unsigned), or open **Menu** / back to the forum (signed-in). On fetch error, **Try again**. Logged-out **Log in** → `/login` (`login.submit`) below the thread. Logged-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. Signed-in (hydrated session and account): same per-note actions as `/welcome` (pay when payable, copy link, PM when not own, expand/replies + reply composer, staff delete, author link when `accountId`). Still no `OnboardingGate`, no top-level composer, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
+- **Inputs:** Dynamic route `id` (UUID). Note from same-origin `GET /public-messages/:id` (`fetchPublicMessage`). Replies from `GET /public-messages/:id/replies` (`fetchPublicReplies`) using the parent id. If the opened note has `parentId`, a second public GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags.
+- **Actions:** Change language (unsigned), or open **Menu** / **Back to the forum** (signed-in). Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread, plus the per-note actions above (pay when payable, copy link, PM when not own, expand/replies + reply composer, staff delete, author link when `accountId`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 
 ### Variant: default
@@ -1071,7 +1133,7 @@ Valid known UUID. Thread may be parent-only when replies are empty. Card with au
 
 ### Variant: signed-in
 
-Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada** still visible.
+Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada**, copy link, and **Write a reaction** (auto-expanded). Gift/PM hidden on own unpaid note.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
 
@@ -1143,7 +1205,7 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated ₿ | selected fiat; About me inside the identity card — not a forum post — name + location + Wallet of Satoshi address fields) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route.
+- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated ₿ | selected fiat; About me inside the identity card — not a forum post, with the photo when `aboutMeHasPhoto` — name + location + Wallet of Satoshi address fields) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given + Received from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when address is blank; activity failure keeps the card with empty series. Identity still `GET /view-key/:viewKey`.
 - **Actions:** Change language (`HomeWordmark` top-left: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows FiatPicker + `profile.chartEmpty`; a filled series can switch scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
@@ -1159,6 +1221,12 @@ Valid known key. Heading **Profile**, FiatPicker always; empty series shows Fiat
 Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
 
 ![21.gifts public view about filled](images/view-about-filled.png)
+
+### Variant: about-photo
+
+Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading, bio, and photo (`About me photo`). Copy-profile-link remains. No edit.
+
+![21.gifts public view about photo](images/view-about-photo.png)
 
 ### Variant: missing
 

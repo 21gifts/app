@@ -24,6 +24,8 @@ const contactMessages = [];
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
+/** @type {Map<string, Buffer>} */
+const aboutMePhotos = new Map();
 
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
@@ -120,6 +122,7 @@ function newAccount(linkingKey) {
     rulesAgreedAt: null,
     viewKey: hex(randomBytes(32)),
     aboutMe: null,
+    aboutMeHasPhoto: false,
     setup: 'name',
     missing: ['name', 'lightning-address', 'rules'],
   };
@@ -136,6 +139,7 @@ const E2E_MEMBER_PROFILE = {
   lightningAddress: 'carol@walletofsatoshi.com',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
+  aboutMeHasPhoto: false,
   profileMessage: {
     id: '33333333-3333-4333-8333-333333333333',
     accountId: E2E_MEMBER_ID,
@@ -916,6 +920,7 @@ const server = http.createServer(async (req, res) => {
         lightningAddress: account.lightningAddress,
         createdAt: new Date(account.createdAt).toISOString(),
         aboutMe: account.aboutMe ?? null,
+        aboutMeHasPhoto: account.aboutMeHasPhoto === true,
         profileMessage: null,
         postCount: 0,
         replyCount: 0,
@@ -929,6 +934,31 @@ const server = http.createServer(async (req, res) => {
   const viewActivityMatch = pathName.match(/^\/view\/([^/]+)\/activity$/);
   if (method === 'GET' && viewActivityMatch) {
     json(res, 200, EMPTY_ACTIVITY);
+    return;
+  }
+
+  const viewAboutPhotoMatch = pathName.match(/^\/view\/([^/]+)\/about\/photo$/);
+  if (method === 'GET' && viewAboutPhotoMatch) {
+    const key = viewAboutPhotoMatch[1];
+    let found;
+    for (const account of byToken.values()) {
+      if (account.viewKey === key) {
+        found = account;
+        break;
+      }
+    }
+    const bytes = found === undefined ? undefined : aboutMePhotos.get(found.id);
+    if (found === undefined || bytes === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    });
+    res.end(bytes);
     return;
   }
 
@@ -961,6 +991,7 @@ const server = http.createServer(async (req, res) => {
       createdAt: found.createdAt,
       hasPasskey,
       aboutMe: found.aboutMe ?? null,
+      aboutMeHasPhoto: found.aboutMeHasPhoto === true,
     });
     return;
   }
@@ -987,9 +1018,52 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
     }
+    if (Object.prototype.hasOwnProperty.call(parsed, 'photo')) {
+      const photo = parsed.photo;
+      const hasPhotoData =
+        photo !== null &&
+        typeof photo === 'object' &&
+        typeof photo.data === 'string' &&
+        photo.data.length > 0;
+      if (photo !== null && !hasPhotoData) {
+        json(res, 400, { error: 'Expected photo to be null or { data }' });
+        return;
+      }
+    }
     const trimmed = parsed.text.trim();
     account.aboutMe = trimmed === '' ? null : trimmed;
+    if (Object.prototype.hasOwnProperty.call(parsed, 'photo')) {
+      if (parsed.photo === null) {
+        aboutMePhotos.delete(account.id);
+        account.aboutMeHasPhoto = false;
+      } else {
+        aboutMePhotos.set(account.id, Buffer.from(parsed.photo.data, 'base64'));
+        account.aboutMeHasPhoto = true;
+      }
+    }
     json(res, 200, account);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/me/about/photo') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const bytes = aboutMePhotos.get(account.id);
+    if (bytes === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    });
+    res.end(bytes);
     return;
   }
 
@@ -1312,6 +1386,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 200, { nodes: [], edges: [] });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/trust/proposals') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { proposals: [] });
     return;
   }
 

@@ -280,6 +280,12 @@ export interface ForumBoardProps {
   composerHidden?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
   onDeleted?: (messageId: string) => void;
+  /**
+   * When set, that nested reply gets `data-permalink-target="true"` and
+   * `ring-1 ring-app-fg`. Parent notes are not ringed (same as the unsigned
+   * public thread). Omit or `null` for no ring.
+   */
+  permalinkTargetId?: string | null;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -356,8 +362,9 @@ function showForumPm(
  * moderator-appointed notification exists, a labeled pill in the same visual
  * language marks it read; if both pills show, the moderator pill stays at
  * `top-14` and New posts moves to `top-28`.
+ * Optional `permalinkTargetId` rings the matching nested reply only.
  *
- * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread state.
+ * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -417,6 +424,7 @@ export function ForumBoard({
   pmBusyId,
   composerHidden = false,
   onDeleted,
+  permalinkTargetId = null,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -1060,7 +1068,14 @@ export function ForumBoard({
                           <li
                             key={reply.id}
                             data-reply-id={reply.id}
-                            className="rounded-xl border border-app-border bg-app-card px-3 py-2"
+                            {...(permalinkTargetId === reply.id
+                              ? { 'data-permalink-target': 'true' }
+                              : {})}
+                            className={
+                              permalinkTargetId === reply.id
+                                ? 'rounded-xl border border-app-border bg-app-card px-3 py-2 ring-1 ring-app-fg'
+                                : 'rounded-xl border border-app-border bg-app-card px-3 py-2'
+                            }
                           >
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <div className="flex flex-wrap items-center gap-2">

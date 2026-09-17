@@ -3872,6 +3872,7 @@ describe('ForumBoard', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(
@@ -3934,6 +3935,7 @@ describe('ForumBoard', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(
@@ -3988,6 +3990,7 @@ describe('ForumBoard', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(
@@ -4019,5 +4022,39 @@ describe('ForumBoard', () => {
     expect(
       within(replyCard as HTMLElement).queryByRole('button', { name: 'Send a private message' }),
     ).toBeNull();
+  });
+
+  it('rings only the nested reply that matches permalinkTargetId', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 2 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        permalinkTargetId="r1"
+        replies={[
+          { ...SAMPLE, id: 'r1', name: 'Bob', replyCount: 0 },
+          { ...SAMPLE, id: 'r2', name: 'Carol', replyCount: 0 },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const target = document.querySelector('[data-permalink-target="true"]');
+    expect(target).toBe(document.querySelector('[data-reply-id="r1"]'));
+    expect(target?.className).toContain('ring-1');
+    expect(target?.className).toContain('ring-app-fg');
+    expect(
+      document.querySelector('[data-reply-id="r2"]')?.hasAttribute('data-permalink-target'),
+    ).toBe(false);
+    const parent = document.querySelector('[data-message-id="m1"]');
+    expect(parent?.hasAttribute('data-permalink-target')).toBe(false);
+    expect(parent?.className).not.toContain('ring-app-fg');
   });
 });

@@ -47,6 +47,7 @@ function setAdaSession(): void {
       setup: null,
       missing: [],
       aboutMe: null,
+      aboutMeHasPhoto: false,
     },
   });
 }

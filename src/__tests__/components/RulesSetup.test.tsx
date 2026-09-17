@@ -25,6 +25,7 @@ const baseAccount: Account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: 'rules',
   missing: ['rules'],
 };
@@ -99,6 +100,7 @@ describe('RulesSetup', () => {
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
       aboutMe: null,
+      aboutMeHasPhoto: false,
       setup: null,
       missing: [],
     });
@@ -221,6 +223,7 @@ describe('RulesSetup', () => {
       rulesAgreedAt: 1_700_000_001,
       viewKey: 'a'.repeat(64),
       aboutMe: null,
+      aboutMeHasPhoto: false,
       setup: null,
       missing: [],
     });

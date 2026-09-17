@@ -17,6 +17,7 @@ import {
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
+  moderatorProposalsResponseSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -38,6 +39,7 @@ import {
   type LnAddressResolved,
   type MemberProfile,
   type MessageInvoice,
+  type ModeratorProposal,
   type PasskeyBegin,
   type PasskeySession,
   type TrustActionResult,
@@ -187,20 +189,28 @@ export async function setLocation(sessionToken: string, location: string): Promi
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param text - The About me text as typed.
+ * @param photo - JPEG payload to set, `null` to clear, omitted to keep the stored photo.
  * @returns The updated {@link Account}.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
  * @throws Error `'Could not save. Please try again.'` on any other non-2xx
  * status or a 409 body that is not `missing_requirements`.
  * @throws when the 2xx body fails {@link accountSchema} validation.
  */
-export async function putAboutMe(sessionToken: string, text: string): Promise<Account> {
+export async function putAboutMe(
+  sessionToken: string,
+  text: string,
+  photo?: { contentType: string; data: string } | null,
+): Promise<Account> {
   const response = await fetch('/me/about', {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(photo === undefined ? {} : { photo }),
+    }),
   });
   if (response.status === 409) {
     let body: unknown;
@@ -219,6 +229,58 @@ export async function putAboutMe(sessionToken: string, text: string): Promise<Ac
     throw new Error('Could not save. Please try again.');
   }
   return accountSchema.parse(await response.json());
+}
+
+const ABOUT_ME_PHOTO_LOAD_ERROR = 'Could not load. Please try again.';
+
+/**
+ * Fetches the signed-in account's About me photo bytes.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The photo as a Blob.
+ * @throws Error `'Could not load. Please try again.'` on a non-ok response,
+ * an empty blob, or a network failure.
+ */
+export async function fetchAboutMePhoto(sessionToken: string): Promise<Blob> {
+  try {
+    const response = await fetch('/me/about/photo', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    return blob;
+  } catch {
+    throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+  }
+}
+
+/**
+ * Fetches a public view-key profile's About me photo bytes.
+ *
+ * @param viewKey - 64 lowercase hex capability key.
+ * @returns The photo as a Blob.
+ * @throws Error `'Could not load. Please try again.'` on a non-ok response,
+ * an empty blob, or a network failure.
+ */
+export async function fetchViewAboutMePhoto(viewKey: string): Promise<Blob> {
+  try {
+    const response = await fetch(`/view-key/${encodeURIComponent(viewKey)}/about/photo`);
+    if (!response.ok) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    return blob;
+  } catch {
+    throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+  }
 }
 
 /**
@@ -669,6 +731,33 @@ export async function postTrustAppoint(
   accountId: string,
 ): Promise<TrustActionResult> {
   return postTrustAction('/trust/appoint-moderator', sessionToken, accountId);
+}
+
+const TRUST_PROPOSALS_LOAD_ERROR = 'Could not load moderator proposals. Please try again.';
+
+/**
+ * Fetches open moderator proposals for founders and moderators.
+ *
+ * Hits same-origin `GET /trust/proposals` (Bearer). Next.js forbids a
+ * `route.ts` beside `/moderate/proposals`, so the proxy lives at this path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The open-proposal list.
+ * @throws Error with visitor-facing copy on 401/403/503, other non-2xx, a
+ * network failure, or a body that fails {@link moderatorProposalsResponseSchema}.
+ */
+export async function fetchTrustProposals(sessionToken: string): Promise<ModeratorProposal[]> {
+  try {
+    const response = await fetch('/trust/proposals', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(TRUST_PROPOSALS_LOAD_ERROR);
+    }
+    return moderatorProposalsResponseSchema.parse(await response.json()).proposals;
+  } catch {
+    throw new Error(TRUST_PROPOSALS_LOAD_ERROR);
+  }
 }
 
 /**

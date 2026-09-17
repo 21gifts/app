@@ -80,6 +80,7 @@ describe('PublicMessageChrome', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(
@@ -113,6 +114,7 @@ describe('PublicMessageChrome', () => {
         setup: null,
         missing: [],
         aboutMe: null,
+        aboutMeHasPhoto: false,
       },
     });
     renderWithLocale(

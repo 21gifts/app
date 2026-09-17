@@ -42,6 +42,7 @@ const account: Account = {
   rulesAgreedAt: 1_700_000_001,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: null,
   missing: [],
 };
@@ -67,6 +68,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Moderation tools' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
@@ -76,6 +78,7 @@ describe('ModerateScreen', () => {
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
 
@@ -83,6 +86,7 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
 
@@ -100,6 +104,9 @@ describe('ModerateScreen', () => {
     expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
       '/moderate/hidden',
     );
+    expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
+      '/moderate/proposals',
+    );
     expect(listMock).not.toHaveBeenCalled();
   });
 
@@ -110,6 +117,9 @@ describe('ModerateScreen', () => {
     expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
       '/moderate/hidden',
+    );
+    expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
+      '/moderate/proposals',
     );
     expect(listMock).not.toHaveBeenCalled();
   });

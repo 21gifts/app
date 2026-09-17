@@ -346,6 +346,12 @@ const en = {
   'profile.about.save': 'Save About me',
   'profile.about.cancel': 'Cancel',
   'profile.about.error': 'Could not save. Please try again.',
+  'profile.about.attach': 'Add a photo',
+  'profile.about.removePhoto': 'Remove photo',
+  'profile.about.previewAlt': 'Selected photo',
+  'profile.about.photoAlt': 'About me photo',
+  'profile.about.errorUnsupported': 'Use a JPEG, PNG, or WebP photo',
+  'profile.about.errorTooLarge': 'Keep photos under 1 MB',
   'profile.copyLink': 'Copy link to this profile',
   'profile.message': 'Message',
 
@@ -529,6 +535,11 @@ const en = {
   'moderate.listLabel': 'Hidden notes',
   'moderate.hiddenBy': 'Hidden by {name}',
   'moderate.unnamed': 'Unnamed',
+  'moderate.proposals.heading': 'Open proposals',
+  'moderate.proposals.empty': 'No open proposals.',
+  'moderate.proposals.listLabel': 'Open moderator proposals',
+  'moderate.proposals.proposedBy': 'Proposed by {name}',
+  'moderate.proposals.error': 'Could not load open proposals. Please try again.',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -895,6 +906,12 @@ const de = {
   'profile.about.save': 'Über mich speichern',
   'profile.about.cancel': 'Abbrechen',
   'profile.about.error': 'Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.',
+  'profile.about.attach': 'Foto hinzufügen',
+  'profile.about.removePhoto': 'Foto entfernen',
+  'profile.about.previewAlt': 'Ausgewähltes Foto',
+  'profile.about.photoAlt': 'Über-mich-Foto',
+  'profile.about.errorUnsupported': 'JPEG, PNG oder WebP verwenden',
+  'profile.about.errorTooLarge': 'Fotos unter 1 MB halten',
   'profile.copyLink': 'Link zu diesem Profil kopieren',
   'profile.message': 'Nachricht',
 
@@ -1084,6 +1101,12 @@ const de = {
   'moderate.listLabel': 'Ausgeblendete Notizen',
   'moderate.hiddenBy': 'Ausgeblendet von {name}',
   'moderate.unnamed': 'Unbenannt',
+  'moderate.proposals.heading': 'Offene Vorschläge',
+  'moderate.proposals.empty': 'Keine offenen Vorschläge.',
+  'moderate.proposals.listLabel': 'Offene Moderatorvorschläge',
+  'moderate.proposals.proposedBy': 'Vorgeschlagen von {name}',
+  'moderate.proposals.error':
+    'Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1442,6 +1465,12 @@ const es = {
   'profile.about.save': 'Guardar Sobre mí',
   'profile.about.cancel': 'Cancelar',
   'profile.about.error': 'No se pudo guardar. Inténtalo de nuevo.',
+  'profile.about.attach': 'Añadir una foto',
+  'profile.about.removePhoto': 'Quitar foto',
+  'profile.about.previewAlt': 'Foto seleccionada',
+  'profile.about.photoAlt': 'Foto de Sobre mí',
+  'profile.about.errorUnsupported': 'Usa una foto JPEG, PNG o WebP',
+  'profile.about.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
   'profile.copyLink': 'Copiar enlace a este perfil',
   'profile.message': 'Mensaje',
 
@@ -1625,6 +1654,11 @@ const es = {
   'moderate.listLabel': 'Notas ocultas',
   'moderate.hiddenBy': 'Ocultada por {name}',
   'moderate.unnamed': 'Sin nombre',
+  'moderate.proposals.heading': 'Propuestas abiertas',
+  'moderate.proposals.empty': 'No hay propuestas abiertas.',
+  'moderate.proposals.listLabel': 'Propuestas abiertas de moderación',
+  'moderate.proposals.proposedBy': 'Propuesto por {name}',
+  'moderate.proposals.error': 'No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo.',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -1984,6 +2018,12 @@ const fil = {
   'profile.about.save': 'I-save ang Tungkol sa akin',
   'profile.about.cancel': 'Kanselahin',
   'profile.about.error': 'Hindi ma-save. Subukan ulit.',
+  'profile.about.attach': 'Magdagdag ng litrato',
+  'profile.about.removePhoto': 'Alisin ang litrato',
+  'profile.about.previewAlt': 'Napiling litrato',
+  'profile.about.photoAlt': 'Litrato ng Tungkol sa akin',
+  'profile.about.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato',
+  'profile.about.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
   'profile.copyLink': 'Kopyahin ang link sa profile na ito',
   'profile.message': 'Mensahe',
 
@@ -2173,6 +2213,11 @@ const fil = {
   'moderate.listLabel': 'Mga nakatagong nota',
   'moderate.hiddenBy': 'Itinago ni {name}',
   'moderate.unnamed': 'Walang pangalan',
+  'moderate.proposals.heading': 'Mga bukas na mungkahi',
+  'moderate.proposals.empty': 'Walang bukas na mungkahi.',
+  'moderate.proposals.listLabel': 'Mga bukas na mungkahi para maging moderator',
+  'moderate.proposals.proposedBy': 'Iminungkahi ni {name}',
+  'moderate.proposals.error': 'Hindi ma-load ang mga bukas na mungkahi. Subukan ulit.',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

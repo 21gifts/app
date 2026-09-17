@@ -63,6 +63,7 @@ app/
 │   │   │   ├── name/route.ts    # POST /me/name
 │   │   │   ├── location/route.ts # POST /me/location
 │   │   │   ├── about/route.ts   # PUT /me/about
+│   │   │   ├── about/photo/route.ts  # GET /me/about/photo same-origin proxy
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
@@ -105,6 +106,7 @@ app/
 │   │   │           └── activity/route.ts  # GET /forum/members/:id/activity → api GET /members/:id/activity
 │   │   ├── trust/
 │   │   │   ├── graph/route.ts              # GET /trust/graph → api GET /trust-chain
+│   │   │   ├── proposals/route.ts          # GET /trust/proposals
 │   │   │   ├── verify/route.ts             # POST /trust/verify
 │   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
 │   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
@@ -117,6 +119,10 @@ app/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + push bell
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
+│   │   ├── moderate/
+│   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
+│   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
+│   │   │   └── proposals/page.tsx    # GET /moderate/proposals — confirm queue
 │   │   ├── trust-chain/
 │   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
 │   │   │   └── trust-chain-loader.tsx
@@ -127,7 +133,8 @@ app/
 │   │   ├── view-key/
 │   │   │   └── [viewKey]/
 │   │   │       ├── route.ts  # GET /view-key/:viewKey → api GET /view/:viewKey
-│   │   │       └── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
+│   │   │       ├── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
+│   │   │       └── about/photo/route.ts  # GET /view-key/:viewKey/about/photo → api GET /view/:viewKey/about/photo
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
@@ -148,6 +155,9 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals)
+│   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
+│   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # IconButton Bell with visible On/Off value (button stays icon-only)
@@ -165,7 +175,8 @@ app/
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
-│   │   ├── PublicMessageLoader.tsx # read-only public forum note on `/messages/[id]`
+│   │   ├── PublicMessageLoader.tsx # public forum note on `/messages/[id]`; signed-in uses PublicMessageThread, unsigned remains read-only
+│   │   ├── PublicMessageThread.tsx # signed-in permalink ForumBoard (composerHidden, auto-expand, pay/copy/PM/reply/delete)
 │   │   ├── RulesDocument.tsx    # Living-room rules body from catalog keys
 │   │   ├── RulesSetup.tsx       # Onboarding agree control for /setup/rules
 │   │   ├── ContactScreen.tsx    # In-app contact heading + composer
@@ -242,6 +253,7 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
+│   ├── proposals.spec.ts        # /moderate/proposals staff confirm queue
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

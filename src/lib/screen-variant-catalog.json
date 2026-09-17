@@ -864,6 +864,54 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/proposals:default",
+    "label": "/moderate/proposals default",
+    "visual": "screen-moderate-proposals",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:forbidden",
+    "label": "/moderate/proposals forbidden",
+    "visual": "state-moderate-proposals-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:empty",
+    "label": "/moderate/proposals empty",
+    "visual": "state-moderate-proposals-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:loading",
+    "label": "/moderate/proposals loading",
+    "visual": "state-moderate-proposals-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:error",
+    "label": "/moderate/proposals error",
+    "visual": "state-moderate-proposals-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:waiting-confirm",
+    "label": "/moderate/proposals waiting-confirm",
+    "visual": "state-moderate-proposals-waiting-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:confirm-error",
+    "label": "/moderate/proposals confirm-error",
+    "visual": "state-moderate-proposals-confirm-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:confirming",
+    "label": "/moderate/proposals confirming",
+    "visual": "state-moderate-proposals-confirming",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/404:default",
     "label": "/404 default",
     "visual": "screen-404",

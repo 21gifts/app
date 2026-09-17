@@ -15,6 +15,8 @@ import {
   lnAddressResolvedSchema,
   giftStatsSchema,
   memberProfileSchema,
+  moderatorProposalSchema,
+  moderatorProposalsResponseSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -37,6 +39,7 @@ const account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
@@ -51,6 +54,7 @@ describe('memberProfileSchema', () => {
       lightningAddress: 'carol@walletofsatoshi.com',
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
+      aboutMeHasPhoto: false,
       profileMessage: null,
       postCount: 0,
       replyCount: 0,
@@ -76,6 +80,58 @@ describe('memberProfileSchema', () => {
     expect(() => memberProfileSchema.parse({ ...profile, replyCount: 0 })).toThrow();
   });
 
+  it('defaults omitted aboutMeHasPhoto to false', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).aboutMeHasPhoto).toBe(false);
+  });
+
+  it('accepts aboutMeHasPhoto true', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      aboutMeHasPhoto: true,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).aboutMeHasPhoto).toBe(true);
+  });
+
+  it('rejects a non-boolean aboutMeHasPhoto', () => {
+    expect(() =>
+      memberProfileSchema.parse({
+        id: '22222222-2222-4222-8222-222222222222',
+        name: 'Carol',
+        location: null,
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        aboutMeHasPhoto: 'yes',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+      }),
+    ).toThrow();
+  });
+
   it('rejects an empty name string', () => {
     expect(() =>
       memberProfileSchema.parse({
@@ -86,6 +142,7 @@ describe('memberProfileSchema', () => {
         lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
+        aboutMeHasPhoto: false,
         profileMessage: null,
         postCount: 0,
         replyCount: 0,
@@ -120,6 +177,77 @@ describe('trustActionResultSchema', () => {
   it('accepts a staff action snapshot', () => {
     const body = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
     expect(trustActionResultSchema.parse(body)).toEqual(body);
+  });
+});
+
+describe('moderatorProposalSchema', () => {
+  const proposal = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+
+  it('accepts an open proposal with display names', () => {
+    expect(moderatorProposalSchema.parse(proposal)).toEqual(proposal);
+  });
+
+  it('accepts null names', () => {
+    const unnamed = {
+      subject: { id: 'acc_rose', name: null, role: 'verified' as const },
+      proposedBy: { id: 'acc_bob', name: null },
+      createdAt: '2026-08-28T12:00:00.000Z',
+    };
+    expect(moderatorProposalSchema.parse(unnamed)).toEqual(unnamed);
+  });
+
+  it('rejects a subject role other than verified', () => {
+    expect(() =>
+      moderatorProposalSchema.parse({
+        ...proposal,
+        subject: { ...proposal.subject, role: 'moderator' },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects an empty subject id', () => {
+    expect(() =>
+      moderatorProposalSchema.parse({
+        ...proposal,
+        subject: { ...proposal.subject, id: '' },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a createdAt without an offset', () => {
+    expect(() =>
+      moderatorProposalSchema.parse({ ...proposal, createdAt: '2026-08-28T12:00:00.000' }),
+    ).toThrow();
+  });
+});
+
+describe('moderatorProposalsResponseSchema', () => {
+  const proposal = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+
+  it('accepts an empty list', () => {
+    expect(moderatorProposalsResponseSchema.parse({ proposals: [] })).toEqual({ proposals: [] });
+  });
+
+  it('accepts a list of proposals', () => {
+    expect(moderatorProposalsResponseSchema.parse({ proposals: [proposal] })).toEqual({
+      proposals: [proposal],
+    });
+  });
+
+  it('rejects a missing proposals key', () => {
+    expect(() => moderatorProposalsResponseSchema.parse({})).toThrow();
+  });
+
+  it('rejects a non-array proposals value', () => {
+    expect(() => moderatorProposalsResponseSchema.parse({ proposals: proposal })).toThrow();
   });
 });
 
@@ -577,6 +705,20 @@ describe('accountSchema', () => {
   it('rejects an empty location', () => {
     expect(() => accountSchema.parse({ ...account, location: '' })).toThrow();
   });
+
+  it('defaults omitted aboutMeHasPhoto to false', () => {
+    const without: Record<string, unknown> = { ...account };
+    delete without['aboutMeHasPhoto'];
+    expect(accountSchema.parse(without).aboutMeHasPhoto).toBe(false);
+  });
+
+  it('accepts aboutMeHasPhoto true', () => {
+    expect(accountSchema.parse({ ...account, aboutMeHasPhoto: true }).aboutMeHasPhoto).toBe(true);
+  });
+
+  it('rejects a non-boolean aboutMeHasPhoto', () => {
+    expect(() => accountSchema.parse({ ...account, aboutMeHasPhoto: 'yes' })).toThrow();
+  });
 });
 
 describe('viewProfileSchema', () => {
@@ -588,6 +730,7 @@ describe('viewProfileSchema', () => {
     createdAt: 1_700_000_000,
     hasPasskey: false,
     aboutMe: null,
+    aboutMeHasPhoto: false,
   };
 
   it('accepts a well-formed named profile', () => {
@@ -605,6 +748,22 @@ describe('viewProfileSchema', () => {
 
   it('rejects an empty location', () => {
     expect(() => viewProfileSchema.parse({ ...profile, location: '' })).toThrow();
+  });
+
+  it('defaults omitted aboutMeHasPhoto to false', () => {
+    const without: Record<string, unknown> = { ...profile };
+    delete without['aboutMeHasPhoto'];
+    expect(viewProfileSchema.parse(without).aboutMeHasPhoto).toBe(false);
+  });
+
+  it('accepts aboutMeHasPhoto true', () => {
+    expect(viewProfileSchema.parse({ ...profile, aboutMeHasPhoto: true }).aboutMeHasPhoto).toBe(
+      true,
+    );
+  });
+
+  it('rejects a non-boolean aboutMeHasPhoto', () => {
+    expect(() => viewProfileSchema.parse({ ...profile, aboutMeHasPhoto: 'yes' })).toThrow();
   });
 });
 

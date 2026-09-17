@@ -10,12 +10,14 @@ import {
   fetchAccountActivity,
   fetchGiftDay,
   fetchGiftStats,
+  fetchAboutMePhoto,
   fetchMe,
   fetchMember,
   fetchMemberActivity,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchTrustChain,
+  fetchTrustProposals,
   fetchMessagePhoto,
   fetchMessages,
   fetchPublicMessage,
@@ -23,6 +25,7 @@ import {
   fetchPublicReplies,
   fetchReplies,
   fetchVapidPublicKey,
+  fetchViewAboutMePhoto,
   fetchViewActivity,
   fetchViewProfile,
   finishPasskeyAuthentication,
@@ -68,6 +71,7 @@ const account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMeHasPhoto: false,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as const,
 };
@@ -130,6 +134,7 @@ describe('fetchViewProfile', () => {
     createdAt: 1,
     hasPasskey: false,
     aboutMe: null,
+    aboutMeHasPhoto: false,
   };
 
   it('returns the validated profile and hits the same-origin proxy path', async () => {
@@ -188,6 +193,7 @@ describe('fetchMember', () => {
     lightningAddress: 'carol@walletofsatoshi.com',
     createdAt: '2026-01-15T12:00:00.000Z',
     aboutMe: null,
+    aboutMeHasPhoto: false,
     profileMessage: null,
     postCount: 0,
     replyCount: 0,
@@ -374,6 +380,37 @@ describe('putAboutMe', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hello from Ada.' }),
+    });
+  });
+
+  it('includes photo:null when the third argument is null', async () => {
+    const updated = { ...account, aboutMe: 'Hello' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(putAboutMe('sess', 'Hello', null)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello', photo: null }),
+    });
+  });
+
+  it('includes the photo object when the third argument is a payload', async () => {
+    const updated = { ...account, aboutMe: 'Hello', aboutMeHasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+    const photo = { contentType: 'image/jpeg', data: 'abc' };
+
+    await expect(putAboutMe('sess', 'Hello', photo)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello', photo }),
     });
   });
 
@@ -1669,6 +1706,107 @@ describe('fetchMessagePhoto', () => {
   });
 });
 
+describe('fetchAboutMePhoto', () => {
+  it('returns the blob and sends the bearer header', async () => {
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchAboutMePhoto('sess')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/me/about/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchAboutMePhoto('sess')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchAboutMePhoto('sess')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchAboutMePhoto('sess')).rejects.toThrow('Could not load. Please try again.');
+  });
+});
+
+describe('fetchViewAboutMePhoto', () => {
+  it('returns the blob without Authorization', async () => {
+    const viewKey = 'a'.repeat(64);
+    const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchViewAboutMePhoto(viewKey)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${viewKey}/about/photo`);
+  });
+
+  it('encodes the view key in the path', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchViewAboutMePhoto('a/b');
+    expect(fetchMock).toHaveBeenCalledWith('/view-key/a%2Fb/about/photo');
+  });
+
+  it('throws when the response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchViewAboutMePhoto('vk')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchViewAboutMePhoto('vk')).rejects.toThrow('Could not load. Please try again.');
+  });
+
+  it('throws when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchViewAboutMePhoto('vk')).rejects.toThrow('Could not load. Please try again.');
+  });
+});
+
 describe('fetchPublicMessage', () => {
   it('GETs /public-messages/:id and returns the message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
@@ -2477,6 +2615,70 @@ describe('fetchTrustChain', () => {
     await expect(fetchTrustChain('sess')).rejects.toThrow(
       'Could not load the Trust Chain. Please try again.',
     );
+  });
+});
+
+describe('fetchTrustProposals', () => {
+  const proposal = {
+    subject: { id: 'acc_rose', name: 'Rose', role: 'verified' as const },
+    proposedBy: { id: 'acc_bob', name: 'Bob' },
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+  const loadError = 'Could not load moderator proposals. Please try again.';
+
+  it('returns the validated proposals and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { proposals: [proposal] } });
+    await expect(fetchTrustProposals('sess')).resolves.toEqual([proposal]);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/proposals', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('returns an empty list', async () => {
+    stubFetch({ ok: true, status: 200, body: { proposals: [] } });
+    await expect(fetchTrustProposals('sess')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('not json')),
+      } as unknown as Response),
+    );
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { proposals: [{ id: 'acc_rose' }] } });
+    await expect(fetchTrustProposals('sess')).rejects.toThrow(loadError);
   });
 });
 

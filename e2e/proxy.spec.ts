@@ -31,6 +31,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/me/name')).status()).toBe(401);
   expect((await request.post('/me/location')).status()).toBe(401);
   expect((await request.put('/me/about')).status()).toBe(401);
+  expect((await request.get('/me/about/photo')).status()).toBe(401);
   expect((await request.post('/me/rules-agreement')).status()).toBe(401);
   expect((await request.post('/me/lightning-address')).status()).toBe(401);
   expect((await request.delete('/me/lightning-address')).status()).toBe(401);
@@ -42,6 +43,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   ).toBeGreaterThanOrEqual(400);
   expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
   expect((await request.get('/trust/graph')).status()).toBe(401);
+  expect((await request.get('/trust/proposals')).status()).toBe(401);
   expect((await request.post('/trust/verify')).status()).toBe(401);
   expect((await request.post('/trust/propose-moderator')).status()).toBe(401);
   expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);
@@ -52,5 +54,8 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(200);
   expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(400);
   expect((await request.get('/view-key/[viewKey]')).status()).toBeGreaterThanOrEqual(400);
+  expect((await request.get('/view-key/[viewKey]/about/photo')).status()).toBeGreaterThanOrEqual(
+    400,
+  );
   expect((await request.get(`/view-key/${'a'.repeat(64)}`)).status()).toBe(404);
 });

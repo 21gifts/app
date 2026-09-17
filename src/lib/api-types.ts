@@ -21,6 +21,8 @@ export const accountSchema = z.object({
   viewKey: z.string().regex(/^[0-9a-f]{64}$/),
   /** About me note, or `null` when unfilled (name-only auto notes). */
   aboutMe: z.string().nullable(),
+  /** True when the live profile note has a photo. Optional so older api bodies still parse. */
+  aboutMeHasPhoto: z.boolean().optional().default(false),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
   setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
@@ -54,6 +56,8 @@ export const accountSchema = z.object({
  * never rendered as visible text in the signed-in profile UI).
  * `aboutMe` is the profile card note, or `null` until the giver writes one
  * (name-only auto notes from the api are `null`).
+ * `aboutMeHasPhoto` is true when the live profile note has a photo (optional
+ * on older api bodies; defaults to false).
  * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
  * or `null` when onboarding is complete (including after skips). `missing` lists
  * fields still unset for posting; skipped steps stay listed until filled.
@@ -78,10 +82,13 @@ export const viewProfileSchema = z.object({
   hasPasskey: z.boolean(),
   /** About me note, or `null` when unfilled. */
   aboutMe: z.string().nullable(),
+  /** True when the live profile note has a photo. Optional so older api bodies still parse. */
+  aboutMeHasPhoto: z.boolean().optional().default(false),
 });
 
 /**
  * Public profile fields returned by the view-key endpoint (no id, linkingKey, role, or viewKey).
+ * `aboutMeHasPhoto` is true when the live profile note has a photo.
  */
 export type ViewProfile = z.infer<typeof viewProfileSchema>;
 
@@ -629,6 +636,8 @@ export const memberProfileSchema = z.object({
   replyCount: z.number().int().nonnegative(),
   /** About me note, or `null` when unfilled. */
   aboutMe: z.string().nullable(),
+  /** True when the live profile note has a photo. Optional so older api bodies still parse. */
+  aboutMeHasPhoto: z.boolean().optional().default(false),
   trust: accountTrustSchema.optional().default(accountTrustNull),
 });
 
@@ -691,3 +700,35 @@ export const trustActionResultSchema = z.object({
  * Updated account snapshot after a staff trust action.
  */
 export type TrustActionResult = z.infer<typeof trustActionResultSchema>;
+
+/**
+ * Runtime schema for one open moderator proposal from `GET /trust/proposals`.
+ *
+ * `subject.role` is always `verified` (the member is waiting for a second
+ * staff confirm). `subject.name` and `proposedBy.name` may be null when the
+ * account has no display name yet.
+ */
+export const moderatorProposalSchema = z.object({
+  subject: z.object({
+    id: z.string().min(1),
+    name: z.string().nullable(),
+    role: z.literal('verified'),
+  }),
+  proposedBy: z.object({
+    id: z.string().min(1),
+    name: z.string().nullable(),
+  }),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/**
+ * Runtime schema for the payload of `GET /trust/proposals`.
+ */
+export const moderatorProposalsResponseSchema = z.object({
+  proposals: z.array(moderatorProposalSchema),
+});
+
+/**
+ * One open moderator proposal from the api.
+ */
+export type ModeratorProposal = z.infer<typeof moderatorProposalSchema>;

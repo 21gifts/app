@@ -86,10 +86,24 @@
 
 ## Endpoint: PUT /me/about
 
-- **Purpose:** Same-origin proxy of api `PUT /me/about` (set or replace the signed-in About me note).
+- **Purpose:** Same-origin proxy of api `PUT /me/about` (set or replace the signed-in About me note). JSON `{ text, photo? }`: `photo` omitted keeps a stored image, `null` clears it, `{ contentType, data }` sets a JPEG/PNG/WebP like a forum post.
 - **Errors:** Upstream 400/401/409, or 502 if the api is unreachable.
 - **Used by:** `putAboutMe`.
 - **Auth:** Bearer.
+
+## Endpoint: GET /me/about/photo
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw JPEG/PNG/WebP bytes for the signed-in About me note). Always render via blob URLs — not bare `<img src>`.
+- **Errors:** Upstream 401/404, or 502 if the api is unreachable.
+- **Used by:** `fetchAboutMePhoto`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /view-key/[viewKey]/about/photo
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/about/photo` (raw JPEG/PNG/WebP bytes for the view-key About me note). Always render via blob URLs — not bare `<img src>`.
+- **Errors:** Upstream 404, or 502 if the api is unreachable.
+- **Used by:** `fetchViewAboutMePhoto`.
+- **Auth:** none.
 
 ## Endpoint: POST /me/setup/skip
 
@@ -329,6 +343,13 @@
 - **Used by:** `fetchTrustChain` on signed-in `/trust-chain` (forwards `?around=`).
 - **Auth:** Bearer.
 
+## Endpoint: GET /trust/proposals
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /trust/proposals` (open moderator proposals for founders and moderators). Lives under `/trust/proposals` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/proposals`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals`. `ModerateScreen` on `/moderate` does not call this GET. Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
+- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+
 ## Endpoint: POST /trust/verify
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId }`.
@@ -347,7 +368,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/confirm-moderator` with `{ accountId }`.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
-- **Used by:** `postTrustConfirm` in `MemberTrustActions`.
+- **Used by:** `postTrustConfirm` in `MemberTrustActions` and `ProposalsScreen`.
 - **Auth:** Bearer (founder or moderator, not the proposer).
 
 ## Endpoint: POST /trust/appoint-moderator
