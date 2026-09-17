@@ -2210,10 +2210,11 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    clickGiftOnReply();
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    const replyCard = clickGiftOnReply();
+    expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
   it('clears the pay sheet when a public fetch returns more sats', async () => {
