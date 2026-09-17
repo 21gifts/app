@@ -922,6 +922,12 @@ Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500,
 
 ![21.gifts profile About me save error](images/profile-about-save-error.png)
 
+### Variant: notification-level-error
+
+Notifications section with `role="alert"` save error after stubbing POST /me/notification-level to 500 and clicking Active. Copy **Could not save notification level.**
+
+![21.gifts profile notification level error](images/profile-notification-level-error.png)
+
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.

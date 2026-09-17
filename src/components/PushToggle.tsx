@@ -161,7 +161,9 @@ export function PushToggle(): ReactElement | null {
       />
       <p className="text-sm text-app-muted">{t('profile.push.level.hint')}</p>
       {levelError ? (
-        <p className="text-sm text-app-muted">{t('profile.push.level.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('profile.push.level.error')}
+        </p>
       ) : null}
       {showBell && showInstallHint ? (
         <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>

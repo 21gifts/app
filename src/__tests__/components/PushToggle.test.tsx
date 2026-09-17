@@ -257,7 +257,8 @@ describe('PushToggle', () => {
     vi.mocked(postNotificationLevel).mockRejectedValue(new Error('boom'));
     renderWithLocale(<PushToggle />);
     fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
-    expect(await screen.findByText('Could not save notification level.')).toBeTruthy();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not save notification level.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
     expect(useAuthStore.getState().account?.notificationLevel).toBeUndefined();
   });
