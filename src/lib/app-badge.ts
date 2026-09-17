@@ -55,7 +55,8 @@ export function setUnreadAppBadge(count: number): void {
  * Fetches `GET /forum/notifications` and, unless `inboxUnreadOverride` is
  * passed, `GET /conversations`. Either side failing contributes `0`. Captures
  * the badge epoch at start; skips the write if it changed (callers that already
- * know a newer count should `bumpUnreadAppBadgeEpoch` first). Fetch errors are
+ * know a newer count should `bumpUnreadAppBadgeEpoch` first) or if
+ * `loadSession()` is no longer `sessionToken`. Fetch errors are
  * swallowed so callers can fire-and-forget.
  *
  * @param sessionToken - Bearer token for the signed-in session.

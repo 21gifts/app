@@ -394,7 +394,7 @@
 - **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear, and after inbox mark-read so they do not overwrite the remaining sum.
 - **Inputs:** None.
 - **Returns / side effects:** The new epoch number.
-- **Used by:** `NotificationsLoader`, `InboxLoader`.
+- **Used by:** `NotificationsLoader`, `InboxLoader`, `useAuthStore.clearAuth`.
 
 ## Function: unreadAppBadgeEpoch
 
@@ -405,9 +405,9 @@
 
 ## Function: refreshUnreadAppBadge
 
-- **Purpose:** Refresh the installed PWA home-screen badge to notification unread plus inbox unread. Fetches `GET /forum/notifications` and, unless an inbox override is passed, `GET /conversations`. Either side failing contributes 0. Captures the badge epoch at start; skips the write if it changed. Never rejects.
+- **Purpose:** Refresh the installed PWA home-screen badge to notification unread plus inbox unread. Fetches `GET /forum/notifications` and, unless an inbox override is passed, `GET /conversations`. Either side failing contributes 0. Captures the badge epoch at start; skips the write if the epoch changed or `loadSession()` is not still `sessionToken`. Never rejects.
 - **Inputs:** `sessionToken` (string). Optional `inboxUnreadOverride` (number) — when set, skip the conversations fetch and use that inbox unread count (e.g. the local list after mark-read).
-- **Returns / side effects:** `Promise<void>`. Calls `setUnreadAppBadge` with the sum. Fire-and-forget safe.
+- **Returns / side effects:** `Promise<void>`. Calls `setUnreadAppBadge` with the sum only when the epoch is unchanged and `loadSession() === sessionToken`. Fire-and-forget safe.
 - **Used by:** `InboxLoader` after a successful thread load and mark-read.
 
 ## Function: vapidPublicKeyToBytes
@@ -1653,7 +1653,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Zustand store for `session` + `account`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`.
-- **Returns / side effects:** Auth state object. `clearAuth` also calls `setUnreadAppBadge(0)` after clearing storage.
+- **Returns / side effects:** Auth state object. `clearAuth` clears storage, then `bumpUnreadAppBadgeEpoch()` then `setUnreadAppBadge(0)`, then drops `session` and `account`.
 - **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations

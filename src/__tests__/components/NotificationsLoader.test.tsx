@@ -381,6 +381,42 @@ describe('NotificationsLoader', () => {
     expect(setBadgeMock).not.toHaveBeenCalledWith(2);
   });
 
+  it('does not write remaining inbox when the stored session no longer matches', async () => {
+    listMock.mockResolvedValue(LIST);
+    let resolveRows!: (value: Conversation[]) => void;
+    conversationsMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRows = resolve;
+        }),
+    );
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    window.localStorage.removeItem('21gifts.session');
+    await act(async () => {
+      resolveRows([UNREAD_CONVERSATION]);
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(1);
+  });
+
+  it('does not write inbox 0 on fetch failure when the stored session no longer matches', async () => {
+    listMock.mockResolvedValue(LIST);
+    let rejectRows!: (reason?: unknown) => void;
+    conversationsMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRows = reject;
+        }),
+    );
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    window.localStorage.removeItem('21gifts.session');
+    await act(async () => {
+      rejectRows(new Error('fail'));
+    });
+    expect(setBadgeMock).not.toHaveBeenCalled();
+  });
+
   it('does not write a stale inbox error badge after the epoch bumps again', async () => {
     const epochMock = vi.mocked(unreadAppBadgeEpoch);
     let epoch = 0;

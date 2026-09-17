@@ -6056,9 +6056,11 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
   });
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await expect.poll(() => notificationGets).toBeGreaterThan(0);
+  const beforeThread = notificationGets;
   await page.getByRole('button', { name: '21.gifts, Unread' }).click();
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
-  await expect.poll(() => notificationGets).toBeGreaterThan(0);
+  await expect.poll(() => notificationGets).toBe(beforeThread + 1);
 });
 
 test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {
