@@ -15,7 +15,8 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { Button, Card, IconButton } from '@/components/ui';import {
+import { Button, Card } from '@/components/ui';
+import {
   fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
