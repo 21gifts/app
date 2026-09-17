@@ -15,7 +15,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { Button, IconButton } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
 import {
   fetchGiftStats,
   fetchMemberPosts,
@@ -971,7 +971,7 @@ export function MemberProfileScreen({
         />
       ) : null}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
-        <section className="flex w-full flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm">
+        <Card>
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
@@ -1074,7 +1074,7 @@ export function MemberProfileScreen({
           listedProfile.id !== account.id ? (
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
           ) : null}
-        </section>
+        </Card>
         {activity === 'posts' || activity === 'replies' ? (
           activityLoading ? (
             <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
