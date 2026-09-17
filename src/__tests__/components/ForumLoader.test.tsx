@@ -608,6 +608,34 @@ describe('ForumLoader', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
   });
 
+  it('falls back to hasPhoto when photoCount is omitted', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        ...SAMPLE,
+        id: 'm-omit-photo',
+        hasPhoto: true,
+        text: '',
+        photoCount: undefined as unknown as number,
+        sats: 1,
+      },
+      {
+        ...SAMPLE,
+        id: 'm-omit-none',
+        hasPhoto: false,
+        photoCount: undefined as unknown as number,
+        sats: 1,
+      },
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm-omit-photo', 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  });
+
   it('does not fetch photos for unpaid hasPhoto notes on Active', async () => {
     fetchMock.mockResolvedValue([
       {
@@ -1021,6 +1049,41 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:video');
     });
+  });
+
+  it('sets unsupported when revoking a video draft throws while picking a photo', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const clip = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    const jpeg = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file: clip, poster, previewUrl: 'blob:video' },
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [clip] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
+    vi.mocked(URL.revokeObjectURL).mockImplementationOnce(() => {
+      throw new Error('revoke failed');
+    });
+    fireEvent.change(input, { target: { files: [jpeg] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
+    });
+    vi.mocked(URL.revokeObjectURL).mockImplementation(() => undefined);
   });
 
   it('revokes a video draft preview on unmount', async () => {

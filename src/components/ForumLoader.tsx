@@ -1010,6 +1010,7 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const onPickFiles = (files: File[]): void => {
+    /* v8 ignore next 3 -- ForumBoard skips onPickFiles when the FileList is empty */
     if (files.length === 0) {
       return;
     }
@@ -1069,6 +1070,7 @@ export function ForumLoader(): ReactElement | null {
             }
           }
         }
+        /* v8 ignore next 3 -- generation already checked after each await in the stills loop */
         if (generation !== pickGeneration.current) {
           return;
         }

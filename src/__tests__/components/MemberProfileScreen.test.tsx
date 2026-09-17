@@ -2958,6 +2958,27 @@ describe('MemberProfileScreen', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
   });
 
+  it('loads a photo blob URL when photoCount is omitted on a hasPhoto post', async () => {
+    vi.mocked(fetchMemberPosts).mockResolvedValue([
+      { ...secondPost, hasPhoto: true, photoCount: undefined as unknown as number },
+      {
+        ...secondPost,
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        hasPhoto: false,
+        photoCount: undefined as unknown as number,
+        text: 'plain post',
+      },
+    ]);
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id, 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+  });
+
   it('loads a photo blob URL for a listed profile note', async () => {
     renderWithLocale(
       <MemberProfileScreen

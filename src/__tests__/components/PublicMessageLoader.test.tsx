@@ -241,6 +241,51 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByAltText('Photo from Ada').className).not.toContain('rounded-2xl');
   });
 
+  it('loads a photo blob URL when photoCount is omitted on a hasPhoto note', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasPhoto: true,
+      photoCount: undefined as unknown as number,
+      text: '',
+    });
+    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+    });
+    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
+  });
+
+  it('renders text without a photo when photoCount is omitted and hasPhoto is false', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasPhoto: false,
+      photoCount: undefined as unknown as number,
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('loads a photo gallery when photoCount is greater than one', async () => {
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 2, text: '' });
+    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    vi.spyOn(URL, 'createObjectURL')
+      .mockReturnValueOnce('blob:public-0')
+      .mockReturnValueOnce('blob:public-1');
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(2);
+    });
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('data-photo-index')).toBe('0');
+    expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
+    expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
+    expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+  });
+
   it('renders a video when hasVideo is true', async () => {
     fetchMessage.mockResolvedValue({
       ...sample,

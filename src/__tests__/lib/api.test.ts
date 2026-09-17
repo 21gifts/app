@@ -1985,6 +1985,18 @@ describe('fetchPublicMessagePhoto', () => {
     expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo');
   });
 
+  it('fetches an extra still at /photo/1.jpg', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchPublicMessagePhoto('m1', 1)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo/1.jpg');
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     vi.stubGlobal(
       'fetch',

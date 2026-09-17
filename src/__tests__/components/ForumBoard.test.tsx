@@ -1109,6 +1109,41 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('listitem').getAttribute('data-message-id')).toBe('m-photo');
   });
 
+  it('renders omitted photoCount as a photo or as text depending on hasPhoto', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-omit-photo',
+            hasPhoto: true,
+            text: '',
+            photoCount: undefined as unknown as number,
+          },
+          {
+            ...SAMPLE,
+            id: 'm-omit-none',
+            hasPhoto: false,
+            photoCount: undefined as unknown as number,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-omit-photo:0': 'blob:photo' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  });
+
   it('renders caption text below the photo', () => {
     renderWithLocale(
       <ForumBoard
@@ -1328,6 +1363,29 @@ describe('ForumBoard', () => {
     expect(previews).toHaveLength(2);
     expect(previews[0]?.getAttribute('src')).toBe(PHOTO.previewUrl);
     expect(previews[1]?.getAttribute('src')).toBe(PHOTO2.previewUrl);
+  });
+
+  it('removes a gallery photo draft by index', () => {
+    const onRemovePhoto = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoDrafts={[PHOTO, PHOTO2]}
+        onRemovePhoto={onRemovePhoto}
+        {...modeProps('active')}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[1]!);
+    expect(onRemovePhoto).toHaveBeenCalledWith(1);
   });
 
   it('shows a video draft preview and clear control', () => {
