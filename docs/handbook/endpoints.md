@@ -333,7 +333,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, and moderator appointment for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
-- **Used by:** `fetchNotifications` via `NotificationsLoader` on `/notifications`, via `useUnreadCount` in `SignedInChrome`, and via `ForumLoader` on `/welcome`.
+- **Used by:** `fetchNotifications` via `NotificationsLoader` on `/notifications`, via `useUnreadCount` in `SignedInChrome`, via `ForumLoader` on `/welcome`, and via `refreshUnreadAppBadge` (from `InboxLoader` after mark-read).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /forum/notifications/read-all

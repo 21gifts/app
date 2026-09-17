@@ -1507,7 +1507,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the bearer token from `localStorage`.
 - **Inputs:** None.
 - **Returns / side effects:** Token string or `null`. SSR-safe.
-- **Used by:** `useHydrateSession` on mount, `useUnreadCount`.
+- **Used by:** `useHydrateSession` on mount, `useUnreadCount`, `refreshUnreadAppBadge`, `NotificationsLoader`.
 
 ## Function: loadUnpaidSeenAt
 
