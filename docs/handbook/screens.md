@@ -900,7 +900,7 @@ Owner card with a real bio not equal to the display name. Seed GET /me with `nam
 
 ### Variant: about-photo
 
-Photo-only filled owner card. Seed GET /me with `aboutMe: null`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`) plus the icon-only pencil (`Edit About me`), not the empty CTA.
+Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA.
 
 ![21.gifts profile About me photo](images/profile-about-photo.png)
 
@@ -1224,7 +1224,7 @@ Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy
 
 ### Variant: about-photo
 
-Valid known key with a photo-only About me (`aboutMe: null`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading and photo (`About me photo`). Copy-profile-link remains. No edit.
+Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading, bio, and photo (`About me photo`). Copy-profile-link remains. No edit.
 
 ![21.gifts public view about photo](images/view-about-photo.png)
 

@@ -3377,7 +3377,7 @@ test.describe('onboarding screens', () => {
           lightningAddressVerified: false,
           createdAt: 1,
           hasPasskey: false,
-          aboutMe: null,
+          aboutMe: 'I build on Bitcoin',
           aboutMeHasPhoto: true,
         }),
       });
@@ -3397,6 +3397,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
     await expect(page.getByAltText('About me photo')).toBeVisible();
     await shotScreen(page, 'state-view-about-photo');
   });
@@ -3743,7 +3744,7 @@ test.describe('profile activity chart variants', () => {
   });
 
   test('profile about-photo', async ({ page }) => {
-    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: true });
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await page.route(/\/me\/about\/photo$/, async (route) => {
       await route.fulfill({
@@ -3753,6 +3754,7 @@ test.describe('profile activity chart variants', () => {
       });
     });
     await page.goto('/profile');
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
     await expect(page.getByAltText('About me photo')).toBeVisible();
     await shotScreen(page, 'state-profile-about-photo');
   });
