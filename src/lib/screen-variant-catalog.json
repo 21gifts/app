@@ -624,6 +624,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:about-photo",
+    "label": "/profile about-photo",
+    "visual": "state-profile-about-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:about-editing",
     "label": "/profile about-editing",
     "visual": "state-profile-about-editing",
@@ -657,6 +663,12 @@
     "id": "/view/[viewKey]:about-filled",
     "label": "/view/[viewKey] about-filled",
     "visual": "state-view-about-filled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-photo",
+    "label": "/view/[viewKey] about-photo",
+    "visual": "state-view-about-photo",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

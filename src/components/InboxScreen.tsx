@@ -163,18 +163,12 @@ function inboxAuthorProfileButton(
  * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on
  * the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`;
  * text+sats show the amount under the body. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. Heading and incoming author names with a
- * a 500-character composer. Members (`showFilter` false) see the unfiltered
- * inbound list. Founder/moderator (`showFilter` true) see the origin control
- * (Direct / Contact / Damus); default Direct. Origin labels come from
- * {@link Conversation} `kind`. Outbound last-text previews use
- * `inbox.sentPreview` as a filled chip. Unread inbound rows use a semibold
+ * Wallet of Satoshi / QR pay sheet. Unread inbound rows use a semibold
  * counterpart name and `text-app-fg` last-text (read inbound last-text stays
- * muted). Incoming thread messages are full-width
- * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the
- * right labelled `inbox.you`. Heading and incoming author names with a
- * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
- * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
+ * muted) plus `aria-label` `inbox.threadUnread`. Heading and incoming author
+ * names with a non-empty `accountId` are `inbox.authorProfile` buttons to
+ * `/members/:id`; `fromMe` stays `inbox.you` text; Damus or a missing id stays
+ * plain text.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.

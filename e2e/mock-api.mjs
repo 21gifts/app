@@ -64,6 +64,7 @@ function publicConversation(row) {
     lastText: row.lastText,
     lastAt: row.lastAt,
     lastFromMe: row.lastFromMe === true,
+    lastSats: Number(row.lastSats ?? 0),
     unread: conversationUnread(row),
   };
 }
@@ -549,22 +550,7 @@ const server = http.createServer(async (req, res) => {
       )
       .map(publicConversation);
     json(res, 200, {
-      conversations: conversations
-        .filter((row) => row.ownerId === account.id)
-        .filter(
-          (row) =>
-            row.messages.some((message) => message.fromMe !== true) ||
-            ((row.kind ?? 'member_member') === 'member_platform' && row.messages.length > 0),
-        )
-        .map((row) => ({
-          id: row.id,
-          kind: row.kind ?? 'member_member',
-          name: row.name,
-          lastText: row.lastText,
-          lastAt: row.lastAt,
-          lastFromMe: row.lastFromMe === true,
-          lastSats: Number(row.lastSats ?? 0),
-        })),
+      conversations: list,
       unreadCount: list.filter((row) => row.unread).length,
     });
     return;
@@ -615,15 +601,6 @@ const server = http.createServer(async (req, res) => {
       };
       conversations.unshift(thread);
     }
-    json(res, 200, {
-      id: thread.id,
-      kind: thread.kind ?? 'member_member',
-      name: thread.name,
-      lastText: thread.lastText,
-      lastAt: thread.lastAt,
-      lastFromMe: thread.lastFromMe === true,
-      lastSats: Number(thread.lastSats ?? 0),
-    });
     json(res, 200, publicConversation(thread));
     return;
   }

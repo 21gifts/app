@@ -190,9 +190,7 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setMessages(next);
-        await markConversationRead(session, openId).catch(() => undefined);
-        markedReadGen.current.set(openId, listFetchGen.current);
-        let remainingInboxUnread =
+        const remainingFromList =
           conversations === null
             ? undefined
             : conversations.filter((row) => row.id !== openId && row.unread).length;
@@ -202,20 +200,32 @@ export function InboxLoader(): ReactElement | null {
           }
           return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
         });
-        bumpUnreadAppBadgeEpoch();
-        if (remainingInboxUnread === undefined) {
+        markedReadGen.current.set(openId, listFetchGen.current);
+        void markConversationRead(session, openId).catch(() => undefined);
+        if (remainingFromList !== undefined) {
+          bumpUnreadAppBadgeEpoch();
+          void refreshUnreadAppBadge(session, remainingFromList).catch(() => undefined);
+        } else {
           try {
             const rows = await fetchConversations(session);
             /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
             if (cancelled) {
               return;
             }
-            remainingInboxUnread = rows.filter((row) => row.id !== openId && row.unread).length;
+            bumpUnreadAppBadgeEpoch();
+            void refreshUnreadAppBadge(
+              session,
+              rows.filter((row) => row.id !== openId && row.unread).length,
+            ).catch(() => undefined);
           } catch {
-            remainingInboxUnread = 0;
+            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
+            if (cancelled) {
+              return;
+            }
+            bumpUnreadAppBadgeEpoch();
+            void refreshUnreadAppBadge(session, 0).catch(() => undefined);
           }
         }
-        void refreshUnreadAppBadge(session, remainingInboxUnread).catch(() => undefined);
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {
