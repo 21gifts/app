@@ -510,6 +510,33 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('advances from rules to name when the overlay still has a gap', async () => {
+    signIn({
+      role: 'founder',
+      name: null,
+      rulesAgreedAt: null,
+      missing: ['rules', 'name'],
+    });
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      role: 'founder',
+      name: null,
+      rulesAgreedAt: 2,
+      missing: ['name'],
+      setup: 'name',
+    });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reply');
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('dialog', { name: /rules/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
   it('retries an unpaid staff reply after a missing_requirements overlay is satisfied', async () => {
     signIn({ role: 'founder' });
     vi.mocked(agreeToRules).mockResolvedValue({

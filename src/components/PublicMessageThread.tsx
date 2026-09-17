@@ -584,7 +584,6 @@ export function PublicMessageThread(props: {
       return;
     }
     const still = nextPostRequirement(current.missing);
-    /* v8 ignore next 4 -- overlay save left another requirement */
     if (still !== null) {
       setOverlayRequirement(still);
       return;
