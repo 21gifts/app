@@ -940,6 +940,23 @@ describe('forumMessageSchema', () => {
   it('rejects an unknown role', () => {
     expect(() => forumMessageSchema.parse({ ...message, role: 'admin' })).toThrow();
   });
+
+  it('parses a reply with via nostr and omits via when absent', () => {
+    const reply = {
+      ...message,
+      parentId: 'parent-1',
+      via: 'nostr' as const,
+      payable: false,
+    };
+    expect(forumMessageSchema.parse(reply).via).toBe('nostr');
+    const parsed = forumMessageSchema.parse(message);
+    expect(parsed.via).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'via')).toBe(false);
+  });
+
+  it('rejects an unknown via value', () => {
+    expect(() => forumMessageSchema.parse({ ...message, via: 'something-else' })).toThrow();
+  });
 });
 
 describe('passkeyBeginSchema', () => {
