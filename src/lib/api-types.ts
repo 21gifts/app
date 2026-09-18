@@ -408,8 +408,8 @@ export const forumListSchema = z.object({
  * note. `hasVideo` / `videoContentType` default when an older api omits them.
  * `deletedBy.id`, `deletedBy.name`, and `deletedBy.role` may be null when the
  * deleter row is missing.
- * `via` is present only on a hidden note originally written by a Nostr user with no 21.gifts
- * account; any other `via` value fails the parse.
+ * `via` is any non-empty string marking a row written without a 21.gifts
+ * account (today the api sends `'nostr'`); only an empty string fails the parse.
  */
 export const hiddenMessageSchema = z.object({
   id: z.string().min(1),
@@ -431,7 +431,7 @@ export const hiddenMessageSchema = z.object({
     name: z.string().min(1).nullable(),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).nullable(),
   }),
-  via: z.literal('nostr').optional(),
+  via: z.string().min(1).optional(),
 });
 
 /**

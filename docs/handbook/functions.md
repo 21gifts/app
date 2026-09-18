@@ -711,9 +711,9 @@
 
 ## Function: publicMessageOgMetadata
 
-- **Purpose:** Maps a loaded public note (or `null`) to Next.js `Metadata`. Found notes use the author name as title and never the marketing layout description, even when `text` is empty. Photo notes set `og:image` to `/messages/{id}/photo`; others keep `/og.png`. A note with `via === 'nostr'` prefixes the title (and the Open Graph / Twitter titles) with `Visitor: ` — a plain English string, not from the catalog.
+- **Purpose:** Maps a loaded public note (or `null`) to Next.js `Metadata`. Found notes use the author name as title and never the marketing layout description, even when `text` is empty. Photo notes set `og:image` to `/messages/{id}/photo`; others keep `/og.png`. A note with any `via` value (written without a 21.gifts account) gets fully generic metadata instead: title `Visitor on 21.gifts`, description `A reply from a visitor who sent bitcoin to a post on 21.gifts.`, and always the default `/og.png` image — nothing from the note's `name`, `text` or photo reaches a link preview. Both strings are plain English constants, not from the catalog.
 - **Inputs:** Route `id` and `note` (`ForumMessage | null`).
-- **Returns / side effects:** `{}` when `note` is `null`. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/messages/{id}`, `siteName` 21.gifts), and Twitter `summary_large_image`.
+- **Returns / side effects:** `{}` when `note` is `null`. For a note with a `via` value the generic visitor title, description and default image described above. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/messages/{id}`, `siteName` 21.gifts), and Twitter `summary_large_image`.
 - **Used by:** `generateMetadata` on `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -2309,7 +2309,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HiddenNotesScreen
 
-- **Purpose:** Client list of hidden living-room notes. Staff (founder or moderator) fetch `listHiddenMessages` and show the lead copy plus the newest-hidden-first list (a non-interactive **Visitor** badge next to the name when the row has `via === 'nostr'`) (or empty / loading / try-again). Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. No un-hide control.
+- **Purpose:** Client list of hidden living-room notes. Staff (founder or moderator) fetch `listHiddenMessages` and show the lead copy plus the newest-hidden-first list (a non-interactive **Visitor** badge next to the name when the row has a `via` value) (or empty / loading / try-again). Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/messages/hidden` only when the role is founder or moderator.
 - **Used by:** `HiddenNotesPage`.

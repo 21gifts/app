@@ -192,6 +192,13 @@ describe('HiddenNotesScreen', () => {
     expect(screen.getByText('Visitor')).toBeTruthy();
   });
 
+  it('shows a Visitor badge for a hidden row with a non-nostr via value', async () => {
+    listMock.mockResolvedValue([{ ...HIDDEN, via: 'something-else' }]);
+    renderWithLocale(<HiddenNotesScreen />);
+    expect(await screen.findByText('Bob')).toBeTruthy();
+    expect(screen.getByText('Visitor')).toBeTruthy();
+  });
+
   it('falls back to Unnamed beside the Visitor badge when a visitor row has no name', async () => {
     listMock.mockResolvedValue([{ ...HIDDEN, name: '', via: 'nostr' }]);
     renderWithLocale(<HiddenNotesScreen />);

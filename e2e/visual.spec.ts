@@ -998,7 +998,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-gifts');
   });
 
-  test('state /welcome expanded-nostr', async ({ page }) => {
+  test('state /welcome expanded-visitor', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -1060,7 +1060,7 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByText('https://example.com/hello')).toBeVisible();
     await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-expanded-nostr');
+    await shotScreen(page, 'state-welcome-expanded-visitor');
   });
 
   test('state /welcome quoted-note', async ({ page }) => {
@@ -3410,7 +3410,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-thread');
   });
 
-  test('state /messages/[id] nostr-reply', async ({ page }) => {
+  test('state /messages/[id] visitor-reply', async ({ page }) => {
     const parentId = '11111111-1111-4111-8111-111111111111';
     const parent = {
       id: parentId,
@@ -3457,7 +3457,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${parentId}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
     await expect(page.getByText('Visitor').first()).toBeVisible();
-    await shotScreen(page, 'state-messages-id-nostr-reply');
+    await shotScreen(page, 'state-messages-id-visitor-reply');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {
