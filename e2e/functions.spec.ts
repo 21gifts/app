@@ -147,7 +147,7 @@ const EMPTY_STATS = {
 };
 
 async function stubPayableNote(page: Page): Promise<void> {
-  await page.route('**/messages', async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     const url = route.request().url();
     if (
       url.includes('/invoice') ||

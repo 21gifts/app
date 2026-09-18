@@ -3958,7 +3958,7 @@ test.describe('welcome forum variants', () => {
   }
 
   async function stubPayInvoice(page: Page): Promise<void> {
-    await page.route('**/messages', async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       const url = route.request().url();
       if (
         url.includes('/invoice') ||
@@ -5123,7 +5123,7 @@ test.describe('welcome forum variants', () => {
   test('welcome pay-author-wallet', async ({ page }) => {
     await stubWalletLocationAssign(page);
     await seedAda(page);
-    await page.route('**/messages', async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       const url = route.request().url();
       if (
         url.includes('/invoice') ||
