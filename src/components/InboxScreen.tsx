@@ -108,6 +108,11 @@ export interface InboxScreenProps {
   onPayCancel?: () => void;
   /** True while waiting for the gift row after invoice mint. */
   payWaiting?: boolean;
+  /**
+   * Show the sats Amount field beside the composer. Default true; the closed
+   * staff room passes false (text only, no gifts).
+   */
+  showAmount?: boolean;
 }
 
 /**
@@ -198,6 +203,7 @@ export function InboxScreen({
   invoice = null,
   onPayCancel = () => undefined,
   payWaiting = false,
+  showAmount = true,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -401,19 +407,21 @@ export function InboxScreen({
             disabled={posting || messagesLoading}
             className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
           />
-          <Field
-            className="w-24"
-            label={t('inbox.amountLabel')}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            placeholder={t('forum.payAmountPlaceholder')}
-            value={amountDraft}
-            disabled={posting || messagesLoading}
-            onChange={(event) => onAmountDraftChange(event.target.value)}
-          />
+          {showAmount ? (
+            <Field
+              className="w-24"
+              label={t('inbox.amountLabel')}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder={t('forum.payAmountPlaceholder')}
+              value={amountDraft}
+              disabled={posting || messagesLoading}
+              onChange={(event) => onAmountDraftChange(event.target.value)}
+            />
+          ) : null}
           <IconButton
             type="submit"
             size="lg"

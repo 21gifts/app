@@ -82,7 +82,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
     return (
       <Card maxWidth="xl">
         {heading}
-        <p className="text-center text-sm text-app-muted">{t('moderate.forbidden')}</p>
+        <p className="text-center text-sm text-app-muted">{t('moderate.groupForbidden')}</p>
       </Card>
     );
   }
@@ -151,7 +151,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
 
   return (
     <InboxScreen
-      conversations={[group]}
+      conversations={[{ ...group, name: t('moderate.groupLabel') }]}
       error={false}
       loading={false}
       /* v8 ignore next -- list retry is unused on the open staff-room thread */
@@ -173,6 +173,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       posting={posting}
       formError={formError}
       showFilter={false}
+      showAmount={false}
     />
   );
 }

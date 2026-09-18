@@ -530,7 +530,7 @@ export const conversationListSchema = z.object({
  *
  * Body is `{ conversation }` using {@link conversationSchema}.
  */
-export const conversationOneSchema = z.object({
+export const conversationResponseSchema = z.object({
   conversation: conversationSchema,
 });
 

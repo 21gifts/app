@@ -174,7 +174,7 @@ test('Function: ModeratorGroupPage — confirmed moderators see the group thread
 test('Function: ModeratorGroupScreen — founders see the forbidden copy', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await page.goto('/moderate/group');
-  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This room is for confirmed moderators.')).toBeVisible();
 });
 
 test('Function: fetchModeratorGroup — confirmed moderators see Hello mods', async ({ page }) => {

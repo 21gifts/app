@@ -780,6 +780,35 @@ describe('InboxLoader', () => {
     });
   });
 
+  it('shows neutral loading, not the list, while the staff-room lookup runs', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'missing');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    let resolveGroup!: (value: Conversation) => void;
+    groupMock.mockImplementation(
+      () =>
+        new Promise<Conversation>((resolve) => {
+          resolveGroup = resolve;
+        }),
+    );
+    renderWithLocale(<InboxLoader />);
+    await waitFor(() => {
+      expect(groupMock).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+    expect(threadMock).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveGroup({ ...THREAD, id: 'conv-mods', kind: 'moderator_group', name: 'Moderators' });
+    });
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(groupMock).toHaveBeenCalledTimes(1);
+  });
+
   it('opens an unlisted PM when the staff-room fetch fails', async () => {
     useAuthStore.setState({
       session: 'sess',

@@ -973,6 +973,32 @@ describe('InboxScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
   });
 
+  it('hides the Amount field when showAmount is false', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+      />,
+    );
+    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
   it('shows a gift-only last-sats list preview', () => {
     renderWithLocale(
       <InboxScreen

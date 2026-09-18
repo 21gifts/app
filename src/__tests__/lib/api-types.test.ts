@@ -8,7 +8,7 @@ import {
   conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
-  conversationOneSchema,
+  conversationResponseSchema,
   conversationSchema,
   conversationThreadSchema,
   notificationListSchema,
@@ -432,7 +432,7 @@ describe('conversationSchema', () => {
   });
 });
 
-describe('conversationOneSchema', () => {
+describe('conversationResponseSchema', () => {
   it('accepts a moderator_group conversation wrapper', () => {
     const conversation = {
       id: 'conv-mod',
@@ -443,12 +443,12 @@ describe('conversationOneSchema', () => {
       lastFromMe: false,
       lastSats: 0,
     };
-    expect(conversationOneSchema.parse({ conversation })).toEqual({
+    expect(conversationResponseSchema.parse({ conversation })).toEqual({
       conversation: { ...conversation, unread: false },
     });
     expect(
-      conversationOneSchema.parse({ conversation: { ...conversation, unread: true } }).conversation
-        .unread,
+      conversationResponseSchema.parse({ conversation: { ...conversation, unread: true } })
+        .conversation.unread,
     ).toBe(true);
   });
 });

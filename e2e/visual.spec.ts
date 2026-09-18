@@ -6409,7 +6409,7 @@ test.describe('moderate group screens', () => {
   test('moderate group forbidden', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.goto('/moderate/group');
-    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('This room is for confirmed moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-forbidden');
   });
 

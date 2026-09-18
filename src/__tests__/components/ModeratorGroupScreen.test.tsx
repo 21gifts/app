@@ -101,7 +101,7 @@ describe('ModeratorGroupScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This room is for confirmed moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
     expect(screen.queryByLabelText('Your message')).toBeNull();
@@ -112,14 +112,14 @@ describe('ModeratorGroupScreen', () => {
   it('shows forbidden copy for a basis account and does not fetch', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This room is for confirmed moderators.')).toBeTruthy();
     expect(groupMock).not.toHaveBeenCalled();
   });
 
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This room is for confirmed moderators.')).toBeTruthy();
     expect(groupMock).not.toHaveBeenCalled();
   });
 
@@ -142,6 +142,10 @@ describe('ModeratorGroupScreen', () => {
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     expect(groupMock).toHaveBeenCalledWith('sess');
     expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id);
+    expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+    expect(screen.queryByText('Staff room')).toBeNull();
+    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
   it('shows an error and retries', async () => {

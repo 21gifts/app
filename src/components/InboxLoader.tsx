@@ -192,7 +192,8 @@ export function InboxLoader(): ReactElement | null {
       openId === null ||
       openId === '' ||
       conversations === null ||
-      listed !== undefined
+      listed !== undefined ||
+      staffRoomId !== null
     ) {
       return;
     }
@@ -211,7 +212,7 @@ export function InboxLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, account?.role, openId, conversations, listed]);
+  }, [session, account?.role, openId, conversations, listed, staffRoomId]);
 
   useEffect(() => {
     if (session === null || openId === null || openId === '' || !threadAllowed) {
@@ -430,9 +431,9 @@ export function InboxLoader(): ReactElement | null {
   const showFilter = account?.role === 'moderator' || account?.role === 'founder';
   return (
     <InboxScreen
-      conversations={conversations}
+      conversations={waitingStaffRoom ? null : conversations}
       error={error}
-      loading={loading}
+      loading={loading || waitingStaffRoom}
       onRetry={() => {
         /* v8 ignore next -- retry increments the list loader */
         setAttempt((n) => n + 1);

@@ -305,7 +305,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/conversations/moderator-group` (singleton closed staff room as `{ conversation }`).
 - **Errors:** Upstream 401/403/404, or 502 if the api is unreachable.
-- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group`.
+- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group` and via `InboxLoader` on `/messages` (unlisted `?c=` guard for moderators).
 - **Auth:** Bearer; confirmed moderator on the api.
 
 ## Endpoint: POST /conversations
