@@ -1378,7 +1378,7 @@ export const SCREEN_VARIANTS = [
     id: 'expanded-nostr',
     image: 'welcome-expanded-nostr.png',
     visual: 'state-welcome-expanded-nostr',
-    needle: 'via Nostr',
+    needle: 'Wrote from another app',
   },
   {
     route: '/welcome',

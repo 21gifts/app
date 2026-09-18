@@ -67,7 +67,7 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
   if (note === null) {
     return {};
   }
-  const title = note.name;
+  const title = note.via === 'nostr' ? `Visitor: ${note.name}` : note.name;
   const description = ogDescription(note);
   const photoAlt = note.text.trim() || note.name;
   const photoImage = { url: `/messages/${id}/photo`, alt: photoAlt };

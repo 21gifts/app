@@ -130,9 +130,20 @@ export function HiddenNotesScreen(): ReactElement | null {
           <li key={row.id}>
             <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
               <span className="flex w-full items-baseline justify-between gap-2">
-                <span className="text-sm font-medium text-app-fg">
-                  {row.name !== '' ? row.name : t('moderate.unnamed')}
-                </span>
+                {row.via === 'nostr' ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-app-fg">
+                      {row.name !== '' ? row.name : t('moderate.unnamed')}
+                    </span>
+                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                      {t('forum.via.nostr')}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium text-app-fg">
+                    {row.name !== '' ? row.name : t('moderate.unnamed')}
+                  </span>
+                )}
                 <time dateTime={row.createdAt} className="text-xs text-app-subtle">
                   {formatForumTime(row.createdAt, locale)}
                 </time>

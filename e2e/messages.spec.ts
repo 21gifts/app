@@ -841,7 +841,7 @@ test('quoted public note hides the raw URL and opens the linked note', async ({ 
   await expect(page).toHaveURL(/\/messages\/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec/);
 });
 
-test('welcome via Nostr reply shows a badge and keeps the url as text', async ({ page }) => {
+test('welcome visitor reply shows a badge and keeps the url as text', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -895,7 +895,7 @@ test('welcome via Nostr reply shows a badge and keeps the url as text', async ({
         messages: [
           {
             id: 'r-nostr-gift',
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text: '',
             createdAt: '2026-08-28T12:03:00.000Z',
@@ -905,7 +905,7 @@ test('welcome via Nostr reply shows a badge and keeps the url as text', async ({
           },
           {
             id: 'r-nostr-text',
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text: 'Greetings! https://example.com/hello',
             createdAt: '2026-08-28T12:04:00.000Z',
@@ -919,18 +919,18 @@ test('welcome via Nostr reply shows a badge and keeps the url as text', async ({
   });
   await page.goto('/welcome');
   await page.getByText('Thank you both — that helps.').click();
-  await expect(page.getByRole('button', { name: 'via Nostr' }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'via Nostr' }).first().click();
+  await expect(page.getByRole('button', { name: 'Visitor' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Visitor' }).first().click();
   await expect(
     page.getByText(
-      'Wrote from another Nostr app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+      'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
     ),
   ).toBeVisible();
   await expect(page.getByText('https://example.com/hello')).toBeVisible();
   await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
 });
 
-test('unsigned permalink via Nostr reply is a span and keeps the url as text', async ({ page }) => {
+test('unsigned permalink visitor reply is a span and keeps the url as text', async ({ page }) => {
   const parentId = ID;
   await page.route(`**/public-messages/${parentId}/replies`, async (route) => {
     await route.fulfill({
@@ -941,7 +941,7 @@ test('unsigned permalink via Nostr reply is a span and keeps the url as text', a
           {
             id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
             parentId,
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text: '',
             createdAt: '2026-08-28T12:03:00.000Z',
@@ -952,7 +952,7 @@ test('unsigned permalink via Nostr reply is a span and keeps the url as text', a
           {
             id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
             parentId,
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text: 'Greetings! https://example.com/hello',
             createdAt: '2026-08-28T12:04:00.000Z',
@@ -976,8 +976,8 @@ test('unsigned permalink via Nostr reply is a span and keeps the url as text', a
   });
   await page.goto(`/messages/${parentId}`);
   await expect(page.getByText('Hello from Ada')).toBeVisible();
-  await expect(page.getByText('via Nostr').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'via Nostr' })).toHaveCount(0);
+  await expect(page.getByText('Visitor').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Visitor' })).toHaveCount(0);
   await expect(page.getByText('https://example.com/hello')).toBeVisible();
   await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
 });

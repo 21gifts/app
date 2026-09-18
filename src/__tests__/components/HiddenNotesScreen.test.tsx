@@ -185,6 +185,20 @@ describe('HiddenNotesScreen', () => {
     );
   });
 
+  it('shows a Visitor badge for a hidden row from a Nostr visitor', async () => {
+    listMock.mockResolvedValue([{ ...HIDDEN, via: 'nostr' }]);
+    renderWithLocale(<HiddenNotesScreen />);
+    expect(await screen.findByText('Bob')).toBeTruthy();
+    expect(screen.getByText('Visitor')).toBeTruthy();
+  });
+
+  it('does not show a Visitor badge for a hidden row without via', async () => {
+    listMock.mockResolvedValue([HIDDEN]);
+    renderWithLocale(<HiddenNotesScreen />);
+    expect(await screen.findByText('Bob')).toBeTruthy();
+    expect(screen.queryByText('Visitor')).toBeNull();
+  });
+
   it('renders hidden notes in API order without reordering', async () => {
     listMock.mockResolvedValue([OLDER, HIDDEN]);
     renderWithLocale(<HiddenNotesScreen />);
