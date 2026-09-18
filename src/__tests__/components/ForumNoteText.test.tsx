@@ -65,6 +65,23 @@ describe('ForumNoteText', () => {
     expect(screen.queryByRole('button', { name: /Show less/i })).toBeNull();
   });
 
+  it('renders a short url as plain text when plain', () => {
+    renderWithLocale(
+      <ForumNoteText plain text="see https://example.com/hello" className="body" />,
+    );
+    expect(screen.getByText('see https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('does not autolink a truncated url when plain, including after Show more', () => {
+    const href = `https://example.com/${'a'.repeat(300)}`;
+    renderWithLocale(<ForumNoteText plain text={href} className="body" />);
+    expect(screen.queryByRole('link')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(screen.getByText(href)).toBeTruthy();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
   it('stops click and keydown events from reaching the parent', () => {
     const onClick = vi.fn();
     const onKeyDown = vi.fn();

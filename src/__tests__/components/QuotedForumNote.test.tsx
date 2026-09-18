@@ -455,6 +455,59 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
   });
 
+  it('shows a via Nostr badge on a nested quoted note and keeps the url as plain text', async () => {
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+      text: 'Greetings! https://example.com/hello',
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('via Nostr')).toBeTruthy();
+    });
+    expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    expect(screen.queryByText('Founder')).toBeNull();
+  });
+
+  it('keeps a long nested via note full when truncate is off', async () => {
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+      text: `${'a'.repeat(280)} https://example.com/hello`,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(viaQuoted.text)).toBeTruthy();
+    });
+    expect(screen.getByText('via Nostr')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
   it('keeps a long nested quoted note full when truncate is off', async () => {
     const longQuoted: ForumMessage = { ...quotedNote, text: `${'a'.repeat(280)} TAILTOKEN` };
     renderWithLocale(

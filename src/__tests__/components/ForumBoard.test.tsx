@@ -2519,6 +2519,226 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toBe('Diese Person hat 21.gifts gegründet.');
   });
 
+  it('shows a via Nostr badge and hint on a top-level note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const tag = screen.getByRole('button', { name: 'via Nostr' });
+    expect(tag.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
+    fireEvent.click(tag);
+    expect(tag.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Wrote from another Nostr app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+    );
+    fireEvent.click(tag);
+    expect(tag.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('renders a via note url as plain text and does not unfurl a quoted note', async () => {
+    const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+    const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            via: 'nostr',
+            payable: false,
+            text: `Greetings! https://example.com/hello ${quotedUrl}`,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(`Greetings! https://example.com/hello ${quotedUrl}`)).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: quotedUrl })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
+    expect(fetchPublicMessage).not.toHaveBeenCalled();
+  });
+
+  it('keeps a long via note full when truncate is off', () => {
+    const text = `${'a'.repeat(280)} https://example.com/hello`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false, text }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        truncate={false}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(text)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
+  it('shows a via Nostr badge and hint on a reply and keeps a url as plain text', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        onToggleExpand={onToggleExpand}
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-nostr-text',
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text: 'Greetings! https://example.com/hello',
+            sats: 0,
+            payable: false,
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const tag = screen.getByRole('button', { name: 'via Nostr' });
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Nostr Visitor')).toBeTruthy();
+    expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    fireEvent.click(tag);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.getByRole('status').textContent).toContain('Wrote from another Nostr app');
+    fireEvent.click(tag);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('keeps a long via reply full when truncate is off', () => {
+    const text = `${'a'.repeat(280)} https://example.com/hello`;
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-nostr-long',
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text,
+            sats: 0,
+            payable: false,
+            replyCount: 0,
+          },
+        ]}
+        truncate={false}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(text)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
+  it('keeps a via gift-only reply as send ₿ with a via badge', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-nostr-gift',
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text: '',
+            sats: 69,
+            payable: false,
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'via Nostr' })).toBeTruthy();
+    expect(screen.getByText('send ₿69')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('localizes the via Nostr badge', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByRole('button', { name: 'über Nostr' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'über Nostr' }));
+    expect(screen.getByRole('status').textContent).toContain('anderen Nostr-App');
+  });
+
   it('renders webm video from videoContentType', () => {
     renderWithLocale(
       <ForumBoard

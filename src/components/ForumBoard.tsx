@@ -12,7 +12,10 @@ import {
   type MouseEvent,
   type ReactElement,
 } from 'react';
+import { ForumNoteText } from '@/components/ForumNoteText';
+import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
+import { NoteTranslate } from '@/components/NoteTranslate';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
@@ -907,6 +910,18 @@ export function ForumBoard({
                       >
                         {t(roleKeys.label)}
                       </button>
+                    ) : message.via === 'nostr' ? (
+                      <button
+                        type="button"
+                        aria-expanded={roleHintOpen}
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          setOpenRoleMessageId(roleHintOpen ? null : message.id);
+                        }}
+                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                      >
+                        {t('forum.via.nostr')}
+                      </button>
                     ) : null}
                   </div>
                   <time dateTime={message.createdAt} className="text-xs text-app-subtle">
@@ -916,6 +931,10 @@ export function ForumBoard({
                 {roleHintOpen && roleKeys !== null ? (
                   <p role="status" className="mt-1 text-xs text-app-muted">
                     {t(roleKeys.hint)}
+                  </p>
+                ) : roleHintOpen && message.via === 'nostr' ? (
+                  <p role="status" className="mt-1 text-xs text-app-muted">
+                    {t('forum.via.nostrHint')}
                   </p>
                 ) : null}
                 {videoSrc !== undefined ? (
@@ -956,17 +975,36 @@ export function ForumBoard({
                 ) : null}
                 {message.text !== '' ? (
                   <div className="mt-2">
-                    <ForumQuotedBody
-                      text={message.text}
-                      knownNotes={[...messages, ...(Array.isArray(replies) ? replies : [])]}
-                      excludeId={message.id}
-                      rateDay={rateDay ?? null}
-                      fiat={fiat}
-                      truncate={truncate}
-                      onActivate={(event) => {
-                        event.stopPropagation();
-                      }}
-                    />
+                    {message.via === 'nostr' ? (
+                      <>
+                        {truncate ? (
+                          <ForumNoteText
+                            plain
+                            text={message.text}
+                            className="whitespace-pre-wrap text-sm text-app-fg"
+                          />
+                        ) : (
+                          <LinkedText
+                            plain
+                            text={message.text}
+                            className="whitespace-pre-wrap text-sm text-app-fg"
+                          />
+                        )}
+                        <NoteTranslate plain text={message.text} />
+                      </>
+                    ) : (
+                      <ForumQuotedBody
+                        text={message.text}
+                        knownNotes={[...messages, ...(Array.isArray(replies) ? replies : [])]}
+                        excludeId={message.id}
+                        rateDay={rateDay ?? null}
+                        fiat={fiat}
+                        truncate={truncate}
+                        onActivate={(event) => {
+                          event.stopPropagation();
+                        }}
+                      />
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -1120,6 +1158,18 @@ export function ForumBoard({
                                   >
                                     {t(replyRoleKeys.label)}
                                   </button>
+                                ) : reply.via === 'nostr' ? (
+                                  <button
+                                    type="button"
+                                    aria-expanded={replyHintOpen}
+                                    onClick={(event) => {
+                                      stopCardToggle(event);
+                                      setOpenRoleMessageId(replyHintOpen ? null : reply.id);
+                                    }}
+                                    className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                                  >
+                                    {t('forum.via.nostr')}
+                                  </button>
                                 ) : null}
                               </div>
                               <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
@@ -1129,6 +1179,10 @@ export function ForumBoard({
                             {replyHintOpen && replyRoleKeys !== null ? (
                               <p role="status" className="mt-1 text-xs text-app-muted">
                                 {t(replyRoleKeys.hint)}
+                              </p>
+                            ) : replyHintOpen && reply.via === 'nostr' ? (
+                              <p role="status" className="mt-1 text-xs text-app-muted">
+                                {t('forum.via.nostrHint')}
                               </p>
                             ) : null}
                             {reply.text === '' && reply.sats > 0 ? (
@@ -1141,17 +1195,36 @@ export function ForumBoard({
                             ) : null}
                             {reply.text !== '' ? (
                               <div className="mt-1">
-                                <ForumQuotedBody
-                                  text={reply.text}
-                                  knownNotes={[...messages, ...replies]}
-                                  excludeId={reply.id}
-                                  rateDay={rateDay ?? null}
-                                  fiat={fiat}
-                                  truncate={truncate}
-                                  onActivate={(event) => {
-                                    event.stopPropagation();
-                                  }}
-                                />
+                                {reply.via === 'nostr' ? (
+                                  <>
+                                    {truncate ? (
+                                      <ForumNoteText
+                                        plain
+                                        text={reply.text}
+                                        className="whitespace-pre-wrap text-sm text-app-fg"
+                                      />
+                                    ) : (
+                                      <LinkedText
+                                        plain
+                                        text={reply.text}
+                                        className="whitespace-pre-wrap text-sm text-app-fg"
+                                      />
+                                    )}
+                                    <NoteTranslate plain text={reply.text} />
+                                  </>
+                                ) : (
+                                  <ForumQuotedBody
+                                    text={reply.text}
+                                    knownNotes={[...messages, ...replies]}
+                                    excludeId={reply.id}
+                                    rateDay={rateDay ?? null}
+                                    fiat={fiat}
+                                    truncate={truncate}
+                                    onActivate={(event) => {
+                                      event.stopPropagation();
+                                    }}
+                                  />
+                                )}
                               </div>
                             ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (

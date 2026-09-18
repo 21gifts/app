@@ -840,3 +840,146 @@ test('quoted public note hides the raw URL and opens the linked note', async ({ 
   await page.getByRole('link', { name: 'Open linked note from Cyrill' }).click();
   await expect(page).toHaveURL(/\/messages\/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec/);
 });
+
+test('welcome via Nostr reply shows a badge and keeps the url as text', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-ada',
+            name: 'Ada',
+            text: 'Thank you both — that helps.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/messages/**/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r-nostr-gift',
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text: '',
+            createdAt: '2026-08-28T12:03:00.000Z',
+            sats: 69,
+            payable: false,
+            hasPhoto: false,
+          },
+          {
+            id: 'r-nostr-text',
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text: 'Greetings! https://example.com/hello',
+            createdAt: '2026-08-28T12:04:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByText('Thank you both — that helps.').click();
+  await expect(page.getByRole('button', { name: 'via Nostr' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'via Nostr' }).first().click();
+  await expect(
+    page.getByText(
+      'Wrote from another Nostr app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText('https://example.com/hello')).toBeVisible();
+  await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
+});
+
+test('unsigned permalink via Nostr reply is a span and keeps the url as text', async ({
+  page,
+}) => {
+  const parentId = ID;
+  await page.route(`**/public-messages/${parentId}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+            parentId,
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text: '',
+            createdAt: '2026-08-28T12:03:00.000Z',
+            sats: 69,
+            payable: false,
+            hasPhoto: false,
+          },
+          {
+            id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+            parentId,
+            name: 'Nostr Visitor',
+            via: 'nostr',
+            text: 'Greetings! https://example.com/hello',
+            createdAt: '2026-08-28T12:04:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${parentId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...PUBLIC_NOTE,
+        replyCount: 2,
+      }),
+    });
+  });
+  await page.goto(`/messages/${parentId}`);
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+  await expect(page.getByText('via Nostr').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'via Nostr' })).toHaveCount(0);
+  await expect(page.getByText('https://example.com/hello')).toBeVisible();
+  await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
+});
