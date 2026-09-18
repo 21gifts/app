@@ -984,7 +984,7 @@ Handbook states: default hub, forbidden, moderator.
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (founder or moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **Visitor** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
 
-Handbook states: default list, forbidden, empty, loading, error.
+Handbook states: default list, forbidden, empty, loading, error, visitor.
 
 ### `/moderate/group`
 

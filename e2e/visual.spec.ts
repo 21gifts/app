@@ -3459,6 +3459,9 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${parentId}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
     await expect(page.getByText('Visitor').first()).toBeVisible();
+    await expect(
+      page.getByText('Greetings! https://example.com/hello', { exact: true }),
+    ).toBeVisible();
     await shotScreen(page, 'state-messages-id-visitor-reply');
   });
 
@@ -6252,6 +6255,38 @@ test.describe('moderate hidden screens', () => {
     await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
     await expect(page.getByText('Hidden by Ada')).toBeVisible();
     await shotScreen(page, 'screen-moderate-hidden');
+  });
+
+  test('state /moderate/hidden visitor', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'h2',
+              name: 'Robin',
+              text: 'Hidden visitor note',
+              via: 'nostr',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              parentId: null,
+              deletedAt: '2026-08-29T15:00:00.000Z',
+              deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText('Hidden visitor note', { exact: true })).toBeVisible();
+    await expect(page.getByText('Visitor').first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-hidden-visitor');
   });
 
   test('moderate hidden forbidden', async ({ page }) => {

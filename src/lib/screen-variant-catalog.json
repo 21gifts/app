@@ -966,6 +966,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/hidden:visitor",
+    "label": "/moderate/hidden visitor",
+    "visual": "state-moderate-hidden-visitor",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/hidden:forbidden",
     "label": "/moderate/hidden forbidden",
     "visual": "state-moderate-hidden-forbidden",
