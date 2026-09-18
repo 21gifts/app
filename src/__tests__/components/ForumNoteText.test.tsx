@@ -66,9 +66,7 @@ describe('ForumNoteText', () => {
   });
 
   it('renders a short url as plain text when plain', () => {
-    renderWithLocale(
-      <ForumNoteText plain text="see https://example.com/hello" className="body" />,
-    );
+    renderWithLocale(<ForumNoteText plain text="see https://example.com/hello" className="body" />);
     expect(screen.getByText('see https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
   });
