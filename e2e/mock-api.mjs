@@ -414,8 +414,7 @@ const server = http.createServer(async (req, res) => {
       filtered = living.filter((message) => message.sats === 0);
     } else if (mode === 'active') {
       filtered = living.filter(
-        (message) =>
-          message.sats > 0 || message.role === 'founder' || message.role === 'moderator',
+        (message) => message.sats > 0 || message.role === 'founder' || message.role === 'moderator',
       );
     } else if (mode === 'popular') {
       filtered = living.filter((message) => message.sats > 0);
