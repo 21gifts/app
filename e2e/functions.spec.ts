@@ -652,6 +652,7 @@ test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without a fil
   request,
 }) => {
   expect((await request.get('/messages/m1/photo')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo/1.jpg')).status()).toBe(404);
 });
 
 test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({

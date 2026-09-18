@@ -264,9 +264,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:photos",
+    "label": "/welcome photos",
+    "visual": "state-welcome-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:photo-and-text",
     "label": "/welcome photo-and-text",
     "visual": "state-welcome-photo-and-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:photos-and-text",
+    "label": "/welcome photos-and-text",
+    "visual": "state-welcome-photos-and-text",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -282,9 +294,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:composer-photos",
+    "label": "/welcome composer-photos",
+    "visual": "state-welcome-composer-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-photo-and-text",
     "label": "/welcome composer-photo-and-text",
     "visual": "state-welcome-composer-photo-and-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-photos-and-text",
+    "label": "/welcome composer-photos-and-text",
+    "visual": "state-welcome-composer-photos-and-text",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -348,9 +372,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:error-too-many",
+    "label": "/welcome error-too-many",
+    "visual": "state-welcome-error-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:error-too-large-with-text",
     "label": "/welcome error-too-large-with-text",
     "visual": "state-welcome-error-too-large-with-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:error-too-many-with-text",
+    "label": "/welcome error-too-many-with-text",
+    "visual": "state-welcome-error-too-many-with-text",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -477,6 +513,12 @@
     "id": "/members/[accountId]:posts-open-photo",
     "label": "/members/[accountId] posts-open-photo",
     "visual": "state-members-posts-open-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-photos",
+    "label": "/members/[accountId] posts-open-photos",
+    "visual": "state-members-posts-open-photos",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -365,6 +365,16 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo');
   });
 
+  it('proxyMessagesPhotoGet hits an indexed extra still', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoGet(
+      new Request('http://localhost/messages/m1/photo/1.jpg'),
+      'm1',
+      '1.jpg',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo/1.jpg');
+  });
+
   it('proxyMessagesVideoGet hits /messages/m1/video.mp4', async () => {
     const fetchMock = stubApi();
     await proxyMessagesVideoGet(new Request('http://localhost/messages/m1/video.mp4'), 'm1', 'mp4');

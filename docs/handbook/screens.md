@@ -511,11 +511,23 @@ On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row 
 
 ![21.gifts welcome photo](images/welcome-photo.png)
 
+### Variant: photos
+
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) and the attach control visible in the composer.
+
+![21.gifts welcome photos](images/welcome-photos.png)
+
 ### Variant: photo-and-text
 
 After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
 
 ![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
+
+### Variant: photos-and-text
+
+On **All**: forum row from Ada with two stills (**Photo from Ada**) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+
+![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 
 ### Variant: composer-text
 
@@ -529,11 +541,23 @@ JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.
 
 ![21.gifts welcome composer photo](images/welcome-composer-photo.png)
 
+### Variant: composer-photos
+
+Two JPEG previews (**Selected photo**) and per-index **Remove photo**; textarea empty.
+
+![21.gifts welcome composer photos](images/welcome-composer-photos.png)
+
 ### Variant: composer-photo-and-text
 
 Preview plus caption **Caption with selected photo.**, ready to Post.
 
 ![21.gifts welcome composer photo and text](images/welcome-composer-photo-and-text.png)
+
+### Variant: composer-photos-and-text
+
+Two JPEG previews plus caption **Caption with selected photos.**, ready to Post.
+
+![21.gifts welcome composer photos and text](images/welcome-composer-photos-and-text.png)
 
 ### Variant: composer-video
 
@@ -595,11 +619,23 @@ Encoded JPEG over 1 MB → **Keep photos under 1 MB and videos under 32 MB**.
 
 ![21.gifts welcome error too large](images/welcome-error-too-large.png)
 
+### Variant: error-too-many
+
+Eleven files → **You can add up to 10 photos**.
+
+![21.gifts welcome error too many](images/welcome-error-too-many.png)
+
 ### Variant: error-too-large-with-text
 
 Same alert with caption **Caption with a photo that is too large.** still in the composer.
 
 ![21.gifts welcome error too large with text](images/welcome-error-too-large-with-text.png)
+
+### Variant: error-too-many-with-text
+
+Same 11-file tooMany alert with caption **Caption with too many photos.** still in the composer.
+
+![21.gifts welcome error too many with text](images/welcome-error-too-many-with-text.png)
 
 ### Variant: error-request-photo-and-text
 
@@ -739,6 +775,12 @@ Identity card with counts; posts button pressed; post card 'Second post from Car
 Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and shows the inline photo (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photo`.
 
 ![21.gifts member posts open with photo](images/members-posts-open-photo.png)
+
+### Variant: posts-open-photos
+
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photos`.
+
+![21.gifts member posts open with photos](images/members-posts-open-photos.png)
 
 ### Variant: replies-open
 

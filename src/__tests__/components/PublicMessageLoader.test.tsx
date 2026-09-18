@@ -91,6 +91,7 @@ const sample: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -228,16 +229,75 @@ describe('PublicMessageLoader', () => {
   });
 
   it('loads a photo blob URL when hasPhoto is true', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, text: '' });
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1, text: '' });
     fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
     });
-    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID);
+    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:public');
     expect(screen.getByAltText('Photo from Ada').className).toContain('rounded-xl');
     expect(screen.getByAltText('Photo from Ada').className).not.toContain('rounded-2xl');
+  });
+
+  it('loads a photo blob URL when photoCount is omitted on a hasPhoto note', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasPhoto: true,
+      photoCount: undefined as unknown as number,
+      text: '',
+    });
+    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+    });
+    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
+  });
+
+  it('renders text without a photo when photoCount is omitted and hasPhoto is false', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasPhoto: false,
+      photoCount: undefined as unknown as number,
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('loads a photo gallery when photoCount is greater than one', async () => {
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 2, text: '' });
+    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    vi.spyOn(URL, 'createObjectURL')
+      .mockReturnValueOnce('blob:public-0')
+      .mockReturnValueOnce('blob:public-1');
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(2);
+    });
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('data-photo-index')).toBe('0');
+    expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
+    expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
+    expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+  });
+
+  it('keeps the original still index when an earlier extra still fails to load', async () => {
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 2, text: '' });
+    fetchPhoto
+      .mockRejectedValueOnce(new Error('gone'))
+      .mockResolvedValueOnce(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(1);
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('data-photo-index')).toBe('1');
+    expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
+    expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
   });
 
   it('renders a video when hasVideo is true', async () => {
@@ -276,6 +336,7 @@ describe('PublicMessageLoader', () => {
       ...sample,
       hasVideo: true,
       hasPhoto: true,
+      photoCount: 1,
       videoContentType: 'video/mp4',
       text: '',
     });
@@ -363,7 +424,7 @@ describe('PublicMessageLoader', () => {
   });
 
   it('ignores a stale photo resolve after unmount', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true });
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1 });
     let resolvePhoto: ((value: Blob) => void) | undefined;
     fetchPhoto.mockImplementationOnce(
       () =>
@@ -422,7 +483,7 @@ describe('PublicMessageLoader', () => {
   });
 
   it('clears the photo when the photo fetch fails', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true });
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1 });
     fetchPhoto.mockRejectedValue(new Error('photo down'));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
@@ -707,6 +768,7 @@ describe('PublicMessageLoader', () => {
       sats: 21,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'verified',
@@ -720,6 +782,7 @@ describe('PublicMessageLoader', () => {
       sats: 43,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'founder',
@@ -734,6 +797,7 @@ describe('PublicMessageLoader', () => {
       sats: 21,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'founder',

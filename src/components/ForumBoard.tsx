@@ -48,7 +48,7 @@ import {
 
 /** Client-side composer validation or request failure. */
 export type ForumFormError =
-  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | null;
+  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | 'tooMany' | null;
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount';
@@ -216,15 +216,17 @@ export interface ForumBoardProps {
   lawsVisible: boolean;
   /** Called when the user clicks the hint dismiss control. */
   onDismissLaws: () => void;
-  /** Prepared photo waiting to post, or `null`. */
-  photoDraft: ForumPhotoPayload | null;
+  /** Prepared photos waiting to post. */
+  photoDrafts: ForumPhotoPayload[];
   /** Prepared video waiting to post, or `null`. */
   videoDraft?: ForumVideoPayload | null;
-  /** Called when the visitor picks a file from the attach control. */
-  onPickPhoto: (file: File) => void;
-  /** Clears the pending photo draft. */
+  /** Called when the visitor picks files from the attach control. */
+  onPickFiles: (files: File[]) => void;
+  /** Removes one pending photo draft. */
+  onRemovePhoto: (index: number) => void;
+  /** Clears the pending video and photos. */
   onClearPhoto: () => void;
-  /** Message id → blob/object URL for inline photos already loaded. */
+  /** Message id plus index → blob/object URL for inline photos already loaded. */
   photoUrls: Readonly<Record<string, string>>;
   /** Message id → blob/object URL for a just-posted video (local preview). */
   videoUrls?: Readonly<Record<string, string>>;
@@ -566,9 +568,10 @@ export function ForumBoard({
   unpaidNewCount = 0,
   lawsVisible,
   onDismissLaws,
-  photoDraft,
+  photoDrafts,
   videoDraft = null,
-  onPickPhoto,
+  onPickFiles,
+  onRemovePhoto,
   onClearPhoto,
   photoUrls,
   videoUrls = {},
@@ -753,9 +756,9 @@ export function ForumBoard({
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const file = event.target.files?.[0];
-    if (file !== undefined) {
-      onPickPhoto(file);
+    const files = event.target.files;
+    if (files !== null && files.length > 0) {
+      onPickFiles(Array.from(files));
     }
     event.target.value = '';
   };
@@ -833,7 +836,12 @@ export function ForumBoard({
         className="flex flex-col gap-4"
       >
         {displayed.map((message) => {
-          const photoUrl = message.hasPhoto ? photoUrls[message.id] : undefined;
+          const photoCount = message.photoCount ?? (message.hasPhoto ? 1 : 0);
+          const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
+            index,
+            url: photoUrls[`${message.id}:${index}`],
+          })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
+          const photoUrl = photoUrls[`${message.id}:0`];
           const videoSrc =
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
@@ -923,7 +931,7 @@ export function ForumBoard({
                       setDeadVideoIds((prev) => new Set(prev).add(message.id));
                     }}
                   />
-                ) : photoUrl !== undefined ? (
+                ) : photoCount <= 1 && photoUrl !== undefined ? (
                   /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
                   <img
                     src={photoUrl}
@@ -931,6 +939,20 @@ export function ForumBoard({
                     className="mt-2 max-h-80 w-full rounded-xl object-contain"
                     onClick={stopCardToggle}
                   />
+                ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
+                  <div>
+                    {loadedPhotoUrls.map(({ index, url }) => (
+                      /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
+                      <img
+                        key={`${message.id}:${index}`}
+                        src={url}
+                        alt={t('forum.photoAlt', { name: message.name })}
+                        className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                        onClick={stopCardToggle}
+                        data-photo-index={index}
+                      />
+                    ))}
+                  </div>
                 ) : null}
                 {message.text !== '' ? (
                   <div className="mt-2">
@@ -1393,6 +1415,7 @@ export function ForumBoard({
             <input
               ref={fileInputRef}
               type="file"
+              multiple
               accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
               className="hidden"
               disabled={posting}
@@ -1444,11 +1467,11 @@ export function ForumBoard({
               </IconButton>
             </div>
           ) : null}
-          {photoDraft !== null ? (
+          {photoDrafts.length === 1 ? (
             <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
               {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
               <img
-                src={photoDraft.previewUrl}
+                src={photoDrafts[0]!.previewUrl}
                 alt={t('forum.previewAlt')}
                 className="h-20 w-20 rounded-lg object-cover"
               />
@@ -1456,13 +1479,40 @@ export function ForumBoard({
                 type="button"
                 size="sm"
                 variant="secondary"
-                onClick={onClearPhoto}
+                onClick={() => {
+                  onRemovePhoto(0);
+                }}
                 disabled={posting}
                 aria-label={t('forum.removePhoto')}
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </IconButton>
             </div>
+          ) : photoDrafts.length > 1 ? (
+            <ul className="flex flex-wrap items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {photoDrafts.map((photo, index) => (
+                <li key={`${photo.previewUrl}:${index}`} className="flex items-start gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+                  <img
+                    src={photo.previewUrl}
+                    alt={t('forum.previewAlt')}
+                    className="h-20 w-20 rounded-lg object-cover"
+                  />
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      onRemovePhoto(index);
+                    }}
+                    disabled={posting}
+                    aria-label={t('forum.removePhoto')}
+                  >
+                    <X aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </form>
       ) : null}
@@ -1495,6 +1545,11 @@ export function ForumBoard({
       {!composerHidden && formError === 'tooLarge' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLarge')}
+        </p>
+      ) : null}
+      {!composerHidden && formError === 'tooMany' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('forum.errorTooMany')}
         </p>
       ) : null}
 

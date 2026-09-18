@@ -165,8 +165,9 @@ const IDLE_BOARD = {
   onModeChange: (): void => undefined,
   lawsVisible: false,
   onDismissLaws: (): void => undefined,
-  photoDraft: null,
-  onPickPhoto: (): void => undefined,
+  photoDrafts: [],
+  onPickFiles: (): void => undefined,
+  onRemovePhoto: (): void => undefined,
   onClearPhoto: (): void => undefined,
   photoUrls: {},
   expandedId: null as string | null,
@@ -260,8 +261,12 @@ export function MemberProfileScreen({
   const photoSourceRef = useRef(photoSource);
   photoSourceRef.current = photoSource;
   const photoIdsKey = photoSource
-    .filter((message) => message.hasPhoto)
-    .map((message) => message.id)
+    .map((message) => ({
+      id: message.id,
+      count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
+    }))
+    .filter(({ count }) => count > 0)
+    .map(({ id, count }) => `${id}:${count}`)
     .sort()
     .join('\0');
 
@@ -289,28 +294,33 @@ export function MemberProfileScreen({
     }
     const listed = photoSourceRef.current;
     let cancelled = false;
-    const missing = listed.filter(
-      (message) => message.hasPhoto && photoUrlsRef.current[message.id] === undefined,
-    );
+    const missing = listed.flatMap((message) => {
+      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
+      return Array.from({ length: count }, (_, index) => ({
+        id: message.id,
+        index,
+        key: `${message.id}:${index}`,
+      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
+    });
     if (missing.length === 0) {
       return;
     }
     void (async () => {
-      for (const message of missing) {
+      for (const photo of missing) {
         /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[message.id] !== undefined) {
+        if (photoUrlsRef.current[photo.key] !== undefined) {
           continue;
         }
         /* v8 ignore stop */
         let blob: Blob;
         try {
-          blob = await fetchMessagePhoto(session, message.id);
+          blob = await fetchMessagePhoto(session, photo.id, photo.index);
         } catch {
           if (cancelled) {
             return;
           }
           try {
-            blob = await fetchMessagePhoto(session, message.id);
+            blob = await fetchMessagePhoto(session, photo.id, photo.index);
           } catch {
             if (cancelled) {
               return;
@@ -329,12 +339,12 @@ export function MemberProfileScreen({
         }
         setPhotoUrls((prev) => {
           /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[message.id] !== undefined) {
+          if (prev[photo.key] !== undefined) {
             URL.revokeObjectURL(url);
             return prev;
           }
           /* v8 ignore stop */
-          return { ...prev, [message.id]: url };
+          return { ...prev, [photo.key]: url };
         });
       }
     })();

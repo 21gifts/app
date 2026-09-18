@@ -252,6 +252,13 @@
 - **Used by:** `fetchMessagePhoto`, `fetchPublicMessagePhoto`.
 - **Auth:** Optional Bearer (api photo is public; forum board still sends Bearer).
 
+## Endpoint: GET /messages/[id]/photo/[file]
+
+- **Purpose:** Same-origin proxy of api extra stills at GET `/messages/:id/photo/{1-9}.jpg`. App Router `file` must match `{1-9}.{jpg|jpeg|png|webp}`; other names 404 without proxying. The proxy always requests `{n}.jpg` from the api (same bytes as `.jpeg`/`.png`/`.webp` aliases).
+- **Errors:** Route 404 for unknown `file`; upstream 404/502 when the extra still is missing or unreachable.
+- **Used by:** `fetchMessagePhoto` / `fetchPublicMessagePhoto` with index 1–9.
+- **Auth:** Optional Bearer.
+
 ## Endpoint: GET /messages/[id]/[file]
 
 - **Purpose:** App Router GET that proxies `video.mp4` / `video.webm` / `video.mov` to the 21.gifts api at runtime via `getApiUrl()` (not next.config rewrites). Other `file` values return 404 without proxying. Public; missing files 404 from the api.

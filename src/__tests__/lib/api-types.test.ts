@@ -616,6 +616,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -631,7 +632,17 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 1,
     });
+  });
+
+  it('keeps an explicit photoCount of 2', () => {
+    expect(forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: 2 }).photoCount).toBe(2);
+  });
+
+  it('rejects photoCount 11 and -1', () => {
+    expect(() => forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: 11 })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: -1 })).toThrow();
   });
 
   it('accepts an empty text when hasVideo is true', () => {
@@ -640,6 +651,7 @@ describe('forumMessageSchema', () => {
       ...videoOnly,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -654,6 +666,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -914,6 +927,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
