@@ -180,7 +180,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify(E2E_ACCOUNT),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,

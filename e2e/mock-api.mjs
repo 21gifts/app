@@ -338,8 +338,25 @@ const server = http.createServer(async (req, res) => {
       json(res, 409, { error: 'missing_requirements', missing: account.missing });
       return;
     }
+    const parsedLimit = parseInt(url.searchParams.get('limit') ?? '', 10);
+    const limit = Number.isFinite(parsedLimit) ? parsedLimit : 200;
+    const mode = url.searchParams.get('mode');
+    const living = forumMessages.filter((message) => message.deletedAt === undefined);
+    let filtered = living;
+    if (mode === 'unpaid') {
+      filtered = living.filter((message) => message.sats === 0);
+    } else if (mode === 'active') {
+      filtered = living.filter(
+        (message) =>
+          message.sats > 0 || message.role === 'founder' || message.role === 'moderator',
+      );
+    } else if (mode === 'popular') {
+      filtered = living.filter((message) => message.sats > 0);
+    }
+    const messages = filtered.slice(0, limit);
     json(res, 200, {
-      messages: forumMessages.filter((message) => message.deletedAt === undefined),
+      messages,
+      ...(filtered.length > limit ? { nextCursor: 'next' } : {}),
     });
     return;
   }

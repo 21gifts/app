@@ -381,7 +381,7 @@ const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 /** Signed-in Ada `/welcome` with one paid German note (Active shows Translate). */
 async function seedGermanNoteWelcome(page: Page): Promise<void> {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -687,7 +687,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -747,7 +747,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -784,7 +784,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1251,7 +1251,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -1298,7 +1298,7 @@ test('Function: requestForumCompose — Write an introduction focuses the welcom
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -1343,7 +1343,7 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -1390,7 +1390,7 @@ test('Function: consumePendingForumCompose — CTA from profile focuses the welc
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -3582,7 +3582,7 @@ test('Function: satsToFiatAmount — forum note shows a USD equivalent next to �
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -3637,7 +3637,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -3933,7 +3933,7 @@ test('Function: useFiatPreference — welcome feed has no fiat switcher', async 
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4189,7 +4189,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4226,7 +4226,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4263,7 +4263,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4394,7 +4394,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4434,7 +4434,7 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
     });
   });
   let messagesBody: unknown = { messages: [] };
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4496,7 +4496,7 @@ test('Function: ForumLoader — scrolled silent refresh shows New posts without 
     replyCount: 0,
   }));
   let messagesBody: unknown = { messages: first };
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4565,7 +4565,7 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
     replyCount: 0,
   }));
   let messagesBody: unknown = { messages: first };
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4616,7 +4616,7 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
 test('Function: ForumLoader — wordmark click on /welcome refetches', async ({ page }) => {
   await seedAdaSession(page);
   let messagesBody: unknown = { messages: [] };
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4650,7 +4650,7 @@ test('Function: ForumHomeWordmark — clicking 21.gifts on /welcome does not lea
   page,
 }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4690,7 +4690,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4745,7 +4745,7 @@ test.describe('welcome clock uses the browser local timezone', () => {
         }),
       });
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4813,7 +4813,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4922,7 +4922,7 @@ async function seedWelcomeWithUnpaidCount(page: Page): Promise<void> {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -5237,7 +5237,7 @@ test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ p
 
 test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -5252,7 +5252,7 @@ test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', asy
 
 test('Function: SegmentedControl — welcome shows Active / All / Most popular', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -5266,7 +5266,7 @@ test('Function: SegmentedControl — welcome shows Active / All / Most popular',
 
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -5764,7 +5764,7 @@ test('Function: fetchPublicReplies — public thread loads replies without beare
 test('Function: fetchReplies — expanding a welcome note loads replies', async ({ page }) => {
   await seedAdaSession(page);
   const id = 'm-expand';
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -6506,7 +6506,7 @@ test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ pa
       path: 'e2e/fixtures/tiny.mp4',
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -6538,7 +6538,7 @@ test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ pa
 
 test('Function: prepareForumVideo — attaching an mp4 shows a preview', async ({ page }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -6554,7 +6554,7 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
   page,
 }) => {
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -6634,7 +6634,7 @@ test('Endpoint: OPTIONS /.well-known/nostr.json — checker literals', async ({ 
 
 test('Function: deleteMessage — moderator cancels then deletes a post', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       json: {
         messages: [
@@ -6928,7 +6928,7 @@ test('Function: DeletePostControl — ordinary members have no reply delete acti
 }) => {
   await seedAdaSession(page);
   const id = 'm-expand';
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -6986,7 +6986,7 @@ test('Function: DeletePostControl — moderator deletes a reply', async ({ page 
   await seedAdaSession(page, 'moderator');
   const parentId = '11111111-1111-4111-8111-111111111111';
   const replyId = '22222222-2222-4222-8222-222222222222';
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       json: {
         messages: [
@@ -7217,7 +7217,7 @@ test('Function: ForumQuotedBody — welcome reply shows the nested post', async 
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -7263,7 +7263,7 @@ test('Function: forumTextPreview — long welcome note hides the tail behind Sho
   await seedAdaSession(page);
   const tail = 'TAILTOKEN';
   const text = `${'a'.repeat(280)} ${tail}`;
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -7292,7 +7292,7 @@ test('Function: ForumNoteText — Show more expands the long welcome note', asyn
   await seedAdaSession(page);
   const tail = 'TAILTOKEN';
   const text = `${'a'.repeat(280)} ${tail}`;
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -7342,7 +7342,7 @@ async function seedWelcomeLinkNote(page: Page, text: string): Promise<void> {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -7392,7 +7392,7 @@ test('Function: splitNoteLinks — welcome note autolinks an internal url and st
       body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
