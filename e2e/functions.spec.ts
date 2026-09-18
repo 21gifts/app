@@ -585,6 +585,14 @@ test('Function: proxyConversationPost — POST /conversations/[id] without beare
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyConversationInvoicePost — POST /conversations/[id]/invoice without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.post('/conversations/[id]/invoice', { data: { sats: 21 } })).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyNotificationsGet — GET /forum/notifications without bearer is 401', async ({
   request,
 }) => {
@@ -1661,6 +1669,12 @@ test('Function: proxyMeForumLawsDismissedPost — POST /me/forum-laws-dismissed 
   expect(((await again.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
 });
 
+test('Function: proxyMeNotificationLevelPost — POST /me/notification-level without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/notification-level')).status()).toBe(401);
+});
+
 test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({
   request,
 }) => {
@@ -2104,7 +2118,9 @@ test('Function: topicPath — welcome chapter heading is visible', async ({ page
 test('Function: topicVariant — pay-qr contents link is visible', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(
-    page.getByRole('navigation', { name: 'Contents' }).getByRole('link', { name: 'pay-qr' }),
+    page
+      .getByRole('navigation', { name: 'Contents' })
+      .getByRole('link', { name: 'pay-qr', exact: true }),
   ).toBeVisible();
 });
 
@@ -2148,7 +2164,7 @@ test('Function: parseScreenVariantDescriptions — pay-qr description is visible
   page,
 }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByText(/Bitcoin payment QR/)).toBeVisible();
+  await expect(page.getByText(/invoice card shows the Bitcoin payment QR/)).toBeVisible();
 });
 
 test('Function: topicImageSrc — screens viewer shows an image', async ({ page }) => {
@@ -2623,6 +2639,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: false,
+            lastSats: 0,
           },
         ],
       }),
@@ -2640,6 +2657,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
             text: 'Hello team',
             createdAt: '2026-08-28T12:00:00.000Z',
             fromMe: false,
+            sats: 0,
           },
         ],
       }),
@@ -2647,6 +2665,76 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
   });
   await page.goto('/messages?c=conv-21');
   await expect(page.getByText('Hello team')).toBeVisible();
+});
+
+test('Function: postConversationInvoice — amount field is visible on a thread', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        hasPosted: true,
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Bob',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByLabel(/amount/i)).toBeVisible();
 });
 
 test('Function: postConversationMessage — composer is visible on a thread', async ({ page }) => {
@@ -2688,6 +2776,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
             lastText: 'Hello team',
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: false,
+            lastSats: 0,
           },
         ],
       }),
@@ -2705,6 +2794,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
             text: 'Hello team',
             createdAt: '2026-08-28T12:00:00.000Z',
             fromMe: false,
+            sats: 0,
           },
         ],
       }),
@@ -5890,6 +5980,42 @@ test('Function: deletePushSubscription — DELETE /me/push-subscriptions with be
   });
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
+});
+
+test('Function: postNotificationLevel — profile shows All Active Mentions', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
+  await expect(page.getByRole('group', { name: 'Notification level' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mentions' })).toBeVisible();
+  const posted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'POST') {
+      return false;
+    }
+    return new URL(response.url()).pathname === '/me/notification-level';
+  });
+  await page.getByRole('button', { name: 'Active' }).click();
+  expect((await posted).status()).toBe(200);
+  await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: PushToggle — profile shows the enable notifications control', async ({ page }) => {

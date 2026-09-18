@@ -366,6 +366,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-unread",
+    "label": "/welcome menu-unread",
+    "visual": "state-welcome-menu-unread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-amount",
     "label": "/welcome pay-amount",
     "visual": "state-welcome-pay-amount",
@@ -459,6 +465,12 @@
     "id": "/members/[accountId]:posts-open",
     "label": "/members/[accountId] posts-open",
     "visual": "state-members-posts-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-photo",
+    "label": "/members/[accountId] posts-open-photo",
+    "visual": "state-members-posts-open-photo",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -615,6 +627,18 @@
     "id": "/profile:about-save-error",
     "label": "/profile about-save-error",
     "visual": "state-profile-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:notification-level-error",
+    "label": "/profile notification-level-error",
+    "visual": "state-profile-notification-level-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:push-enable-error",
+    "label": "/profile push-enable-error",
+    "visual": "state-profile-push-enable-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -795,6 +819,30 @@
     "id": "/messages:thread",
     "label": "/messages thread",
     "visual": "state-messages-thread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:sent-sats",
+    "label": "/messages sent-sats",
+    "visual": "state-messages-sent-sats",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-gift",
+    "label": "/messages thread-gift",
+    "visual": "state-messages-thread-gift",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-text-sats",
+    "label": "/messages thread-text-sats",
+    "visual": "state-messages-thread-text-sats",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-pay-qr",
+    "label": "/messages thread-pay-qr",
+    "visual": "state-messages-thread-pay-qr",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1047,6 +1095,18 @@
     "id": "/messages/[id]:translate-error",
     "label": "/messages/[id] translate-error",
     "visual": "state-messages-id-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:thread",
+    "label": "/messages/[id] thread",
+    "visual": "state-messages-id-thread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply",
+    "label": "/messages/[id] reply",
+    "visual": "state-messages-id-reply",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

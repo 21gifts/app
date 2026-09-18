@@ -1,9 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
+  accountNotificationLevel,
   accountSchema,
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
+  conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
   conversationSchema,
@@ -295,6 +297,7 @@ describe('conversationSchema', () => {
       lastText: '',
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
+      lastSats: 0,
     };
     expect(conversationSchema.parse(row)).toEqual(row);
     expect(conversationListSchema.parse({ conversations: [row] }).conversations).toHaveLength(1);
@@ -308,6 +311,7 @@ describe('conversationSchema', () => {
       lastText: 'Hi',
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
+      lastSats: 0,
     };
     const outgoing = { ...incoming, lastFromMe: true };
     expect(conversationSchema.parse(incoming)).toEqual(incoming);
@@ -322,6 +326,7 @@ describe('conversationSchema', () => {
         lastText: '',
         lastAt: '2026-08-28T12:00:00.000Z',
         lastFromMe: false,
+        lastSats: 0,
       }),
     ).toThrow();
   });
@@ -347,6 +352,7 @@ describe('conversationSchema', () => {
         lastText: '',
         lastAt: '2026-08-28T12:00:00.000Z',
         lastFromMe: false,
+        lastSats: 0,
       }),
     ).toThrow();
   });
@@ -359,6 +365,7 @@ describe('conversationSchema', () => {
       lastText: 'Hi',
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
+      lastSats: 0,
       accountId: 'acc_1',
     };
     expect(conversationSchema.parse(row)).toEqual(row);
@@ -373,6 +380,7 @@ describe('conversationSchema', () => {
         lastText: 'Hi',
         lastAt: '2026-08-28T12:00:00.000Z',
         lastFromMe: false,
+        lastSats: 0,
         accountId: '',
       }),
     ).toThrow();
@@ -387,6 +395,7 @@ describe('conversationMessageSchema', () => {
       text: 'Hello',
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
+      sats: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
     expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
@@ -399,6 +408,7 @@ describe('conversationMessageSchema', () => {
       text: 'Hello',
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
+      sats: 0,
     };
     const outgoing = { ...incoming, fromMe: true };
     expect(conversationMessageSchema.parse(incoming)).toEqual(incoming);
@@ -423,7 +433,20 @@ describe('conversationMessageSchema', () => {
       text: 'Hello',
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
+      sats: 0,
       accountId: 'acc_1',
+    };
+    expect(conversationMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('accepts empty text with sats', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: true,
+      sats: 21,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
   });
@@ -436,9 +459,29 @@ describe('conversationMessageSchema', () => {
         text: 'Hello',
         createdAt: '2026-08-28T12:00:00.000Z',
         fromMe: false,
+        sats: 0,
         accountId: '',
       }),
     ).toThrow();
+  });
+
+  it('rejects a missing sats', () => {
+    expect(() =>
+      conversationMessageSchema.parse({
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        fromMe: false,
+      }),
+    ).toThrow();
+  });
+});
+
+describe('conversationInvoiceSchema', () => {
+  it('accepts pr, amountSats, and messageId', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21, messageId: 'm-gift' };
+    expect(conversationInvoiceSchema.parse(invoice)).toEqual(invoice);
   });
 });
 
@@ -718,6 +761,48 @@ describe('accountSchema', () => {
 
   it('rejects a non-boolean aboutMeHasPhoto', () => {
     expect(() => accountSchema.parse({ ...account, aboutMeHasPhoto: 'yes' })).toThrow();
+  });
+
+  it('accepts a missing notificationLevel and defaults the helper to all', () => {
+    expect(accountNotificationLevel(accountSchema.parse(account))).toBe('all');
+  });
+
+  it('accepts all, active, and mentions notification levels', () => {
+    expect(accountSchema.parse({ ...account, notificationLevel: 'all' }).notificationLevel).toBe(
+      'all',
+    );
+    expect(accountSchema.parse({ ...account, notificationLevel: 'active' }).notificationLevel).toBe(
+      'active',
+    );
+    expect(
+      accountSchema.parse({ ...account, notificationLevel: 'mentions' }).notificationLevel,
+    ).toBe('mentions');
+  });
+
+  it('rejects a garbage notificationLevel', () => {
+    expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
+    expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
+  });
+});
+
+describe('accountNotificationLevel', () => {
+  it('returns all when the field is missing or undefined', () => {
+    expect(accountNotificationLevel(accountSchema.parse(account))).toBe('all');
+    expect(
+      accountNotificationLevel({
+        ...accountSchema.parse(account),
+        notificationLevel: undefined,
+      }),
+    ).toBe('all');
+  });
+
+  it('returns mentions when the account stores that level', () => {
+    expect(
+      accountNotificationLevel({
+        ...accountSchema.parse(account),
+        notificationLevel: 'mentions',
+      }),
+    ).toBe('mentions');
   });
 });
 

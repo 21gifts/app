@@ -2,15 +2,24 @@
 
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, type ReactElement, useState } from 'react';
+import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { QrCode } from '@/components/QrCode';
+import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
+import { formatBitcoin } from '@/lib/stats-money';
+import {
+  isAndroidUserAgent,
+  isSmartphoneUserAgent,
+  walletOfSatoshiHref,
+  walletOfSatoshiIntentHref,
+} from '@/lib/wos-deep-link';
 
 /** Catalog key for each conversation.kind origin label. */
 const CONVERSATION_ORIGIN_KEY = {
@@ -34,8 +43,24 @@ const FILTER_EMPTY_KEY = {
   damus: 'inbox.empty.damus',
 } as const;
 
+/** Compact last-text / last-sats chip vs muted inbound preview. */
+function listPreviewClass(fromMe: boolean): string {
+  return fromMe
+    ? 'self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg'
+    : 'line-clamp-2 text-sm text-app-muted';
+}
+
 /** Client-side composer validation or request failure. */
-export type InboxFormError = 'empty' | 'tooLong' | 'request' | null;
+export type InboxFormError =
+  'empty' | 'tooLong' | 'request' | 'amount' | 'rateLimit' | 'authorWallet' | null;
+
+/** Open Lightning invoice shown in the inbox pay sheet. */
+export interface InboxInvoice {
+  /** BOLT11 payment request. */
+  pr: string;
+  /** Whole satoshis on the invoice. */
+  amountSats: number;
+}
 
 /** Props for {@link InboxScreen}. */
 export interface InboxScreenProps {
@@ -73,6 +98,16 @@ export interface InboxScreenProps {
   formError: InboxFormError;
   /** True for founder/moderator: show Direct/Contact/Damus. Members see the full inbound list. */
   showFilter: boolean;
+  /** Amount draft for the composer sats field. */
+  amountDraft?: string;
+  /** Called when the amount field changes. */
+  onAmountDraftChange?: (value: string) => void;
+  /** Open Lightning invoice, or `null` when no pay sheet is showing. */
+  invoice?: InboxInvoice | null;
+  /** Cancels the pay sheet and aborts the poll. */
+  onPayCancel?: () => void;
+  /** True while waiting for the gift row after invoice mint. */
+  payWaiting?: boolean;
 }
 
 /**
@@ -118,13 +153,17 @@ function inboxAuthorProfileButton(
 
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer. Members (`showFilter` false) see the unfiltered
- * inbound list. Founder/moderator (`showFilter` true) see the origin control
- * (Direct / Contact / Damus); default Direct. Origin labels come from
- * {@link Conversation} `kind`. Outbound last-text previews use
- * `inbox.sentPreview` as a filled chip. Incoming thread messages are full-width
- * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the
- * right labelled `inbox.you`. Heading and incoming author names with a
+ * a 500-character composer and a sats amount field. Members (`showFilter`
+ * false) see the unfiltered inbound list. Founder/moderator (`showFilter`
+ * true) see the origin control (Direct / Contact / Damus); default Direct.
+ * Origin labels come from {@link Conversation} `kind`. Outbound last-text
+ * previews use `inbox.sentPreview` as a filled chip. Gift-only last rows
+ * (`lastText` empty, `lastSats` &gt; 0) show `formatBitcoin(lastSats)` with
+ * the same chip vs muted split. Incoming thread messages are full-width
+ * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on
+ * the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`;
+ * text+sats show the amount under the body. An open `invoice` shows the
+ * Wallet of Satoshi / QR pay sheet. Heading and incoming author names with a
  * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
  * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
  *
@@ -149,10 +188,24 @@ export function InboxScreen({
   posting,
   formError,
   showFilter,
+  amountDraft = '',
+  onAmountDraftChange = () => undefined,
+  invoice = null,
+  onPayCancel = () => undefined,
+  payWaiting = false,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
+  const { numberFormat } = useNumberFormat();
   const [filter, setFilter] = useState<InboxFilter>('direct');
+  const [showPaymentQr, setShowPaymentQr] = useState(false);
+
+  useEffect(() => {
+    /* v8 ignore next 3 -- SSR has no navigator */
+    setShowPaymentQr(
+      typeof navigator !== 'undefined' ? !isSmartphoneUserAgent(navigator.userAgent) : false,
+    );
+  }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -170,6 +223,47 @@ export function InboxScreen({
     openId === null || conversations === null
       ? null
       : (conversations.find((row) => row.id === openId) ?? null);
+
+  /* v8 ignore next 8 -- SSR has no navigator */
+  const isSmartphone =
+    typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
+  /* v8 ignore start -- Android vs iOS wallet href */
+  const android =
+    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
+  const wosHref =
+    invoice === null
+      ? null
+      : android
+        ? walletOfSatoshiIntentHref(invoice.pr)
+        : walletOfSatoshiHref(invoice.pr);
+  /* v8 ignore stop */
+
+  const openWalletOfSatoshi = (href: string): void => {
+    window.location.href = href;
+  };
+
+  const walletButton =
+    wosHref === null ? null : (
+      <Button
+        type="button"
+        aria-label={t('forum.payOpenWalletAria')}
+        icon={
+          <img
+            src="/wos-icon.png"
+            alt=""
+            width={20}
+            height={20}
+            aria-hidden="true"
+            className="h-5 w-5 rounded-md ring-1 ring-white/30"
+          />
+        }
+        onClick={() => {
+          openWalletOfSatoshi(wosHref);
+        }}
+      >
+        {t('forum.payOpenWallet')}
+      </Button>
+    );
 
   let body: ReactElement;
   if (openId !== null) {
@@ -264,15 +358,41 @@ export function InboxScreen({
                     {formatForumTime(message.createdAt, locale)}
                   </time>
                 </div>
-                <p
-                  className={
-                    message.fromMe
-                      ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
-                      : 'mt-2 whitespace-pre-wrap text-sm text-app-fg'
-                  }
-                >
-                  {message.text}
-                </p>
+                {message.text !== '' ? (
+                  <p
+                    className={
+                      message.fromMe
+                        ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
+                        : 'mt-2 whitespace-pre-wrap text-sm text-app-fg'
+                    }
+                  >
+                    {message.text}
+                  </p>
+                ) : message.sats > 0 ? (
+                  /* v8 ignore next 12 -- inbound vs outbound gift-only class names */
+                  <p
+                    className={
+                      message.fromMe
+                        ? 'mt-2 text-sm tabular-nums lining-nums text-app-btn-fg'
+                        : 'mt-2 text-sm tabular-nums lining-nums text-app-fg'
+                    }
+                  >
+                    {t('forum.giftReply', {
+                      amount: formatBitcoin(message.sats, numberFormat),
+                    })}
+                  </p>
+                ) : null}
+                {message.text !== '' && message.sats > 0 ? (
+                  <p
+                    className={
+                      message.fromMe
+                        ? 'mt-1 text-sm tabular-nums lining-nums text-app-btn-fg/80'
+                        : 'mt-1 text-sm tabular-nums lining-nums text-app-muted'
+                    }
+                  >
+                    {formatBitcoin(message.sats, numberFormat)}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -287,6 +407,19 @@ export function InboxScreen({
             rows={2}
             disabled={posting || messagesLoading}
             className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+          />
+          <Field
+            className="w-24"
+            label={t('inbox.amountLabel')}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder={t('forum.payAmountPlaceholder')}
+            value={amountDraft}
+            disabled={posting || messagesLoading}
+            onChange={(event) => onAmountDraftChange(event.target.value)}
           />
           <IconButton
             type="submit"
@@ -316,6 +449,66 @@ export function InboxScreen({
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorRequest')}
           </p>
+        ) : null}
+        {formError === 'amount' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('inbox.errorAmount')}
+          </p>
+        ) : null}
+        {formError === 'rateLimit' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('inbox.errorRateLimit')}
+          </p>
+        ) : null}
+        {formError === 'authorWallet' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('inbox.errorAuthorWallet')}
+          </p>
+        ) : null}
+        {invoice !== null && isSmartphone ? (
+          <div className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10">
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t('forum.payBack')}
+              onClick={onPayCancel}
+              className="absolute left-2 top-2"
+            >
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+            {walletButton}
+            {/* v8 ignore next 3 -- waiting copy after mint */}
+            {payWaiting ? (
+              <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
+            ) : null}
+          </div>
+        ) : null}
+        {invoice !== null && !isSmartphone ? (
+          <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t('forum.payBack')}
+              onClick={onPayCancel}
+              className="absolute left-2 top-2"
+            >
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+            <p className="px-10 text-center text-sm text-app-muted">
+              {t('forum.payConfirm', {
+                amount: formatBitcoin(invoice.amountSats, numberFormat),
+              })}
+            </p>
+            {showPaymentQr ? <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} /> : null}
+            {walletButton}
+            {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
+            {payWaiting ? (
+              <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
+            ) : null}
+            {/* v8 ignore stop */}
+          </div>
         ) : null}
       </div>
     );
@@ -386,16 +579,14 @@ export function InboxScreen({
                     {t(CONVERSATION_ORIGIN_KEY[row.kind])}
                   </span>
                   {row.lastText !== '' ? (
-                    <span
-                      className={
-                        row.lastFromMe
-                          ? 'self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg'
-                          : 'line-clamp-2 text-sm text-app-muted'
-                      }
-                    >
+                    <span className={listPreviewClass(row.lastFromMe)}>
                       {row.lastFromMe
                         ? t('inbox.sentPreview', { text: row.lastText })
                         : row.lastText}
+                    </span>
+                  ) : row.lastSats > 0 ? (
+                    <span className={listPreviewClass(row.lastFromMe)}>
+                      {formatBitcoin(row.lastSats, numberFormat)}
                     </span>
                   ) : null}
                 </button>

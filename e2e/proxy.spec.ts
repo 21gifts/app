@@ -19,6 +19,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/conversations')).status()).toBe(401);
   expect((await request.get('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
+  expect((await request.post('/conversations/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/forum/notifications')).status()).toBe(401);
   expect((await request.post('/forum/notifications/read-all')).status()).toBe(401);
   expect((await request.post('/forum/notifications/[id]/read')).status()).toBeGreaterThanOrEqual(
@@ -30,6 +31,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/messages/m1/video.mp4')).status()).toBe(404);
   expect((await request.post('/me/name')).status()).toBe(401);
   expect((await request.post('/me/location')).status()).toBe(401);
+  expect((await request.post('/me/notification-level')).status()).toBe(401);
   expect((await request.put('/me/about')).status()).toBe(401);
   expect((await request.get('/me/about/photo')).status()).toBe(401);
   expect((await request.post('/me/rules-agreement')).status()).toBe(401);

@@ -3832,6 +3832,31 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-profile-about-save-error');
   });
+
+  test('profile notification-level-error', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route('**/me/notification-level', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Active' }).click();
+    await expect(page.getByText('Could not save notification level.')).toBeVisible();
+    await shotScreen(page, 'state-profile-notification-level-error');
+  });
+
+  test('profile push-enable-error', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Enable notifications' }).click();
+    await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
+    await shotScreen(page, 'state-profile-push-enable-error');
+  });
 });
 
 test.describe('welcome forum variants', () => {
@@ -5041,6 +5066,7 @@ test.describe('contact screens', () => {
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
             },
           ],
         }),
@@ -5058,6 +5084,7 @@ test.describe('contact screens', () => {
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
               fromMe: false,
+              sats: 0,
             },
           ],
         }),
@@ -5110,6 +5137,7 @@ test.describe('inbox screens', () => {
               lastText: 'Can you help?',
               lastAt: '2026-08-28T14:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
             },
             {
               id: 'conv-21',
@@ -5118,6 +5146,7 @@ test.describe('inbox screens', () => {
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
             },
             {
               id: 'conv-damus',
@@ -5126,6 +5155,7 @@ test.describe('inbox screens', () => {
               lastText: 'Hi from Damus',
               lastAt: '2026-08-28T11:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
             },
           ],
         }),
@@ -5183,6 +5213,7 @@ test.describe('inbox screens', () => {
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: true,
+              lastSats: 0,
             },
           ],
         }),
@@ -5248,6 +5279,7 @@ test.describe('inbox screens', () => {
               lastText: 'Hello team',
               lastAt: '2026-08-28T12:00:00.000Z',
               lastFromMe: false,
+              lastSats: 0,
             },
           ],
         }),
@@ -5265,6 +5297,7 @@ test.describe('inbox screens', () => {
               text: 'Hello team',
               createdAt: '2026-08-28T12:00:00.000Z',
               fromMe: false,
+              sats: 0,
             },
             {
               id: 'm2',
@@ -5272,6 +5305,7 @@ test.describe('inbox screens', () => {
               text: 'Thanks',
               createdAt: '2026-08-28T12:05:00.000Z',
               fromMe: true,
+              sats: 0,
             },
           ],
         }),
@@ -5281,6 +5315,204 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await expect(page.getByText('You')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
+  });
+
+  test('messages sent-sats', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: '',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: true,
+              lastSats: 21,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages');
+    await expect(page.getByText('₿21')).toBeVisible();
+    await shotScreen(page, 'state-messages-sent-sats');
+  });
+
+  test('messages thread-gift', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+            {
+              id: 'm-gift',
+              name: 'Ada',
+              text: '',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              fromMe: true,
+              sats: 21,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText('send ₿21')).toBeVisible();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-gift');
+  });
+
+  test('messages thread-text-sats', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 21,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hi',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 21,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText('Hi')).toBeVisible();
+    await expect(page.getByText('₿21')).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-text-sats');
+  });
+
+  test('messages thread-pay-qr', async ({ page }, testInfo) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+            {
+              id: 'm2',
+              name: 'Ada',
+              text: 'Thanks',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              fromMe: true,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21\/invoice$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
+      });
+    });
+    await page.route(/sinceMessageId=/, async () => {
+      /* hang — keep payWaiting while the sheet is open */
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText('Hello team')).toBeVisible();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-messages-thread-pay-qr');
   });
 });
 

@@ -21,7 +21,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
- * and address forms, PushToggle, LanguagePreferenceSwitcher, ThemeSwitcher,
+ * and address forms, PushToggle (three-stage notification level plus optional
+ * Web Push bell), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Menu totals stay in `SignedInChrome`.

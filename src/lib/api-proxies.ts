@@ -171,6 +171,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/notification-level to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ level }`).
+ * @returns The upstream response.
+ */
+export function proxyMeNotificationLevelPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/notification-level');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -413,6 +423,8 @@ export async function proxyConversationsPost(request: Request): Promise<Response
 /**
  * Proxies GET /conversations/:id to the 21.gifts api.
  *
+ * Forwards the incoming query string (including `sinceMessageId` long-poll).
+ *
  * @param request - Incoming App Router request (Bearer session).
  * @param conversationId - Conversation UUID.
  * @returns The upstream response.
@@ -436,6 +448,20 @@ export async function proxyConversationPost(
   conversationId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}`);
+}
+
+/**
+ * Proxies POST /conversations/:id/invoice to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @param conversationId - Conversation UUID.
+ * @returns The upstream response.
+ */
+export async function proxyConversationInvoicePost(
+  request: Request,
+  conversationId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}/invoice`);
 }
 
 /**

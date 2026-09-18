@@ -151,6 +151,7 @@ beforeEach(() => {
     lastText: '',
     lastAt: '2026-01-01T00:00:00.000Z',
     lastFromMe: false,
+    lastSats: 0,
   });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,

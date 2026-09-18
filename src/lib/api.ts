@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   accountSchema,
   contactSchema,
+  conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
   conversationSchema,
@@ -26,8 +27,10 @@ import {
   vapidPublicSchema,
   viewProfileSchema,
   type Account,
+  type NotificationLevel,
   type ContactMessage,
   type Conversation,
+  type ConversationInvoice,
   type ConversationMessage,
   type Notification,
   type NotificationList,
@@ -526,6 +529,33 @@ export async function dismissForumLaws(sessionToken: string): Promise<Account> {
   });
   if (!response.ok) {
     throw new Error('Could not dismiss the living-room hint');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets the signed-in account notification level.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param level - `all`, `active`, or `mentions`.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function postNotificationLevel(
+  session: string,
+  level: NotificationLevel,
+): Promise<Account> {
+  const response = await fetch('/me/notification-level', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ level }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save notification level.');
   }
   return accountSchema.parse(await response.json());
 }
@@ -1284,27 +1314,107 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
 /**
  * Fetches messages in one private thread (oldest first).
  *
+ * When `sinceMessageId` is a non-empty string, the api long-polls until that
+ * id exists (or times out). `AbortError` is rethrown so the inbox pay poll
+ * can treat cancel as a non-error.
+ *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Conversation UUID.
+ * @param opts - Optional `sinceMessageId` query and `AbortSignal` for the fetch.
  * @returns Message list.
  * @throws Error with visitor-facing copy when the api is unavailable, the
  * thread is missing, or the body fails {@link conversationThreadSchema}.
+ * Re-throws `AbortError` when the request was aborted.
  */
 export async function fetchConversation(
   sessionToken: string,
   id: string,
+  opts?: { sinceMessageId?: string; signal?: AbortSignal },
 ): Promise<ConversationMessage[]> {
   try {
-    const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
+    const sinceMessageId = opts?.sinceMessageId;
+    const path = `/conversations/${encodeURIComponent(id)}`;
+    const url =
+      sinceMessageId !== undefined && sinceMessageId !== ''
+        ? `${path}?sinceMessageId=${encodeURIComponent(sinceMessageId)}`
+        : path;
+    const init: RequestInit = {
       headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    };
+    if (opts?.signal !== undefined) {
+      init.signal = opts.signal;
+    }
+    const response = await fetch(url, init);
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }
     return conversationThreadSchema.parse(await response.json()).messages;
-  } catch {
+  } catch (err) {
+    if ((err instanceof Error && err.name === 'AbortError') || opts?.signal?.aborted) {
+      throw err instanceof Error && err.name === 'AbortError'
+        ? err
+        : new DOMException('The operation was aborted.', 'AbortError');
+    }
     throw new Error('Could not load messages. Please try again.');
   }
+}
+
+/**
+ * Requests a BOLT11 invoice to send bitcoin in a private thread.
+ *
+ * The api creates the predetermined `messageId` up front; the gift row
+ * appears only after payment is confirmed. Empty `text` is omitted.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Conversation UUID.
+ * @param sats - Whole satoshis to pay (≥ 1).
+ * @param text - Optional comment shown as the gift body.
+ * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll.
+ * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
+ * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
+ * {@link conversationInvoiceSchema}.
+ */
+export async function postConversationInvoice(
+  sessionToken: string,
+  id: string,
+  sats: number,
+  text?: string,
+): Promise<ConversationInvoice> {
+  const response = await fetch(`/conversations/${encodeURIComponent(id)}/invoice`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(text === undefined || text === '' ? { sats } : { sats, text }),
+  });
+  if (response.status === 400 || response.status === 429) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not start the Bitcoin payment');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (response.status === 404) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (response.status === 503) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (!response.ok) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return conversationInvoiceSchema.parse(await response.json());
 }
 
 /**

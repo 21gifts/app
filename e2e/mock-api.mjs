@@ -452,6 +452,7 @@ const server = http.createServer(async (req, res) => {
         lastText: text,
         lastAt: created.createdAt,
         lastFromMe: true,
+        lastSats: 0,
         ownerId: account.id,
         messages: [],
       };
@@ -463,6 +464,7 @@ const server = http.createServer(async (req, res) => {
       text,
       createdAt: created.createdAt,
       fromMe: true,
+      sats: 0,
     });
     thread.lastText = text;
     thread.lastAt = created.createdAt;
@@ -524,6 +526,7 @@ const server = http.createServer(async (req, res) => {
           lastText: row.lastText,
           lastAt: row.lastAt,
           lastFromMe: row.lastFromMe === true,
+          lastSats: Number(row.lastSats ?? 0),
         })),
     });
     return;
@@ -568,6 +571,7 @@ const server = http.createServer(async (req, res) => {
         lastText: '',
         lastAt: now,
         lastFromMe: false,
+        lastSats: 0,
         ownerId: account.id,
         messages: [],
       };
@@ -580,7 +584,53 @@ const server = http.createServer(async (req, res) => {
       lastText: thread.lastText,
       lastAt: thread.lastAt,
       lastFromMe: thread.lastFromMe === true,
+      lastSats: Number(thread.lastSats ?? 0),
     });
+    return;
+  }
+
+  const conversationInvoiceMatch = pathName.match(/^\/conversations\/([^/]+)\/invoice$/);
+  if (conversationInvoiceMatch && method === 'POST') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = decodeURIComponent(conversationInvoiceMatch[1]);
+    const thread = conversations.find((row) => row.id === id && row.ownerId === account.id);
+    if (thread === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
+      return;
+    }
+    const sats = Number(parsed?.sats);
+    if (!Number.isInteger(sats) || sats < 1) {
+      json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
+      return;
+    }
+    const senderName = typeof account.name === 'string' ? account.name.trim() : '';
+    const text = typeof parsed?.text === 'string' ? parsed.text.trim() : '';
+    const created = {
+      id: `cmsg_${hex(randomBytes(8))}`,
+      name: senderName === '' ? 'You' : senderName,
+      text,
+      createdAt: new Date().toISOString(),
+      fromMe: true,
+      sats,
+    };
+    thread.messages.push(created);
+    thread.lastText = text;
+    thread.lastAt = created.createdAt;
+    thread.lastFromMe = true;
+    thread.lastSats = sats;
+    json(res, 200, { pr: 'lnbc21n1test', amountSats: sats, messageId: created.id });
     return;
   }
 
@@ -606,6 +656,7 @@ const server = http.createServer(async (req, res) => {
           text: message.text,
           createdAt: message.createdAt,
           fromMe: message.fromMe === true,
+          sats: Number(message.sats ?? 0),
         })),
       });
       return;
@@ -637,11 +688,13 @@ const server = http.createServer(async (req, res) => {
       text,
       createdAt: new Date().toISOString(),
       fromMe: true,
+      sats: 0,
     };
     thread.messages.push(created);
     thread.lastText = text;
     thread.lastAt = created.createdAt;
     thread.lastFromMe = true;
+    thread.lastSats = 0;
     json(res, 200, created);
     return;
   }
@@ -1135,6 +1188,29 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.forumLawsDismissed = true;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/notification-level') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a level of all, active, or mentions' });
+      return;
+    }
+    if (parsed?.level !== 'all' && parsed?.level !== 'active' && parsed?.level !== 'mentions') {
+      json(res, 400, { error: 'Expected a JSON body with a level of all, active, or mentions' });
+      return;
+    }
+    account.notificationLevel = parsed.level;
     json(res, 200, account);
     return;
   }
