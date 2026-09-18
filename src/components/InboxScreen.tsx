@@ -158,7 +158,8 @@ function inboxAuthorProfileButton(
 
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer and a sats amount field. Members (`showFilter`
+ * a 500-character composer and a sats amount field (`showAmount` false
+ * hides it; the staff room is text only). Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Founder/moderator
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
@@ -178,7 +179,8 @@ function inboxAuthorProfileButton(
  * `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe`
  * stays `inbox.you` text; Damus or a missing id stays plain text.
  *
- * @param props - List/thread/composer state from {@link InboxLoader}.
+ * @param props - List/thread/composer state from {@link InboxLoader} or
+ *   {@link ModeratorGroupScreen}.
  * @returns The inbox card.
  */
 export function InboxScreen({

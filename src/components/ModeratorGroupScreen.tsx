@@ -16,7 +16,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * Signed-in closed moderator-group thread.
  *
  * Confirmed moderators fetch {@link fetchModeratorGroup} then
- * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread.
+ * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread
+ * (`showFilter` and `showAmount` false; the heading is always the catalog
+ * `moderate.groupLabel`, never the api row name).
  * Founders, other signed-in visitors, and a missing account see forbidden
  * copy and do not fetch. Renders nothing without a session. Back to the
  * moderation hub is the page chrome (no in-card back).

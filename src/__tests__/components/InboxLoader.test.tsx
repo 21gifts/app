@@ -786,7 +786,7 @@ describe('InboxLoader', () => {
       account: { ...account, role: 'moderator' },
     });
     searchParams.set('c', 'missing');
-    listMock.mockResolvedValue([THREAD]);
+    listMock.mockResolvedValue([OLDER]);
     threadMock.mockResolvedValue([MESSAGE]);
     let resolveGroup!: (value: Conversation) => void;
     groupMock.mockImplementation(
@@ -807,6 +807,38 @@ describe('InboxLoader', () => {
     });
     expect(await screen.findByText('Hello')).toBeTruthy();
     expect(groupMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the old list on a session change so the thread waits for the new one', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([{ ...THREAD, unread: true }]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(threadMock).toHaveBeenCalledTimes(1);
+    let resolveList!: (value: Conversation[]) => void;
+    listMock.mockImplementation(
+      () =>
+        new Promise<Conversation[]>((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2' });
+    });
+    await waitFor(() => {
+      expect(listMock).toHaveBeenCalledWith('sess-2');
+    });
+    expect(screen.queryByText('Hello')).toBeNull();
+    expect(threadMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveList([{ ...THREAD, unread: true }]);
+    });
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(threadMock).toHaveBeenLastCalledWith('sess-2', 'conv-1');
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenLastCalledWith('sess-2', 0);
+    });
   });
 
   it('opens an unlisted PM when the staff-room fetch fails', async () => {
