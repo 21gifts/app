@@ -2414,6 +2414,58 @@ describe('ForumLoader', () => {
     expect(items[1]!.textContent).toContain('Hello from Ada');
   });
 
+  it('keeps a posted note at the top when a silent refresh omits it', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    const created: ForumMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'New note',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'New note' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('New note')).toBeTruthy();
+    });
+
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(2);
+    });
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]!.textContent).toContain('New note');
+    expect(items[1]!.textContent).toContain('Hello from Ada');
+  });
+
   it('shows a post error when posting fails', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new Error('boom'));
@@ -6729,6 +6781,41 @@ describe('forum feed pages', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'all', limit: 20 });
     });
+  });
+
+  it('prefetches after a silent refresh is the first successful load', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
+    fetchMock
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValue(forumPage([second]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await screen.findByText('First page');
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await screen.findByText('Second page');
   });
 
   it('prefetches and appends the next cursor page while deduplicating ids', async () => {

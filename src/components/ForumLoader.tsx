@@ -531,14 +531,24 @@ export function ForumLoader(): ReactElement | null {
         nextCursorRef.current = next.nextCursor;
         setNextCursor(next.nextCursor);
       } else {
-        setMessages((prev) =>
-          mergePageOne(
+        const optimistic = visibleForumMessages(
+          [...optimisticMessages.current.values()],
+          activeMode,
+        ).filter((message) => !serverIds.has(message.id) && !deletedIds.current.has(message.id));
+        const optimisticIds = new Set(optimistic.map((message) => message.id));
+        setMessages((prev) => {
+          const merged = mergePageOne(
             prev,
             visibleNext,
             hiddenReplyCounts.current,
             lastServerReplyCount.current,
-          ).filter((row) => !deletedIds.current.has(row.id)),
-        );
+          ).filter((row) => !deletedIds.current.has(row.id));
+          return [...optimistic, ...merged.filter((row) => !optimisticIds.has(row.id))];
+        });
+        if (messagesRef.current === null) {
+          nextCursorRef.current = next.nextCursor;
+          setNextCursor(next.nextCursor);
+        }
       }
       setNewPostsAvailable(false);
       if (visibleNext.some((message) => message.payable === false)) {
