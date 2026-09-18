@@ -3302,6 +3302,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByRole('button', { name: 'React', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });

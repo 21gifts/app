@@ -29,6 +29,10 @@ describe('getCatalog', () => {
     expect(getCatalog('de')['forum.payOpenWallet']).toBe('Zahlen');
     expect(getCatalog('es')['forum.payOpenWallet']).toBe('Pagar');
     expect(getCatalog('fil')['forum.payOpenWallet']).toBe('Magbayad');
+    expect(getCatalog('en')['forum.react']).toBe('React');
+    expect(getCatalog('de')['forum.react']).toBe('Reagieren');
+    expect(getCatalog('es')['forum.react']).toBe('Reaccionar');
+    expect(getCatalog('fil')['forum.react']).toBe('Tumugon');
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
