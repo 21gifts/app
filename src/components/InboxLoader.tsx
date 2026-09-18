@@ -82,9 +82,9 @@ function isAbortError(err: unknown): boolean {
  * Client loader for the signed-in inbox on `/messages`.
  *
  * Reads the session from the auth store, fetches the conversation list, and
- * opens `?c=` only after that list loaded for the current session (rows
- * from another session do not count), unless the list has that id as `moderator_group` (new empty
- * PMs are not yet listed). For a confirmed moderator an unlisted `?c=` first
+ * opens `?c=` only after that list loaded, unless the list has that id as
+ * `moderator_group` (new empty PMs are not yet listed). For a confirmed
+ * moderator an unlisted `?c=` first
  * resolves {@link fetchModeratorGroup} once per id, with neutral loading
  * instead of the list; a match never opens, other roles and a failed lookup
  * fall through. The composer sends free text
@@ -118,7 +118,6 @@ export function InboxLoader(): ReactElement | null {
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
-  const [listSession, setListSession] = useState<string | null>(null);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
@@ -138,21 +137,19 @@ export function InboxLoader(): ReactElement | null {
   /* v8 ignore stop */
   openIdRef.current = openId;
 
-  /* Rows count as loaded only for the session that fetched them. */
-  const rows = listSession === session ? conversations : null;
   const listed =
-    rows === null || openId === null || openId === ''
+    conversations === null || openId === null || openId === ''
       ? undefined
-      : rows.find((row) => row.id === openId);
+      : conversations.find((row) => row.id === openId);
   const waitingStaffRoom =
     account?.role === 'moderator' &&
-    rows !== null &&
+    conversations !== null &&
     openId !== null &&
     openId !== '' &&
     listed === undefined &&
     staffRoomId === null;
   const threadAllowed =
-    rows !== null &&
+    conversations !== null &&
     openId !== null &&
     openId !== '' &&
     listed?.kind !== 'moderator_group' &&
@@ -174,7 +171,6 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setConversations(next);
-        setListSession(session);
       } catch {
         /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
@@ -199,7 +195,7 @@ export function InboxLoader(): ReactElement | null {
       account?.role !== 'moderator' ||
       openId === null ||
       openId === '' ||
-      rows === null ||
+      conversations === null ||
       listed !== undefined ||
       staffRoomId !== null
     ) {
@@ -220,7 +216,7 @@ export function InboxLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, account?.role, openId, rows, listed, staffRoomId]);
+  }, [session, account?.role, openId, conversations, listed, staffRoomId]);
 
   useEffect(() => {
     if (session === null || openId === null || openId === '' || !threadAllowed) {
@@ -242,7 +238,7 @@ export function InboxLoader(): ReactElement | null {
         }
         setMessages(next);
         /* v8 ignore next -- a thread only opens after the inbox list loaded */
-        const listedRows = rows ?? [];
+        const listedRows = conversations ?? [];
         const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
         setConversations((prev) => {
           /* v8 ignore next 3 -- list cleared while the thread was loading */
@@ -439,7 +435,7 @@ export function InboxLoader(): ReactElement | null {
   const showFilter = account?.role === 'moderator' || account?.role === 'founder';
   return (
     <InboxScreen
-      conversations={waitingStaffRoom ? null : rows}
+      conversations={waitingStaffRoom ? null : conversations}
       error={error}
       loading={loading || waitingStaffRoom}
       onRetry={() => {
