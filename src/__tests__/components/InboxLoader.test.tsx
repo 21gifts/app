@@ -527,7 +527,7 @@ describe('InboxLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 
-  it('retries a failed thread fetch and goes back', async () => {
+  it('retries a failed thread fetch', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce([MESSAGE]);
@@ -535,8 +535,6 @@ describe('InboxLoader', () => {
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Hello')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
-    expect(push).toHaveBeenCalledWith('/messages');
   });
 
   it('clears stale messages immediately when opening another conversation', async () => {

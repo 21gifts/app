@@ -430,17 +430,6 @@ export function InboxLoader(): ReactElement | null {
         setPayWaiting(false);
         router.push(`/messages?c=${encodeURIComponent(id)}`);
       }}
-      onBack={() => {
-        /* v8 ignore next -- no poll unless a pay sheet is open */
-        payPollRef.current?.abort();
-        payPollRef.current = null;
-        setDraft('');
-        setAmountDraft('');
-        setFormError(null);
-        setInvoice(null);
-        setPayWaiting(false);
-        router.push('/messages');
-      }}
       messages={openId === null || openId === '' ? null : messages}
       messagesLoading={openId !== null && openId !== '' && messagesLoading}
       messagesError={openId !== null && openId !== '' && messagesError}

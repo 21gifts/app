@@ -349,10 +349,17 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared signed-in top-left chrome: icon-only forum back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`.
-- **Inputs:** Catalog `profile.back` via `useTranslations`.
-- **Returns / side effects:** A link (`aria-label` from `profile.back`) and a wordmark link. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back`, default `profile.back`).
+- **Inputs:** Optional `backHref` and `backLabelKey`; catalog via `useTranslations`.
+- **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. No network.
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+
+## Function: MessagesChromeLeft
+
+- **Purpose:** Client `/messages` chrome that reads `?c=` and renders `ProfileChromeLeft`. List (missing or empty `c`): default forum back. Non-empty `c`: `backHref="/messages"` and `backLabelKey="inbox.back"`.
+- **Inputs:** `useSearchParams`.
+- **Returns / side effects:** `ProfileChromeLeft`. No network.
+- **Used by:** `MessagesPage`.
 
 ## Function: ProfileScreen
 
@@ -2115,19 +2122,19 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Next.js page for `/messages` (signed-in PN inbox).
 - **Inputs:** None.
-- **Returns / side effects:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
+- **Returns / side effects:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` in `Suspense` top-left (fallback `ProfileChromeLeft`), `SignedInChrome` top-right, and `OnboardingGate` around `InboxLoader`. Conversation HTTP is under `/conversations`.
 - **Used by:** Route `/messages`.
 
 ## Function: InboxLoader
 
-- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=`, posts replies. Founder/moderator get `showFilter` true; members see the unfiltered inbound list.
+- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list.
 - **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
 - **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`. After a successful thread fetch, local `unread: false`, then fire-and-forget `markConversationRead`, `bumpUnreadAppBadgeEpoch` and `refreshUnreadAppBadge` (remaining inbox from the local list, or a conversations fetch if the list is still null). Must not fail the thread view.
 - **Used by:** `MessagesPage`.
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
 - **Inputs:** List/thread/composer state from `InboxLoader`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`.

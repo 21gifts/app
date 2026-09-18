@@ -77,8 +77,6 @@ export interface InboxScreenProps {
   openId: string | null;
   /** Opens a thread from the list. */
   onOpen: (id: string) => void;
-  /** Returns to the thread list. */
-  onBack: () => void;
   /** Messages for the open thread (oldest-first), or `null` when not ready. */
   messages: ConversationMessage[] | null;
   /** True while messages are loading for the open thread. */
@@ -164,7 +162,8 @@ function inboxAuthorProfileButton(
  * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on
  * the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`;
  * text+sats show the amount under the body. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. Unread inbound rows use a semibold
+ * Wallet of Satoshi / QR pay sheet. The open-thread heading is the counterpart
+ * name plus origin caption (no in-card back). Unread inbound rows use a semibold
  * counterpart name and `text-app-fg` last-text (read inbound last-text stays
  * muted) plus `aria-label` `inbox.threadUnread`. Heading and incoming author
  * names with a non-empty `accountId` are `inbox.authorProfile` buttons to
@@ -181,7 +180,6 @@ export function InboxScreen({
   onRetry,
   openId,
   onOpen,
-  onBack,
   messages,
   messagesLoading,
   messagesError,
@@ -273,43 +271,32 @@ export function InboxScreen({
   if (openId !== null) {
     body = (
       <div className="flex w-full flex-col gap-4">
-        <div className="flex w-full items-center gap-2">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('inbox.back')}
-            onClick={onBack}
-          >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          <div className="min-w-0 flex-1">
-            {open !== null && hasInboxAccountId(open.accountId) ? (
-              <h1
-                className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl"
-                aria-label={open.name}
-              >
-                {inboxAuthorProfileButton(
-                  open.name,
-                  open.accountId,
-                  'text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl underline underline-offset-2',
-                  t('inbox.authorProfile'),
-                  (href) => {
-                    router.push(href);
-                  },
-                )}
-              </h1>
-            ) : (
-              <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-                {open?.name ?? t('inbox.heading')}
-              </h1>
-            )}
-            {open !== null ? (
-              <p className="text-center text-xs text-app-subtle">
-                {t(CONVERSATION_ORIGIN_KEY[open.kind])}
-              </p>
-            ) : null}
-          </div>
+        <div>
+          {open !== null && hasInboxAccountId(open.accountId) ? (
+            <h1
+              className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl"
+              aria-label={open.name}
+            >
+              {inboxAuthorProfileButton(
+                open.name,
+                open.accountId,
+                'text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl underline underline-offset-2',
+                t('inbox.authorProfile'),
+                (href) => {
+                  router.push(href);
+                },
+              )}
+            </h1>
+          ) : (
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+              {open?.name ?? t('inbox.heading')}
+            </h1>
+          )}
+          {open !== null ? (
+            <p className="text-center text-xs text-app-subtle">
+              {t(CONVERSATION_ORIGIN_KEY[open.kind])}
+            </p>
+          ) : null}
         </div>
         {messagesLoading && messages === null ? (
           <p className="text-center text-sm text-app-muted">{t('inbox.loading')}</p>
