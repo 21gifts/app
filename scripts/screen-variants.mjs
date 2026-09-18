@@ -507,6 +507,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-inbox-unread',
+    image: 'welcome-menu-inbox-unread.png',
+    visual: 'state-welcome-menu-inbox-unread',
+    needle: "getByRole('link', { name: 'Messages, 2 unread' })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',
@@ -994,6 +1001,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages.png',
     visual: 'screen-messages',
     needle: "getByRole('heading', { name: 'Messages' })",
+  },
+  {
+    route: '/messages',
+    id: 'unread',
+    image: 'messages-unread.png',
+    visual: 'state-messages-unread',
+    needle: "getByRole('button', { name: 'Bob, Unread' })",
   },
   {
     route: '/messages',

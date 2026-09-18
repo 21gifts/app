@@ -593,6 +593,14 @@ test('Function: proxyConversationInvoicePost — POST /conversations/[id]/invoic
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyConversationReadPost — POST /conversations/[id]/read without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.post('/conversations/[id]/read', { data: {} })).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyNotificationsGet — GET /forum/notifications without bearer is 401', async ({
   request,
 }) => {
@@ -2737,6 +2745,69 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
   await expect(page.getByLabel(/amount/i)).toBeVisible();
 });
 
+test('Function: markConversationRead — opening a thread POSTs read', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        ],
+        unreadCount: 1,
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  const readPost = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
+  );
+  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await readPost;
+  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
+});
+
 test('Function: postConversationMessage — composer is visible on a thread', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -4840,6 +4911,48 @@ test('Function: useUnreadCount — menu shows unread notification count', async 
   await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
 });
 
+test('Function: useUnreadCount — menu shows inbox unread count', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'c1',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: 'Hi',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+          {
+            id: 'c2',
+            kind: 'member_member',
+            name: 'Carol',
+            lastText: 'Hey',
+            lastAt: '2026-08-28T13:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        ],
+        unreadCount: 2,
+      }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Messages, 2 unread' })).toBeVisible();
+});
+
 test('Function: resyncPushSubscription — signed-in chrome still shows Menu', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
@@ -5922,6 +6035,82 @@ test('Function: setUnreadAppBadge — menu shows unread notification count', asy
   await page.goto('/profile');
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Notifications, 3 unread' })).toBeVisible();
+});
+
+test('Function: refreshUnreadAppBadge — opening a thread refetches notifications', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  let notificationGets = 0;
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    notificationGets += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        ],
+        unreadCount: 1,
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await expect.poll(() => notificationGets).toBeGreaterThan(0);
+  const beforeThread = notificationGets;
+  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
+  await expect.poll(() => notificationGets).toBe(beforeThread + 1);
 });
 
 test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {

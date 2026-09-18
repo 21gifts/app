@@ -406,6 +406,98 @@ test('inbox gift-only last preview shows ₿21', async ({ page }) => {
   await expect(page.getByText('₿21')).toBeVisible();
 });
 
+test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const readPosts: string[] = [];
+  await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    readPosts.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        ],
+        unreadCount: 1,
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '21.gifts, Unread' })).toBeVisible();
+  expect(readPosts).toEqual([]);
+  const readPost = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
+  );
+  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await readPost;
+  await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
+  expect(readPosts).toHaveLength(1);
+});
+
 test('inbox gift-only bubble shows send ₿21', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

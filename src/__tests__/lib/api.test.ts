@@ -33,6 +33,7 @@ import {
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   listHiddenMessages,
   markAllNotificationsRead,
+  markConversationRead,
   markNotificationRead,
   openConversation,
   postContact,
@@ -2190,6 +2191,7 @@ const conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const conversationMessage = {
@@ -2219,6 +2221,27 @@ describe('fetchConversations', () => {
     await expect(fetchConversations('sess')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+
+  it('defaults missing unread and unreadCount so an old api body still parses', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: {
+        conversations: [
+          {
+            id: 'conv-1',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      },
+    });
+    await expect(fetchConversations('sess')).resolves.toEqual([conversation]);
   });
 });
 
@@ -2491,6 +2514,24 @@ describe('fetchNotifications', () => {
     stubFetch({ ok: true, status: 200, body: { notifications: [], unreadCount: -1 } });
     await expect(fetchNotifications('sess')).rejects.toThrow(
       'Could not load notifications. Please try again.',
+    );
+  });
+});
+
+describe('markConversationRead', () => {
+  it('posts and encodes the id', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+    await expect(markConversationRead('sess', 'a/b')).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb/read', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(markConversationRead('sess', 'c1')).rejects.toThrow(
+      'Could not mark conversation as read',
     );
   });
 });

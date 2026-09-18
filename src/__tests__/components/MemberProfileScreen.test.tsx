@@ -242,6 +242,7 @@ beforeEach(() => {
     lastAt: '2026-01-01T00:00:00.000Z',
     lastFromMe: false,
     lastSats: 0,
+    unread: false,
   });
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
   vi.mocked(fetchPublicMessage).mockResolvedValue(null);
@@ -692,6 +693,7 @@ describe('MemberProfileScreen', () => {
         lastAt: '2026-01-01T00:00:00.000Z',
         lastFromMe: false,
         lastSats: 0,
+        unread: false,
       });
     });
     await waitFor(() => {
@@ -2544,6 +2546,7 @@ describe('MemberProfileScreen', () => {
       lastAt: string;
       lastFromMe: boolean;
       lastSats: number;
+      unread: boolean;
     }) => void;
     vi.mocked(openConversation).mockReturnValue(
       new Promise((resolve) => {
@@ -2569,6 +2572,7 @@ describe('MemberProfileScreen', () => {
       lastAt: '2026-01-01T00:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
@@ -2662,6 +2666,7 @@ describe('MemberProfileScreen', () => {
       lastAt: string;
       lastFromMe: boolean;
       lastSats: number;
+      unread: boolean;
     }) => void;
     vi.mocked(openConversation).mockReturnValue(
       new Promise((resolve) => {
@@ -2687,6 +2692,7 @@ describe('MemberProfileScreen', () => {
       lastAt: '2026-01-01T00:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     });
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
@@ -2702,6 +2708,7 @@ describe('MemberProfileScreen', () => {
       lastAt: string;
       lastFromMe: boolean;
       lastSats: number;
+      unread: boolean;
     }) => void;
     vi.mocked(openConversation).mockReturnValue(
       new Promise((resolve) => {
@@ -2727,6 +2734,7 @@ describe('MemberProfileScreen', () => {
       lastAt: '2026-01-01T00:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     });
     await act(async () => {
       await Promise.resolve();

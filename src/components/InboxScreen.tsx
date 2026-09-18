@@ -163,9 +163,12 @@ function inboxAuthorProfileButton(
  * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on
  * the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`;
  * text+sats show the amount under the body. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. Heading and incoming author names with a
- * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
- * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
+ * Wallet of Satoshi / QR pay sheet. Unread inbound rows use a semibold
+ * counterpart name and `text-app-fg` last-text (read inbound last-text stays
+ * muted) plus `aria-label` `inbox.threadUnread`. Heading and incoming author
+ * names with a non-empty `accountId` are `inbox.authorProfile` buttons to
+ * `/members/:id`; `fromMe` stays `inbox.you` text; Damus or a missing id stays
+ * plain text.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -564,13 +567,22 @@ export function InboxScreen({
               <li key={row.id}>
                 <button
                   type="button"
+                  aria-label={row.unread ? t('inbox.threadUnread', { name: row.name }) : undefined}
                   onClick={() => {
                     onOpen(row.id);
                   }}
                   className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
                 >
                   <span className="flex w-full items-baseline justify-between gap-2">
-                    <span className="text-sm font-medium text-app-fg">{row.name}</span>
+                    <span
+                      className={
+                        row.unread
+                          ? 'text-sm font-semibold text-app-fg'
+                          : 'text-sm font-medium text-app-fg'
+                      }
+                    >
+                      {row.name}
+                    </span>
                     <time dateTime={row.lastAt} className="text-xs text-app-subtle">
                       {formatForumTime(row.lastAt, locale)}
                     </time>
@@ -579,7 +591,15 @@ export function InboxScreen({
                     {t(CONVERSATION_ORIGIN_KEY[row.kind])}
                   </span>
                   {row.lastText !== '' ? (
-                    <span className={listPreviewClass(row.lastFromMe)}>
+                    <span
+                      className={
+                        row.lastFromMe
+                          ? listPreviewClass(true)
+                          : row.unread
+                            ? 'line-clamp-2 text-sm text-app-fg'
+                            : listPreviewClass(false)
+                      }
+                    >
                       {row.lastFromMe
                         ? t('inbox.sentPreview', { text: row.lastText })
                         : row.lastText}

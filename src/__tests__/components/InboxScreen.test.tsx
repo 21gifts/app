@@ -37,6 +37,7 @@ const THREAD: Conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const DIRECT: Conversation = {
@@ -47,6 +48,7 @@ const DIRECT: Conversation = {
   lastAt: '2026-08-28T13:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const DAMUS: Conversation = {
@@ -57,6 +59,7 @@ const DAMUS: Conversation = {
   lastAt: '2026-08-28T14:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
@@ -967,6 +970,71 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
+  it('styles an unread inbound row with a semibold name and foreground lastText', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...THREAD, unread: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    const row = screen.getByRole('button', { name: '21.gifts, Unread' });
+    expect(row.getAttribute('aria-label')).toBe('21.gifts, Unread');
+    expect(within(row).getByText('21.gifts').className).toContain('font-semibold');
+    const lastText = screen.getByText('Hello team', { exact: true });
+    expect(lastText.className).toContain('text-app-fg');
+    expect(lastText.className).not.toContain('text-app-muted');
+    expect(row.querySelector('.tabular-nums')).toBeNull();
+    expect(within(row).queryByText('Unread')).toBeNull();
+  });
+
+  it('keeps a read inbound row medium and muted without an unread aria-label', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        onBack={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
+    const row = screen.getByRole('button', { name: /21\.gifts/ });
+    expect(row.getAttribute('aria-label')).toBeNull();
+    expect(within(row).getByText('21.gifts').className).toContain('font-medium');
+    expect(within(row).getByText('21.gifts').className).not.toContain('font-semibold');
+    const lastText = screen.getByText('Hello team', { exact: true });
+    expect(lastText.className).toContain('text-app-muted');
+    expect(lastText.className).not.toContain('text-app-fg');
+    expect(row.querySelector('.tabular-nums')).toBeNull();
   });
 
   it('opens Wallet of Satoshi from the smartphone pay sheet', () => {

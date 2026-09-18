@@ -20,7 +20,7 @@ const byPasskeyCredential = new Map();
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
-/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, lastFromMe: boolean, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string, fromMe: boolean }> }>} */
+/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, lastFromMe: boolean, lastReadAt?: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string, fromMe: boolean }> }>} */
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
@@ -37,6 +37,36 @@ function b64url(bytes) {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/u, '');
+}
+
+/**
+ * True when the thread has inbound mail newer than last-read.
+ *
+ * @param {{ lastReadAt?: string, messages: Array<{ createdAt: string, fromMe: boolean }> }} row
+ */
+function conversationUnread(row) {
+  const lastReadAt = typeof row.lastReadAt === 'string' ? row.lastReadAt : null;
+  return row.messages.some(
+    (message) => message.fromMe !== true && (lastReadAt === null || message.createdAt > lastReadAt),
+  );
+}
+
+/**
+ * Public conversation list-row fields, including `unread`.
+ *
+ * @param {{ id: string, kind?: string, name: string, lastText: string, lastAt: string, lastFromMe?: boolean, lastReadAt?: string, messages: Array<{ createdAt: string, fromMe: boolean }> }} row
+ */
+function publicConversation(row) {
+  return {
+    id: row.id,
+    kind: row.kind ?? 'member_member',
+    name: row.name,
+    lastText: row.lastText,
+    lastAt: row.lastAt,
+    lastFromMe: row.lastFromMe === true,
+    lastSats: Number(row.lastSats ?? 0),
+    unread: conversationUnread(row),
+  };
 }
 
 function json(res, status, body) {
@@ -511,23 +541,17 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    const list = conversations
+      .filter((row) => row.ownerId === account.id)
+      .filter(
+        (row) =>
+          row.messages.some((message) => message.fromMe !== true) ||
+          ((row.kind ?? 'member_member') === 'member_platform' && row.messages.length > 0),
+      )
+      .map(publicConversation);
     json(res, 200, {
-      conversations: conversations
-        .filter((row) => row.ownerId === account.id)
-        .filter(
-          (row) =>
-            row.messages.some((message) => message.fromMe !== true) ||
-            ((row.kind ?? 'member_member') === 'member_platform' && row.messages.length > 0),
-        )
-        .map((row) => ({
-          id: row.id,
-          kind: row.kind ?? 'member_member',
-          name: row.name,
-          lastText: row.lastText,
-          lastAt: row.lastAt,
-          lastFromMe: row.lastFromMe === true,
-          lastSats: Number(row.lastSats ?? 0),
-        })),
+      conversations: list,
+      unreadCount: list.filter((row) => row.unread).length,
     });
     return;
   }
@@ -577,15 +601,25 @@ const server = http.createServer(async (req, res) => {
       };
       conversations.unshift(thread);
     }
-    json(res, 200, {
-      id: thread.id,
-      kind: thread.kind ?? 'member_member',
-      name: thread.name,
-      lastText: thread.lastText,
-      lastAt: thread.lastAt,
-      lastFromMe: thread.lastFromMe === true,
-      lastSats: Number(thread.lastSats ?? 0),
-    });
+    json(res, 200, publicConversation(thread));
+    return;
+  }
+  const conversationReadMatch = pathName.match(/^\/conversations\/([^/]+)\/read$/);
+  if (method === 'POST' && conversationReadMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = decodeURIComponent(conversationReadMatch[1]);
+    const thread = conversations.find((row) => row.id === id && row.ownerId === account.id);
+    if (thread === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    thread.lastReadAt = new Date().toISOString();
+    json(res, 200, { ok: true });
     return;
   }
 

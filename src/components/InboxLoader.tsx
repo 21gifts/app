@@ -6,9 +6,11 @@ import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/component
 import {
   fetchConversation,
   fetchConversations,
+  markConversationRead,
   postConversationInvoice,
   postConversationMessage,
 } from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
@@ -83,6 +85,9 @@ function isAbortError(err: unknown): boolean {
  * an invoice from its amount field and long-polls for the paid gift row.
  * Renders nothing when there is no session.
  * Founder/moderator get the origin filter; members see the full inbound list.
+ * After a successful thread load and mark-read, bumps the badge epoch and
+ * refreshes the home-screen badge to notifications unread plus remaining
+ * inbox unread.
  *
  * @returns The inbox screen, or `null` without a session.
  */
@@ -108,6 +113,8 @@ export function InboxLoader(): ReactElement | null {
   const [payWaiting, setPayWaiting] = useState(false);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
+  const listFetchGen = useRef(0);
+  const markedReadGen = useRef(new Map<string, number>());
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
   if (openIdRef.current !== openId) {
     setMessages(null);
@@ -131,6 +138,8 @@ export function InboxLoader(): ReactElement | null {
     let cancelled = false;
     setLoading(true);
     setError(false);
+    const gen = listFetchGen.current + 1;
+    listFetchGen.current = gen;
     void (async () => {
       try {
         const next = await fetchConversations(session);
@@ -138,7 +147,12 @@ export function InboxLoader(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setConversations(next);
+        setConversations(
+          next.map((row) => {
+            const markedGen = markedReadGen.current.get(row.id);
+            return markedGen !== undefined && gen <= markedGen ? { ...row, unread: false } : row;
+          }),
+        );
       } catch {
         /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
@@ -176,6 +190,42 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setMessages(next);
+        const remainingFromList =
+          conversations === null
+            ? undefined
+            : conversations.filter((row) => row.id !== openId && row.unread).length;
+        setConversations((prev) => {
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
+        });
+        markedReadGen.current.set(openId, listFetchGen.current);
+        void markConversationRead(session, openId).catch(() => undefined);
+        if (remainingFromList !== undefined) {
+          bumpUnreadAppBadgeEpoch();
+          void refreshUnreadAppBadge(session, remainingFromList).catch(() => undefined);
+        } else {
+          try {
+            const rows = await fetchConversations(session);
+            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
+            if (cancelled) {
+              return;
+            }
+            bumpUnreadAppBadgeEpoch();
+            void refreshUnreadAppBadge(
+              session,
+              rows.filter((row) => row.id !== openId && row.unread).length,
+            ).catch(() => undefined);
+          } catch {
+            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
+            if (cancelled) {
+              return;
+            }
+            bumpUnreadAppBadgeEpoch();
+            void refreshUnreadAppBadge(session, 0).catch(() => undefined);
+          }
+        }
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {
@@ -335,6 +385,7 @@ export function InboxLoader(): ReactElement | null {
                   lastSats: created.sats,
                   lastAt: created.createdAt,
                   lastFromMe: true,
+                  unread: false,
                 }
               : row,
           );
