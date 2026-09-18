@@ -1002,8 +1002,14 @@ describe('hiddenMessageSchema', () => {
     expect(Object.prototype.hasOwnProperty.call(parsed, 'via')).toBe(false);
   });
 
-  it('rejects an unknown via value', () => {
-    expect(() => hiddenMessageSchema.parse({ ...hidden, via: 'something-else' })).toThrow();
+  it('accepts another non-empty via value', () => {
+    expect(hiddenMessageSchema.parse({ ...hidden, via: 'something-else' }).via).toBe(
+      'something-else',
+    );
+  });
+
+  it('rejects an empty via value', () => {
+    expect(() => hiddenMessageSchema.parse({ ...hidden, via: '' })).toThrow();
   });
 });
 

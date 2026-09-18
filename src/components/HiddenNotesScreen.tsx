@@ -130,7 +130,7 @@ export function HiddenNotesScreen(): ReactElement | null {
           <li key={row.id}>
             <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
               <span className="flex w-full items-baseline justify-between gap-2">
-                {row.via === 'nostr' ? (
+                {row.via !== undefined ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-app-fg">
                       {row.name !== '' ? row.name : t('moderate.unnamed')}

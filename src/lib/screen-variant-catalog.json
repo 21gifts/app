@@ -1116,6 +1116,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-visitor",
+    "label": "/welcome expanded-visitor",
+    "visual": "state-welcome-expanded-visitor",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:quoted-note",
     "label": "/welcome quoted-note",
     "visual": "state-welcome-quoted-note",
@@ -1209,6 +1215,12 @@
     "id": "/messages/[id]:thread",
     "label": "/messages/[id] thread",
     "visual": "state-messages-id-thread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:visitor-reply",
+    "label": "/messages/[id] visitor-reply",
+    "visual": "state-messages-id-visitor-reply",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -1375,9 +1375,9 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'expanded-nostr',
-    image: 'welcome-expanded-nostr.png',
-    visual: 'state-welcome-expanded-nostr',
+    id: 'expanded-visitor',
+    image: 'welcome-expanded-visitor.png',
+    visual: 'state-welcome-expanded-visitor',
     needle: 'Wrote from another app',
   },
   {
@@ -1494,10 +1494,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
-    id: 'nostr-reply',
-    image: 'messages-id-nostr-reply.png',
-    visual: 'state-messages-id-nostr-reply',
-    needle: 'state-messages-id-nostr-reply',
+    id: 'visitor-reply',
+    image: 'messages-id-visitor-reply.png',
+    visual: 'state-messages-id-visitor-reply',
+    needle: 'state-messages-id-visitor-reply',
   },
   {
     route: '/messages/[id]',
