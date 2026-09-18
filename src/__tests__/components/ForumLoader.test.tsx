@@ -6839,6 +6839,34 @@ describe('forum feed pages', () => {
     await screen.findByText('Second page');
   });
 
+  it('starts a payable poll when a cursor page includes an unsigned note', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const unsigned: ForumMessage = {
+      ...paidMessage('page-2', 'Unsigned page', '2026-08-28T14:00:00.000Z'),
+      payable: false,
+    };
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValueOnce(forumPage([unsigned]))
+      .mockResolvedValue(forumPage([unsigned]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    vi.useFakeTimers();
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Unsigned page')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it('keeps the loaded pages when a cursor prefetch fails', async () => {
     const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
     fetchMock

@@ -685,7 +685,6 @@ export function ForumLoader(): ReactElement | null {
           );
           nextCursorRef.current = page.nextCursor;
           setNextCursor(page.nextCursor);
-          /* v8 ignore next 3 -- page-two unsigned notes are rare; page one already polls */
           if (appended.some((message) => message.payable === false)) {
             startPayablePoll(activeSession);
           }

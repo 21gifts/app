@@ -490,7 +490,7 @@ async function advanceRulesChapters(page: Page, clicks: number): Promise<void> {
 
 /** Newest-first mixed-sats forum fixture for `/welcome` Active / All / Most popular. */
 async function fulfillMixedSatsMessages(page: Page): Promise<void> {
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -536,7 +536,7 @@ const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 
 /** One paid German Ada note so Active shows Translate under the body. */
 async function fulfillGermanPaidAdaNote(page: Page): Promise<void> {
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1206,7 +1206,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
         return;
@@ -1491,7 +1491,7 @@ test.describe('onboarding screens', () => {
     });
     const tail = 'TAILTOKEN';
     const text = `${'Good morning everyone. '.repeat(14)}${tail}`;
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1551,7 +1551,7 @@ test.describe('onboarding screens', () => {
       replyCount: 0,
     }));
     let messagesBody: { messages: typeof baseMessages } = { messages: baseMessages };
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1627,7 +1627,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4658,7 +4658,7 @@ test.describe('welcome forum variants', () => {
     test(replyDeleteTitles[state], async ({ page }) => {
       await seedAda(page, 'moderator');
       await fulfillMixedSatsMessages(page);
-      await page.route(/\/messages$/, async (route) => {
+      await page.route(/\/messages(?:\?|$)/, async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -4813,7 +4813,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome empty-unpaid', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4857,7 +4857,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome empty-paid', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4889,7 +4889,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome empty', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4907,7 +4907,7 @@ test.describe('welcome forum variants', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await held;
       await route.abort();
     });
@@ -4919,7 +4919,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome error', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.abort();
     });
     await page.goto('/welcome');
@@ -4929,7 +4929,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome validation-error', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4945,7 +4945,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome photo', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -4985,7 +4985,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome photos', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5035,7 +5035,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome photo-and-text', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         const parsed = route.request().postDataJSON() as {
           text?: string;
@@ -5092,7 +5092,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome photos-and-text', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5141,7 +5141,7 @@ test.describe('welcome forum variants', () => {
   });
 
   async function emptyForum(page: Page): Promise<void> {
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5317,7 +5317,7 @@ test.describe('welcome forum variants', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         await held;
         await route.fulfill({
@@ -5362,7 +5362,7 @@ test.describe('welcome forum variants', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5478,7 +5478,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome error-request-photo-and-text', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 500,
@@ -5772,7 +5772,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome role-hint', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5938,7 +5938,7 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
         return;
