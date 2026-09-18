@@ -281,6 +281,7 @@ const en = {
   'forum.previewAlt': 'Selected photo',
   'forum.photoAlt': 'Photo from {name}',
   'forum.quotedNote': 'Open linked note from {name}',
+  'forum.quotedNoteVisitor': 'Open linked note from visitor {name}',
   'forum.removePhoto': 'Remove photo',
   'forum.removeVideo': 'Remove video',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
@@ -393,9 +394,9 @@ const en = {
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
-  'forum.via.nostr': 'via Nostr',
+  'forum.via.nostr': 'Visitor',
   'forum.via.nostrHint':
-    'Wrote from another Nostr app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+    'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
 
   'rules.pageTitle': 'Living room rules',
   'rules.heading': 'Living room rules',
@@ -861,6 +862,7 @@ const de = {
   'forum.previewAlt': 'Ausgewähltes Foto',
   'forum.photoAlt': 'Foto von {name}',
   'forum.quotedNote': 'Verknüpfte Notiz von {name} öffnen',
+  'forum.quotedNoteVisitor': 'Verknüpfte Notiz von Besucher {name} öffnen',
   'forum.removePhoto': 'Foto entfernen',
   'forum.removeVideo': 'Video entfernen',
   'forum.errorUnsupported':
@@ -977,9 +979,9 @@ const de = {
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
-  'forum.via.nostr': 'über Nostr',
+  'forum.via.nostr': 'Besucher',
   'forum.via.nostrHint':
-    'Hat aus einer anderen Nostr-App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
+    'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
 
   'rules.pageTitle': 'Wohnzimmerregeln',
   'rules.heading': 'Wohnzimmerregeln',
@@ -1446,6 +1448,7 @@ const es = {
   'forum.previewAlt': 'Foto seleccionada',
   'forum.photoAlt': 'Foto de {name}',
   'forum.quotedNote': 'Abrir la nota enlazada de {name}',
+  'forum.quotedNoteVisitor': 'Abrir la nota enlazada del visitante {name}',
   'forum.removePhoto': 'Quitar foto',
   'forum.removeVideo': 'Quitar vídeo',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
@@ -1560,9 +1563,9 @@ const es = {
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
-  'forum.via.nostr': 'vía Nostr',
+  'forum.via.nostr': 'Visitante',
   'forum.via.nostrHint':
-    'Escribió desde otra app de Nostr, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
+    'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
 
   'rules.pageTitle': 'Reglas del salón',
   'rules.heading': 'Reglas del salón',
@@ -2022,6 +2025,7 @@ const fil = {
   'forum.previewAlt': 'Napiling litrato',
   'forum.photoAlt': 'Litrato mula kay {name}',
   'forum.quotedNote': 'Buksan ang naka-link na nota mula kay {name}',
+  'forum.quotedNoteVisitor': 'Buksan ang naka-link na nota mula sa bisitang si {name}',
   'forum.removePhoto': 'Alisin ang litrato',
   'forum.removeVideo': 'Alisin ang bidyo',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
@@ -2137,9 +2141,9 @@ const fil = {
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
-  'forum.via.nostr': 'mula sa Nostr',
+  'forum.via.nostr': 'Bisita',
   'forum.via.nostrHint':
-    'Sumulat mula sa ibang Nostr app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
+    'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
 
   'rules.pageTitle': 'Mga patakaran sa living room',
   'rules.heading': 'Mga patakaran sa living room',

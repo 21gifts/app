@@ -216,4 +216,17 @@ describe('publicMessageOgMetadata', () => {
       images: [photo],
     });
   });
+
+  it('prefixes the title in all three places for a via nostr note', () => {
+    const note: ForumMessage = { ...sample, via: 'nostr' };
+    const meta = publicMessageOgMetadata(MESSAGE_ID, note);
+    expect(meta.title).toBe('Visitor: Ada');
+    expect(meta.openGraph).toMatchObject({ title: 'Visitor: Ada' });
+    expect(meta.twitter).toMatchObject({ title: 'Visitor: Ada' });
+  });
+
+  it('does not prefix the title for a member note', () => {
+    const meta = publicMessageOgMetadata(MESSAGE_ID, sample);
+    expect(meta.title).toBe('Ada');
+  });
 });

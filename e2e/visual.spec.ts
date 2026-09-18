@@ -1027,7 +1027,7 @@ test.describe('onboarding screens', () => {
           messages: [
             {
               id: 'r-nostr-gift',
-              name: 'Nostr Visitor',
+              name: 'Robin',
               via: 'nostr',
               text: '',
               createdAt: '2026-08-28T12:03:00.000Z',
@@ -1037,7 +1037,7 @@ test.describe('onboarding screens', () => {
             },
             {
               id: 'r-nostr-text',
-              name: 'Nostr Visitor',
+              name: 'Robin',
               via: 'nostr',
               text: 'Greetings! https://example.com/hello',
               createdAt: '2026-08-28T12:04:00.000Z',
@@ -1051,11 +1051,11 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
-    await expect(page.getByText('via Nostr').first()).toBeVisible();
-    await page.getByRole('button', { name: 'via Nostr' }).first().click();
+    await expect(page.getByText('Visitor').first()).toBeVisible();
+    await page.getByRole('button', { name: 'Visitor' }).first().click();
     await expect(
       page.getByText(
-        'Wrote from another Nostr app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+        'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
       ),
     ).toBeVisible();
     await expect(page.getByText('https://example.com/hello')).toBeVisible();
@@ -3427,7 +3427,7 @@ test.describe('onboarding screens', () => {
       {
         id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
         parentId,
-        name: 'Nostr Visitor',
+        name: 'Robin',
         via: 'nostr',
         text: '',
         createdAt: '2026-08-28T12:03:00.000Z',
@@ -3438,7 +3438,7 @@ test.describe('onboarding screens', () => {
       {
         id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
         parentId,
-        name: 'Nostr Visitor',
+        name: 'Robin',
         via: 'nostr',
         text: 'Greetings! https://example.com/hello',
         createdAt: '2026-08-28T12:04:00.000Z',
@@ -3456,7 +3456,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${parentId}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
-    await expect(page.getByText('via Nostr').first()).toBeVisible();
+    await expect(page.getByText('Visitor').first()).toBeVisible();
     await shotScreen(page, 'state-messages-id-nostr-reply');
   });
 

@@ -98,7 +98,11 @@ function QuotedForumNote({
     >
       <Link
         href={`/messages/${note.id}`}
-        aria-label={t('forum.quotedNote', { name: note.name })}
+        aria-label={
+          note.via === 'nostr'
+            ? t('forum.quotedNoteVisitor', { name: note.name })
+            : t('forum.quotedNote', { name: note.name })
+        }
         className="block"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2">

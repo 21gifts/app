@@ -2519,7 +2519,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toBe('Diese Person hat 21.gifts gegründet.');
   });
 
-  it('shows a via Nostr badge and hint on a top-level note', () => {
+  it('shows a Visitor badge and hint on a top-level note', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -2535,14 +2535,14 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const tag = screen.getByRole('button', { name: 'via Nostr' });
+    const tag = screen.getByRole('button', { name: 'Visitor' });
     expect(tag.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByRole('status').textContent).toBe(
-      'Wrote from another Nostr app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+      'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
     );
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('false');
@@ -2605,7 +2605,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
 
-  it('shows a via Nostr badge and hint on a reply and keeps a url as plain text', () => {
+  it('shows a Visitor badge and hint on a reply and keeps a url as plain text', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -2625,7 +2625,7 @@ describe('ForumBoard', () => {
           {
             ...SAMPLE,
             id: 'r-nostr-text',
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text: 'Greetings! https://example.com/hello',
             sats: 0,
@@ -2636,14 +2636,14 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const tag = screen.getByRole('button', { name: 'via Nostr' });
+    const tag = screen.getByRole('button', { name: 'Visitor' });
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
-    expect(screen.getByText('Nostr Visitor')).toBeTruthy();
+    expect(screen.getByText('Robin')).toBeTruthy();
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
     fireEvent.click(tag);
     expect(onToggleExpand).not.toHaveBeenCalled();
-    expect(screen.getByRole('status').textContent).toContain('Wrote from another Nostr app');
+    expect(screen.getByRole('status').textContent).toContain('Wrote from another app');
     fireEvent.click(tag);
     expect(screen.queryByRole('status')).toBeNull();
   });
@@ -2667,7 +2667,7 @@ describe('ForumBoard', () => {
           {
             ...SAMPLE,
             id: 'r-nostr-long',
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text,
             sats: 0,
@@ -2702,7 +2702,7 @@ describe('ForumBoard', () => {
           {
             ...SAMPLE,
             id: 'r-nostr-gift',
-            name: 'Nostr Visitor',
+            name: 'Robin',
             via: 'nostr',
             text: '',
             sats: 69,
@@ -2713,12 +2713,12 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'via Nostr' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Visitor' })).toBeTruthy();
     expect(screen.getByText('send ₿69')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
-  it('localizes the via Nostr badge', () => {
+  it('localizes the Visitor badge', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -2735,9 +2735,9 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'über Nostr' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'über Nostr' }));
-    expect(screen.getByRole('status').textContent).toContain('anderen Nostr-App');
+    expect(screen.getByRole('button', { name: 'Besucher' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Besucher' }));
+    expect(screen.getByRole('status').textContent).toContain('anderen App');
   });
 
   it('renders webm video from videoContentType', () => {

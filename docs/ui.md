@@ -824,7 +824,7 @@ Do not restyle QR for dark mode.
 
 **Do not** color-code roles (no green verified, no orange founder). Type + optional hint is the encoding. Hint copy already in catalogs (`forum.role.*Hint`).
 
-The same anatomy is reused for a **via Nostr** badge (`forum.via.nostr`) marking a row written by a Nostr user with no 21.gifts account (shown because they sent bitcoin to a post). On the forum board it is an interactive button with a togglable hint paragraph (`forum.via.nostrHint`, same slot and one-open toggle as a role pill); on the unsigned permalink card and the quoted/nested note card it is a non-interactive `<span>` with no hint. Never color-coded, same as role badges.
+The same anatomy is reused for a **Visitor** badge (`forum.via.nostr`), shown for a row with `via: 'nostr'` — written by someone with no 21.gifts account (shown because they sent bitcoin to a post). The badge word is technology-neutral because of Principles §4 (visitors are never shown the underlying protocol). On the forum board it is an interactive button with a togglable hint paragraph (`forum.via.nostrHint`, same slot and one-open toggle as a role pill); on the unsigned permalink card and the quoted/nested note card it is a non-interactive `<span>` with no hint. Never color-coded, same as role badges.
 
 ### Chart
 

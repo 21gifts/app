@@ -828,7 +828,7 @@ describe('PublicMessageLoader', () => {
     const reply: ForumMessage = {
       ...sample,
       id: '22222222-2222-4222-8222-222222222222',
-      name: 'Nostr Visitor',
+      name: 'Robin',
       via: 'nostr',
       text: 'Greetings! https://example.com/hello',
       sats: 0,
@@ -840,8 +840,8 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getByText('via Nostr')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'via Nostr' })).toBeNull();
+    expect(screen.getByText('Visitor')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Visitor' })).toBeNull();
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
@@ -850,7 +850,7 @@ describe('PublicMessageLoader', () => {
     const reply: ForumMessage = {
       ...sample,
       id: '22222222-2222-4222-8222-222222222222',
-      name: 'Nostr Visitor',
+      name: 'Robin',
       via: 'nostr',
       text: '',
       sats: 69,
@@ -862,8 +862,8 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getByText('via Nostr')).toBeTruthy();
+    expect(screen.getByText('Visitor')).toBeTruthy();
     expect(screen.getByText('₿69')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'via Nostr' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Visitor' })).toBeNull();
   });
 });
