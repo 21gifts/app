@@ -2552,6 +2552,7 @@ describe('ForumBoard', () => {
   it('renders a via note url as plain text and does not unfurl a quoted note', async () => {
     const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
     const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    vi.mocked(fetchPublicMessage).mockClear();
     renderWithLocale(
       <ForumBoard
         messages={[
