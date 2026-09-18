@@ -191,6 +191,8 @@ export interface ForumBoardProps {
   mode: ForumFeedMode;
   /** Called when the visitor picks another mode. */
   onModeChange: (mode: ForumFeedMode) => void;
+  /** Optional ref attached near the end of the visible feed for loader pagination. */
+  nearEndRef?: (node: HTMLLIElement | null) => void;
   /**
    * Unseen zero-sat notes since the last No gifts yet visit. Chip is shown
    * only when this is \> 0 and unpaid is not selected. Default 0.
@@ -518,7 +520,8 @@ function fallbackCopy(text: string): boolean {
  * moderator-appointed notification exists, a labeled pill in the same visual
  * language marks it read; pills are sticky in the AppShell scroller under the
  * frame header (`top-2`, or `top-14` for New posts when both show).
- * Optional `permalinkTargetId` rings the matching nested reply only.
+ * Optional `permalinkTargetId` rings the matching nested reply only; optional
+ * `nearEndRef` attaches to the note about eight rows from the visible end.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink/truncate state.
  * @returns The forum board element.
@@ -552,6 +555,7 @@ export function ForumBoard({
   rateDay = null,
   mode,
   onModeChange,
+  nearEndRef,
   unpaidNewCount = 0,
   lawsVisible,
   onDismissLaws,
@@ -824,7 +828,7 @@ export function ForumBoard({
         aria-busy={refreshing === true}
         className="flex flex-col gap-4"
       >
-        {displayed.map((message) => {
+        {displayed.map((message, index) => {
           const photoCount = message.photoCount ?? (message.hasPhoto ? 1 : 0);
           const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
             index,
@@ -850,6 +854,9 @@ export function ForumBoard({
           return (
             <li
               key={message.id}
+              {...(nearEndRef !== undefined && index === Math.max(0, displayed.length - 8)
+                ? { ref: nearEndRef }
+                : {})}
               data-message-id={message.id}
               className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
             >

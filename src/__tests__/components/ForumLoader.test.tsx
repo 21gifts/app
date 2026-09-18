@@ -125,6 +125,13 @@ const SAMPLE: ForumMessage = {
   replyCount: 0,
 };
 
+function forumPage(
+  messages: ForumMessage[],
+  nextCursor: string | null = null,
+): { messages: ForumMessage[]; nextCursor: string | null } {
+  return { messages, nextCursor };
+}
+
 const PAYABLE_REPLY: ForumMessage = {
   id: 'r-pay',
   name: 'Bob',
@@ -245,7 +252,7 @@ async function revealAll(): Promise<void> {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  fetchMock.mockResolvedValue([]);
+  fetchMock.mockResolvedValue(forumPage([]));
   fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
   markNotificationReadMock.mockResolvedValue({
     id: 'n-mod',
@@ -316,7 +323,7 @@ describe('ForumLoader', () => {
 
   it('renders the board when the session has no account yet', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -325,7 +332,7 @@ describe('ForumLoader', () => {
 
   it('keeps ₿-only amounts when gift stats fail', async () => {
     fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
-    fetchMock.mockResolvedValue([FRESH]);
+    fetchMock.mockResolvedValue(forumPage([FRESH]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('Fresh from refresh')).toBeTruthy();
@@ -336,7 +343,7 @@ describe('ForumLoader', () => {
 
   it('posts when the account snapshot is missing', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -350,7 +357,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows empty copy when fetch resolves to an empty list', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -358,7 +365,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows the living-room laws hint when forumLawsDismissed is false', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(
@@ -375,7 +382,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -389,7 +396,7 @@ describe('ForumLoader', () => {
   });
 
   it('dismisses the laws hint and persists via dismissForumLaws', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     dismissLawsMock.mockResolvedValue({ ...account, forumLawsDismissed: true });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -408,7 +415,7 @@ describe('ForumLoader', () => {
   });
 
   it('restores the laws hint when dismissForumLaws rejects', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     dismissLawsMock.mockRejectedValue(new Error('Could not dismiss the living-room hint'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -429,7 +436,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not restore an account when logout happens during dismiss', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let resolveDismiss: ((value: Account) => void) | undefined;
     dismissLawsMock.mockImplementation(
       () =>
@@ -452,7 +459,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not restore an account when logout happens during a failed dismiss', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let rejectDismiss: ((reason: Error) => void) | undefined;
     dismissLawsMock.mockImplementation(
       () =>
@@ -474,8 +481,18 @@ describe('ForumLoader', () => {
     expect(useAuthStore.getState().account).toBeNull();
   });
 
+  it('ignores a mode click for the already selected mode', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Active' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('shows a fetched message with sats', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
@@ -493,7 +510,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
@@ -506,7 +523,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
@@ -533,23 +550,25 @@ describe('ForumLoader', () => {
       account: { ...account, forumLawsDismissed: true },
     });
     const listed: ForumMessage = { ...SAMPLE, payable: true };
-    fetchMock.mockResolvedValueOnce([listed]).mockImplementation(async () => [
-      {
-        id: 'm-new',
-        name: 'Carol',
-        text: 'Fresh from refresh',
-        createdAt: new Date().toISOString(),
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-      listed,
-    ]);
+    fetchMock.mockResolvedValueOnce(forumPage([listed])).mockImplementation(async () =>
+      forumPage([
+        {
+          id: 'm-new',
+          name: 'Carol',
+          text: 'Fresh from refresh',
+          createdAt: new Date().toISOString(),
+          sats: 0,
+          payable: true,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        listed,
+      ]),
+    );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
@@ -574,7 +593,7 @@ describe('ForumLoader', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
       expect(screen.getByText('Fresh from refresh')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
@@ -584,22 +603,24 @@ describe('ForumLoader', () => {
   });
 
   it('loads a photo blob URL for hasPhoto messages and revokes on unmount', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     const view = renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
@@ -612,23 +633,25 @@ describe('ForumLoader', () => {
   });
 
   it('falls back to hasPhoto when photoCount is omitted', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        ...SAMPLE,
-        id: 'm-omit-photo',
-        hasPhoto: true,
-        text: '',
-        photoCount: undefined as unknown as number,
-        sats: 1,
-      },
-      {
-        ...SAMPLE,
-        id: 'm-omit-none',
-        hasPhoto: false,
-        photoCount: undefined as unknown as number,
-        sats: 1,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'm-omit-photo',
+          hasPhoto: true,
+          text: '',
+          photoCount: undefined as unknown as number,
+          sats: 1,
+        },
+        {
+          ...SAMPLE,
+          id: 'm-omit-none',
+          hasPhoto: false,
+          photoCount: undefined as unknown as number,
+          sats: 1,
+        },
+      ]),
+    );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', 'm-omit-photo', 0);
@@ -640,22 +663,24 @@ describe('ForumLoader', () => {
   });
 
   it('does not fetch photos for unpaid hasPhoto notes on Active', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
@@ -664,22 +689,24 @@ describe('ForumLoader', () => {
   });
 
   it('fetches an unpaid hasPhoto note after switching to All', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
@@ -693,22 +720,24 @@ describe('ForumLoader', () => {
   });
 
   it('retries a transient photo fetch failure once for a visible note', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     photoMock.mockRejectedValueOnce(new Error('transient'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -740,8 +769,10 @@ describe('ForumLoader', () => {
           resolvePhoto = resolve;
         }),
     );
-    fetchMock.mockResolvedValueOnce([unsigned]);
-    fetchMock.mockResolvedValueOnce([{ ...unsigned, payable: true }]);
+    fetchMock.mockResolvedValueOnce(forumPage([unsigned])).mockResolvedValue(forumPage([unsigned]));
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...unsigned, payable: true }]))
+      .mockResolvedValue(forumPage([{ ...unsigned, payable: true }]));
     renderWithLocale(<ForumLoader />);
     await act(async () => {
       await Promise.resolve();
@@ -759,7 +790,7 @@ describe('ForumLoader', () => {
 
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
-    fetchMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
@@ -802,7 +833,7 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a stale fetch after unmount', async () => {
-    let resolveStale: ((value: ForumMessage[]) => void) | undefined;
+    let resolveStale: ((value: ReturnType<typeof forumPage>) => void) | undefined;
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -811,7 +842,7 @@ describe('ForumLoader', () => {
     );
     const view = renderWithLocale(<ForumLoader />);
     view.unmount();
-    resolveStale?.([]);
+    resolveStale?.(forumPage([]));
     await Promise.resolve();
     expect(fetchMock).toHaveBeenCalled();
   });
@@ -832,7 +863,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not post when the draft is empty or whitespace without a photo', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -852,7 +883,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not post when the trimmed draft is longer than 500 characters', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -867,7 +898,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts a video via multipart when the picker returns a clip', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -908,7 +939,7 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a stale video prepare after a newer pick starts', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     let resolveFirst: ((value: Awaited<ReturnType<typeof prepareForumVideo>>) => void) | undefined;
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
@@ -944,7 +975,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes a video draft preview when Remove video is clicked', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -967,7 +998,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes the previous video draft when a later pick fails', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -995,7 +1026,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes the previous video draft when a new clip prepares', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const first = new File([new Uint8Array([1])], 'a.mp4', { type: 'video/mp4' });
@@ -1026,7 +1057,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes a video draft when a photo is picked instead', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValueOnce(true).mockReturnValueOnce(false);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const clip = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -1055,7 +1086,7 @@ describe('ForumLoader', () => {
   });
 
   it('sets unsupported when revoking a video draft throws while picking a photo', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValueOnce(true).mockReturnValueOnce(false);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const clip = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -1090,7 +1121,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes a video draft preview on unmount', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -1112,7 +1143,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes a posted video preview on unmount but not at post time', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -1152,7 +1183,7 @@ describe('ForumLoader', () => {
   });
 
   it('sets formError when prepareForumVideo rejects as unsupported', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     prepareVideoMock.mockResolvedValue({ ok: false, error: 'unsupported' });
     renderWithLocale(<ForumLoader />);
@@ -1171,7 +1202,7 @@ describe('ForumLoader', () => {
   });
 
   it('sets formError when prepareForumVideo rejects as tooLarge', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     prepareVideoMock.mockResolvedValue({ ok: false, error: 'tooLarge' });
     renderWithLocale(<ForumLoader />);
@@ -1190,7 +1221,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps an existing photo when prepareForumPhoto rejects another file', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock
       .mockResolvedValueOnce({
         ok: true,
@@ -1224,7 +1255,7 @@ describe('ForumLoader', () => {
   });
 
   it('sets unsupported when prepareForumPhoto throws', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock.mockRejectedValueOnce(new Error('Could not decode image'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -1242,7 +1273,7 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a stale prepare after a newer pick starts', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let resolveFirst: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
     prepareMock.mockImplementationOnce(
       () =>
@@ -1285,7 +1316,7 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a stale prepare rejection after a newer pick starts', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let rejectFirst: ((reason: Error) => void) | undefined;
     prepareMock.mockImplementationOnce(
       () =>
@@ -1322,7 +1353,7 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a stale prepare after unmount', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let resolvePrep: ((value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void) | undefined;
     prepareMock.mockImplementationOnce(
       () =>
@@ -1354,7 +1385,7 @@ describe('ForumLoader', () => {
   });
 
   it('sets tooLarge and keeps an existing photo draft', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock
       .mockResolvedValueOnce({
         ok: true,
@@ -1388,7 +1419,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears a photo draft when Remove photo is clicked', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock.mockResolvedValueOnce({
       ok: true,
       photo: {
@@ -1415,7 +1446,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps a prior photo draft when another prepare throws', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock
       .mockResolvedValueOnce({
         ok: true,
@@ -1449,7 +1480,7 @@ describe('ForumLoader', () => {
   });
 
   it('appends two photos selected in one change', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock
       .mockResolvedValueOnce({
         ok: true,
@@ -1483,7 +1514,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps ten photos and rejects an eleventh', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock.mockImplementation(async (file: File) => ({
       ok: true,
       photo: {
@@ -1516,7 +1547,7 @@ describe('ForumLoader', () => {
   });
 
   it('sets tooMany from one pick of eleven even when the tenth prepare fails', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock.mockImplementation(async (file: File) => {
       if (file.name === '9.jpg') {
         return { ok: false, error: 'unsupported' };
@@ -1548,7 +1579,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears photo drafts when a video is picked', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     const photo = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
     const video = new File([new Uint8Array([2])], 'clip.mp4', { type: 'video/mp4' });
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
@@ -1582,7 +1613,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps photo drafts when video preparation fails', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     const photo = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
     const video = new File([new Uint8Array([2])], 'clip.mp4', { type: 'video/mp4' });
     isVideoMock.mockReturnValueOnce(false).mockReturnValueOnce(true);
@@ -1615,22 +1646,24 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a failed photo fetch', async () => {
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: 'Hi',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: 'Hi',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     photoMock.mockRejectedValue(new Error('gone'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -1646,22 +1679,24 @@ describe('ForumLoader', () => {
 
   it('ignores a stale photo fetch after unmount', async () => {
     let resolvePhoto: ((value: Blob) => void) | undefined;
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     photoMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -1679,22 +1714,24 @@ describe('ForumLoader', () => {
 
   it('does not continue a photo retry after unmount', async () => {
     let rejectRetry: ((reason: Error) => void) | undefined;
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
       () =>
         new Promise((_, reject) => {
@@ -1711,7 +1748,7 @@ describe('ForumLoader', () => {
   });
 
   it('retries reply loading and records reply draft changes', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockRejectedValueOnce(new Error('gone')).mockResolvedValueOnce([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -1732,36 +1769,38 @@ describe('ForumLoader', () => {
 
   it('does not fetch the next photo after unmount when the current fetch fails', async () => {
     let rejectFirst: ((reason: Error) => void) | undefined;
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm1',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-      {
-        id: 'm2',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:01:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm1',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        {
+          id: 'm2',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:01:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     photoMock.mockImplementationOnce(
       () =>
         new Promise((_, reject) => {
@@ -1780,22 +1819,24 @@ describe('ForumLoader', () => {
 
   it('revokes a photo blob if unmount happens during createObjectURL', async () => {
     let resolvePhoto: ((value: Blob) => void) | undefined;
-    fetchMock.mockResolvedValue([
-      {
-        id: 'm-photo',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 5,
-        payable: false,
-        hasPhoto: true,
-        photoCount: 1,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-photo',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     photoMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -1817,7 +1858,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts a photo-only message and shows the preview immediately', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock.mockResolvedValue({
       ok: true,
       photo: {
@@ -1866,7 +1907,7 @@ describe('ForumLoader', () => {
   });
 
   it('switches to All after posting an unpaid note', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     const created: ForumMessage = {
       id: 'm-unpaid',
       name: 'Ada',
@@ -1903,7 +1944,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     postMock.mockImplementation(async () => ({
       id: 'm-unpaid',
       name: 'Ada',
@@ -1940,7 +1981,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts text together with two photos', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     prepareMock
       .mockResolvedValueOnce({
         ok: true,
@@ -2017,7 +2058,7 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     };
-    fetchMock.mockResolvedValue([created]);
+    fetchMock.mockResolvedValue(forumPage([created]));
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
     prepareMock.mockResolvedValue({
       ok: true,
@@ -2047,7 +2088,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not replace an existing local video preview on a second post of the same id', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -2100,7 +2141,7 @@ describe('ForumLoader', () => {
   });
 
   it('revokes a pending video preview when the created message has no video', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
@@ -2166,13 +2207,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps an early post when the in-flight fetch later resolves', async () => {
-    let resolveFetch: ((value: ForumMessage[]) => void) | undefined;
-    fetchMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveFetch = resolve;
-        }),
-    );
+    let resolveFetch: ((value: ReturnType<typeof forumPage>) => void) | undefined;
     const created: ForumMessage = {
       id: 'm-early',
       name: 'Ada',
@@ -2201,6 +2236,14 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     };
+    fetchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFetch = resolve;
+          }),
+      )
+      .mockResolvedValue(forumPage([fromServer]));
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -2212,7 +2255,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Early')).toBeTruthy();
     });
     await act(async () => {
-      resolveFetch?.([fromServer]);
+      resolveFetch?.(forumPage([fromServer]));
     });
     await waitFor(() => {
       expect(screen.getByText('Early')).toBeTruthy();
@@ -2222,12 +2265,14 @@ describe('ForumLoader', () => {
 
   it('keeps an early post when the in-flight fetch later rejects', async () => {
     let rejectFetch: ((reason: Error) => void) | undefined;
-    fetchMock.mockImplementationOnce(
-      () =>
-        new Promise((_, reject) => {
-          rejectFetch = reject;
-        }),
-    );
+    fetchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            rejectFetch = reject;
+          }),
+      )
+      .mockResolvedValue(forumPage([]));
     const created: ForumMessage = {
       id: 'm-early',
       name: 'Ada',
@@ -2257,9 +2302,8 @@ describe('ForumLoader', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('Early')).toBeTruthy();
-      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
 
   it('does not duplicate a post already present from fetch', async () => {
@@ -2277,7 +2321,7 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     };
-    fetchMock.mockResolvedValue([created]);
+    fetchMock.mockResolvedValue(forumPage([created]));
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -2298,7 +2342,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts a trimmed message, shows it as the newest row, and clears the draft', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     const created: ForumMessage = {
       id: 'm2',
       name: 'Ada',
@@ -2334,7 +2378,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows a newly posted note above existing notes', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     const created: ForumMessage = {
       id: 'm2',
       name: 'Ada',
@@ -2372,7 +2416,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows a post error when posting fails', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -2387,7 +2431,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows rate-limit copy when posting is rate limited', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new Error('Too many messages'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -2404,7 +2448,7 @@ describe('ForumLoader', () => {
   });
 
   it('disables Post and shows a spinner while posting', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let resolvePost!: (value: ForumMessage) => void;
     const pending = new Promise<ForumMessage>((resolve) => {
       resolvePost = resolve;
@@ -2447,7 +2491,7 @@ describe('ForumLoader', () => {
   });
 
   it('ignores a second composer submit while the first note POST is in flight', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     let resolvePost!: (value: ForumMessage) => void;
     const pending = new Promise<ForumMessage>((resolve) => {
       resolvePost = resolve;
@@ -2488,7 +2532,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears a reply pay sheet when the thread is collapsed', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await act(async () => {
@@ -2508,7 +2552,7 @@ describe('ForumLoader', () => {
 
   it('clears the pay sheet when a public fetch returns more sats', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 2 }]));
     repliesMock.mockResolvedValue([
       { ...PAYABLE_REPLY },
       { ...NESTED_REPLY, id: 'r-other', text: 'Other reply' },
@@ -2549,7 +2593,7 @@ describe('ForumLoader', () => {
     });
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
@@ -2588,7 +2632,7 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     };
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }, second]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }, second]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue({ ...PAYABLE_REPLY, sats: 21 });
@@ -2619,7 +2663,7 @@ describe('ForumLoader', () => {
 
   it('ignores a public pay fetch that resolves after Back', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     let resolvePoll: ((value: ForumMessage | null) => void) | undefined;
@@ -2654,7 +2698,7 @@ describe('ForumLoader', () => {
 
   it('aborts the public pay poll signal on Back so a late higher-sats resolve does not keep the QR', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     let resolvePoll: ((value: ForumMessage | null) => void) | undefined;
@@ -2693,7 +2737,7 @@ describe('ForumLoader', () => {
 
   it('keeps the QR and retries after a failed public fetch, then closes when sats increase', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockRejectedValueOnce(new Error('poll failed'));
@@ -2721,7 +2765,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not mark hasPosted on a swapped session after a paid poll', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     let resolvePoll!: (value: typeof PAYABLE_REPLY) => void;
@@ -2753,7 +2797,7 @@ describe('ForumLoader', () => {
   });
 
   it('refetches expanded replies after a paid poll when the account snapshot is missing', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     let resolvePoll!: (value: typeof PAYABLE_REPLY) => void;
@@ -2787,7 +2831,7 @@ describe('ForumLoader', () => {
 
   it('does not close via later sats after Back during a rejected public pay fetch', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockImplementationOnce(
@@ -2826,7 +2870,7 @@ describe('ForumLoader', () => {
 
   it('keeps the QR after 16s of unpaid public fetches', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue(PAYABLE_REPLY);
@@ -2853,7 +2897,7 @@ describe('ForumLoader', () => {
 
   it('closes the QR when a later public fetch reports sats 21 after unpaid waits', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue(PAYABLE_REPLY);
@@ -2884,7 +2928,7 @@ describe('ForumLoader', () => {
   });
 
   it('requests an invoice and shows the QR', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
@@ -2912,7 +2956,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps the reply pay sheet when switching feed mode', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, sats: 21, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, sats: 21, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
@@ -2928,7 +2972,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears the reply pay sheet when the thread is collapsed then the feed mode changes', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, sats: 21, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, sats: 21, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
@@ -2940,7 +2984,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears a parent-composer invoice when Active hides the unpaid parent', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
@@ -2970,7 +3014,7 @@ describe('ForumLoader', () => {
 
   it('clears the pay sheet when the paid reply is deleted', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     vi.mocked(deleteMessage).mockResolvedValue(undefined);
     renderWithLocale(<ForumLoader />);
@@ -2985,7 +3029,7 @@ describe('ForumLoader', () => {
   });
 
   it('defaults an empty pay amount to 21 sats without filling the draft', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
@@ -3008,7 +3052,7 @@ describe('ForumLoader', () => {
   });
 
   it('defaults a whitespace-only pay amount to 21 sats without filling the draft', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
@@ -3031,7 +3075,7 @@ describe('ForumLoader', () => {
   });
 
   it('rejects a non-numeric pay amount before calling the api', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -3051,7 +3095,7 @@ describe('ForumLoader', () => {
   });
 
   it('rejects a non-positive pay amount before calling the api', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -3070,7 +3114,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows pay request error when invoice fails', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockRejectedValue(new Error('Could not start the Bitcoin payment'));
     renderWithLocale(<ForumLoader />);
@@ -3091,7 +3135,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows pay author-wallet error when invoice rejects the author wallet', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockRejectedValue(
       new Error("The author's wallet cannot receive this Bitcoin payment"),
@@ -3116,7 +3160,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows pay rate-limit copy when invoice is rate limited', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(<ForumLoader />);
@@ -3139,7 +3183,7 @@ describe('ForumLoader', () => {
   });
 
   it('drops a late invoice after cancel', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
     invoiceMock.mockImplementation(
@@ -3167,7 +3211,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears an in-flight pay sheet when Active hides the note', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
     invoiceMock.mockImplementation(
@@ -3199,7 +3243,7 @@ describe('ForumLoader', () => {
   });
 
   it('drops a late invoice error after cancel', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     let rejectInvoice: ((reason: Error) => void) | undefined;
     invoiceMock.mockImplementation(
@@ -3227,7 +3271,7 @@ describe('ForumLoader', () => {
   });
 
   it('omits Send Bitcoin while a loaded note is not payable', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, payable: false }]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
@@ -3257,9 +3301,9 @@ describe('ForumLoader', () => {
       replyCount: 1,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
-    fetchMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(unsigned);
-    fetchMock.mockResolvedValueOnce([signed]);
+    fetchMock.mockResolvedValueOnce(forumPage([signed])).mockResolvedValue(forumPage([signed]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
 
     renderWithLocale(<ForumLoader />);
@@ -3285,7 +3329,7 @@ describe('ForumLoader', () => {
     });
     const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
     expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('keeps polling when the first payable poll GET returns empty before the note is echoed', async () => {
@@ -3305,10 +3349,10 @@ describe('ForumLoader', () => {
       replyCount: 1,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
-    fetchMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(unsigned);
-    fetchMock.mockResolvedValueOnce([]);
-    fetchMock.mockResolvedValueOnce([signed]);
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
+    fetchMock.mockResolvedValueOnce(forumPage([signed])).mockResolvedValue(forumPage([signed]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
 
     renderWithLocale(<ForumLoader />);
@@ -3347,8 +3391,8 @@ describe('ForumLoader', () => {
     vi.useFakeTimers();
     const unsigned: ForumMessage = { ...SAMPLE, payable: false, replyCount: 1 };
     const signed: ForumMessage = { ...SAMPLE, payable: true, replyCount: 1 };
-    fetchMock.mockResolvedValueOnce([unsigned]);
-    fetchMock.mockResolvedValueOnce([signed]);
+    fetchMock.mockResolvedValueOnce(forumPage([unsigned])).mockResolvedValue(forumPage([unsigned]));
+    fetchMock.mockResolvedValueOnce(forumPage([signed])).mockResolvedValue(forumPage([signed]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
 
     renderWithLocale(<ForumLoader />);
@@ -3393,10 +3437,11 @@ describe('ForumLoader', () => {
       replyCount: 1,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
-    fetchMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(unsigned);
+    fetchMock.mockResolvedValueOnce(forumPage([unsigned]));
     fetchMock.mockRejectedValueOnce(new Error('poll failed'));
-    fetchMock.mockResolvedValueOnce([signed]);
+    fetchMock.mockResolvedValueOnce(forumPage([signed])).mockResolvedValue(forumPage([signed]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
 
     renderWithLocale(<ForumLoader />);
@@ -3431,7 +3476,9 @@ describe('ForumLoader', () => {
 
   it('aborts the payable poll after unmount before the delayed fetch', async () => {
     vi.useFakeTimers();
-    fetchMock.mockResolvedValueOnce([{ ...SAMPLE, payable: false }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...SAMPLE, payable: false }]))
+      .mockResolvedValue(forumPage([{ ...SAMPLE, payable: false }]));
 
     renderWithLocale(<ForumLoader />);
     await act(async () => {
@@ -3446,19 +3493,21 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('ignores a payable poll fetch that resolves after unmount', async () => {
     vi.useFakeTimers();
-    let resolvePoll: ((value: ForumMessage[]) => void) | undefined;
-    fetchMock.mockResolvedValueOnce([{ ...SAMPLE, payable: false }]);
-    fetchMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePoll = resolve;
-        }),
-    );
+    let resolvePoll: ((value: ReturnType<typeof forumPage>) => void) | undefined;
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...SAMPLE, payable: false }]))
+      .mockResolvedValueOnce(forumPage([{ ...SAMPLE, payable: false }]))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolvePoll = resolve;
+          }),
+      );
 
     renderWithLocale(<ForumLoader />);
     await act(async () => {
@@ -3471,19 +3520,19 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
 
     cleanup();
 
     await act(async () => {
-      resolvePoll?.([{ ...SAMPLE, payable: true }]);
+      resolvePoll?.(forumPage([{ ...SAMPLE, payable: true }]));
       await Promise.resolve();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('does not request a second invoice while one is in flight', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockReturnValue(new Promise(() => undefined));
     renderWithLocale(<ForumLoader />);
@@ -3502,7 +3551,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not collapse while a reply is posting', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([]);
     postMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<ForumLoader />);
@@ -3524,7 +3573,7 @@ describe('ForumLoader', () => {
   });
 
   it('collapses an expanded thread', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3540,7 +3589,7 @@ describe('ForumLoader', () => {
   });
 
   it('loads replies via fetchReplies when a row is expanded', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([
       {
         id: 'r1',
@@ -3571,23 +3620,25 @@ describe('ForumLoader', () => {
   });
 
   it('clears stale replies immediately when expanding a different note', async () => {
-    fetchMock.mockResolvedValue([
-      SAMPLE,
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        SAMPLE,
+        {
+          id: 'm-bob',
+          name: 'Bob',
+          text: 'Hello from Bob',
+          createdAt: '2026-08-28T11:00:00.000Z',
+          sats: 0,
+          payable: true,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     repliesMock.mockResolvedValueOnce([
       {
         id: 'r1',
@@ -3623,23 +3674,25 @@ describe('ForumLoader', () => {
   // reaches postMessage). The same expandedIdRef guard is covered by the
   // error-path test below; the async success arm is v8-ignored.
   it.skip('does not apply a posted reply after expanding a different note', async () => {
-    fetchMock.mockResolvedValue([
-      SAMPLE,
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        SAMPLE,
+        {
+          id: 'm-bob',
+          name: 'Bob',
+          text: 'Hello from Bob',
+          createdAt: '2026-08-28T11:00:00.000Z',
+          sats: 0,
+          payable: true,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     repliesMock.mockResolvedValueOnce([]);
     repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
     let resolvePost: ((value: ForumMessage) => void) | undefined;
@@ -3687,23 +3740,25 @@ describe('ForumLoader', () => {
   });
 
   it('does not apply a reply error after expanding a different note', async () => {
-    fetchMock.mockResolvedValue([
-      SAMPLE,
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        SAMPLE,
+        {
+          id: 'm-bob',
+          name: 'Bob',
+          text: 'Hello from Bob',
+          createdAt: '2026-08-28T11:00:00.000Z',
+          sats: 0,
+          payable: true,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     repliesMock.mockResolvedValueOnce([]);
     repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
     let rejectPost: ((reason: Error) => void) | undefined;
@@ -3751,7 +3806,7 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     };
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([reply]);
     postMock.mockResolvedValue(reply);
     renderWithLocale(<ForumLoader />);
@@ -3774,23 +3829,25 @@ describe('ForumLoader', () => {
   });
 
   it('increments replyCount when a new reply is posted', async () => {
-    fetchMock.mockResolvedValue([
-      { ...SAMPLE, replyCount: 0 },
-      {
-        id: 'm-bob',
-        name: 'Bob',
-        text: 'Hello from Bob',
-        createdAt: '2026-08-28T11:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        { ...SAMPLE, replyCount: 0 },
+        {
+          id: 'm-bob',
+          name: 'Bob',
+          text: 'Hello from Bob',
+          createdAt: '2026-08-28T11:00:00.000Z',
+          sats: 0,
+          payable: true,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-new',
@@ -3834,7 +3891,7 @@ describe('ForumLoader', () => {
         resolvePost = resolve;
       }),
     );
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3871,7 +3928,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts a reply when the account snapshot is missing', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-new',
@@ -3909,7 +3966,7 @@ describe('ForumLoader', () => {
   });
 
   it('requires a sat amount to reply on someone else’s note', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -3930,7 +3987,7 @@ describe('ForumLoader', () => {
   });
 
   it('invoices a reply with text on someone else’s note', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
@@ -3953,7 +4010,7 @@ describe('ForumLoader', () => {
   });
 
   it('invoices a gift-only reply from the composer', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
@@ -3975,7 +4032,7 @@ describe('ForumLoader', () => {
   });
 
   it('invoices a gift-only reply when text and amount are empty', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
@@ -4000,7 +4057,7 @@ describe('ForumLoader', () => {
 
   it('invoices a gift-only reply when text and amount are empty as a founder', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
@@ -4021,7 +4078,7 @@ describe('ForumLoader', () => {
   });
 
   it('invoices a gift-only reply when text and amount are empty and the parent omits accountId', async () => {
-    fetchMock.mockResolvedValue([{ ...FOREIGN, accountId: undefined }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, accountId: undefined }]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     publicFetchMock.mockResolvedValue({ ...FOREIGN, sats: 21, replyCount: 1 });
@@ -4048,7 +4105,7 @@ describe('ForumLoader', () => {
         resolveInvoice = resolve;
       }),
     );
-    fetchMock.mockResolvedValue([{ ...FOREIGN, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4078,7 +4135,7 @@ describe('ForumLoader', () => {
         rejectInvoice = reject;
       }),
     );
-    fetchMock.mockResolvedValue([{ ...FOREIGN, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4101,7 +4158,7 @@ describe('ForumLoader', () => {
   });
 
   async function expandForeignAndPayReply(text: string, sats: string): Promise<void> {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4193,7 +4250,7 @@ describe('ForumLoader', () => {
 
   it('lets a founder reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-staff',
@@ -4231,7 +4288,7 @@ describe('ForumLoader', () => {
 
   it('lets a moderator reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-mod',
@@ -4266,7 +4323,7 @@ describe('ForumLoader', () => {
 
   it('keeps an optimistic reply count when a stale list refresh returns the old count', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-mod',
@@ -4303,7 +4360,9 @@ describe('ForumLoader', () => {
       ).toBeTruthy();
     });
 
-    fetchMock.mockResolvedValueOnce([{ ...FOREIGN }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...FOREIGN }]))
+      .mockResolvedValue(forumPage([{ ...FOREIGN }]));
     const before = fetchMock.mock.calls.length;
     const event = new Event('pageshow');
     Object.defineProperty(event, 'persisted', { value: true });
@@ -4317,7 +4376,7 @@ describe('ForumLoader', () => {
 
   it('lets a later server reply raise the count after posting then deleting a reply', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-mod',
@@ -4364,7 +4423,9 @@ describe('ForumLoader', () => {
       ).toBeTruthy();
     });
 
-    fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 0 }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...FOREIGN, replyCount: 0 }]))
+      .mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 0 }]));
     const before = fetchMock.mock.calls.length;
     const event = new Event('pageshow');
     Object.defineProperty(event, 'persisted', { value: true });
@@ -4374,7 +4435,9 @@ describe('ForumLoader', () => {
       within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 reactions'),
     ).toBeTruthy();
 
-    fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 1 }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...FOREIGN, replyCount: 1 }]))
+      .mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 1 }]));
     const beforeLater = fetchMock.mock.calls.length;
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeLater));
@@ -4385,7 +4448,7 @@ describe('ForumLoader', () => {
 
   it('lets a later server reply raise the count after a stale refresh between post and delete', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-mod',
@@ -4422,7 +4485,9 @@ describe('ForumLoader', () => {
       ).toBeTruthy();
     });
 
-    fetchMock.mockResolvedValueOnce([{ ...FOREIGN }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...FOREIGN }]))
+      .mockResolvedValue(forumPage([{ ...FOREIGN }]));
     const before = fetchMock.mock.calls.length;
     const event = new Event('pageshow');
     Object.defineProperty(event, 'persisted', { value: true });
@@ -4443,7 +4508,9 @@ describe('ForumLoader', () => {
       ).toBeTruthy();
     });
 
-    fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 0 }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...FOREIGN, replyCount: 0 }]))
+      .mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 0 }]));
     const beforeZero = fetchMock.mock.calls.length;
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeZero));
@@ -4451,7 +4518,9 @@ describe('ForumLoader', () => {
       within(screen.getByText('Hello from Bob').closest('li')!).getByText('0 reactions'),
     ).toBeTruthy();
 
-    fetchMock.mockResolvedValueOnce([{ ...FOREIGN, replyCount: 1 }]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([{ ...FOREIGN, replyCount: 1 }]))
+      .mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 1 }]));
     const beforeLater = fetchMock.mock.calls.length;
     fireEvent(window, event);
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeLater));
@@ -4462,7 +4531,7 @@ describe('ForumLoader', () => {
 
   it('lets a verified member reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-staff',
@@ -4499,7 +4568,7 @@ describe('ForumLoader', () => {
   });
 
   it('lets the parent author reply unpaid when the note omits accountId', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, accountId: undefined }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, accountId: undefined }]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-own',
@@ -4533,7 +4602,7 @@ describe('ForumLoader', () => {
   });
 
   it('starts a 1-sat invoice when unpaid reply is 403 and the parent omits accountId', async () => {
-    fetchMock.mockResolvedValue([{ ...FOREIGN, accountId: undefined }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, accountId: undefined }]));
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
@@ -4555,7 +4624,7 @@ describe('ForumLoader', () => {
   });
 
   it('rejects a non-numeric reply amount', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4574,7 +4643,7 @@ describe('ForumLoader', () => {
   });
 
   it('rejects a non-numeric reply amount when the reply text is empty', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4592,7 +4661,7 @@ describe('ForumLoader', () => {
   });
 
   it('sends 1 sat when the reply amount is 0', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(<ForumLoader />);
@@ -4613,7 +4682,7 @@ describe('ForumLoader', () => {
   });
 
   it('sends 1 sat when the reply amount is 0 and the reply text is empty', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(<ForumLoader />);
@@ -4633,7 +4702,7 @@ describe('ForumLoader', () => {
   });
 
   it('rejects an overflowing reply amount', async () => {
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4654,7 +4723,7 @@ describe('ForumLoader', () => {
   });
 
   it('starts a 1-sat invoice when an unpaid reply is 403', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
@@ -4677,7 +4746,7 @@ describe('ForumLoader', () => {
   it('does not refetch replies after a pay-sheet gift on a nested reply', async () => {
     vi.useFakeTimers();
     try {
-      fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+      fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
       repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
       invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
       publicFetchMock.mockResolvedValue({ ...PAYABLE_REPLY, sats: 21 });
@@ -4708,7 +4777,7 @@ describe('ForumLoader', () => {
   });
 
   it('updates the reply draft from the expanded composer', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4728,29 +4797,34 @@ describe('ForumLoader', () => {
   });
 
   it('refetches when the document becomes visible again after being hidden', async () => {
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
-      {
-        id: 'm-new',
-        name: 'Carol',
-        text: 'Fresh from refresh',
-        createdAt: '2026-08-28T15:00:00.000Z',
-        sats: 0,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-      SAMPLE,
-    ]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(
+        forumPage([
+          {
+            id: 'm-new',
+            name: 'Carol',
+            text: 'Fresh from refresh',
+            createdAt: '2026-08-28T15:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+          SAMPLE,
+        ]),
+      );
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -4768,14 +4842,17 @@ describe('ForumLoader', () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
       expect(screen.getByText('Fresh from refresh')).toBeTruthy();
     });
   });
 
   it('holds unseen notes behind New posts when the page is scrolled down', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -4828,7 +4905,10 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     };
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([held, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(forumPage([held, SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
@@ -4877,7 +4957,10 @@ describe('ForumLoader', () => {
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
       Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     });
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -4961,7 +5044,10 @@ describe('ForumLoader', () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {
       Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     });
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -4999,10 +5085,11 @@ describe('ForumLoader', () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {
       Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     });
-    let release: ((value: ForumMessage[]) => void) | undefined;
+    let release: ((value: ReturnType<typeof forumPage>) => void) | undefined;
     fetchMock
-      .mockResolvedValueOnce([SAMPLE])
-      .mockResolvedValueOnce([FRESH, SAMPLE])
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([FRESH, SAMPLE]))
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
@@ -5036,7 +5123,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New posts' }));
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
     await act(async () => {
-      release?.([FRESH, SAMPLE]);
+      release?.(forumPage([FRESH, SAMPLE]));
     });
     await waitFor(() => {
       expect(screen.getByText('Fresh from refresh')).toBeTruthy();
@@ -5046,7 +5133,10 @@ describe('ForumLoader', () => {
   it('applies held notes when the visitor scrolls back to the top', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -5085,7 +5175,10 @@ describe('ForumLoader', () => {
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
       Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     });
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -5105,33 +5198,35 @@ describe('ForumLoader', () => {
 
   it('polls the forum list on the visible-tab interval', async () => {
     vi.useFakeTimers({ toFake: ['setInterval'] });
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
-    fetchMock.mockResolvedValueOnce([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([FRESH, SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     await act(async () => {
       vi.advanceTimersByTime(FORUM_LIST_POLL_MS);
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
 
   it('does not poll while the document is hidden', async () => {
     vi.useFakeTimers({ toFake: ['setInterval'] });
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -5140,14 +5235,17 @@ describe('ForumLoader', () => {
     await act(async () => {
       vi.advanceTimersByTime(FORUM_LIST_POLL_MS);
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('does not insert unseen ids from the payable poll while scrolled', async () => {
     vi.useFakeTimers();
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
     const unsigned: ForumMessage = { ...SAMPLE, payable: false };
-    fetchMock.mockResolvedValueOnce([unsigned]).mockResolvedValue([FRESH, unsigned]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([unsigned]))
+      .mockResolvedValueOnce(forumPage([unsigned]))
+      .mockResolvedValue(forumPage([FRESH, unsigned]));
     renderWithLocale(<ForumLoader />);
     await act(async () => {
       await Promise.resolve();
@@ -5168,7 +5266,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not keep force-apply from a Home click during the initial load', async () => {
-    let release: ((value: ForumMessage[]) => void) | undefined;
+    let release: ((value: ReturnType<typeof forumPage>) => void) | undefined;
     fetchMock.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -5184,14 +5282,16 @@ describe('ForumLoader', () => {
     });
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
     await act(async () => {
-      release?.([SAMPLE]);
+      release?.(forumPage([SAMPLE]));
     });
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
 
-    fetchMock.mockResolvedValueOnce([FRESH, SAMPLE]);
+    fetchMock
+      .mockResolvedValueOnce(forumPage([FRESH, SAMPLE]))
+      .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       get: () => 'hidden',
@@ -5213,14 +5313,14 @@ describe('ForumLoader', () => {
   });
 
   it('holds unseen ids on a loaded empty feed while scrolled', async () => {
-    fetchMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
-    fetchMock.mockResolvedValueOnce([FRESH]);
+    fetchMock.mockResolvedValueOnce(forumPage([FRESH])).mockResolvedValue(forumPage([FRESH]));
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       get: () => 'hidden',
@@ -5243,7 +5343,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not double-fetch on first mount before any visibility event', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -5252,20 +5352,20 @@ describe('ForumLoader', () => {
   });
 
   it('refetches on pageshow when persisted is true, not when false', async () => {
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    fetchMock.mockResolvedValueOnce(forumPage([SAMPLE])).mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     act(() => {
       const notPersisted = new Event('pageshow');
       Object.defineProperty(notPersisted, 'persisted', { value: false });
       window.dispatchEvent(notPersisted);
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     act(() => {
       const persisted = new Event('pageshow');
@@ -5273,18 +5373,18 @@ describe('ForumLoader', () => {
       window.dispatchEvent(persisted);
     });
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
 
   it('does not double-fetch when pageshow and visibilitychange fire in the same turn', async () => {
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    fetchMock.mockResolvedValueOnce(forumPage([SAMPLE])).mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     act(() => {
       Object.defineProperty(document, 'visibilityState', {
@@ -5303,12 +5403,12 @@ describe('ForumLoader', () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
 
   it('does not refresh while a pay sheet is open', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5319,7 +5419,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -5336,11 +5436,11 @@ describe('ForumLoader', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await Promise.resolve();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('refreshes after a blocked visibility cycle once the pay sheet closes', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5351,7 +5451,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -5367,17 +5467,18 @@ describe('ForumLoader', () => {
     act(() => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
 
   it('keeps the list and does not show forum.error when a silent refresh fails', async () => {
     fetchMock
-      .mockResolvedValueOnce([SAMPLE])
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
       .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5401,7 +5502,7 @@ describe('ForumLoader', () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
@@ -5462,23 +5563,25 @@ describe('ForumLoader', () => {
   });
 
   it('does not scroll the newest note into view when refresh adds a newer message id', async () => {
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([
-      {
-        id: 'm-newer',
-        name: 'Carol',
-        text: 'Newer note',
-        createdAt: '2026-08-28T16:00:00.000Z',
-        sats: 21,
-        payable: true,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-      SAMPLE,
-    ]);
+    fetchMock.mockResolvedValueOnce(forumPage([SAMPLE])).mockResolvedValue(
+      forumPage([
+        {
+          id: 'm-newer',
+          name: 'Carol',
+          text: 'Newer note',
+          createdAt: '2026-08-28T16:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        SAMPLE,
+      ]),
+    );
     renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -5515,31 +5618,34 @@ describe('ForumLoader', () => {
 
   it('refetches when the board is pulled at the top of the page', async () => {
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValueOnce([SAMPLE]);
+    fetchMock.mockResolvedValueOnce(forumPage([SAMPLE])).mockResolvedValue(forumPage([SAMPLE]));
     const { container } = renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     const root = container.querySelector('.overscroll-y-contain');
     expect(root).toBeTruthy();
     fireEvent.touchStart(root!, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(root!, { touches: [{ clientY: 160 }] });
     fireEvent.touchEnd(root!);
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
 
   it('ignores a silent refresh that finishes after unmount', async () => {
-    let resolveRefresh: (value: ForumMessage[]) => void = () => undefined;
-    fetchMock.mockResolvedValueOnce([SAMPLE]).mockImplementationOnce(
-      () =>
-        new Promise<ForumMessage[]>((resolve) => {
-          resolveRefresh = resolve;
-        }),
-    );
+    let resolveRefresh: (value: ReturnType<typeof forumPage>) => void = () => undefined;
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockImplementationOnce(
+        () =>
+          new Promise<ReturnType<typeof forumPage>>((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      );
     const { unmount } = renderWithLocale(<ForumLoader />);
     await revealAll();
     await waitFor(() => {
@@ -5560,11 +5666,11 @@ describe('ForumLoader', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
     unmount();
     await act(async () => {
-      resolveRefresh([SAMPLE]);
+      resolveRefresh(forumPage([SAMPLE]));
     });
   });
 
@@ -5578,7 +5684,8 @@ describe('ForumLoader', () => {
 
   it('redirects to /setup/rules when a silent refresh returns missing_requirements', async () => {
     fetchMock
-      .mockResolvedValueOnce([SAMPLE])
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
       .mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5609,7 +5716,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -5633,7 +5740,7 @@ describe('ForumLoader', () => {
         forumLawsDismissed: true,
       },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -5646,7 +5753,7 @@ describe('ForumLoader', () => {
   });
 
   it('opens the overlay when posting returns missing_requirements', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -5658,7 +5765,7 @@ describe('ForumLoader', () => {
   });
 
   it('opens the overlay when posting returns a lightning-address missing_requirements', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new MissingRequirementsError(['lightning-address']));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -5682,7 +5789,7 @@ describe('ForumLoader', () => {
         forumLawsDismissed: true,
       },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
@@ -5711,7 +5818,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     vi.mocked(setName).mockResolvedValue({
       ...account,
@@ -5744,7 +5851,7 @@ describe('ForumLoader', () => {
         forumLawsDismissed: true,
       },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     vi.mocked(agreeToRules).mockResolvedValue({
       ...account,
       name: null,
@@ -5772,7 +5879,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
     vi.mocked(setName).mockResolvedValue({
       ...account,
@@ -5807,7 +5914,7 @@ describe('ForumLoader', () => {
       missing: [],
       setup: null,
     });
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
     renderWithLocale(<ForumLoader />);
@@ -5840,7 +5947,7 @@ describe('ForumLoader', () => {
       missing: [],
       setup: null,
     });
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5870,7 +5977,7 @@ describe('ForumLoader', () => {
       setup: null,
     });
     invoiceMock.mockRejectedValue(new MissingRequirementsError(['name']));
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5894,7 +6001,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 0 }]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -5912,7 +6019,7 @@ describe('ForumLoader', () => {
   });
 
   it('opens the overlay when a reply returns missing_requirements', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 0 }]));
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(<ForumLoader />);
@@ -5930,7 +6037,7 @@ describe('ForumLoader', () => {
   });
 
   it('retries the post after a missing_requirements overlay is satisfied', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     postMock.mockResolvedValueOnce(SAMPLE);
     vi.mocked(agreeToRules).mockResolvedValue({
@@ -5960,7 +6067,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, name: null, missing: ['name'], forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 0 }]));
     repliesMock.mockResolvedValue([]);
     postMock.mockResolvedValue({
       id: 'r-new',
@@ -6002,7 +6109,7 @@ describe('ForumLoader', () => {
   });
 
   it('retries the reply after a missing_requirements overlay is satisfied', async () => {
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 0 }]));
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     postMock.mockResolvedValueOnce({
@@ -6058,7 +6165,7 @@ describe('ForumLoader', () => {
       setup: null,
     });
     postMock.mockRejectedValue(new MissingRequirementsError(['name']));
-    fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 0 }]);
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 0 }]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -6081,7 +6188,7 @@ describe('ForumLoader', () => {
   });
 
   it('shows the moderator banner for an unread moderator_appointed notification', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     fetchNotificationsMock.mockResolvedValue({
       notifications: [UNREAD_APPOINTED],
       unreadCount: 1,
@@ -6091,7 +6198,7 @@ describe('ForumLoader', () => {
   });
 
   it('marks the appointed notification read and hides the banner on click', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     fetchNotificationsMock.mockResolvedValue({
       notifications: [UNREAD_APPOINTED],
       unreadCount: 1,
@@ -6105,7 +6212,7 @@ describe('ForumLoader', () => {
   });
 
   it('leaves the moderator banner when markNotificationRead rejects', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     fetchNotificationsMock.mockResolvedValue({
       notifications: [UNREAD_APPOINTED],
       unreadCount: 1,
@@ -6127,7 +6234,7 @@ describe('ForumLoader', () => {
           resolveRead = resolve;
         }),
     );
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     fetchNotificationsMock.mockResolvedValue({
       notifications: [UNREAD_APPOINTED],
       unreadCount: 1,
@@ -6146,7 +6253,7 @@ describe('ForumLoader', () => {
   });
 
   it('hides the moderator banner when fetchNotifications rejects', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     fetchNotificationsMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -6163,7 +6270,7 @@ describe('ForumLoader', () => {
           resolveList = resolve;
         }),
     );
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     const view = renderWithLocale(<ForumLoader />);
     view.unmount();
     await act(async () => {
@@ -6182,7 +6289,7 @@ describe('ForumLoader', () => {
           rejectList = reject;
         }),
     );
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     const view = renderWithLocale(<ForumLoader />);
     view.unmount();
     await act(async () => {
@@ -6195,10 +6302,12 @@ describe('ForumLoader', () => {
 
 it('removes a moderated open post, closes its pay/reply state, and prevents stale refresh restoration', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([
-    { ...SAMPLE, replyCount: 1 },
-    { ...SAMPLE, id: 'keep', text: 'Keep this post' },
-  ]);
+  fetchMock.mockResolvedValue(
+    forumPage([
+      { ...SAMPLE, replyCount: 1 },
+      { ...SAMPLE, id: 'keep', text: 'Keep this post' },
+    ]),
+  );
   repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
   renderWithLocale(<ForumLoader />);
@@ -6233,10 +6342,12 @@ it('removes a moderated open post, closes its pay/reply state, and prevents stal
 
 it('does not treat a session-deleted id as unseen on silent refresh', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([
-    { ...SAMPLE, replyCount: 1 },
-    { ...SAMPLE, id: 'keep', text: 'Keep this post' },
-  ]);
+  fetchMock.mockResolvedValue(
+    forumPage([
+      { ...SAMPLE, replyCount: 1 },
+      { ...SAMPLE, id: 'keep', text: 'Keep this post' },
+    ]),
+  );
   repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
   renderWithLocale(<ForumLoader />);
@@ -6261,7 +6372,9 @@ it('does not treat a session-deleted id as unseen on silent refresh', async () =
   expect(screen.getByText('Keep this post')).toBeTruthy();
 
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
-  fetchMock.mockResolvedValueOnce([SAMPLE, { ...SAMPLE, id: 'keep', text: 'Keep this post' }]);
+  fetchMock
+    .mockResolvedValueOnce(forumPage([SAMPLE, { ...SAMPLE, id: 'keep', text: 'Keep this post' }]))
+    .mockResolvedValue(forumPage([SAMPLE, { ...SAMPLE, id: 'keep', text: 'Keep this post' }]));
   const before = fetchMock.mock.calls.length;
   Object.defineProperty(document, 'visibilityState', {
     configurable: true,
@@ -6286,10 +6399,12 @@ it('does not treat a session-deleted id as unseen on silent refresh', async () =
 
 it('removes a moderated reply, keeps the parent, and ignores restored replies', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([
-    { ...SAMPLE, replyCount: 1 },
-    { ...SAMPLE, id: 'keep', text: 'Keep this post' },
-  ]);
+  fetchMock.mockResolvedValue(
+    forumPage([
+      { ...SAMPLE, replyCount: 1 },
+      { ...SAMPLE, id: 'keep', text: 'Keep this post' },
+    ]),
+  );
   repliesMock.mockResolvedValue([NESTED_REPLY]);
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
   renderWithLocale(<ForumLoader />);
@@ -6335,7 +6450,7 @@ it('removes a moderated reply, keeps the parent, and ignores restored replies', 
 
 it('lets a later server reply raise the count after a session delete', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   repliesMock.mockResolvedValue([NESTED_REPLY]);
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
   renderWithLocale(<ForumLoader />);
@@ -6351,7 +6466,9 @@ it('lets a later server reply raise the count after a session delete', async () 
     within(screen.getByText('Hello from Ada').closest('li')!).getByText('0 reactions'),
   ).toBeTruthy();
 
-  fetchMock.mockResolvedValueOnce([{ ...SAMPLE, replyCount: 2 }]);
+  fetchMock
+    .mockResolvedValueOnce(forumPage([{ ...SAMPLE, replyCount: 2 }]))
+    .mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 2 }]));
   const before = fetchMock.mock.calls.length;
   const event = new Event('pageshow');
   Object.defineProperty(event, 'persisted', { value: true });
@@ -6361,7 +6478,9 @@ it('lets a later server reply raise the count after a session delete', async () 
     within(screen.getByText('Hello from Ada').closest('li')!).getByText('1 reactions'),
   ).toBeTruthy();
 
-  fetchMock.mockResolvedValueOnce([{ ...SAMPLE, replyCount: 1 }]);
+  fetchMock
+    .mockResolvedValueOnce(forumPage([{ ...SAMPLE, replyCount: 1 }]))
+    .mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   const beforeCatchUp = fetchMock.mock.calls.length;
   fireEvent(window, event);
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(beforeCatchUp));
@@ -6379,7 +6498,7 @@ it('lets a later server reply raise the count after a session delete', async () 
 
 it('drops overlapping nested reply deletes without restoring the first', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 2 }]));
   repliesMock.mockResolvedValue([
     NESTED_REPLY,
     { ...NESTED_REPLY, id: 'r2', text: 'Second reply' },
@@ -6431,7 +6550,7 @@ it('drops overlapping nested reply deletes without restoring the first', async (
 
 it('decrements the reply count twice when two nested replies are deleted in sequence', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 2 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 2 }]));
   repliesMock.mockResolvedValue([
     NESTED_REPLY,
     { ...NESTED_REPLY, id: 'r2', text: 'Second reply' },
@@ -6478,7 +6597,7 @@ it('decrements the reply count twice when two nested replies are deleted in sequ
 
 it('still hides a reply deleted after the thread is collapsed', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   repliesMock.mockResolvedValue([NESTED_REPLY]);
   let finishDelete!: () => void;
   vi.mocked(deleteMessage).mockImplementation(
@@ -6508,7 +6627,7 @@ it('still hides a reply deleted after the thread is collapsed', async () => {
 });
 
 it('hides reply deletion for ordinary members', async () => {
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   repliesMock.mockResolvedValue([NESTED_REPLY]);
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
@@ -6521,7 +6640,7 @@ it('hides reply deletion for ordinary members', async () => {
 
 it('pays a payable reply and polls that reply id', async () => {
   const payableReply: ForumMessage = { ...NESTED_REPLY, payable: true, sats: 5 };
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   repliesMock.mockResolvedValue([payableReply]);
   invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
   publicFetchMock.mockResolvedValue({ ...payableReply, sats: 26 });
@@ -6555,7 +6674,7 @@ it('pays a payable reply and polls that reply id', async () => {
 
 it('keeps a reply pay sheet when Active hides the parent note', async () => {
   const payableReply: ForumMessage = { ...NESTED_REPLY, payable: true };
-  fetchMock.mockResolvedValue([{ ...SAMPLE, replyCount: 1 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   repliesMock.mockResolvedValue([payableReply]);
   invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
   renderWithLocale(<ForumLoader />);
@@ -6582,7 +6701,7 @@ it('keeps a reply pay sheet when Active hides the parent note', async () => {
 });
 
 it('omits Gift on an unpayable nested reply', async () => {
-  fetchMock.mockResolvedValue([{ ...SAMPLE, payable: false, replyCount: 1 }]);
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, payable: false, replyCount: 1 }]));
   repliesMock.mockResolvedValue([NESTED_REPLY]);
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'All' })).toBeTruthy());
@@ -6594,4 +6713,235 @@ it('omits Gift on an unpayable nested reply', async () => {
   expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+});
+
+describe('forum feed pages', () => {
+  class FakeIntersectionObserver {
+    static instances: FakeIntersectionObserver[] = [];
+    callback: IntersectionObserverCallback;
+    observed: Element[] = [];
+
+    constructor(cb: IntersectionObserverCallback) {
+      this.callback = cb;
+      FakeIntersectionObserver.instances.push(this);
+    }
+
+    observe(el: Element): void {
+      this.observed.push(el);
+    }
+
+    unobserve(): void {}
+
+    disconnect(): void {}
+
+    trigger(isIntersecting = true): void {
+      this.callback(
+        this.observed.map((target) => ({ isIntersecting, target }) as IntersectionObserverEntry),
+        this as unknown as IntersectionObserver,
+      );
+    }
+  }
+
+  const paidMessage = (id: string, text: string, createdAt: string): ForumMessage => ({
+    ...SAMPLE,
+    id,
+    text,
+    createdAt,
+    sats: 21,
+    payable: true,
+  });
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the first active page on mount without using the legacy one-argument call', async () => {
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'active', limit: 20 });
+    });
+    expect(fetchMock).not.toHaveBeenCalledWith('sess');
+  });
+
+  it('requests page one without a cursor after switching to All', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'all', limit: 20 });
+    });
+  });
+
+  it('prefetches and appends the next cursor page while deduplicating ids', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValue(forumPage([first, second]));
+    const { container } = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Second page')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      cursor: 'cur_2',
+    });
+    expect(container.querySelectorAll('[data-message-id="page-1"]')).toHaveLength(1);
+  });
+
+  it('does not prefetch without a next cursor', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    fetchMock.mockResolvedValue(forumPage([first]));
+    renderWithLocale(<ForumLoader />);
+    await screen.findByText('First page');
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start a second prefetch while the cursor request is in flight', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
+    let resolvePageTwo: (page: ReturnType<typeof forumPage>) => void = () => undefined;
+    fetchMock.mockResolvedValueOnce(forumPage([first], 'cur_2')).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePageTwo = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      resolvePageTwo(forumPage([second]));
+    });
+    await screen.findByText('Second page');
+  });
+
+  it('keeps the loaded pages when a cursor prefetch fails', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', {
+        mode: 'active',
+        limit: 20,
+        cursor: 'cur_2',
+      });
+    });
+    expect(screen.getByText('First page')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('ignores an in-flight cursor page after the mode changes', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const stale = paidMessage('stale-page', 'Stale page', '2026-08-28T14:00:00.000Z');
+    let resolveStalePage: (page: ReturnType<typeof forumPage>) => void = () => undefined;
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStalePage = resolve;
+          }),
+      )
+      .mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    await revealAll();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'all', limit: 20 });
+    });
+    await act(async () => {
+      resolveStalePage(forumPage([stale]));
+    });
+    expect(screen.queryByText('Stale page')).toBeNull();
+  });
+
+  it('observes the first visible note when fewer than eight are loaded', async () => {
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    fetchMock.mockResolvedValue(forumPage([first], 'cur_2'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(
+        FakeIntersectionObserver.instances[0]?.observed[0]?.getAttribute('data-message-id'),
+      ).toBe('page-1');
+    });
+  });
+
+  it('keeps older cursor pages while a scrolled page-one poll holds unseen posts', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const older = paidMessage('page-2', 'Older page', '2026-08-28T14:00:00.000Z');
+    const fresh = paidMessage('page-new', 'Fresh page one', '2026-08-28T16:00:00.000Z');
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValueOnce(forumPage([older]))
+      .mockResolvedValue(forumPage([fresh, first]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await screen.findByText('Older page');
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Fresh page one')).toBeNull();
+    expect(screen.getByText('Older page')).toBeTruthy();
+    expect(fetchMock).toHaveBeenLastCalledWith('sess', { mode: 'active', limit: 20 });
+  });
 });

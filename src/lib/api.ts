@@ -966,17 +966,39 @@ export async function fetchViewActivity(viewKey: string): Promise<AccountActivit
   }
 }
 
+/** One cursor-paginated page of the forum feed. */
+export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | null };
+
 /**
- * Fetches every public top-level forum message (newest first).
+ * Fetches one page of public top-level forum messages (newest first).
+ *
+ * Sends `GET /forum/messages` with an optional mode and cursor and an always
+ * present limit (20 by default).
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @returns The message list.
+ * @param args - Optional feed mode, page size, and non-empty page cursor.
+ * @returns The validated message page and its next cursor, or `null` at the end.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link forumListSchema}.
  */
-export async function fetchMessages(sessionToken: string): Promise<ForumMessage[]> {
+export async function fetchMessages(
+  sessionToken: string,
+  args: {
+    mode?: 'active' | 'unpaid' | 'all' | 'popular';
+    limit?: number;
+    cursor?: string | null;
+  } = {},
+): Promise<ForumFeedPage> {
   try {
-    const response = await fetch('/forum/messages', {
+    const query = new URLSearchParams();
+    if (args.mode !== undefined) {
+      query.set('mode', args.mode);
+    }
+    query.set('limit', String(args.limit ?? 20));
+    if (args.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
+      query.set('cursor', args.cursor);
+    }
+    const response = await fetch(`/forum/messages?${query.toString()}`, {
       headers: { Authorization: `Bearer ${sessionToken}` },
     });
     if (response.status === 409) {
@@ -995,7 +1017,8 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }
-    return forumListSchema.parse(await response.json()).messages;
+    const page = forumListSchema.parse(await response.json());
+    return { messages: page.messages, nextCursor: page.nextCursor ?? null };
   } catch (err) {
     if (err instanceof MissingRequirementsError) {
       throw err;
