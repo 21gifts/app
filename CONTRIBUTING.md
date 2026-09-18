@@ -156,6 +156,8 @@ app/
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
+│   │   ├── LinkedText.tsx       # Autolink http(s) in note bodies; internal Link, external warning
+│   │   ├── ExternalLinkWarning.tsx # Confirm overlay before leaving 21.gifts
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional push bell + language + theme + fiat + number format)
@@ -213,6 +215,7 @@ app/
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
+│   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
 │   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check

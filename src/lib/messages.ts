@@ -307,6 +307,11 @@ const en = {
   'forum.translateError': 'Could not translate this note. Please try again.',
   'forum.showMore': 'Show more',
 
+  'link.externalTitle': 'Open external link?',
+  'link.externalBody': 'This address is not 21.gifts. Open it only if you trust it.',
+  'link.externalContinue': 'Open link',
+  'link.externalClose': 'Close',
+
   'requirements.nameTitle': 'Add your name',
   'requirements.rulesTitle': 'Agree to the living room rules',
   'requirements.addressTitle': 'Add your Wallet of Satoshi address',
@@ -879,6 +884,12 @@ const de = {
   'forum.translateShowTranslation': 'Übersetzung anzeigen',
   'forum.translateError': 'Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen.',
   'forum.showMore': 'Mehr anzeigen',
+
+  'link.externalTitle': 'Externe Seite öffnen?',
+  'link.externalBody':
+    'Diese Adresse gehört nicht zu 21.gifts. Öffnen Sie sie nur, wenn Sie ihr vertrauen.',
+  'link.externalContinue': 'Link öffnen',
+  'link.externalClose': 'Schließen',
 
   'requirements.nameTitle': 'Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
@@ -1455,6 +1466,11 @@ const es = {
   'forum.translateError': 'No se pudo traducir esta nota. Inténtalo de nuevo.',
   'forum.showMore': 'Mostrar más',
 
+  'link.externalTitle': '¿Abrir un enlace externo?',
+  'link.externalBody': 'Esta dirección no es 21.gifts. Ábrela solo si confías en ella.',
+  'link.externalContinue': 'Abrir enlace',
+  'link.externalClose': 'Cerrar',
+
   'requirements.nameTitle': 'Añade tu nombre',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
   'requirements.addressTitle': 'Añade tu Wallet of Satoshi address',
@@ -2022,6 +2038,12 @@ const fil = {
   'forum.translateShowTranslation': 'Ipakita ang pagsasalin',
   'forum.translateError': 'Hindi maisalin ang notang ito. Pakisubukan muli.',
   'forum.showMore': 'Magpakita pa',
+
+  'link.externalTitle': 'Buksan ang panlabas na link?',
+  'link.externalBody':
+    'Hindi 21.gifts ang address na ito. Buksan mo lang kung pinagkakatiwalaan mo ito.',
+  'link.externalContinue': 'Buksan ang link',
+  'link.externalClose': 'Isara',
 
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',

@@ -269,12 +269,12 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 
 **Elevation.**
 
-| Level   | Recipe                               | Use                                                                                       |
-| ------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
-| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes                                      |
-| 1       | `border border-app-border shadow-sm` | `Card`                                                                                    |
-| 2       | `border border-app-border shadow-lg` | Menu, language listbox                                                                    |
-| Overlay | `bg-app-overlay`                     | `HandbookLightbox`, `PwaInstall`, `IntroduceYourselfOverlay`, `RequirementsOverlay` scrim |
+| Level   | Recipe                               | Use                                                                                                              |
+| ------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| 0       | border only                          | Marketing KPI tiles (`border-paper/10`), forum notes                                                             |
+| 1       | `border border-app-border shadow-sm` | `Card`                                                                                                           |
+| 2       | `border border-app-border shadow-lg` | Menu, language listbox                                                                                           |
+| Overlay | `bg-app-overlay`                     | `HandbookLightbox`, `PwaInstall`, `IntroduceYourselfOverlay`, `RequirementsOverlay`, `ExternalLinkWarning` scrim |
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
@@ -662,6 +662,8 @@ Glyph: `aria-hidden` on the lucide node.
 
 **Requirements.** Name, Lightning Address, or living-room rules before a pending post retries. Close dismisses without posting. No Skip.
 
+**External link.** Title **Open external link?**, body warning, destination URL as `text-sm text-app-fg break-all` (user content, not catalogized), labeled **Open link**. Close dismisses without opening. No Skip. App body links stay `font-medium underline underline-offset-2` and inherit colour — not `text-accent`.
+
 **States.** Open / dismissed (parent).
 
 ### `Field`
@@ -949,6 +951,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Posts do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
+- `ExternalLinkWarning` (same overlay chrome, no Skip) when a visitor clicks an external http(s) URL in note, About me, or inbox text. Internal 21.gifts URLs navigate in-app with no overlay.
 
 Author names with `accountId` open `/members/[accountId]`.
 

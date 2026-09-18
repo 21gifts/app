@@ -5311,6 +5311,59 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('button', { name: 'Write an introduction' })).toBeVisible();
     await shotScreen(page, 'state-welcome-overlay-introduce');
   });
+
+  test('welcome overlay-external-link', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          forumLawsDismissed: true,
+        }),
+      });
+    });
+    await page.route(/\/messages$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-link',
+              name: 'Ada',
+              text: 'New:\nhttps://example.com/phish',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('link', { name: 'https://example.com/phish' }).click();
+    await expect(page.getByRole('dialog', { name: 'Open external link?' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open link' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-overlay-external-link');
+  });
 });
 
 test.describe('contact screens', () => {

@@ -244,9 +244,13 @@ describe('ForumQuotedBody', () => {
         fiat="USD"
       />,
     );
-    expect(screen.getByText(`just for information: ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByText('just for information:')).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
     await waitFor(() => {
       expect(screen.getByText('just for information:')).toBeTruthy();
+      expect(screen.queryByRole('link', { name: QUOTED_URL })).toBeNull();
     });
     expect(screen.queryByText(QUOTED_URL)).toBeNull();
     expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
@@ -271,7 +275,10 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
     });
-    expect(screen.getByText(`see ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByText('see', { exact: false })).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
     expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
   });
 
@@ -289,7 +296,9 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
     });
-    expect(screen.getByText(`see ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
   });
 
   it('does not quote the note that contains the url', async () => {
@@ -306,7 +315,9 @@ describe('ForumQuotedBody', () => {
         fiat="USD"
       />,
     );
-    expect(screen.getByText(`loop ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
     expect(fetchMessage).not.toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
   });
@@ -326,8 +337,12 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText(`caption https://21.gifts/messages/${PARENT_ID}`)).toBeTruthy();
+      expect(screen.getByText('caption', { exact: false })).toBeTruthy();
     });
+    const nestedLink = screen.getByRole('link', {
+      name: `https://21.gifts/messages/${PARENT_ID}`,
+    });
+    expect(nestedLink.getAttribute('href')).toBe(`/messages/${PARENT_ID}`);
     expect(screen.queryByText('Good morning everyone especially to our sponsor.')).toBeNull();
   });
 
