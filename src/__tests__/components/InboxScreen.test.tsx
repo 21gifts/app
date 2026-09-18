@@ -961,7 +961,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -993,7 +992,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
