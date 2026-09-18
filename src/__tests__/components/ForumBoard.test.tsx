@@ -862,6 +862,59 @@ describe('ForumBoard', () => {
     );
   });
 
+  it('attaches nearEndRef to the eighth visible note from the end', () => {
+    const messages = Array.from({ length: 10 }, (_, index) => ({
+      ...SAMPLE,
+      id: `m${index + 1}`,
+      text: `Message ${index + 1}`,
+    }));
+    const nearEndRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={messages}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        nearEndRef={nearEndRef}
+      />,
+    );
+
+    expect(nearEndRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m3"]'));
+  });
+
+  it('attaches nearEndRef to the first visible note when fewer than eight render', () => {
+    const nearEndRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE, MULTILINE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        nearEndRef={nearEndRef}
+      />,
+    );
+
+    expect(nearEndRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m1"]'));
+  });
+
   it('orders popular by sats descending when input is newest-first', () => {
     renderWithLocale(
       <ForumBoard

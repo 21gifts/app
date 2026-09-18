@@ -16,7 +16,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({
-  fetchMessages: vi.fn().mockResolvedValue([]),
+  fetchMessages: vi.fn().mockResolvedValue({ messages: [], nextCursor: null }),
   postMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),

@@ -1164,7 +1164,7 @@ const forumMessage = {
 };
 
 describe('fetchMessages', () => {
-  it('returns the validated messages and sends the bearer header', async () => {
+  it('returns the validated page with a null cursor and sends the default limit', async () => {
     const forumMessageWithoutRole = {
       id: forumMessage.id,
       name: forumMessage.name,
@@ -1179,19 +1179,65 @@ describe('fetchMessages', () => {
       status: 200,
       body: { messages: [forumMessageWithoutRole] },
     });
-    await expect(fetchMessages('sess')).resolves.toEqual([
-      {
-        ...forumMessageWithoutRole,
-        role: 'basis',
-        hasVideo: false,
-        videoContentType: null,
-        replyCount: 0,
-        photoCount: 0,
-      },
-    ]);
-    expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
+    await expect(fetchMessages('sess')).resolves.toEqual({
+      messages: [
+        {
+          ...forumMessageWithoutRole,
+          role: 'basis',
+          hasVideo: false,
+          videoContentType: null,
+          replyCount: 0,
+          photoCount: 0,
+        },
+      ],
+      nextCursor: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages?limit=20', {
       headers: { Authorization: 'Bearer sess' },
     });
+  });
+
+  it('sends mode before the default limit', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'active' });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages?mode=active&limit=20', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('sends mode, limit, and cursor in order', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'all', limit: 20, cursor: 'abc' });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages?mode=all&limit=20&cursor=abc', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it.each([null, ''])('omits an empty cursor (%s)', async (cursor) => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'all', cursor });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages?mode=all&limit=20', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('returns the validated next cursor', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage], nextCursor: 'cur_2' },
+    });
+    await expect(fetchMessages('sess')).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: 'cur_2',
+    });
+  });
+
+  it('throws visitor copy when nextCursor is empty', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [], nextCursor: '' } });
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
   });
 
   it('throws visitor copy on a non-ok response', async () => {

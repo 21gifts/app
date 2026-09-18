@@ -393,10 +393,14 @@ export const forumMessageSchema = z
   }));
 
 /**
- * Runtime schema for the payload of `GET /messages` (top-level notes).
+ * Runtime schema for `GET /messages` and member posts/replies payloads.
+ *
+ * The forum feed may include a cursor for the next page; member activity
+ * endpoints may omit it.
  */
 export const forumListSchema = z.object({
   messages: z.array(forumMessageSchema),
+  nextCursor: z.string().min(1).optional(),
 });
 
 /**
