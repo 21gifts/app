@@ -15,7 +15,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import {
   fetchGiftStats,
   fetchMemberPosts,
@@ -118,6 +118,20 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
+/**
+ * True when the author's wallet rejected the zap invoice.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the message looks like an author's-wallet error.
+ */
+function isAuthorWalletError(err: unknown): boolean {
+  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+}
+
 /** Roles that show a clickable tag beside the author name. */
 type MemberTaggedRole = 'founder' | 'moderator' | 'verified';
 
@@ -166,10 +180,6 @@ const IDLE_BOARD = {
   onReplyPost: (): void => undefined,
   replyPosting: false,
   replyFormError: null as ForumReplyFormError,
-  ownName: null as string | null,
-  ownAccountId: null as string | null,
-  onPm: (): void => undefined,
-  pmBusyId: null as string | null,
   composerHidden: true,
 };
 /* v8 ignore stop */
@@ -212,7 +222,6 @@ export function MemberProfileScreen({
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
-  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
@@ -376,7 +385,32 @@ export function MemberProfileScreen({
     }
   };
 
+  const bumpPayPollGeneration = (): number => {
+    payPollAbortRef.current?.abort();
+    payPollAbortRef.current = new AbortController();
+    payPollGeneration.current += 1;
+    return payPollGeneration.current;
+  };
+
+  const handlePayCancel = (): void => {
+    bumpPayPollGeneration();
+    setPayMessageId(null);
+    setPayDraft('');
+    setPayError(null);
+    setPayInvoice(null);
+    setPayBusy(false);
+    setPayWaiting(false);
+    setReplyPosting(false);
+  };
+
   const openActivity = (next: 'posts' | 'replies'): void => {
+    if (
+      payMessageId !== null &&
+      ((replies !== null && replies.some((row) => row.id === payMessageId)) ||
+        (activityReplies !== null && activityReplies.some((row) => row.id === payMessageId)))
+    ) {
+      handlePayCancel();
+    }
     if (activity === next) {
       setActivity(null);
       return;
@@ -391,13 +425,6 @@ export function MemberProfileScreen({
     if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
       void loadActivityFeed('replies');
     }
-  };
-
-  const bumpPayPollGeneration = (): number => {
-    payPollAbortRef.current?.abort();
-    payPollAbortRef.current = new AbortController();
-    payPollGeneration.current += 1;
-    return payPollGeneration.current;
   };
 
   useEffect(() => {
@@ -440,6 +467,18 @@ export function MemberProfileScreen({
                     }
                   : row,
               );
+            });
+            setActivityReplies((prev) => {
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+            });
+            setReplies((prev) => {
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
             });
             setPayWaiting(false);
             setPayInvoice(null);
@@ -720,9 +759,13 @@ export function MemberProfileScreen({
     }
     const token = session;
     const messageId = payMessageId;
-    const parent = posts?.find((message) => message.id === messageId);
-    /* v8 ignore next -- pay sheet only opens on a listed note */
-    const baselineSats = parent === undefined ? 0 : parent.sats;
+    const visibleList = activity === 'replies' ? activityReplies : replies;
+    const listed = visibleList?.find((message) => message.id === messageId);
+    /* v8 ignore next 3 -- sheet only opens on a payable row */
+    if (listed === undefined || listed.payable !== true) {
+      return;
+    }
+    const baselineSats = listed.sats;
     const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);
@@ -754,7 +797,13 @@ export function MemberProfileScreen({
             setPayError('request');
             return null;
           }
-          setPayError('request');
+          setPayError(
+            isRateLimitError(err)
+              ? 'rateLimit'
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
+          );
         } finally {
           if (generation === payPollGeneration.current) {
             setPayBusy(false);
@@ -770,20 +819,16 @@ export function MemberProfileScreen({
     return continuePay(false);
   };
 
-  const handlePayCancel = (): void => {
-    bumpPayPollGeneration();
-    setPayMessageId(null);
-    setPayDraft('');
-    setPayError(null);
-    setPayInvoice(null);
-    setPayBusy(false);
-    setPayWaiting(false);
-    setReplyPosting(false);
-  };
-
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
       return;
+    }
+    if (
+      payMessageId !== null &&
+      replies !== null &&
+      replies.some((row) => row.id === payMessageId)
+    ) {
+      handlePayCancel();
     }
     if (expandedId === messageId) {
       ++expandGen.current;
@@ -898,21 +943,6 @@ export function MemberProfileScreen({
     })();
   };
 
-  const handlePm = (messageId: string): void => {
-    if (session === null || pmBusyId !== null) {
-      return;
-    }
-    setPmBusyId(messageId);
-    void (async () => {
-      try {
-        const thread = await openConversation(session, messageId);
-        router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
-      } catch {
-        setPmBusyId(null);
-      }
-    })();
-  };
-
   const sharedForumProps = {
     photoUrls,
     rateDay,
@@ -948,10 +978,6 @@ export function MemberProfileScreen({
     replyFormError,
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
-    ownName: account?.name ?? null,
-    ownAccountId: account?.id ?? null,
-    pmBusyId,
-    onPm: handlePm,
   };
 
   const activityMessages = activity === 'posts' ? (posts ?? []) : (activityReplies ?? []);
@@ -998,23 +1024,22 @@ export function MemberProfileScreen({
             {...(profileUrl !== '' ? { profileUrl } : {})}
           />
           {showMessage ? (
-            <div className="flex items-center justify-center">
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={pmBusy}
-                aria-label={t('profile.message')}
-                title={t('profile.message')}
-                onClick={onMessage}
-              >
-                {pmBusy ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={pmBusy}
+              icon={
+                pmBusy ? (
                   <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : (
                   <Mail aria-hidden="true" className="h-4 w-4" />
-                )}
-              </IconButton>
-            </div>
+                )
+              }
+              onClick={onMessage}
+            >
+              {t('profile.message')}
+            </Button>
           ) : null}
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">

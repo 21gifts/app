@@ -244,7 +244,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'welcome.png',
     visual: 'screen-welcome',
-    needle: 'Send Bitcoin',
+    needle: 'Welcome, Ada',
   },
   {
     route: '/welcome',
@@ -1288,13 +1288,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-copy.png',
     visual: 'state-welcome-copy',
     needle: 'Copy link to this note',
-  },
-  {
-    route: '/welcome',
-    id: 'pm',
-    image: 'welcome-pm.png',
-    visual: 'state-welcome-pm',
-    needle: 'Send a private message',
   },
   {
     route: '/welcome',

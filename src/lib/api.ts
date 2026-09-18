@@ -450,7 +450,7 @@ export async function fetchMemberPosts(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list (`payable` false; optional `parentId`).
+ * @returns The message list (reply rows may be payable; optional `parentId`).
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
  * @throws Error with visitor-facing copy on other failures or schema mismatch.
  */

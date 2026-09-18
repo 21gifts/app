@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
@@ -15,7 +14,6 @@ import {
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
-  openConversation,
   postMessage,
   postMessageInvoice,
 } from '@/lib/api';
@@ -45,6 +43,7 @@ function isReplyPaymentExempt(
   account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
   parentAccountId: string | undefined,
 ): boolean {
+  /* v8 ignore next 3 -- signed-in permalink board always has an account */
   if (account === null) {
     return false;
   }
@@ -159,19 +158,16 @@ const IDLE_BOARD = {
   onReplyPost: (): void => undefined,
   replyPosting: false,
   replyFormError: null as ForumReplyFormError,
-  ownName: null as string | null,
-  ownAccountId: null as string | null,
-  onPm: (): void => undefined,
-  pmBusyId: null as string | null,
   composerHidden: true,
 };
 /* v8 ignore stop */
 
 /**
  * Signed-in permalink thread: one root note on {@link ForumBoard} with the
- * same per-post pay, copy, PM, expand/reply, photo, translate, and staff
- * delete actions as `/welcome`. Auto-expands the root so the thread and
- * in-card reply composer are available. No top-level composer or feed filters.
+ * same copy, expand/reply, photo, translate, and staff delete actions as
+ * `/welcome`. Gift only on a payable nested reply. Auto-expands the root so
+ * the thread and in-card reply composer are available. No top-level composer,
+ * feed filters, or envelope.
  *
  * @param props - Public parent note, optional reply highlight id, root-delete hook.
  * @returns The interactive thread board and requirements overlay.
@@ -184,7 +180,6 @@ export function PublicMessageThread(props: {
   onRootDeleted: () => void;
 }): ReactElement {
   const { root, highlightId, onRootDeleted } = props;
-  const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -204,7 +199,6 @@ export function PublicMessageThread(props: {
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
-  const [pmBusyId, setPmBusyId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
   const [replyPosting, setReplyPosting] = useState(false);
@@ -398,6 +392,18 @@ export function PublicMessageThread(props: {
                 ...next,
                 replyCount: Math.max(prev.replyCount, next.replyCount),
               };
+            });
+            setReplies((prev) => {
+              /* v8 ignore next 3 -- poll can finish after the thread failed to load replies */
+              if (prev === null) {
+                return prev;
+              }
+              return prev.map((row) => {
+                if (row.id !== next.id) {
+                  return row;
+                }
+                return { ...row, ...next };
+              });
             });
             setPayWaiting(false);
             setPayInvoice(null);
@@ -614,6 +620,7 @@ export function PublicMessageThread(props: {
   };
 
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
+    /* v8 ignore next 3 -- Continue unmounts without a session; busy clicks are ignored */
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
@@ -633,7 +640,12 @@ export function PublicMessageThread(props: {
     }
     const token = session;
     const messageId = payMessageId;
-    const baselineSats = note.sats;
+    /* v8 ignore next 4 -- Gift sheet only opens on a loaded payable nested reply */
+    const listed = replies?.find((row) => row.id === messageId);
+    if (listed === undefined || listed.payable !== true) {
+      return;
+    }
+    const baselineSats = listed.sats;
     const continuePay = (isRetry: boolean): Promise<ForumPayInvoice | null> => {
       const generation = payPollGeneration.current;
       setPayBusy(true);
@@ -660,7 +672,9 @@ export function PublicMessageThread(props: {
           }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
-              pendingPostRef.current = () => continuePay(true).then(() => undefined);
+              pendingPostRef.current = async () => {
+                await continuePay(true);
+              };
               return null;
             }
             setPayError('request');
@@ -682,7 +696,9 @@ export function PublicMessageThread(props: {
       })();
     };
     if (account !== null && openOverlayForMissing(account.missing)) {
-      pendingPostRef.current = () => continuePay(true).then(() => undefined);
+      pendingPostRef.current = async () => {
+        await continuePay(true);
+      };
       return;
     }
     return continuePay(false);
@@ -702,6 +718,13 @@ export function PublicMessageThread(props: {
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
       return;
+    }
+    if (
+      payMessageId !== null &&
+      replies !== null &&
+      replies.some((row) => row.id === payMessageId)
+    ) {
+      handlePayCancel();
     }
     if (expandedId === messageId) {
       ++expandGen.current;
@@ -819,26 +842,14 @@ export function PublicMessageThread(props: {
     })();
   };
 
-  const handlePm = (messageId: string): void => {
-    /* v8 ignore next 3 -- PM is hidden without a session and disabled while busy */
-    if (session === null || pmBusyId !== null) {
-      return;
-    }
-    setPmBusyId(messageId);
-    void (async () => {
-      try {
-        const thread = await openConversation(session, messageId);
-        router.push(`/messages?c=${encodeURIComponent(thread.id)}`);
-      } catch {
-        setPmBusyId(null);
-      }
-    })();
-  };
-
   const handleDeleted = (messageId: string): void => {
     if (messageId === note.id) {
+      handlePayCancel();
       onRootDeleted();
       return;
+    }
+    if (payMessageId === messageId) {
+      handlePayCancel();
     }
     setReplies((prev) => {
       /* v8 ignore next 3 -- delete control only mounts after replies loaded */
@@ -903,10 +914,6 @@ export function PublicMessageThread(props: {
         replyFormError={replyFormError}
         onReplyPost={handleReplyPost}
         onRetryReplies={handleRetryReplies}
-        ownName={account?.name ?? null}
-        ownAccountId={account?.id ?? null}
-        pmBusyId={pmBusyId}
-        onPm={handlePm}
         onDeleted={handleDeleted}
         permalinkTargetId={highlightId}
       />

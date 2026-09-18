@@ -298,7 +298,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations` with `{ forumMessageId }` to open or return the thread with that note's author. Response is the same conversation list-row shape, including required `kind`, required `lastFromMe`, and optional `accountId` (counterpart).
 - **Errors:** Upstream 400 (self), 404 (unknown note), 401/503, or 502 if the api is unreachable.
-- **Used by:** `openConversation` from the forum PM control.
+- **Used by:** `openConversation` from the member-profile Message button.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations/[id]

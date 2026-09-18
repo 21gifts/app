@@ -1044,12 +1044,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:pm",
-    "label": "/welcome pm",
-    "visual": "state-welcome-pm",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:translate",
     "label": "/welcome translate",
     "visual": "state-welcome-translate",
