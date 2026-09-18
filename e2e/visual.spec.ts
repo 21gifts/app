@@ -1051,7 +1051,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
-    await expect(page.getByText('Visitor').first()).toBeVisible();
+    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Visitor' }).first().click();
     await expect(
       page.getByText(
@@ -3458,7 +3458,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${parentId}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
-    await expect(page.getByText('Visitor').first()).toBeVisible();
+    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
     await expect(
       page.getByText('Greetings! https://example.com/hello', { exact: true }),
     ).toBeVisible();
@@ -6285,7 +6285,7 @@ test.describe('moderate hidden screens', () => {
     });
     await page.goto('/moderate/hidden');
     await expect(page.getByText('Hidden visitor note', { exact: true })).toBeVisible();
-    await expect(page.getByText('Visitor').first()).toBeVisible();
+    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
     await shotScreen(page, 'state-moderate-hidden-visitor');
   });
 
