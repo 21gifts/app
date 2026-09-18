@@ -1141,6 +1141,12 @@ Staff (founder) loaded list with at least one hidden note (author **Bob**, text 
 
 ![21.gifts hidden notes](images/moderate-hidden.png)
 
+### Variant: visitor
+
+Staff (founder) loaded list with one hidden note written without a 21.gifts account (author **Robin**, text **Hidden visitor note**, the non-interactive **Visitor** badge next to the name, **Hidden by Ada**).
+
+![21.gifts hidden notes visitor](images/moderate-hidden-visitor.png)
+
 ### Variant: forbidden
 
 Signed-in basis account. Copy **This page is for founders and moderators.** No list.

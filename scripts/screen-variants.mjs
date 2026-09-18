@@ -1193,6 +1193,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/hidden',
+    id: 'visitor',
+    image: 'moderate-hidden-visitor.png',
+    visual: 'state-moderate-hidden-visitor',
+    needle: 'Hidden visitor note',
+  },
+  {
+    route: '/moderate/hidden',
     id: 'forbidden',
     image: 'moderate-hidden-forbidden.png',
     visual: 'state-moderate-hidden-forbidden',
@@ -1455,7 +1462,7 @@ export const SCREEN_VARIANTS = [
     id: 'visitor-reply',
     image: 'messages-id-visitor-reply.png',
     visual: 'state-messages-id-visitor-reply',
-    needle: 'state-messages-id-visitor-reply',
+    needle: 'Greetings! https://example.com/hello',
   },
   {
     route: '/messages/[id]',
