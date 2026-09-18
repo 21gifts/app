@@ -930,9 +930,7 @@ test('welcome via Nostr reply shows a badge and keeps the url as text', async ({
   await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
 });
 
-test('unsigned permalink via Nostr reply is a span and keeps the url as text', async ({
-  page,
-}) => {
+test('unsigned permalink via Nostr reply is a span and keeps the url as text', async ({ page }) => {
   const parentId = ID;
   await page.route(`**/public-messages/${parentId}/replies`, async (route) => {
     await route.fulfill({

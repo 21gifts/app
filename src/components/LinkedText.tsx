@@ -39,7 +39,12 @@ export interface LinkedTextProps {
  * @param props - See {@link LinkedTextProps}.
  * @returns The paragraph plus an optional confirm overlay.
  */
-export function LinkedText({ text, className, plain = false, ...rest }: LinkedTextProps): ReactElement {
+export function LinkedText({
+  text,
+  className,
+  plain = false,
+  ...rest
+}: LinkedTextProps): ReactElement {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   if (plain) {
