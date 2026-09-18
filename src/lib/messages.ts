@@ -66,7 +66,7 @@ const en = {
   'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
-    'Once you are logged in, write a post in the forum. Others can send Bitcoin to that post — it lands in your Wallet of Satoshi, not ours. The platform never touches the money.',
+    'Once you are logged in, write a post in the forum. Others can send Bitcoin to a payable reaction — it lands in the author’s Wallet of Satoshi, not ours. The platform never touches the money.',
   'home.whyKicker': 'Why this exists',
   'home.whyTitle': 'The shortest possible path from one person to another',
   'home.why1Title': 'Truly peer-to-peer',
@@ -84,7 +84,7 @@ const en = {
   'home.projectKicker': 'The project',
   'home.projectTitle': 'Donate to this project',
   'home.projectLead':
-    'Gifts in the forum go to the person who wrote the post. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
+    'Gifts in the forum go to the person who wrote the reaction. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Common questions, answered briefly',
   'home.faq1Q': 'Who can use this?',
@@ -101,7 +101,7 @@ const en = {
     'Yes. If you lose your login and any platform sync, the account cannot be recovered at this stage. Keep a backup of the device you log in with.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
-    'Open Send help, pick a message in the forum, and choose Send Bitcoin on that post. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
+    'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
   'home.faq6Q': 'Why only Bitcoin?',
   'home.faq6A':
     'Bitcoin is fast, cheap to send, and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
@@ -137,7 +137,8 @@ const en = {
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
-  'donate.lead': 'Pick a message in the forum and send Bitcoin to the person who wrote it.',
+  'donate.lead':
+    'Open the forum, pick a message, open Show reactions, then send Bitcoin on a reaction.',
   'donate.continue': 'Open the forum',
 
   'notFound.body': 'This page does not exist.',
@@ -285,7 +286,6 @@ const en = {
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
   'forum.copyLink': 'Copy link to this note',
-  'forum.pm': 'Send a private message',
   'forum.replyCount': '{count} reactions',
   'forum.replyComposerLabel': 'Your reaction',
   'forum.replyPlaceholder': 'Write a reaction',
@@ -644,7 +644,7 @@ const de = {
   'home.step2BodyAfter': '. Von da an kann Ihnen jede Person aus Wallet of Satoshi Bitcoin senden.',
   'home.step3Title': 'Schreiben und Hilfe empfangen',
   'home.step3Body':
-    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an diesen Beitrag senden — es landet in Ihrer Wallet of Satoshi, nicht bei uns. Die Plattform berührt das Geld nie.',
+    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an eine zahlbare Reaktion senden — es landet in der Wallet of Satoshi der Autorin oder des Autors, nicht bei uns. Die Plattform berührt das Geld nie.',
   'home.whyKicker': 'Warum es das gibt',
   'home.whyTitle': 'Der kürzeste Weg von einer Person zur anderen',
   'home.why1Title': 'Wirklich von Mensch zu Mensch',
@@ -662,7 +662,7 @@ const de = {
   'home.projectKicker': 'Das Projekt',
   'home.projectTitle': 'An dieses Projekt spenden',
   'home.projectLead':
-    'Geschenke im Forum gehen an die Person, die den Beitrag geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
+    'Geschenke im Forum gehen an die Person, die die Reaktion geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
@@ -678,7 +678,7 @@ const de = {
     'Ja. Wenn Sie Ihr Login und jede Plattform-Synchronisation verlieren, lässt sich das Konto derzeit nicht wiederherstellen. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
-    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum und tippen Sie dort auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Nachricht geschrieben hat.',
+    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
   'home.faq6Q': 'Warum nur Bitcoin?',
   'home.faq6A':
     'Bitcoin ist schnell, günstig und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
@@ -713,7 +713,7 @@ const de = {
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
-    'Wählen Sie eine Nachricht im Forum und senden Sie der Person, die sie geschrieben hat, Bitcoin.',
+    'Öffnen Sie das Forum, wählen Sie eine Nachricht, öffnen Sie «Reaktionen anzeigen» und senden Sie Bitcoin auf einer Reaktion.',
   'donate.continue': 'Forum öffnen',
   'notFound.body': 'Diese Seite gibt es nicht.',
   'notFound.back': 'Zur Startseite',
@@ -858,7 +858,6 @@ const de = {
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
   'forum.copyLink': 'Link zu dieser Notiz kopieren',
-  'forum.pm': 'Private Nachricht senden',
   'forum.replyCount': '{count} Reaktionen',
   'forum.replyComposerLabel': 'Ihre Reaktion',
   'forum.replyPlaceholder': 'Reaktion schreiben',
@@ -1224,7 +1223,7 @@ const es = {
     '. A partir de ahí, cualquiera podrá enviarte Bitcoin desde Wallet of Satoshi.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
-    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a esa publicación — llega a tu Wallet of Satoshi, no a la nuestra. La plataforma nunca toca el dinero.',
+    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a una reacción pagable — llega a la Wallet of Satoshi de quien la escribió, no a la nuestra. La plataforma nunca toca el dinero.',
   'home.whyKicker': 'Por qué existe',
   'home.whyTitle': 'El camino más corto de una persona a otra',
   'home.why1Title': 'De persona a persona, de verdad',
@@ -1242,7 +1241,7 @@ const es = {
   'home.projectKicker': 'El proyecto',
   'home.projectTitle': 'Dona a este proyecto',
   'home.projectLead':
-    'Los regalos del foro van a la persona que escribió la publicación. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
+    'Los regalos del foro van a la persona que escribió la reacción. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Preguntas frecuentes, en breve',
   'home.faq1Q': '¿Quién puede usarlo?',
@@ -1259,7 +1258,7 @@ const es = {
     'Sí. Si pierdes tu acceso y cualquier sincronización de plataforma, por ahora la cuenta no se puede recuperar. Guarda una copia de seguridad del dispositivo con el que inicias sesión.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
-    'Abre Enviar ayuda, elige un mensaje en el foro y pulsa Enviar Bitcoin en esa publicación. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió el mensaje.',
+    'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió la reacción.',
   'home.faq6Q': '¿Por qué solo Bitcoin?',
   'home.faq6A':
     'Bitcoin es rápido, barato de enviar y resistente a la censura. Wallet of Satoshi hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
@@ -1292,7 +1291,8 @@ const es = {
     'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Las cantidades pequeñas llegan rápido y cuestan poco. Llega a quien recibe, no a nosotros. Nadie puede emitir más ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
-  'donate.lead': 'Elige un mensaje en el foro y envía Bitcoin a la persona que lo escribió.',
+  'donate.lead':
+    'Abre el foro, elige un mensaje, abre Mostrar reacciones y envía Bitcoin en una reacción.',
   'donate.continue': 'Abrir el foro',
   'notFound.body': 'Esta página no existe.',
   'notFound.back': 'Volver al inicio',
@@ -1432,7 +1432,6 @@ const es = {
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
   'forum.copyLink': 'Copiar enlace a esta nota',
-  'forum.pm': 'Enviar un mensaje privado',
   'forum.replyCount': '{count} reacciones',
   'forum.replyComposerLabel': 'Tu reacción',
   'forum.replyPlaceholder': 'Escribe una reacción',
@@ -1788,7 +1787,7 @@ const fil = {
     '. Mula roon, puwede ka nang padalhan ng Bitcoin ng kahit sino mula sa Wallet of Satoshi.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
-    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa post na iyon — sa Wallet of Satoshi mo ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
+    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa isang nababayarang reaksyon — sa Wallet of Satoshi ng may-akda ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
   'home.whyKicker': 'Bakit ito umiiral',
   'home.whyTitle': 'Ang pinakamaikling daan mula sa isang tao patungo sa iba',
   'home.why1Title': 'Tunay na peer-to-peer',
@@ -1806,7 +1805,7 @@ const fil = {
   'home.projectKicker': 'Ang proyekto',
   'home.projectTitle': 'Mag-donate sa proyektong ito',
   'home.projectLead':
-    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng post. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
+    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng reaksyon. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Mga karaniwang tanong, maikling sagot',
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',
@@ -1823,7 +1822,7 @@ const fil = {
     'Oo. Kung mawala ang login mo at ang anumang platform sync, hindi pa mababawi ang account sa ngayon. Mag-backup ng device na ginagamit mo sa pag-log in.',
   'home.faq5Q': 'Paano ako magpapadala ng regalo?',
   'home.faq5A':
-    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, at i-tap ang Magpadala ng Bitcoin sa post na iyon. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng mensahe ang Bitcoin.',
+    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng reaksyon ang Bitcoin.',
   'home.faq6Q': 'Bakit Bitcoin lang?',
   'home.faq6A':
     'Mabilis ang Bitcoin, mura ang pagpapadala, at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng Wallet of Satoshi ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
@@ -1857,7 +1856,8 @@ const fil = {
     'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Mabilis at mura ang pagpapadala ng maliliit na halaga. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
-  'donate.lead': 'Pumili ng mensahe sa forum at magpadala ng Bitcoin sa taong sumulat nito.',
+  'donate.lead':
+    'Buksan ang forum, pumili ng mensahe, buksan ang Ipakita ang mga reaksyon, at magpadala ng Bitcoin sa isang reaksyon.',
   'donate.continue': 'Buksan ang forum',
   'notFound.body': 'Walang ganitong page.',
   'notFound.back': 'Bumalik sa home',
@@ -1999,7 +1999,6 @@ const fil = {
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
   'forum.copyLink': 'Kopyahin ang link sa notang ito',
-  'forum.pm': 'Magpadala ng pribadong mensahe',
   'forum.replyCount': '{count} na reaksyon',
   'forum.replyComposerLabel': 'Iyong reaksyon',
   'forum.replyPlaceholder': 'Sumulat ng reaksyon',

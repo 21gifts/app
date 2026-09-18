@@ -149,7 +149,11 @@ const EMPTY_STATS = {
 async function stubPayableNote(page: Page): Promise<void> {
   await page.route('**/messages', async (route) => {
     const url = route.request().url();
-    if (url.includes('/invoice') || route.request().method() !== 'GET') {
+    if (
+      url.includes('/invoice') ||
+      url.includes('/replies') ||
+      route.request().method() !== 'GET'
+    ) {
       await route.continue();
       return;
     }
@@ -167,13 +171,34 @@ async function stubPayableNote(page: Page): Promise<void> {
             payable: true,
             hasPhoto: false,
             role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/messages/m-pay/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r-pay',
+            name: 'Carol',
+            text: 'A payable reply',
+            createdAt: '2026-08-28T10:05:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
             replyCount: 0,
           },
         ],
       }),
     });
   });
-  await page.route('**/messages/m-pay/invoice', async (route) => {
+  await page.route('**/messages/r-pay/invoice', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -284,8 +309,10 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
   await submitPayAmount(page);
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 }
@@ -2875,7 +2902,9 @@ test('Function: postConversationMessage — composer is visible on a thread', as
   await expect(page.getByLabel('Your message')).toBeVisible();
 });
 
-test('Function: openConversation — Send a private message is on other notes', async ({ page }) => {
+test('Function: openConversation — Message is on another member profile', async ({ page }) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  const noteId = '33333333-3333-4333-8333-333333333333';
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -2885,7 +2914,7 @@ test('Function: openConversation — Send a private message is on other notes', 
       contentType: 'application/json',
       body: JSON.stringify({
         id: 'acc_e2e',
-        linkingKey: null,
+        linkingKey: `02${'a'.repeat(62)}`,
         role: 'basis',
         name: 'Ada',
         location: null,
@@ -2901,29 +2930,45 @@ test('Function: openConversation — Send a private message is on other notes', 
       }),
     });
   });
-  await page.route(/\/forum\/messages$/, async (route) => {
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-bob',
-            name: 'Bob',
-            text: 'Hello from Bob',
-            createdAt: '2026-08-28T10:00:00.000Z',
-            sats: 21,
-            payable: true,
-            hasPhoto: false,
-            role: 'basis',
-            replyCount: 0,
-          },
-        ],
+        id: memberId,
+        name: 'Carol',
+        location: null,
+        role: 'verified',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
+        profileMessage: {
+          id: noteId,
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Hello from my profile note.',
+          createdAt: '2026-08-01T10:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'verified',
+          replyCount: 0,
+        },
+        postCount: 1,
+        replyCount: 0,
       }),
     });
   });
-  await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'Send a private message' })).toBeVisible();
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a private message' })).toHaveCount(0);
 });
 
 test('Function: HandbookMarkdown — functions chapter headings render', async ({ page }) => {
@@ -3127,6 +3172,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
@@ -3168,6 +3214,7 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
@@ -3477,6 +3524,28 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
             sats: 21,
             payable: true,
             hasPhoto: false,
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/messages/m-pay/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r-pay',
+            name: 'Carol',
+            text: 'A payable reply',
+            createdAt: '2026-08-28T11:05:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
           },
         ],
       }),
@@ -3484,8 +3553,10 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   });
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await expect(page.getByLabel('Amount')).toBeVisible();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(replyCard.getByLabel('Amount')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
   await expect(page.getByText('$0.02').first()).toBeVisible();
 });
@@ -5089,8 +5160,10 @@ test('Function: Field — pay amount uses Field', async ({ page }) => {
   await stubPayableNote(page);
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await expect(page.getByLabel('Amount')).toBeVisible();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(replyCard.getByLabel('Amount')).toBeVisible();
 });
 
 test('Function: PageChrome — public rules shows language switcher chrome', async ({ page }) => {
@@ -6718,6 +6791,7 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await stubPayableNote(page);
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
 });

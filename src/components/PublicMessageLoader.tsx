@@ -164,9 +164,9 @@ function PublicThreadCard({
  * Back to the forum link from session hydrate state. Opening a reply UUID
  * still shows the parent thread. Unsigned visitors keep the read-only cards.
  * When hydrate is ready and both session and account are set, mounts
- * {@link PublicMessageThread} (`ForumBoard` with `composerHidden`) so pay,
- * copy, PM, reply, and staff delete work. No OnboardingGate and no top-level
- * composer.
+ * {@link PublicMessageThread} (`ForumBoard` with `composerHidden`) so copy,
+ * reply, Gift on a payable nested reply, and staff delete work. No
+ * OnboardingGate, top-level composer, or envelope.
  *
  * @param props - Dynamic route `id`.
  * @returns Loading, missing, error, unsigned cards, or the signed-in thread.

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import {
@@ -8,7 +8,6 @@ import {
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
-  openConversation,
   postMessage,
   postMessageInvoice,
   setLightningAddress,
@@ -37,7 +36,6 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
-  openConversation: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   deleteMessage: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -89,6 +87,34 @@ const giftReply: ForumMessage = {
   payable: false,
   replyCount: 0,
 };
+
+const payableNested: ForumMessage = {
+  ...giftReply,
+  payable: true,
+  sats: 0,
+  text: 'A payable reply',
+};
+
+function submitComposer(amount?: string): void {
+  const form = screen.getByLabelText('Your reaction').closest('form');
+  if (form === null) {
+    throw new Error('reply form missing');
+  }
+  if (amount !== undefined) {
+    fireEvent.change(replyAmountInput(), { target: { value: amount } });
+  }
+  fireEvent.submit(form);
+}
+
+async function openNestedPaySheet(): Promise<HTMLElement> {
+  const card = (await waitFor(() => {
+    const el = document.querySelector(`[data-reply-id="${REPLY_ID}"]`);
+    expect(el).not.toBeNull();
+    return el as HTMLElement;
+  })) as HTMLElement;
+  fireEvent.click(within(card).getByRole('button', { name: 'Send Bitcoin' }));
+  return card;
+}
 
 function signIn(next: Partial<Account> = {}): void {
   useAuthStore.setState({ session: 'sess', account: { ...account, ...next } });
@@ -144,16 +170,6 @@ beforeEach(() => {
     parentId: MESSAGE_ID,
   });
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
-  vi.mocked(openConversation).mockResolvedValue({
-    id: 'conv-1',
-    kind: 'member_member',
-    name: 'Carol',
-    lastText: '',
-    lastAt: '2026-01-01T00:00:00.000Z',
-    lastFromMe: false,
-    lastSats: 0,
-    unread: false,
-  });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -182,9 +198,9 @@ describe('PublicMessageThread', () => {
       expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
     expect(fetchReplies).toHaveBeenCalledWith('sess', MESSAGE_ID);
-    expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send a private message' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
   it('keeps a long original body full on the signed-in permalink', async () => {
@@ -202,8 +218,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
     });
@@ -213,9 +228,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.change(payAmountInput(), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer('21');
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
     });
@@ -225,10 +238,11 @@ describe('PublicMessageThread', () => {
   });
 
   it('rejects a non-numeric pay amount', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: 'nope' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -236,11 +250,24 @@ describe('PublicMessageThread', () => {
   });
 
   it('rejects a zero pay amount', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
+  });
+
+  it('rejects an overflowing Gift amount', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.change(payAmountInput(), { target: { value: '9007199254740993' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
@@ -248,10 +275,11 @@ describe('PublicMessageThread', () => {
 
   it('shows a pay error when the invoice request fails', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('nope'));
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
@@ -260,10 +288,11 @@ describe('PublicMessageThread', () => {
 
   it('maps a pay rate-limit onto the pay error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
@@ -274,21 +303,80 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new Error("The author's wallet cannot receive this Bitcoin payment"),
     );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/wallet cannot receive/i);
     });
   });
 
-  it('cancels an open pay sheet', async () => {
+  it('invoices from Gift on a nested reply', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', REPLY_ID, 21);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+  });
+
+  it('polls the nested reply sats after Gift, not the parent', async () => {
+    const otherReply: ForumMessage = {
+      ...giftReply,
+      id: '33333333-3333-4333-8333-333333333333',
+      text: 'Another reply',
+      sats: 3,
+      payable: false,
+    };
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested, otherReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableNested, sats: 21 });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        REPLY_ID,
+        expect.objectContaining({ sinceSats: 0 }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+    const replyCard = document.querySelector(`[data-reply-id="${REPLY_ID}"]`) as HTMLElement;
+    expect(within(replyCard).getByText('₿21')).toBeTruthy();
+    expect(screen.getByText('Hello from Carol')).toBeTruthy();
+  });
+
+  it('maps a pay missing-requirements miss onto the pay error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError([]));
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('cancels an open pay sheet', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
     expect(payAmountInput()).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
@@ -299,7 +387,19 @@ describe('PublicMessageThread', () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    submitComposer();
+    expect(
+      await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    ).toBeTruthy();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('opens the overlay when Gift Continue is missing a Lightning Address', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn({ lightningAddress: null, missing: ['lightning-address'] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -328,8 +428,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -348,8 +447,7 @@ describe('PublicMessageThread', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await act(async () => {
       await Promise.resolve();
     });
@@ -370,8 +468,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -384,26 +481,36 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread({ root: { ...root, replyCount: 5 } });
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
   });
 
-  it('polls the parent after paying from the gift button', async () => {
+  it('polls the parent after a composer invoice', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...root, sats: 42 });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+  });
+
+  it('invoices 1 sat when an unpaid reply is rejected', async () => {
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    signIn({ id: 'acc_carol' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
     });
   });
 
@@ -730,6 +837,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('retries pay after the lightning-address overlay is satisfied', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
@@ -739,7 +847,7 @@ describe('PublicMessageThread', () => {
     });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -754,6 +862,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('retries pay after a missing_requirements overlay is satisfied', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     vi.mocked(postMessageInvoice)
       .mockRejectedValueOnce(new MissingRequirementsError(['rules']))
       .mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 21 });
@@ -766,7 +875,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
@@ -778,6 +887,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('shows a pay error when an overlay retry is still missing requirements', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['rules']));
     vi.mocked(agreeToRules).mockResolvedValue({
       ...account,
@@ -788,7 +898,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
@@ -821,19 +931,6 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('opens a private thread with the note author', async () => {
-    signIn();
-    renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalledWith('sess', MESSAGE_ID);
-    });
-    await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/messages?c=conv-1');
-    });
-  });
-
   it('rings the highlighted reply after Bearer replies load', async () => {
     vi.mocked(fetchReplies).mockResolvedValue([giftReply]);
     signIn();
@@ -856,6 +953,45 @@ describe('PublicMessageThread', () => {
       expect(deleteMessage).toHaveBeenCalledWith('sess', MESSAGE_ID);
     });
     expect(onRootDeleted).toHaveBeenCalled();
+  });
+
+  it('clears nested Gift when the paid reply is deleted', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn({ role: 'moderator' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    const replyCard = document.querySelector(`[data-reply-id="${REPLY_ID}"]`) as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Delete reaction' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+  });
+
+  it('clears nested Gift when the thread collapses', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
   });
 
   it('drops a nested reply after a staff delete', async () => {
@@ -961,12 +1097,25 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('does not invoice when Continue is clicked without a session', async () => {
-    useAuthStore.setState({ session: null, account });
-    renderThread({ root: { ...root, payable: true } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+  it('ignores a second Gift Continue while the invoice is in flight', async () => {
+    let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
+    vi.mocked(postMessageInvoice).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInvoice = resolve;
+        }),
+    );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveInvoice?.({ pr: 'lnbc1', amountSats: 21 });
+    });
   });
 
   it('maps an over-long invoice comment onto the reply length error', async () => {
@@ -1008,27 +1157,11 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('clears PM busy when openConversation fails', async () => {
-    vi.mocked(openConversation).mockRejectedValue(new Error('offline'));
-    signIn();
-    renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send a private message' }));
-    await waitFor(() => {
-      expect(openConversation).toHaveBeenCalled();
-    });
-    expect(
-      (screen.getByRole('button', { name: 'Send a private message' }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(false);
-  });
-
   it('dismisses the requirements overlay', async () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
@@ -1042,10 +1175,11 @@ describe('PublicMessageThread', () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new MissingRequirementsError(['lightning-address']),
     );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
@@ -1141,8 +1275,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
@@ -1155,10 +1288,11 @@ describe('PublicMessageThread', () => {
         resolveInvoice = resolve;
       }),
     );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     await act(async () => {
