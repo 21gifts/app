@@ -70,6 +70,7 @@ const MODERATORS: Conversation = {
   lastAt: '2026-08-28T15:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
@@ -388,7 +389,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}

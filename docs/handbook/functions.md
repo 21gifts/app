@@ -349,10 +349,10 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back`, default `profile.back`).
+- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading`, default `profile.back`).
 - **Inputs:** Optional `backHref` and `backLabelKey`; catalog via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: MessagesChromeLeft
 
@@ -2127,21 +2127,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxLoader
 
-- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list. A `moderator_group` UUID in `?c=` never opens; `fetchConversation` is not called for that id.
+- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list. `?c=` opens only after the inbox list loaded. A `moderator_group` UUID in `?c=` never opens; `fetchConversation` is not called for that id.
 - **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
-- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`. After a successful thread fetch, local `unread: false`, then fire-and-forget `markConversationRead`, `bumpUnreadAppBadgeEpoch` and `refreshUnreadAppBadge` (remaining inbox from the local list, or a conversations fetch if the list is still null). Must not fail the thread view.
+- **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`. After a successful thread fetch, local `unread: false`, then fire-and-forget `markConversationRead`, `bumpUnreadAppBadgeEpoch` and `refreshUnreadAppBadge` (remaining inbox from the local list; a thread only opens after the list loaded, so there is no second conversations fetch). Must not fail the thread view.
 - **Used by:** `MessagesPage`.
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Members (`showFilter` false) see the full inbound list and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
-- **Inputs:** List/thread/composer state from `InboxLoader`.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field. When `showFilter` is true (founder/moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Rows with `kind` `moderator_group` are never listed; the closed staff room lives on `/moderate/group`. Members (`showFilter` false) see inbound rows except `moderator_group` and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus / Moderators). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text.
+- **Inputs:** List/thread/composer state from `InboxLoader` or `ModeratorGroupScreen`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: fetchConversations
 
-- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations, unreadCount }`. Missing `unread` defaults false; missing `unreadCount` defaults 0. The api returns incoming threads, plus the member's own 21.gifts contact thread when it has a message. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe` (true when the last message was sent by the session), and `unread`.
+- **Purpose:** GET `/conversations` with Bearer and parse `{ conversations, unreadCount }`. Missing `unread` defaults false; missing `unreadCount` defaults 0. The api returns incoming threads, plus the member's own 21.gifts contact thread when it has a message. GET `/conversations` never lists the `moderator_group` thread, even for moderators. Each row includes required `kind`: `member_member` | `member_platform` | `member_damus` | `moderator_group`, required `lastFromMe` (true when the last message was sent by the session), required `lastSats`, optional `accountId` (counterpart), and `unread`.
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation list, or throws visitor copy.
 - **Used by:** `InboxLoader`, `ContactLoader`, `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
@@ -2337,14 +2337,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModeratorGroupPage
 
-- **Purpose:** Next.js page for `/moderate/group` (signed-in closed moderator group thread). HTML `/moderate/group` is the group page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModeratorGroupScreen`. Group HTTP lives under `/conversations/moderator-group` (no `route.ts` beside this page).
+- **Purpose:** Next.js page for `/moderate/group` (signed-in closed moderator group thread). HTML `/moderate/group` is the group page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/moderate"`, `backLabelKey="moderate.heading"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModeratorGroupScreen`. Group HTTP lives under `/conversations/moderator-group` (no `route.ts` beside this page).
 - **Inputs:** None.
 - **Returns / side effects:** The moderator group screen inside fill AppShell.
 - **Used by:** Route `/moderate/group`.
 
 ## Function: ModeratorGroupScreen
 
-- **Purpose:** Client closed staff-room thread. Confirmed moderators (`role === 'moderator'`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; in-card back label **Moderation**). Founders and other signed-in visitors see heading **Moderators** plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`.
+- **Purpose:** Client closed staff-room thread. Confirmed moderators (`role === 'moderator'`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; no in-card back). Founders and other signed-in visitors see heading **Moderators** plus forbidden copy and do not fetch. Renders `null` without a session. Back to `/moderate` is the page chrome (`ProfileChromeLeft` `backHref="/moderate"`), never in the card.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /conversations/moderator-group` then `GET /conversations/:id` only when the role is moderator.
 - **Used by:** `ModeratorGroupPage`.

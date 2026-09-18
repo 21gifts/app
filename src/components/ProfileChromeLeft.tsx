@@ -10,8 +10,11 @@ import { Wordmark } from '@/components/ui';
 export interface ProfileChromeLeftProps {
   /** Back link target. Default `/welcome`. */
   backHref?: string;
-  /** Catalog key for the icon-only back aria-label. Default `profile.back`. */
-  backLabelKey?: 'profile.back' | 'inbox.back';
+  /**
+   * Catalog key for the icon-only back aria-label. Default `profile.back`;
+   * `/moderate/group` passes `moderate.heading` with `backHref="/moderate"`.
+   */
+  backLabelKey?: 'profile.back' | 'inbox.back' | 'moderate.heading';
 }
 
 /**

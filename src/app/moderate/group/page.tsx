@@ -8,7 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/moderate/group` — signed-in closed moderator group thread.
  *
- * `/moderate` is the hub; `/moderate/group` is the group thread. Requires
+ * `/moderate` is the hub; `/moderate/group` is the group thread. The chrome
+ * back goes to `/moderate` (the card has no back control). Requires
  * name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids
  * that); group HTTP lives under `/conversations/moderator-group`.
@@ -20,7 +21,7 @@ export default function ModeratorGroupPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft />}
+      topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">

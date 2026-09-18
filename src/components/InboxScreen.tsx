@@ -108,11 +108,6 @@ export interface InboxScreenProps {
   onPayCancel?: () => void;
   /** True while waiting for the gift row after invoice mint. */
   payWaiting?: boolean;
-  /**
-   * Accessible label for the in-card back control. Defaults to `inbox.back`
-   * ("All conversations"). The moderator group page passes `moderate.heading`.
-   */
-  backLabel?: string;
 }
 
 /**
@@ -159,22 +154,24 @@ function inboxAuthorProfileButton(
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 500-character composer and a sats amount field. Members (`showFilter`
- * false) see the unfiltered inbound list. Founder/moderator (`showFilter`
- * true) see the origin control (Direct / Contact / Damus); default Direct.
- * Origin labels come from {@link Conversation} `kind`. Outbound last-text
- * previews use `inbox.sentPreview` as a filled chip. Gift-only last rows
- * (`lastText` empty, `lastSats` &gt; 0) show `formatBitcoin(lastSats)` with
- * the same chip vs muted split. Incoming thread messages are full-width
- * muted note cards; `fromMe` messages render as filled `app-btn` bubbles on
- * the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`;
- * text+sats show the amount under the body. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. The open-thread heading is the counterpart
- * name plus origin caption (no in-card back). Unread inbound rows use a semibold
- * counterpart name and `text-app-fg` last-text (read inbound last-text stays
- * muted) plus `aria-label` `inbox.threadUnread`. Heading and incoming author
- * names with a non-empty `accountId` are `inbox.authorProfile` buttons to
- * `/members/:id`; `fromMe` stays `inbox.you` text; Damus or a missing id stays
- * plain text.
+ * false) see inbound rows except `moderator_group`. Founder/moderator
+ * (`showFilter` true) see the origin control (Direct / Contact / Damus);
+ * default Direct. Rows with `kind` `moderator_group` are never listed (the
+ * closed staff room lives on `/moderate/group`). Origin labels come from
+ * {@link Conversation} `kind` (Direct, Contact, Damus, or Moderators).
+ * Outbound last-text previews use `inbox.sentPreview` as a filled chip.
+ * Gift-only last rows (`lastText` empty, `lastSats` &gt; 0) show
+ * `formatBitcoin(lastSats)` with the same chip vs muted split. Incoming
+ * thread messages are full-width muted note cards; `fromMe` messages render
+ * as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only
+ * bubbles use `forum.giftReply`; text+sats show the amount under the body.
+ * An open `invoice` shows the Wallet of Satoshi / QR pay sheet. The
+ * open-thread heading is the counterpart name plus origin caption (no in-card
+ * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
+ * last-text (read inbound last-text stays muted) plus `aria-label`
+ * `inbox.threadUnread`. Heading and incoming author names with a non-empty
+ * `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe`
+ * stays `inbox.you` text; Damus or a missing id stays plain text.
  *
  * @param props - List/thread/composer state from {@link InboxLoader}.
  * @returns The inbox card.
@@ -201,7 +198,6 @@ export function InboxScreen({
   invoice = null,
   onPayCancel = () => undefined,
   payWaiting = false,
-  backLabel,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();

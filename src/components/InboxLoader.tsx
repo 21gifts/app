@@ -6,6 +6,7 @@ import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/component
 import {
   fetchConversation,
   fetchConversations,
+  fetchModeratorGroup,
   markConversationRead,
   postConversationInvoice,
   postConversationMessage,
@@ -115,8 +116,6 @@ export function InboxLoader(): ReactElement | null {
   const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
-  const listFetchGen = useRef(0);
-  const markedReadGen = useRef(new Map<string, number>());
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
   if (openIdRef.current !== openId) {
     setMessages(null);
@@ -160,8 +159,6 @@ export function InboxLoader(): ReactElement | null {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    const gen = listFetchGen.current + 1;
-    listFetchGen.current = gen;
     void (async () => {
       try {
         const next = await fetchConversations(session);
@@ -169,12 +166,7 @@ export function InboxLoader(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setConversations(
-          next.map((row) => {
-            const markedGen = markedReadGen.current.get(row.id);
-            return markedGen !== undefined && gen <= markedGen ? { ...row, unread: false } : row;
-          }),
-        );
+        setConversations(next);
       } catch {
         /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
@@ -240,42 +232,19 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setMessages(next);
-        const remainingFromList =
-          conversations === null
-            ? undefined
-            : conversations.filter((row) => row.id !== openId && row.unread).length;
+        /* v8 ignore next -- a thread only opens after the inbox list loaded */
+        const listedRows = conversations ?? [];
+        const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
         setConversations((prev) => {
+          /* v8 ignore next 3 -- list cleared while the thread was loading */
           if (prev === null) {
             return prev;
           }
           return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
         });
-        markedReadGen.current.set(openId, listFetchGen.current);
         void markConversationRead(session, openId).catch(() => undefined);
-        if (remainingFromList !== undefined) {
-          bumpUnreadAppBadgeEpoch();
-          void refreshUnreadAppBadge(session, remainingFromList).catch(() => undefined);
-        } else {
-          try {
-            const rows = await fetchConversations(session);
-            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
-            if (cancelled) {
-              return;
-            }
-            bumpUnreadAppBadgeEpoch();
-            void refreshUnreadAppBadge(
-              session,
-              rows.filter((row) => row.id !== openId && row.unread).length,
-            ).catch(() => undefined);
-          } catch {
-            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
-            if (cancelled) {
-              return;
-            }
-            bumpUnreadAppBadgeEpoch();
-            void refreshUnreadAppBadge(session, 0).catch(() => undefined);
-          }
-        }
+        bumpUnreadAppBadgeEpoch();
+        void refreshUnreadAppBadge(session, remaining).catch(() => undefined);
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {

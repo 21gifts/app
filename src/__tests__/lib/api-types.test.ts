@@ -443,7 +443,13 @@ describe('conversationOneSchema', () => {
       lastFromMe: false,
       lastSats: 0,
     };
-    expect(conversationOneSchema.parse({ conversation })).toEqual({ conversation });
+    expect(conversationOneSchema.parse({ conversation })).toEqual({
+      conversation: { ...conversation, unread: false },
+    });
+    expect(
+      conversationOneSchema.parse({ conversation: { ...conversation, unread: true } }).conversation
+        .unread,
+    ).toBe(true);
   });
 });
 

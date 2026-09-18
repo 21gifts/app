@@ -1,8 +1,5 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -21,8 +18,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * Confirmed moderators fetch {@link fetchModeratorGroup} then
  * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread.
  * Founders, other signed-in visitors, and a missing account see forbidden
- * copy and do not fetch. Renders nothing without a session. In-card back
- * goes to the moderation hub.
+ * copy and do not fetch. Renders nothing without a session. Back to the
+ * moderation hub is the page chrome (no in-card back).
  *
  * @returns The group thread, forbidden copy, or `null` without a session.
  */
@@ -30,7 +27,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const router = useRouter();
   const isModerator = account?.role === 'moderator';
   const [group, setGroup] = useState<Conversation | null>(null);
   const [error, setError] = useState(false);
@@ -77,20 +73,9 @@ export function ModeratorGroupScreen(): ReactElement | null {
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/moderate"
-        aria-label={t('moderate.heading')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('moderate.groupLabel')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('moderate.groupLabel')}
+    </h1>
   );
 
   if (!isModerator) {
@@ -174,9 +159,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
       openId={group.id}
       /* v8 ignore next -- the staff-room thread is already open */
       onOpen={() => undefined}
-      onBack={() => {
-        router.push('/moderate');
-      }}
       messages={messages}
       messagesLoading={false}
       messagesError={false}
@@ -191,7 +173,6 @@ export function ModeratorGroupScreen(): ReactElement | null {
       posting={posting}
       formError={formError}
       showFilter={false}
-      backLabel={t('moderate.heading')}
     />
   );
 }

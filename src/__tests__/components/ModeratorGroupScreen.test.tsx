@@ -65,6 +65,7 @@ const GROUP: Conversation = {
   lastAt: '2026-08-28T15:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unread: false,
 };
 
 const MESSAGE: ConversationMessage = {
@@ -101,7 +102,7 @@ describe('ModeratorGroupScreen', () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
     expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
     expect(screen.queryByLabelText('Your message')).toBeNull();
     expect(groupMock).not.toHaveBeenCalled();
@@ -234,11 +235,12 @@ describe('ModeratorGroupScreen', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('goes back to the hub from the in-card control', async () => {
+  it('has no in-card back on the open thread', async () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Moderation' }));
-    expect(push).toHaveBeenCalledWith('/moderate');
+    expect(screen.queryByRole('button', { name: 'Moderation' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
   });
 
   it('validates empty and too-long drafts then posts', async () => {
