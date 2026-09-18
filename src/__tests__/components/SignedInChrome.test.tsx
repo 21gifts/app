@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
-import { fetchAccountActivity, fetchNotifications } from '@/lib/api';
+import { fetchAccountActivity, fetchConversations, fetchNotifications } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
@@ -100,6 +100,7 @@ vi.mock('@/lib/api', () => ({
     },
   }),
   fetchNotifications: vi.fn().mockResolvedValue({ notifications: [], unreadCount: 0 }),
+  fetchConversations: vi.fn().mockResolvedValue([]),
 }));
 
 const useAccountTotalsActual = (
@@ -136,6 +137,7 @@ beforeEach(() => {
   vi.mocked(useAccountTotals).mockImplementation(useAccountTotalsActual);
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
+  vi.mocked(fetchConversations).mockResolvedValue([]);
   vi.mocked(resyncPushSubscription).mockResolvedValue(undefined);
   vi.mocked(enablePush).mockResolvedValue(undefined);
   vi.mocked(usePasskeyLogin).mockReturnValue({
@@ -237,6 +239,39 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Notifications, 3 unread' }).textContent).toContain(
       '3',
     );
+    expect(screen.getByRole('link', { name: 'Messages' })).toBeTruthy();
+  });
+
+  it('shows the unread count on Messages when greater than zero', async () => {
+    vi.mocked(fetchConversations).mockResolvedValue([
+      {
+        id: 'c1',
+        kind: 'member_member',
+        name: 'Bob',
+        lastText: 'Hi',
+        lastAt: '2026-08-28T12:00:00.000Z',
+        lastFromMe: false,
+        lastSats: 0,
+        unread: true,
+      },
+      {
+        id: 'c2',
+        kind: 'member_member',
+        name: 'Carol',
+        lastText: 'Hey',
+        lastAt: '2026-08-28T13:00:00.000Z',
+        lastFromMe: false,
+        lastSats: 0,
+        unread: true,
+      },
+    ]);
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Messages, 2 unread' })).toBeTruthy();
+    });
+    expect(screen.getByRole('link', { name: 'Messages, 2 unread' }).textContent).toContain('2');
+    expect(screen.getByRole('link', { name: 'Notifications' })).toBeTruthy();
   });
 
   it('swallows resync rejection on mount', async () => {

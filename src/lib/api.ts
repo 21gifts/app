@@ -1484,6 +1484,28 @@ export async function openConversation(
 }
 
 /**
+ * Marks one private-message thread as read.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Conversation UUID.
+ * @returns Nothing on success.
+ * @throws Error with visitor-facing copy when the api is unavailable.
+ */
+export async function markConversationRead(sessionToken: string, id: string): Promise<void> {
+  try {
+    const response = await fetch(`/conversations/${encodeURIComponent(id)}/read`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not mark conversation as read');
+    }
+  } catch {
+    throw new Error('Could not mark conversation as read');
+  }
+}
+
+/**
  * Fetches notifications (living-room posts, replies, and payments) for the signed-in session.
  *
  * @param sessionToken - A bearer token from a completed challenge.

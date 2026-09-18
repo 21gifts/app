@@ -34,8 +34,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * rows (Home, Profile with same-line given/received amounts only when that
  * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `account.role` is founder or moderator,
- * notifications with an unread count when greater than zero, messages, contact,
- * optional PWA install, and log out). The Menu ends with a quiet
+ * notifications with an unread count when greater than zero, messages with an
+ * inbox unread count when greater than zero, contact, optional PWA install,
+ * and log out). The Menu ends with a quiet
  * Version line (`app.version` / `getAppVersion()`). When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
@@ -57,7 +58,7 @@ export function SignedInChrome(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { donatedSats, receivedSats, loading } = useAccountTotals();
-  const { unreadCount } = useUnreadCount(open);
+  const { unreadCount, inboxUnreadCount } = useUnreadCount(open);
   const showIntroduce =
     account !== null &&
     account.setup === null &&
@@ -245,6 +246,11 @@ export function SignedInChrome(): ReactElement {
         </Link>
         <Link
           href="/messages"
+          aria-label={
+            inboxUnreadCount > 0
+              ? t('nav.inboxUnread', { count: String(inboxUnreadCount) })
+              : t('nav.inbox')
+          }
           onClick={() => {
             setOpen(false);
           }}
@@ -252,6 +258,11 @@ export function SignedInChrome(): ReactElement {
         >
           <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.inbox')}
+          {inboxUnreadCount > 0 ? (
+            <span className="ml-auto font-semibold tabular-nums lining-nums">
+              {inboxUnreadCount}
+            </span>
+          ) : null}
         </Link>
         <Link
           href="/contact"

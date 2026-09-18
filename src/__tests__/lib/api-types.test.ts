@@ -298,9 +298,52 @@ describe('conversationSchema', () => {
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     };
     expect(conversationSchema.parse(row)).toEqual(row);
-    expect(conversationListSchema.parse({ conversations: [row] }).conversations).toHaveLength(1);
+    expect(conversationListSchema.parse({ conversations: [row] })).toEqual({
+      conversations: [row],
+      unreadCount: 0,
+    });
+  });
+
+  it('defaults missing unread to false and missing unreadCount to 0', () => {
+    const row = {
+      id: 'c1',
+      kind: 'member_member',
+      name: 'Bob',
+      lastText: 'Hi',
+      lastAt: '2026-08-28T12:00:00.000Z',
+      lastFromMe: false,
+      lastSats: 0,
+    };
+    expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false });
+    expect(conversationListSchema.parse({ conversations: [row] })).toEqual({
+      conversations: [{ ...row, unread: false }],
+      unreadCount: 0,
+    });
+  });
+
+  it('accepts unread true and unreadCount', () => {
+    const row = {
+      id: 'c1',
+      kind: 'member_member',
+      name: 'Bob',
+      lastText: 'Hi',
+      lastAt: '2026-08-28T12:00:00.000Z',
+      lastFromMe: false,
+      lastSats: 0,
+      unread: true,
+    };
+    expect(conversationSchema.parse(row)).toEqual(row);
+    expect(conversationListSchema.parse({ conversations: [row], unreadCount: 1 })).toEqual({
+      conversations: [row],
+      unreadCount: 1,
+    });
+  });
+
+  it('rejects a negative unreadCount', () => {
+    expect(() => conversationListSchema.parse({ conversations: [], unreadCount: -1 })).toThrow();
   });
 
   it('accepts lastFromMe true and false', () => {
@@ -312,6 +355,7 @@ describe('conversationSchema', () => {
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unread: false,
     };
     const outgoing = { ...incoming, lastFromMe: true };
     expect(conversationSchema.parse(incoming)).toEqual(incoming);
@@ -368,7 +412,7 @@ describe('conversationSchema', () => {
       lastSats: 0,
       accountId: 'acc_1',
     };
-    expect(conversationSchema.parse(row)).toEqual(row);
+    expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false });
   });
 
   it('rejects an empty accountId', () => {

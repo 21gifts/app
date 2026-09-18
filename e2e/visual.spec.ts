@@ -4731,6 +4731,46 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-unread');
   });
 
+  test('welcome menu-inbox-unread', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'c1',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: true,
+            },
+            {
+              id: 'c2',
+              kind: 'member_member',
+              name: 'Cara',
+              lastText: 'Hey',
+              lastAt: '2026-08-28T11:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: true,
+            },
+          ],
+          unreadCount: 2,
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Messages, 2 unread' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-inbox-unread');
+  });
+
   test('welcome pay-amount', async ({ page }, testInfo) => {
     await seedAda(page);
     await stubPayInvoice(page);
@@ -5174,6 +5214,34 @@ test.describe('inbox screens', () => {
     await expect(list.getByText('21.gifts')).toBeVisible();
     await expect(list.getByText('npub1abc…xyz')).toBeVisible();
     await shotScreen(page, 'screen-messages');
+  });
+
+  test('messages unread', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Hi from Bob',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: true,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await page.goto('/messages');
+    await expect(page.getByRole('button', { name: 'Bob, Unread' })).toBeVisible();
+    await shotScreen(page, 'state-messages-unread');
   });
 
   test('messages contact', async ({ page }) => {
