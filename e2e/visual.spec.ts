@@ -1955,9 +1955,10 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
-    await expect(page.getByText('Loading…')).toBeVisible();
+    const postsLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
+    await expect(postsLoading).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
-    await page.getByText('Loading…').scrollIntoViewIfNeeded();
+    await postsLoading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-loading');
     release();
   });
@@ -2021,9 +2022,10 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 reactions' }).click();
-    await expect(page.getByText('Loading…')).toBeVisible();
+    const repliesLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
+    await expect(repliesLoading).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
-    await page.getByText('Loading…').scrollIntoViewIfNeeded();
+    await repliesLoading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-loading');
     release();
   });

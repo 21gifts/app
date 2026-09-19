@@ -21,9 +21,10 @@ export interface FiatPickerProps {
 /**
  * Four-way CHF | EUR | USD | PHP control (no ₿).
  *
- * Production mounts: Profile `FiatPreferenceSwitcher` (`tone="neutral"`) and
- * {@link AccountActivityChart} (`shell="app"`, default `tone="gift"`), plus
- * StatsDashboard and DayLoader (marketing `dark`, default `tone="gift"`).
+ * Production mounts: Profile `FiatPreferenceSwitcher` always
+ * (`tone="neutral"`); {@link AccountActivityChart} (`shell="app"`, default
+ * `tone="gift"`), StatsDashboard, and DayLoader (marketing `dark`, default
+ * `tone="gift"`) only when unsigned (hydration ready and session is null).
  * Forum, the public thread (`PublicMessageLoader`), and the pay sheet do not
  * mount it.
  *

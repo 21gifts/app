@@ -501,7 +501,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; after mint the line uses the invoice amount). Pay sheet confirm sentence (`forum.payConfirm`) is one `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) mints the invoice and keeps the amount form (no `location.assign`); Android phone (`isSmartphoneUserAgent`) stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the wallet `Button` (Intent href; no QR, no invoice card); desktop and iPad stay **Continue** (`forum.payContinue`) and after mint show the invoice card with QR. Wallet CTA is a **Pay** `Button` (`variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent) that sets `window.location.href` to the WoS href (not a custom-scheme `<a>` / `ButtonLink`). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + that Button.
 
-**Fiat.** Cookie `fiat` (otherwise locale default). Switchers: Profile settings (`FiatPreferenceSwitcher`), every `AccountActivityChart` (Profile, `/members/[accountId]`, `/view/[viewKey]`), `/stats`, and `/stats/[day]`. Forum notes, nested replies, and the pay sheet **display** that code only (no picker). Stats KPI shows ₿ on the first line and the selected fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`). Populated profile chart is ₿ | selected FiatCode.
+**Fiat.** Cookie `fiat` (otherwise locale default). Switchers: Profile settings (`FiatPreferenceSwitcher`) is the only signed-in writer. `FiatPicker` remains on unsigned `AccountActivityChart` (public `/view`), unsigned `/stats`, and unsigned `/stats/[day]` (`useHydrateSession().ready && session === null`). Signed-in chart, member, and stats/day omit it; ₿|{code} scale stays. Forum notes, nested replies, and the pay sheet **display** that code only (no picker). Stats KPI shows ₿ on the first line and the selected fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`). Populated profile chart is ₿ | selected FiatCode.
 
 **₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the preferred FiatCode. Profile: ₿ and the preferred FiatCode (same as stats charts, app shell).
 
@@ -515,7 +515,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; a
 
 Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
-**Empty profile chart.** If both series empty/all-zero sats: FiatPicker plus `profile.chartEmpty` `role="status"`; **no SVG / no ₿|fiat scale**. Legend without data is noise.
+**Empty profile chart.** If both series empty/all-zero sats: unsigned shows FiatPicker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone; **no SVG / no ₿|fiat scale**. Legend without data is noise.
 
 ## Control grammar
 
@@ -746,7 +746,7 @@ LanguagePreferenceSwitcher is **app + Profile only**. Anatomy = PushToggle secti
 
 #### FiatPreferenceSwitcher profile settings section
 
-FiatPreferenceSwitcher is **app + Profile settings**. Anatomy = PushToggle section: uppercase kicker (`profile.fiatCurrency`), then `FiatPicker` `shell="app"` `tone="neutral"` with CHF | EUR | USD | PHP (selected `bg-app-btn`, not orange). Writes the `fiat` cookie. Stats, the day view, and every `AccountActivityChart` (Profile, member, public view) also mount `FiatPicker` against the same cookie but keep `tone="gift"` (compact orange). Not a Menu disclosure. Forum and the pay sheet display the code only.
+FiatPreferenceSwitcher is **app + Profile settings**. Anatomy = PushToggle section: uppercase kicker (`profile.fiatCurrency`), then `FiatPicker` `shell="app"` `tone="neutral"` with CHF | EUR | USD | PHP (selected `bg-app-btn`, not orange). The **only** signed-in control that writes the `fiat` cookie. Unsigned stats, day view, and unsigned `AccountActivityChart` (public `/view`) still mount `FiatPicker` against the same cookie with `tone="gift"` (compact orange). Signed-in chart, member, and stats/day omit it. Not a Menu disclosure. Forum and the pay sheet display the code only.
 
 #### NumberFormatSwitcher profile settings section
 
@@ -828,7 +828,7 @@ Do not restyle QR for dark mode.
 
 **Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
 
-**Profile activity.** FiatPicker always (empty included). Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty: FiatPicker plus `profile.chartEmpty` `role="status"`, no SVG.
+**Profile activity.** FiatPicker only when `useHydrateSession().ready && session === null` (unsigned public view). Signed-in mounts omit it. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Unsigned empty: FiatPicker plus `profile.chartEmpty` `role="status"`, no SVG. Signed-in empty: `profile.chartEmpty` alone.
 
 ### Alert / error
 
@@ -959,7 +959,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` always includes FiatPicker; empty = picker + `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (Notifications heading, `SegmentedControl tone="neutral"` All/Active/Mentions plus muted hint; bell row still On/Off + `IconButton` when Push APIs exist; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` has no FiatPicker (signed-in); empty = `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (Notifications heading, `SegmentedControl tone="neutral"` All/Active/Mentions plus muted hint; bell row still On/Off + `IconButton` when Push APIs exist; secondary outline BellOff off, primary filled Bell on — fill vs outline so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
 
 ### `/members/[accountId]`
 
@@ -1073,7 +1073,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts do not show Send Bitcoin.
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
-8. **Empty profile chart is copy plus FiatPicker**, not an axis; no SVG / no ₿|fiat scale. `profile.chartEmpty` `role="status"`.
+8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
 11. **Photo/story is a reserved 96×96 circle + story clamp**, not a shipped feature.

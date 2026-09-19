@@ -61,6 +61,12 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
 const photoMock = vi.mocked(fetchMessagePhoto);
 const NULL_TRUST = {
   verifiedBy: null,
@@ -248,6 +254,7 @@ function fillPaidReply(text: string, amount = '1'): void {
 }
 
 beforeEach(() => {
+  hydrateReady = true;
   vi.clearAllMocks();
   push.mockClear();
   vi.mocked(fetchMemberPosts).mockResolvedValue([]);

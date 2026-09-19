@@ -1,10 +1,24 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatsDashboard } from '@/components/StatsDashboard';
 import type { GiftStats } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-afterEach(cleanup);
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
+beforeEach(() => {
+  hydrateReady = true;
+});
+
+afterEach(() => {
+  cleanup();
+  useAuthStore.setState({ session: null, account: null });
+});
 
 const FX_USD: GiftStats['fx'] = {
   quote: 'BTC-USD',
@@ -728,6 +742,39 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend by person in USD')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in USD')).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
+  });
+
+  it('hides the fiat switcher while hydration is not ready and still shows KPIs and scale', () => {
+    hydrateReady = false;
+    renderWithLocale(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
+    expect(screen.getByText('Total spent')).toBeTruthy();
+    expect(
+      within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
+        name: 'USD',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('hides the fiat switcher when a session is set and still follows preferred CHF', () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    renderWithLocale(
+      <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
+      'en',
+      'ch',
+      'CHF',
+    );
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
+    const spent = screen.getByText('Total spent').parentElement;
+    expect(spent).not.toBeNull();
+    expect(within(spent as HTMLElement).getByText("CHF 1'200.00")).toBeTruthy();
+    expect(
+      within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
+        name: 'CHF',
+      }),
+    ).toBeTruthy();
   });
 
   it('offers a fiat switcher and follows EUR', () => {
