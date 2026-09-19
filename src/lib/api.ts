@@ -894,7 +894,7 @@ export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | nul
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param args - Optional feed mode, page size, and non-empty page cursor.
- * @returns The validated message page and its next cursor, or `null` at the end.
+ * @returns The validated page; `nextCursor` is `null` when the response omits it.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link forumListSchema}.
  */

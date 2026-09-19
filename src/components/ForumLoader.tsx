@@ -410,6 +410,7 @@ export function ForumLoader(): ReactElement | null {
   loadingRef.current = loading;
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
+  const replaceInFlightRef = useRef(false);
   const postingRef = useRef(posting);
   postingRef.current = posting;
   const preparingRef = useRef(preparing);
@@ -581,6 +582,10 @@ export function ForumLoader(): ReactElement | null {
       return false;
     }
     if (loadingRef.current) {
+      return false;
+    }
+    if (replaceInFlightRef.current) {
+      pendingRefreshRef.current = true;
       return false;
     }
     if (refreshingRef.current) {
@@ -763,6 +768,7 @@ export function ForumLoader(): ReactElement | null {
       setLoading(true);
     }
     setError(false);
+    replaceInFlightRef.current = true;
     void (async () => {
       const result = await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
       if (!cancelled && result === 'requirements') {
@@ -775,9 +781,16 @@ export function ForumLoader(): ReactElement | null {
       if (!cancelled) {
         setLoading(false);
       }
+      if (!cancelled) {
+        replaceInFlightRef.current = false;
+        if (pendingRefreshRef.current && mountedRef.current) {
+          refreshMessagesRef.current();
+        }
+      }
     })();
     return () => {
       cancelled = true;
+      replaceInFlightRef.current = false;
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;
     };
@@ -1289,14 +1302,16 @@ export function ForumLoader(): ReactElement | null {
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);
       }
-      paginationGeneration.current += 1;
-      loadingMoreRef.current = false;
-      refreshGeneration.current += 1;
-      nextCursorRef.current = null;
-      setNextCursor(null);
-      setNewPostsAvailable(false);
-      feedModeRef.current = 'all';
-      setFeedMode('all');
+      if (feedModeRef.current !== 'all') {
+        paginationGeneration.current += 1;
+        loadingMoreRef.current = false;
+        refreshGeneration.current += 1;
+        nextCursorRef.current = null;
+        setNextCursor(null);
+        setNewPostsAvailable(false);
+        feedModeRef.current = 'all';
+        setFeedMode('all');
+      }
     }
     if (created.hasPhoto && pendingPhotos.length > 0) {
       setPhotoUrls((prev) => {
