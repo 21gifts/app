@@ -6,6 +6,7 @@ import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/component
 import {
   fetchConversation,
   fetchConversations,
+  fetchModeratorGroup,
   markConversationRead,
   postConversationInvoice,
   postConversationMessage,
@@ -81,9 +82,14 @@ function isAbortError(err: unknown): boolean {
  * Client loader for the signed-in inbox on `/messages`.
  *
  * Reads the session from the auth store, fetches the conversation list, and
- * opens `?c=` when present. The composer sends free text directly, or mints
- * an invoice from its amount field and long-polls for the paid gift row.
- * Renders nothing when there is no session.
+ * opens `?c=` only after that list loaded, unless the list has that id as
+ * `moderator_group` (new empty PMs are not yet listed). For a confirmed
+ * moderator an unlisted `?c=` first
+ * resolves {@link fetchModeratorGroup} once per id, with neutral loading
+ * instead of the list; a match never opens, other roles and a failed lookup
+ * fall through. The composer sends free text
+ * directly, or mints an invoice from its amount field and long-polls for the
+ * paid gift row. Renders nothing when there is no session.
  * Founder/moderator get the origin filter; members see the full inbound list.
  * After a successful thread load and mark-read, bumps the badge epoch and
  * refreshes the home-screen badge to notifications unread plus remaining
@@ -111,10 +117,9 @@ export function InboxLoader(): ReactElement | null {
   const [formError, setFormError] = useState<InboxFormError>(null);
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
-  const listFetchGen = useRef(0);
-  const markedReadGen = useRef(new Map<string, number>());
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
   if (openIdRef.current !== openId) {
     setMessages(null);
@@ -125,11 +130,31 @@ export function InboxLoader(): ReactElement | null {
     setFormError(null);
     setInvoice(null);
     setPayWaiting(false);
+    setStaffRoomId(null);
     payPollRef.current?.abort();
     payPollRef.current = null;
   }
   /* v8 ignore stop */
   openIdRef.current = openId;
+
+  const listed =
+    conversations === null || openId === null || openId === ''
+      ? undefined
+      : conversations.find((row) => row.id === openId);
+  const waitingStaffRoom =
+    account?.role === 'moderator' &&
+    conversations !== null &&
+    openId !== null &&
+    openId !== '' &&
+    listed === undefined &&
+    staffRoomId === null;
+  const threadAllowed =
+    conversations !== null &&
+    openId !== null &&
+    openId !== '' &&
+    listed?.kind !== 'moderator_group' &&
+    staffRoomId !== openId &&
+    !waitingStaffRoom;
 
   useEffect(() => {
     if (session === null) {
@@ -138,8 +163,6 @@ export function InboxLoader(): ReactElement | null {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    const gen = listFetchGen.current + 1;
-    listFetchGen.current = gen;
     void (async () => {
       try {
         const next = await fetchConversations(session);
@@ -147,12 +170,7 @@ export function InboxLoader(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setConversations(
-          next.map((row) => {
-            const markedGen = markedReadGen.current.get(row.id);
-            return markedGen !== undefined && gen <= markedGen ? { ...row, unread: false } : row;
-          }),
-        );
+        setConversations(next);
       } catch {
         /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
@@ -172,7 +190,36 @@ export function InboxLoader(): ReactElement | null {
   }, [session, attempt]);
 
   useEffect(() => {
-    if (session === null || openId === null || openId === '') {
+    if (
+      session === null ||
+      account?.role !== 'moderator' ||
+      openId === null ||
+      openId === '' ||
+      conversations === null ||
+      listed !== undefined ||
+      staffRoomId !== null
+    ) {
+      return;
+    }
+    let cancelled = false;
+    void fetchModeratorGroup(session)
+      .then((row) => {
+        if (!cancelled) {
+          setStaffRoomId(row.id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStaffRoomId('');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, account?.role, openId, conversations, listed, staffRoomId]);
+
+  useEffect(() => {
+    if (session === null || openId === null || openId === '' || !threadAllowed) {
       setMessages(null);
       setMessagesError(false);
       setMessagesLoading(false);
@@ -190,42 +237,19 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setMessages(next);
-        const remainingFromList =
-          conversations === null
-            ? undefined
-            : conversations.filter((row) => row.id !== openId && row.unread).length;
+        /* v8 ignore next -- a thread only opens after the inbox list loaded */
+        const listedRows = conversations ?? [];
+        const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
         setConversations((prev) => {
+          /* v8 ignore next 3 -- list cleared while the thread was loading */
           if (prev === null) {
             return prev;
           }
           return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
         });
-        markedReadGen.current.set(openId, listFetchGen.current);
         void markConversationRead(session, openId).catch(() => undefined);
-        if (remainingFromList !== undefined) {
-          bumpUnreadAppBadgeEpoch();
-          void refreshUnreadAppBadge(session, remainingFromList).catch(() => undefined);
-        } else {
-          try {
-            const rows = await fetchConversations(session);
-            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
-            if (cancelled) {
-              return;
-            }
-            bumpUnreadAppBadgeEpoch();
-            void refreshUnreadAppBadge(
-              session,
-              rows.filter((row) => row.id !== openId && row.unread).length,
-            ).catch(() => undefined);
-          } catch {
-            /* v8 ignore next 3 -- unmount during remaining-inbox fetch */
-            if (cancelled) {
-              return;
-            }
-            bumpUnreadAppBadgeEpoch();
-            void refreshUnreadAppBadge(session, 0).catch(() => undefined);
-          }
-        }
+        bumpUnreadAppBadgeEpoch();
+        void refreshUnreadAppBadge(session, remaining).catch(() => undefined);
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {
@@ -242,7 +266,7 @@ export function InboxLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, openId, messagesAttempt]);
+  }, [session, openId, messagesAttempt, threadAllowed]);
 
   if (session === null) {
     return null;
@@ -407,13 +431,13 @@ export function InboxLoader(): ReactElement | null {
   };
 
   /* v8 ignore next -- empty ?c= is the same as no thread */
-  const threadId = openId === null || openId === '' ? null : openId;
+  const threadId = threadAllowed ? openId : null;
   const showFilter = account?.role === 'moderator' || account?.role === 'founder';
   return (
     <InboxScreen
-      conversations={conversations}
+      conversations={waitingStaffRoom ? null : conversations}
       error={error}
-      loading={loading}
+      loading={loading || waitingStaffRoom}
       onRetry={() => {
         /* v8 ignore next -- retry increments the list loader */
         setAttempt((n) => n + 1);
@@ -430,9 +454,11 @@ export function InboxLoader(): ReactElement | null {
         setPayWaiting(false);
         router.push(`/messages?c=${encodeURIComponent(id)}`);
       }}
-      messages={openId === null || openId === '' ? null : messages}
-      messagesLoading={openId !== null && openId !== '' && messagesLoading}
-      messagesError={openId !== null && openId !== '' && messagesError}
+      messages={threadId === null ? null : messages}
+      messagesLoading={
+        threadId !== null && (messagesLoading || (messages === null && !messagesError))
+      }
+      messagesError={threadId !== null && messagesError}
       onRetryMessages={() => {
         setMessagesAttempt((n) => n + 1);
       }}

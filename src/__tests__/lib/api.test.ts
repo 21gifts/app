@@ -6,6 +6,7 @@ import {
   dismissForumLaws,
   fetchConversation,
   fetchConversations,
+  fetchModeratorGroup,
   fetchNotifications,
   fetchAccountActivity,
   fetchGiftDay,
@@ -2291,6 +2292,27 @@ describe('fetchConversations', () => {
       },
     });
     await expect(fetchConversations('sess')).resolves.toEqual([conversation]);
+  });
+});
+
+describe('fetchModeratorGroup', () => {
+  it('returns the conversation and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { conversation },
+    });
+    await expect(fetchModeratorGroup('sess')).resolves.toEqual(conversation);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/moderator-group', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Conversations are unavailable' } });
+    await expect(fetchModeratorGroup('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
   });
 });
 

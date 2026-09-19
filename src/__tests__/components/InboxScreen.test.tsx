@@ -62,6 +62,17 @@ const DAMUS: Conversation = {
   unread: false,
 };
 
+const MODERATORS: Conversation = {
+  id: 'conv-mods',
+  kind: 'moderator_group',
+  name: 'Staff room',
+  lastText: 'Hello mods',
+  lastAt: '2026-08-28T15:00:00.000Z',
+  lastFromMe: false,
+  lastSats: 0,
+  unread: false,
+};
+
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
 
 const MESSAGE: ConversationMessage = {
@@ -367,6 +378,40 @@ describe('InboxScreen', () => {
     expect(npubRow.textContent).toContain('Damus');
     expect(npubRow.textContent).not.toContain('Contact');
     expect(npubRow.textContent).not.toContain('Direct');
+  });
+
+  it('never lists a moderator_group row on Direct', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT, DAMUS, THREAD, MODERATORS]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={true}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Conversation type' });
+    expect(within(group).getByRole('button', { name: 'Direct' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    const rows = within(list).getAllByRole('button');
+    expect(screen.queryByText('Staff room')).toBeNull();
+    expect(screen.queryByText('Hello mods')).toBeNull();
+    expect(rows[0]?.textContent).toContain('Bob');
+    expect(rows[0]?.textContent).toContain('Later');
+    expect(rows[0]?.textContent).not.toContain('Hello mods');
   });
 
   it('uses the inbox heading when openId is not in the conversation list', () => {
@@ -926,6 +971,32 @@ describe('InboxScreen', () => {
     expect(screen.getAllByText('send ₿21')).toHaveLength(2);
     expect(screen.getByText('₿21')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
+  });
+
+  it('hides the Amount field when showAmount is false', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+      />,
+    );
+    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
   it('shows a gift-only last-sats list preview', () => {

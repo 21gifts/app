@@ -421,6 +421,16 @@ export async function proxyConversationsPost(request: Request): Promise<Response
 }
 
 /**
+ * Proxies GET /conversations/moderator-group to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyModeratorGroupGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/conversations/moderator-group');
+}
+
+/**
  * Proxies GET /conversations/:id to the 21.gifts api.
  *
  * Forwards the incoming query string (including `sinceMessageId` long-poll).

@@ -5,6 +5,7 @@ import {
   conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
+  conversationResponseSchema,
   conversationSchema,
   conversationThreadSchema,
   notificationListSchema,
@@ -1312,6 +1313,28 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
       throw new Error('Could not load messages. Please try again.');
     }
     return conversationListSchema.parse(await response.json()).conversations;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches the closed moderator-group thread for a confirmed moderator.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The singleton {@link Conversation} row.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link conversationResponseSchema}.
+ */
+export async function fetchModeratorGroup(sessionToken: string): Promise<Conversation> {
+  try {
+    const response = await fetch('/conversations/moderator-group', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return conversationResponseSchema.parse(await response.json()).conversation;
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
