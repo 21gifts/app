@@ -6,6 +6,8 @@ import { getApiUrl } from '@/lib/config';
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
+const VISITOR_OG_TITLE = 'Visitor on 21.gifts';
+const VISITOR_OG_DESCRIPTION = 'A reply from a visitor who sent bitcoin to a post on 21.gifts.';
 const DESCRIPTION_MAX = 300;
 
 /**
@@ -57,7 +59,8 @@ export async function loadPublicMessageForOg(id: string): Promise<ForumMessage |
  * Builds per-note Open Graph and Twitter metadata for `/messages/[id]`.
  *
  * A missing note returns `{}` so the root layout preview is inherited. A
- * found note always uses the author name and never the marketing description.
+ * found note with `via !== undefined` gets fully generic metadata instead.
+ * A member note uses the author name and never the marketing description.
  *
  * @param id - Forum message UUID from the route.
  * @param note - Loaded public note, or `null` when missing or unloadable.
@@ -66,6 +69,28 @@ export async function loadPublicMessageForOg(id: string): Promise<ForumMessage |
 export function publicMessageOgMetadata(id: string, note: ForumMessage | null): Metadata {
   if (note === null) {
     return {};
+  }
+  if (note.via !== undefined) {
+    const title = VISITOR_OG_TITLE;
+    const description = VISITOR_OG_DESCRIPTION;
+    return {
+      title,
+      description,
+      openGraph: {
+        type: 'website',
+        url: `https://21.gifts/messages/${id}`,
+        siteName: '21.gifts',
+        title,
+        description,
+        images: [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
+      },
+    };
   }
   const title = note.name;
   const description = ogDescription(note);

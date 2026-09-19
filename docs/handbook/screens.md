@@ -445,6 +445,12 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
 
+### Variant: expanded-visitor
+
+On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows a **Visitor** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+
+![21.gifts welcome expanded visitor](images/welcome-expanded-visitor.png)
+
 ### Variant: quoted-note
 
 Signed-in founder Cyrill, living-room laws dismissed, Active. Only Riana Rosello's paid 21-sat verified note is in the list; the card is expanded. Cyrill's reply shows `just for information:` and a nested technical-note post (photo, caption starting **A Quick Technical Note**, Founder pill, ₿43). The raw `https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec` URL is not visible.
@@ -1124,7 +1130,7 @@ Signed-in basis account. Copy **This page is for founders and moderators.** No t
 ## Screen: /moderate/hidden
 
 - **URL:** `/moderate/hidden` — signed-in hidden-notes list for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. No un-hide control. No hidden photo/video fetch.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, a non-interactive **Visitor** badge next to the name when the row has a `via` value, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. No un-hide control. No hidden photo/video fetch.
 - **Actions:** In-card icon back to the hub `/moderate`. Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HiddenNotesPage`, `HiddenNotesScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. List only for `role` founder|moderator; others see forbidden copy and do not fetch.
@@ -1134,6 +1140,12 @@ Signed-in basis account. Copy **This page is for founders and moderators.** No t
 Staff (founder) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
 
 ![21.gifts hidden notes](images/moderate-hidden.png)
+
+### Variant: visitor
+
+Staff (founder) loaded list with one hidden note written without a 21.gifts account (author **Robin**, text **Hidden visitor note**, the non-interactive **Visitor** badge next to the name, **Hidden by Ada**).
+
+![21.gifts hidden notes visitor](images/moderate-hidden-visitor.png)
 
 ### Variant: forbidden
 
@@ -1287,6 +1299,12 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 3000) showing `formatBitcoin` (`₿3'000`). Opened on the parent UUID.
 
 ![21.gifts public message thread](images/messages-id-thread.png)
+
+### Variant: visitor-reply
+
+Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each author line shows a non-interactive **Visitor** span next to the name (same slot as a role pill; not a button, no hint). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+
+![21.gifts public message visitor reply](images/messages-id-visitor-reply.png)
 
 ### Variant: quoted-note
 

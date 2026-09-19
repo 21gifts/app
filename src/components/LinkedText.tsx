@@ -26,6 +26,8 @@ export interface LinkedTextProps {
   currentOrigin?: string;
   /** Nodes after the linked runs (Show more). */
   suffix?: ReactNode;
+  /** When true, render `text` as one span with no autolinks. */
+  plain?: boolean;
 }
 
 /**
@@ -37,14 +39,29 @@ export interface LinkedTextProps {
  * @param props - See {@link LinkedTextProps}.
  * @returns The paragraph plus an optional confirm overlay.
  */
-export function LinkedText({ text, className, ...rest }: LinkedTextProps): ReactElement {
+export function LinkedText({
+  text,
+  className,
+  plain = false,
+  ...rest
+}: LinkedTextProps): ReactElement {
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  if (plain) {
+    return (
+      <p className={className}>
+        <span>{text}</span>
+        {rest.suffix}
+      </p>
+    );
+  }
+
   const origin =
     rest.currentOrigin ??
     /* v8 ignore next -- SSR has no window; tests run in jsdom */
     (typeof window === 'undefined' ? undefined : window.location.origin);
   const linkClassName = rest.linkClassName ?? DEFAULT_LINK_CLASS;
   const segments = origin === undefined ? splitNoteLinks(text) : splitNoteLinks(text, origin);
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   const stopToggle = (event: { stopPropagation: () => void }): void => {
     event.stopPropagation();

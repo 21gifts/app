@@ -168,4 +168,27 @@ describe('LinkedText', () => {
     expect(link.getAttribute('href')).toBe('/welcome');
     expect(link.className).toBe('underline');
   });
+
+  it('renders a url as a single span when plain', () => {
+    const { container } = renderWithLocale(
+      <LinkedText plain text="see https://example.com/hello" className="text-sm" />,
+    );
+    expect(screen.getByText('see https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(container.querySelector('p')?.className).toBe('text-sm');
+  });
+
+  it('keeps suffix after the plain span', () => {
+    renderWithLocale(
+      <LinkedText
+        plain
+        text="see https://example.com/hello"
+        className="text-sm"
+        suffix={<span>more</span>}
+      />,
+    );
+    expect(screen.getByText('see https://example.com/hello')).toBeTruthy();
+    expect(screen.getByText('more')).toBeTruthy();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
 });

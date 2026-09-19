@@ -1193,6 +1193,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/hidden',
+    id: 'visitor',
+    image: 'moderate-hidden-visitor.png',
+    visual: 'state-moderate-hidden-visitor',
+    needle: 'Hidden visitor note',
+  },
+  {
+    route: '/moderate/hidden',
     id: 'forbidden',
     image: 'moderate-hidden-forbidden.png',
     visual: 'state-moderate-hidden-forbidden',
@@ -1333,6 +1340,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'expanded-visitor',
+    image: 'welcome-expanded-visitor.png',
+    visual: 'state-welcome-expanded-visitor',
+    needle: 'Wrote from another app',
+  },
+  {
+    route: '/welcome',
     id: 'quoted-note',
     image: 'welcome-quoted-note.png',
     visual: 'state-welcome-quoted-note',
@@ -1442,6 +1456,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-thread.png',
     visual: 'state-messages-id-thread',
     needle: 'state-messages-id-thread',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'visitor-reply',
+    image: 'messages-id-visitor-reply.png',
+    visual: 'state-messages-id-visitor-reply',
+    needle: 'Greetings! https://example.com/hello',
   },
   {
     route: '/messages/[id]',

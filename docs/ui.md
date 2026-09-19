@@ -824,6 +824,8 @@ Do not restyle QR for dark mode.
 
 **Do not** color-code roles (no green verified, no orange founder). Type + optional hint is the encoding. Hint copy already in catalogs (`forum.role.*Hint`).
 
+The same anatomy is reused for a **Visitor** badge (`forum.via.nostr`), shown for a row with `via: 'nostr'` — written by someone with no 21.gifts account (shown because they sent bitcoin to a post). The badge word is technology-neutral because of Principles §4 (visitors are never shown the underlying protocol). On the forum board it is an interactive button with a togglable hint paragraph (`forum.via.nostrHint`, same slot and one-open toggle as a role pill); on the unsigned permalink card, the quoted/nested note card, and the moderators' hidden list (`/moderate/hidden`, `HiddenNotesScreen`) it is a non-interactive `<span>` with no hint. Never color-coded, same as role badges.
+
 ### Chart
 
 **Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
@@ -980,9 +982,9 @@ Handbook states: default hub, forbidden.
 
 ### `/moderate/hidden`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (founder or moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times). Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (founder or moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **Visitor** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
 
-Handbook states: default list, forbidden, empty, loading, error.
+Handbook states: default list, forbidden, empty, loading, error, visitor.
 
 ### `/contact`
 

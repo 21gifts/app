@@ -998,6 +998,74 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-gifts');
   });
 
+  test('state /welcome expanded-visitor', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-nostr-gift',
+              name: 'Robin',
+              via: 'nostr',
+              text: '',
+              createdAt: '2026-08-28T12:03:00.000Z',
+              sats: 69,
+              payable: false,
+              hasPhoto: false,
+            },
+            {
+              id: 'r-nostr-text',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Greetings! https://example.com/hello',
+              createdAt: '2026-08-28T12:04:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Visitor', exact: true }).first().click();
+    await expect(
+      page.getByText(
+        'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Greetings! https://example.com/hello', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-expanded-visitor');
+  });
+
   test('state /welcome quoted-note', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -3343,6 +3411,59 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Pater Severin')).toBeVisible();
     await expect(page.getByText("\u20BF3'000")).toBeVisible();
     await shotScreen(page, 'state-messages-id-thread');
+  });
+
+  test('state /messages/[id] visitor-reply', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 2,
+    };
+    await fulfillPublicThreadReplies(page, parentId, [
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+        parentId,
+        name: 'Robin',
+        via: 'nostr',
+        text: '',
+        createdAt: '2026-08-28T12:03:00.000Z',
+        sats: 69,
+        payable: false,
+        hasPhoto: false,
+      },
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+        parentId,
+        name: 'Robin',
+        via: 'nostr',
+        text: 'Greetings! https://example.com/hello',
+        createdAt: '2026-08-28T12:04:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+      },
+    ]);
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${parentId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText('Greetings! https://example.com/hello', { exact: true }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-messages-id-visitor-reply');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {
@@ -6128,6 +6249,38 @@ test.describe('moderate hidden screens', () => {
     await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
     await expect(page.getByText('Hidden by Ada')).toBeVisible();
     await shotScreen(page, 'screen-moderate-hidden');
+  });
+
+  test('state /moderate/hidden visitor', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'h2',
+              name: 'Robin',
+              text: 'Hidden visitor note',
+              via: 'nostr',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              parentId: null,
+              deletedAt: '2026-08-29T15:00:00.000Z',
+              deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText('Hidden visitor note', { exact: true })).toBeVisible();
+    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-hidden-visitor');
   });
 
   test('moderate hidden forbidden', async ({ page }) => {
