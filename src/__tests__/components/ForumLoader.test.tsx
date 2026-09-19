@@ -6829,6 +6829,47 @@ describe('forum feed pages', () => {
     });
   });
 
+  it('holds a silent refresh until the mode-switch page-one replace finishes', async () => {
+    let releaseAll: ((page: ReturnType<typeof forumPage>) => void) | undefined;
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseAll = resolve;
+          }),
+      )
+      .mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      releaseAll?.(forumPage([SAMPLE]));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+  });
+
   it('prefetches after a silent refresh is the first successful load', async () => {
     const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
     const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
