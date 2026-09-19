@@ -1303,6 +1303,7 @@ export function ForumLoader(): ReactElement | null {
         setUnpaidSeenAt(iso);
       }
       if (feedModeRef.current !== 'all') {
+        replaceInFlightRef.current = true;
         paginationGeneration.current += 1;
         loadingMoreRef.current = false;
         refreshGeneration.current += 1;
@@ -1528,6 +1529,7 @@ export function ForumLoader(): ReactElement | null {
     ) {
       clearPaySheet();
     }
+    replaceInFlightRef.current = true;
     paginationGeneration.current += 1;
     loadingMoreRef.current = false;
     refreshGeneration.current += 1;
