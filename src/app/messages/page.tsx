@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { Suspense } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { InboxLoader } from '@/components/InboxLoader';
+import { MessagesChromeLeft } from '@/components/MessagesChromeLeft';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
@@ -22,7 +23,11 @@ export default function MessagesPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft />}
+      topLeft={
+        <Suspense fallback={<ProfileChromeLeft />}>
+          <MessagesChromeLeft />
+        </Suspense>
+      }
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">

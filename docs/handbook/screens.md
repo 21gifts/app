@@ -57,8 +57,8 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 ## Screen: /stats/[day]
 
 - **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
-- **What the user sees:** Dark 21.gifts header (wordmark `/` when unsigned, `/welcome` when a session is hydrated), **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, selected fiat code) with a FiatPicker, empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
-- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). Pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header (wordmark `/` when unsigned, `/welcome` when a session is hydrated), **All stats** back to `/stats`, heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, selected fiat code) with a FiatPicker **only when unsigned**, empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Signed-in visitors still see preferred-fiat amounts and cannot change the code here. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
+- **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
 - **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `FiatPicker`, `fetchGiftDay` (`GET /gifts?day=`).
 - **Auth:** None.
 
@@ -89,8 +89,8 @@ Fetch failed. Button **Try again**.
 ## Screen: /stats
 
 - **URL:** `/stats` — public gift totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header with a language switcher (wordmark `/` when unsigned, `/welcome` when a session is hydrated), heading **Gifts**. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, gifts, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. Pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher (wordmark `/` when unsigned, `/welcome` when a session is hydrated), heading **Gifts**. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, gifts, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `LanguageSwitcher`.
 
 ### Variant: default
@@ -511,11 +511,23 @@ On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row 
 
 ![21.gifts welcome photo](images/welcome-photo.png)
 
+### Variant: photos
+
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) and the attach control visible in the composer.
+
+![21.gifts welcome photos](images/welcome-photos.png)
+
 ### Variant: photo-and-text
 
 After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
 
 ![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
+
+### Variant: photos-and-text
+
+On **All**: forum row from Ada with two stills (**Photo from Ada**) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+
+![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 
 ### Variant: composer-text
 
@@ -529,11 +541,23 @@ JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.
 
 ![21.gifts welcome composer photo](images/welcome-composer-photo.png)
 
+### Variant: composer-photos
+
+Two JPEG previews (**Selected photo**) and per-index **Remove photo**; textarea empty.
+
+![21.gifts welcome composer photos](images/welcome-composer-photos.png)
+
 ### Variant: composer-photo-and-text
 
 Preview plus caption **Caption with selected photo.**, ready to Post.
 
 ![21.gifts welcome composer photo and text](images/welcome-composer-photo-and-text.png)
+
+### Variant: composer-photos-and-text
+
+Two JPEG previews plus caption **Caption with selected photos.**, ready to Post.
+
+![21.gifts welcome composer photos and text](images/welcome-composer-photos-and-text.png)
 
 ### Variant: composer-video
 
@@ -595,11 +619,23 @@ Encoded JPEG over 1 MB → **Keep photos under 1 MB and videos under 32 MB**.
 
 ![21.gifts welcome error too large](images/welcome-error-too-large.png)
 
+### Variant: error-too-many
+
+Eleven files → **You can add up to 10 photos**.
+
+![21.gifts welcome error too many](images/welcome-error-too-many.png)
+
 ### Variant: error-too-large-with-text
 
 Same alert with caption **Caption with a photo that is too large.** still in the composer.
 
 ![21.gifts welcome error too large with text](images/welcome-error-too-large-with-text.png)
+
+### Variant: error-too-many-with-text
+
+Same 11-file tooMany alert with caption **Caption with too many photos.** still in the composer.
+
+![21.gifts welcome error too many with text](images/welcome-error-too-many-with-text.png)
 
 ### Variant: error-request-photo-and-text
 
@@ -668,6 +704,14 @@ Named member with living-room rules agreed, a Wallet of Satoshi address, and `ha
 
 ![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
 
+### Variant: overlay-external-link
+
+Named member with living-room rules dismissed and a paid forum note whose body is `New:` plus `https://example.com/phish`. Clicking that URL opens `ExternalLinkWarning` dialog **Open external link?** with the catalog body, the destination URL as `break-all` text, labeled **Open link**, and icon-only Close. Internal 21.gifts URLs on the same board do not open this overlay.
+
+- **Actions:** Close dismisses without opening. **Open link** (`Button` `type="button"` `size="lg"`) confirms and hands the https URL to `openInSystemBrowser`.
+
+![21.gifts welcome overlay external link](images/welcome-overlay-external-link.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.
@@ -717,7 +761,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 ## Screen: /members/[accountId]
 
 - **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, Lightning Address, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is founder or moderator and the subject is someone else, staff Trust Chain actions appear on the card (Verify, Propose, Confirm, or Appoint; already-on-chain is a link). About me is not a `ForumBoard` post; labeled **Translate** sits on feed note/reply bodies via `NoteTranslate` when the language differs from the UI locale (not on About me). The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for the parent author, a moderator, the founder, or a verified member, otherwise 1 sat; an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for `latestRateDay` on feed notes (display-only preferred fiat, no FiatPicker on the feed); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
+- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for `latestRateDay` on feed notes (display-only preferred fiat, no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
 - **Actions:** Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {sha}** line (`app.version`); icon-only back to the forum; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile**); Message on the card when another member has a `profileMessage`; translate a foreign-language feed note or reply (**Translate** / Show original / Show translation); click **N posts** or **N reactions** to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Replies from the parent author, moderator, founder, or verified may post unpaid. When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint; already-on-chain is a link. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
@@ -739,6 +783,12 @@ Identity card with counts; posts button pressed; post card 'Second post from Car
 Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and shows the inline photo (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photo`.
 
 ![21.gifts member posts open with photo](images/members-posts-open-photo.png)
+
+### Variant: posts-open-photos
+
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photos`.
+
+![21.gifts member posts open with photos](images/members-posts-open-photos.png)
 
 ### Variant: replies-open
 
@@ -850,14 +900,14 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`, default `tone="gift"`; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, choose a three-stage notification level (All / Active / Mentions `SegmentedControl tone="neutral"`) plus the existing icon-only Web Push bell (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, choose a three-stage notification level (All / Active / Mentions `SegmentedControl tone="neutral"`) plus the existing icon-only Web Push bell (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row, return to the forum via an icon-only back control. Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement + optional `notificationLevel`) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). Location save is `POST /me/location` (`setLocation`). Notification level save is `POST /me/notification-level` (`postNotificationLevel`).
-- **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {sha}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the address form plus the existing icon-only Web Push bell (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); pick CHF|EUR|USD|PHP on the chart FiatPicker (`shell="app"`, default `tone="gift"`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
+- **Actions:** Open **Menu** for **Home**, Profile (current), **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {sha}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the address form plus the existing icon-only Web Push bell (visible On/Off value; icon-only Bell `IconButton` — off outlined BellOff secondary, on filled Bell primary; aria from `profile.push.enable` / `profile.push.disable`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears above the value row; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: FiatPicker always (CHF|EUR|USD|PHP, `shell="app"`, default `tone="gift"`). When the series is empty, FiatPicker + `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a Notifications section under the address form with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` plus the existing icon-only bell with visible On/Off (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), and Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), a Notifications section under the address form with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` plus the existing icon-only bell with visible On/Off (same `IconButton` circle as pencil/trash; off outlined BellOff secondary, on filled Bell primary), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back top-left next to the wordmark (returns to the forum); one **Menu** top-right (**Home** first; log out, then a quiet **Version {sha}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
 
 ![21.gifts profile](images/profile.png)
 
@@ -936,9 +986,9 @@ Notifications section with `role="alert"` after clicking Enable notifications wh
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text (`inbox.threadUnread`); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is the counterpart name; the origin label sits under it, not inside the h1. Inbox thread in-card back stays **All conversations**; the page chrome back then goes to welcome. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Actions:** Open a thread, send a reply, return via **All conversations**, back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text (`inbox.threadUnread`); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Actions:** Open a thread, send a reply, return via **All conversations** (chrome link), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (moderators, unlisted `?c=` only), `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -955,13 +1005,13 @@ Member list with an unread Direct row **Bob** (`inbox.threadUnread`, accessible 
 
 ### Variant: contact
 
-Staff (moderator). Contact selected. List shows official **21.gifts**. Chooser present.
+Staff (moderator). Contact selected. List shows official **21.gifts**. Chooser present. No pinned Staff room / Moderators row.
 
 ![21.gifts inbox contact](images/messages-contact.png)
 
 ### Variant: damus
 
-Staff (moderator). Damus selected. List shows **npub1abc…xyz**. Chooser present.
+Staff (moderator). Damus selected. List shows **npub1abc…xyz**. Chooser present. No pinned Staff room / Moderators row.
 
 ![21.gifts inbox damus](images/messages-damus.png)
 
@@ -1054,8 +1104,8 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
-- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Confirmed moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for confirmed moderators.** Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
+- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Confirmed moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
@@ -1070,6 +1120,12 @@ Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders a
 Signed-in basis account. Copy **This page is for founders and moderators.** No tools list.
 
 ![21.gifts moderation forbidden](images/moderate-forbidden.png)
+
+### Variant: moderator
+
+Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for confirmed moderators.**
+
+![21.gifts moderation moderator](images/moderate-moderator.png)
 
 ## Screen: /moderate/hidden
 
@@ -1165,6 +1221,44 @@ Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spi
 
 ![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
 
+## Screen: /moderate/group
+
+- **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators**. Confirmed moderators fetch the singleton group then the thread and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators** (never the api row name); the composer is text only (no **Amount** field, no gifts). Founders and other signed-in visitors see heading **Moderators** plus **This room is for confirmed moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages.
+- **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Confirmed moderators send a reply and **Try again** on fetch error.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, `fetchConversation`, `postConversationMessage`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only for `role` moderator; founders and others see forbidden copy and do not fetch.
+
+### Variant: default
+
+Confirmed moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
+
+![21.gifts moderator group](images/moderate-group.png)
+
+### Variant: forbidden
+
+Signed-in founder (or other non-moderator). Heading **Moderators**. Copy **This room is for confirmed moderators.** No thread fetch.
+
+![21.gifts moderator group forbidden](images/moderate-group-forbidden.png)
+
+### Variant: empty
+
+Confirmed moderator. Group exists, zero messages. Composer **Your message** visible.
+
+![21.gifts moderator group empty](images/moderate-group-empty.png)
+
+### Variant: loading
+
+Confirmed moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
+
+![21.gifts moderator group loading](images/moderate-group-loading.png)
+
+### Variant: error
+
+Confirmed moderator fetch failed. Button **Try again**.
+
+![21.gifts moderator group error](images/moderate-group-error.png)
+
 ## Screen: /messages/[id]
 
 - **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. Signed-in (hydrated session and account): same per-note actions as `/welcome` (copy link, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null. Labeled **Translate** / Show original / Show translation sit under the note and reply bodies via `NoteTranslate` when the language differs from the UI locale (not in the footer icon row).
@@ -1252,14 +1346,14 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker always, CHF|EUR|USD|PHP, `shell="app"`; empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; populated ₿ | selected fiat; About me inside the identity card — not a forum post, with the photo when `aboutMeHasPhoto` — name + location + Wallet of Satoshi address fields) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route.
+- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; populated ₿ | selected fiat; About me inside the identity card — not a forum post, with the photo when `aboutMeHasPhoto` — name + location + Wallet of Satoshi address fields) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given + Received from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when address is blank; activity failure keeps the card with empty series. Identity still `GET /view-key/:viewKey`.
-- **Actions:** Change language (`HomeWordmark` top-left: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows FiatPicker + `profile.chartEmpty`; a filled series can switch scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card.
+- **Actions:** Change language (`HomeWordmark` top-left: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Unsigned empty series shows FiatPicker + `profile.chartEmpty`; signed-in empty is `profile.chartEmpty` alone. A filled series can switch scale between ₿ and the selected fiat. When unsigned, pick CHF|EUR|USD|PHP on the chart FiatPicker. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, FiatPicker always; empty series shows FiatPicker + `profile.chartEmpty` (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text, no back arrow.
+Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty series shows FiatPicker + `profile.chartEmpty` when unsigned (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) and `profile.chartEmpty` alone when signed in, About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text, no back arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 

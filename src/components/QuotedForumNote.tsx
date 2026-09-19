@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
+import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -124,7 +125,7 @@ function QuotedForumNote({
         truncate ? (
           <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
         ) : (
-          <p className="whitespace-pre-wrap text-sm text-app-fg">{note.text}</p>
+          <LinkedText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
         )
       ) : null}
       <Link href={`/messages/${note.id}`} className="block">
@@ -242,7 +243,7 @@ export function ForumQuotedBody({
         truncate ? (
           <ForumNoteText text={displayText} className="whitespace-pre-wrap text-sm text-app-fg" />
         ) : (
-          <p className="whitespace-pre-wrap text-sm text-app-fg">{displayText}</p>
+          <LinkedText text={displayText} className="whitespace-pre-wrap text-sm text-app-fg" />
         )
       ) : null}
       {displayText !== '' ? <NoteTranslate text={displayText} /> : null}

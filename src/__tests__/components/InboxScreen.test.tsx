@@ -62,6 +62,17 @@ const DAMUS: Conversation = {
   unread: false,
 };
 
+const MODERATORS: Conversation = {
+  id: 'conv-mods',
+  kind: 'moderator_group',
+  name: 'Staff room',
+  lastText: 'Hello mods',
+  lastAt: '2026-08-28T15:00:00.000Z',
+  lastFromMe: false,
+  lastSats: 0,
+  unread: false,
+};
+
 const THREE: Conversation[] = [THREAD, DIRECT, DAMUS];
 
 const MESSAGE: ConversationMessage = {
@@ -83,7 +94,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -111,7 +121,6 @@ describe('InboxScreen', () => {
         onRetry={onRetry}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -141,7 +150,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -168,7 +176,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -205,7 +212,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={onOpen}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -238,7 +244,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={onOpen}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -276,7 +281,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={onOpen}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -315,7 +319,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -351,7 +354,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -378,6 +380,40 @@ describe('InboxScreen', () => {
     expect(npubRow.textContent).not.toContain('Direct');
   });
 
+  it('never lists a moderator_group row on Direct', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT, DAMUS, THREAD, MODERATORS]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={true}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Conversation type' });
+    expect(within(group).getByRole('button', { name: 'Direct' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const list = screen.getByRole('list', { name: 'Conversations' });
+    const rows = within(list).getAllByRole('button');
+    expect(screen.queryByText('Staff room')).toBeNull();
+    expect(screen.queryByText('Hello mods')).toBeNull();
+    expect(rows[0]?.textContent).toContain('Bob');
+    expect(rows[0]?.textContent).toContain('Later');
+    expect(rows[0]?.textContent).not.toContain('Hello mods');
+  });
+
   it('uses the inbox heading when openId is not in the conversation list', () => {
     renderWithLocale(
       <InboxScreen
@@ -387,7 +423,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="missing"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -403,7 +438,7 @@ describe('InboxScreen', () => {
     expect(screen.getByRole('heading', { name: 'Messages' })).toBeTruthy();
     expect(screen.queryByText('Contact')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Conversation type' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'All conversations' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.queryByText('All conversations')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
   });
@@ -418,7 +453,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={onOpen}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -447,7 +481,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={onOpen}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -479,7 +512,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -510,7 +542,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -545,7 +576,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -566,7 +596,6 @@ describe('InboxScreen', () => {
 
   it('shows an open thread, composer errors, and posts', () => {
     const onPost = vi.fn();
-    const onBack = vi.fn();
     const onDraftChange = vi.fn();
     const onRetryMessages = vi.fn();
     renderWithLocale(
@@ -577,7 +606,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={onBack}
         messages={[MESSAGE]}
         messagesLoading={false}
         messagesError={false}
@@ -601,8 +629,7 @@ describe('InboxScreen', () => {
     expect(incoming.className).not.toContain('bg-app-btn');
     expect(incoming.className).not.toContain('self-end');
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
-    fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
-    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Next' } });
     expect(onDraftChange).toHaveBeenCalledWith('Next');
     expect(screen.queryByText('Send')).toBeNull();
@@ -619,7 +646,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[]}
         messagesLoading={false}
         messagesError={false}
@@ -633,6 +659,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.queryByText('Send')).toBeNull();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
     rerender(
@@ -645,7 +672,6 @@ describe('InboxScreen', () => {
             onRetry={() => undefined}
             openId="conv-1"
             onOpen={() => undefined}
-            onBack={() => undefined}
             messages={null}
             messagesLoading={true}
             messagesError={false}
@@ -661,6 +687,7 @@ describe('InboxScreen', () => {
       </LocaleProvider>,
     );
     expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 
@@ -674,7 +701,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={true}
@@ -690,6 +716,7 @@ describe('InboxScreen', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe('Could not load messages. Please try again.');
     expect(alert.className).toContain('text-app-danger');
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetryMessages).toHaveBeenCalledTimes(1);
   });
@@ -703,7 +730,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[{ ...MESSAGE, fromMe: true }]}
         messagesLoading={false}
         messagesError={false}
@@ -718,6 +744,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByText('You')).toBeTruthy();
     expect(screen.queryByText('Ada')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     const bubble = screen.getByRole('listitem');
     expect(bubble.getAttribute('data-from-me')).toBe('true');
     expect(bubble.className).toContain('self-end');
@@ -734,7 +761,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[MESSAGE]}
         messagesLoading={false}
         messagesError={false}
@@ -749,6 +775,7 @@ describe('InboxScreen', () => {
     );
     const heading = screen.getByRole('heading', { name: 'Bob' });
     expect(heading).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     fireEvent.click(within(heading).getByRole('button', { name: 'View profile' }));
     expect(push).toHaveBeenCalledWith('/members/acc_bob');
   });
@@ -762,7 +789,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[{ ...MESSAGE, accountId: 'acc_ada' }]}
         messagesLoading={false}
         messagesError={false}
@@ -775,6 +801,7 @@ describe('InboxScreen', () => {
         showFilter={false}
       />,
     );
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
     expect(push).toHaveBeenCalledWith('/members/acc_ada');
   });
@@ -788,7 +815,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[{ ...MESSAGE, accountId: 'acc_ada' }]}
         messagesLoading={false}
         messagesError={false}
@@ -801,6 +827,7 @@ describe('InboxScreen', () => {
         showFilter={false}
       />,
     );
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     const buttons = screen.getAllByRole('button', { name: 'View profile' });
     expect(buttons).toHaveLength(2);
     fireEvent.click(buttons[0]!);
@@ -818,7 +845,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[{ ...MESSAGE, fromMe: true, accountId: 'acc_me' }]}
         messagesLoading={false}
         messagesError={false}
@@ -834,6 +860,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('You')).toBeTruthy();
     expect(screen.queryByText('Ada')).toBeNull();
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
   });
 
   it('keeps names as plain text when accountId is missing', () => {
@@ -845,7 +872,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-1"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[MESSAGE]}
         messagesLoading={false}
         messagesError={false}
@@ -859,6 +885,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.getByRole('heading', { name: '21.gifts' })).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
   });
@@ -872,7 +899,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[{ ...MESSAGE, accountId: '' }]}
         messagesLoading={false}
         messagesError={false}
@@ -886,6 +912,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Bob' })).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
   });
@@ -899,7 +926,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-3"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[MESSAGE]}
         messagesLoading={false}
         messagesError={false}
@@ -914,6 +940,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('heading', { name: 'npub1abc…xyz' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
   });
 
   it('renders a gift-only bubble and amount under text+sats', () => {
@@ -925,7 +952,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[
           { ...MESSAGE, id: 'g1', text: '', sats: 21, fromMe: true },
           { ...MESSAGE, id: 'g0', text: '', sats: 21, fromMe: false },
@@ -947,6 +973,32 @@ describe('InboxScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
   });
 
+  it('hides the Amount field when showAmount is false', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+      />,
+    );
+    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
   it('shows a gift-only last-sats list preview', () => {
     renderWithLocale(
       <InboxScreen
@@ -956,7 +1008,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -981,7 +1032,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -1013,7 +1063,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId={null}
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={null}
         messagesLoading={false}
         messagesError={false}
@@ -1051,7 +1100,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[MESSAGE]}
         messagesLoading={false}
         messagesError={false}
@@ -1083,7 +1131,6 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        onBack={() => undefined}
         messages={[MESSAGE]}
         messagesLoading={false}
         messagesError={false}

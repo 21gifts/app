@@ -421,6 +421,16 @@ export async function proxyConversationsPost(request: Request): Promise<Response
 }
 
 /**
+ * Proxies GET /conversations/moderator-group to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyModeratorGroupGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/conversations/moderator-group');
+}
+
+/**
  * Proxies GET /conversations/:id to the 21.gifts api.
  *
  * Forwards the incoming query string (including `sinceMessageId` long-poll).
@@ -513,14 +523,20 @@ export async function proxyNotificationReadPost(request: Request, id: string): P
 }
 
 /**
- * Proxies GET /messages/:id/photo to the 21.gifts api (public; no auth).
+ * Proxies GET /messages/:id/photo or an indexed photo file to the 21.gifts api.
  *
  * @param request - Incoming App Router request.
  * @param id - Forum message id from the dynamic route segment.
+ * @param file - Optional indexed photo filename such as `1.jpg`.
  * @returns The upstream response (raw image bytes).
  */
-export async function proxyMessagesPhotoGet(request: Request, id: string): Promise<Response> {
-  return proxyApiRequest(request, `/messages/${encodeURIComponent(id)}/photo`);
+export async function proxyMessagesPhotoGet(
+  request: Request,
+  id: string,
+  file?: string,
+): Promise<Response> {
+  const base = `/messages/${encodeURIComponent(id)}/photo`;
+  return proxyApiRequest(request, file === undefined || file === '' ? base : `${base}/${file}`);
 }
 
 /**

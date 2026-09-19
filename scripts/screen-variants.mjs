@@ -381,10 +381,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'photos',
+    image: 'welcome-photos.png',
+    visual: 'state-welcome-photos',
+    needle: 'welcome photos',
+  },
+  {
+    route: '/welcome',
     id: 'photo-and-text',
     image: 'welcome-photo-and-text.png',
     visual: 'state-welcome-photo-and-text',
     needle: 'Hello with this photo.',
+  },
+  {
+    route: '/welcome',
+    id: 'photos-and-text',
+    image: 'welcome-photos-and-text.png',
+    visual: 'state-welcome-photos-and-text',
+    needle: 'Hello with these photos.',
   },
   {
     route: '/welcome',
@@ -402,10 +416,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-photos',
+    image: 'welcome-composer-photos.png',
+    visual: 'state-welcome-composer-photos',
+    needle: 'welcome composer-photos',
+  },
+  {
+    route: '/welcome',
     id: 'composer-photo-and-text',
     image: 'welcome-composer-photo-and-text.png',
     visual: 'state-welcome-composer-photo-and-text',
     needle: 'Caption with selected photo.',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-photos-and-text',
+    image: 'welcome-composer-photos-and-text.png',
+    visual: 'state-welcome-composer-photos-and-text',
+    needle: 'Caption with selected photos.',
   },
   {
     route: '/welcome',
@@ -479,10 +507,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'error-too-many',
+    image: 'welcome-error-too-many.png',
+    visual: 'state-welcome-error-too-many',
+    needle: 'You can add up to 10 photos',
+  },
+  {
+    route: '/welcome',
     id: 'error-too-large-with-text',
     image: 'welcome-error-too-large-with-text.png',
     visual: 'state-welcome-error-too-large-with-text',
     needle: 'Caption with a photo that is too large.',
+  },
+  {
+    route: '/welcome',
+    id: 'error-too-many-with-text',
+    image: 'welcome-error-too-many-with-text.png',
+    visual: 'state-welcome-error-too-many-with-text',
+    needle: 'Caption with too many photos.',
   },
   {
     route: '/welcome',
@@ -562,6 +604,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('dialog', { name: 'Introduce yourself' })",
   },
   {
+    route: '/welcome',
+    id: 'overlay-external-link',
+    image: 'welcome-overlay-external-link.png',
+    visual: 'state-welcome-overlay-external-link',
+    needle: "getByRole('dialog', { name: 'Open external link?' })",
+  },
+  {
     route: '/rules',
     id: 'default',
     image: 'rules.png',
@@ -630,6 +679,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-photo.png',
     visual: 'state-members-posts-open-photo',
     needle: 'Photo from Carol',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-photos',
+    image: 'members-posts-open-photos.png',
+    visual: 'state-members-posts-open-photos',
+    needle: 'state /members posts-open-photos',
   },
   {
     route: '/members/[accountId]',
@@ -1129,6 +1185,13 @@ export const SCREEN_VARIANTS = [
     needle: 'This page is for founders and moderators.',
   },
   {
+    route: '/moderate',
+    id: 'moderator',
+    image: 'moderate-moderator.png',
+    visual: 'state-moderate-moderator',
+    needle: 'Moderators',
+  },
+  {
     route: '/moderate/hidden',
     id: 'default',
     image: 'moderate-hidden.png',
@@ -1218,6 +1281,41 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-proposals-confirming.png',
     visual: 'state-moderate-proposals-confirming',
     needle: "getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled()",
+  },
+  {
+    route: '/moderate/group',
+    id: 'default',
+    image: 'moderate-group.png',
+    visual: 'screen-moderate-group',
+    needle: 'Hello mods',
+  },
+  {
+    route: '/moderate/group',
+    id: 'forbidden',
+    image: 'moderate-group-forbidden.png',
+    visual: 'state-moderate-group-forbidden',
+    needle: 'This room is for confirmed moderators.',
+  },
+  {
+    route: '/moderate/group',
+    id: 'empty',
+    image: 'moderate-group-empty.png',
+    visual: 'state-moderate-group-empty',
+    needle: 'Your message',
+  },
+  {
+    route: '/moderate/group',
+    id: 'loading',
+    image: 'moderate-group-loading.png',
+    visual: 'state-moderate-group-loading',
+    needle: 'Loading…',
+  },
+  {
+    route: '/moderate/group',
+    id: 'error',
+    image: 'moderate-group-error.png',
+    visual: 'state-moderate-group-error',
+    needle: 'Try again',
   },
   {
     route: '/404',

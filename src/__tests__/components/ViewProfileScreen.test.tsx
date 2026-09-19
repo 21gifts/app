@@ -9,6 +9,12 @@ vi.mock('@/lib/api', () => ({
   fetchViewAboutMePhoto: vi.fn(),
 }));
 
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
 const VIEW_KEY = 'a'.repeat(64);
 
 const named: ViewProfile = {
@@ -23,6 +29,7 @@ const named: ViewProfile = {
 };
 
 beforeEach(() => {
+  hydrateReady = true;
   vi.mocked(fetchViewAboutMePhoto).mockReset();
   vi.mocked(fetchViewAboutMePhoto).mockResolvedValue(
     new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }),

@@ -117,6 +117,7 @@ const SAMPLE: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -131,6 +132,7 @@ const PAYABLE_REPLY: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -145,6 +147,7 @@ const NESTED_REPLY: ForumMessage = {
   sats: 0,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -176,6 +179,7 @@ const FRESH: ForumMessage = {
   sats: 21,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -191,6 +195,7 @@ const FOREIGN: ForumMessage = {
   sats: 0,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -536,6 +541,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -586,6 +592,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -594,13 +601,41 @@ describe('ForumLoader', () => {
     ]);
     const view = renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
     });
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
     });
     view.unmount();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+  });
+
+  it('falls back to hasPhoto when photoCount is omitted', async () => {
+    fetchMock.mockResolvedValue([
+      {
+        ...SAMPLE,
+        id: 'm-omit-photo',
+        hasPhoto: true,
+        text: '',
+        photoCount: undefined as unknown as number,
+        sats: 1,
+      },
+      {
+        ...SAMPLE,
+        id: 'm-omit-none',
+        hasPhoto: false,
+        photoCount: undefined as unknown as number,
+        sats: 1,
+      },
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm-omit-photo', 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
   });
 
   it('does not fetch photos for unpaid hasPhoto notes on Active', async () => {
@@ -613,6 +648,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -636,6 +672,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -649,7 +686,7 @@ describe('ForumLoader', () => {
     expect(photoMock).not.toHaveBeenCalled();
     await revealAll();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
       expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
     });
   });
@@ -664,6 +701,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -688,6 +726,7 @@ describe('ForumLoader', () => {
       sats: 5,
       payable: false,
       hasPhoto: true,
+      photoCount: 1,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -706,7 +745,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo');
+    expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
@@ -840,6 +879,7 @@ describe('ForumLoader', () => {
       id: 'vid1',
       text: 'clip',
       hasPhoto: true,
+      photoCount: 1,
       hasVideo: true,
       videoContentType: 'video/mp4',
     });
@@ -1013,6 +1053,41 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('sets unsupported when revoking a video draft throws while picking a photo', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const clip = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    const jpeg = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file: clip, poster, previewUrl: 'blob:video' },
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [clip] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
+    vi.mocked(URL.revokeObjectURL).mockImplementationOnce(() => {
+      throw new Error('revoke failed');
+    });
+    fireEvent.change(input, { target: { files: [jpeg] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
+    });
+    vi.mocked(URL.revokeObjectURL).mockImplementation(() => undefined);
+  });
+
   it('revokes a video draft preview on unmount', async () => {
     fetchMock.mockResolvedValue([]);
     isVideoMock.mockReturnValue(true);
@@ -1049,6 +1124,7 @@ describe('ForumLoader', () => {
       id: 'vid1',
       text: 'clip',
       hasPhoto: true,
+      photoCount: 1,
       hasVideo: true,
       videoContentType: 'video/mp4',
     });
@@ -1112,14 +1188,29 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('sets formError when prepareForumPhoto rejects the file', async () => {
+  it('keeps an existing photo when prepareForumPhoto rejects another file', async () => {
     fetchMock.mockResolvedValue([]);
-    prepareMock.mockResolvedValue({ ok: false, error: 'unsupported' });
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'first',
+          previewUrl: 'data:image/jpeg;base64,first',
+        },
+      })
+      .mockResolvedValueOnce({ ok: false, error: 'unsupported' });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
     fireEvent.change(input, {
       target: { files: [new File([], 'a.gif', { type: 'image/gif' })] },
     });
@@ -1128,6 +1219,7 @@ describe('ForumLoader', () => {
         'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
       );
     });
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(1);
   });
 
   it('sets unsupported when prepareForumPhoto throws', async () => {
@@ -1260,7 +1352,7 @@ describe('ForumLoader', () => {
     await Promise.resolve();
   });
 
-  it('sets tooLarge and clears a photo draft', async () => {
+  it('sets tooLarge and keeps an existing photo draft', async () => {
     fetchMock.mockResolvedValue([]);
     prepareMock
       .mockResolvedValueOnce({
@@ -1291,9 +1383,7 @@ describe('ForumLoader', () => {
         'Keep photos under 1 MB and videos under 32 MB',
       );
     });
-    expect(screen.queryByAltText('Selected photo')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(postMock).not.toHaveBeenCalled();
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(1);
   });
 
   it('clears a photo draft when Remove photo is clicked', async () => {
@@ -1323,7 +1413,7 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
-  it('clears a prior photo draft when a replacement throws', async () => {
+  it('keeps a prior photo draft when another prepare throws', async () => {
     fetchMock.mockResolvedValue([]);
     prepareMock
       .mockResolvedValueOnce({
@@ -1354,9 +1444,173 @@ describe('ForumLoader', () => {
         'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
       );
     });
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(1);
+  });
+
+  it('appends two photos selected in one change', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'first',
+          previewUrl: 'data:image/jpeg;base64,first',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'second',
+          previewUrl: 'data:image/jpeg;base64,second',
+        },
+      });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const first = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const second = new File([new Uint8Array([2])], 'b.png', { type: 'image/png' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [first, second] } });
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
+    });
+    expect(prepareMock).toHaveBeenNthCalledWith(1, first);
+    expect(prepareMock).toHaveBeenNthCalledWith(2, second);
+  });
+
+  it('keeps ten photos and rejects an eleventh', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockImplementation(async (file: File) => ({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: file.name,
+        previewUrl: `data:image/jpeg;base64,${file.name}`,
+      },
+    }));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const firstTen = Array.from(
+      { length: 10 },
+      (_, index) => new File([new Uint8Array([index])], `${index}.jpg`, { type: 'image/jpeg' }),
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: firstTen } });
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Selected photo')).toHaveLength(10);
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([], '10.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    });
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(10);
+    expect(prepareMock).toHaveBeenCalledTimes(10);
+  });
+
+  it('sets tooMany from one pick of eleven even when the tenth prepare fails', async () => {
+    fetchMock.mockResolvedValue([]);
+    prepareMock.mockImplementation(async (file: File) => {
+      if (file.name === '9.jpg') {
+        return { ok: false, error: 'unsupported' };
+      }
+      return {
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: file.name,
+          previewUrl: `data:image/jpeg;base64,${file.name}`,
+        },
+      };
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const eleven = Array.from(
+      { length: 11 },
+      (_, index) => new File([new Uint8Array([index])], `${index}.jpg`, { type: 'image/jpeg' }),
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: eleven } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    });
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(9);
+    expect(prepareMock).toHaveBeenCalledTimes(10);
+  });
+
+  it('clears photo drafts when a video is picked', async () => {
+    fetchMock.mockResolvedValue([]);
+    const photo = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const video = new File([new Uint8Array([2])], 'clip.mp4', { type: 'video/mp4' });
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    isVideoMock.mockReturnValueOnce(false).mockReturnValueOnce(true);
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'first',
+        previewUrl: 'data:image/jpeg;base64,first',
+      },
+    });
+    prepareVideoMock.mockResolvedValueOnce({
+      ok: true,
+      video: { file: video, poster, previewUrl: 'blob:video' },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [photo] } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, { target: { files: [video] } });
+    await waitFor(() => {
+      expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
+    });
     expect(screen.queryByAltText('Selected photo')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps photo drafts when video preparation fails', async () => {
+    fetchMock.mockResolvedValue([]);
+    const photo = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const video = new File([new Uint8Array([2])], 'clip.mp4', { type: 'video/mp4' });
+    isVideoMock.mockReturnValueOnce(false).mockReturnValueOnce(true);
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'first',
+        previewUrl: 'data:image/jpeg;base64,first',
+      },
+    });
+    prepareVideoMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [photo] } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(input, { target: { files: [video] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+      );
+    });
+    expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    expect(document.querySelector('form video')).toBeNull();
   });
 
   it('ignores a failed photo fetch', async () => {
@@ -1369,6 +1623,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -1399,6 +1654,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -1431,6 +1687,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -1483,6 +1740,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -1496,6 +1754,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -1529,6 +1788,7 @@ describe('ForumLoader', () => {
         sats: 5,
         payable: false,
         hasPhoto: true,
+        photoCount: 1,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -1573,6 +1833,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: true,
+      photoCount: 1,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1594,7 +1855,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: '',
-        photo: { contentType: 'image/jpeg', data: 'abc' },
+        photos: [{ contentType: 'image/jpeg', data: 'abc' }],
       });
       expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
         'data:image/jpeg;base64,abc',
@@ -1613,6 +1874,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1649,6 +1911,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1675,16 +1938,25 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('posts text together with a photo', async () => {
+  it('posts text together with two photos', async () => {
     fetchMock.mockResolvedValue([]);
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: {
-        contentType: 'image/jpeg',
-        data: 'abc',
-        previewUrl: 'data:image/jpeg;base64,abc',
-      },
-    });
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'def',
+          previewUrl: 'data:image/jpeg;base64,def',
+        },
+      });
     const created: ForumMessage = {
       id: 'm-both',
       name: 'Ada',
@@ -1693,6 +1965,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: true,
+      photoCount: 2,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1705,23 +1978,26 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const first = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const second = new File([new Uint8Array([2])], 'b.png', { type: 'image/png' });
     fireEvent.change(input, {
-      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
+      target: { files: [first, second] },
     });
     await waitFor(() => {
-      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+      expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
     });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'Hello',
-        photo: { contentType: 'image/jpeg', data: 'abc' },
+        photos: [
+          { contentType: 'image/jpeg', data: 'abc' },
+          { contentType: 'image/jpeg', data: 'def' },
+        ],
       });
     });
     expect(screen.getByText('Hello')).toBeTruthy();
-    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
-      'data:image/jpeg;base64,abc',
-    );
+    expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(2);
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
   });
 
@@ -1734,6 +2010,7 @@ describe('ForumLoader', () => {
       sats: 5,
       payable: false,
       hasPhoto: true,
+      photoCount: 1,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1782,6 +2059,7 @@ describe('ForumLoader', () => {
       id: 'vid1',
       text: 'clip',
       hasPhoto: true,
+      photoCount: 1,
       hasVideo: true,
       videoContentType: 'video/mp4',
     };
@@ -1834,6 +2112,7 @@ describe('ForumLoader', () => {
       id: 'vid-novideo',
       text: 'clip',
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
     });
@@ -1867,6 +2146,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1900,6 +2180,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1913,6 +2194,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1953,6 +2235,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -1987,6 +2270,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -2022,6 +2306,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -2057,6 +2342,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -2144,6 +2430,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -2186,6 +2473,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -2293,6 +2581,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -2960,6 +3249,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -3007,6 +3297,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -3094,6 +3385,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -3257,6 +3549,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3287,6 +3580,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3302,6 +3596,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3337,6 +3632,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3378,6 +3674,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3399,6 +3696,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3446,6 +3744,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -3484,6 +3783,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3499,6 +3799,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -3558,6 +3859,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: false,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -3578,6 +3880,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -3899,6 +4202,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'founder',
@@ -3936,6 +4240,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'moderator',
@@ -3970,6 +4275,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'moderator',
@@ -4020,6 +4326,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'moderator',
@@ -4087,6 +4394,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'moderator',
@@ -4163,6 +4471,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'verified',
@@ -4199,6 +4508,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -4426,6 +4736,7 @@ describe('ForumLoader', () => {
         sats: 0,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -4510,6 +4821,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: true,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -5113,6 +5425,7 @@ describe('ForumLoader', () => {
         sats: 21,
         payable: true,
         hasPhoto: false,
+        photoCount: 0,
         hasVideo: false,
         videoContentType: null,
         role: 'basis',
@@ -5611,6 +5924,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',
@@ -5653,6 +5967,7 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
       hasPhoto: false,
+      photoCount: 0,
       hasVideo: false,
       videoContentType: null,
       role: 'basis',

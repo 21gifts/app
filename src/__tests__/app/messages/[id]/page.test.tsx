@@ -36,6 +36,7 @@ const sample: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',

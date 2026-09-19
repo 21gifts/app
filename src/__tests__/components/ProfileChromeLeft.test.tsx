@@ -32,4 +32,13 @@ describe('ProfileChromeLeft', () => {
     expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
+
+  it('renders an inbox back link to /messages and wordmark to /welcome', () => {
+    renderWithLocale(<ProfileChromeLeft backHref="/messages" backLabelKey="inbox.back" />);
+    expect(screen.getByRole('link', { name: 'All conversations' }).getAttribute('href')).toBe(
+      '/messages',
+    );
+    expect(screen.queryByText('All conversations')).toBeNull();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
+  });
 });

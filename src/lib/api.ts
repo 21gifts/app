@@ -5,6 +5,7 @@ import {
   conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
+  conversationResponseSchema,
   conversationSchema,
   conversationThreadSchema,
   notificationListSchema,
@@ -1079,12 +1080,11 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
 }
 
 /**
- * Posts a new public forum message (text and/or one photo), or a reply.
+ * Posts a new public forum message (text and/or up to ten photos), or a reply.
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param input - Trimmed text (may be empty when a photo is included), an
- * optional JPEG photo payload (`contentType` + raw base64 `data`), and optional
- * `inReplyTo` parent id (thread composer only; omit for top-level notes).
+ * @param input - Trimmed text, optional legacy `photo`, optional `photos`, and
+ * optional `inReplyTo` parent id (thread composer only; omit for top-level notes).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
@@ -1096,9 +1096,16 @@ export async function postMessage(
   input: {
     text: string;
     photo?: { contentType: string; data: string };
+    photos?: { contentType: string; data: string }[];
     inReplyTo?: string;
   },
 ): Promise<ForumMessage> {
+  const stills =
+    input.photos !== undefined
+      ? input.photos.slice(0, 10)
+      : input.photo !== undefined
+        ? [input.photo]
+        : [];
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
@@ -1107,7 +1114,7 @@ export async function postMessage(
     },
     body: JSON.stringify({
       text: input.text,
-      ...(input.photo ? { photo: input.photo } : {}),
+      ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
       ...(input.inReplyTo !== undefined && input.inReplyTo !== ''
         ? { inReplyTo: input.inReplyTo }
         : {}),
@@ -1306,6 +1313,28 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
       throw new Error('Could not load messages. Please try again.');
     }
     return conversationListSchema.parse(await response.json()).conversations;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches the closed moderator-group thread for a confirmed moderator.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The singleton {@link Conversation} row.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link conversationResponseSchema}.
+ */
+export async function fetchModeratorGroup(sessionToken: string): Promise<Conversation> {
+  try {
+    const response = await fetch('/conversations/moderator-group', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return conversationResponseSchema.parse(await response.json()).conversation;
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
@@ -1576,7 +1605,7 @@ export async function markAllNotificationsRead(sessionToken: string): Promise<vo
 }
 
 /**
- * Fetches the JPEG/PNG/WebP bytes for one forum message photo.
+ * Fetches the JPEG/PNG/WebP bytes for one indexed forum message photo.
  *
  * Auth is a Bearer token in JS memory, so callers must use the returned blob
  * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
@@ -1584,13 +1613,19 @@ export async function markAllNotificationsRead(sessionToken: string): Promise<vo
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Forum message id.
+ * @param index - Zero-based photo index. Index zero uses the legacy route.
  * @returns The photo body as a `Blob`.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * response is empty — same family as {@link fetchMessages}; does not leak status.
  */
-export async function fetchMessagePhoto(sessionToken: string, id: string): Promise<Blob> {
+export async function fetchMessagePhoto(
+  sessionToken: string,
+  id: string,
+  index = 0,
+): Promise<Blob> {
   try {
-    const response = await fetch(`/messages/${encodeURIComponent(id)}/photo`, {
+    const base = `/messages/${encodeURIComponent(id)}/photo`;
+    const response = await fetch(index <= 0 ? base : `${base}/${index}.jpg`, {
       headers: { Authorization: `Bearer ${sessionToken}` },
     });
     if (!response.ok) {
@@ -1607,18 +1642,20 @@ export async function fetchMessagePhoto(sessionToken: string, id: string): Promi
 }
 
 /**
- * Fetches a forum message photo without a session (public note page).
+ * Fetches an indexed forum message photo without a session (public note page).
  *
  * Api `GET /messages/:id/photo` is public; the same-origin proxy forwards
  * without Authorization. Callers must use a blob URL, not a bare `<img src>`.
  *
  * @param id - Forum message id.
+ * @param index - Zero-based photo index. Index zero uses the legacy route.
  * @returns The photo body as a `Blob`.
  * @throws Error with visitor-facing copy when the api is unavailable or empty.
  */
-export async function fetchPublicMessagePhoto(id: string): Promise<Blob> {
+export async function fetchPublicMessagePhoto(id: string, index = 0): Promise<Blob> {
   try {
-    const response = await fetch(`/messages/${encodeURIComponent(id)}/photo`);
+    const base = `/messages/${encodeURIComponent(id)}/photo`;
+    const response = await fetch(index <= 0 ? base : `${base}/${index}.jpg`);
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }

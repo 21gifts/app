@@ -67,6 +67,12 @@ vi.mock('@/lib/push', () => ({
   vapidPublicKeyToBytes: vi.fn(),
 }));
 
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
+}));
+
 const FX_ALL = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
@@ -82,6 +88,7 @@ const FX_ALL = {
 const VIEW_KEY = 'a'.repeat(64);
 
 beforeEach(() => {
+  hydrateReady = true;
   replace.mockReset();
   vi.mocked(fetchAccountActivity).mockReset();
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
@@ -125,6 +132,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ session: null, account: null });
 });
 
 describe('ProfileScreen', () => {
@@ -154,7 +162,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByRole('button', { name: '10,000.23' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '23.000,33' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(2);
+    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(1);
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -168,7 +176,7 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(2);
+    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(1);
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();

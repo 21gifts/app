@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchConversations: vi.fn(),
   fetchConversation: vi.fn(),
+  fetchModeratorGroup: vi.fn(),
   postConversationInvoice: vi.fn(),
   markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@/lib/app-badge', () => ({
 import {
   fetchConversation,
   fetchConversations,
+  fetchModeratorGroup,
   postConversationInvoice,
   markConversationRead,
   postConversationMessage,
@@ -40,6 +42,7 @@ import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge'
 
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
+const groupMock = vi.mocked(fetchModeratorGroup);
 const invoiceMock = vi.mocked(postConversationInvoice);
 const markReadMock = vi.mocked(markConversationRead);
 const postMock = vi.mocked(postConversationMessage);
@@ -101,6 +104,16 @@ beforeEach(() => {
   searchParams.delete('c');
   markReadMock.mockResolvedValue(undefined);
   refreshMock.mockResolvedValue(undefined);
+  groupMock.mockResolvedValue({
+    id: 'conv-mods',
+    kind: 'moderator_group',
+    name: 'Moderators',
+    lastText: '',
+    lastAt: '2026-08-28T15:00:00.000Z',
+    lastFromMe: false,
+    lastSats: 0,
+    unread: false,
+  });
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -282,6 +295,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
@@ -314,35 +330,14 @@ describe('InboxLoader', () => {
     });
   });
 
-  it('posts when the opened id is not in the conversation list', async () => {
+  it('opens a thread when the opened id is not in the conversation list', async () => {
     searchParams.set('c', 'missing');
-    let resolveList: ((value: Conversation[]) => void) | undefined;
-    listMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveList = resolve;
-        }),
-    );
+    listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue([MESSAGE]);
-    postMock.mockResolvedValue({
-      id: 'm2',
-      name: 'Ada',
-      text: 'Follow up',
-      createdAt: '2026-08-28T13:00:00.000Z',
-      fromMe: true,
-      sats: 0,
-    });
     renderWithLocale(<InboxLoader />);
-    expect(await screen.findByText('Hello')).toBeTruthy();
-    resolveList?.([THREAD]);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', 'missing', 'Follow up');
-      expect(screen.getByText('Follow up')).toBeTruthy();
+      expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
     });
   });
 
@@ -352,6 +347,7 @@ describe('InboxLoader', () => {
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'a'.repeat(501) } });
@@ -366,6 +362,7 @@ describe('InboxLoader', () => {
     threadMock.mockResolvedValue([MESSAGE]);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
@@ -391,6 +388,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockRejectedValue(new Error(message));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText(expected)).toBeTruthy();
@@ -409,6 +409,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
@@ -429,6 +432,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Could not send your message')).toBeTruthy();
@@ -444,6 +450,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
@@ -470,6 +479,9 @@ describe('InboxLoader', () => {
     );
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     searchParams.set('c', 'conv-2');
@@ -493,6 +505,9 @@ describe('InboxLoader', () => {
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
@@ -521,13 +536,16 @@ describe('InboxLoader', () => {
     postMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 
-  it('retries a failed thread fetch and goes back', async () => {
+  it('retries a failed thread fetch', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce([MESSAGE]);
@@ -535,16 +553,17 @@ describe('InboxLoader', () => {
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Hello')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'All conversations' }));
-    expect(push).toHaveBeenCalledWith('/messages');
   });
 
   it('clears stale messages immediately when opening another conversation', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock
-      .mockResolvedValueOnce([MESSAGE])
-      .mockImplementationOnce(() => new Promise(() => undefined));
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve([MESSAGE]);
+    });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     searchParams.set('c', 'conv-2');
@@ -562,9 +581,12 @@ describe('InboxLoader', () => {
   it('does not apply a posted message after switching conversations', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock
-      .mockResolvedValueOnce([MESSAGE])
-      .mockImplementationOnce(() => new Promise(() => undefined));
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve([MESSAGE]);
+    });
     let resolvePost: ((value: ConversationMessage) => void) | undefined;
     postMock.mockImplementation(
       () =>
@@ -605,9 +627,12 @@ describe('InboxLoader', () => {
   it('does not apply a post error after switching conversations', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock
-      .mockResolvedValueOnce([MESSAGE])
-      .mockImplementationOnce(() => new Promise(() => undefined));
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve([MESSAGE]);
+    });
     let rejectPost: ((reason: Error) => void) | undefined;
     postMock.mockImplementation(
       () =>
@@ -670,29 +695,6 @@ describe('InboxLoader', () => {
     expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
   });
 
-  it('keeps a thread read when a slower list fetch still reports unread', async () => {
-    searchParams.set('c', 'conv-1');
-    let resolveList!: (value: Conversation[]) => void;
-    const listP = new Promise<Conversation[]>((resolve) => {
-      resolveList = resolve;
-    });
-    listMock.mockImplementation(() => listP);
-    threadMock.mockResolvedValue([MESSAGE]);
-    const view = renderWithLocale(<InboxLoader />);
-    expect(await screen.findByText('Hello')).toBeTruthy();
-    await waitFor(() => {
-      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
-    });
-    await act(async () => {
-      resolveList([{ ...THREAD, unread: true }]);
-    });
-    searchParams.delete('c');
-    view.rerender(<InboxLoader />);
-    const row = await screen.findByRole('button', { name: /21\.gifts/ });
-    expect(row.getAttribute('aria-label')).toBeNull();
-    expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
-  });
-
   it('passes remaining inbox unread after opening one of two unread threads', async () => {
     listMock.mockResolvedValue([
       { ...THREAD, unread: true },
@@ -723,46 +725,6 @@ describe('InboxLoader', () => {
     });
   });
 
-  it('treats remaining inbox as 0 when the follow-up list fetch fails', async () => {
-    searchParams.set('c', 'conv-1');
-    let listCalls = 0;
-    listMock.mockImplementation(async () => {
-      listCalls += 1;
-      if (listCalls === 1) {
-        return new Promise(() => undefined);
-      }
-      throw new Error('list boom');
-    });
-    threadMock.mockResolvedValue([MESSAGE]);
-    renderWithLocale(<InboxLoader />);
-    expect(await screen.findByText('Hello')).toBeTruthy();
-    await waitFor(() => {
-      expect(refreshMock).toHaveBeenCalledWith('sess', 0);
-    });
-  });
-
-  it('excludes the opened thread from remaining inbox when the list is still null', async () => {
-    searchParams.set('c', 'conv-1');
-    let listCalls = 0;
-    listMock.mockImplementation(async () => {
-      listCalls += 1;
-      if (listCalls === 1) {
-        return new Promise(() => undefined);
-      }
-      return [
-        { ...THREAD, unread: true },
-        { ...THREAD, id: 'conv-other', name: 'Bob', unread: true },
-      ];
-    });
-    threadMock.mockResolvedValue([MESSAGE]);
-    renderWithLocale(<InboxLoader />);
-    expect(await screen.findByText('Hello')).toBeTruthy();
-    await waitFor(() => {
-      expect(refreshMock).toHaveBeenCalledWith('sess', 1);
-    });
-    expect(bumpMock).toHaveBeenCalled();
-  });
-
   it('still renders the thread when refreshUnreadAppBadge rejects', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
@@ -774,5 +736,109 @@ describe('InboxLoader', () => {
       expect(refreshMock).toHaveBeenCalled();
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('does not fetch a moderator_group thread from ?c=', async () => {
+    searchParams.set('c', 'group-id');
+    listMock.mockResolvedValue([
+      OLDER,
+      THREAD,
+      {
+        id: 'group-id',
+        kind: 'moderator_group',
+        name: 'Staff room',
+        lastText: 'Hello mods',
+        lastAt: '2026-08-28T15:00:00.000Z',
+        lastFromMe: false,
+        lastSats: 0,
+        unread: false,
+      },
+    ]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Bob')).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(threadMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Staff room')).toBeNull();
+    expect(screen.queryByText('Hello mods')).toBeNull();
+  });
+
+  it('opens an unlisted PM for a moderator after the staff-room id differs', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'missing');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    expect(groupMock).toHaveBeenCalledWith('sess');
+    await waitFor(() => {
+      expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
+    });
+  });
+
+  it('shows neutral loading, not the list, while the staff-room lookup runs', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'missing');
+    listMock.mockResolvedValue([OLDER]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    let resolveGroup!: (value: Conversation) => void;
+    groupMock.mockImplementation(
+      () =>
+        new Promise<Conversation>((resolve) => {
+          resolveGroup = resolve;
+        }),
+    );
+    renderWithLocale(<InboxLoader />);
+    await waitFor(() => {
+      expect(groupMock).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+    expect(threadMock).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveGroup({ ...THREAD, id: 'conv-mods', kind: 'moderator_group', name: 'Moderators' });
+    });
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(groupMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens an unlisted PM when the staff-room fetch fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'missing');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    groupMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    await waitFor(() => {
+      expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
+    });
+  });
+
+  it('does not open an unlisted staff-room id for a moderator', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    searchParams.set('c', 'conv-mods');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
+    await waitFor(() => {
+      expect(groupMock).toHaveBeenCalledWith('sess');
+    });
+    expect(threadMock).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
   });
 });

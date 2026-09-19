@@ -8,6 +8,7 @@ import {
   conversationInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
+  conversationResponseSchema,
   conversationSchema,
   conversationThreadSchema,
   notificationListSchema,
@@ -431,6 +432,27 @@ describe('conversationSchema', () => {
   });
 });
 
+describe('conversationResponseSchema', () => {
+  it('accepts a moderator_group conversation wrapper', () => {
+    const conversation = {
+      id: 'conv-mod',
+      kind: 'moderator_group',
+      name: 'Moderators',
+      lastText: 'Hello mods',
+      lastAt: '2026-08-28T15:00:00.000Z',
+      lastFromMe: false,
+      lastSats: 0,
+    };
+    expect(conversationResponseSchema.parse({ conversation })).toEqual({
+      conversation: { ...conversation, unread: false },
+    });
+    expect(
+      conversationResponseSchema.parse({ conversation: { ...conversation, unread: true } })
+        .conversation.unread,
+    ).toBe(true);
+  });
+});
+
 describe('conversationMessageSchema', () => {
   it('accepts a well-formed message', () => {
     const message = {
@@ -616,6 +638,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -631,7 +654,17 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 1,
     });
+  });
+
+  it('keeps an explicit photoCount of 2', () => {
+    expect(forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: 2 }).photoCount).toBe(2);
+  });
+
+  it('rejects photoCount 11 and -1', () => {
+    expect(() => forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: 11 })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, hasPhoto: true, photoCount: -1 })).toThrow();
   });
 
   it('accepts an empty text when hasVideo is true', () => {
@@ -640,6 +673,7 @@ describe('forumMessageSchema', () => {
       ...videoOnly,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -654,6 +688,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 
@@ -914,6 +949,7 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      photoCount: 0,
     });
   });
 

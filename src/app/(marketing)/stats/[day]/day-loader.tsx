@@ -7,11 +7,13 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { GiftDayTable } from '@/components/GiftDayTable';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
+import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { fetchGiftDay } from '@/lib/api';
 import { formatGroupedNumber } from '@/lib/number-format';
 import type { GiftDay } from '@/lib/api-types';
 import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
 import { isUtcDay } from '@/lib/utc-day';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link DayLoader}. */
 export interface DayLoaderProps {
@@ -42,6 +44,8 @@ function dayTotal(payload: GiftDay, fiat: FiatCode): string | null {
 /**
  * Client loader for `/stats/[day]`: fetches that day's gifts and a date input.
  *
+ * FiatPicker sits on the loaded table only when hydration is ready AND session is null.
+ *
  * @param props - UTC `day`.
  * @returns Loading, error, empty, or table UI.
  */
@@ -49,6 +53,9 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const { ready } = useHydrateSession();
+  const session = useAuthStore((state) => state.session);
+  const showFiatSwitcher = ready && session === null;
   const [payload, setPayload] = useState<GiftDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,7 +125,9 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
       ) : null}
       {!loading && error === null && payload !== null && payload.day === day ? (
         <div className="mt-8 space-y-4">
-          <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
+          {showFiatSwitcher ? (
+            <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
+          ) : null}
           <p className="text-paper/60">
             {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
             {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}

@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DayLoader } from '@/app/(marketing)/stats/[day]/day-loader';
 import type { GiftDay } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
@@ -12,6 +13,12 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchGiftDay: vi.fn(),
+}));
+
+let hydrateReady = true;
+
+vi.mock('@/hooks/useHydrateSession', () => ({
+  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
 }));
 
 import { fetchGiftDay } from '@/lib/api';
@@ -74,10 +81,15 @@ const ALICE: GiftDay = {
   fx: FX_ALL,
 };
 
+beforeEach(() => {
+  hydrateReady = true;
+});
+
 afterEach(() => {
   cleanup();
   fetchMock.mockReset();
   push.mockReset();
+  useAuthStore.setState({ session: null, account: null });
 });
 
 describe('DayLoader', () => {
@@ -138,6 +150,26 @@ describe('DayLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
     });
+  });
+
+  it('hides the fiat switcher when a session is set and still follows preferred CHF', async () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
+    await waitFor(() => {
+      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+    });
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
+  });
+
+  it('hides the fiat switcher before session hydration and still follows preferred CHF', async () => {
+    hydrateReady = false;
+    fetchMock.mockResolvedValue(ALICE);
+    renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
+    await waitFor(() => {
+      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+    });
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 
   it('follows preferred CHF in the day summary', async () => {

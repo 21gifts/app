@@ -6,6 +6,7 @@ import {
   dismissForumLaws,
   fetchConversation,
   fetchConversations,
+  fetchModeratorGroup,
   fetchNotifications,
   fetchAccountActivity,
   fetchGiftDay,
@@ -269,6 +270,7 @@ describe('fetchMemberPosts', () => {
     sats: 0,
     payable: true,
     hasPhoto: false,
+    photoCount: 0,
     hasVideo: false,
     videoContentType: null,
     role: 'verified' as const,
@@ -336,6 +338,7 @@ describe('fetchMemberReplies', () => {
     sats: 0,
     payable: false,
     hasPhoto: false,
+    photoCount: 0,
     hasVideo: false,
     videoContentType: null,
     role: 'verified' as const,
@@ -1154,6 +1157,7 @@ const forumMessage = {
   sats: 0,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis' as const,
@@ -1183,6 +1187,7 @@ describe('fetchMessages', () => {
         hasVideo: false,
         videoContentType: null,
         replyCount: 0,
+        photoCount: 0,
       },
     ]);
     expect(fetchMock).toHaveBeenCalledWith('/forum/messages', {
@@ -1486,7 +1491,7 @@ describe('postMessage', () => {
         Authorization: 'Bearer sess',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: '', photo }),
+      body: JSON.stringify({ text: '', photo, photos: [photo] }),
     });
   });
 
@@ -1505,7 +1510,26 @@ describe('postMessage', () => {
         Authorization: 'Bearer sess',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: 'Hello from Ada', photo }),
+      body: JSON.stringify({ text: 'Hello from Ada', photo, photos: [photo] }),
+    });
+  });
+
+  it('dual-sends photo and photos when a gallery is provided', async () => {
+    const withPhotos = { ...forumMessage, hasPhoto: true, photoCount: 2 };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: withPhotos });
+    const photos = [
+      { contentType: 'image/jpeg', data: 'abc' },
+      { contentType: 'image/jpeg', data: 'def' },
+    ];
+    await expect(postMessage('sess', { text: 'gallery', photos })).resolves.toEqual({
+      ...withPhotos,
+      hasVideo: false,
+      videoContentType: null,
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'gallery',
+      photo: photos[0],
+      photos,
     });
   });
 
@@ -1684,6 +1708,20 @@ describe('fetchMessagePhoto', () => {
     vi.stubGlobal('fetch', fetchMock);
     await expect(fetchMessagePhoto('sess', 'm1')).resolves.toBe(blob);
     expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('fetches an extra still at /photo/1.jpg', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMessagePhoto('sess', 'm1', 1)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo/1.jpg', {
       headers: { Authorization: 'Bearer sess' },
     });
   });
@@ -1946,6 +1984,18 @@ describe('fetchPublicMessagePhoto', () => {
     vi.stubGlobal('fetch', fetchMock);
     await expect(fetchPublicMessagePhoto('m1')).resolves.toBe(blob);
     expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo');
+  });
+
+  it('fetches an extra still at /photo/1.jpg', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchPublicMessagePhoto('m1', 1)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/m1/photo/1.jpg');
   });
 
   it('throws visitor copy on a non-ok response', async () => {
@@ -2242,6 +2292,27 @@ describe('fetchConversations', () => {
       },
     });
     await expect(fetchConversations('sess')).resolves.toEqual([conversation]);
+  });
+});
+
+describe('fetchModeratorGroup', () => {
+  it('returns the conversation and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { conversation },
+    });
+    await expect(fetchModeratorGroup('sess')).resolves.toEqual(conversation);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/moderator-group', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Conversations are unavailable' } });
+    await expect(fetchModeratorGroup('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
   });
 });
 

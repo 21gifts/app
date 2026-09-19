@@ -354,6 +354,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  *
  * `sats` is the validated payment total for the note (always present, including 0).
  * `payable` is true when a signed-in member can request an invoice for that note.
+ * `photoCount` defaults from `hasPhoto` when an older api omits it.
  * `hasVideo` / `videoContentType` default when an older api omits them.
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
@@ -373,6 +374,7 @@ export const forumMessageSchema = z
     sats: z.number().int().nonnegative(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
+    photoCount: z.number().int().min(0).max(10).optional(),
     hasVideo: z.boolean().optional().default(false),
     videoContentType: z
       .enum(['video/mp4', 'video/webm', 'video/quicktime'])
@@ -384,7 +386,11 @@ export const forumMessageSchema = z
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
-  );
+  )
+  .transform((message) => ({
+    ...message,
+    photoCount: message.photoCount ?? (message.hasPhoto ? 1 : 0),
+  }));
 
 /**
  * Runtime schema for the payload of `GET /messages` (top-level notes).
@@ -484,18 +490,20 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * Runtime schema for one conversation list row from `GET /conversations`.
  *
  * `kind` is `member_member` (in-app member conversation), `member_platform`
- * (contact / official 21.gifts thread), or `member_damus` (Nostr-only
- * counterpart). `lastText` may be empty when the thread was opened from a
- * forum note and has no messages yet, or when the last row is gift-only
- * (`lastSats > 0`). `lastFromMe` is true when the last message was sent by
- * the session (including staff sending as the platform account). `lastSats`
- * is the satoshis on that last message (0 for text-only). `accountId` is the
- * optional 21.gifts counterpart id on list rows.
+ * (contact / official 21.gifts thread), `member_damus` (Nostr-only
+ * counterpart), or `moderator_group` (closed staff room). `GET /conversations`
+ * never returns `moderator_group`; that kind is only on
+ * `GET /conversations/moderator-group`. `lastText` may be empty when the
+ * thread was opened from a forum note and has no messages yet, or when the
+ * last row is gift-only (`lastSats > 0`). `lastFromMe` is true when the last
+ * message was sent by the session (including staff sending as the platform
+ * account). `lastSats` is the satoshis on that last message (0 for text-only).
+ * `accountId` is the optional 21.gifts counterpart id on list rows.
  * `unread` is true when the viewer has inbound mail newer than last-read.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['member_member', 'member_platform', 'member_damus']),
+  kind: z.enum(['member_member', 'member_platform', 'member_damus', 'moderator_group']),
   name: z.string().min(1),
   lastText: z.string(),
   lastAt: z.string().datetime({ offset: true }),
@@ -515,6 +523,15 @@ export const conversationSchema = z.object({
 export const conversationListSchema = z.object({
   conversations: z.array(conversationSchema),
   unreadCount: z.number().int().nonnegative().default(0),
+});
+
+/**
+ * Runtime schema for `GET /conversations/moderator-group`.
+ *
+ * Body is `{ conversation }` using {@link conversationSchema}.
+ */
+export const conversationResponseSchema = z.object({
+  conversation: conversationSchema,
 });
 
 /**

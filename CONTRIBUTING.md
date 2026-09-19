@@ -89,13 +89,16 @@ app/
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx     # GET /messages/[id] — public forum note; per-note Open Graph
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice payable-reply pay sheet
-│   │   │       ├── photo/route.ts    # GET /messages/[id]/photo same-origin proxy
-│   │   │       └── [file]/route.ts   # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
+│   │   │       ├── photo/
+│   │   │       │   ├── route.ts         # GET /messages/[id]/photo same-origin proxy
+│   │   │       │   └── [file]/route.ts  # GET /messages/[id]/photo/{n}.jpg extra stills
+│   │   │       └── [file]/route.ts      # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
 │   │   ├── translate/route.ts    # GET availability + POST LibreTranslate-compatible proxy
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
+│   │   │   ├── moderator-group/route.ts  # GET /conversations/moderator-group
 │   │   │   └── [id]/
 │   │   │       ├── route.ts     # GET/POST /conversations/[id]
 │   │   │       ├── invoice/route.ts  # POST /conversations/:id/invoice
@@ -126,7 +129,8 @@ app/
 │   │   ├── moderate/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
-│   │   │   └── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   └── group/page.tsx        # GET /moderate/group — closed staff room
 │   │   ├── trust-chain/
 │   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
 │   │   │   └── trust-chain-loader.tsx
@@ -148,20 +152,23 @@ app/
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LanguagePreferenceSwitcher.tsx # Profile locale SegmentedControl (endonyms)
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
-│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (Profile, chart, stats, day)
+│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (profile settings; unsigned chart/stats/day)
 │   │   ├── FiatPreferenceSwitcher.tsx # Profile cookie fiat override (CHF|EUR|USD|PHP)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
+│   │   ├── LinkedText.tsx       # Autolink http(s) in note bodies; internal Link, external warning
+│   │   ├── ExternalLinkWarning.tsx # Confirm overlay before leaving 21.gifts
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator-only staff room)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
+│   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # Three-stage All/Active/Mentions control plus icon-only Bell
@@ -211,6 +218,7 @@ app/
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
+│   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
 │   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
@@ -376,9 +384,9 @@ English).
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **binding** rule. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), **Message** (member profile DM CTA), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, inbox thread back, Menu **row** icons (the Menu _trigger_ stays labeled) |
+| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), **Message** (member profile DM CTA), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **pay**, push bell, profile back, rules-setup back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
 Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer.
 

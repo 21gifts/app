@@ -252,6 +252,13 @@
 - **Used by:** `fetchMessagePhoto`, `fetchPublicMessagePhoto`.
 - **Auth:** Optional Bearer (api photo is public; forum board still sends Bearer).
 
+## Endpoint: GET /messages/[id]/photo/[file]
+
+- **Purpose:** Same-origin proxy of api extra stills at GET `/messages/:id/photo/{1-9}.jpg`. App Router `file` must match `{1-9}.{jpg|jpeg|png|webp}`; other names 404 without proxying. The proxy always requests `{n}.jpg` from the api (same bytes as `.jpeg`/`.png`/`.webp` aliases).
+- **Errors:** Route 404 for unknown `file`; upstream 404/502 when the extra still is missing or unreachable.
+- **Used by:** `fetchMessagePhoto` / `fetchPublicMessagePhoto` with index 1–9.
+- **Auth:** Optional Bearer.
+
 ## Endpoint: GET /messages/[id]/[file]
 
 - **Purpose:** App Router GET that proxies `video.mp4` / `video.webm` / `video.mov` to the 21.gifts api at runtime via `getApiUrl()` (not next.config rewrites). Other `file` values return 404 without proxying. Public; missing files 404 from the api.
@@ -289,10 +296,17 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). Each item has required `kind`: `member_member` | `member_platform` | `member_damus`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). GET `/conversations` never lists the `moderator_group` thread, even for moderators. Each item has required `kind`: `member_member` | `member_platform` | `member_damus` | `moderator_group`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`, `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer.
+
+## Endpoint: GET /conversations/moderator-group
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/moderator-group` (singleton closed staff room as `{ conversation }`).
+- **Errors:** Upstream 401/403/404, or 502 if the api is unreachable.
+- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group` and via `InboxLoader` on `/messages` (unlisted `?c=` guard for moderators).
+- **Auth:** Bearer; confirmed moderator on the api.
 
 ## Endpoint: POST /conversations
 
@@ -305,14 +319,14 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` and `sats`, and optional `accountId` (sender). Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
-- **Used by:** `fetchConversation` on `/messages?c=`.
+- **Used by:** `fetchConversation` on `/messages?c=` and on `/moderate/group`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters). Staff replies on official threads send as the platform account. The created message has required `fromMe` and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
-- **Used by:** `postConversationMessage` in the inbox composer.
+- **Used by:** `postConversationMessage` in the inbox composer and in `ModeratorGroupScreen`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]/invoice

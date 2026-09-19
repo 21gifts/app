@@ -46,6 +46,7 @@ const quotedNote: ForumMessage = {
   sats: 43,
   payable: true,
   hasPhoto: true,
+  photoCount: 1,
   hasVideo: false,
   videoContentType: null,
   role: 'founder',
@@ -60,6 +61,7 @@ const parentNote: ForumMessage = {
   sats: 21,
   payable: true,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'verified',
@@ -190,7 +192,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('renders a nested post with no caption when the quoted note has empty text', async () => {
-    const giftOnly: ForumMessage = { ...quotedNote, text: '', hasPhoto: false };
+    const giftOnly: ForumMessage = { ...quotedNote, text: '', hasPhoto: false, photoCount: 0 };
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
@@ -242,9 +244,13 @@ describe('ForumQuotedBody', () => {
         fiat="USD"
       />,
     );
-    expect(screen.getByText(`just for information: ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByText('just for information:')).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
     await waitFor(() => {
       expect(screen.getByText('just for information:')).toBeTruthy();
+      expect(screen.queryByRole('link', { name: QUOTED_URL })).toBeNull();
     });
     expect(screen.queryByText(QUOTED_URL)).toBeNull();
     expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
@@ -269,7 +275,10 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
     });
-    expect(screen.getByText(`see ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByText('see', { exact: false })).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
     expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
   });
 
@@ -287,7 +296,9 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
     });
-    expect(screen.getByText(`see ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
   });
 
   it('does not quote the note that contains the url', async () => {
@@ -304,7 +315,9 @@ describe('ForumQuotedBody', () => {
         fiat="USD"
       />,
     );
-    expect(screen.getByText(`loop ${QUOTED_URL}`)).toBeTruthy();
+    expect(screen.getByRole('link', { name: QUOTED_URL }).getAttribute('href')).toBe(
+      `/messages/${QUOTED_ID}`,
+    );
     expect(fetchMessage).not.toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
   });
@@ -324,8 +337,12 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText(`caption https://21.gifts/messages/${PARENT_ID}`)).toBeTruthy();
+      expect(screen.getByText('caption', { exact: false })).toBeTruthy();
     });
+    const nestedLink = screen.getByRole('link', {
+      name: `https://21.gifts/messages/${PARENT_ID}`,
+    });
+    expect(nestedLink.getAttribute('href')).toBe(`/messages/${PARENT_ID}`);
     expect(screen.queryByText('Good morning everyone especially to our sponsor.')).toBeNull();
   });
 
@@ -369,6 +386,7 @@ describe('ForumQuotedBody', () => {
       name: 'Ada',
       role: 'basis',
       hasPhoto: false,
+      photoCount: 0,
       text: 'plain',
     };
     renderWithLocale(

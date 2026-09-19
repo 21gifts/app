@@ -15,6 +15,7 @@ const sample: ForumMessage = {
   sats: 21,
   payable: false,
   hasPhoto: false,
+  photoCount: 0,
   hasVideo: false,
   videoContentType: null,
   role: 'basis',
@@ -177,7 +178,7 @@ describe('publicMessageOgMetadata', () => {
   });
 
   it('uses the note photo URL when hasPhoto is true', () => {
-    const note: ForumMessage = { ...sample, hasPhoto: true };
+    const note: ForumMessage = { ...sample, hasPhoto: true, photoCount: 1 };
     const meta = publicMessageOgMetadata(MESSAGE_ID, note);
     const photo = { url: `/messages/${MESSAGE_ID}/photo`, alt: 'Hello from Ada' };
     expect(meta.openGraph).toEqual({
@@ -197,7 +198,7 @@ describe('publicMessageOgMetadata', () => {
   });
 
   it('uses the author name as photo alt when hasPhoto is true and text is empty', () => {
-    const note: ForumMessage = { ...sample, text: '', hasPhoto: true };
+    const note: ForumMessage = { ...sample, text: '', hasPhoto: true, photoCount: 1 };
     const meta = publicMessageOgMetadata(MESSAGE_ID, note);
     const photo = { url: `/messages/${MESSAGE_ID}/photo`, alt: 'Ada' };
     expect(meta.openGraph).toEqual({
