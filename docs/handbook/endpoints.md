@@ -191,7 +191,7 @@
 
 ## Endpoint: GET /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first). App path is `/forum/messages` so `/messages/[id]` can serve HTML.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first), forwarding optional `mode`, `limit`, and `cursor` query parameters. App path is `/forum/messages` so `/messages/[id]` can serve HTML. The welcome client always sends `limit=20`; the JSON body may include opaque `nextCursor` (omitted at end of feed).
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
 - **Used by:** `fetchMessages`.
 - **Auth:** Bearer.

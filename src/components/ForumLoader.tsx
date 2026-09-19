@@ -51,6 +51,9 @@ const PAY_POLL_ATTEMPTS = 8;
 /** Delay between pay / payable polls (ms). */
 const PAY_POLL_MS = 2000;
 
+/** Number of notes requested for each forum feed page. */
+const FORUM_PAGE_LIMIT = 20;
+
 /** Default invoice amount when the pay sheet amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;
 
@@ -186,8 +189,7 @@ function applySessionReplyCount(
 }
 
 /**
- * Merges a fresh list into local state, keeping optimistic posts the server
- * has not echoed yet.
+ * Merges a fresh page one before previously loaded rows.
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the api.
@@ -195,7 +197,7 @@ function applySessionReplyCount(
  * @param lastServerReplyCount - Last merged server replyCount per parent id.
  * @returns Merged newest-first list.
  */
-function mergeMessages(
+function mergePageOne(
   prev: ForumMessage[] | null,
   next: ForumMessage[],
   hiddenReplyCounts: Map<string, number>,
@@ -217,8 +219,43 @@ function mergeMessages(
   }
   const mergedNext = next.map(withHiddenCount);
   const ids = new Set(next.map((message) => message.id));
-  const extra = prev.filter((message) => !ids.has(message.id));
-  return [...extra, ...mergedNext];
+  const older = prev.filter((message) => !ids.has(message.id));
+  return [...mergedNext, ...older];
+}
+
+/**
+ * Appends unseen rows from a later page without reordering loaded rows.
+ *
+ * @param prev - Current loaded pages, or `null` before page one.
+ * @param next - Later page returned by the api.
+ * @param hiddenReplyCounts - Session-deleted reply counts keyed by parent id.
+ * @param lastServerReplyCount - Last merged server replyCount per parent id.
+ * @returns The deduplicated loaded pages in their existing order.
+ */
+function appendMessages(
+  prev: ForumMessage[] | null,
+  next: ForumMessage[],
+  hiddenReplyCounts: Map<string, number>,
+  lastServerReplyCount: Map<string, number>,
+): ForumMessage[] {
+  /* v8 ignore next 3 -- load-more only appends after page one is in state */
+  if (prev === null) {
+    return next;
+  }
+  const ids = new Set(prev.map((message) => message.id));
+  const appended = next
+    .filter((message) => !ids.has(message.id))
+    .map((message) => ({
+      ...message,
+      replyCount: applySessionReplyCount(
+        message.id,
+        message.replyCount,
+        hiddenReplyCounts,
+        lastServerReplyCount,
+        0,
+      ),
+    }));
+  return [...prev, ...appended];
 }
 
 /**
@@ -247,8 +284,9 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
 /**
  * Client loader for the public forum on `/welcome`.
  *
- * Reads the session and account from the auth store, fetches messages with a
- * cancelled-flag pattern matching {@link StatsLoader}, loads photos via Bearer
+ * Reads the session and account from the auth store, fetches the first page of
+ * 20 messages for the current mode with a cancelled-flag pattern matching
+ * {@link StatsLoader}, refetches page one on mode changes, loads photos via Bearer
  * + blob URLs, owns composer draft/photo/video/post state, the Active/No gifts
  * yet/All/Most popular feed mode, and `21gifts.forum-unpaid-seen` (hydrates the
  * last-visit stamp on mount, not in the state initializer; stamps on entering
@@ -259,7 +297,9 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  * living-room laws hint on the account. After a successful top-level post or
  * reply, sets `hasPosted: true` on the session account when the session token
  * is unchanged and an account is still present (no persist-flag POST). Also
- * polls until unsigned notes become payable. Silently re-fetches when the
+ * polls until unsigned notes become payable. An IntersectionObserver sentinel
+ * prefetches the next cursor page near the end of the visible list. Silently
+ * re-fetches page one when the
  * document becomes visible again
  * (`visibilitychange` hidden→visible, `pageshow` with `persisted`) and when
  * the board pull-to-refresh fires, plus every 30 seconds while the tab is
@@ -314,6 +354,15 @@ export function ForumLoader(): ReactElement | null {
   const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<ForumFormError>(null);
   const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
+  const feedModeRef = useRef(feedMode);
+  feedModeRef.current = feedMode;
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const nextCursorRef = useRef(nextCursor);
+  nextCursorRef.current = nextCursor;
+  const [nearEndElement, setNearEndElement] = useState<HTMLLIElement | null>(null);
+  const loadingMoreRef = useRef(false);
+  const paginationGeneration = useRef(0);
+  const optimisticMessages = useRef(new Map<string, ForumMessage>());
   const [unpaidSeenAt, setUnpaidSeenAt] = useState<string | null>(null);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
@@ -361,6 +410,7 @@ export function ForumLoader(): ReactElement | null {
   loadingRef.current = loading;
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
+  const replaceInFlightRef = useRef(false);
   const postingRef = useRef(posting);
   postingRef.current = posting;
   const preparingRef = useRef(preparing);
@@ -404,13 +454,18 @@ export function ForumLoader(): ReactElement | null {
           return;
         }
         try {
-          const next = await fetchMessages(activeSession);
+          const next = await fetchMessages(activeSession, {
+            mode: feedModeRef.current,
+            limit: FORUM_PAGE_LIMIT,
+          });
           if (generation !== payablePollGeneration.current) {
             return;
           }
-          const merged = mergePayableStatus(messagesRef.current, next);
+          const merged = mergePayableStatus(messagesRef.current, next.messages);
           setMessages((prev) =>
-            mergePayableStatus(prev, next).filter((row) => !deletedIds.current.has(row.id)),
+            mergePayableStatus(prev, next.messages).filter(
+              (row) => !deletedIds.current.has(row.id),
+            ),
           );
           if (merged.length > 0 && merged.every((message) => message.payable)) {
             return;
@@ -426,33 +481,78 @@ export function ForumLoader(): ReactElement | null {
    * Shared fetch + merge + payable-poll path for mount/retry and silent refresh.
    *
    * @param activeSession - Session token for the fetch.
+   * @param activeMode - Feed mode whose first page is being requested.
    * @param shouldContinue - False when the caller was cancelled or superseded.
    * @param forceApply - True when the visitor asked to apply (pill / home); skips the hold.
+   * @param replace - True for mount, retry, and mode-switch page-one replacement.
    * @returns `ok` when the list was applied, `error` on failure, `aborted` when skipped.
    */
   const loadMessagesOnce = async (
     activeSession: string,
+    activeMode: ForumFeedMode,
     shouldContinue: () => boolean,
     forceApply = false,
+    replace = false,
   ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
-      const next = await fetchMessages(activeSession);
+      const next = await fetchMessages(activeSession, {
+        mode: activeMode,
+        limit: FORUM_PAGE_LIMIT,
+      });
       if (!shouldContinue()) {
         return 'aborted';
       }
       const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
-      const visibleNext = next.filter((message) => !deletedIds.current.has(message.id));
-      if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, visibleNext)) {
+      const visibleNext = next.messages.filter((message) => !deletedIds.current.has(message.id));
+      if (
+        !replace &&
+        !forceApply &&
+        !atTop &&
+        hasUnseenForumPosts(messagesRef.current, visibleNext)
+      ) {
         setNewPostsAvailable(true);
         return 'ok';
       }
-      setMessages((prev) =>
-        mergeMessages(prev, next, hiddenReplyCounts.current, lastServerReplyCount.current).filter(
-          (row) => !deletedIds.current.has(row.id),
-        ),
-      );
+      const serverIds = new Set(visibleNext.map((message) => message.id));
+      for (const id of serverIds) {
+        optimisticMessages.current.delete(id);
+      }
+      if (replace) {
+        const optimistic = visibleForumMessages(
+          [...optimisticMessages.current.values()],
+          activeMode,
+        ).filter((message) => !serverIds.has(message.id) && !deletedIds.current.has(message.id));
+        const pageOne = mergePageOne(
+          null,
+          visibleNext,
+          hiddenReplyCounts.current,
+          lastServerReplyCount.current,
+        );
+        setMessages([...optimistic, ...pageOne]);
+        nextCursorRef.current = next.nextCursor;
+        setNextCursor(next.nextCursor);
+      } else {
+        const optimistic = visibleForumMessages(
+          [...optimisticMessages.current.values()],
+          activeMode,
+        ).filter((message) => !serverIds.has(message.id) && !deletedIds.current.has(message.id));
+        const optimisticIds = new Set(optimistic.map((message) => message.id));
+        setMessages((prev) => {
+          const merged = mergePageOne(
+            prev,
+            visibleNext,
+            hiddenReplyCounts.current,
+            lastServerReplyCount.current,
+          ).filter((row) => !deletedIds.current.has(row.id));
+          return [...optimistic, ...merged.filter((row) => !optimisticIds.has(row.id))];
+        });
+        if (messagesRef.current === null) {
+          nextCursorRef.current = next.nextCursor;
+          setNextCursor(next.nextCursor);
+        }
+      }
       setNewPostsAvailable(false);
-      if (next.some((message) => message.payable === false)) {
+      if (visibleNext.some((message) => message.payable === false)) {
         startPayablePoll(activeSession);
       }
       return 'ok';
@@ -484,6 +584,10 @@ export function ForumLoader(): ReactElement | null {
     if (loadingRef.current) {
       return false;
     }
+    if (replaceInFlightRef.current) {
+      pendingRefreshRef.current = true;
+      return false;
+    }
     if (refreshingRef.current) {
       pendingRefreshRef.current = true;
       return false;
@@ -503,31 +607,32 @@ export function ForumLoader(): ReactElement | null {
     const forceApply = forceApplyRef.current;
     forceApplyRef.current = false;
     const activeSession = session;
+    const activeMode = feedModeRef.current;
     const generation = ++refreshGeneration.current;
     refreshingRef.current = true;
     setRefreshing(true);
     void (async () => {
       const result = await loadMessagesOnce(
         activeSession,
+        activeMode,
         () => generation === refreshGeneration.current,
         forceApply,
       );
-      if (generation !== refreshGeneration.current) {
-        return;
-      }
-      // Commit setMessages from loadMessagesOnce while refreshing is still true
-      // so ForumBoard's newestId effect skips newest-note scroll.
-      flushSync(() => {
-        if (result === 'ok') {
-          setError(false);
-        } else if (result === 'requirements') {
-          router.replace('/setup/rules');
-        } else if (result === 'error') {
-          if (messagesRef.current === null) {
-            setError(true);
+      if (generation === refreshGeneration.current) {
+        // Commit setMessages from loadMessagesOnce while refreshing is still true
+        // so ForumBoard's newestId effect skips newest-note scroll.
+        flushSync(() => {
+          if (result === 'ok') {
+            setError(false);
+          } else if (result === 'requirements') {
+            router.replace('/setup/rules');
+          } else if (result === 'error') {
+            if (messagesRef.current === null) {
+              setError(true);
+            }
           }
-        }
-      });
+        });
+      }
       refreshingRef.current = false;
       setRefreshing(false);
       if (pendingRefreshRef.current && mountedRef.current) {
@@ -544,8 +649,72 @@ export function ForumLoader(): ReactElement | null {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      payablePollGeneration.current += 1;
     };
   }, []);
+
+  const nearEndRef = useCallback((node: HTMLLIElement | null): void => {
+    setNearEndElement(node);
+  }, []);
+
+  useEffect(() => {
+    if (session === null || nearEndElement === null || nextCursor === null) {
+      return;
+    }
+    let cancelled = false;
+    const activeSession = session;
+    const activeMode = feedMode;
+    const activeCursor = nextCursor;
+    const generation = paginationGeneration.current;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
+        return;
+      }
+      loadingMoreRef.current = true;
+      void (async () => {
+        try {
+          const page = await fetchMessages(activeSession, {
+            mode: activeMode,
+            limit: FORUM_PAGE_LIMIT,
+            cursor: activeCursor,
+          });
+          if (
+            cancelled ||
+            generation !== paginationGeneration.current ||
+            feedModeRef.current !== activeMode
+          ) {
+            return;
+          }
+          const appended = page.messages.filter((message) => !deletedIds.current.has(message.id));
+          setMessages((prev) =>
+            appendMessages(
+              prev,
+              appended,
+              hiddenReplyCounts.current,
+              lastServerReplyCount.current,
+            ).filter((message) => !deletedIds.current.has(message.id)),
+          );
+          nextCursorRef.current = page.nextCursor;
+          setNextCursor(page.nextCursor);
+          if (appended.some((message) => message.payable === false)) {
+            startPayablePoll(activeSession);
+          }
+        } catch {
+          // Keep the current pages and cursor so a later intersection may retry.
+        } finally {
+          if (!cancelled && generation === paginationGeneration.current) {
+            loadingMoreRef.current = false;
+          }
+        }
+      })();
+    });
+    observer.observe(nearEndElement);
+    return () => {
+      cancelled = true;
+      loadingMoreRef.current = false;
+      observer.disconnect();
+    };
+  }, [feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
@@ -589,10 +758,19 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    paginationGeneration.current += 1;
+    loadingMoreRef.current = false;
+    nextCursorRef.current = null;
+    setNextCursor(null);
+    setNewPostsAvailable(false);
+    const initial = messagesRef.current === null;
+    if (initial) {
+      setLoading(true);
+    }
     setError(false);
+    replaceInFlightRef.current = true;
     void (async () => {
-      const result = await loadMessagesOnce(session, () => !cancelled);
+      const result = await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
       if (!cancelled && result === 'requirements') {
         router.replace('/setup/rules');
         return;
@@ -603,12 +781,21 @@ export function ForumLoader(): ReactElement | null {
       if (!cancelled) {
         setLoading(false);
       }
+      if (!cancelled) {
+        replaceInFlightRef.current = false;
+        if (pendingRefreshRef.current && mountedRef.current) {
+          refreshMessagesRef.current();
+        }
+      }
     })();
     return () => {
       cancelled = true;
+      replaceInFlightRef.current = false;
+      paginationGeneration.current += 1;
+      loadingMoreRef.current = false;
     };
     /* router.replace is used on 409; next/navigation's identity is not stable */
-  }, [attempt, session]);
+  }, [attempt, feedMode, session]);
 
   useEffect(() => {
     if (session === null) {
@@ -785,6 +972,8 @@ export function ForumLoader(): ReactElement | null {
       bumpPayPollGeneration();
       payablePollGeneration.current += 1;
       refreshGeneration.current += 1;
+      paginationGeneration.current += 1;
+      loadingMoreRef.current = false;
       pickGeneration.current += 1;
       for (const url of Object.values(photoUrlsRef.current)) {
         URL.revokeObjectURL(url);
@@ -1097,6 +1286,7 @@ export function ForumLoader(): ReactElement | null {
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
+    optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
         return [created];
@@ -1112,7 +1302,17 @@ export function ForumLoader(): ReactElement | null {
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);
       }
-      setFeedMode('all');
+      if (feedModeRef.current !== 'all') {
+        replaceInFlightRef.current = true;
+        paginationGeneration.current += 1;
+        loadingMoreRef.current = false;
+        refreshGeneration.current += 1;
+        nextCursorRef.current = null;
+        setNextCursor(null);
+        setNewPostsAvailable(false);
+        feedModeRef.current = 'all';
+        setFeedMode('all');
+      }
     }
     if (created.hasPhoto && pendingPhotos.length > 0) {
       setPhotoUrls((prev) => {
@@ -1318,6 +1518,9 @@ export function ForumLoader(): ReactElement | null {
   };
 
   const onModeChange = (next: ForumFeedMode): void => {
+    if (next === feedMode) {
+      return;
+    }
     if (
       payMessageId !== null &&
       messages !== null &&
@@ -1325,9 +1528,15 @@ export function ForumLoader(): ReactElement | null {
       (replies === null || !replies.some((message) => message.id === payMessageId))
     ) {
       clearPaySheet();
-      setFeedMode(next);
-      return;
     }
+    replaceInFlightRef.current = true;
+    paginationGeneration.current += 1;
+    loadingMoreRef.current = false;
+    refreshGeneration.current += 1;
+    nextCursorRef.current = null;
+    setNextCursor(null);
+    setNewPostsAvailable(false);
+    feedModeRef.current = next;
     setFeedMode(next);
   };
 
@@ -1395,7 +1604,7 @@ export function ForumLoader(): ReactElement | null {
       }
     }
     if (!alreadyListed) {
-      /* v8 ignore next -- mergeMessages seeds the parent id before any created reply */
+      /* v8 ignore next -- page-one merge seeds the parent id before any created reply */
       const prevLast = lastServerReplyCount.current.get(parentId) ?? 0;
       lastServerReplyCount.current.set(parentId, Math.max(prevLast, parentBaseline + 1));
       setMessages((prev) => {
@@ -1702,6 +1911,7 @@ export function ForumLoader(): ReactElement | null {
         rateDay={rateDay}
         mode={feedMode}
         onModeChange={onModeChange}
+        nearEndRef={nearEndRef}
         unpaidNewCount={
           feedMode === 'unpaid' || messages === null ? 0 : unpaidNewCount(messages, unpaidSeenAt)
         }
