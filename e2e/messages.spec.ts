@@ -980,7 +980,7 @@ test('unsigned permalink visitor reply is a span and keeps the url as text', asy
   await page.goto(`/messages/${parentId}`);
   await expect(page.getByText('Hello from Ada')).toBeVisible();
   await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Visitor', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /visitor/i })).toHaveCount(0);
   await expect(
     page.getByText('Greetings! https://example.com/hello', { exact: true }),
   ).toBeVisible();

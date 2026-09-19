@@ -142,7 +142,7 @@ test('Function: HiddenNotesScreen — a visitor row shows the badge, a member ro
   const visitorRow = page.locator('li', { hasText: 'Robin' });
   await expect(visitorRow.getByText('Visitor', { exact: true })).toBeVisible();
   const memberRow = page.locator('li', { hasText: 'Bob' });
-  await expect(memberRow.getByText('Visitor', { exact: true })).toHaveCount(0);
+  await expect(memberRow.getByText(/visitor/i)).toHaveCount(0);
 });
 
 test('Function: proxyMessagesHiddenGet — GET /forum/messages/hidden without bearer is 401', async ({
