@@ -613,22 +613,21 @@ export function ForumLoader(): ReactElement | null {
         () => generation === refreshGeneration.current,
         forceApply,
       );
-      if (generation !== refreshGeneration.current) {
-        return;
-      }
-      // Commit setMessages from loadMessagesOnce while refreshing is still true
-      // so ForumBoard's newestId effect skips newest-note scroll.
-      flushSync(() => {
-        if (result === 'ok') {
-          setError(false);
-        } else if (result === 'requirements') {
-          router.replace('/setup/rules');
-        } else if (result === 'error') {
-          if (messagesRef.current === null) {
-            setError(true);
+      if (generation === refreshGeneration.current) {
+        // Commit setMessages from loadMessagesOnce while refreshing is still true
+        // so ForumBoard's newestId effect skips newest-note scroll.
+        flushSync(() => {
+          if (result === 'ok') {
+            setError(false);
+          } else if (result === 'requirements') {
+            router.replace('/setup/rules');
+          } else if (result === 'error') {
+            if (messagesRef.current === null) {
+              setError(true);
+            }
           }
-        }
-      });
+        });
+      }
       refreshingRef.current = false;
       setRefreshing(false);
       if (pendingRefreshRef.current && mountedRef.current) {
@@ -1290,6 +1289,12 @@ export function ForumLoader(): ReactElement | null {
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);
       }
+      paginationGeneration.current += 1;
+      loadingMoreRef.current = false;
+      refreshGeneration.current += 1;
+      nextCursorRef.current = null;
+      setNextCursor(null);
+      setNewPostsAvailable(false);
       feedModeRef.current = 'all';
       setFeedMode('all');
     }
