@@ -184,7 +184,9 @@ function PublicThreadCard({
           </>
         ) : null}
       </p>
-      {typeof note.goalSats === 'number' && note.goalSats > 0 ? (
+      {note.parentId === undefined &&
+      typeof note.goalSats === 'number' &&
+      note.goalSats > 0 ? (
         <ForumGoalBar sats={note.sats} goalSats={note.goalSats} />
       ) : null}
     </Card>
