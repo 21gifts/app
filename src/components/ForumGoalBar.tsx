@@ -21,9 +21,10 @@ function forumGoalRatio(sats: number, goalSats: number): number {
  * Progress bar of collected sats versus an optional whole-sat goal.
  *
  * Renders nothing when `goalSats` is missing or `<= 0`. Fill is bitcoin-orange
- * through 100% of the track; overflow past 100% continues in green, painted
- * at most one extra track width (visual max 200%). The percent label is not
- * capped. Lengths use SVG `width` / `x` attributes, not React `style`.
+ * through 100% of the track; overflow past 100% continues in green as an
+ * in-flow sibling, at most one extra track width (visual max 200%), so the
+ * percent label stays readable. The percent label is not capped. Lengths use
+ * SVG `width` / `x` attributes, not React `style`.
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
@@ -47,13 +48,13 @@ export function ForumGoalBar({
   const percentLabel = String(percent);
   return (
     <div className="mt-2 flex items-center gap-2">
-      <div className="relative min-w-0 flex-1 overflow-visible">
+      <div className="flex min-w-0 flex-1 items-center">
         <svg
           viewBox="0 0 100 8"
           preserveAspectRatio="none"
           role="img"
           aria-label={t('forum.goalBarAria', { percent: percentLabel })}
-          className="h-2 w-full"
+          className="h-2 min-w-0 flex-1"
         >
           <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-border" />
           {fillWidth > 0 ? (
@@ -65,7 +66,7 @@ export function ForumGoalBar({
             viewBox="0 0 100 8"
             preserveAspectRatio="none"
             aria-hidden="true"
-            className="absolute left-full top-0 h-2"
+            className="h-2 shrink-0"
             width={`${overflowWidth}%`}
           >
             <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-success" />
