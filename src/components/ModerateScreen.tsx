@@ -229,7 +229,7 @@ function PayoutGoalWidget(props: {
   const { t, locale, stats, error, open, onToggle, onRetry } = props;
   const shell =
     'flex w-full flex-col gap-3 rounded-3xl border border-app-border-strong bg-app-card-muted p-4';
-  const labeled = { 'aria-label': t('moderate.goal.widgetLabel') };
+  const labeled = { role: 'group' as const, 'aria-label': t('moderate.goal.widgetLabel') };
 
   if (error && stats === null) {
     return (
