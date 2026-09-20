@@ -3230,6 +3230,16 @@ test('Function: LoginCard — choice heading is reachable', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
 });
 
+test('Function: isWrongAccountError — login heading is visible', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+});
+
+test('Function: WrongAccountError — login heading is visible', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+});
+
 test('Function: InAppBrowserView — Telegram WebView shows Open in browser', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });

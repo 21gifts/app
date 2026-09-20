@@ -32,7 +32,7 @@ const account = {
 };
 
 beforeEach(() => {
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.clearAllMocks();
 });
 
@@ -41,6 +41,7 @@ describe('useAuthStore', () => {
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
     expect(state.account).toBeNull();
+    expect(state.wrongAccount).toBe(false);
   });
 
   it('setAuth records the session and persists the token', () => {
@@ -79,5 +80,23 @@ describe('useAuthStore', () => {
     expect(clearSession).toHaveBeenCalledTimes(1);
     expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();
     expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
+  });
+
+  it('setWrongAccount and clearWrongAccount toggle the hint flag', () => {
+    useAuthStore.getState().setWrongAccount(true);
+    expect(useAuthStore.getState().wrongAccount).toBe(true);
+    useAuthStore.getState().clearWrongAccount();
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
+  it('clearAuth does not reset wrongAccount', () => {
+    useAuthStore.getState().setAuth('tok', account);
+    useAuthStore.getState().setWrongAccount(true);
+    useAuthStore.getState().clearAuth();
+
+    const state = useAuthStore.getState();
+    expect(state.session).toBeNull();
+    expect(state.account).toBeNull();
+    expect(state.wrongAccount).toBe(true);
   });
 });

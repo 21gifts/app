@@ -59,6 +59,40 @@ import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missin
 export const LIGHTNING_ADDRESS_NOT_ZAP_ERROR =
   'This Wallet of Satoshi address cannot receive these Bitcoin payments';
 
+/**
+ * Exact api 403 body when the visitor signed in with a listed duplicate account.
+ * Matched literally (English).
+ */
+export const WRONG_ACCOUNT_ERROR =
+  'You signed in with the wrong account. Please try again with the correct account.';
+
+/**
+ * Api 403 rejection when the session belongs to a listed duplicate account.
+ */
+export class WrongAccountError extends Error {
+  /**
+   * @returns A wrong-account error with the api's exact English copy.
+   */
+  public constructor() {
+    super(WRONG_ACCOUNT_ERROR);
+    this.name = 'WrongAccountError';
+  }
+}
+
+/**
+ * True for {@link WrongAccountError} or any `Error` whose message is exactly
+ * {@link WRONG_ACCOUNT_ERROR}.
+ *
+ * @param error - Unknown rejection.
+ * @returns Whether the visitor signed in with the wrong account.
+ */
+export function isWrongAccountError(error: unknown): boolean {
+  return (
+    error instanceof WrongAccountError ||
+    (error instanceof Error && error.message === WRONG_ACCOUNT_ERROR)
+  );
+}
+
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
 
@@ -127,6 +161,23 @@ async function throwIfApiMessage(response: Response): Promise<void> {
     return;
   }
   throw new Error(toUserFacingError(raw));
+}
+
+/**
+ * Throws {@link WrongAccountError} when a 403 body is the duplicate-account
+ * api string. Other 403 bodies are left for the caller fallback.
+ *
+ * @param response - The raw fetch response.
+ * @throws WrongAccountError when the status is 403 and the body matches.
+ */
+async function throwIfWrongAccount(response: Response): Promise<void> {
+  if (response.status !== 403) {
+    return;
+  }
+  const raw = await readApiError(response);
+  if (raw === WRONG_ACCOUNT_ERROR) {
+    throw new WrongAccountError();
+  }
 }
 
 /**
@@ -293,6 +344,7 @@ export async function fetchViewAboutMePhoto(viewKey: string): Promise<Blob> {
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The {@link Account}, or `null` when the token is rejected (401) —
  * the caller treats that as "not logged in" and clears local state.
+ * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function fetchMe(sessionToken: string): Promise<Account | null> {
@@ -302,6 +354,7 @@ export async function fetchMe(sessionToken: string): Promise<Account | null> {
   if (response.status === 401) {
     return null;
   }
+  await throwIfWrongAccount(response);
   if (!response.ok) {
     throw new Error(`Failed to fetch account: ${response.status}`);
   }
@@ -1850,7 +1903,8 @@ export async function startPasskeyRegistration(viewKey?: string): Promise<Passke
  * @param challengeId - Id returned by {@link startPasskeyRegistration}.
  * @param credential - Browser attestation JSON (`PublicKeyCredential.toJSON()`).
  * @returns Token plus account (`linkingKey` is null).
- * @throws Error on a non-2xx status or a body that fails validation.
+ * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function finishPasskeyRegistration(
   challengeId: string,
@@ -1861,6 +1915,7 @@ export async function finishPasskeyRegistration(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ challengeId, credential }),
   });
+  await throwIfWrongAccount(response);
   if (!response.ok) {
     throw new Error(`Failed to finish passkey registration: ${response.status}`);
   }
@@ -1887,7 +1942,8 @@ export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
  * @param challengeId - Id returned by {@link startPasskeyAuthentication}.
  * @param credential - Browser assertion JSON.
  * @returns Token plus account.
- * @throws Error on a non-2xx status or a body that fails validation.
+ * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function finishPasskeyAuthentication(
   challengeId: string,
@@ -1898,6 +1954,7 @@ export async function finishPasskeyAuthentication(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ challengeId, credential }),
   });
+  await throwIfWrongAccount(response);
   if (!response.ok) {
     throw new Error(`Failed to finish passkey authentication: ${response.status}`);
   }

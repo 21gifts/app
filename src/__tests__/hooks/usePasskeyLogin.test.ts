@@ -6,16 +6,22 @@ import {
   finishPasskeyRegistration,
   startPasskeyAuthentication,
   startPasskeyRegistration,
+  WRONG_ACCOUNT_ERROR,
+  WrongAccountError,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
-vi.mock('@/lib/api', () => ({
-  startPasskeyRegistration: vi.fn(),
-  finishPasskeyRegistration: vi.fn(),
-  startPasskeyAuthentication: vi.fn(),
-  finishPasskeyAuthentication: vi.fn(),
-}));
+vi.mock('@/lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api')>();
+  return {
+    ...actual,
+    startPasskeyRegistration: vi.fn(),
+    finishPasskeyRegistration: vi.fn(),
+    startPasskeyAuthentication: vi.fn(),
+    finishPasskeyAuthentication: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
@@ -48,7 +54,7 @@ const account = {
 const begin = { challengeId: 'ch', options: { challenge: 'aa' } };
 
 beforeEach(() => {
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
   vi.mocked(startPasskeyRegistration).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
@@ -160,6 +166,25 @@ describe('usePasskeyLogin', () => {
     expect(startPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('choice');
     expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('login WrongAccountError from finish does not start registration', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new WrongAccountError());
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe(WRONG_ACCOUNT_ERROR);
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().wrongAccount).toBe(true);
     vi.unstubAllGlobals();
   });
 

@@ -6,6 +6,7 @@ import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -20,6 +21,8 @@ import { useAuthStore } from '@/stores/auth-store';
  */
 export function LoginCard(): ReactElement {
   const account = useAuthStore((state) => state.account);
+  const wrongAccount = useAuthStore((state) => state.wrongAccount);
+  const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
   const [inApp, setInApp] = useState(false);
 
@@ -33,6 +36,8 @@ export function LoginCard(): ReactElement {
     }
   }, [account, passkey.cancel]);
 
+  const wrongAccountHint = wrongAccount || passkey.error === WRONG_ACCOUNT_ERROR;
+
   let body: ReactElement;
   if (account !== null) {
     body = <StartingView />;
@@ -40,8 +45,16 @@ export function LoginCard(): ReactElement {
     body = <InAppBrowserView />;
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
-  } else if (passkey.status === 'error') {
-    body = <ErrorView onRetry={passkey.retry} />;
+  } else if (wrongAccountHint || passkey.status === 'error') {
+    body = (
+      <ErrorView
+        wrongAccount={wrongAccountHint}
+        onRetry={() => {
+          clearWrongAccount();
+          passkey.retry();
+        }}
+      />
+    );
   } else if (passkey.status === 'choice') {
     body = (
       <ChoiceView onAuthenticate={passkey.authenticate} onRegister={() => passkey.register()} />
@@ -135,21 +148,24 @@ function StartingView(): ReactElement {
 interface ErrorViewProps {
   /** Called to restart the login flow. */
   onRetry: () => void;
+  /** When true, show the dedicated wrong-account copy instead of `login.error`. */
+  wrongAccount: boolean;
 }
 
 /**
- * The error state: a request failed or a response was malformed.
+ * The error state: a request failed, a response was malformed, or the visitor
+ * signed in with a listed duplicate account.
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
  */
-function ErrorView({ onRetry }: ErrorViewProps): ReactElement {
+function ErrorView({ onRetry, wrongAccount }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <p role="alert" className="text-center text-sm text-app-danger">
-        {t('login.error')}
+        {t(wrongAccount ? 'login.wrongAccount' : 'login.error')}
       </p>
       <Button type="button" onClick={onRetry}>
         {t('login.retry')}

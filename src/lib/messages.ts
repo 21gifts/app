@@ -177,6 +177,8 @@ const en = {
   'login.submit': 'Log in',
   'login.preparing': 'Preparing your login…',
   'login.error': 'Something went wrong. Please try again.',
+  'login.wrongAccount':
+    'You signed in with the wrong account. Please try again with the correct account.',
   'login.retry': 'Try again',
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
@@ -800,6 +802,8 @@ const de = {
   'login.submit': 'Anmelden',
   'login.preparing': 'Anmeldung wird vorbereitet…',
   'login.error': 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+  'login.wrongAccount':
+    'Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto.',
   'login.retry': 'Erneut versuchen',
   'login.choiceHeading': 'Haben Sie schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
@@ -1433,6 +1437,8 @@ const es = {
   'login.submit': 'Iniciar sesión',
   'login.preparing': 'Preparando tu inicio de sesión…',
   'login.error': 'Algo salió mal. Inténtalo de nuevo.',
+  'login.wrongAccount':
+    'Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta.',
   'login.retry': 'Intentar de nuevo',
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
@@ -2049,6 +2055,8 @@ const fil = {
   'login.submit': 'Mag-log in',
   'login.preparing': 'Inihahanda ang login mo…',
   'login.error': 'May nangyaring mali. Subukan ulit.',
+  'login.wrongAccount':
+    'Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account.',
   'login.retry': 'Subukan ulit',
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',

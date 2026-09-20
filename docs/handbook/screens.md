@@ -190,7 +190,7 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 
 ### Variant: error
 
-Login begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
+Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**. A 403 `{ error }` matching the wrong-account api string uses `login.wrongAccount` instead of `login.error`, still with **Try again**. The session is cleared so the visitor is not left signed in.
 
 ![21.gifts login error](images/login-error.png)
 
