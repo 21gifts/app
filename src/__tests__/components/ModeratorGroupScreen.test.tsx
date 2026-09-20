@@ -387,6 +387,7 @@ describe('ModeratorGroupScreen', () => {
   it('shows the photo attach control', async () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
   });
 
   it('posts a photo-only message', async () => {
@@ -408,7 +409,9 @@ describe('ModeratorGroupScreen', () => {
       fireEvent.change(input, { target: { files: [file] } });
     });
     expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByText('Add a photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });

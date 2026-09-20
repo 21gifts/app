@@ -1905,6 +1905,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(onRemovePhoto).toHaveBeenCalledWith(0);
     rerender(
@@ -1932,6 +1933,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
+    expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[1]!);
     expect(onRemovePhoto).toHaveBeenCalledWith(1);
   });
@@ -1991,6 +1993,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
     expect(document.querySelector('input[type="file"]')).toBeTruthy();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
@@ -2029,8 +2032,10 @@ describe('InboxScreen', () => {
     fireEvent.change(input, {
       target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] },
     });
+    expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
   });
 
   it('renders a thread photo from photoUrls', () => {

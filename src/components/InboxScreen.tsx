@@ -173,7 +173,7 @@ export interface InboxScreenProps {
   payWaiting?: boolean;
   /**
    * Show the sats Amount field beside the composer. Default true; the closed
-   * staff room passes false (text only, no gifts).
+   * staff room passes false (no gifts).
    */
   showAmount?: boolean;
   /** Latest gift-day totals for the preferred-fiat suffix, or `null` without a usable rate. */
@@ -314,7 +314,7 @@ function inboxAuthorProfileButton(
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 500-character composer and a sats amount field (`showAmount` false
- * hides it; the staff room is text only). Members (`showFilter`
+ * hides it; the staff room has no gifts). Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
