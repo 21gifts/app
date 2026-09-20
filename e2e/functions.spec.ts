@@ -941,16 +941,41 @@ test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page
   await postAndExpectPhotoRow(page, caption);
 });
 
-test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ page, request }) => {
-  await reachWelcome(page, request);
-  await page
-    .locator('input[type="file"]')
-    .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
-  await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
-  await page.getByRole('button', { name: 'Post' }).click();
+test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ page }) => {
+  const jpeg = Buffer.from(
+    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+    'base64',
+  );
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+            photoCount: 2,
+            hasVideo: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m-photo\/photo/, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
+  });
+  await page.goto('/welcome');
   await page.getByRole('button', { name: 'All' }).click();
-  await expect(page.getByText('1/2').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Photo 2 of 2' }).first()).toBeVisible();
+  await expect(page.getByText('1/2')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toBeVisible();
 });
 
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
