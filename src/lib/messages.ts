@@ -582,6 +582,24 @@ const en = {
   'moderate.proposals.listLabel': 'Open moderator proposals',
   'moderate.proposals.proposedBy': 'Proposed by {name}',
   'moderate.proposals.error': 'Could not load open proposals. Please try again.',
+  'moderate.goal.title': 'Goal',
+  'moderate.goal.subtitle': '100 payouts a day',
+  'moderate.goal.percent': '{percent}%',
+  'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
+  'moderate.goal.openHint': 'Tap for history and explanation',
+  'moderate.goal.closeHint': 'Tap to close',
+  'moderate.goal.explYesterday':
+    'Yesterday (UTC {date}) 21.gifts paid {count} official payouts. That is {percent} percent of the {goal} a day we are aiming for.',
+  'moderate.goal.explOfficial':
+    'Official means 21.gifts itself paid someone on the recipient list. That happens when that person writes a living-room note on that UTC day. Gifts between members do not count here.',
+  'moderate.goal.explBar':
+    'The bar uses the last completed UTC day. The current day is drawn lighter on the chart.',
+  'moderate.goal.chartTitle': 'Official payouts by UTC day',
+  'moderate.goal.chartFoot': 'Line at the top = goal {goal} · lighter bar = today, still open',
+  'moderate.goal.loading': 'Loading…',
+  'moderate.goal.error': 'Could not load payouts. Please try again.',
+  'moderate.goal.retry': 'Try again',
+  'moderate.goal.widgetLabel': 'Daily payout goal',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1193,6 +1211,25 @@ const de = {
   'moderate.proposals.proposedBy': 'Vorgeschlagen von {name}',
   'moderate.proposals.error':
     'Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'moderate.goal.title': 'Ziel',
+  'moderate.goal.subtitle': '100 Auszahlungen am Tag',
+  'moderate.goal.percent': '{percent} %',
+  'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
+  'moderate.goal.openHint': 'Tippen für Verlauf und Erklärung',
+  'moderate.goal.closeHint': 'Tippen zum Schliessen',
+  'moderate.goal.explYesterday':
+    'Gestern (UTC {date}) hat 21.gifts {count} offizielle Auszahlungen bezahlt. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
+  'moderate.goal.explOfficial':
+    'Offiziell heisst: 21.gifts selbst hat an eine Person auf der Empfängerliste ausgezahlt. Das geschieht, wenn diese Person an dem UTC-Tag eine Wohnzimmer-Notiz schreibt. Geschenke zwischen Mitgliedern zählen hier nicht.',
+  'moderate.goal.explBar':
+    'Der Balken nimmt den letzten abgeschlossenen UTC-Tag. Der laufende Tag ist im Diagramm heller gezeichnet.',
+  'moderate.goal.chartTitle': 'Offizielle Auszahlungen je UTC-Tag',
+  'moderate.goal.chartFoot': 'Linie oben = Ziel {goal} · heller Balken = heute, noch offen',
+  'moderate.goal.loading': 'Wird geladen…',
+  'moderate.goal.error':
+    'Auszahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'moderate.goal.retry': 'Erneut versuchen',
+  'moderate.goal.widgetLabel': 'Tägliches Auszahlungsziel',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1787,6 +1824,24 @@ const es = {
   'moderate.proposals.listLabel': 'Propuestas abiertas de moderación',
   'moderate.proposals.proposedBy': 'Propuesto por {name}',
   'moderate.proposals.error': 'No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo.',
+  'moderate.goal.title': 'Meta',
+  'moderate.goal.subtitle': '100 pagos al día',
+  'moderate.goal.percent': '{percent} %',
+  'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
+  'moderate.goal.openHint': 'Toca para ver el historial y la explicación',
+  'moderate.goal.closeHint': 'Toca para cerrar',
+  'moderate.goal.explYesterday':
+    'Ayer (UTC {date}) 21.gifts pagó {count} pagos oficiales. Eso es el {percent} por ciento de los {goal} al día que buscamos.',
+  'moderate.goal.explOfficial':
+    'Oficial significa que 21.gifts mismo pagó a alguien de la lista de destinatarios. Eso ocurre cuando esa persona escribe una nota en la sala de estar ese día UTC. Los regalos entre miembros no cuentan aquí.',
+  'moderate.goal.explBar':
+    'La barra usa el último día UTC cerrado. El día en curso se dibuja más claro en el gráfico.',
+  'moderate.goal.chartTitle': 'Pagos oficiales por día UTC',
+  'moderate.goal.chartFoot': 'Línea de arriba = meta {goal} · barra más clara = hoy, aún abierto',
+  'moderate.goal.loading': 'Cargando…',
+  'moderate.goal.error': 'No se pudieron cargar los pagos. Inténtalo de nuevo.',
+  'moderate.goal.retry': 'Intentar de nuevo',
+  'moderate.goal.widgetLabel': 'Meta diaria de pagos',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2389,6 +2444,25 @@ const fil = {
   'moderate.proposals.listLabel': 'Mga bukas na mungkahi para maging moderator',
   'moderate.proposals.proposedBy': 'Iminungkahi ni {name}',
   'moderate.proposals.error': 'Hindi ma-load ang mga bukas na mungkahi. Subukan ulit.',
+  'moderate.goal.title': 'Layunin',
+  'moderate.goal.subtitle': '100 na bayad kada araw',
+  'moderate.goal.percent': '{percent}%',
+  'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
+  'moderate.goal.openHint': 'I-tap para sa kasaysayan at paliwanag',
+  'moderate.goal.closeHint': 'I-tap para isara',
+  'moderate.goal.explYesterday':
+    'Kahapon (UTC {date}) nagbayad ang 21.gifts ng {count} opisyal na bayad. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
+  'moderate.goal.explOfficial':
+    'Opisyal ang ibig sabihin: ang 21.gifts mismo ang nagbayad sa isang tao sa listahan ng tatanggap. Mangyayari iyon kapag nagsulat ang taong iyon ng living-room note sa UTC-araw na iyon. Hindi dito binibilang ang mga gift sa pagitan ng mga miyembro.',
+  'moderate.goal.explBar':
+    'Ginagamit ng bar ang huling kumpletong UTC-araw. Mas maliwanag ang kasalukuyang araw sa tsart.',
+  'moderate.goal.chartTitle': 'Mga opisyal na bayad bawat UTC-araw',
+  'moderate.goal.chartFoot':
+    'Linya sa itaas = layunin {goal} · mas maliwanag na bar = ngayon, bukas pa',
+  'moderate.goal.loading': 'Naglo-load…',
+  'moderate.goal.error': 'Hindi ma-load ang mga bayad. Subukan ulit.',
+  'moderate.goal.retry': 'Subukan ulit',
+  'moderate.goal.widgetLabel': 'Araw-araw na layunin sa bayad',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

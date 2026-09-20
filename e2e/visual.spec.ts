@@ -6420,6 +6420,62 @@ test.describe('notifications screens', () => {
 
 test.describe('moderate screens', () => {
   // Goldens are regenerated on the build host.
+  const PAYOUT_GOAL_STATS = (() => {
+    const counts: Record<string, number> = {
+      '2026-08-24': 36,
+      '2026-09-19': 12,
+      '2026-09-20': 9,
+    };
+    const start = Date.parse('2026-08-22T00:00:00.000Z');
+    const spendOverTime = Array.from({ length: 30 }, (_, i) => {
+      const day = new Date(start + i * 86_400_000).toISOString().slice(0, 10);
+      const giftCount = counts[day] ?? 0;
+      return {
+        day,
+        giftCount,
+        sats: 0,
+        cumulativeSats: 0,
+        btc: '0.00000000',
+        cumulativeBtc: '0.00000000',
+        usd: '0.00',
+        cumulativeUsd: '0.00',
+        chf: '0.00',
+        eur: '0.00',
+        php: '0.00',
+        cumulativeChf: '0.00',
+        cumulativeEur: '0.00',
+        cumulativePhp: '0.00',
+      };
+    });
+    return {
+      totalSats: 0,
+      totalBtc: '0.00000000',
+      totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
+      giftCount: 57,
+      recipientCount: 0,
+      firstPaidAt: '2026-08-22T00:00:00.000Z',
+      lastPaidAt: '2026-09-20T00:00:00.000Z',
+      spendOverTime,
+      byRecipient: [],
+      byMonth: [],
+      fx: FX_USD,
+    };
+  })();
+
+  async function stubPayoutGoal(page: Page): Promise<void> {
+    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(PAYOUT_GOAL_STATS),
+      });
+    });
+  }
+
   async function seedAda(
     page: Page,
     role: 'basis' | 'moderator' | 'founder' = 'basis',
@@ -6462,12 +6518,14 @@ test.describe('moderate screens', () => {
 
   test('screen /moderate', async ({ page }) => {
     await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
     await expect(page.getByText('Tools for moderators.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
+    await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
 
@@ -6476,6 +6534,40 @@ test.describe('moderate screens', () => {
     await page.goto('/moderate');
     await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
+  });
+
+  test('moderate goal-open', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await page.goto('/moderate');
+    await expect(page.getByText('12%')).toBeVisible();
+    await page.getByRole('button', { name: /Goal/ }).click();
+    await expect(page.getByText('Official payouts by UTC day')).toBeVisible();
+    await shotScreen(page, 'state-moderate-goal-open');
+  });
+
+  test('moderate loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/gifts/stats', () => new Promise(() => undefined));
+    await page.goto('/moderate');
+    await expect(
+      page.getByRole('group', { name: 'Daily payout goal' }).getByText('Loading…'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-loading');
+  });
+
+  test('moderate error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-error');
   });
 });
 

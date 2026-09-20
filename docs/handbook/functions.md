@@ -1176,7 +1176,7 @@
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
 - **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
-- **Used by:** `StatsLoader`, `ForumLoader`, `PublicMessageLoader`, `MemberProfileScreen`.
+- **Used by:** `StatsLoader`, `ForumLoader`, `PublicMessageLoader`, `MemberProfileScreen`, `ModerateScreen`.
 
 ## Function: fetchAccountActivity
 
@@ -2365,9 +2365,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. A **Moderators** `ButtonLink` → `/moderate/group` is shown when `roleAtLeast(role, 'moderator')`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (moderator) see hub lead copy, the hide-tool lead, the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. A **Moderators** `ButtonLink` → `/moderate/group` is shown when `roleAtLeast(role, 'moderator')`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
+- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch.
 - **Used by:** `ModeratePage`.
 
 ## Function: HiddenNotesPage

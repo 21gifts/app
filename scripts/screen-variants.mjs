@@ -1213,6 +1213,27 @@ export const SCREEN_VARIANTS = [
     needle: 'This page is for moderators.',
   },
   {
+    route: '/moderate',
+    id: 'goal-open',
+    image: 'moderate-goal-open.png',
+    visual: 'state-moderate-goal-open',
+    needle: 'Official payouts by UTC day',
+  },
+  {
+    route: '/moderate',
+    id: 'loading',
+    image: 'moderate-loading.png',
+    visual: 'state-moderate-loading',
+    needle: 'Daily payout goal',
+  },
+  {
+    route: '/moderate',
+    id: 'error',
+    image: 'moderate-error.png',
+    visual: 'state-moderate-error',
+    needle: 'Could not load payouts. Please try again.',
+  },
+  {
     route: '/moderate/hidden',
     id: 'default',
     image: 'moderate-hidden.png',

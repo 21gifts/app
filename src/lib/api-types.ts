@@ -170,9 +170,11 @@ export const giftStatsFxSchema = z.object({
 
 /**
  * One UTC day in the cumulative spend series from `GET /gifts/stats`.
+ * `giftCount` is omitted by older apis; consumers treat a missing count as 0.
  */
 export const spendDaySchema = z.object({
   day: z.string(),
+  giftCount: z.number().int().nonnegative().optional(),
   sats: z.number().int().nonnegative(),
   cumulativeSats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,

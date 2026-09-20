@@ -914,6 +914,7 @@ describe('fetchGiftStats', () => {
     spendOverTime: [
       {
         day: '2026-06-01',
+        giftCount: 1,
         sats: 10,
         cumulativeSats: 10,
         btc: '0.00000010',
