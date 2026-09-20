@@ -3264,10 +3264,11 @@ describe('ForumBoard', () => {
       />,
     );
     fireEvent.click(screen.getAllByAltText('Photo from Ada')[0] as HTMLElement);
-    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Photo 2 of 2' }).parentElement as HTMLElement,
-    );
+    const nextDot = screen.getByRole('button', { name: 'Photo 2 of 2' });
+    fireEvent.click(nextDot);
+    fireEvent.click(nextDot.parentElement as HTMLElement);
+    fireEvent.keyDown(nextDot, { key: ' ' });
+    fireEvent.keyDown(nextDot, { key: 'Enter' });
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 

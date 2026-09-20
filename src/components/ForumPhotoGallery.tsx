@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  useCallback,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactElement,
-  type UIEvent,
-} from 'react';
+import { useCallback, useRef, useState, type ReactElement, type UIEvent } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 
 /** One loaded still in {@link ForumPhotoGallery}. */
@@ -26,8 +19,8 @@ export type ForumPhotoGalleryProps = {
   alt: string;
   /** Extra classes on the outer wrap (ForumBoard passes `mt-2`). */
   className?: string;
-  /** Stop card expand/collapse when tapping the gallery. */
-  onPhotoClick?: (event: MouseEvent<HTMLElement>) => void;
+  /** Stop card expand/collapse when tapping or keying the gallery. */
+  onPhotoClick?: (event: { stopPropagation(): void }) => void;
 };
 
 /**
@@ -97,7 +90,7 @@ export function ForumPhotoGallery({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
-    <div className={`flex flex-col${extra}`} onClick={onPhotoClick}>
+    <div className={`flex flex-col${extra}`} onClick={onPhotoClick} onKeyDown={onPhotoClick}>
       <div className="relative">
         <div
           ref={scrollerRef}

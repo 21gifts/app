@@ -866,7 +866,7 @@ export function ForumBoard({
           const expanded = expandedId === message.id;
           const copied = copiedId === message.id;
 
-          const stopCardToggle = (event: MouseEvent): void => {
+          const stopCardToggle = (event: { stopPropagation(): void }): void => {
             event.stopPropagation();
           };
           const copyLabelKey =
