@@ -6680,42 +6680,54 @@ test('Function: vapidPublicKeyToBytes — profile shows the this-device control'
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: registerPushWorker — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: enablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: disablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: isStandaloneDisplay — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: isIosSafari — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) => {

@@ -4339,7 +4339,10 @@ test.describe('profile activity chart variants', () => {
     await seedAdaProfile(page);
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await page.goto('/profile');
-    await page.getByRole('button', { name: 'On' }).click();
+    await page
+      .getByRole('group', { name: 'This device' })
+      .getByRole('button', { name: 'On' })
+      .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-profile-push-enable-error');
   });
