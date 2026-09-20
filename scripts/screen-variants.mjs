@@ -129,6 +129,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'wrong-account',
+    image: 'login-wrong-account.png',
+    visual: 'state-login-wrong-account',
+    needle: 'You signed in with the wrong account. Please try again with the correct account.',
+  },
+  {
+    route: '/login',
     id: 'choice',
     image: 'login-choice.png',
     visual: 'state-login-choice',

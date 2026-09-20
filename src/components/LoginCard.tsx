@@ -158,7 +158,7 @@ interface ErrorViewProps {
 
 /**
  * The error state: a request failed, a response was malformed, or the visitor
- * signed in with a listed duplicate account.
+ * signed in with an account whose session is refused.
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.

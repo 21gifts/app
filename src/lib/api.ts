@@ -60,14 +60,14 @@ export const LIGHTNING_ADDRESS_NOT_ZAP_ERROR =
   'This Wallet of Satoshi address cannot receive these Bitcoin payments';
 
 /**
- * Exact api 403 body when the visitor signed in with a listed duplicate account.
+ * Exact api 403 body when the visitor signed in with a refused account.
  * Matched literally (English).
  */
 export const WRONG_ACCOUNT_ERROR =
   'You signed in with the wrong account. Please try again with the correct account.';
 
 /**
- * Api 403 rejection when the session belongs to a listed duplicate account.
+ * Api 403 rejection when the session belongs to an account with sessionRefused.
  */
 export class WrongAccountError extends Error {
   /**

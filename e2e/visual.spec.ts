@@ -725,6 +725,37 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-error');
   });
 
+  test('login wrong-account', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-wrong-account');
+    });
+    await page.route('**/me', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname !== '/me' && !url.pathname.endsWith('/me')) {
+        await route.continue();
+        return;
+      }
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'You signed in with the wrong account. Please try again with the correct account.',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-wrong-account');
+  });
+
   test('login choice', async ({ page }) => {
     await page.addInitScript(() => {
       const pk = globalThis.PublicKeyCredential as unknown as {

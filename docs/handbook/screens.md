@@ -172,7 +172,7 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Fill `AppShell` with `HomeWordmark` top-left (`/` when unsigned, `/welcome` when a session is hydrated); light language switcher top-right (not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **What the user sees:** Fill `AppShell` with `HomeWordmark` top-left (`/` when unsigned, `/welcome` when a session is hydrated); light language switcher top-right (not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
@@ -190,9 +190,15 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 
 ### Variant: error
 
-Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**. A 403 `{ error }` matching the wrong-account api string uses `login.wrongAccount` instead of `login.error`, still with **Try again**. The session is cleared so the visitor is not left signed in.
+Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**.
 
 ![21.gifts login error](images/login-error.png)
+
+### Variant: wrong-account
+
+GET `/me` 403 with the api wrong-account copy, or passkey finish with that same string. Alert **You signed in with the wrong account. Please try again with the correct account.** (`login.wrongAccount`) and **Try again**. The leftover session is cleared so the visitor is not left signed in. **Try again** starts authenticate-first login.
+
+![21.gifts login wrong-account](images/login-wrong-account.png)
 
 ### Variant: choice
 

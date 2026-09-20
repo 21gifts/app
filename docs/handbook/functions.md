@@ -250,7 +250,7 @@
 
 - **Purpose:** Login UI: one **Log in** button (authenticate-first), an account-choice card after browser `NotAllowedError` (**Log in with existing account** / **Open a new account**), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`. A new account is created only after **Open a new account** and a completed create ceremony. Error uses `login.error` plus **Try again**, except a wrong-account 403 (`wrongAccount` or passkey error equal to that api string) which uses `login.wrongAccount` with the same layout. **Try again** on that hint calls `clearWrongAccount` then `passkey.login` (never `retry`, so it cannot create another account). Generic errors still call `passkey.retry`.
 - **Inputs:** Uses `usePasskeyLogin`, `useAuthStore`, `isInAppBrowser`, and `InAppBrowserView`.
-- **Returns / side effects:** React element covering idle/choice/starting/error/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
+- **Returns / side effects:** React element covering idle/choice/starting/error/wrong-account/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
 - **Used by:** Screen `/login`.
 
 ## Function: LoginPage
@@ -988,7 +988,7 @@
 
 ## Function: WrongAccountError
 
-- **Purpose:** Typed error for api 403 when the visitor signed in with a listed duplicate account.
+- **Purpose:** Typed error for api 403 when the visitor signed in with an account whose session is refused.
 - **Inputs:** None; message is the exact api English string.
 - **Returns / side effects:** Error instance named `WrongAccountError`. Callers clear the session and show `login.wrongAccount`.
 - **Used by:** `fetchMe`, `finishPasskeyAuthentication`, `finishPasskeyRegistration`, `useHydrateSession`, `usePasskeyLogin`.
