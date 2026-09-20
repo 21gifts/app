@@ -734,7 +734,7 @@
 
 - **Purpose:** Maps a loaded public note (or `null`) to Next.js `Metadata`. Found notes use the author name as title and never the marketing layout description, even when `text` is empty. Photo notes set `og:image` to `/messages/{id}/photo`; others keep `/og.png`. A note with any `via` value (written without a 21.gifts account) gets fully generic metadata instead: title `External author on 21.gifts`, description `A reply from someone outside 21.gifts who sent bitcoin to a post.`, and always the default `/og.png` image — nothing from the note's `name`, `text` or photo reaches a link preview. Both strings are plain English constants, not from the catalog.
 - **Inputs:** Route `id` and `note` (`ForumMessage | null`).
-- **Returns / side effects:** `{}` when `note` is `null`. For a note with a `via` value the generic visitor title, description and default image described above. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/messages/{id}`, `siteName` 21.gifts), and Twitter `summary_large_image`.
+- **Returns / side effects:** `{}` when `note` is `null`. For a note with a `via` value the generic External title, description and default image described above. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/messages/{id}`, `siteName` 21.gifts), and Twitter `summary_large_image`.
 - **Used by:** `generateMetadata` on `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -746,7 +746,7 @@
 
 ## Function: PublicMessageThread
 
-- **Purpose:** Signed-in permalink thread: one root on `ForumBoard` with `composerHidden` and `truncate={false}` so the original body stays full, auto-expand via `fetchReplies`, and the same React, copy, reply, overlay, photo, and poll behavior as `/welcome`. React (`forum.react`, lucide Reply) on the root note; Gift only on a payable nested reply. Staff `onDeleted` on the root calls `onRootDeleted` (loader → missing); a nested reply is dropped from the list. Passes `permalinkTargetId` so only a matching nested reply is ringed.
+- **Purpose:** Signed-in permalink thread: one root on `ForumBoard` with `composerHidden` and `truncate={false}` so the original body stays full, auto-expand via `fetchReplies`, and the same React, copy, reply, overlay, photo, and poll behavior as `/welcome`. React (`forum.react`, lucide Reply) on the root note; on every nested reply Gift when payable, copy (`forum.copyReplyLink`, the reply's own `/messages/<uuid>`) always, and trash for staff. Staff `onDeleted` on the root calls `onRootDeleted` (loader → missing); a nested reply is dropped from the list. Passes `permalinkTargetId` so only a matching nested reply is ringed.
 - **Inputs:** `{ root, highlightId, onRootDeleted }` as in `src/components/PublicMessageThread.tsx`: `root` is `ForumMessage`, `highlightId` is `string | null` (route id when it is a reply UUID), `onRootDeleted` is `() => void`. Session and account from the auth store.
 - **Returns / side effects:** React tree. Auto-expands the root so **Write a reaction** is available. Passes `permalinkTargetId={highlightId}`. No top-level composer or feed filters.
 - **Used by:** `PublicMessageLoader`.

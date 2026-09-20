@@ -3337,6 +3337,133 @@ describe('ForumBoard', () => {
     ).toBeNull();
   });
 
+  it('falls back to execCommand for a reply permalink when the clipboard write rejects', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[
+            {
+              id: 'r-fallback',
+              name: 'Bob',
+              text: 'A reply',
+              createdAt: '2026-08-28T12:30:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              photoCount: 0,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ]}
+          {...modeProps('all')}
+        />,
+      );
+      const replyCard = document.querySelector('[data-reply-id="r-fallback"]') as HTMLElement;
+      fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+      await waitFor(() => {
+        expect(execCommand).toHaveBeenCalledWith('copy');
+        expect(
+          within(replyCard)
+            .getByRole('button', { name: 'Copy link to this reply' })
+            .getAttribute('data-copied'),
+        ).toBe('true');
+      });
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/r-fallback`);
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+      Object.defineProperty(document, 'execCommand', {
+        configurable: true,
+        value: originalExecCommand,
+      });
+    }
+  });
+
+  it('leaves a reply copy control unmarked when both copy paths fail', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => false);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[
+            {
+              id: 'r-copy-fails',
+              name: 'Bob',
+              text: 'A reply',
+              createdAt: '2026-08-28T12:30:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              photoCount: 0,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ]}
+          {...modeProps('all')}
+        />,
+      );
+      const replyCard = document.querySelector('[data-reply-id="r-copy-fails"]') as HTMLElement;
+      fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+      await waitFor(() => {
+        expect(errorSpy).toHaveBeenCalledWith('Copy link failed');
+      });
+      expect(execCommand).toHaveBeenCalledWith('copy');
+      expect(
+        within(replyCard)
+          .getByRole('button', { name: 'Copy link to this reply' })
+          .getAttribute('data-copied'),
+      ).toBeNull();
+    } finally {
+      errorSpy.mockRestore();
+      Object.defineProperty(document, 'execCommand', {
+        configurable: true,
+        value: originalExecCommand,
+      });
+    }
+  });
+
   it('shows the reply copy control alone with the mt-2 row class when not payable or deletable', () => {
     renderWithLocale(
       <ForumBoard
