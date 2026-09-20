@@ -5113,6 +5113,63 @@ describe('ForumBoard', () => {
     expect(screen.getByText('₿0')).toBeTruthy();
   });
 
+  it('omits Gift on a hidden payable reply card', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            parentId: 'p1',
+            payable: true,
+            deletedAt: '2026-08-29T15:00:00.000Z',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
+  it('omits Gift and Delete on a hidden nested reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            parentId: 'm1',
+            payable: true,
+            deletedAt: '2026-08-29T15:00:00.000Z',
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+  });
+
   it('focuses the reply composer when React is clicked on an expanded note', () => {
     renderWithLocale(
       <ForumBoard
