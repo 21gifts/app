@@ -6671,7 +6671,8 @@ test('Function: PushToggle — profile shows the enable notifications control', 
   await expect(
     page.getByRole('paragraph').getByText('Notifications', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('Off', { exact: true })).toBeVisible();
+  await expect(page.getByText('Off', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('On', { exact: true })).toHaveCount(0);
 });
 
 test('Function: vapidPublicKeyToBytes — profile shows the enable notifications control', async ({

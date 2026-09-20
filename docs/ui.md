@@ -708,6 +708,7 @@ export function SegmentedControl<T extends string>(props: {
   tone: 'gift' | 'neutral';
   shell?: 'app' | 'dark';
   className?: string;
+  trailing?: ReactNode;
 }): ReactElement;
 ```
 
@@ -717,9 +718,9 @@ Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-
 | --------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs` | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                                                                                                                          |
 | `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                                                                                                            |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications All / Active / Mentions (default track, no extra `className`) |
+| `neutral`       | Outer `flex w-full items-center rounded-full border border-app-border bg-app-card-muted p-1` (`overflow-hidden` when `trailing` is set). Inner `role="group"` is `flex min-w-0 flex-1`. Gift ignores `trailing`. | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications All / Active / Mentions plus optional trailing icon-only Web Push bell |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses the default one-row flex track (All / Active / Mentions, no extra `className`).
+Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses the default one-row flex track (All / Active / Mentions, no extra `className`); when Push APIs are ready, an icon-only bell is the `trailing` slot after a 1px separator. `trailing` is omitted (not `undefined`) when Push APIs are missing. Gift ignores `trailing`.
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
