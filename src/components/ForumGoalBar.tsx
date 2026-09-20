@@ -10,12 +10,10 @@ import { forumGoalPercent } from '@/lib/forum-goal';
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal.
- * @returns Uncapped ratio (`sats / goalSats`), or 0.
+ * @returns Uncapped ratio (`sats / goalSats`). Caller already rejected
+ *   non-positive goals.
  */
 function forumGoalRatio(sats: number, goalSats: number): number {
-  if (!Number.isFinite(goalSats) || goalSats <= 0) {
-    return 0;
-  }
   const collected = Number.isFinite(sats) && sats > 0 ? sats : 0;
   return collected / goalSats;
 }

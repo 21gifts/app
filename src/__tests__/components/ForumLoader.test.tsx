@@ -1160,6 +1160,47 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('posts a video with a valid Ask amount as goalSats', async () => {
+    fetchMock.mockResolvedValue([]);
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:video' },
+    });
+    postVideoMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'vid-goal',
+      text: 'clip',
+      hasPhoto: true,
+      photoCount: 1,
+      hasVideo: true,
+      videoContentType: 'video/mp4',
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(prepareVideoMock).toHaveBeenCalledWith(file);
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postVideoMock).toHaveBeenCalledWith('sess', {
+        text: 'clip',
+        video: file,
+        poster,
+        goalSats: 21000,
+      });
+      expect(postMock).not.toHaveBeenCalled();
+    });
+  });
+
   it('ignores a stale video prepare after a newer pick starts', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
