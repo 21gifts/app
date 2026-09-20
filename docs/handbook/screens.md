@@ -2,6 +2,8 @@
 
 Every variant below is captured in all four Linux Chromium combos (desktop/mobile × light/dark). Markdown images are the desktop-light shot. The other combo PNGs are visual-test baselines only.
 
+**Role hierarchy.** Roles are ordered founder > moderator > verified > basis. A higher role can always do and see everything a lower role can; there are no exceptions. Wherever this handbook names a role for a screen, tool or control it means that role **or higher**. The app checks this with `roleAtLeast` (`src/lib/roles.ts`); an equality test on the viewer's role is a defect.
+
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
@@ -988,7 +990,7 @@ Notifications section with `role="alert"` after clicking Enable notifications wh
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text (`inbox.threadUnread`); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Open a thread, send a reply, return via **All conversations** (chrome link), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
-- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (moderators, unlisted `?c=` only), `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
+- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (founder or moderator, unlisted `?c=` only), `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -1101,11 +1103,6 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ![21.gifts notifications error](images/notifications-error.png)
 
-> **Role hierarchy.** Roles are ordered founder > moderator > verified > basis. A higher role can always
-> do and see everything a lower role can; there are no exceptions. Wherever this handbook names a role
-> for a screen, tool or control it means that role **or higher**. The app checks this with `roleAtLeast`
-> (`src/lib/roles.ts`); an equality test on the viewer's role is a defect.
-
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
@@ -1125,12 +1122,6 @@ Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders a
 Signed-in basis account. Copy **This page is for founders and moderators.** No tools list.
 
 ![21.gifts moderation forbidden](images/moderate-forbidden.png)
-
-### Variant: moderator
-
-Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for founders and moderators.**
-
-![21.gifts moderation moderator](images/moderate-moderator.png)
 
 ## Screen: /moderate/hidden
 

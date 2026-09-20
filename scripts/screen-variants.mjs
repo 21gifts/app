@@ -1185,13 +1185,6 @@ export const SCREEN_VARIANTS = [
     needle: 'This page is for founders and moderators.',
   },
   {
-    route: '/moderate',
-    id: 'moderator',
-    image: 'moderate-moderator.png',
-    visual: 'state-moderate-moderator',
-    needle: 'Moderators',
-  },
-  {
     route: '/moderate/hidden',
     id: 'default',
     image: 'moderate-hidden.png',

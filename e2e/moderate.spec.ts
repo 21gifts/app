@@ -156,7 +156,7 @@ async function stubModeratorGroup(page: import('@playwright/test').Page): Promis
   });
 }
 
-test('confirmed moderators see the Moderators hub link', async ({ page }) => {
+test('moderators see the Moderators hub link', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await page.goto('/moderate');
   await expect(page.getByRole('link', { name: 'Moderators' })).toHaveAttribute(
@@ -165,9 +165,7 @@ test('confirmed moderators see the Moderators hub link', async ({ page }) => {
   );
 });
 
-test('Function: ModeratorGroupPage — confirmed moderators see the group thread', async ({
-  page,
-}) => {
+test('Function: ModeratorGroupPage — moderators see the group thread', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroup(page);
   await page.goto('/moderate/group');
@@ -203,7 +201,7 @@ test('Function: roleRank — a verified member ranks below the staff room', asyn
   await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
 });
 
-test('Function: fetchModeratorGroup — confirmed moderators see Hello mods', async ({ page }) => {
+test('Function: fetchModeratorGroup — moderators see Hello mods', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroup(page);
   await page.goto('/moderate/group');

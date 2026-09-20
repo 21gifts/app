@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ROLE_ORDER } from '@/lib/roles';
 
 /** Notification stages stored on the signed-in account. */
 export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
@@ -15,7 +16,7 @@ export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
 export const accountSchema = z.object({
   id: z.string(),
   linkingKey: z.string().nullable(),
-  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
+  role: z.enum(ROLE_ORDER),
   name: z.string().min(1).nullable(),
   location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
@@ -381,7 +382,7 @@ export const forumMessageSchema = z
       .nullable()
       .optional()
       .default(null),
-    role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
+    role: z.enum(ROLE_ORDER).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
   })
   .refine(
@@ -425,7 +426,7 @@ export const hiddenMessageSchema = z.object({
   deletedBy: z.object({
     id: z.string().min(1).nullable(),
     name: z.string().min(1).nullable(),
-    role: z.enum(['basis', 'verified', 'moderator', 'founder']).nullable(),
+    role: z.enum(ROLE_ORDER).nullable(),
   }),
 });
 
@@ -697,7 +698,7 @@ export const memberProfileSchema = z.object({
   id: z.string(),
   name: z.string().min(1).nullable(),
   location: z.string().min(1).nullable(),
-  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
+  role: z.enum(ROLE_ORDER),
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),
   profileMessage: forumMessageSchema.nullable(),
@@ -762,7 +763,7 @@ export type TrustChainEdge = z.infer<typeof trustChainEdgeSchema>;
 export const trustActionResultSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  role: z.enum(['basis', 'verified', 'moderator', 'founder']),
+  role: z.enum(ROLE_ORDER),
 });
 
 /**

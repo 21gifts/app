@@ -6075,13 +6075,6 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
   });
-
-  test('moderate moderator', async ({ page }) => {
-    await seedAda(page, 'moderator');
-    await page.goto('/moderate');
-    await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
-    await shotScreen(page, 'state-moderate-moderator');
-  });
 });
 
 test.describe('moderate hidden screens', () => {
