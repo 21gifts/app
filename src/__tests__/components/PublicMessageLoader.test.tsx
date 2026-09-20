@@ -369,6 +369,55 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByText('This profile could not be found.')).toBeNull();
   });
 
+  it('merges a hidden permalink reply when staff replies omit it', async () => {
+    const deletedAt = '2026-08-29T15:00:00.000Z';
+    const parentId = '22222222-2222-4222-8222-222222222222';
+    const replyId = MESSAGE_ID;
+    const parent: ForumMessage = { ...sample, id: parentId, text: 'Parent note' };
+    const hiddenReply: ForumMessage = {
+      ...sample,
+      id: replyId,
+      parentId,
+      text: 'Hidden reply',
+      deletedAt,
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    useAuthStore.setState({
+      session: 'staff-session',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessageBearer.mockImplementation(async (_session, id) => {
+      if (id === replyId) {
+        return hiddenReply;
+      }
+      if (id === parentId) {
+        return parent;
+      }
+      return null;
+    });
+    fetchRepliesBearer.mockResolvedValue([]);
+    renderWithLocale(<PublicMessageLoader id={replyId} />);
+    expect(await screen.findByRole('status')).toBeTruthy();
+    expect(screen.getByText('Hidden reply')).toBeTruthy();
+    expect(screen.getByText('Parent note')).toBeTruthy();
+  });
+
   it('shows Loading… while the message is fetching', () => {
     fetchMessage.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);

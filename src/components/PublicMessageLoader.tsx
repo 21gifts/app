@@ -283,9 +283,17 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         if (cancelled) {
           return;
         }
+        const highlight =
+          next.parentId !== undefined && next.parentId !== '' ? id : null;
+        const replies =
+          highlight !== null &&
+          next.deletedAt !== undefined &&
+          !nextReplies.some((row) => row.id === next.id)
+            ? [...nextReplies, next]
+            : nextReplies;
         setRoot(rootNote);
-        setReplies(nextReplies);
-        setHighlightId(next.parentId !== undefined && next.parentId !== '' ? id : null);
+        setReplies(replies);
+        setHighlightId(highlight);
         setStatus('ready');
       } catch {
         if (!cancelled) {
@@ -297,7 +305,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [id, attempt, ready, session, account]);
+  }, [id, attempt, ready, session, account?.role]);
 
   useEffect(() => {
     if (!MESSAGE_ID_RE.test(id)) {
