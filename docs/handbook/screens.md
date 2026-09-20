@@ -1248,19 +1248,19 @@ Signed-in non-staff visitor (verified or basis). Heading **Moderators**. Copy **
 
 ### Variant: empty
 
-Confirmed moderator. Group exists, zero messages. Composer **Your message** visible.
+Founder or moderator. Group exists, zero messages. Composer **Your message** visible.
 
 ![21.gifts moderator group empty](images/moderate-group-empty.png)
 
 ### Variant: loading
 
-Confirmed moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
+Founder or moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
 
 ![21.gifts moderator group loading](images/moderate-group-loading.png)
 
 ### Variant: error
 
-Confirmed moderator fetch failed. Button **Try again**.
+Founder or moderator fetch failed. Button **Try again**.
 
 ![21.gifts moderator group error](images/moderate-group-error.png)
 
