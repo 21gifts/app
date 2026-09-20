@@ -306,6 +306,8 @@ describe('PublicMessageLoader', () => {
     }
     expect(screen.getByText('1/2')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Photo 2 of 2' })).toBeTruthy();
+    expect(screen.queryByText('Photo 1 of 2')).toBeNull();
+    expect(screen.queryByText('Photo 2 of 2')).toBeNull();
   });
 
   it('keeps the original still index when an earlier extra still fails to load', async () => {

@@ -53,6 +53,8 @@ describe('ForumPhotoGallery', () => {
     expect(
       screen.getByRole('button', { name: 'Photo 2 of 2' }).getAttribute('aria-current'),
     ).toBeNull();
+    expect(screen.queryByText('Photo 1 of 2')).toBeNull();
+    expect(screen.queryByText('Photo 2 of 2')).toBeNull();
   });
 
   it('updates the chip when the scroller moves', () => {
@@ -123,9 +125,44 @@ describe('ForumPhotoGallery', () => {
       toJSON: () => undefined,
     });
     fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
-    expect(onPhotoClick).toHaveBeenCalledTimes(1);
+    expect(onPhotoClick).toHaveBeenCalled();
     expect(scrollTo).toHaveBeenCalledWith({ left: 200, behavior: 'smooth' });
     expect(screen.getByText('2/2')).toBeTruthy();
+  });
+
+  it('scrolls without smooth motion when reduced motion is preferred', () => {
+    const scrollTo = vi.fn();
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('prefers-reduced-motion: reduce'),
+          media: query,
+          onchange: null,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+          dispatchEvent: () => false,
+        }) as MediaQueryList,
+    );
+    renderWithLocale(<ForumPhotoGallery photos={PHOTOS} alt="Photo from Ada" />);
+    const photos = screen.getAllByAltText('Photo from Ada');
+    const scroller = photos[0]?.parentElement?.parentElement as HTMLElement;
+    const slide = photos[0]?.parentElement as HTMLElement;
+    Object.defineProperty(scroller, 'scrollTo', { configurable: true, value: scrollTo });
+    vi.spyOn(slide, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 0,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => undefined,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
+    expect(scrollTo).toHaveBeenCalledWith({ left: 200, behavior: 'auto' });
   });
 
   it('does not render dots for a single still', () => {

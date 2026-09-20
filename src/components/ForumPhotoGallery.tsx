@@ -31,6 +31,18 @@ export type ForumPhotoGalleryProps = {
 };
 
 /**
+ * Instant scroll when the visitor prefers reduced motion.
+ *
+ * @returns CSSOM `ScrollBehavior` for `Element.scrollTo`.
+ */
+function galleryScrollBehavior(): ScrollBehavior {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return 'auto';
+  }
+  return 'smooth';
+}
+
+/**
  * Horizontal stride of one snap slide including the scroller gap.
  *
  * @param scroller - Overflow row.
@@ -85,12 +97,11 @@ export function ForumPhotoGallery({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
-    <div className={`flex flex-col${extra}`}>
+    <div className={`flex flex-col${extra}`} onClick={onPhotoClick}>
       <div className="relative">
         <div
           ref={scrollerRef}
           className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain"
-          onClick={onPhotoClick}
           onScroll={(event: UIEvent<HTMLDivElement>) => {
             updateActive(event.currentTarget);
           }}
@@ -102,7 +113,6 @@ export function ForumPhotoGallery({
                 src={url}
                 alt={alt}
                 className="max-h-80 w-full rounded-xl object-contain"
-                onClick={onPhotoClick}
                 data-photo-index={index}
               />
             </div>
@@ -124,15 +134,19 @@ export function ForumPhotoGallery({
               aria-label={t('forum.galleryDot', { current: i + 1, total: photos.length })}
               aria-current={i === active ? true : undefined}
               className="relative isolate inline-flex h-6 w-6 items-center justify-center before:absolute before:content-[''] before:block before:-inset-2.5 before:min-h-11 before:min-w-11 before:rounded-full"
-              onClick={(event) => {
-                onPhotoClick?.(event);
+              onClick={() => {
                 const scroller = scrollerRef.current;
                 /* v8 ignore next 3 -- dots only render beside the scroller */
                 if (scroller === null) {
                   return;
                 }
                 const stride = slideStride(scroller);
-                scroller.scrollTo({ left: stride * i, behavior: 'smooth' });
+                const left = stride * i;
+                if (typeof scroller.scrollTo === 'function') {
+                  scroller.scrollTo({ left, behavior: galleryScrollBehavior() });
+                } else {
+                  scroller.scrollLeft = left;
+                }
                 setActive(i);
               }}
             >

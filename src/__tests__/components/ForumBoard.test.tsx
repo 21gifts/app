@@ -1167,6 +1167,8 @@ describe('ForumBoard', () => {
     }
     expect(screen.getByText('1/2')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Photo 2 of 2' })).toBeTruthy();
+    expect(screen.queryByText('Photo 1 of 2')).toBeNull();
+    expect(screen.queryByText('Photo 2 of 2')).toBeNull();
   });
 
   it('renders omitted photoCount as a photo or as text depending on hasPhoto', () => {
@@ -3230,6 +3232,42 @@ describe('ForumBoard', () => {
     fireEvent.click(document.querySelector('video') as HTMLVideoElement);
     expect(onToggleExpand).not.toHaveBeenCalled();
     fireEvent.click(screen.getByAltText('Photo from Bob'));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not expand when clicking gallery chrome on a multi-still note', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-gallery',
+            name: 'Ada',
+            text: '',
+            hasPhoto: true,
+            photoCount: 2,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-gallery:0': 'blob:g0', 'm-gallery:1': 'blob:g1' }}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getAllByAltText('Photo from Ada')[0] as HTMLElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Photo 2 of 2' }).parentElement as HTMLElement,
+    );
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
