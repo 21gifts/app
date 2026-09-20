@@ -3370,12 +3370,12 @@ describe('ForumBoard', () => {
   });
 
   it('falls back to execCommand for a reply permalink when the clipboard write rejects', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText },
     });
-    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const originalExecCommand = document.execCommand;
     const execCommand = vi.fn(() => true);
     Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
@@ -3440,12 +3440,12 @@ describe('ForumBoard', () => {
   });
 
   it('leaves a reply copy control unmarked when both copy paths fail', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText },
     });
-    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const originalExecCommand = document.execCommand;
     const execCommand = vi.fn(() => false);
     Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
