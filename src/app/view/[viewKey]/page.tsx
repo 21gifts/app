@@ -23,7 +23,7 @@ export default async function ViewProfilePage({
 }): Promise<ReactElement> {
   const { viewKey } = await params;
   return (
-    <AppShell mode="flow" topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
+    <AppShell mode="fill" topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
       <ViewProfileLoader viewKey={viewKey} />
     </AppShell>
   );

@@ -164,7 +164,7 @@ export function ModerateScreen(): ReactElement | null {
 
   if (!staff) {
     return (
-      <Card maxWidth="xl">
+      <Card maxWidth="xl" surface={false}>
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('moderate.heading')}
         </h1>
@@ -174,7 +174,7 @@ export function ModerateScreen(): ReactElement | null {
   }
 
   return (
-    <Card maxWidth="xl">
+    <Card maxWidth="xl" surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('moderate.heading')}
       </h1>

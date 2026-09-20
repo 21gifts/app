@@ -89,7 +89,7 @@ export function RequirementsOverlay({
       aria-label={t(titleKey)}
       className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
     >
-      <Card maxWidth="sm" chrome={false}>
+      <Card maxWidth="sm">
         <div className="flex w-full items-start justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight text-app-fg">{t(titleKey)}</h2>
           <IconButton

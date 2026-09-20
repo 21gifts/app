@@ -5,17 +5,18 @@ import { AppShell } from '@/components/AppShell';
 export interface PageChromeProps {
   /** Page body. */
   children: ReactNode;
-  /** Optional absolute top-left chrome (wordmark). */
+  /** Optional frame-header top-left chrome (wordmark). */
   topLeft?: ReactNode;
-  /** Optional absolute top-right chrome (menu, language, theme). */
+  /** Optional frame-header top-right chrome (menu, language, theme). */
   topRight?: ReactNode;
   /** Extra classes on the outer `<main>` — never viewport height classes. */
   className?: string;
 }
 
 /**
- * Flow-mode app page wrapper around {@link AppShell} with optional chrome slots.
- * Prefer {@link AppShell} directly on app routes.
+ * App page wrapper around {@link AppShell} with optional chrome slots.
+ * Passes `mode="flow"`; AppShell draws the same page frame for `fill` and
+ * `flow`. Prefer {@link AppShell} directly on app routes.
  *
  * @param props - See {@link PageChromeProps}.
  * @returns The page chrome element.

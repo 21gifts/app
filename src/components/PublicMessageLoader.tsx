@@ -103,7 +103,6 @@ function PublicThreadCard({
   const card = (
     <Card
       maxWidth="md"
-      chrome={false}
       className={`items-stretch text-left${highlight ? ' ring-1 ring-app-fg' : ''}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">

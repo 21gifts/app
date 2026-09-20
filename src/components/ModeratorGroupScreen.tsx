@@ -96,7 +96,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
 
   if (!staff) {
     return (
-      <Card maxWidth="xl">
+      <Card maxWidth="xl" surface={false}>
         {heading}
         <p className="text-center text-sm text-app-muted">{t('moderate.groupForbidden')}</p>
       </Card>
@@ -105,7 +105,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
 
   if (error && group === null) {
     return (
-      <Card maxWidth="xl">
+      <Card maxWidth="xl" surface={false}>
         {heading}
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('moderate.groupError')}
@@ -125,7 +125,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
 
   if (group === null || messages === null) {
     return (
-      <Card maxWidth="xl">
+      <Card maxWidth="xl" surface={false}>
         {heading}
         <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>
       </Card>

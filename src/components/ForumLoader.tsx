@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
+import { useAppShellScroller } from '@/components/AppShell';
 import {
   ForumBoard,
   type ForumFormError,
@@ -73,6 +74,30 @@ function revokeObjectUrlIfPresent(url: string | undefined): void {
   if (url !== undefined && url !== '') {
     URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * Scroll offset of the AppShell scroller, or the document when none is mounted.
+ *
+ * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
+ * @returns Current scrollTop in pixels.
+ */
+function shellScrollTop(scroller: HTMLElement | null): number {
+  if (scroller !== null) return scroller.scrollTop;
+  return window.scrollY || document.documentElement.scrollTop || 0;
+}
+
+/**
+ * Scrolls the AppShell scroller to the top, or the document when none is mounted.
+ *
+ * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
+ */
+function shellScrollToTop(scroller: HTMLElement | null): void {
+  if (scroller !== null) {
+    scroller.scrollTo(0, 0);
+    return;
+  }
+  window.scrollTo(0, 0);
 }
 
 /**
@@ -255,6 +280,7 @@ export function ForumLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
+  const scroller = useAppShellScroller();
   const setAccount = useAuthStore((state) => state.setAccount);
   /** Session-local hidden message ids (posts and replies) so stale GETs cannot resurrect either. */
   const deletedIds = useRef(new Set<string>());
@@ -417,7 +443,7 @@ export function ForumLoader(): ReactElement | null {
       if (!shouldContinue()) {
         return 'aborted';
       }
-      const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
+      const atTop = shellScrollTop(scroller) < 8;
       const visibleNext = next.filter((message) => !deletedIds.current.has(message.id));
       if (!forceApply && !atTop && hasUnseenForumPosts(messagesRef.current, visibleNext)) {
         setNewPostsAvailable(true);
@@ -529,13 +555,13 @@ export function ForumLoader(): ReactElement | null {
   }, []);
 
   const showNewPosts = useCallback((): void => {
-    window.scrollTo(0, 0);
+    shellScrollToTop(scroller);
     forceApplyRef.current = true;
     const started = refreshMessagesRef.current();
     if (!started && !pendingRefreshRef.current) {
       forceApplyRef.current = false;
     }
-  }, []);
+  }, [scroller]);
 
   useEffect(() => {
     if (pendingRefreshRef.current) {
@@ -656,17 +682,24 @@ export function ForumLoader(): ReactElement | null {
       return;
     }
     const onScroll = (): void => {
-      const atTop = (window.scrollY || document.documentElement.scrollTop || 0) < 8;
+      const atTop = shellScrollTop(scroller) < 8;
       if (atTop) {
         showNewPosts();
       }
     };
+    if (scroller !== null) {
+      scroller.addEventListener('scroll', onScroll);
+      onScroll();
+      return () => {
+        scroller.removeEventListener('scroll', onScroll);
+      };
+    }
     window.addEventListener('scroll', onScroll);
     onScroll();
     return () => {
       window.removeEventListener('scroll', onScroll);
     };
-  }, [newPostsAvailable, session, showNewPosts]);
+  }, [newPostsAvailable, session, showNewPosts, scroller]);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {

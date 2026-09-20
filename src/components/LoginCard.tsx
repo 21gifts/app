@@ -67,7 +67,7 @@ export function LoginCard(): ReactElement {
     body = <StartView onLogin={passkey.login} />;
   }
 
-  return <Card>{body}</Card>;
+  return <Card surface={false}>{body}</Card>;
 }
 
 /** Props for {@link StartView}. */

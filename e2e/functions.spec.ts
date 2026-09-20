@@ -5576,6 +5576,11 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
+test('Function: useAppShellScroller — login frame has an inner scroller', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.locator('main section .overflow-y-auto')).toHaveCount(1);
+});
+
 test('Function: AppShell — signed-in notifications Menu sits inside the card', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/forum\/notifications$/, async (route) => {

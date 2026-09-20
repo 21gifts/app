@@ -117,7 +117,7 @@ export function ViewProfileClaim({
 
   if (inApp || passkey.status === 'unsupported') {
     return (
-      <Card chrome={false}>
+      <Card>
         <InAppBrowserView />
       </Card>
     );
