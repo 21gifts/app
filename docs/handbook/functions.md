@@ -12,7 +12,7 @@
 - **Purpose:** CORS preflight for `/.well-known/nostr.json` and `/.well-known/lnurlp/[username]`.
 - **Inputs:** none.
 - **Returns / side effects:** 204 with `Access-Control-Allow-Origin: *`.
-- **Used by:** Damus NIP-05 fetch.
+- **Used by:** Damus NIP-05 fetch and LUD-16 payRequest preflight.
 
 ## Function: isForumVideoFile
 
@@ -1682,7 +1682,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/me/username` with the unique LUD-16 local-part.
 - **Inputs:** `sessionToken`, `username`.
 - **Returns / side effects:** Updated `Account`. Throws `'username-taken'` on 409, `'username-invalid'` on 400, `'username-request'` on other failures.
-- **Used by:** `UsernameSetup`.
+- **Used by:** `UsernameForm`.
 
 ## Function: giftsLightningAddress
 
