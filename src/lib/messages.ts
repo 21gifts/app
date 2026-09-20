@@ -176,6 +176,9 @@ const en = {
   'login.preparing': 'Preparing your login…',
   'login.error': 'Something went wrong. Please try again.',
   'login.retry': 'Try again',
+  'login.choiceHeading': 'Do you already have an account?',
+  'login.existing': 'Log in with existing account',
+  'login.create': 'Open a new account',
   'login.inAppHeading': 'Open this page in your browser',
   'login.inAppBody':
     'Passkeys do not work inside Telegram or other in-app browsers. Open this page in Safari or Chrome to log in.',
@@ -763,6 +766,9 @@ const de = {
   'login.preparing': 'Anmeldung wird vorbereitet…',
   'login.error': 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
   'login.retry': 'Erneut versuchen',
+  'login.choiceHeading': 'Haben Sie schon ein Konto?',
+  'login.existing': 'Mit bestehendem Konto einloggen',
+  'login.create': 'Ein neues Konto eröffnen',
   'login.inAppHeading': 'Diese Seite im Browser öffnen',
   'login.inAppBody':
     'Passkeys funktionieren in Telegram und anderen In-App-Browsern nicht. Öffnen Sie diese Seite in Safari oder Chrome, um sich anzumelden.',
@@ -1359,6 +1365,9 @@ const es = {
   'login.preparing': 'Preparando tu inicio de sesión…',
   'login.error': 'Algo salió mal. Inténtalo de nuevo.',
   'login.retry': 'Intentar de nuevo',
+  'login.choiceHeading': '¿Ya tienes una cuenta?',
+  'login.existing': 'Iniciar sesión con una cuenta existente',
+  'login.create': 'Abrir una cuenta nueva',
   'login.inAppHeading': 'Abre esta página en tu navegador',
   'login.inAppBody':
     'Las passkeys no funcionan dentro de Telegram ni de otros navegadores integrados. Abre esta página en Safari o Chrome para iniciar sesión.',
@@ -1939,6 +1948,9 @@ const fil = {
   'login.preparing': 'Inihahanda ang login mo…',
   'login.error': 'May nangyaring mali. Subukan ulit.',
   'login.retry': 'Subukan ulit',
+  'login.choiceHeading': 'May account ka na ba?',
+  'login.existing': 'Mag-log in gamit ang existing account',
+  'login.create': 'Magbukas ng bagong account',
   'login.inAppHeading': 'Buksan ang page na ito sa browser',
   'login.inAppBody':
     'Hindi gumagana ang mga passkey sa Telegram o sa ibang in-app browser. Buksan ang page na ito sa Safari o Chrome para mag-log in.',
