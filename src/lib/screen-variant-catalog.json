@@ -582,6 +582,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-goal-110",
+    "label": "/members/[accountId] posts-open-goal-110",
+    "visual": "state-members-posts-open-goal-110",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-photos",
     "label": "/members/[accountId] posts-open-photos",
     "visual": "state-members-posts-open-photos",

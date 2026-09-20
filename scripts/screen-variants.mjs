@@ -752,6 +752,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'posts-open-goal-110',
+    image: 'members-posts-open-goal-110.png',
+    visual: 'state-members-posts-open-goal-110',
+    needle: 'state /members posts-open-goal-110',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'posts-open-photos',
     image: 'members-posts-open-photos.png',
     visual: 'state-members-posts-open-photos',
