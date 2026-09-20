@@ -1382,6 +1382,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'photos',
+    image: 'messages-id-photos.png',
+    visual: 'state-messages-id-photos',
+    needle: 'state-messages-id-photos',
+  },
+  {
+    route: '/messages/[id]',
     id: 'signed-in',
     image: 'messages-id-signed-in.png',
     visual: 'state-messages-id-signed-in',
