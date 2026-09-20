@@ -584,7 +584,7 @@ export const conversationMessageSchema = z.object({
   /** Optional 21.gifts sender id on thread messages. */
   accountId: z.string().min(1).optional(),
   /** Optional id of the thread message this row is a paid gift for (moderator-group stipend rows). */
-  giftFor: z.string().optional(),
+  giftFor: z.string().min(1).optional(),
 });
 
 /**

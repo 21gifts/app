@@ -304,7 +304,7 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
         messages: [
           {
             id: 'm1',
-            name: 'Ada',
+            name: 'Rose Otero',
             text: 'Great work today, moderators!',
             createdAt: '2026-08-28T15:00:00.000Z',
             fromMe: false,
@@ -312,8 +312,8 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
           },
           {
             id: 'g1',
-            name: 'Rose Otero',
-            text: '',
+            name: '21.gifts',
+            text: '21gifts moderator · Rose Otero',
             createdAt: '2026-08-28T15:01:00.000Z',
             fromMe: false,
             sats: 6158,
@@ -507,7 +507,7 @@ test('Function: groupThreadGifts — the moderator group nests a stipend under i
   await stubModeratorGroupStipend(page);
   await page.goto('/moderate/group');
   await expect(page.getByText('Great work today, moderators!')).toBeVisible();
-  const note = page.getByRole('note', { name: /Rose Otero/ });
+  const note = page.getByRole('note', { name: /21\.gifts/ });
   await expect(note).toBeVisible();
   await expect(note).toHaveAttribute('data-gift-for', 'm1');
   await expect(note).toHaveAttribute('data-message-id', 'g1');
@@ -519,7 +519,7 @@ test('Function: preferredFiatSuffix — the nested stipend line shows a fiat suf
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroupStipend(page);
   await page.goto('/moderate/group');
-  const note = page.getByRole('note', { name: /Rose Otero/ });
+  const note = page.getByRole('note', { name: /21\.gifts/ });
   await expect(note).toContainText('$5.00');
 });
 
@@ -531,5 +531,5 @@ test('Function: useLatestRateDay — the moderator group thread loads a live fia
   const statsRequest = page.waitForRequest((req) => /\/gifts\/stats/.test(req.url()));
   await page.goto('/moderate/group');
   await statsRequest;
-  await expect(page.getByRole('note', { name: /Rose Otero/ })).toContainText('$5.00');
+  await expect(page.getByRole('note', { name: /21\.gifts/ })).toContainText('$5.00');
 });

@@ -1316,9 +1316,9 @@ Moderator. Loaded group thread with message **Hello mods**. Composer visible. No
 
 ### Variant: stipend
 
-Moderator. Loaded group thread with message **Great work today, moderators!** and a nested
-paid-stipend line for **Rose Otero** attached under that message (not a separate bubble),
-showing the ₿ amount plus preferred-fiat suffix and the payment time. Composer visible.
+Moderator. Loaded group thread with **Rose Otero**'s message **Great work today, moderators!**
+and the paid stipend as a footer line inside that bubble (not a separate bubble): **21.gifts**,
+the ₿ amount plus preferred-fiat suffix, and the payment time. Composer visible.
 
 ![21.gifts moderator group stipend](images/moderate-group-stipend.png)
 

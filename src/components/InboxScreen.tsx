@@ -140,8 +140,9 @@ export interface ThreadGiftGroup {
  * A message with `giftFor` equal to the id of a DIFFERENT message that is
  * present in `messages` is removed from the top level and appended to that
  * parent's `gifts`, in the original list order. A `giftFor` that matches no
- * message in the list, or matches the message's own id, is not a gift link:
- * that message stays an ordinary top-level entry. Messages without `giftFor`
+ * message in the list, matches the message's own id, or names a message that
+ * is itself a gift, is not a gift link: that message stays an ordinary
+ * top-level entry, so no message is ever dropped. Messages without `giftFor`
  * are unchanged. The relative order of top-level messages is preserved.
  *
  * @param messages - Oldest-first thread messages.
@@ -149,13 +150,22 @@ export interface ThreadGiftGroup {
  */
 export function groupThreadGifts(messages: ConversationMessage[]): ThreadGiftGroup[] {
   const ids = new Set(messages.map((message) => message.id));
-  const isGift = (message: ConversationMessage): boolean =>
+  const pointsAtAnother = (message: ConversationMessage): boolean =>
     message.giftFor !== undefined && message.giftFor !== message.id && ids.has(message.giftFor);
+  const candidateIds = new Set(messages.filter(pointsAtAnother).map((message) => message.id));
+  // A gift hangs only on a top-level message, so a gift of a gift stays a bubble of its own.
+  const parentOf = (message: ConversationMessage): string | undefined => {
+    const target = message.giftFor;
+    if (target === undefined || !pointsAtAnother(message) || candidateIds.has(target)) {
+      return undefined;
+    }
+    return target;
+  };
 
   const groups: ThreadGiftGroup[] = [];
   const byId = new Map<string, ThreadGiftGroup>();
   for (const message of messages) {
-    if (isGift(message)) {
+    if (parentOf(message) !== undefined) {
       continue;
     }
     const group: ThreadGiftGroup = { message, gifts: [] };
@@ -163,13 +173,12 @@ export function groupThreadGifts(messages: ConversationMessage[]): ThreadGiftGro
     byId.set(message.id, group);
   }
   for (const message of messages) {
-    if (!isGift(message)) {
+    const parentId = parentOf(message);
+    if (parentId === undefined) {
       continue;
     }
-    const parent = byId.get(message.giftFor as string);
-    if (parent !== undefined) {
-      parent.gifts.push(message);
-    }
+    /* v8 ignore next -- a parent id is always a top-level message, so its group exists */
+    byId.get(parentId)?.gifts.push(message);
   }
   return groups;
 }

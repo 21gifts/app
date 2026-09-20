@@ -7138,7 +7138,7 @@ test.describe('moderate group screens', () => {
     await mockThread(page, [
       {
         id: 'm1',
-        name: 'Ada',
+        name: 'Rose Otero',
         text: 'Great work today, moderators!',
         createdAt: '2026-08-28T15:00:00.000Z',
         fromMe: false,
@@ -7146,8 +7146,8 @@ test.describe('moderate group screens', () => {
       },
       {
         id: 'g1',
-        name: 'Rose Otero',
-        text: '',
+        name: '21.gifts',
+        text: '21gifts moderator · Rose Otero',
         createdAt: '2026-08-28T15:01:00.000Z',
         fromMe: false,
         sats: 6158,
@@ -7199,7 +7199,7 @@ test.describe('moderate group screens', () => {
     });
     await page.goto('/moderate/group');
     await expect(page.getByText('Great work today, moderators!')).toBeVisible();
-    await expect(page.getByRole('note', { name: /Rose Otero/ })).toContainText('$5.00');
+    await expect(page.getByRole('note', { name: /21\.gifts/ })).toContainText('$5.00');
     await shotScreen(page, 'state-moderate-group-stipend');
   });
 

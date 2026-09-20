@@ -147,7 +147,20 @@ describe('groupThreadGifts', () => {
     const gift = { ...MESSAGE, id: 'g1', giftFor: 'm1', sats: 21, text: '' };
     const nested = { ...MESSAGE, id: 'g2', giftFor: 'g1', sats: 7, text: '' };
     const groups: ThreadGiftGroup[] = groupThreadGifts([parent, gift, nested]);
-    expect(groups).toEqual([{ message: parent, gifts: [gift] }]);
+    expect(groups).toEqual([
+      { message: parent, gifts: [gift] },
+      { message: nested, gifts: [] },
+    ]);
+  });
+
+  it('never drops a message, whatever the gift links look like', () => {
+    const a = { ...MESSAGE, id: 'a', giftFor: 'b' };
+    const b = { ...MESSAGE, id: 'b', giftFor: 'a' };
+    const c = { ...MESSAGE, id: 'c', giftFor: 'c' };
+    const d = { ...MESSAGE, id: 'd', giftFor: 'missing' };
+    const groups = groupThreadGifts([a, b, c, d]);
+    const seen = groups.flatMap((group) => [group.message.id, ...group.gifts.map((g) => g.id)]);
+    expect([...seen].sort()).toEqual(['a', 'b', 'c', 'd']);
   });
 });
 
