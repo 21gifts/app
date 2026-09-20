@@ -52,9 +52,10 @@ function slideStride(scroller: HTMLElement): number {
 }
 
 /**
- * Horizontal snap gallery for a note with more than one still: each slide is
- * 88% wide so the next photo peeks, a `current/total` chip sits on the first
- * visible still, and dots jump to a still.
+ * Horizontal snap gallery for a note with more than one still: earlier slides
+ * are 88% wide so the next photo peeks; the last slide is full width so it can
+ * sit flush at snap-start. A `current/total` chip sits on the visible still,
+ * and dots jump to a still.
  *
  * @param props - See {@link ForumPhotoGalleryProps}.
  * @returns The gallery, or `null` when `photos` is empty.
