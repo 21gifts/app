@@ -1313,6 +1313,37 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
   });
 
+  it('styles a nested gift inside an own bubble with the bubble foreground', () => {
+    const parent = { ...MESSAGE, id: 'm1', fromMe: true };
+    const gift = { ...MESSAGE, id: 'g1', name: '21.gifts', text: '', sats: 21, giftFor: 'm1' };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={RATE_DAY}
+      />,
+    );
+    const note = screen.getByRole('note');
+    expect(note.closest('li')?.getAttribute('data-from-me')).toBe('true');
+    expect(note.className).toContain('border-app-btn-fg/20');
+    expect(note.querySelector('span')?.className).toContain('text-app-btn-fg/80');
+    expect(note.querySelector('time')?.className).toContain('text-app-btn-fg/70');
+  });
+
   it('keeps a nested gift ₿-only when the rate conversion is unusable', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
@@ -1351,10 +1382,7 @@ describe('InboxScreen', () => {
         onRetry={() => undefined}
         openId="conv-2"
         onOpen={() => undefined}
-        messages={[
-          MESSAGE,
-          { ...MESSAGE, id: 'g1', text: '', sats: 21, giftFor: 'missing' },
-        ]}
+        messages={[MESSAGE, { ...MESSAGE, id: 'g1', text: '', sats: 21, giftFor: 'missing' }]}
         messagesLoading={false}
         messagesError={false}
         onRetryMessages={() => undefined}

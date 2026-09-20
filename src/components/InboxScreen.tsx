@@ -186,7 +186,9 @@ function giftAmountText(
     return bitcoin;
   }
   const amount = satsToFiatAmount(sats, rateDay, fiat);
-  return amount === null ? bitcoin : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
+  return amount === null
+    ? bitcoin
+    : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
 }
 
 /**
@@ -446,7 +448,7 @@ export function InboxScreen({
                     }
                   />
                 ) : message.sats > 0 ? (
-                  /* v8 ignore next 12 -- inbound vs outbound gift-only class names */
+                  /* v8 ignore next 13 -- inbound vs outbound gift-only class names */
                   <p
                     className={
                       message.fromMe

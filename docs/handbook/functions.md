@@ -1475,7 +1475,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: preferredFiatSuffix
 
-- **Purpose:** Preferred-fiat suffix next to a ₿ amount (` · ` plus the visitor's fiat), shared
+- **Purpose:** Preferred-fiat suffix next to a ₿ amount (`·` plus the visitor's fiat), shared
   by the forum and inbox/moderator-group threads. `null` when `rateDay` is `null` or the
   conversion is unusable (₿-only).
 - **Inputs:** Whole sats, latest `FiatRateDay` or `null`, visitor `FiatCode`, number-format
