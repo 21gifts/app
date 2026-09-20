@@ -17,6 +17,22 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
@@ -49,6 +65,7 @@ vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
   unlinkLightningAddress: vi.fn(),
   putAboutMe: vi.fn(),
+  postFundingApply: vi.fn(),
   fetchAboutMePhoto: vi
     .fn()
     .mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' })),
@@ -142,6 +159,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByText('You are not verified yet.')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
       'true',

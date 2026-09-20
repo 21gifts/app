@@ -20,6 +20,10 @@ import {
   memberProfileSchema,
   messageInvoiceSchema,
   moderatorProposalsResponseSchema,
+  fundingApplyResponseSchema,
+  fundingApplicationDetailSchema,
+  fundingApplicationsResponseSchema,
+  fundingDecisionResultSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -44,6 +48,10 @@ import {
   type MemberProfile,
   type MessageInvoice,
   type ModeratorProposal,
+  type FundingApplication,
+  type FundingApplicationDetail,
+  type FundingDecisionResult,
+  type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
   type TrustActionResult,
@@ -871,6 +879,172 @@ export async function fetchTrustProposals(sessionToken: string): Promise<Moderat
   } catch {
     throw new Error(TRUST_PROPOSALS_LOAD_ERROR);
   }
+}
+
+const FUNDING_APPLY_ERROR = 'Could not submit your application. Please try again.';
+const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Please try again.';
+const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
+const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
+
+/**
+ * Applies for the 21 gifts grant (verified and above).
+ *
+ * Hits same-origin `POST /funding/apply` (Bearer). Role `basis` is 403.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link OwnerFunding} object.
+ * @throws Error with visitor-facing copy on 401/403/409/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingApplyResponseSchema}.
+ */
+export async function postFundingApply(sessionToken: string): Promise<OwnerFunding> {
+  try {
+    const response = await fetch('/funding/apply', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_APPLY_ERROR);
+    }
+    return fundingApplyResponseSchema.parse(await response.json()).funding;
+  } catch {
+    throw new Error(FUNDING_APPLY_ERROR);
+  }
+}
+
+/**
+ * Fetches open grant applications for founders and moderators.
+ *
+ * Hits same-origin `GET /funding/applications` (Bearer). Next.js forbids a
+ * `route.ts` beside `/moderate/applications`, so the proxy lives at this path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The open-application list (oldest `appliedAt` first).
+ * @throws Error with visitor-facing copy on 401/403/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingApplicationsResponseSchema}.
+ */
+export async function fetchFundingApplications(
+  sessionToken: string,
+): Promise<FundingApplication[]> {
+  try {
+    const response = await fetch('/funding/applications', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_APPLICATIONS_LOAD_ERROR);
+    }
+    return fundingApplicationsResponseSchema.parse(await response.json()).applications;
+  } catch {
+    throw new Error(FUNDING_APPLICATIONS_LOAD_ERROR);
+  }
+}
+
+/**
+ * Fetches one grant application for staff review.
+ *
+ * Hits same-origin `GET /funding/applications/:accountId` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param accountId - Subject account id.
+ * @returns Account, grant, and living-room posts.
+ * @throws Error with visitor-facing copy on 401/403/404/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingApplicationDetailSchema}.
+ */
+export async function fetchFundingApplication(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingApplicationDetail> {
+  try {
+    const response = await fetch(`/funding/applications/${encodeURIComponent(accountId)}`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_APPLICATION_LOAD_ERROR);
+    }
+    return fundingApplicationDetailSchema.parse(await response.json());
+  } catch {
+    throw new Error(FUNDING_APPLICATION_LOAD_ERROR);
+  }
+}
+
+/**
+ * Posts a staff funding decision with the signed-in session.
+ *
+ * @param path - Same-origin proxy path.
+ * @param sessionToken - Bearer session.
+ * @param accountId - Subject account id.
+ * @returns Parsed {@link FundingDecisionResult}.
+ * @throws Error with visitor-facing copy on any failure.
+ */
+async function postFundingAction(
+  path: string,
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId }),
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_ACTION_ERROR);
+    }
+    return fundingDecisionResultSchema.parse(await response.json());
+  } catch {
+    throw new Error(FUNDING_ACTION_ERROR);
+  }
+}
+
+/**
+ * Grants a one-day trial (staff). Target must be effective pending.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postFundingTrial(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  return postFundingAction('/funding/trial', sessionToken, accountId);
+}
+
+/**
+ * Admits a member to daily grant payouts (staff). Target pending or trial.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postFundingAdmit(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  return postFundingAction('/funding/admit', sessionToken, accountId);
+}
+
+/**
+ * Rejects a grant application (staff). The subject may re-apply.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postFundingReject(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  return postFundingAction('/funding/reject', sessionToken, accountId);
 }
 
 /**

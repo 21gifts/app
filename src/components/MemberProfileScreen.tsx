@@ -42,6 +42,7 @@ import {
 } from '@/lib/missing-requirements';
 import { giftsLightningAddress } from '@/lib/gifts-address';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -169,8 +170,9 @@ const IDLE_BOARD = {
 
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
- * Address, role pill, copy-profile-link, optional Message, post/reply counts,
- * stacked activity feeds, and staff Trust Chain actions when the viewer is
+ * Address, role pill, optional grant-reviewed tag when `fundingReviewedAt` is a
+ * number, copy-profile-link, optional Message, post/reply counts, stacked
+ * activity feeds, and staff Trust Chain actions when the viewer is
  * a moderator and the subject is someone else. About me is not a forum post.
  *
  * @param props - Member profile and both activity series for the chart.
@@ -185,7 +187,7 @@ export function MemberProfileScreen({
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
 }): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -684,6 +686,7 @@ export function MemberProfileScreen({
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
+  const [fundingHintOpen, setFundingHintOpen] = useState(false);
   const tagged =
     listedProfile.role === 'founder' ||
     listedProfile.role === 'moderator' ||
@@ -691,6 +694,8 @@ export function MemberProfileScreen({
       ? listedProfile.role
       : null;
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
+  const fundingReviewedAt = listedProfile.fundingReviewedAt;
+  const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
   /* v8 ignore next -- SSR first paint: origin empty until client */
@@ -1055,10 +1060,29 @@ export function MemberProfileScreen({
                   {t(roleKeys.label)}
                 </button>
               ) : null}
+              {showFundingReviewed ? (
+                <button
+                  type="button"
+                  aria-expanded={fundingHintOpen}
+                  onClick={() => {
+                    setFundingHintOpen((open) => !open);
+                  }}
+                  className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                >
+                  {t('funding.reviewedOn', {
+                    date: formatForumTimeFromMs(fundingReviewedAt, locale),
+                  })}
+                </button>
+              ) : null}
             </div>
             {roleHintOpen && roleKeys !== null ? (
               <p role="status" className="text-center text-xs text-app-muted">
                 {t(roleKeys.hint)}
+              </p>
+            ) : null}
+            {fundingHintOpen && showFundingReviewed ? (
+              <p role="status" className="text-center text-xs text-app-muted">
+                {t('funding.reviewedBy')}
               </p>
             ) : null}
           </div>

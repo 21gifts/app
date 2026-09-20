@@ -55,6 +55,14 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/trust/propose-moderator')).status()).toBe(401);
   expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);
   expect((await request.post('/trust/appoint-moderator')).status()).toBe(401);
+  expect((await request.post('/funding/apply')).status()).toBe(401);
+  expect((await request.get('/funding/applications')).status()).toBe(401);
+  expect((await request.get('/funding/applications/[accountId]')).status()).toBeGreaterThanOrEqual(
+    400,
+  );
+  expect((await request.post('/funding/trial')).status()).toBe(401);
+  expect((await request.post('/funding/admit')).status()).toBe(401);
+  expect((await request.post('/funding/reject')).status()).toBe(401);
   expect((await request.get('/gifts')).status()).toBe(400);
   expect((await request.post('/auth/passkey/register/begin')).status()).toBe(200);
   expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);

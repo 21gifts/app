@@ -22,6 +22,7 @@ import {
   type ForumMessage,
   type MemberProfile,
 } from '@/lib/api-types';
+import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -368,6 +369,33 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
     expect(screen.getByText(/confirmed they are real/i)).toBeTruthy();
+  });
+
+  it('shows a reviewed-by tag next to the role tag when fundingReviewedAt is a number', () => {
+    const admittedAt = Date.parse('2026-08-28T12:00:00.000Z');
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, fundingReviewedAt: admittedAt }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const label = `Reviewed by a moderator on ${formatForumTimeFromMs(admittedAt, 'en')}`;
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    expect(screen.getByText('Reviewed by a moderator', { exact: true })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    expect(screen.queryByText('Reviewed by a moderator', { exact: true })).toBeNull();
+  });
+
+  it('does not show a reviewed-by tag when fundingReviewedAt is null', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, fundingReviewedAt: null }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByText(/Reviewed by a moderator on/)).toBeNull();
   });
 
   it('shows clickable post and reply counts, including the empty 0/0 state', () => {

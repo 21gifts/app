@@ -19,6 +19,12 @@ import {
   fetchMemberReplies,
   fetchTrustChain,
   fetchTrustProposals,
+  fetchFundingApplication,
+  fetchFundingApplications,
+  postFundingAdmit,
+  postFundingApply,
+  postFundingReject,
+  postFundingTrial,
   fetchMessagePhoto,
   fetchMessages,
   fetchForumMessage,
@@ -3248,6 +3254,260 @@ describe('postTrustAppoint', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(postTrustAppoint('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postFundingApply', () => {
+  const funding = {
+    status: 'pending' as const,
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
+  };
+  const loadError = 'Could not submit your application. Please try again.';
+
+  it('posts Bearer JSON and returns funding', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { funding } });
+    await expect(postFundingApply('sess')).resolves.toEqual(funding);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/apply', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+  });
+
+  it('throws visitor copy on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(postFundingApply('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(postFundingApply('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(postFundingApply('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { funding: { status: 'nope' } } });
+    await expect(postFundingApply('sess')).rejects.toThrow(loadError);
+  });
+});
+
+describe('fetchFundingApplications', () => {
+  const application = {
+    accountId: 'acc_rose',
+    name: 'Rose',
+    role: 'verified' as const,
+    appliedAt: 1_700_000_000,
+  };
+  const loadError = 'Could not load grant applications. Please try again.';
+
+  it('returns the validated applications and sends the bearer header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { applications: [application] },
+    });
+    await expect(fetchFundingApplications('sess')).resolves.toEqual([application]);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/applications', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('returns an empty list', async () => {
+    stubFetch({ ok: true, status: 200, body: { applications: [] } });
+    await expect(fetchFundingApplications('sess')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchFundingApplications('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(fetchFundingApplications('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchFundingApplications('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchFundingApplications('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { applications: [{ id: 'acc_rose' }] } });
+    await expect(fetchFundingApplications('sess')).rejects.toThrow(loadError);
+  });
+});
+
+describe('fetchFundingApplication', () => {
+  const detail = {
+    account: {
+      id: 'acc_rose',
+      name: 'Rose',
+      role: 'verified' as const,
+      lightningAddress: null,
+    },
+    grant: {
+      status: 'pending' as const,
+      appliedAt: 1_700_000_000,
+      trialUtcDate: null,
+      admittedAt: null,
+      decidedAt: null,
+    },
+    messages: [],
+  };
+  const loadError = 'Could not load this application. Please try again.';
+
+  it('returns the validated detail and encodes the account id', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: detail });
+    await expect(fetchFundingApplication('sess', 'acc/1')).resolves.toEqual(detail);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/applications/acc%2F1', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchFundingApplication('sess', 'acc_1')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchFundingApplication('sess', 'acc_1')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { account: {} } });
+    await expect(fetchFundingApplication('sess', 'acc_1')).rejects.toThrow(loadError);
+  });
+});
+
+describe('postFundingTrial', () => {
+  const result = {
+    id: 'acc_1',
+    name: 'Carol',
+    role: 'verified' as const,
+    funding: {
+      status: 'trial' as const,
+      trialUtcDate: '2026-09-20',
+      admittedAt: null,
+      reviewedByName: 'Ada',
+    },
+  };
+
+  it('posts Bearer JSON { accountId } to /funding/trial', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postFundingTrial('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/trial', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(postFundingTrial('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(postFundingTrial('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postFundingAdmit', () => {
+  const result = {
+    id: 'acc_1',
+    name: 'Carol',
+    role: 'verified' as const,
+    funding: {
+      status: 'admitted' as const,
+      trialUtcDate: null,
+      admittedAt: 1,
+      reviewedByName: 'Ada',
+    },
+  };
+
+  it('posts Bearer JSON { accountId } to /funding/admit', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postFundingAdmit('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/admit', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postFundingReject', () => {
+  const result = {
+    id: 'acc_1',
+    name: 'Carol',
+    role: 'verified' as const,
+    funding: {
+      status: 'rejected' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+    },
+  };
+
+  it('posts Bearer JSON { accountId } to /funding/reject', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postFundingReject('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/reject', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(postFundingReject('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(postFundingReject('sess', 'acc_1')).rejects.toThrow(
       'Could not update this member. Please try again.',
     );
   });

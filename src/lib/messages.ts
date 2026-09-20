@@ -627,6 +627,34 @@ const en = {
   'moderate.handbook.funding.ruleRecord': 'Please keep a record of the daily payments',
   'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
   'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
+  'funding.heading': '21 gifts grant',
+  'funding.notVerified': 'You are not verified yet.',
+  'funding.verifyHow':
+    'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
+  'funding.notAdmitted': 'You are not admitted to daily 21.gifts grant payouts.',
+  'funding.apply': 'Apply for the 21 gifts grant',
+  'funding.conditions':
+    'Daily grants go to people whose living-room posts reflect the three convictions.',
+  'funding.pending': 'Your application is open. A moderator will review your posts.',
+  'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
+  'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
+  'funding.reviewedBy': 'Reviewed by a moderator',
+  'funding.reviewedOn': 'Reviewed by a moderator on {date}',
+  'funding.applyError': 'Could not submit your application. Please try again.',
+  'funding.applications.heading': 'Open applications',
+  'funding.applications.lead':
+    'Review living-room posts against the three convictions. Grant a one-day trial or a final admission.',
+  'funding.applications.empty': 'No open applications.',
+  'funding.applications.listLabel': 'Open grant applications',
+  'funding.applications.error': 'Could not load open applications. Please try again.',
+  'funding.detail.heading': 'Grant application',
+  'funding.detail.criteria': 'Review against the three convictions',
+  'funding.detail.postsLabel': 'Living-room posts',
+  'funding.detail.emptyPosts': 'No living-room posts.',
+  'funding.detail.error': 'Could not load this application. Please try again.',
+  'funding.detail.trial': 'Trial',
+  'funding.detail.admit': 'Admit',
+  'funding.detail.reject': 'Reject',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1284,6 +1312,37 @@ const de = {
   'moderate.handbook.funding.ruleRecord': 'Bitte führt Buch über die täglichen Zahlungen',
   'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
   'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
+  'funding.heading': '21-Förderprogramm',
+  'funding.notVerified': 'Sie sind noch nicht verifiziert.',
+  'funding.verifyHow':
+    'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
+  'funding.notAdmitted': 'Sie sind nicht zum täglichen 21.gifts-Förderprogramm zugelassen.',
+  'funding.apply': 'Für 21 Förderprogramm bewerben',
+  'funding.conditions':
+    'Tägliche Förderungen gehen an Menschen, deren Wohnzimmer-Beiträge die drei Überzeugungen widerspiegeln.',
+  'funding.pending':
+    'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
+  'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
+  'funding.admitted': 'Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen.',
+  'funding.reviewedBy': 'Geprüft von einer Moderatorin oder einem Moderator',
+  'funding.reviewedOn': 'Geprüft von einer Moderatorin oder einem Moderator am {date}',
+  'funding.applyError': 'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+  'funding.applications.heading': 'Offene Bewerbungen',
+  'funding.applications.lead':
+    'Prüfen Sie Wohnzimmer-Beiträge an den drei Überzeugungen. Gewähren Sie einen eintägigen Probezugang oder eine endgültige Zulassung.',
+  'funding.applications.empty': 'Keine offenen Bewerbungen.',
+  'funding.applications.listLabel': 'Offene Förderbewerbungen',
+  'funding.applications.error':
+    'Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'funding.detail.heading': 'Förderbewerbung',
+  'funding.detail.criteria': 'Prüfung an den drei Überzeugungen',
+  'funding.detail.postsLabel': 'Wohnzimmer-Beiträge',
+  'funding.detail.emptyPosts': 'Keine Wohnzimmer-Beiträge.',
+  'funding.detail.error':
+    'Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'funding.detail.trial': 'Probe',
+  'funding.detail.admit': 'Zulassen',
+  'funding.detail.reject': 'Ablehnen',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1923,6 +1982,34 @@ const es = {
   'moderate.handbook.funding.ruleRecord': 'Por favor, lleven un registro de los pagos diarios',
   'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
   'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
+  'funding.heading': 'Beca 21 gifts',
+  'funding.notVerified': 'Aún no estás verificada o verificado.',
+  'funding.verifyHow':
+    'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
+  'funding.notAdmitted': 'No estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
+  'funding.apply': 'Solicitar la beca 21 gifts',
+  'funding.conditions':
+    'Las becas diarias van a personas cuyos mensajes del salón reflejan las tres convicciones.',
+  'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
+  'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
+  'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
+  'funding.reviewedBy': 'Revisado por una persona moderadora',
+  'funding.reviewedOn': 'Revisado por una persona moderadora el {date}',
+  'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
+  'funding.applications.heading': 'Solicitudes abiertas',
+  'funding.applications.lead':
+    'Revisa los mensajes del salón frente a las tres convicciones. Concede una prueba de un día o una admisión definitiva.',
+  'funding.applications.empty': 'No hay solicitudes abiertas.',
+  'funding.applications.listLabel': 'Solicitudes abiertas de beca',
+  'funding.applications.error': 'No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo.',
+  'funding.detail.heading': 'Solicitud de beca',
+  'funding.detail.criteria': 'Revisión frente a las tres convicciones',
+  'funding.detail.postsLabel': 'Mensajes del salón',
+  'funding.detail.emptyPosts': 'No hay mensajes del salón.',
+  'funding.detail.error': 'No se pudo cargar esta solicitud. Inténtalo de nuevo.',
+  'funding.detail.trial': 'Prueba',
+  'funding.detail.admit': 'Admitir',
+  'funding.detail.reject': 'Rechazar',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2571,6 +2658,34 @@ const fil = {
   'moderate.handbook.funding.ruleRecord': 'Mangyaring magtago ng tala ng araw-araw na bayad',
   'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
   'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
+  'funding.heading': '21 gifts grant',
+  'funding.notVerified': 'Hindi ka pa nabe-verify.',
+  'funding.verifyHow':
+    'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
+  'funding.notAdmitted': 'Hindi ka admitted sa araw-araw na 21.gifts grant payouts.',
+  'funding.apply': 'Mag-apply para sa 21 gifts grant',
+  'funding.conditions':
+    'Ang araw-araw na grant ay para sa mga taong ang living-room posts ay sumasalamin sa tatlong paniniwala.',
+  'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
+  'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
+  'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
+  'funding.reviewedBy': 'Nireview ng isang moderator',
+  'funding.reviewedOn': 'Nireview ng isang moderator noong {date}',
+  'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
+  'funding.applications.heading': 'Mga bukas na aplikasyon',
+  'funding.applications.lead':
+    'Suriin ang living-room posts laban sa tatlong paniniwala. Magbigay ng one-day trial o pinal na admission.',
+  'funding.applications.empty': 'Walang bukas na aplikasyon.',
+  'funding.applications.listLabel': 'Mga bukas na grant application',
+  'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',
+  'funding.detail.heading': 'Grant application',
+  'funding.detail.criteria': 'Suriin laban sa tatlong paniniwala',
+  'funding.detail.postsLabel': 'Mga living-room post',
+  'funding.detail.emptyPosts': 'Walang living-room posts.',
+  'funding.detail.error': 'Hindi ma-load ang aplikasyong ito. Subukan ulit.',
+  'funding.detail.trial': 'Trial',
+  'funding.detail.admit': 'Admit',
+  'funding.detail.reject': 'Reject',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
