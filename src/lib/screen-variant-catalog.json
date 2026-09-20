@@ -1284,6 +1284,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/group:composer-photos",
+    "label": "/moderate/group composer-photos",
+    "visual": "state-moderate-group-composer-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:quoted-note",
     "label": "/moderate/group quoted-note",
     "visual": "state-moderate-group-quoted-note",

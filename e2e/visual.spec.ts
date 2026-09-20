@@ -8031,6 +8031,19 @@ test.describe('moderate group screens', () => {
     await shotScreen(page, 'state-moderate-group-composer-photo');
   });
 
+  test('moderate group composer-photos', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    await shotScreen(page, 'state-moderate-group-composer-photos');
+  });
+
   test('moderate group quoted-note', async ({ page }) => {
     await seedAda(page, 'moderator');
     await mockGroup(page);

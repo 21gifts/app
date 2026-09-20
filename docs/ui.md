@@ -807,7 +807,7 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Composer
 
-**Anatomy.** Top-level forum note: `flex items-center gap-2`. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): `flex-col gap-2` with an attach row above the textarea.
+**Anatomy.** Top-level forum note: `flex items-center gap-2`. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
 
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer, and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
@@ -1022,7 +1022,7 @@ Handbook states: default list, forbidden, empty, loading, error, external.
 ### `/moderate/group`
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl` `surface={false}`, `showFilter` false, `showAmount` false, `showAttach` true): **h1** **Moderators chat group** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** (stills + quoted-note unfurl) + composer with **Add a photo** (JPEG/PNG/WebP, max 10, photo-only send) and icon send. Direct/Contact/Damus stay text-only for sending. Other signed-in visitors see `Card xl` `surface={false}` → **h1** **Moderators chat group** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
-Handbook states: default, stipend, forbidden, empty, loading, error, composer-photo, quoted-note, photo.
+Handbook states: default, stipend, forbidden, empty, loading, error, composer-photo, composer-photos, quoted-note, photo.
 
 ### `/moderate/handbook`
 

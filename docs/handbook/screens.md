@@ -1553,6 +1553,12 @@ Moderator. Empty thread. One JPEG selected in the composer; **Remove photo** vis
 
 ![21.gifts moderator group composer photo](images/moderate-group-composer-photo.png)
 
+### Variant: composer-photos
+
+Moderator. Empty thread. Two JPEGs selected in the composer; two **Selected photo** thumbs.
+
+![21.gifts moderator group composer photos](images/moderate-group-composer-photos.png)
+
 ### Variant: quoted-note
 
 Moderator. Loaded group thread whose body is a public forum note URL. Nested quoted-note card shows **A Quick Technical Note**; the raw URL is hidden.
