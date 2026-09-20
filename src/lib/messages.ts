@@ -1179,7 +1179,7 @@ const de = {
   'trustChain.explainVerified':
     'Verifiziert bedeutet, dass eine Moderatorin oder ein Moderator die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
-    'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
+    'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
   'trustChain.explainFounder':
     'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
   'trustChain.action.verify': 'Verifizieren',
