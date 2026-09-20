@@ -135,7 +135,7 @@ export function SegmentedControl<T extends string>({
       <div
         className={`flex w-full items-center overflow-hidden rounded-full border border-app-border bg-app-card-muted p-1${extra}`}
       >
-        <div role="group" aria-label={ariaLabel} className="flex min-w-0 flex-1">
+        <div role="group" aria-label={ariaLabel} className="relative z-10 flex min-w-0 flex-1">
           {optionButtons}
         </div>
         <span aria-hidden="true" className="mx-0.5 w-px self-stretch bg-app-border" />

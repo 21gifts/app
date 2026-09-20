@@ -249,6 +249,7 @@ describe('SegmentedControl', () => {
       />,
     );
     const group = screen.getByRole('group', { name: 'Forum view' });
+    expect(group.className).toContain('z-10');
     const trailing = screen.getByRole('button', { name: 'Bell' });
     expect(trailing).toBeTruthy();
     expect(group.contains(trailing)).toBe(false);
