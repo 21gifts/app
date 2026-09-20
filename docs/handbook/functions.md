@@ -5,11 +5,11 @@
 - **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, and `/trust/proposals` which re-exports `proxyTrustProposalsGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm queue, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
-- **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
+- **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16.
 
 ## Function: OPTIONS
 
-- **Purpose:** CORS preflight for `/.well-known/nostr.json`.
+- **Purpose:** CORS preflight for `/.well-known/nostr.json` and `/.well-known/lnurlp/[username]`.
 - **Inputs:** none.
 - **Returns / side effects:** 204 with `Access-Control-Allow-Origin: *`.
 - **Used by:** Damus NIP-05 fetch.
@@ -350,16 +350,16 @@
 ## Function: OnboardingGate
 
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
-- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/trust-chain`.
+- **Inputs:** `screen` (`login` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/trust-chain`.
 
 ## Function: SignedInChrome
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -992,8 +992,8 @@
 ## Function: RequirementsOverlay
 
 - **Purpose:** Modal to add a missing name (`NameForm` profile), username (`UsernameForm`), Wallet of Satoshi address (`LightningAddressForm` profile), or agree to rules before retrying a post. No Skip.
-- **Inputs:** `requirement` (`name` | `rules` | `lightning-address`), `onDismiss`, `onSatisfied`.
-- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`. Title/`aria-label` from `requirements.nameTitle`, `requirements.rulesTitle`, or `requirements.addressTitle`.
+- **Inputs:** `requirement` (`name` | `username` | `rules` | `lightning-address`), `onDismiss`, `onSatisfied`.
+- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`. Title/`aria-label` from `requirements.nameTitle`, `requirements.usernameTitle`, `requirements.rulesTitle`, or `requirements.addressTitle`.
 - **Used by:** `ForumLoader`, `ContactLoader`, `MemberProfileScreen`.
 
 ## Function: IntroduceYourselfOverlay

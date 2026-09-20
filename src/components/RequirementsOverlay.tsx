@@ -106,7 +106,7 @@ export function RequirementsOverlay({
         {requirement === 'name' ? (
           <NameForm variant="profile" onSaved={onSatisfied} />
         ) : requirement === 'username' ? (
-          <UsernameForm onSaved={onSatisfied} />
+          <UsernameForm variant="overlay" onSaved={onSatisfied} />
         ) : requirement === 'lightning-address' ? (
           <LightningAddressForm variant="profile" onSaved={onSatisfied} />
         ) : (

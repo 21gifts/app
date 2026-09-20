@@ -348,6 +348,7 @@ flowchart TB
     LI["/login"]
     DO["/donate"]
     SN["/setup/name"]
+    SU["/setup/username"]
     SA["/setup/address"]
     SR["/setup/rules"]
     W["/welcome"]
@@ -374,21 +375,21 @@ flowchart TB
 
 ## Layout and chrome
 
-| Measure            | Value                                       | Use                                                            |
-| ------------------ | ------------------------------------------- | -------------------------------------------------------------- |
-| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner               |
-| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                           |
-| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address |
-| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                      |
-| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation       |
-| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                       |
-| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                 |
-| Marketing pad      | `px-5`                                      | Header, sections, footer                                       |
-| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                              |
-| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/address`, `/setup/rules`                |
-| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                            |
-| Marketing section  | `py-20`                                     | how / why / project / faq                                      |
-| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                |
+| Measure            | Value                                       | Use                                                                |
+| ------------------ | ------------------------------------------- | ------------------------------------------------------------------ |
+| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                   |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                               |
+| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address     |
+| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                          |
+| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation           |
+| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                           |
+| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                     |
+| Marketing pad      | `px-5`                                      | Header, sections, footer                                           |
+| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                  |
+| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules` |
+| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                |
+| Marketing section  | `py-20`                                     | how / why / project / faq                                          |
+| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                    |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden`. App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
@@ -528,7 +529,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), **Message** (member profile DM CTA), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”) on payable replies, push bell, profile/rules-setup back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
-**Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
+**Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/username`, `/setup/rules`, or on `RequirementsOverlay`.
 
 **Notifications** list rows are full-row links/buttons with visible text (not icon-only).
 
@@ -938,6 +939,10 @@ Fill `AppShell` `align="center"`; `HomeWordmark` + LanguageSwitcher. Inner `max-
 ### `/setup/name`
 
 Fill `AppShell` `align="start"`; `topLeft={<Wordmark />}` (span) `topRight={<SignedInChrome />}`. `OnboardingGate screen="name"` → `NameSetup`: `AppShellHeader` **h1** “Your name” → `NameForm onboarding` (prompt, `Field`, alert, **Continue** and labeled **Skip** in `AppShellFooter`).
+
+### `/setup/username`
+
+Fill `AppShell` `align="start"`; `topLeft={<Wordmark />}` (span) `topRight={<SignedInChrome />}`. `OnboardingGate screen="username"` → `UsernameSetup`: `AppShellHeader` **h1** “Your 21.gifts name”, hint, `UsernameForm onboarding` (field, alert, **Continue** in `AppShellFooter`). No Skip.
 
 ### `/setup/address`
 

@@ -20,7 +20,7 @@ export function UsernameSetup(): ReactElement {
         </h1>
       </AppShellHeader>
       <p className="mt-4 text-center text-sm text-app-muted">{t('setup.usernameHint')}</p>
-      <UsernameForm />
+      <UsernameForm variant="onboarding" />
     </section>
   );
 }

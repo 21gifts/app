@@ -223,7 +223,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/setup/name` — first screen after login (`account.setup === 'name'`).
 - **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/username`).
 - **Calls:** `AppShell`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
@@ -245,7 +245,7 @@ Signed in with a display name (or a skipped name) and no username. **Your 21.gif
 
 ## Screen: /setup/address
 
-- **URL:** `/setup/address` — second screen after login (`account.setup === 'address'`; name may already be saved or skipped).
+- **URL:** `/setup/address` — after username (`account.setup === 'address'`). Name may already be saved or skipped; username is required.
 - **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
 - **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
 - **Calls:** `AppShell`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.

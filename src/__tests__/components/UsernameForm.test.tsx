@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UsernameForm } from '@/components/UsernameForm';
 import { setUsername } from '@/lib/api';
@@ -40,7 +40,7 @@ describe('UsernameForm', () => {
   it('does not call the api when the username is empty', () => {
     renderWithLocale(<UsernameForm />);
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-    expect(screen.getByRole('status').textContent).toBe('Enter a username');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a username');
     expect(setUsername).not.toHaveBeenCalled();
   });
 
@@ -79,6 +79,31 @@ describe('UsernameForm', () => {
     vi.mocked(setUsername).mockRejectedValueOnce('boom');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText('Could not save your username')).toBeTruthy();
+  });
+
+  it('disables the control and shows a spinner while a request is in flight', async () => {
+    let resolve!: (value: Account) => void;
+    const pending = new Promise<Account>((r) => {
+      resolve = r;
+    });
+    vi.mocked(setUsername).mockReturnValue(pending);
+    renderWithLocale(<UsernameForm />);
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    const button = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect((screen.getByRole('textbox') as HTMLInputElement).disabled).toBe(true);
+
+    await act(async () => {
+      resolve({
+        ...base,
+        username: 'ada',
+        setup: 'lightning-address',
+        missing: ['lightning-address', 'rules'],
+      });
+    });
   });
 
   it('does nothing without a session', () => {

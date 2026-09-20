@@ -4188,66 +4188,19 @@ test('Function: UsernameSetup — username screen heading is visible', async ({ 
   await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
 });
 
-test('Function: setUsername — username screen heading is visible', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        username: null,
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'username',
-        missing: ['username', 'lightning-address', 'rules'],
-      }),
-    });
-  });
-  await page.goto('/setup/username');
-  await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+test('Function: setUsername — signed-in form saves a username', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await saveOnboardingUsername(page);
 });
 
-test('Function: giftsLightningAddress — username screen heading is visible', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        username: null,
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'username',
-        missing: ['username', 'lightning-address', 'rules'],
-      }),
-    });
-  });
-  await page.goto('/setup/username');
-  await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+test('Function: giftsLightningAddress — member card shows username@21.gifts', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
 });
 
 test('Function: NameSetup — name screen heading is visible', async ({ page }) => {

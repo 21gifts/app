@@ -286,18 +286,23 @@ const E2E_MEMBER_REPLIES = [
   },
 ];
 
-/** True when a forum POST needs name, rules, or lightning-address. */
+/** True when a forum POST needs name, username, rules, or lightning-address. */
 function missingForumPostRequirements(account) {
   return (
     account.missing.includes('name') ||
+    account.missing.includes('username') ||
     account.missing.includes('rules') ||
     account.missing.includes('lightning-address')
   );
 }
 
-/** True when a contact POST needs name or rules (not lightning-address). */
+/** True when a contact POST needs name, username, or rules (not lightning-address). */
 function missingContactRequirements(account) {
-  return account.missing.includes('name') || account.missing.includes('rules');
+  return (
+    account.missing.includes('name') ||
+    account.missing.includes('username') ||
+    account.missing.includes('rules')
+  );
 }
 
 /**
@@ -1064,6 +1069,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, {
         id: account.id,
         name: account.name,
+        username: account.username ?? null,
         location: account.location,
         role: account.role,
         lightningAddress: account.lightningAddress,
@@ -1134,6 +1140,7 @@ const server = http.createServer(async (req, res) => {
     }
     json(res, 200, {
       name: found.name,
+      username: found.username ?? null,
       location: found.location,
       lightningAddress: found.lightningAddress,
       lightningAddressVerified: found.lightningAddressVerified,
