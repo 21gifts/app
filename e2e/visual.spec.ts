@@ -3623,13 +3623,13 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-messages-id');
   });
 
-  test('state /messages/[id] photos', async ({ page }) => {
+  test('state /messages/[id] goal-110', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';  test('state /messages/[id] photos', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111112';
     const jpeg = Buffer.from(
       '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
       'base64',
-    );
-    await fulfillPublicThreadReplies(page, id);
+    );    await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -3637,18 +3637,24 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id,
           name: 'Ada',
-          text: '',
+          text: 'Goal note at one hundred ten percent',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 23100,
+          goalSats: 21000,
+          payable: true,
+          hasPhoto: false,          text: '',
           createdAt: '2026-08-28T12:00:00.000Z',
           sats: 0,
           payable: false,
           hasPhoto: true,
-          photoCount: 2,
-          role: 'basis',
+          photoCount: 2,          role: 'basis',
           replyCount: 0,
         }),
       });
     });
-    await page.route(`**/messages/${id}/photo`, async (route) => {
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('110%')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-goal-110');    await page.route(`**/messages/${id}/photo`, async (route) => {
       await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
     });
     await page.route(`**/messages/${id}/photo/1.jpg`, async (route) => {
@@ -3657,8 +3663,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
     await expect(page.getByText('1/2')).toBeVisible();
-    await shotScreen(page, 'state-messages-id-photos');
-  });
+    await shotScreen(page, 'state-messages-id-photos');  });
 
   test('state /messages/[id] signed-in', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';

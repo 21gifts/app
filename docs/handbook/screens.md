@@ -1673,6 +1673,7 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 - **Inputs:** Dynamic route `id` (UUID). After hydrate: staff (moderator/founder) load `GET /forum/messages/:id` (`fetchForumMessage`) and Bearer replies; everyone else uses same-origin `GET /public-messages/:id` (`fetchPublicMessage`) and `GET /public-messages/:id/replies`. If the opened note has `parentId`, a second GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Opening a hidden reply UUID as staff still shows the parent, live replies, AND the opened hidden reply (merged if Bearer replies omit it). Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` or signed-in `fetchMessagePhoto` (via `PublicMessageThread`) → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags. Unsigned/non-staff hidden ids stay `view.missing`.- **Actions:** Change language (unsigned), or open **Menu** / **Back to the forum** (signed-in). Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread, plus the per-note actions above (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
+- **Calls:** `PublicMessagePage`, `PublicMessageChrome`, `PublicMessageLoader`, `PublicThreadCard`, `PublicMessageThread`, `ForumGoalBar`, `forumGoalPercent`, `ForumQuotedBody`, `NoteTranslate`, `LanguageSwitcher`.
 
 ### Variant: default
 
@@ -1680,12 +1681,16 @@ Valid known UUID. Thread may be parent-only when replies are empty. Card with au
 
 ![21.gifts public message](images/messages-id.png)
 
+### Variant: goal-110
+
+Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumGoalBar` sits after the amount line: full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
+
+![21.gifts public message goal 110](images/messages-id-goal-110.png)
 ### Variant: photos
 
 Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` shows earlier stills at 88% so the next photo peeks, the last still full width, a `1/2` chip, and dots.
 
 ![21.gifts public message photos](images/messages-id-photos.png)
-
 ### Variant: signed-in
 
 Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
