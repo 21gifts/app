@@ -17,6 +17,7 @@ import {
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -83,11 +84,11 @@ function isAbortError(err: unknown): boolean {
  *
  * Reads the session from the auth store, fetches the conversation list, and
  * opens `?c=` only after that list loaded, unless the list has that id as
- * `moderator_group` (new empty PMs are not yet listed). For a confirmed
- * moderator an unlisted `?c=` first
- * resolves {@link fetchModeratorGroup} once per id, with neutral loading
- * instead of the list; a match never opens, other roles and a failed lookup
- * fall through. The composer sends free text
+ * `moderator_group` (new empty PMs are not yet listed). For a founder or
+ * moderator an unlisted `?c=` first resolves {@link fetchModeratorGroup}
+ * once per id, with neutral loading instead of the list; a match never
+ * opens, other roles and a failed lookup fall through. The composer sends
+ * free text
  * directly, or mints an invoice from its amount field and long-polls for the
  * paid gift row. Renders nothing when there is no session.
  * Founder/moderator get the origin filter; members see the full inbound list.
@@ -141,8 +142,9 @@ export function InboxLoader(): ReactElement | null {
     conversations === null || openId === null || openId === ''
       ? undefined
       : conversations.find((row) => row.id === openId);
+  const staff = roleAtLeast(account?.role, 'moderator');
   const waitingStaffRoom =
-    account?.role === 'moderator' &&
+    staff &&
     conversations !== null &&
     openId !== null &&
     openId !== '' &&
@@ -192,7 +194,7 @@ export function InboxLoader(): ReactElement | null {
   useEffect(() => {
     if (
       session === null ||
-      account?.role !== 'moderator' ||
+      !staff ||
       openId === null ||
       openId === '' ||
       conversations === null ||
@@ -216,7 +218,7 @@ export function InboxLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, account?.role, openId, conversations, listed, staffRoomId]);
+  }, [session, staff, openId, conversations, listed, staffRoomId]);
 
   useEffect(() => {
     if (session === null || openId === null || openId === '' || !threadAllowed) {
@@ -432,7 +434,7 @@ export function InboxLoader(): ReactElement | null {
 
   /* v8 ignore next -- empty ?c= is the same as no thread */
   const threadId = threadAllowed ? openId : null;
-  const showFilter = account?.role === 'moderator' || account?.role === 'founder';
+  const showFilter = staff;
   return (
     <InboxScreen
       conversations={waitingStaffRoom ? null : conversations}

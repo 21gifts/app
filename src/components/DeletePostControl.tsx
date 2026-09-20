@@ -5,6 +5,7 @@ import { Check, Loader2, Trash2, X } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
 import { useTranslations } from '@/components/LocaleProvider';
 import { deleteMessage } from '@/lib/api';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for the inline post or reply moderation control. */
@@ -39,7 +40,7 @@ export function DeletePostControl({
   const confirmLabel = kind === 'reply' ? t('forum.deleteReplyConfirm') : t('forum.deleteConfirm');
   const errorLabel = kind === 'reply' ? t('forum.deleteReplyError') : t('forum.deleteError');
 
-  if (session === null || (account?.role !== 'founder' && account?.role !== 'moderator')) {
+  if (session === null || !roleAtLeast(account?.role, 'moderator')) {
     return null;
   }
 

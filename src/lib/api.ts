@@ -1319,7 +1319,7 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
 }
 
 /**
- * Fetches the closed moderator-group thread for a confirmed moderator.
+ * Fetches the closed moderator-group thread for a moderator or founder.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The singleton {@link Conversation} row.

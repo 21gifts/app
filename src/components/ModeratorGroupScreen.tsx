@@ -10,18 +10,19 @@ import {
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in closed moderator-group thread.
  *
- * Confirmed moderators fetch {@link fetchModeratorGroup} then
+ * Founders and moderators fetch {@link fetchModeratorGroup} then
  * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread
  * (`showFilter` and `showAmount` false; the heading is always the catalog
  * `moderate.groupLabel`, never the api row name).
- * Founders, other signed-in visitors, and a missing account see forbidden
- * copy and do not fetch. Renders nothing without a session. Back to the
- * moderation hub is the page chrome (no in-card back).
+ * Other signed-in visitors and a missing account see forbidden copy and do
+ * not fetch. Renders nothing without a session. Back to the moderation hub is
+ * the page chrome (no in-card back).
  *
  * @returns The group thread, forbidden copy, or `null` without a session.
  */
@@ -29,7 +30,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const isModerator = account?.role === 'moderator';
+  const staff = roleAtLeast(account?.role, 'moderator');
   const [group, setGroup] = useState<Conversation | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -39,7 +40,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const [formError, setFormError] = useState<InboxFormError>(null);
 
   useEffect(() => {
-    if (session === null || !isModerator) {
+    if (session === null || !staff) {
       return;
     }
     let cancelled = false;
@@ -68,7 +69,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, isModerator, attempt]);
+  }, [session, staff, attempt]);
 
   if (session === null) {
     return null;
@@ -80,7 +81,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
     </h1>
   );
 
-  if (!isModerator) {
+  if (!staff) {
     return (
       <Card maxWidth="xl">
         {heading}

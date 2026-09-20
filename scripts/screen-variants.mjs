@@ -1294,7 +1294,7 @@ export const SCREEN_VARIANTS = [
     id: 'forbidden',
     image: 'moderate-group-forbidden.png',
     visual: 'state-moderate-group-forbidden',
-    needle: 'This room is for confirmed moderators.',
+    needle: 'This room is for founders and moderators.',
   },
   {
     route: '/moderate/group',

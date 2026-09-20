@@ -296,7 +296,7 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). GET `/conversations` never lists the `moderator_group` thread, even for moderators. Each item has required `kind`: `member_member` | `member_platform` | `member_damus` | `moderator_group`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). GET `/conversations` never lists the `moderator_group` thread, even for founders or moderators. Each item has required `kind`: `member_member` | `member_platform` | `member_damus` | `moderator_group`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`, `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer.
@@ -305,8 +305,8 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/conversations/moderator-group` (singleton closed staff room as `{ conversation }`).
 - **Errors:** Upstream 401/403/404, or 502 if the api is unreachable.
-- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group` and via `InboxLoader` on `/messages` (unlisted `?c=` guard for moderators).
-- **Auth:** Bearer; confirmed moderator on the api.
+- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group` and via `InboxLoader` on `/messages` (unlisted `?c=` guard for founder or moderator).
+- **Auth:** Bearer; moderator or founder on the api.
 
 ## Endpoint: POST /conversations
 

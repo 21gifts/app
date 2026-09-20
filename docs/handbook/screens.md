@@ -1101,17 +1101,22 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ![21.gifts notifications error](images/notifications-error.png)
 
+> **Role hierarchy.** Roles are ordered founder > moderator > verified > basis. A higher role can always
+> do and see everything a lower role can; there are no exceptions. Wherever this handbook names a role
+> for a screen, tool or control it means that role **or higher**. The app checks this with `roleAtLeast`
+> (`src/lib/roles.ts`); an equality test on the viewer's role is a defect.
+
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Confirmed moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for confirmed moderators.** Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
-- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Confirmed moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Founders and moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for founders and moderators.** Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
+- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Founders and moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, and labeled **Open proposals** control → `/moderate/proposals`.
+Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for founders and moderators.**
 
 ![21.gifts moderation](images/moderate.png)
 
@@ -1123,7 +1128,7 @@ Signed-in basis account. Copy **This page is for founders and moderators.** No t
 
 ### Variant: moderator
 
-Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for confirmed moderators.**
+Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for founders and moderators.**
 
 ![21.gifts moderation moderator](images/moderate-moderator.png)
 
@@ -1224,20 +1229,20 @@ Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spi
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators**. Confirmed moderators fetch the singleton group then the thread and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators** (never the api row name); the composer is text only (no **Amount** field, no gifts). Founders and other signed-in visitors see heading **Moderators** plus **This room is for confirmed moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages.
-- **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Confirmed moderators send a reply and **Try again** on fetch error.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators**. Founders and moderators fetch the singleton group then the thread and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators** (never the api row name); the composer is text only (no **Amount** field, no gifts). Other signed-in visitors see heading **Moderators** plus **This room is for founders and moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages.
+- **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Founders and moderators send a reply and **Try again** on fetch error.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, `fetchConversation`, `postConversationMessage`.
-- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only for `role` moderator; founders and others see forbidden copy and do not fetch.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Confirmed moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
+Founder or moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
 
 ![21.gifts moderator group](images/moderate-group.png)
 
 ### Variant: forbidden
 
-Signed-in founder (or other non-moderator). Heading **Moderators**. Copy **This room is for confirmed moderators.** No thread fetch.
+Signed-in non-staff visitor (verified or basis). Heading **Moderators**. Copy **This room is for founders and moderators.** No thread fetch.
 
 ![21.gifts moderator group forbidden](images/moderate-group-forbidden.png)
 

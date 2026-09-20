@@ -6065,6 +6065,7 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
 
@@ -6409,9 +6410,9 @@ test.describe('moderate group screens', () => {
   });
 
   test('moderate group forbidden', async ({ page }) => {
-    await seedAda(page, 'founder');
+    await seedAda(page, 'basis');
     await page.goto('/moderate/group');
-    await expect(page.getByText('This room is for confirmed moderators.')).toBeVisible();
+    await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-forbidden');
   });
 

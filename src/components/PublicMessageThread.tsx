@@ -23,35 +23,12 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
+import { isReplyPaymentExempt } from '@/lib/roles';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
 const PAY_POLL_MS = 2000;
-
-/**
- * True when the signed-in account may reply without paying.
- *
- * Parent author, moderator, founder, and verified are exempt.
- *
- * @param account - Live account, or `null` when the snapshot is missing.
- * @param parentAccountId - Parent note `accountId` when the public JSON includes it.
- *   Missing id is not treated as exempt; the caller may POST unpaid and map 403.
- * @returns Whether `POST /messages` is allowed without a zap.
- */
-function isReplyPaymentExempt(
-  account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
-  parentAccountId: string | undefined,
-): boolean {
-  /* v8 ignore next 3 -- signed-in permalink board always has an account */
-  if (account === null) {
-    return false;
-  }
-  if (account.role === 'founder' || account.role === 'moderator' || account.role === 'verified') {
-    return true;
-  }
-  return parentAccountId !== undefined && parentAccountId === account.id;
-}
 
 /** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;

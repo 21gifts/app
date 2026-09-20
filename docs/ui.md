@@ -986,7 +986,7 @@ Handbook states: default list, forbidden, empty, loading, error.
 
 ### `/moderate/group`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → confirmed moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Founders and other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
 
 Handbook states: default, forbidden, empty, loading, error.
 

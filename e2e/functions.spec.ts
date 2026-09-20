@@ -348,7 +348,10 @@ async function openSignedInMenu(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Menu' }).click();
 }
 
-async function seedAdaSession(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
+async function seedAdaSession(
+  page: Page,
+  role: 'basis' | 'verified' | 'moderator' | 'founder' = 'basis',
+): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -5820,6 +5823,72 @@ test('Function: fetchReplies — expanding a welcome note loads replies', async 
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
+});
+
+test('Function: isReplyPaymentExempt — a founder posts a reaction without an invoice', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'founder');
+  const id = 'm-exempt';
+  const note = {
+    id,
+    accountId: 'acc_other',
+    name: 'Bob',
+    text: 'Hello from Bob',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 5,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  let invoiceRequests = 0;
+  let replyBody: unknown = null;
+  await page.route(/\/messages$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      replyBody = route.request().postDataJSON();
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: {
+            ...note,
+            id: 'r-exempt',
+            name: 'Ada',
+            text: 'Thank you',
+            sats: 0,
+            role: 'founder',
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [note] }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/messages\/[^/]+\/invoice$/, async (route) => {
+    invoiceRequests += 1;
+    await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await page.getByPlaceholder('Write a reaction').fill('Thank you');
+  await page.getByRole('button', { name: 'Post' }).last().click();
+  await expect.poll(() => replyBody).toMatchObject({ text: 'Thank you', inReplyTo: id });
+  expect(invoiceRequests).toBe(0);
 });
 
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {

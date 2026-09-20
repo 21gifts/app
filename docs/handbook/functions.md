@@ -335,9 +335,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `account?.role === 'founder' || account?.role === 'moderator'`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
@@ -2127,7 +2127,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxLoader
 
-- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list. `?c=` opens only after the inbox list loaded. For a confirmed moderator an unlisted `?c=` first resolves `fetchModeratorGroup` once per id (neutral **Loading…**, not the list, while it runs); when that id matches, the thread never opens and `fetchConversation` is not called. A listed `moderator_group` row never opens either. Other roles, and a failed lookup, fall through to `fetchConversation`; the api rejects accounts that may not read the thread.
+- **Purpose:** Client loader for `/messages`. Session and account from `useAuthStore`; returns null without a session. Fetches `GET /conversations`, opens `?c=` via `onOpen` `router.push`, posts replies. Returning to the list is the chrome link (no `onBack` handler). Founder/moderator get `showFilter` true; members see the unfiltered inbound list. `?c=` opens only after the inbox list loaded. For a founder or moderator an unlisted `?c=` first resolves `fetchModeratorGroup` once per id (neutral **Loading…**, not the list, while it runs); when that id matches, the thread never opens and `fetchConversation` is not called. A listed `moderator_group` row never opens either. Other roles, and a failed lookup, fall through to `fetchConversation`; the api rejects accounts that may not read the thread.
 - **Inputs:** None (reads session and account from the auth store; `useSearchParams`).
 - **Returns / side effects:** React element or `null` without a session. Calls `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (moderators, unlisted `?c=` only), `postConversationMessage`, `postConversationInvoice`. After a successful thread fetch, local `unread: false`, then fire-and-forget `markConversationRead`, `bumpUnreadAppBadgeEpoch` and `refreshUnreadAppBadge` (remaining inbox from the local list; a thread only opens after the list loaded, so there is no second conversations fetch). Must not fail the thread view.
 - **Used by:** `MessagesPage`.
@@ -2300,9 +2300,30 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The moderation hub inside fill AppShell.
 - **Used by:** Route `/moderate`.
 
+## Function: roleRank
+
+- **Purpose:** Numeric rank of a role in the founder > moderator > verified > basis hierarchy, for use by `roleAtLeast`.
+- **Inputs:** `role` — one of `'basis' | 'verified' | 'moderator' | 'founder'`.
+- **Returns / side effects:** Integer 0 (basis) through 3 (founder). Pure, no side effects.
+- **Used by:** `roleAtLeast`.
+
+## Function: roleAtLeast
+
+- **Purpose:** Product-rule primitive for every viewer permission/visibility check: true when `role` is `min` or higher in the founder > moderator > verified > basis hierarchy. A missing account (`null`/`undefined` role) is never at least any role.
+- **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent; `min` — inclusive minimum role.
+- **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
+- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`.
+
+## Function: isReplyPaymentExempt
+
+- **Purpose:** True when the signed-in account may reply without paying: anyone at least verified is exempt, and so is the parent note's author regardless of role.
+- **Inputs:** `account` — `{ id, role }` or `null` when the account snapshot is missing; `parentAccountId` — the parent note's `accountId` if the api sent one (a missing id is not treated as exempt).
+- **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleAtLeast`.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
+
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. A **Moderators** `ButtonLink` → `/moderate/group` is shown only when `role === 'moderator'`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (founder or moderator) see hub lead copy, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. A **Moderators** `ButtonLink` → `/moderate/group` is shown for founder or moderator (`roleAtLeast(role, 'moderator')`). Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. No network. Staff see the hub; others see forbidden copy.
 - **Used by:** `ModeratePage`.
@@ -2344,9 +2365,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModeratorGroupScreen
 
-- **Purpose:** Client closed staff-room thread. Confirmed moderators (`role === 'moderator'`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; `showAmount` false; no in-card back; row `name` replaced by the catalog `moderate.groupLabel` so the heading is always **Moderators**). Founders and other signed-in visitors see heading **Moderators** plus `moderate.groupForbidden` and do not fetch. Renders `null` without a session. Back to `/moderate` is the page chrome (`ProfileChromeLeft` `backHref="/moderate"`), never in the card.
+- **Purpose:** Client closed staff-room thread. Founders and moderators (`roleAtLeast(role, 'moderator')`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; `showAmount` false; no in-card back; row `name` replaced by the catalog `moderate.groupLabel` so the heading is always **Moderators**). Other signed-in visitors see heading **Moderators** plus `moderate.groupForbidden` and do not fetch. Renders `null` without a session. Back to `/moderate` is the page chrome (`ProfileChromeLeft` `backHref="/moderate"`), never in the card.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /conversations/moderator-group` then `GET /conversations/:id` only when the role is moderator.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /conversations/moderator-group` then `GET /conversations/:id` only when the role is founder or moderator.
 - **Used by:** `ModeratorGroupPage`.
 
 ## Function: fetchModeratorGroup
@@ -2354,7 +2375,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/conversations/moderator-group` with Bearer and parse `{ conversation }` via `conversationResponseSchema`. Returns the singleton closed staff-room row (`kind` `moderator_group`).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation row, or throws visitor copy.
-- **Used by:** `ModeratorGroupScreen`, `InboxLoader` (`/messages` unlisted `?c=` guard for moderators).
+- **Used by:** `ModeratorGroupScreen`, `InboxLoader` (`/messages` unlisted `?c=` guard for founder or moderator).
 
 ## Function: listHiddenMessages
 

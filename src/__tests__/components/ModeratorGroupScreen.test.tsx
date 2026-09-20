@@ -97,56 +97,56 @@ describe('ModeratorGroupScreen', () => {
     expect(threadMock).not.toHaveBeenCalled();
   });
 
-  it('shows forbidden copy for a founder and does not fetch', () => {
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
-    expect(screen.getByText('This room is for confirmed moderators.')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
-    expect(screen.queryByLabelText('Your message')).toBeNull();
-    expect(groupMock).not.toHaveBeenCalled();
-    expect(threadMock).not.toHaveBeenCalled();
-  });
-
-  it('shows forbidden copy for a basis account and does not fetch', () => {
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByText('This room is for confirmed moderators.')).toBeTruthy();
-    expect(groupMock).not.toHaveBeenCalled();
-  });
+  it.each(['basis', 'verified'] as const)(
+    'shows forbidden copy for a %s account and does not fetch',
+    (role) => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role } });
+      renderWithLocale(<ModeratorGroupScreen />);
+      expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+      expect(screen.getByText('This room is for founders and moderators.')).toBeTruthy();
+      expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
+      expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+      expect(screen.queryByLabelText('Your message')).toBeNull();
+      expect(groupMock).not.toHaveBeenCalled();
+      expect(threadMock).not.toHaveBeenCalled();
+    },
+  );
 
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByText('This room is for confirmed moderators.')).toBeTruthy();
+    expect(screen.getByText('This room is for founders and moderators.')).toBeTruthy();
     expect(groupMock).not.toHaveBeenCalled();
   });
 
-  it('shows loading then the group thread', async () => {
-    let resolveGroup: ((value: Conversation) => void) | undefined;
-    groupMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveGroup = resolve;
-        }),
-    );
-    threadMock.mockResolvedValue([MESSAGE]);
-    renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
-    expect(screen.getByText('Loading…')).toBeTruthy();
-    await act(async () => {
-      resolveGroup?.(GROUP);
-      await Promise.resolve();
-    });
-    expect(await screen.findByText('Hello mods')).toBeTruthy();
-    expect(groupMock).toHaveBeenCalledWith('sess');
-    expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id);
-    expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
-    expect(screen.queryByText('Staff room')).toBeNull();
-    expect(screen.getByLabelText('Your message')).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-  });
+  it.each(['founder', 'moderator'] as const)(
+    'shows loading then the group thread as %s',
+    async (role) => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role } });
+      let resolveGroup: ((value: Conversation) => void) | undefined;
+      groupMock.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveGroup = resolve;
+          }),
+      );
+      threadMock.mockResolvedValue([MESSAGE]);
+      renderWithLocale(<ModeratorGroupScreen />);
+      expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+      expect(screen.getByText('Loading…')).toBeTruthy();
+      await act(async () => {
+        resolveGroup?.(GROUP);
+        await Promise.resolve();
+      });
+      expect(await screen.findByText('Hello mods')).toBeTruthy();
+      expect(groupMock).toHaveBeenCalledWith('sess');
+      expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id);
+      expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+      expect(screen.queryByText('Staff room')).toBeNull();
+      expect(screen.getByLabelText('Your message')).toBeTruthy();
+      expect(screen.queryByLabelText('Amount')).toBeNull();
+    },
+  );
 
   it('shows an error and retries', async () => {
     groupMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(GROUP);

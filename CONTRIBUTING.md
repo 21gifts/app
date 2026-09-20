@@ -165,7 +165,7 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional push bell + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator-only staff room)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + founder/moderator staff room)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
 │   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
@@ -329,6 +329,7 @@ update stuff
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Accessors throw on missing values; no
   silent fallbacks.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can.
 
 ### Styling
 
