@@ -802,7 +802,7 @@ export function ForumBoard({
       flashCopied(messageId);
       return;
     } catch {
-      /* v8 ignore next 7 -- clipboard throw after unmount or fallback fail */
+      /* v8 ignore next 3 -- clipboard threw after unmount */
       if (!copyMounted.current) {
         return;
       }
@@ -868,6 +868,8 @@ export function ForumBoard({
           const stopCardToggle = (event: MouseEvent): void => {
             event.stopPropagation();
           };
+          const copyLabelKey =
+            message.parentId === undefined ? 'forum.copyLink' : 'forum.copyReplyLink';
 
           return (
             <li
@@ -1068,8 +1070,8 @@ export function ForumBoard({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  aria-label={t('forum.copyLink')}
-                  title={t('forum.copyLink')}
+                  aria-label={t(copyLabelKey)}
+                  title={t(copyLabelKey)}
                   data-copied={copied ? 'true' : undefined}
                   onClick={(event) => {
                     stopCardToggle(event);

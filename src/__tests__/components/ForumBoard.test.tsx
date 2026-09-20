@@ -3284,6 +3284,37 @@ describe('ForumBoard', () => {
     });
   });
 
+  it('labels the copy control of a reply shown as a feed card and copies its own permalink', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'r-feed', parentId: 'parent-1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Copy link to this note' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this reply' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/r-feed`);
+      expect(
+        screen.getByRole('button', { name: 'Copy link to this reply' }).getAttribute('data-copied'),
+      ).toBe('true');
+    });
+  });
+
   it("copies a reply's own permalink", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -3335,6 +3366,7 @@ describe('ForumBoard', () => {
     expect(
       screen.getByRole('button', { name: 'Copy link to this note' }).getAttribute('data-copied'),
     ).toBeNull();
+    expect(screen.queryByText('Copy link to this reply')).toBeNull();
   });
 
   it('falls back to execCommand for a reply permalink when the clipboard write rejects', async () => {
@@ -3343,6 +3375,7 @@ describe('ForumBoard', () => {
       configurable: true,
       value: { writeText },
     });
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const originalExecCommand = document.execCommand;
     const execCommand = vi.fn(() => true);
     Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
@@ -3398,6 +3431,11 @@ describe('ForumBoard', () => {
         configurable: true,
         value: originalExecCommand,
       });
+      if (originalClipboard === undefined) {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      } else {
+        Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      }
     }
   });
 
@@ -3407,6 +3445,7 @@ describe('ForumBoard', () => {
       configurable: true,
       value: { writeText },
     });
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const originalExecCommand = document.execCommand;
     const execCommand = vi.fn(() => false);
     Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
@@ -3461,6 +3500,11 @@ describe('ForumBoard', () => {
         configurable: true,
         value: originalExecCommand,
       });
+      if (originalClipboard === undefined) {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      } else {
+        Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      }
     }
   });
 
@@ -3600,6 +3644,46 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-deletable"]') as HTMLElement;
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+  });
+
+  it('keeps the flex row class for a viewer without the trash when the board was given onDeleted', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-no-trash',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-no-trash"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
     expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
   });
 

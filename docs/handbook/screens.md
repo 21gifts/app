@@ -485,7 +485,7 @@ Click **Copy link to this note** — control sets `data-copied` after writing `o
 
 ### Variant: reply-copy
 
-On **All**, expand Ada's note to show its replies.
+Signed-in `/welcome` on the default filter; expand Ada's note to show its reply.
 
 - **Trigger:** Click **Copy link to this reply** on a nested reply.
 - **Result:** The control sets `data-copied` on that reply's own button after writing the reply's own `origin/messages/<replyId>` permalink to the clipboard — the note's own copy button is unaffected.
