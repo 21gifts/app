@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
-    set({ session, account });
+    set({ session, account, wrongAccount: false });
   },
   setAccount: (account) => {
     set({ account });

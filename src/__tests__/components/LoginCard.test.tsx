@@ -143,7 +143,8 @@ describe('LoginCard', () => {
     expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
     expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
-    expect(retrySpy).toHaveBeenCalledTimes(1);
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(retrySpy).not.toHaveBeenCalled();
     expect(useAuthStore.getState().wrongAccount).toBe(false);
   });
 
@@ -155,7 +156,8 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
     expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
-    expect(retrySpy).toHaveBeenCalledTimes(1);
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(retrySpy).not.toHaveBeenCalled();
     expect(useAuthStore.getState().wrongAccount).toBe(false);
   });
 

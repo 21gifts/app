@@ -57,8 +57,17 @@ export function useHydrateSession(): { ready: boolean } {
           if (gen !== hydrateGen.current) {
             return;
           }
-          clearAuth();
-          setWrongAccount(true);
+          if (loadSession() !== token) {
+            return;
+          }
+          const current = useAuthStore.getState();
+          if (current.session !== null && current.session !== token) {
+            return;
+          }
+          if (current.session === null || current.session === token) {
+            clearAuth();
+            setWrongAccount(true);
+          }
           return;
         }
         console.error('Session hydration failed', error);

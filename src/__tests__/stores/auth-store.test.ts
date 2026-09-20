@@ -89,6 +89,12 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState().wrongAccount).toBe(false);
   });
 
+  it('setAuth clears the wrongAccount hint', () => {
+    useAuthStore.getState().setWrongAccount(true);
+    useAuthStore.getState().setAuth('tok', account);
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
   it('clearAuth does not reset wrongAccount', () => {
     useAuthStore.getState().setAuth('tok', account);
     useAuthStore.getState().setWrongAccount(true);

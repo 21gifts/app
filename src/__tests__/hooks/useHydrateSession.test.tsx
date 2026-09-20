@@ -124,6 +124,28 @@ describe('useHydrateSession', () => {
     expect(useAuthStore.getState().session).toBe('new');
   });
 
+  it('does not clear a newer session when stale hydration returns WrongAccountError', async () => {
+    let reject!: (error: unknown) => void;
+    const pending = new Promise<typeof account | null>((_resolve, rej) => {
+      reject = rej;
+    });
+    vi.mocked(loadSession).mockReturnValueOnce('old').mockReturnValue('new');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    renderWithLocale(<Probe />);
+    act(() => {
+      useAuthStore.getState().setAuth('new', { ...account, name: 'Ada' });
+    });
+
+    await act(async () => {
+      reject(new WrongAccountError());
+    });
+
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBe('new');
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
   it('ignores stale hydration when the store already holds a different session', async () => {
     let resolve!: (value: typeof account | null) => void;
     const pending = new Promise<typeof account | null>((r) => {

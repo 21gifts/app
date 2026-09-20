@@ -51,6 +51,10 @@ export function LoginCard(): ReactElement {
         wrongAccount={wrongAccountHint}
         onRetry={() => {
           clearWrongAccount();
+          if (wrongAccountHint) {
+            passkey.login();
+            return;
+          }
           passkey.retry();
         }}
       />
