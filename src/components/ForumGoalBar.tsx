@@ -46,30 +46,32 @@ export function ForumGoalBar({
   const overflowWidth = percent > 100 ? Math.min(100, percent - 100) : 0;
   const percentLabel = String(percent);
   return (
-    <div className="mt-2 flex items-center gap-2 overflow-visible">
-      <svg
-        viewBox="0 0 100 8"
-        preserveAspectRatio="none"
-        overflow="visible"
-        role="img"
-        aria-label={t('forum.goalBarAria', { percent: percentLabel })}
-        className="h-2 min-w-0 flex-1 overflow-visible"
-      >
-        <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-border" />
-        {fillWidth > 0 ? (
-          <rect x="0" y="0" width={fillWidth} height="8" rx="4" className="fill-app-accent" />
-        ) : null}
+    <div className="mt-2 flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-center">
+        <svg
+          viewBox="0 0 100 8"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={t('forum.goalBarAria', { percent: percentLabel })}
+          className="h-2 min-w-0 flex-1"
+        >
+          <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-border" />
+          {fillWidth > 0 ? (
+            <rect x="0" y="0" width={fillWidth} height="8" rx="4" className="fill-app-accent" />
+          ) : null}
+        </svg>
         {overflowWidth > 0 ? (
-          <rect
-            x="100"
-            y="0"
-            width={overflowWidth}
-            height="8"
-            rx="4"
-            className="fill-app-success"
-          />
+          <svg
+            viewBox="0 0 100 8"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            className="h-2"
+            width={`${overflowWidth}%`}
+          >
+            <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-success" />
+          </svg>
         ) : null}
-      </svg>
+      </div>
       <span className="shrink-0 tabular-nums text-xs text-app-muted">
         {t('forum.goalPercent', { percent: percentLabel })}
       </span>

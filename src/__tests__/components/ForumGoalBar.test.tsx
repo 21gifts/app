@@ -55,5 +55,6 @@ describe('ForumGoalBar', () => {
     expect(overflow).not.toBeNull();
     expect(overflow?.getAttribute('width')).toBe('100');
     expect(screen.getByRole('img').querySelector('[style]')).toBeNull();
+    expect(container.querySelector('svg[aria-hidden="true"]')?.getAttribute('width')).toBe('100%');
   });
 });
