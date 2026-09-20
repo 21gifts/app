@@ -1704,11 +1704,13 @@ Valid known UUID. Thread may be parent-only when replies are empty. Card with au
 Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumGoalBar` sits after the amount line: full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
 
 ![21.gifts public message goal 110](images/messages-id-goal-110.png)
+
 ### Variant: photos
 
 Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` shows earlier stills at 88% so the next photo peeks, the last still full width, a `1/2` chip, and dots.
 
 ![21.gifts public message photos](images/messages-id-photos.png)
+
 ### Variant: signed-in
 
 Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
