@@ -209,7 +209,8 @@ function PublicThreadCard({
  * Opening a reply UUID still shows the parent thread. Unsigned visitors keep
  * the read-only cards. When hydrate is ready and both session and account are
  * set, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
- * so copy, reply, Gift on a payable nested reply, and staff delete work. No
+ * so copy, reply, Gift on a payable nested reply, and staff delete work.
+ * Passes optional `seedReply` when the highlighted row is a hidden reply. No
  * OnboardingGate, top-level composer, or envelope.
  *
  * @param props - Dynamic route `id`.
@@ -283,8 +284,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         if (cancelled) {
           return;
         }
-        const highlight =
-          next.parentId !== undefined && next.parentId !== '' ? id : null;
+        const highlight = next.parentId !== undefined && next.parentId !== '' ? id : null;
         const replies =
           highlight !== null &&
           next.deletedAt !== undefined &&
@@ -355,6 +355,10 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   }
 
   const signedInThread = ready && session !== null && account !== null;
+  const seedReply =
+    highlightId !== null
+      ? replies.find((row) => row.id === highlightId && row.deletedAt !== undefined)
+      : undefined;
   const highlighted =
     highlightId !== null ? replies.find((reply) => reply.id === highlightId) : undefined;
   const hiddenNoticeSource =
@@ -382,6 +386,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         <PublicMessageThread
           root={root}
           highlightId={highlightId}
+          {...(seedReply !== undefined ? { seedReply } : {})}
           onRootDeleted={() => {
             setStatus('missing');
             setRoot(null);
