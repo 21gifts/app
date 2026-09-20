@@ -294,6 +294,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:error-ask",
+    "label": "/welcome error-ask",
+    "visual": "state-welcome-error-ask",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:photo",
     "label": "/welcome photo",
     "visual": "state-welcome-photo",

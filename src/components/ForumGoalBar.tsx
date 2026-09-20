@@ -5,13 +5,12 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { forumGoalPercent } from '@/lib/forum-goal';
 
 /**
- * Unfloored collected/goal ratio for SVG widths. Non-finite or non-positive
- * goals yield 0. Negative or non-finite sats are treated as 0.
+ * Unfloored collected/goal ratio for SVG widths. Negative or non-finite
+ * sats are treated as 0. The caller must pass a positive finite goal.
  *
  * @param sats - Collected sats on the note.
- * @param goalSats - Whole-sat goal.
- * @returns Uncapped ratio (`sats / goalSats`). Caller already rejected
- *   non-positive goals.
+ * @param goalSats - Positive finite whole-sat goal.
+ * @returns Uncapped ratio (`sats / goalSats`).
  */
 function forumGoalRatio(sats: number, goalSats: number): number {
   const collected = Number.isFinite(sats) && sats > 0 ? sats : 0;

@@ -416,6 +416,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'error-ask',
+    image: 'welcome-error-ask.png',
+    visual: 'state-welcome-error-ask',
+    needle: 'Enter a whole number to ask for.',
+  },
+  {
+    route: '/welcome',
     id: 'photo',
     image: 'welcome-photo.png',
     visual: 'state-welcome-photo',

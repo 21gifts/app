@@ -5321,6 +5321,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-validation-error');
   });
 
+  test('welcome error-ask', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello');
+    await page.getByLabel('Ask').fill('abc');
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByText('Enter a whole number to ask for.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-error-ask');
+  });
+
   test('welcome photo', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {

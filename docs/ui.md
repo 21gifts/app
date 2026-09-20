@@ -94,7 +94,7 @@ Live tokens from `src/app/globals.css` `@theme` and `html.dark`.
 | `app-accent-fg`      | `#0a090c`            | `#0a090c`                | Text on accent fill (always ink)                         |
 | `app-focus`          | `#171717`            | `#ffffff`                | `:focus-visible` ring (2px)                              |
 | `app-danger`         | `#b91c1c`            | `#f87171`                | Alert text/border                                        |
-| `app-success`        | `#15803d`            | `#4ade80`                | Success copy (unused on current screens)                 |
+| `app-success`        | `#15803d`            | `#4ade80`                | Goal-bar overflow fill past 100%                         |
 | `app-overlay`        | `rgb(10 9 12 / 0.4)` | `rgb(10 9 12 / 0.6)`     | Modal / overlay scrim                                    |
 | `app-chart-given`    | `#525252`            | `#a3a3a3`                | Given series                                             |
 | `app-chart-received` | `#f7931a`            | `#f7931a`                | Received / spend series                                  |
@@ -807,15 +807,17 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Composer
 
-**Anatomy.** Top-level forum note: `flex items-center gap-2`. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
+**Anatomy.** Top-level forum note: column with optional Ask `Field` (`forum.askAmountLabel`) above a `flex items-center gap-2` row. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
 
+- Ask (forum note only): `Field` `forum.askAmountLabel`, `inputMode="numeric"`. Empty = no goal. Invalid input sets `formError` `ask`.
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer, and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
 - Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
 - Send/Post: `IconButton` lg primary, lucide `Send`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
+- Goal bar (top-level notes with a positive ask): orange `app-accent` through 100%, green `app-success` overflow, uncapped percent label.
 
-**States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`).
+**States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`) including empty-post and invalid-Ask.
 
 ### Pay sheet
 
