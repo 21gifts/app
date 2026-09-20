@@ -236,22 +236,22 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `PHP 80.00
 
 **Spacing scale** (4px base = Tailwind default). Use only these on new surfaces:
 
-| Token   | px        | Tailwind                 | Typical                                                        |
-| ------- | --------- | ------------------------ | -------------------------------------------------------------- |
-| 1       | 4         | `p-1` `gap-1`            | Badge padding-y                                                |
-| 1.5     | 6         | `gap-1.5`                | Icon+label in Menu                                             |
-| 2       | 8         | `p-2` `gap-2`            | IconButton inner, composer gap                                 |
-| 3       | 12        | `p-3` `gap-3`            | Pay sheet padding, field stack                                 |
-| 4       | 16        | `p-4` `top-4` `gap-4`    | Note card `px-4 py-3` (y=12), chrome top                       |
-| 5       | 20        | `px-5` `right-5` `gap-5` | Marketing horizontal, chrome right, clustered `sm` IconButtons |
-| 6       | 24        | `px-6` `gap-6` `p-6`     | App page padding, card gap                                     |
-| 8       | 32        | `p-8` `gap-8`            | Card padding                                                   |
-| 10      | 40        | `gap-10` `py-10`         | PageChrome gap, footer py                                      |
-| 12      | 48        | `mt-12` `gap-12`         | Section rhythm, stats `space-y-12`                             |
-| 16      | 64        | `pt-16`                  | Stats top                                                      |
-| 20      | 80        | `py-20`                  | Marketing section py                                           |
-| 24      | 96        | `py-24`                  | Legal/handbook top                                             |
-| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | Marketing hero                                                 |
+| Token   | px        | Tailwind                 | Typical                                          |
+| ------- | --------- | ------------------------ | ------------------------------------------------ |
+| 1       | 4         | `p-1` `gap-1`            | Badge padding-y                                  |
+| 1.5     | 6         | `gap-1.5`                | Icon+label in Menu                               |
+| 2       | 8         | `p-2` `gap-2`            | IconButton inner, composer gap                   |
+| 3       | 12        | `p-3` `gap-3`            | Pay sheet padding, field stack                   |
+| 4       | 16        | `p-4` `top-4` `gap-4`    | Note card `px-4 py-3` (y=12)                     |
+| 5       | 20        | `px-5` `right-5` `gap-5` | Marketing horizontal, clustered `sm` IconButtons |
+| 6       | 24        | `px-6` `gap-6` `p-6`     | App page padding, card gap                       |
+| 8       | 32        | `p-8` `gap-8`            | Card padding                                     |
+| 10      | 40        | `gap-10` `py-10`         | PageChrome gap, footer py                        |
+| 12      | 48        | `mt-12` `gap-12`         | Section rhythm, stats `space-y-12`               |
+| 16      | 64        | `pt-16`                  | Stats top                                        |
+| 20      | 80        | `py-20`                  | Marketing section py                             |
+| 24      | 96        | `py-24`                  | Legal/handbook top                               |
+| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | Marketing hero                                   |
 
 App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-5` (20px). Do not mix.
 
@@ -260,7 +260,7 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 | Token     | px   | Tailwind                    | Use                                                                      |
 | --------- | ---- | --------------------------- | ------------------------------------------------------------------------ |
 | `pill`    | 9999 | `rounded-full`              | Buttons, switcher triggers, segmented thumbs, header Log in, badges      |
-| `card`    | 24   | `rounded-3xl`               | `Card`, profile/login/welcome panels                                     |
+| `card`    | 24   | `rounded-3xl`               | AppShell page frame; default `Card` overlays and note panels             |
 | `note`    | 16   | `rounded-2xl`               | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
 | `panel`   | 12   | `rounded-xl`                | Menu, listbox, pay-sheet inner, photo preview, role hint                 |
 | `control` | 8    | `rounded-lg`                | Menu rows                                                                |
@@ -280,14 +280,15 @@ Do not add drop shadows on marketing. Do not use colored shadows.
 
 **Motion.**
 
-| Event                | Duration                     | Easing                | Notes                                                      |
-| -------------------- | ---------------------------- | --------------------- | ---------------------------------------------------------- |
-| Color hover          | 150ms                        | `ease` (`transition`) | Buttons, rows, pills                                       |
-| Menu / listbox mount | instant (conditional render) | —                     | No fade required                                           |
-| Theme switch         | instant                      | —                     | Class toggle on `html`; do not animate `color` on `<body>` |
-| Pay sheet open       | instant                      | —                     | Insert in-card; no slide                                   |
-| Spinner              | 1000ms linear infinite       | `animate-spin`        | `Loader2`                                                  |
-| Copy check flash     | 1200ms then revert           | —                     | `ForumBoard` `COPY_RESET_MS`                               |
+| Event            | Duration                     | Easing                | Notes                                                      |
+| ---------------- | ---------------------------- | --------------------- | ---------------------------------------------------------- |
+| Color hover      | 150ms                        | `ease` (`transition`) | Buttons, rows, pills                                       |
+| Menu panel       | instant (`hidden` class)     | —                     | Stays mounted so `PwaInstall` is not remounted             |
+| Listbox mount    | instant (conditional render) | —                     | LanguageSwitcher; no fade required                         |
+| Theme switch     | instant                      | —                     | Class toggle on `html`; do not animate `color` on `<body>` |
+| Pay sheet open   | instant                      | —                     | Insert in-card; no slide                                   |
+| Spinner          | 1000ms linear infinite       | `animate-spin`        | `Loader2`                                                  |
+| Copy check flash | 1200ms then revert           | —                     | `ForumBoard` `COPY_RESET_MS`                               |
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -395,14 +396,12 @@ flowchart TB
 
 **Safe area / visualViewport.** `AppShell` plus `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`) is the height source. `--app-height` follows `visualViewport.height` only when scale is 1 (keyboard / browser chrome). Do not follow a pinch-zoom visual viewport. `html { touch-action: manipulation }` disables double-tap-zoom; pinch-zoom stays. Do not add `env(safe-area-inset-*)` here.
 
-**`AppShell` slots.** `AppShell` owns the app `<main>`: optional `topLeft` / `topRight`, `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
+**`AppShell` slots.** `AppShell` always draws the page frame: a viewport-height `<main>` with one `rounded-3xl` `<section>`. Chrome (wordmark + Menu / language) is that frame’s first row (`[data-app-chrome]`). `fill` and `flow` share this geometry (`h-[var(--app-height)]`, inner `overflow-y-auto` scroller). `mode` stays on the API so call sites compile. `PageChrome` still passes `mode="flow"`. Card never hosts page chrome. `surface={false}` is the page-body column (no radius/border/bg/shadow/`p-8`). Default Card is still a nested visual panel for overlays and notes. Never `justify-center` on `<main>` or the overflow scroller. Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
 ```
 [ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Language ]
 [                         children                                      ]
 ```
-
-On `fill` + `align="center"`, the first eligible `Card` (`chrome` not `false`) hosts `topLeft` / `topRight` as an in-flow header inside the `rounded-3xl` border. Page-absolute chrome (`top-4` / `left-5` / `right-5`, 16px / 20px) is hidden while that Card holds the claim. Overlay cards, public-note cards (`Card chrome={false}`), `flow`, and `fill` + `align="start"` keep page-absolute chrome. `fill` + `center` with no claiming Card keeps page-absolute chrome and adds `pt-24` on the inner scroller so content clears it. Never `justify-center` on `<main>` or the overflow scroller. Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
 | Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -429,7 +428,7 @@ On `fill` + `align="center"`, the first eligible `Card` (`chrome` not `false`) h
 | Log out              | `LogoutButton`                | labeled                                                                             |
 | Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
-Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`. Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
+Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). `7rem` is AppShell `px-6` plus chrome `px-8` on both sides so the panel stays on-screen at 320 CSS pixels. AppShell `<main>` has no `overflow-hidden` so the panel is not clipped; the inner scroller is still `overflow-y-auto`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
 **Marketing header** stays dedicated (`MarketingHeader`): sticky, `bg-ink/85 backdrop-blur-xl`, `border-b border-paper/10`, `px-5 py-3.5`. Do not reuse `PageChrome` on marketing.
 
@@ -563,9 +562,9 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 ### `AppShell` / `PageChrome`
 
-**Anatomy.** `AppShell` owns the app `<main>`: optional `topLeft` / `topRight` (page-absolute by default; under `fill` + `align="center"` the first eligible Card hosts them in-flow), `fill` (locked height + header/scroll/footer) or `flow` (min-height + document scroll). `PageChrome` is the flow-mode wrapper; prefer `AppShell` on new routes.
+**Anatomy.** `AppShell` always draws one `rounded-3xl` page frame. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). `fill` and `flow` share locked-height inner-scroller geometry. Card never hosts page chrome. `PageChrome` is the flow-mode wrapper (`mode="flow"`); prefer `AppShell` on new routes.
 
-**Tokens.** `h-[var(--app-height)]` (`fill`) or `min-h-[var(--app-height)]` (`flow`), `px-6`, `bg` inherited from `body`. Never Tailwind viewport-height utilities on app routes.
+**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, inner `overflow-y-auto`, `bg` inherited from `body`. Never Tailwind viewport-height utilities on app routes.
 
 **API.**
 
@@ -576,7 +575,7 @@ export interface AppShellProps {
   topLeft?: ReactNode;
   topRight?: ReactNode;
   className?: string;
-  align?: 'start' | 'center'; // fill only
+  align?: 'start' | 'center';
 }
 
 export interface PageChromeProps {
@@ -587,7 +586,7 @@ export interface PageChromeProps {
 }
 ```
 
-Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child registration wins over page `topLeft`).
+Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child registration wins over page `topLeft`). `useAppShellScroller` returns the inner `overflow-y-auto` node, or `null` outside AppShell.
 
 ### `Wordmark`
 
@@ -609,13 +608,11 @@ export function Wordmark(props: {
 
 ### `Card`
 
-**Anatomy.** `<section>` panel: children in a column, centered, `gap-6`, `p-8`, `rounded-3xl`, `border border-app-border bg-app-card shadow-sm`, `w-full` + max width.
+**Anatomy.** Default `<section>` is a nested visual panel: children in a column, centered, `gap-6`, `p-8`, `rounded-3xl`, `border border-app-border bg-app-card shadow-sm`, `w-full` + max width. `surface={false}` is the page-body column (width + flex + gap only; no radius, border, bg, shadow, or `p-8`). Page chrome lives on AppShell `[data-app-chrome]`, never on Card. The AppShell frame is the only page-level `rounded-3xl`.
 
-**API.** `maxWidth?: 'sm' | 'md' | 'xl'` default `sm`. `className?`. `chrome?: boolean` default `true` (`false` never claims page chrome).
+**API.** `maxWidth?: 'sm' | 'md' | 'xl'` default `sm`. `className?`. `surface?: boolean` default `true` (`false` omits panel classes).
 
 **States.** None. Nested notes use `app-card-muted`, not a second `Card`.
-
-On `AppShell` `fill` + `align="center"`, the first Card with `chrome` not `false` hosts page chrome as its top row, inside `rounded-3xl`. Overlay cards, public-note cards, `flow`, and `fill` + `start` stay page-absolute `top-4 left-5 right-5`. `fill` + `center` without a claim uses inner `pt-24` so absolute chrome does not sit on the panel corners.
 
 ### `Button` (labeled)
 
@@ -893,11 +890,11 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Notifications list
 
-**Anatomy.** `Card maxWidth="xl"` + **h1** `notifications.heading` at the **h1** ramp. List of posts, replies, and payments as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`): actor title (`{name} posted` / `{name} replied` / `{name} sent bitcoin`) + time. Unread: semibold `text-app-fg`. Read: actor `font-medium`, body `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only post body: `notifications.photoPost` (**Photo**). Photo-only reply body: `notifications.photoOnly` (**Photo reaction**). Zap body is the stored amount. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
+**Anatomy.** `Card maxWidth="xl"` `surface={false}` + **h1** `notifications.heading` at the **h1** ramp. List of posts, replies, and payments as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`): actor title (`{name} posted` / `{name} replied` / `{name} sent bitcoin`) + time. Unread: semibold `text-app-fg`. Read: actor `font-medium`, body `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only post body: `notifications.photoPost` (**Photo**). Photo-only reply body: `notifications.photoOnly` (**Photo reaction**). Zap body is the stored amount. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity page column `Card` `max-w-sm` `surface={false}` (no nested `rounded-3xl`; the AppShell frame is the page panel): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -967,7 +964,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 ### `/welcome` (forum)
 
-`PageChrome` `topLeft={<Wordmark href="/welcome" />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card max-w-xl` → decorative gift-and-Bitcoin SVG 48px → **one** `h1` “Welcome, {name}” → `ForumLoader` / `ForumBoard`:
+`PageChrome` `topLeft={<Wordmark href="/welcome" />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card surface={false}` `max-w-xl` (page column inside the AppShell frame; the frame is the only page-level `rounded-3xl`) → decorative gift-and-Bitcoin SVG 48px → **one** `h1` “Welcome, {name}” → `ForumLoader` / `ForumBoard`:
 
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
@@ -982,11 +979,11 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/profile`
 
-Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` → **h1** Profile → `AccountActivityChart` has no FiatPicker (signed-in); empty = `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (Notifications heading, first pill All/Active/Mentions plus muted hint, second pill This device On/Off when Push APIs are ready; selected fill `bg-app-btn`; On/Off text so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` `surface={false}` → **h1** Profile → `AccountActivityChart` has no FiatPicker (signed-in); empty = `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `PushToggle` (Notifications heading, first pill All/Active/Mentions plus muted hint, second pill This device On/Off when Push APIs are ready; selected fill `bg-app-btn`; On/Off text so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
 
 ### `/members/[accountId]`
 
-Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, activity **Posts** / **Reactions** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity `Card` `surface={false}` (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, activity **Posts** / **Reactions** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
 Handbook states: default (About me when set), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (posts feed open, listed note expanded, Amount filled, Post → `RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`, `translate*` (German post in the posts feed). Overlay-address is reachable from a posts-feed reply; About me is not a replyable forum note.
 
 ### `/notifications`
@@ -997,25 +994,24 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for moderators.**). Staff (moderator) see the hide-tool lead, the daily payout-goal widget (yesterday UTC vs 100 from `GET /gifts/stats`; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff fetch `GET /gifts/stats` for the widget. Does not fetch the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for moderators.**). Staff (moderator) see the hide-tool lead, the daily payout-goal widget (yesterday UTC vs 100 from `GET /gifts/stats`; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff fetch `GET /gifts/stats` for the widget. Does not fetch the hidden list. No un-hide control.
 
 Handbook states: default hub, forbidden, goal-open, loading, error.
 
 ### `/moderate/hidden`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **External** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **External** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
 
 Handbook states: default list, forbidden, empty, loading, error, external.
 
 ### `/moderate/group`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
-
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl` `surface={false}`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Other signed-in visitors see `Card xl` `surface={false}` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
 Handbook states: default, forbidden, empty, loading, error.
 
 ### `/contact`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** Contact → lead → rules link (`text-app-fg underline`) → Composer (textarea + `IconButton` Send). Alerts. Success navigates to inbox.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Contact → lead → rules link (`text-app-fg underline`) → Composer (textarea + `IconButton` Send). Alerts. Success navigates to inbox.
 
 ### `/rules`
 
@@ -1023,7 +1019,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text; read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text; read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 
@@ -1031,7 +1027,7 @@ App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitc
 
 ### `/view/[viewKey]`
 
-Flow `AppShell`; `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity card (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
+Fill `AppShell` (page frame); `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.

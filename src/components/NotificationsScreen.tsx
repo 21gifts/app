@@ -34,7 +34,7 @@ export interface NotificationsScreenProps {
  * and no filter.
  *
  * @param props - List state from {@link NotificationsLoader}.
- * @returns The notifications card.
+ * @returns The notifications page column.
  */
 export function NotificationsScreen({
   notifications,
@@ -140,5 +140,9 @@ export function NotificationsScreen({
     );
   }
 
-  return <Card maxWidth="xl">{body}</Card>;
+  return (
+    <Card maxWidth="xl" surface={false}>
+      {body}
+    </Card>
+  );
 }

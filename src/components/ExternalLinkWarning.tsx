@@ -41,7 +41,7 @@ export function ExternalLinkWarning({
         event.stopPropagation();
       }}
     >
-      <Card maxWidth="sm" chrome={false}>
+      <Card maxWidth="sm">
         <div className="flex w-full items-start justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight text-app-fg">
             {t('link.externalTitle')}

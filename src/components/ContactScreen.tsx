@@ -47,7 +47,7 @@ export function ContactScreen({
   };
 
   return (
-    <Card maxWidth="xl">
+    <Card maxWidth="xl" surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('contact.heading')}
       </h1>

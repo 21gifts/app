@@ -70,7 +70,7 @@ export function TrustChainScreen({
   }
 
   return (
-    <div className="w-full pt-24 pb-8">
+    <div className="w-full">
       <h1 className="text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('trustChain.title')}
       </h1>
