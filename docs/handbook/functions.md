@@ -1483,9 +1483,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: getAppVersion
 
-- **Purpose:** Typed accessor for the baked git SHA (`NEXT_PUBLIC_GIT_SHA`).
+- **Purpose:** Typed accessor for the baked Menu version (`NEXT_PUBLIC_APP_VERSION`).
 - **Inputs:** None.
-- **Returns / side effects:** Short SHA string (`dev` or 7 characters). Throws if unset/empty. Does not go through `entrypoint.sh`.
+- **Returns / side effects:** Decimal deploy run number string, or `dev`. Throws if unset/empty. Does not go through `entrypoint.sh`. Does not truncate.
 - **Used by:** `SignedInChrome`.
 
 ## Function: getCatalog

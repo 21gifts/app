@@ -13,14 +13,15 @@
 # (__NEXT_PUBLIC_API_URL__) and entrypoint.sh substitutes the real runtime
 # values at container start — the same image runs DEV and PRD without rebuild.
 #
-# GIT_SHA is a Docker build-arg (default `dev`), baked into NEXT_PUBLIC_GIT_SHA
-# at `next build` and shown as Version in the signed-in Menu. It is not a
-# runtime placeholder and is not substituted at container start.
+# APP_VERSION is a Docker build-arg (default `dev`), baked into
+# NEXT_PUBLIC_APP_VERSION at `next build` and shown as Version in the
+# signed-in Menu. It is the deploy run number, not an entrypoint.sh
+# placeholder, and is not substituted at container start.
 #
 # Current NEXT_PUBLIC_* variables:
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
-#   NEXT_PUBLIC_GIT_SHA — short git SHA of this image (from ARG GIT_SHA)
+#   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -33,8 +34,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__
-ARG GIT_SHA=dev
-ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
+ARG APP_VERSION=dev
+ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run build
 
 FROM node:22-alpine AS runtime

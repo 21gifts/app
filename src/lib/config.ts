@@ -4,8 +4,8 @@
  * Every `NEXT_PUBLIC_*` variable read anywhere in the app goes through this
  * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
- * start. `NEXT_PUBLIC_GIT_SHA` is baked at `next build` (Docker ARG /
- * `next.config.ts` env) and is not substituted by `entrypoint.sh`.
+ * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
+ * `entrypoint.sh`.
  */
 
 /**
@@ -31,22 +31,22 @@ export function getApiUrl(): string {
 }
 
 /**
- * Returns the short git SHA of this app build (7 chars), or `dev` when no SHA was baked.
+ * Returns the Menu version of this app build: a decimal deploy run number, or `dev`.
  *
- * Read exclusively through this accessor. Next.js inlines `NEXT_PUBLIC_GIT_SHA`
- * at build time from a literal `process.env.NEXT_PUBLIC_GIT_SHA` expression.
+ * Read exclusively through this accessor. Next.js inlines `NEXT_PUBLIC_APP_VERSION`
+ * at build time from a literal `process.env.NEXT_PUBLIC_APP_VERSION` expression.
  *
- * @returns The display SHA (`dev` or 7-character git SHA).
- * @throws Error when `NEXT_PUBLIC_GIT_SHA` is unset or empty.
+ * @returns The display version (`dev` or a decimal run number string).
+ * @throws Error when `NEXT_PUBLIC_APP_VERSION` is unset or empty.
  */
 export function getAppVersion(): string {
   // Dot access is load-bearing: Next.js inlines `NEXT_PUBLIC_*` variables at
-  // build time only for literal `process.env.NEXT_PUBLIC_GIT_SHA` expressions.
-  const value = process.env.NEXT_PUBLIC_GIT_SHA;
+  // build time only for literal `process.env.NEXT_PUBLIC_APP_VERSION` expressions.
+  const value = process.env.NEXT_PUBLIC_APP_VERSION;
   if (value === undefined || value === '') {
     throw new Error(
-      'NEXT_PUBLIC_GIT_SHA is not set. Provide it at build time (Docker ARG GIT_SHA or next.config.ts env).',
+      'NEXT_PUBLIC_APP_VERSION is not set. Provide it at build time (Docker ARG APP_VERSION or next.config.ts env).',
     );
   }
-  return value.length <= 7 ? value : value.slice(0, 7);
+  return value; // do not slice
 }

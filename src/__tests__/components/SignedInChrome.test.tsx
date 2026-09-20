@@ -71,7 +71,7 @@ vi.mock('@/lib/push', () => ({
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
 }));
-vi.mock('@/lib/config', () => ({ getAppVersion: vi.fn(() => 'abc1234') }));
+vi.mock('@/lib/config', () => ({ getAppVersion: vi.fn(() => '74') }));
 const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
@@ -205,8 +205,8 @@ describe('SignedInChrome', () => {
     expect(screen.queryByRole('option', { name: 'Deutsch' })).toBeNull();
     expect(screen.queryByLabelText('Theme')).toBeNull();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
-    expect(screen.getByText('Version abc1234')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Version abc1234/ })).toBeNull();
+    expect(screen.getByText('Version 74')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Version 74/ })).toBeNull();
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Profile' })).toBeTruthy();
       expect(screen.queryByText('Loading…')).toBeNull();

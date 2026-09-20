@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getApiUrl, getAppVersion } from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
-const ORIGINAL_GIT_SHA = process.env.NEXT_PUBLIC_GIT_SHA;
+const ORIGINAL_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 
 afterEach(() => {
   if (ORIGINAL === undefined) {
@@ -11,10 +11,10 @@ afterEach(() => {
   } else {
     process.env.NEXT_PUBLIC_API_URL = ORIGINAL;
   }
-  if (ORIGINAL_GIT_SHA === undefined) {
-    delete process.env.NEXT_PUBLIC_GIT_SHA;
+  if (ORIGINAL_APP_VERSION === undefined) {
+    delete process.env.NEXT_PUBLIC_APP_VERSION;
   } else {
-    process.env.NEXT_PUBLIC_GIT_SHA = ORIGINAL_GIT_SHA;
+    process.env.NEXT_PUBLIC_APP_VERSION = ORIGINAL_APP_VERSION;
   }
 });
 
@@ -37,27 +37,27 @@ describe('getApiUrl', () => {
 
 describe('getAppVersion', () => {
   it('returns the configured value', () => {
-    process.env.NEXT_PUBLIC_GIT_SHA = 'abc1234';
-    expect(getAppVersion()).toBe('abc1234');
+    process.env.NEXT_PUBLIC_APP_VERSION = '74';
+    expect(getAppVersion()).toBe('74');
   });
 
   it('throws when the variable is unset', () => {
-    delete process.env.NEXT_PUBLIC_GIT_SHA;
-    expect(() => getAppVersion()).toThrow('NEXT_PUBLIC_GIT_SHA');
+    delete process.env.NEXT_PUBLIC_APP_VERSION;
+    expect(() => getAppVersion()).toThrow('NEXT_PUBLIC_APP_VERSION');
   });
 
   it('throws when the variable is empty', () => {
-    process.env.NEXT_PUBLIC_GIT_SHA = '';
-    expect(() => getAppVersion()).toThrow('NEXT_PUBLIC_GIT_SHA');
-  });
-
-  it('slices a 40-char SHA to 7', () => {
-    process.env.NEXT_PUBLIC_GIT_SHA = 'abcdef0123456789abcdef0123456789abcdef01';
-    expect(getAppVersion()).toBe('abcdef0');
+    process.env.NEXT_PUBLIC_APP_VERSION = '';
+    expect(() => getAppVersion()).toThrow('NEXT_PUBLIC_APP_VERSION');
   });
 
   it('leaves `dev` uncut', () => {
-    process.env.NEXT_PUBLIC_GIT_SHA = 'dev';
+    process.env.NEXT_PUBLIC_APP_VERSION = 'dev';
     expect(getAppVersion()).toBe('dev');
+  });
+
+  it('does not slice a long decimal run number', () => {
+    process.env.NEXT_PUBLIC_APP_VERSION = '123456789';
+    expect(getAppVersion()).toBe('123456789');
   });
 });

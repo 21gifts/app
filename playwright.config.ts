@@ -101,7 +101,7 @@ export default defineConfig({
         HOSTNAME: '0.0.0.0',
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
         TRANSLATE_URL: 'http://127.0.0.1:3001',
-        NEXT_PUBLIC_GIT_SHA: 'dev',
+        NEXT_PUBLIC_APP_VERSION: 'dev',
       },
     },
   ],

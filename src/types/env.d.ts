@@ -5,8 +5,8 @@
  * variable accessed as `process.env.FOO` must be declared here. Keep this
  * file in sync with `src/lib/config.ts`. `NEXT_PUBLIC_API_URL` is a Dockerfile
  * build placeholder substituted by `entrypoint.sh` at container start.
- * `NEXT_PUBLIC_GIT_SHA` is baked at `next build` (Docker ARG `GIT_SHA` /
- * `next.config.ts` env), not a runtime placeholder.
+ * `NEXT_PUBLIC_APP_VERSION` is baked at `next build` via Docker ARG
+ * `APP_VERSION` / `next.config.ts` env, not an `entrypoint.sh` placeholder.
  */
 declare global {
   namespace NodeJS {
@@ -19,17 +19,17 @@ declare global {
        */
       NEXT_PUBLIC_API_URL?: string;
       /**
-       * Short git SHA of this app build, inlined at `next build`.
+       * Menu version of this app build, inlined at `next build`.
        * Read exclusively through `getAppVersion()` in `src/lib/config.ts`.
-       * Baked via Docker ARG `GIT_SHA` / `next.config.ts` env — not an
-       * `entrypoint.sh` placeholder. Tests assign it.
+       * Baked via Docker ARG `APP_VERSION` / `next.config.ts` env — not an
+       * `entrypoint.sh` placeholder. Tests assign `NEXT_PUBLIC_APP_VERSION`.
        */
-      NEXT_PUBLIC_GIT_SHA?: string;
+      NEXT_PUBLIC_APP_VERSION?: string;
       /**
-       * Docker build-arg / CI git SHA consumed by `next.config.ts` when baking
-       * `NEXT_PUBLIC_GIT_SHA`. Not an `entrypoint.sh` placeholder.
+       * Docker build-arg / CI deploy run number consumed by `next.config.ts`
+       * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
        */
-      GIT_SHA?: string;
+      APP_VERSION?: string;
       /**
        * Optional same-origin translation proxy upstream base URL. Missing, empty,
        * or non-http(s) values disable translation (`available: false` / POST 503).
