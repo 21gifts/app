@@ -5072,6 +5072,93 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-all');
   });
 
+  test('welcome goal-50', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-50',
+              name: 'Ada',
+              text: 'Goal note at fifty percent',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByText('50%')).toBeVisible();
+    await shotScreen(page, 'state-welcome-goal-50');
+  });
+
+  test('welcome goal-100', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-100',
+              name: 'Ada',
+              text: 'Goal note at one hundred percent',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByText('100%')).toBeVisible();
+    await shotScreen(page, 'state-welcome-goal-100');
+  });
+
+  test('welcome goal-110', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-110',
+              name: 'Ada',
+              text: 'Goal note at one hundred ten percent',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 23100,
+              goalSats: 21000,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'All' }).click();
+    await expect(page.getByText('110%')).toBeVisible();
+    await shotScreen(page, 'state-welcome-goal-110');
+  });
+
   test('welcome unpaid', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);

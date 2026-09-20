@@ -222,6 +222,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:goal-50",
+    "label": "/welcome goal-50",
+    "visual": "state-welcome-goal-50",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:goal-100",
+    "label": "/welcome goal-100",
+    "visual": "state-welcome-goal-100",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:goal-110",
+    "label": "/welcome goal-110",
+    "visual": "state-welcome-goal-110",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:unpaid",
     "label": "/welcome unpaid",
     "visual": "state-welcome-unpaid",

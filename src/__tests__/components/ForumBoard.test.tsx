@@ -173,6 +173,8 @@ const idleProps: Pick<
   | 'onReplyPost'
   | 'replyPosting'
   | 'replyFormError'
+  | 'askDraft'
+  | 'onAskDraftChange'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -203,6 +205,8 @@ const idleProps: Pick<
   onReplyPost: () => undefined,
   replyPosting: false,
   replyFormError: null,
+  askDraft: '',
+  onAskDraftChange: () => undefined,
 };
 
 function modeProps(
@@ -519,6 +523,46 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
     expect(document.querySelector('form')).toBeNull();
+    expect(screen.queryByLabelText('Ask')).toBeNull();
+  });
+
+  it('shows the Ask field when the composer is visible', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByLabelText('Ask')).toBeTruthy();
+  });
+
+  it('hides the Ask field when composerHidden', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByLabelText('Ask')).toBeNull();
   });
 
   it('omits the mode selector and lists a zero-sat basis note when modeSelector is false', () => {
@@ -2285,6 +2329,65 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('shows formError ask alert', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="ask"
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter a whole-sat amount to ask for.',
+    );
+  });
+
+  it('renders ForumGoalBar 110% on a top-level note with a goal', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, sats: 23100, goalSats: 21000 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('110%')).toBeTruthy();
+  });
+
+  it('does not render ForumGoalBar on a reply with goalSats', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'm1', sats: 23100, goalSats: 21000 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText('110%')).toBeNull();
   });
 
   it('disables submit and shows a spinner while posting', () => {

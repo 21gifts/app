@@ -332,6 +332,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'goal-50',
+    image: 'welcome-goal-50.png',
+    visual: 'state-welcome-goal-50',
+    needle: '50%',
+  },
+  {
+    route: '/welcome',
+    id: 'goal-100',
+    image: 'welcome-goal-100.png',
+    visual: 'state-welcome-goal-100',
+    needle: '100%',
+  },
+  {
+    route: '/welcome',
+    id: 'goal-110',
+    image: 'welcome-goal-110.png',
+    visual: 'state-welcome-goal-110',
+    needle: '110%',
+  },
+  {
+    route: '/welcome',
     id: 'unpaid',
     image: 'welcome-unpaid.png',
     visual: 'state-welcome-unpaid',

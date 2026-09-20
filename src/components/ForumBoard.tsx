@@ -24,6 +24,7 @@ import {
   type ReactElement,
 } from 'react';
 import { useAppShellScroller } from '@/components/AppShell';
+import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
@@ -64,7 +65,15 @@ import {
 
 /** Client-side composer validation or request failure. */
 export type ForumFormError =
-  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | 'tooMany' | null;
+  | 'empty'
+  | 'tooLong'
+  | 'request'
+  | 'rateLimit'
+  | 'unsupported'
+  | 'tooLarge'
+  | 'tooMany'
+  | 'ask'
+  | null;
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount';
@@ -159,6 +168,10 @@ export interface ForumBoardProps {
   draft: string;
   /** Called when the composer value changes. */
   onDraftChange: (value: string) => void;
+  /** Optional whole-sat ask draft for a top-level note. */
+  askDraft: string;
+  /** Called when the Ask field changes. */
+  onAskDraftChange: (value: string) => void;
   /** Called when the composer form is submitted. */
   onPost: () => void;
   /** Retry handler for a failed fetch. */
@@ -511,16 +524,16 @@ function fallbackCopy(text: string): boolean {
  * is not selected; omitted when `modeSelector` is false or `composerHidden`
  * is true), composer under the mode
  * filters above the newest-first list (new notes only, photo or video
- * attach), newest-first list (social feed) or empty/loading/error, per-card
- * expand for oldest-first replies + reply composer (labeled Amount field;
- * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
- * text-plus-gift shows the amount under the body), copy-link control,
- * React control on posts (`forum.react`, lucide Reply; expands the reply
- * composer; omitted when `deletedAt` is set), payable-reply pay sheet (Gift
- * on nested replies and on top-level cards with `parentId`; never on posts;
- * omitted when `deletedAt` is set), staff Delete omitted when `deletedAt` is
- * set, optional inline
- * photos, and optional inline videos.
+ * attach, optional Ask field on a second row), newest-first list (social
+ * feed) or empty/loading/error, per-card expand for oldest-first replies +
+ * reply composer (labeled Amount field; gift-only rows use `forum.giftReply`
+ * + `formatBitcoin(sats, numberFormat)`, text-plus-gift shows the amount
+ * under the body), copy-link control, `ForumGoalBar` on a top-level note
+ * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
+ * expands the reply composer; omitted when `deletedAt` is set), payable-reply
+ * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
+ * never on posts; omitted when `deletedAt` is set), staff Delete omitted
+ * when `deletedAt` is set, optional inline photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
  * When unseen notes are held for a scrolled visitor, a labeled New posts pill
@@ -532,7 +545,8 @@ function fallbackCopy(text: string): boolean {
  * `nearEndRef` attaches to the note about eight rows from the visible end.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
  *
- * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink/truncate state.
+ * @param props - Messages payload plus loading/error/composer (including
+ * `askDraft` / `onAskDraftChange`) /pay/mode/photo/video/laws/thread/permalink/truncate state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -549,6 +563,8 @@ export function ForumBoard({
   posting,
   draft,
   onDraftChange,
+  askDraft,
+  onAskDraftChange,
   onPost,
   onRetry,
   formError,
@@ -1021,6 +1037,11 @@ export function ForumBoard({
                   </div>
                 ) : null}
               </div>
+              {message.parentId === undefined &&
+              typeof message.goalSats === 'number' &&
+              message.goalSats > 0 ? (
+                <ForumGoalBar sats={message.sats} goalSats={message.goalSats} />
+              ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">
                 <button
                   type="button"
@@ -1573,6 +1594,20 @@ export function ForumBoard({
               )}
             </IconButton>
           </div>
+          <Field
+            id="forum-ask-amount"
+            label={t('forum.askAmountLabel')}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder=""
+            value={askDraft}
+            disabled={posting}
+            onChange={(event) => onAskDraftChange(event.target.value)}
+            className="w-24"
+          />
           {videoDraft !== null ? (
             <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
               <video
@@ -1677,6 +1712,11 @@ export function ForumBoard({
       {!composerHidden && formError === 'tooMany' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooMany')}
+        </p>
+      ) : null}
+      {!composerHidden && formError === 'ask' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('forum.errorAskAmount')}
         </p>
       ) : null}
 

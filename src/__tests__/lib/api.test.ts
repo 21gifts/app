@@ -72,6 +72,7 @@ import {
   startPasskeyRegistration,
   unlinkLightningAddress,
 } from '@/lib/api';
+import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 
 const account = {
@@ -1604,6 +1605,46 @@ describe('postMessage', () => {
     });
   });
 
+  it('includes goalSats when provided on a top-level note', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada', goalSats: 21000 });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+      goalSats: 21000,
+    });
+  });
+
+  it('omits goalSats when not provided', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada' });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+    });
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string),
+        'goalSats',
+      ),
+    ).toBe(false);
+  });
+
+  it('omits goalSats on a reply even when passed', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada', inReplyTo: 'parent', goalSats: 21000 });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+      inReplyTo: 'parent',
+    });
+  });
+
+  it('omits goalSats above FORUM_GOAL_SATS_MAX', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada', goalSats: FORUM_GOAL_SATS_MAX + 1 });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+    });
+  });
+
   it('includes a photo payload when provided', async () => {
     const withPhoto = { ...forumMessage, text: '', hasPhoto: true };
     const fetchMock = stubFetch({ ok: true, status: 200, body: withPhoto });
@@ -1757,6 +1798,48 @@ describe('postMessageVideo', () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const form = init.body as FormData;
     expect(form.get('poster')).toBeNull();
+  });
+
+  it('sets goalSats on the form when provided', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/webm' as const,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: created });
+    const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
+    await postMessageVideo('sess', { text: 'clip', video, goalSats: 21000 });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('goalSats')).toBe('21000');
+  });
+
+  it('omits goalSats from the form when not provided', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/webm' as const,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: created });
+    const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
+    await postMessageVideo('sess', { text: 'clip', video });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('goalSats')).toBeNull();
+  });
+
+  it('omits goalSats from the form when above FORUM_GOAL_SATS_MAX', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/webm' as const,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: created });
+    const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
+    await postMessageVideo('sess', { text: 'clip', video, goalSats: FORUM_GOAL_SATS_MAX + 1 });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('goalSats')).toBeNull();
   });
 
   it('throws the api error message on a 400', async () => {

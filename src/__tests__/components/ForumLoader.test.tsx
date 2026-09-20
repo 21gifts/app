@@ -356,6 +356,68 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('posts a valid Ask amount as goalSats', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+    });
+  });
+
+  it('omits goalSats when Ask is empty', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
+    });
+  });
+
+  it('does not post when Ask is not a whole sat in range', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    for (const value of ['abc', '0', '10000001']) {
+      fireEvent.change(screen.getByLabelText('Ask'), { target: { value } });
+      fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Enter a whole-sat amount to ask for.',
+      );
+      expect(postMock).not.toHaveBeenCalled();
+    }
+  });
+
+  it('clears the Ask field after a successful post', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+    });
+    expect((screen.getByLabelText('Ask') as HTMLInputElement).value).toBe('');
+  });
+
   it('shows empty copy when fetch resolves to an empty list', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
