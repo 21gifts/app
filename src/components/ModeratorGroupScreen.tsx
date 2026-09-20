@@ -278,6 +278,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       setFormError('tooLong');
       return;
     }
+    pickGeneration.current += 1;
     const conversationId = group.id;
     const pendingPhotos = photoDrafts;
     setPosting(true);
