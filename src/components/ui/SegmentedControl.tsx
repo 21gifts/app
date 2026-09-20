@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 /** Visual tone for {@link SegmentedControl}. */
 export type SegmentedControlTone = 'gift' | 'neutral';
@@ -34,6 +34,8 @@ export interface SegmentedControlProps<T extends string> {
   shell?: SegmentedControlShell;
   /** Extra classes on the outer track. */
   className?: string;
+  /** Optional trailing slot; rendered only for `tone="neutral"`. */
+  trailing?: ReactNode;
 }
 
 const BADGE_CLASS =
@@ -77,10 +79,11 @@ function optionBadgeAriaLabel(
 }
 
 /**
- * Mutually exclusive option group (forum mode, ₿|USD chart scales).
+ * Mutually exclusive option group (forum mode, ₿|USD chart scales). Optional
+ * trailing slot on `neutral` sits in the same pill after a 1px separator.
  *
  * @param props - See {@link SegmentedControlProps}.
- * @returns The group element.
+ * @returns The group element, or a pill wrapping the group plus trailing.
  */
 export function SegmentedControl<T extends string>({
   value,
@@ -90,34 +93,51 @@ export function SegmentedControl<T extends string>({
   tone,
   shell = 'app',
   className,
+  trailing,
 }: SegmentedControlProps<T>): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   if (tone === 'neutral') {
+    const optionButtons = options.map((opt) => {
+      const selected = value === opt.value;
+      return (
+        <button
+          key={opt.value}
+          type="button"
+          aria-pressed={selected}
+          aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
+          onClick={() => onChange(opt.value)}
+          className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
+            selected ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
+          }`}
+        >
+          {opt.label}
+          {optionBadge(opt.badge)}
+        </button>
+      );
+    });
+
+    if (trailing === undefined) {
+      return (
+        <div
+          role="group"
+          aria-label={ariaLabel}
+          className={`flex w-full rounded-full border border-app-border bg-app-card-muted p-1${extra}`}
+        >
+          {optionButtons}
+        </div>
+      );
+    }
+
     return (
       <div
-        role="group"
-        aria-label={ariaLabel}
-        className={`flex w-full rounded-full border border-app-border bg-app-card-muted p-1${extra}`}
+        className={`flex w-full items-center rounded-full border border-app-border bg-app-card-muted p-1 overflow-hidden${extra}`}
       >
-        {options.map((opt) => {
-          const selected = value === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              aria-pressed={selected}
-              aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
-              onClick={() => onChange(opt.value)}
-              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
-                selected ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
-              }`}
-            >
-              {opt.label}
-              {optionBadge(opt.badge)}
-            </button>
-          );
-        })}
+        <div role="group" aria-label={ariaLabel} className="flex min-w-0 flex-1">
+          {optionButtons}
+        </div>
+        <span aria-hidden="true" className="mx-0.5 w-px self-stretch bg-app-border" />
+        <span className="flex shrink-0 items-center">{trailing}</span>
       </div>
     );
   }

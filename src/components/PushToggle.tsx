@@ -14,13 +14,13 @@ type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 /**
  * Profile identity-card Notifications section: uppercase heading, a three-stage
  * `SegmentedControl` (All / Active / Mentions) whenever a session exists, and
- * an icon-only Bell `IconButton` to enable or disable Web Push when
+ * an icon-only Bell `IconButton` as the trailing control in the same pill when
  * Push/Service Worker APIs are present. Off is a secondary outline BellOff; on
  * is a primary filled Bell (`fill="currentColor"`). The button stays icon-only
- * — On/Off is the visible state, not a labeled button. The level control stays
+ * — fill vs outline plus `aria-pressed` encode on/off. The level control stays
  * visible when Push APIs are missing (in-app list still uses the level).
  * Renders nothing without a session. On iPhone Safari outside standalone, also
- * shows an install hint above the bell row. A successful level POST merges
+ * shows an install hint under the level hint. A successful level POST merges
  * `notificationLevel` into the current store account and ignores the response
  * if the session no longer matches.
  *
@@ -139,25 +139,56 @@ export function PushToggle(): ReactElement | null {
 
   const showBell = phase === 'ready';
   const ariaName = subscribed ? t('profile.push.disable') : t('profile.push.enable');
+  const levelOptions = [
+    { value: 'all' as const, label: t('profile.push.level.all') },
+    { value: 'active' as const, label: t('profile.push.level.active') },
+    { value: 'mentions' as const, label: t('profile.push.level.mentions') },
+  ];
+  const onLevelPress = (next: NotificationLevel): void => {
+    void onLevelChange(next);
+  };
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('profile.push.heading')}
       </p>
-      <SegmentedControl
-        tone="neutral"
-        value={selected}
-        options={[
-          { value: 'all', label: t('profile.push.level.all') },
-          { value: 'active', label: t('profile.push.level.active') },
-          { value: 'mentions', label: t('profile.push.level.mentions') },
-        ]}
-        onChange={(next) => {
-          void onLevelChange(next);
-        }}
-        ariaLabel={t('profile.push.level.label')}
-      />
+      {showBell ? (
+        <SegmentedControl
+          tone="neutral"
+          value={selected}
+          options={levelOptions}
+          onChange={onLevelPress}
+          ariaLabel={t('profile.push.level.label')}
+          trailing={
+            <IconButton
+              size="sm"
+              variant={subscribed ? 'primary' : 'secondary'}
+              aria-label={ariaName}
+              title={ariaName}
+              aria-pressed={subscribed}
+              disabled={busy}
+              onClick={() => {
+                void onToggle();
+              }}
+            >
+              {subscribed ? (
+                <Bell aria-hidden="true" className="h-4 w-4" fill="currentColor" />
+              ) : (
+                <BellOff aria-hidden="true" className="h-4 w-4" />
+              )}
+            </IconButton>
+          }
+        />
+      ) : (
+        <SegmentedControl
+          tone="neutral"
+          value={selected}
+          options={levelOptions}
+          onChange={onLevelPress}
+          ariaLabel={t('profile.push.level.label')}
+        />
+      )}
       <p className="text-sm text-app-muted">{t('profile.push.level.hint')}</p>
       {levelError ? (
         <p role="alert" className="text-center text-sm text-app-danger">
@@ -171,29 +202,6 @@ export function PushToggle(): ReactElement | null {
         <p role="alert" className="text-center text-sm text-app-danger">
           {t(errorKey)}
         </p>
-      ) : null}
-      {showBell ? (
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm text-app-fg">
-            {subscribed ? t('profile.push.on') : t('profile.push.off')}
-          </p>
-          <IconButton
-            variant={subscribed ? 'primary' : 'secondary'}
-            aria-label={ariaName}
-            title={ariaName}
-            aria-pressed={subscribed}
-            disabled={busy}
-            onClick={() => {
-              void onToggle();
-            }}
-          >
-            {subscribed ? (
-              <Bell aria-hidden="true" className="h-4 w-4" fill="currentColor" />
-            ) : (
-              <BellOff aria-hidden="true" className="h-4 w-4" />
-            )}
-          </IconButton>
-        </div>
       ) : null}
     </div>
   );

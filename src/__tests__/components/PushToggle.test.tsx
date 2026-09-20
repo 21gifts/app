@@ -145,12 +145,17 @@ describe('PushToggle', () => {
     renderWithLocale(<PushToggle />);
     const button = await screen.findByRole('button', { name: 'Enable notifications' });
     expect(screen.getByText('Notifications')).toBeTruthy();
-    expect(screen.getByText('Off')).toBeTruthy();
+    expect(screen.queryByText('On')).toBeNull();
+    expect(screen.queryByText('Off')).toBeNull();
     expect(screen.queryByText('Enable notifications')).toBeNull();
     expect(button.getAttribute('aria-pressed')).toBe('false');
     expect(button.className).toContain('border-app-border-strong');
     expect(button.className).not.toContain('bg-app-btn');
     expect(button.querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Active' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
   });
 
   it('shows the iOS install hint when Safari is not standalone', async () => {
@@ -170,7 +175,7 @@ describe('PushToggle', () => {
       expect(enablePush).toHaveBeenCalledWith('tok');
     });
     const button = await screen.findByRole('button', { name: 'Disable notifications' });
-    expect(screen.getByText('On')).toBeTruthy();
+    expect(screen.queryByText('On')).toBeNull();
     expect(screen.queryByText('Off')).toBeNull();
     expect(screen.queryByText('Disable notifications')).toBeNull();
     expect(button.getAttribute('aria-pressed')).toBe('true');
@@ -182,7 +187,7 @@ describe('PushToggle', () => {
     stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
     renderWithLocale(<PushToggle />);
     const subscribedButton = await screen.findByRole('button', { name: 'Disable notifications' });
-    expect(screen.getByText('On')).toBeTruthy();
+    expect(screen.queryByText('On')).toBeNull();
     expect(screen.queryByText('Off')).toBeNull();
     expect(screen.queryByText('Disable notifications')).toBeNull();
     expect(subscribedButton.getAttribute('aria-pressed')).toBe('true');
@@ -193,8 +198,8 @@ describe('PushToggle', () => {
       expect(disablePush).toHaveBeenCalledWith('tok');
     });
     const button = await screen.findByRole('button', { name: 'Enable notifications' });
-    expect(screen.getByText('Off')).toBeTruthy();
     expect(screen.queryByText('On')).toBeNull();
+    expect(screen.queryByText('Off')).toBeNull();
     expect(button.getAttribute('aria-pressed')).toBe('false');
     expect(button.className).not.toContain('bg-app-btn');
   });
