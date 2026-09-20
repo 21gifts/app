@@ -4752,7 +4752,12 @@ test('Function: ForumLoader — scrolled silent refresh shows New posts without 
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    window.scrollTo(0, 900);
+    const scroller = document.querySelector('main .overflow-y-auto');
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 900;
+    } else {
+      window.scrollTo(0, 900);
+    }
   });
   messagesBody = {
     messages: [
@@ -4821,7 +4826,12 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    window.scrollTo(0, 900);
+    const scroller = document.querySelector('main .overflow-y-auto');
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 900;
+    } else {
+      window.scrollTo(0, 900);
+    }
   });
   messagesBody = {
     messages: [

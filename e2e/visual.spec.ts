@@ -1563,6 +1563,11 @@ test.describe('onboarding screens', () => {
       page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
     ).toBeVisible();
     await page.evaluate(() => {
+      const scroller = document.querySelector('main .overflow-y-auto');
+      if (scroller instanceof HTMLElement) {
+        scroller.scrollTop = 900;
+        return;
+      }
       window.scrollTo(0, 900);
     });
     messagesBody = {
@@ -1597,7 +1602,7 @@ test.describe('onboarding screens', () => {
     });
     await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
     await expect(page.getByText('Held unseen note for the New posts pill.')).toHaveCount(0);
-    // Viewport shot: fullPage stitches the fixed New posts pill into a random chunk.
+    // Viewport shot: fullPage stitches the sticky New posts pill into a random chunk.
     await shotScreen(page, 'state-welcome-new-posts', false);
   });
 
