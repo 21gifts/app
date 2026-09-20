@@ -27,6 +27,8 @@ export function giftsLightningAddress(
   const domain =
     host === '' ||
     host === 'localhost' ||
+    host === '::1' ||
+    host === '[::1]' ||
     host.endsWith('.localhost') ||
     /^\d+\.\d+\.\d+\.\d+$/.test(host)
       ? '21.gifts'

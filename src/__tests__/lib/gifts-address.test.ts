@@ -18,6 +18,8 @@ describe('giftsLightningAddress', () => {
     expect(giftsLightningAddress('ada', '')).toBe('ada@21.gifts');
     expect(giftsLightningAddress('ada', 'foo.localhost')).toBe('ada@21.gifts');
     expect(giftsLightningAddress('ada', '127.0.0.1')).toBe('ada@21.gifts');
+    expect(giftsLightningAddress('ada', '::1')).toBe('ada@21.gifts');
+    expect(giftsLightningAddress('ada', '[::1]')).toBe('ada@21.gifts');
   });
 
   it('strips a www prefix', () => {

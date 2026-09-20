@@ -1249,6 +1249,9 @@ const server = http.createServer(async (req, res) => {
     account.name = trimmed;
     if (!hasUsername(account)) {
       let derived = usernameFromName(trimmed);
+      // Shared mock process: the live API leaves username unset on collision
+      // (setup stays `username`). Tests reuse display names like Ada, so a
+      // free unique suffix keeps later accounts moving past this step.
       if (derived !== null && usernameTaken(derived, account.id)) {
         derived = `${derived}-${account.id.replace(/[^a-z0-9]/g, '').slice(0, 8)}`.slice(0, 32);
       }

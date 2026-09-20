@@ -605,6 +605,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'overlay-username',
+    image: 'welcome-overlay-username.png',
+    visual: 'state-welcome-overlay-username',
+    needle: "getByRole('dialog', { name: 'Add your 21.gifts name' })",
+  },
+  {
+    route: '/welcome',
     id: 'overlay-introduce',
     image: 'welcome-overlay-introduce.png',
     visual: 'state-welcome-overlay-introduce',
@@ -777,6 +784,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-overlay-address.png',
     visual: 'state-members-overlay-address',
     needle: 'state-members-overlay-address',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'overlay-username',
+    image: 'members-overlay-username.png',
+    visual: 'state-members-overlay-username',
+    needle: 'state-members-overlay-username',
   },
   {
     route: '/members/[accountId]',

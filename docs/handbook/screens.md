@@ -716,6 +716,12 @@ Named member with living-room rules agreed and no Wallet of Satoshi address. Com
 
 ![21.gifts welcome overlay address](images/welcome-overlay-address.png)
 
+### Variant: overlay-username
+
+Named member with living-room rules agreed and no username. Composer filled, **Post** clicked. `RequirementsOverlay` dialog **Add your 21.gifts name** with `UsernameForm variant=overlay`. No **Skip**. Close (X) is present.
+
+![21.gifts welcome overlay username](images/welcome-overlay-username.png)
+
 ### Variant: overlay-introduce
 
 Named member with living-room rules agreed, a Wallet of Satoshi address, and `hasPosted` false. After login on `/welcome`, `IntroduceYourselfOverlay` dialog **Introduce yourself** with body copy and **Write an introduction**. Close (X) is icon-only.
@@ -881,6 +887,12 @@ Signed-in visitor viewing their own `/members/:id` card.
 Named visitor with living-room rules agreed and no Wallet of Satoshi address. Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
 
 ![21.gifts member overlay address](images/members-overlay-address.png)
+
+### Variant: overlay-username
+
+Named visitor with living-room rules agreed and no username. Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your 21.gifts name** with `UsernameForm variant=overlay`. No **Skip**. Close (X) is present.
+
+![21.gifts member overlay username](images/members-overlay-username.png)
 
 ### Variant: translate
 
