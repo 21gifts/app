@@ -64,10 +64,8 @@ export function useHydrateSession(): { ready: boolean } {
           if (current.session !== null && current.session !== token) {
             return;
           }
-          if (current.session === null || current.session === token) {
-            clearAuth();
-            setWrongAccount(true);
-          }
+          clearAuth();
+          setWrongAccount(true);
           return;
         }
         console.error('Session hydration failed', error);
