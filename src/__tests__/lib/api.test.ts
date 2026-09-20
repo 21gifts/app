@@ -32,7 +32,10 @@ import {
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  WRONG_ACCOUNT_ERROR,
+  WrongAccountError,
   listHiddenMessages,
   markAllNotificationsRead,
   markConversationRead,
@@ -122,6 +125,26 @@ describe('fetchMe', () => {
   it('throws on a non-401 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(fetchMe('sess')).rejects.toThrow('Failed to fetch account: 500');
+  });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(fetchMe('sess')).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('throws the generic fetch-account error on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
+    await expect(fetchMe('sess')).rejects.toThrow('Failed to fetch account: 403');
+  });
+
+  it('throws the generic fetch-account error on 403 with an unreadable body', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: () => Promise.reject(new Error('nope')),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMe('sess')).rejects.toThrow('Failed to fetch account: 403');
   });
 
   it('throws when the body fails validation', async () => {
@@ -2884,6 +2907,18 @@ describe('finishPasskeyRegistration', () => {
       'Failed to finish passkey registration: 400',
     );
   });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('throws the generic finish error on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 403',
+    );
+  });
 });
 
 describe('startPasskeyAuthentication', () => {
@@ -2914,6 +2949,34 @@ describe('finishPasskeyAuthentication', () => {
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
       'Failed to finish passkey authentication: 400',
     );
+  });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('throws the generic finish error on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
+      'Failed to finish passkey authentication: 403',
+    );
+  });
+});
+
+describe('isWrongAccountError', () => {
+  it('is true for WrongAccountError instances', () => {
+    expect(isWrongAccountError(new WrongAccountError())).toBe(true);
+  });
+
+  it('is true for Error whose message is the api string', () => {
+    expect(isWrongAccountError(new Error(WRONG_ACCOUNT_ERROR))).toBe(true);
+  });
+
+  it('is false for other values', () => {
+    expect(isWrongAccountError(new Error('nope'))).toBe(false);
+    expect(isWrongAccountError('nope')).toBe(false);
+    expect(isWrongAccountError(null)).toBe(false);
   });
 });
 

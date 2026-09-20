@@ -2,7 +2,7 @@ import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import { fetchMe } from '@/lib/api';
+import { fetchMe, WrongAccountError } from '@/lib/api';
 import { clearSession, loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -12,9 +12,13 @@ vi.mock('@/lib/session-storage', () => ({
   saveSession: vi.fn(),
   clearSession: vi.fn(),
 }));
-vi.mock('@/lib/api', () => ({
-  fetchMe: vi.fn(),
-}));
+vi.mock('@/lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api')>();
+  return {
+    ...actual,
+    fetchMe: vi.fn(),
+  };
+});
 
 const account = {
   id: 'acc_1',
@@ -42,7 +46,7 @@ function Probe(): ReactElement {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.mocked(loadSession).mockReturnValue(null);
 });
 
@@ -118,6 +122,50 @@ describe('useHydrateSession', () => {
 
     expect(clearSession).not.toHaveBeenCalled();
     expect(useAuthStore.getState().session).toBe('new');
+  });
+
+  it('does not clear a newer session when stale hydration returns WrongAccountError', async () => {
+    let reject!: (error: unknown) => void;
+    const pending = new Promise<typeof account | null>((_resolve, rej) => {
+      reject = rej;
+    });
+    vi.mocked(loadSession).mockReturnValueOnce('old').mockReturnValue('new');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    renderWithLocale(<Probe />);
+    act(() => {
+      useAuthStore.getState().setAuth('new', { ...account, name: 'Ada' });
+    });
+
+    await act(async () => {
+      reject(new WrongAccountError());
+    });
+
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBe('new');
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
+  it('does not clear a newer in-memory session when WrongAccountError is for the old token', async () => {
+    let reject!: (error: unknown) => void;
+    const pending = new Promise<typeof account | null>((_resolve, rej) => {
+      reject = rej;
+    });
+    vi.mocked(loadSession).mockReturnValue('old');
+    vi.mocked(fetchMe).mockReturnValue(pending);
+
+    renderWithLocale(<Probe />);
+    act(() => {
+      useAuthStore.getState().setAuth('new', { ...account, name: 'Ada' });
+    });
+
+    await act(async () => {
+      reject(new WrongAccountError());
+    });
+
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBe('new');
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
   });
 
   it('ignores stale hydration when the store already holds a different session', async () => {
@@ -291,6 +339,46 @@ describe('useHydrateSession', () => {
     });
     expect(clearSession).not.toHaveBeenCalled();
     expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
     errorSpy.mockRestore();
+  });
+
+  it('clears the stale token and sets wrongAccount on fetchMe WrongAccountError', async () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockRejectedValue(new WrongAccountError());
+
+    renderWithLocale(<Probe />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ready')).toBeTruthy();
+    });
+    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().wrongAccount).toBe(true);
+  });
+
+  it('does not apply WrongAccountError after unmount', async () => {
+    let rejectFirst!: (error: unknown) => void;
+    const first = new Promise<typeof account | null>((_resolve, reject) => {
+      rejectFirst = reject;
+    });
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockReturnValueOnce(first).mockResolvedValueOnce(account);
+
+    const { unmount } = renderWithLocale(<Probe />);
+    unmount();
+    renderWithLocale(<Probe />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().session).toBe('tok');
+    });
+
+    await act(async () => {
+      rejectFirst(new WrongAccountError());
+    });
+
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
   });
 });
