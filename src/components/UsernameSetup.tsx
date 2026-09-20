@@ -15,7 +15,7 @@ export function UsernameSetup(): ReactElement {
   return (
     <section className="mx-auto flex w-full max-w-sm flex-col">
       <AppShellHeader>
-        <h1 className="pt-24 text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
           {t('setup.usernameTitle')}
         </h1>
       </AppShellHeader>
