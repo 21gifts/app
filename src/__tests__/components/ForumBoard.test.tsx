@@ -4544,6 +4544,96 @@ describe('ForumBoard', () => {
     expect(parent?.className).not.toContain('ring-app-fg');
   });
 
+  it('shows React on a top-level note and omits Gift', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^React$/ })).toBeTruthy();
+    expect(screen.queryByText('React')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^React$/ }));
+    expect(onToggleExpand).toHaveBeenCalledWith('m1');
+  });
+
+  it('focuses the reply composer when React is clicked on an expanded note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        repliesLoading={false}
+        repliesError={false}
+        {...modeProps('all')}
+      />,
+    );
+    const composer = screen.getByLabelText('Your reaction');
+    fireEvent.click(screen.getByRole('button', { name: /^React$/ }));
+    expect(document.activeElement).toBe(composer);
+  });
+
+  it('omits React on a nested reply and keeps Gift when payable', () => {
+    const onPayOpen = vi.fn();
+    const payableReply: ForumMessage = {
+      id: 'r-pay',
+      name: 'Bob',
+      text: 'A payable reply',
+      createdAt: '2026-08-28T12:30:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[payableReply]}
+        onPayOpen={onPayOpen}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
+    expect(replyCard).not.toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: /^React$/ })).toBeNull();
+    expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+  });
+
   it('shows Gift on a payable reply and opens the pay sheet on that reply', () => {
     const onPayOpen = vi.fn();
     const onToggleExpand = vi.fn();
