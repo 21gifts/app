@@ -427,7 +427,7 @@ flowchart TB
 | Log out              | `LogoutButton`                | labeled                                                                             |
 | Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
-Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted`. Panel: `min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
+Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel: `createPortal` to `document.body`, `fixed right-14 top-24 z-50 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (not in-tree `absolute`, so the page frame cannot clip it). Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
 **Marketing header** stays dedicated (`MarketingHeader`): sticky, `bg-ink/85 backdrop-blur-xl`, `border-b border-paper/10`, `px-5 py-3.5`. Do not reuse `PageChrome` on marketing.
 
