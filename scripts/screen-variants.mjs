@@ -1185,6 +1185,13 @@ export const SCREEN_VARIANTS = [
     needle: 'This page is for moderators.',
   },
   {
+    route: '/moderate',
+    id: 'goal-open',
+    image: 'moderate-goal-open.png',
+    visual: 'state-moderate-goal-open',
+    needle: 'Official payouts by UTC day',
+  },
+  {
     route: '/moderate/hidden',
     id: 'default',
     image: 'moderate-hidden.png',

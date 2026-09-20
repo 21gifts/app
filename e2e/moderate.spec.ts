@@ -78,6 +78,63 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
 });
 
+test('Function: ModerateScreen — payout goal expands', async ({ page }) => {
+  await seedAdaSession(page, 'founder');
+  await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
+  await page.route('**/gifts/stats', async (route) => {
+    const start = Date.parse('2026-08-22T00:00:00.000Z');
+    const spendOverTime = Array.from({ length: 30 }, (_, i) => {
+      const day = new Date(start + i * 86_400_000).toISOString().slice(0, 10);
+      const giftCount = day === '2026-09-19' ? 12 : 0;
+      return {
+        day,
+        giftCount,
+        sats: 0,
+        cumulativeSats: 0,
+        btc: '0.00000000',
+        cumulativeBtc: '0.00000000',
+        usd: '0.00',
+        cumulativeUsd: '0.00',
+        chf: '0.00',
+        eur: '0.00',
+        php: '0.00',
+        cumulativeChf: '0.00',
+        cumulativeEur: '0.00',
+        cumulativePhp: '0.00',
+      };
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        totalBtc: '0.00000000',
+        totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
+        giftCount: 12,
+        recipientCount: 0,
+        firstPaidAt: '2026-08-22T00:00:00.000Z',
+        lastPaidAt: '2026-09-20T00:00:00.000Z',
+        spendOverTime,
+        byRecipient: [],
+        byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+  await page.goto('/moderate');
+  await expect(page.getByText('12%')).toBeVisible();
+  await page.getByRole('button', { name: /Goal/ }).click();
+  await expect(page.getByText('Official payouts by UTC day')).toBeVisible();
+});
+
 test('Function: ModerateScreen — basis visitors see the forbidden copy', async ({ page }) => {
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate');

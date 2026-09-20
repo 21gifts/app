@@ -1082,6 +1082,7 @@ describe('giftStatsSchema', () => {
     spendOverTime: [
       {
         day: '2026-06-01',
+        giftCount: 1,
         sats: 10,
         cumulativeSats: 10,
         btc: '0.00000010',
@@ -1125,6 +1126,18 @@ describe('giftStatsSchema', () => {
 
   it('accepts a full stats payload', () => {
     expect(giftStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('accepts a spendOverTime day without giftCount', () => {
+    const day = stats.spendOverTime[0];
+    expect(day).toBeDefined();
+    const withoutCount = { ...day };
+    delete withoutCount.giftCount;
+    const parsed = giftStatsSchema.parse({
+      ...stats,
+      spendOverTime: [withoutCount],
+    });
+    expect(parsed.spendOverTime[0]?.giftCount).toBeUndefined();
   });
 
   it('accepts null date range', () => {

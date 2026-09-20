@@ -1112,14 +1112,14 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (moderator) see hub lead **Tools for moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for moderators.** Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Menu has no Open proposals row.
-- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (moderator) see hub lead **Tools for moderators.**, the hide-tool lead, the daily payout-goal widget (yesterday’s official 21.gifts payouts as a percent of 100; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for moderators.** Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Menu has no Open proposals row.
+- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
-- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal widget.
 
 ### Variant: default
 
-Staff (moderator) hub with heading **Moderation**, hub lead **Tools for moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for moderators.**
+Staff (moderator) hub with heading **Moderation**, hub lead **Tools for moderators.**, hide-tool lead, collapsed payout-goal widget, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for moderators.**
 
 ![21.gifts moderation](images/moderate.png)
 
@@ -1128,6 +1128,12 @@ Staff (moderator) hub with heading **Moderation**, hub lead **Tools for moderato
 Signed-in basis account. Copy **This page is for moderators.** No tools list.
 
 ![21.gifts moderation forbidden](images/moderate-forbidden.png)
+
+### Variant: goal-open
+
+Staff (founder) hub with the payout-goal widget expanded: explanation copy and the 30-UTC-day official-payout count chart (goal line at 100).
+
+![21.gifts moderation goal open](images/moderate-goal-open.png)
 
 ## Screen: /moderate/hidden
 
