@@ -978,6 +978,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate:group-unread",
+    "label": "/moderate group-unread",
+    "visual": "state-moderate-group-unread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate:forbidden",
     "label": "/moderate forbidden",
     "visual": "state-moderate-forbidden",

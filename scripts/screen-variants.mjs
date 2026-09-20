@@ -1214,6 +1214,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate',
+    id: 'group-unread',
+    image: 'moderate-group-unread.png',
+    visual: 'state-moderate-group-unread',
+    needle: "getByRole('link', { name: 'Moderators, 1 unread' })",
+  },
+  {
+    route: '/moderate',
     id: 'forbidden',
     image: 'moderate-forbidden.png',
     visual: 'state-moderate-forbidden',

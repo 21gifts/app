@@ -6604,6 +6604,35 @@ test.describe('moderate screens', () => {
     await shotScreen(page, 'screen-moderate');
   });
 
+  test('moderate group-unread', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/conversations/moderator-group', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversation: {
+            id: 'conv-mod',
+            kind: 'moderator_group',
+            name: 'Moderators',
+            lastText: 'Hello mods',
+            lastAt: '2026-08-28T15:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-unread');
+  });
+
   test('moderate forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await page.goto('/moderate');

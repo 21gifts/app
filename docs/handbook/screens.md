@@ -1169,6 +1169,12 @@ Staff (moderator) hub with heading **Moderation**, hub lead **Tools for moderato
 
 ![21.gifts moderation](images/moderate.png)
 
+### Variant: group-unread
+
+Staff hub with an unread Moderators group. **Moderators** control shows **1** and accessible name **Moderators, 1 unread** (`moderate.groupUnread`). Hidden notes and Open proposals unchanged.
+
+![21.gifts moderation group unread](images/moderate-group-unread.png)
+
 ### Variant: forbidden
 
 Signed-in basis account. Copy **This page is for moderators.** No tools list.
