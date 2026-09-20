@@ -6,7 +6,7 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/moderate` — signed-in moderation hub for founders and moderators.
+ * `/moderate` — signed-in moderation hub for moderators.
  *
  * `/moderate` is the hub; `/moderate/hidden` is the hidden-notes list. Requires
  * name + address + living-room rules agreement via {@link OnboardingGate}

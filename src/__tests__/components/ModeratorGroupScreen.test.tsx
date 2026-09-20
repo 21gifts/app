@@ -103,7 +103,7 @@ describe('ModeratorGroupScreen', () => {
       useAuthStore.setState({ session: 'sess', account: { ...account, role } });
       renderWithLocale(<ModeratorGroupScreen />);
       expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
-      expect(screen.getByText('This room is for founders and moderators.')).toBeTruthy();
+      expect(screen.getByText('This room is for moderators.')).toBeTruthy();
       expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
       expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
       expect(screen.queryByLabelText('Your message')).toBeNull();
@@ -115,7 +115,7 @@ describe('ModeratorGroupScreen', () => {
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByText('This room is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This room is for moderators.')).toBeTruthy();
     expect(groupMock).not.toHaveBeenCalled();
   });
 

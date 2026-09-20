@@ -170,7 +170,7 @@ const IDLE_BOARD = {
  * Signed-in member identity card: chart, About me, name, location, Lightning
  * Address, role pill, copy-profile-link, optional Message, post/reply counts,
  * stacked activity feeds, and staff Trust Chain actions when the viewer is
- * founder/moderator and the subject is someone else. About me is not a forum post.
+ * a moderator and the subject is someone else. About me is not a forum post.
  *
  * @param props - Member profile and both activity series for the chart.
  * @returns The presentational member profile.

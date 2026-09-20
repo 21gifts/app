@@ -19,7 +19,7 @@ export interface DeletePostControlProps {
 }
 
 /**
- * Founder/moderator-only delete action with confirmation, pending and retry states.
+ * Moderator-only delete action with confirmation, pending and retry states.
  *
  * @param props - Message id, successful removal callback, and optional kind.
  * @returns Inline moderation controls, or null for other roles.

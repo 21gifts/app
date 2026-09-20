@@ -60,7 +60,7 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
   await stubHiddenList(page);
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-  await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('Tools for moderators.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveAttribute(
     'href',
     '/moderate/hidden',
@@ -82,7 +82,7 @@ test('Function: ModerateScreen — basis visitors see the forbidden copy', async
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveCount(0);
@@ -100,7 +100,7 @@ test('Function: HiddenNotesPage — staff see the hidden-note list', async ({ pa
 test('Function: HiddenNotesScreen — basis visitors see the forbidden copy', async ({ page }) => {
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate/hidden');
-  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('list', { name: 'Hidden notes' })).toHaveCount(0);
 });
 
@@ -219,7 +219,7 @@ test('Function: ModeratorGroupPage — founders see the group thread', async ({ 
 test('Function: ModeratorGroupScreen — basis visitors see the forbidden copy', async ({ page }) => {
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate/group');
-  await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This room is for moderators.')).toBeVisible();
 });
 
 test('Function: roleAtLeast — a founder opens the Moderators tool from the hub', async ({
@@ -235,7 +235,7 @@ test('Function: roleAtLeast — a founder opens the Moderators tool from the hub
 test('Function: roleRank — a verified member ranks below the staff room', async ({ page }) => {
   await seedAdaSession(page, 'verified');
   await page.goto('/moderate/group');
-  await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This room is for moderators.')).toBeVisible();
 });
 
 test('Function: fetchModeratorGroup — moderators see Hello mods', async ({ page }) => {

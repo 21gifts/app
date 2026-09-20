@@ -720,7 +720,7 @@ describe('ForumBoard', () => {
     ).toBeTruthy();
   });
 
-  it('shows unpaid founder and moderator notes on Active and hides unpaid verified', () => {
+  it('shows unpaid moderator notes on Active and hides unpaid verified', () => {
     const unpaidFounder: ForumMessage = {
       ...SAMPLE,
       id: 'm-founder-unpaid',

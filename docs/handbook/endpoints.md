@@ -198,10 +198,10 @@
 
 ## Endpoint: GET /forum/messages/hidden
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for founders and moderators). App path is `/forum/messages/hidden` so HTML `/moderate/hidden` can serve the page.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for moderators). App path is `/forum/messages/hidden` so HTML `/moderate/hidden` can serve the page.
 - **Errors:** Upstream 401/403, or 502 if the api is unreachable.
 - **Used by:** `listHiddenMessages` via `HiddenNotesScreen` on `/moderate/hidden`.
-- **Auth:** Bearer; staff role (founder|moderator) on the api.
+- **Auth:** Bearer; moderator role on the api.
 
 ## Endpoint: POST /forum/messages
 
@@ -296,7 +296,7 @@
 
 ## Endpoint: GET /conversations
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). GET `/conversations` never lists the `moderator_group` thread, even for founders or moderators. Each item has required `kind`: `member_member` | `member_platform` | `member_damus` | `moderator_group`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations` (incoming threads, plus the member's own 21.gifts contact thread when it has a message; empty and outbound-only member/Damus threads are omitted). GET `/conversations` never lists the `moderator_group` thread, even for moderators. Each item has required `kind`: `member_member` | `member_platform` | `member_damus` | `moderator_group`, required `lastFromMe`, required `lastSats`, `unread` (default false), optional `accountId` (counterpart), and the envelope includes `unreadCount` (default 0).
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversations` on `/messages`, `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer.
@@ -305,8 +305,8 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/conversations/moderator-group` (singleton closed staff room as `{ conversation }`).
 - **Errors:** Upstream 401/403/404, or 502 if the api is unreachable.
-- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group` and via `InboxLoader` on `/messages` (unlisted `?c=` guard for founder or moderator).
-- **Auth:** Bearer; moderator or founder on the api.
+- **Used by:** `fetchModeratorGroup` via `ModeratorGroupScreen` on `/moderate/group` and via `InboxLoader` on `/messages` (unlisted `?c=` guard for a moderator).
+- **Auth:** Bearer; moderator on the api.
 
 ## Endpoint: POST /conversations
 
@@ -380,31 +380,31 @@
 
 ## Endpoint: GET /trust/proposals
 
-- **Purpose:** Same-origin Bearer proxy of api `GET /trust/proposals` (open moderator proposals for founders and moderators). Lives under `/trust/proposals` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/proposals`.
-- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Purpose:** Same-origin Bearer proxy of api `GET /trust/proposals` (open moderator proposals for moderators). Lives under `/trust/proposals` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/proposals`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not a moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals`. `ModerateScreen` on `/moderate` does not call this GET. Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
-- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+- **Auth:** Bearer session; the api requires a moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: POST /trust/verify
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId }`.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `postTrustVerify` in `MemberTrustActions`.
-- **Auth:** Bearer (founder or moderator).
+- **Auth:** Bearer (moderator).
 
 ## Endpoint: POST /trust/propose-moderator
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/propose-moderator` with `{ accountId }`.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `postTrustPropose` in `MemberTrustActions`.
-- **Auth:** Bearer (founder or moderator).
+- **Auth:** Bearer (moderator).
 
 ## Endpoint: POST /trust/confirm-moderator
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/confirm-moderator` with `{ accountId }`.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `postTrustConfirm` in `MemberTrustActions` and `ProposalsScreen`.
-- **Auth:** Bearer (founder or moderator, not the proposer).
+- **Auth:** Bearer (moderator, not the proposer).
 
 ## Endpoint: POST /trust/appoint-moderator
 
@@ -416,7 +416,7 @@
 ## Endpoint: DELETE /forum/messages/[id]
 
 - **Purpose:** Same-origin moderation proxy to DELETE /messages/:id.
-- **Auth:** Forwards Bearer authorization; the API requires live founder or moderator role.
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
 - **Returns:** Upstream 204, 401, 403, 404 or 503; proxy failures return 502.
 - **Side effects:** Deletes the post, direct replies and stored media on 21.gifts. Does not refund gifts or erase external Nostr relay copies.
 

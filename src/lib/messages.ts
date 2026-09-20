@@ -548,19 +548,19 @@ const en = {
   'notifications.moderatorAppointed': 'You are a moderator',
 
   'moderate.heading': 'Moderation',
-  'moderate.hubLead': 'Tools for founders and moderators.',
+  'moderate.hubLead': 'Tools for moderators.',
   'moderate.toolsLabel': 'Moderation tools',
   'moderate.lead':
     'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
-  'moderate.forbidden': 'This page is for founders and moderators.',
+  'moderate.forbidden': 'This page is for moderators.',
   'moderate.empty': 'No hidden notes.',
   'moderate.loading': 'Loading…',
   'moderate.error': 'Could not load hidden notes. Please try again.',
   'moderate.retry': 'Try again',
   'moderate.listLabel': 'Hidden notes',
   'moderate.groupLabel': 'Moderators',
-  'moderate.groupLead': 'Closed staff room for founders and moderators.',
-  'moderate.groupForbidden': 'This room is for founders and moderators.',
+  'moderate.groupLead': 'Closed staff room for moderators.',
+  'moderate.groupForbidden': 'This room is for moderators.',
   'moderate.groupError': 'Could not load the staff room. Please try again.',
   'moderate.hiddenBy': 'Hidden by {name}',
   'moderate.unnamed': 'Unnamed',
@@ -579,9 +579,9 @@ const en = {
   'trustChain.retry': 'Try again',
   'trustChain.unnamed': 'Unnamed',
   'trustChain.explainVerified':
-    'Verified means a moderator or founder met the person in real life and confirmed they are real. It is not a wallet proof.',
+    'Verified means a moderator met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
-    'To become a moderator, an existing moderator or founder proposes the person and a different moderator or founder confirms — or a founder appoints them directly.',
+    'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
   'trustChain.action.verify': 'Verify',
   'trustChain.action.propose': 'Propose as moderator',
@@ -1143,11 +1143,11 @@ const de = {
   'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
 
   'moderate.heading': 'Moderation',
-  'moderate.hubLead': 'Werkzeuge für Gründerpersonen und Moderatorinnen oder Moderatoren.',
+  'moderate.hubLead': 'Werkzeuge für Moderatorinnen oder Moderatoren.',
   'moderate.toolsLabel': 'Moderationswerkzeuge',
   'moderate.lead':
     'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
-  'moderate.forbidden': 'Diese Seite ist für Gründerpersonen und Moderatorinnen oder Moderatoren.',
+  'moderate.forbidden': 'Diese Seite ist für Moderatorinnen oder Moderatoren.',
   'moderate.empty': 'Keine ausgeblendeten Notizen.',
   'moderate.loading': 'Wird geladen…',
   'moderate.error':
@@ -1155,10 +1155,8 @@ const de = {
   'moderate.retry': 'Erneut versuchen',
   'moderate.listLabel': 'Ausgeblendete Notizen',
   'moderate.groupLabel': 'Moderatoren',
-  'moderate.groupLead':
-    'Geschlossener Staff-Raum für Gründerpersonen und Moderatorinnen oder Moderatoren.',
-  'moderate.groupForbidden':
-    'Dieser Raum ist für Gründerpersonen und Moderatorinnen oder Moderatoren.',
+  'moderate.groupLead': 'Geschlossener Staff-Raum für Moderatorinnen oder Moderatoren.',
+  'moderate.groupForbidden': 'Dieser Raum ist für Moderatorinnen oder Moderatoren.',
   'moderate.groupError':
     'Der Staff-Raum konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.hiddenBy': 'Ausgeblendet von {name}',
@@ -1179,9 +1177,9 @@ const de = {
   'trustChain.retry': 'Erneut versuchen',
   'trustChain.unnamed': 'Unbenannt',
   'trustChain.explainVerified':
-    'Verifiziert bedeutet, dass eine Moderatorin, ein Moderator oder eine Gründerperson die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
+    'Verifiziert bedeutet, dass eine Moderatorin oder ein Moderator die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
-    'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin, ein Moderator oder eine Gründerperson die Person vor, und eine andere Moderatorin, ein Moderator oder eine Gründerperson bestätigt — oder eine Gründerperson ernennt sie direkt.',
+    'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
   'trustChain.explainFounder':
     'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
   'trustChain.action.verify': 'Verifizieren',
@@ -1729,19 +1727,19 @@ const es = {
   'notifications.moderatorAppointed': 'Ahora eres moderador',
 
   'moderate.heading': 'Moderación',
-  'moderate.hubLead': 'Herramientas para personas fundadoras y moderadoras.',
+  'moderate.hubLead': 'Herramientas para personas moderadoras.',
   'moderate.toolsLabel': 'Herramientas de moderación',
   'moderate.lead':
     'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
-  'moderate.forbidden': 'Esta página es para personas fundadoras y moderadoras.',
+  'moderate.forbidden': 'Esta página es para personas moderadoras.',
   'moderate.empty': 'No hay notas ocultas.',
   'moderate.loading': 'Cargando…',
   'moderate.error': 'No se pudieron cargar las notas ocultas. Inténtalo de nuevo.',
   'moderate.retry': 'Intentar de nuevo',
   'moderate.listLabel': 'Notas ocultas',
   'moderate.groupLabel': 'Moderadores',
-  'moderate.groupLead': 'Sala de personal cerrada para personas fundadoras y moderadoras.',
-  'moderate.groupForbidden': 'Esta sala es para personas fundadoras y moderadoras.',
+  'moderate.groupLead': 'Sala de personal cerrada para personas moderadoras.',
+  'moderate.groupForbidden': 'Esta sala es para personas moderadoras.',
   'moderate.groupError': 'No se pudo cargar la sala de personal. Inténtalo de nuevo.',
   'moderate.hiddenBy': 'Ocultada por {name}',
   'moderate.unnamed': 'Sin nombre',
@@ -1760,9 +1758,9 @@ const es = {
   'trustChain.retry': 'Intentar de nuevo',
   'trustChain.unnamed': 'Sin nombre',
   'trustChain.explainVerified':
-    'Verificado significa que una persona moderadora o fundadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
+    'Verificado significa que una persona moderadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
-    'Para ser moderadora o moderador, una persona moderadora o fundadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+    'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
   'trustChain.explainFounder':
     'Una persona fundadora empezó 21.gifts y es el primer eslabón de la cadena.',
   'trustChain.action.verify': 'Verificar',
@@ -2318,19 +2316,19 @@ const fil = {
   'notifications.moderatorAppointed': 'Isa ka nang moderator',
 
   'moderate.heading': 'Moderasyon',
-  'moderate.hubLead': 'Mga tool para sa mga founder at moderator.',
+  'moderate.hubLead': 'Mga tool para sa mga moderator.',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',
   'moderate.lead':
     'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',
-  'moderate.forbidden': 'Ang pahinang ito ay para sa mga founder at moderator.',
+  'moderate.forbidden': 'Ang pahinang ito ay para sa mga moderator.',
   'moderate.empty': 'Walang nakatagong mga nota.',
   'moderate.loading': 'Naglo-load…',
   'moderate.error': 'Hindi ma-load ang mga nakatagong nota. Subukan ulit.',
   'moderate.retry': 'Subukan ulit',
   'moderate.listLabel': 'Mga nakatagong nota',
   'moderate.groupLabel': 'Mga Moderator',
-  'moderate.groupLead': 'Saradong staff room para sa mga founder at moderator.',
-  'moderate.groupForbidden': 'Ang silid na ito ay para sa mga founder at moderator.',
+  'moderate.groupLead': 'Saradong staff room para sa mga moderator.',
+  'moderate.groupForbidden': 'Ang silid na ito ay para sa mga moderator.',
   'moderate.groupError': 'Hindi ma-load ang staff room. Subukan ulit.',
   'moderate.hiddenBy': 'Itinago ni {name}',
   'moderate.unnamed': 'Walang pangalan',
@@ -2349,9 +2347,9 @@ const fil = {
   'trustChain.retry': 'Subukan ulit',
   'trustChain.unnamed': 'Walang pangalan',
   'trustChain.explainVerified':
-    'Ang Verified ay nangangahulugang isang moderator o founder ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
+    'Ang Verified ay nangangahulugang isang moderator ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
-    'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator o founder at ibang moderator o founder ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+    'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
   'trustChain.explainFounder':
     'Isang founder ang nagsimula ng 21.gifts at siya ang unang kawing ng kadena.',
   'trustChain.action.verify': 'I-verify',

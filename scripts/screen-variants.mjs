@@ -1175,14 +1175,14 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'moderate.png',
     visual: 'screen-moderate',
-    needle: 'Tools for founders and moderators.',
+    needle: 'Tools for moderators.',
   },
   {
     route: '/moderate',
     id: 'forbidden',
     image: 'moderate-forbidden.png',
     visual: 'state-moderate-forbidden',
-    needle: 'This page is for founders and moderators.',
+    needle: 'This page is for moderators.',
   },
   {
     route: '/moderate/hidden',
@@ -1203,7 +1203,7 @@ export const SCREEN_VARIANTS = [
     id: 'forbidden',
     image: 'moderate-hidden-forbidden.png',
     visual: 'state-moderate-hidden-forbidden',
-    needle: 'This page is for founders and moderators.',
+    needle: 'This page is for moderators.',
   },
   {
     route: '/moderate/hidden',
@@ -1238,7 +1238,7 @@ export const SCREEN_VARIANTS = [
     id: 'forbidden',
     image: 'moderate-proposals-forbidden.png',
     visual: 'state-moderate-proposals-forbidden',
-    needle: 'This page is for founders and moderators.',
+    needle: 'This page is for moderators.',
   },
   {
     route: '/moderate/proposals',
@@ -1294,7 +1294,7 @@ export const SCREEN_VARIANTS = [
     id: 'forbidden',
     image: 'moderate-group-forbidden.png',
     visual: 'state-moderate-group-forbidden',
-    needle: 'This room is for founders and moderators.',
+    needle: 'This room is for moderators.',
   },
   {
     route: '/moderate/group',
