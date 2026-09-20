@@ -177,10 +177,12 @@ function QuotedForumNote({
  *
  * @param props - Body text, already-loaded notes, the containing message id,
  *   fiat conversion, optional feed truncation, optional remaining-text
- *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`), and
+ *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
+ *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), and
  *   an optional click handler for the nested card.
  * @returns The stripped paragraph, nested post cards, and translation control;
- *   `null` when `text` is empty and no quotes resolved.
+ *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
+ *   are loaded with `fetchPublicMessage` (catch, never throw).
  * @throws Does not throw.
  */
 export function ForumQuotedBody({
@@ -272,7 +274,12 @@ export function ForumQuotedBody({
           <LinkedText text={displayText} className={className} />
         )
       ) : null}
-      {displayText !== '' ? <NoteTranslate text={displayText} /> : null}
+      {displayText !== '' ? (
+        <NoteTranslate
+          text={displayText}
+          {...(className.includes('text-app-btn-fg') ? { tone: 'onButton' as const } : {})}
+        />
+      ) : null}
       {resolvedNotes.map((note) => (
         <QuotedForumNote
           key={note.id}

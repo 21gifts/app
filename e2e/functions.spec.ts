@@ -661,7 +661,7 @@ test('Function: proxyConversationMessagePhotoGet — GET photo without bearer', 
   ).toBeGreaterThanOrEqual(400);
 });
 
-test('Function: fetchConversationMessagePhoto — GET extra still without bearer', async ({
+test('Function: proxyConversationMessagePhotoGet — GET extra still without bearer', async ({
   request,
 }) => {
   expect(

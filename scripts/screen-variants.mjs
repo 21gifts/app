@@ -1255,6 +1255,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Pay with Wallet of Satoshi',
   },
   {
+    route: '/messages',
+    id: 'thread-quoted-note',
+    image: 'messages-thread-quoted-note.png',
+    visual: 'state-messages-thread-quoted-note',
+    needle: 'messages thread-quoted-note',
+  },
+  {
     route: '/notifications',
     id: 'default',
     image: 'notifications.png',
@@ -1554,6 +1561,20 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group-error.png',
     visual: 'state-moderate-group-error',
     needle: 'Try again',
+  },
+  {
+    route: '/moderate/group',
+    id: 'composer-photo',
+    image: 'moderate-group-composer-photo.png',
+    visual: 'state-moderate-group-composer-photo',
+    needle: 'moderate group composer-photo',
+  },
+  {
+    route: '/moderate/group',
+    id: 'quoted-note',
+    image: 'moderate-group-quoted-note.png',
+    visual: 'state-moderate-group-quoted-note',
+    needle: 'moderate group quoted-note',
   },
   {
     route: '/moderate/handbook',

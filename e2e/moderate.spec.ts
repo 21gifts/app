@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 const HIDDEN = {
@@ -490,6 +492,48 @@ test('Function: InboxScreen — moderators group composer shows Add a photo', as
   await stubModeratorGroup(page);
   await page.goto('/moderate/group');
   await expect(page.getByRole('button', { name: 'Add a photo' })).toBeVisible();
+});
+
+test('Function: fetchConversationMessagePhoto — group thread shows the attached still', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'moderator');
+  await page.route('**/conversations/moderator-group', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversation: GROUP }),
+    });
+  });
+  await page.route('**/conversations/conv-mod', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T15:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+            hasPhoto: true,
+            photoCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/conversations/conv-mod/messages/m-photo/photo', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+    });
+  });
+  await page.goto('/moderate/group');
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
 });
 
 test('Function: ForumQuotedBody — moderators group unfurls a pasted note URL', async ({ page }) => {

@@ -125,6 +125,19 @@ describe('NoteTranslate', () => {
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
 
+  it('uses button foreground classes when tone is onButton', async () => {
+    vi.mocked(translateNote).mockResolvedValue('Can anyone lend me a few satoshi this week?');
+    renderWithLocale(<NoteTranslate tone="onButton" text={german} />);
+    const translate = await screen.findByRole('button', { name: 'Translate' });
+    expect(translate.className).toContain('text-app-btn-fg');
+    fireEvent.click(translate);
+    const body = await screen.findByText('Can anyone lend me a few satoshi this week?');
+    expect(body.closest('p')?.className).toContain('text-app-btn-fg');
+    expect(screen.getByRole('button', { name: 'Show original' }).className).toContain(
+      'text-app-btn-fg',
+    );
+  });
+
   it('truncates a long translation behind Show more', async () => {
     const translated = `${'a'.repeat(280)} TRANSTAIL`;
     vi.mocked(translateNote).mockResolvedValue(translated);
