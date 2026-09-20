@@ -596,7 +596,7 @@
 
 - **Purpose:** Primary app content panel using semantic card tokens (`bg-app-card`, border, shadow) with optional max-width (`sm` / `md` / `xl`). `surface` default `true` draws that nested visual panel. `surface={false}` is a width + flex + gap column for page body inside the AppShell frame (no radius, border, bg, shadow, or `p-8`). Card never hosts page chrome.
 - **Inputs:** `children`, optional `className`, optional `maxWidth` (default `sm`), optional `surface` (default `true`; `false` omits panel classes).
-- **Returns / side effects:** A `<section>` wrapper. No network. Shared panel for login, public note, overlays, and profile-style cards; page-body columns use `surface={false}`.
+- **Returns / side effects:** A `<section>` wrapper. No network. Nested panel for public notes and overlays; page-body columns (`LoginCard`, profile, welcome, inbox) use `surface={false}`.
 - **Used by:** `PublicMessageLoader`, `LoginCard`, profile and setup screens.
 
 ## Function: Field
