@@ -78,6 +78,18 @@ describe('LoginCard', () => {
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
+  it('shows the account choice with existing and new-account buttons', () => {
+    mockPasskey('choice');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('heading', { name: 'Do you already have an account?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Log in with existing account' }));
+    expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
+    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(registerSpy).toHaveBeenCalledWith();
+    expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+  });
+
   it('shows a loading state while a passkey ceremony starts', () => {
     mockPasskey('starting');
     renderWithLocale(<LoginCard />);

@@ -10,7 +10,8 @@ import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The `/login` card: Log in, preparing, error, or in-app browser escape.
+ * The `/login` card: Log in, account choice, preparing, error, or in-app
+ * browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
@@ -41,6 +42,10 @@ export function LoginCard(): ReactElement {
     body = <StartingView />;
   } else if (passkey.status === 'error') {
     body = <ErrorView onRetry={passkey.retry} />;
+  } else if (passkey.status === 'choice') {
+    body = (
+      <ChoiceView onAuthenticate={passkey.authenticate} onRegister={() => passkey.register()} />
+    );
   } else {
     body = <StartView onLogin={passkey.login} />;
   }
@@ -50,7 +55,7 @@ export function LoginCard(): ReactElement {
 
 /** Props for {@link StartView}. */
 interface StartViewProps {
-  /** Called to sign in with an existing passkey, or create one. */
+  /** Called to start authenticate-first login. */
   onLogin: () => void;
 }
 
@@ -72,6 +77,40 @@ function StartView({ onLogin }: StartViewProps): ReactElement {
         icon={<Fingerprint aria-hidden="true" className="h-4 w-4" />}
       >
         {t('login.submit')}
+      </Button>
+    </>
+  );
+}
+
+/** Props for {@link ChoiceView}. */
+interface ChoiceViewProps {
+  /** Authenticate only; never falls through to register. */
+  onAuthenticate: () => void;
+  /** Create a passkey with no view key. */
+  onRegister: () => void;
+}
+
+/**
+ * After login `NotAllowedError`: ask whether the visitor already has an account.
+ *
+ * @param props - See {@link ChoiceViewProps}.
+ * @returns The choice view.
+ */
+function ChoiceView({ onAuthenticate, onRegister }: ChoiceViewProps): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <>
+      <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      <h1 className="text-center text-lg font-medium text-app-fg">{t('login.choiceHeading')}</h1>
+      <Button
+        type="button"
+        onClick={onAuthenticate}
+        icon={<Fingerprint aria-hidden="true" className="h-4 w-4" />}
+      >
+        {t('login.existing')}
+      </Button>
+      <Button type="button" variant="secondary" onClick={onRegister}>
+        {t('login.create')}
       </Button>
     </>
   );

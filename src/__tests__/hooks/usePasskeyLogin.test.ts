@@ -157,8 +157,9 @@ describe('usePasskeyLogin', () => {
       result.current.retry();
     });
     expect(startPasskeyAuthentication).toHaveBeenCalledTimes(2);
-    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().session).toBe('tok');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('choice');
+    expect(useAuthStore.getState().session).toBeNull();
     vi.unstubAllGlobals();
   });
 
@@ -179,21 +180,115 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('login creates a passkey when get is dismissed', async () => {
-    const cred = { id: 'cred', type: 'public-key' };
+  it('login offers a choice when get is dismissed', async () => {
+    const create = vi.fn();
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
         get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
-        create: vi.fn().mockResolvedValue(cred),
+        create,
       },
     });
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.login();
     });
+    expect(result.current.status).toBe('choice');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('authenticate from choice runs get, not create', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const create = vi.fn();
+    const get = vi
+      .fn()
+      .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'))
+      .mockResolvedValueOnce(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(create).not.toHaveBeenCalled();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
     expect(useAuthStore.getState().session).toBe('tok');
+    vi.unstubAllGlobals();
+  });
+
+  it('register from choice runs create', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const create = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create,
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    await act(async () => {
+      result.current.register();
+    });
+    expect(create).toHaveBeenCalledTimes(1);
     expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
+    expect(useAuthStore.getState().session).toBe('tok');
+    vi.unstubAllGlobals();
+  });
+
+  it('returns to choice when authenticate is cancelled after a choice', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('choice');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('returns to choice when register is cancelled after a choice', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('choice');
     vi.unstubAllGlobals();
   });
 
@@ -318,24 +413,6 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('idle');
     expect(create).not.toHaveBeenCalled();
     expect(startPasskeyRegistration).not.toHaveBeenCalled();
-    expect(useAuthStore.getState().session).toBeNull();
-    vi.unstubAllGlobals();
-  });
-
-  it('login goes to error when fallback create fails', async () => {
-    vi.stubGlobal('navigator', {
-      ...navigator,
-      credentials: {
-        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
-        create: vi.fn().mockResolvedValue(null),
-      },
-    });
-    const { result } = renderHook(() => usePasskeyLogin());
-    await act(async () => {
-      result.current.login();
-    });
-    expect(result.current.status).toBe('error');
-    expect(startPasskeyRegistration).toHaveBeenCalled();
     expect(useAuthStore.getState().session).toBeNull();
     vi.unstubAllGlobals();
   });
@@ -884,10 +961,9 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('waits 400ms on iPhone after login NotAllowedError before register', async () => {
+  it('goes to choice on iPhone after login NotAllowedError without registering', async () => {
     vi.useFakeTimers();
-    const cred = { id: 'cred', type: 'public-key' };
-    const create = vi.fn().mockResolvedValue(cred);
+    const create = vi.fn();
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
@@ -904,13 +980,15 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.login();
     });
+    expect(result.current.status).toBe('choice');
     expect(startPasskeyRegistration).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
     await act(async () => {
       vi.advanceTimersByTime(400);
     });
-    expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
-    expect(create).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe('choice');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: originalUserAgent,

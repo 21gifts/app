@@ -129,6 +129,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'choice',
+    image: 'login-choice.png',
+    visual: 'state-login-choice',
+    needle: 'Do you already have an account?',
+  },
+  {
+    route: '/login',
     id: 'in-app',
     image: 'login-in-app.png',
     visual: 'state-login-in-app',

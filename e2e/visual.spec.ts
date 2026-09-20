@@ -720,6 +720,62 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-error');
   });
 
+  test('login choice', async ({ page }) => {
+    await page.addInitScript(() => {
+      const pk = globalThis.PublicKeyCredential as unknown as {
+        parseCreationOptionsFromJSON?: unknown;
+        parseRequestOptionsFromJSON?: unknown;
+      };
+      if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+        Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+      }
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async () => {
+            throw new Error('create must not run on the login choice path');
+          },
+          get: async (options?: CredentialRequestOptions) => {
+            const publicKey = options?.publicKey;
+            const challenge = publicKey?.challenge;
+            const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+            if (!publicKey || !isBytes) {
+              throw new Error('invalid request options');
+            }
+            throw new DOMException('No credentials', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch',
+          options: {
+            challenge: 'aa',
+            rpId: 'localhost',
+            userVerification: 'required',
+          },
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Do you already have an account?' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-choice');
+  });
+
   test('login in-app', async ({ page }) => {
     await page.addInitScript(() => {
       Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
