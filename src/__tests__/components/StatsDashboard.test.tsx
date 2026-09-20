@@ -53,6 +53,7 @@ const SAMPLE: GiftStats = {
   spendOverTime: [
     {
       day: '2026-06-01',
+      giftCount: 1,
       sats: 500_000,
       cumulativeSats: 500_000,
       btc: '0.00500000',
@@ -68,6 +69,7 @@ const SAMPLE: GiftStats = {
     },
     {
       day: '2026-06-02',
+      giftCount: 0,
       sats: 0,
       cumulativeSats: 500_000,
       btc: '0.00000000',
@@ -83,6 +85,7 @@ const SAMPLE: GiftStats = {
     },
     {
       day: '2026-06-03',
+      giftCount: 2,
       sats: 1_000_000,
       cumulativeSats: 1_500_000,
       btc: '0.01000000',

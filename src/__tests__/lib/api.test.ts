@@ -54,6 +54,7 @@ import {
   setLightningAddress,
   setLocation,
   setName,
+  setUsername,
   skipSetup,
   resolveLightningAddress,
   startPasskeyAuthentication,
@@ -506,6 +507,38 @@ describe('setName', () => {
   });
 });
 
+describe('setUsername', () => {
+  it('posts the username and returns the validated account', async () => {
+    const named = { ...account, username: 'ada' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: named });
+
+    await expect(setUsername('sess', 'ada')).resolves.toEqual(named);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/username`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'ada' }),
+    });
+  });
+
+  it('throws username-taken on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Username is already in use' } });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow('username-taken');
+  });
+
+  it('throws username-invalid on 400', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setUsername('sess', 'Ada Lovelace')).rejects.toThrow('username-invalid');
+  });
+
+  it('throws username-request on other failures', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow('username-request');
+  });
+});
+
 describe('setLocation', () => {
   it('posts the location and returns the validated account', async () => {
     const located = { ...account, location: 'Zug' };
@@ -881,6 +914,7 @@ describe('fetchGiftStats', () => {
     spendOverTime: [
       {
         day: '2026-06-01',
+        giftCount: 1,
         sats: 10,
         cumulativeSats: 10,
         btc: '0.00000010',

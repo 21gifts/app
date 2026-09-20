@@ -19,6 +19,7 @@ const VIEW_KEY = 'a'.repeat(64);
 
 const named: ViewProfile = {
   name: 'Ada',
+  username: 'alice',
   location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
@@ -58,8 +59,8 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Not set')).toBeTruthy();
-    expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
-    expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
+    expect(screen.getByText('21.gifts address')).toBeTruthy();
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
   });
@@ -76,7 +77,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Unnamed')).toBeTruthy();
   });
 
-  it('shows view.noAddress when lightningAddress is null', () => {
+  it('still shows the 21.gifts address when the Wallet of Satoshi address is null', () => {
     renderWithLocale(
       <ViewProfileScreen
         profile={{ ...named, lightningAddress: null }}
@@ -85,7 +86,19 @@ describe('ViewProfileScreen', () => {
         donated={[]}
       />,
     );
-    expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+  });
+
+  it('shows view.noGiftsAddress when username is null', () => {
+    renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, username: null }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText('No 21.gifts address')).toBeTruthy();
   });
 
   it('shows a set location without edit controls', () => {

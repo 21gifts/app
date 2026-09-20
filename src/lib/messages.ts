@@ -57,7 +57,7 @@ const en = {
   'home.howKicker': 'How it works',
   'home.howTitle': 'Three steps, and no account in the traditional sense',
   'home.howLead':
-    'You log in right here on this site. There are no usernames, no passwords, and no email sign-ups.',
+    'You log in right here on this site. There are no passwords and no email sign-ups.',
   'home.step1Title': 'Log in',
   'home.step1Body':
     'One tap in your browser. It uses a secure login stored on your device, or creates one. That is your account — there is nothing else to remember.',
@@ -190,6 +190,13 @@ const en = {
   'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
   'setup.nameTitle': 'Your name',
+  'setup.usernameTitle': 'Your 21.gifts name',
+  'setup.usernameHint':
+    'This is the address people send Bitcoin to: you@21.gifts. Wallet of Satoshi still receives it.',
+  'setup.usernameEmpty': 'Enter a username',
+  'setup.usernameInvalid': 'Use English letters, numbers, hyphen, underscore, or dot',
+  'setup.usernameTaken': 'That username is already taken',
+  'setup.usernameRequest': 'Could not save your username',
   'setup.addressTitle': 'Your Wallet of Satoshi address',
   'setup.continue': 'Continue',
   'setup.skip': 'Skip',
@@ -318,6 +325,7 @@ const en = {
   'link.externalClose': 'Close',
 
   'requirements.nameTitle': 'Add your name',
+  'requirements.usernameTitle': 'Add your 21.gifts name',
   'requirements.rulesTitle': 'Agree to the living room rules',
   'requirements.addressTitle': 'Add your Wallet of Satoshi address',
   'requirements.close': 'Close',
@@ -373,10 +381,12 @@ const en = {
   'profile.about.errorUnsupported': 'Use a JPEG, PNG, or WebP photo',
   'profile.about.errorTooLarge': 'Keep photos under 1 MB',
   'profile.copyLink': 'Copy link to this profile',
+  'profile.giftsHeading': '21.gifts address',
   'profile.message': 'Message',
 
   'view.unnamed': 'Unnamed',
   'view.noAddress': 'No Wallet of Satoshi address',
+  'view.noGiftsAddress': 'No 21.gifts address',
   'view.missing': 'This profile could not be found.',
   'view.error': 'Could not load this profile. Please try again.',
   'view.retry': 'Try again',
@@ -572,6 +582,24 @@ const en = {
   'moderate.proposals.listLabel': 'Open moderator proposals',
   'moderate.proposals.proposedBy': 'Proposed by {name}',
   'moderate.proposals.error': 'Could not load open proposals. Please try again.',
+  'moderate.goal.title': 'Goal',
+  'moderate.goal.subtitle': '100 payouts a day',
+  'moderate.goal.percent': '{percent}%',
+  'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
+  'moderate.goal.openHint': 'Tap for history and explanation',
+  'moderate.goal.closeHint': 'Tap to close',
+  'moderate.goal.explYesterday':
+    'Yesterday (UTC {date}) 21.gifts paid {count} official payouts. That is {percent} percent of the {goal} a day we are aiming for.',
+  'moderate.goal.explOfficial':
+    'Official means 21.gifts itself paid someone on the recipient list. That happens when that person writes a living-room note on that UTC day. Gifts between members do not count here.',
+  'moderate.goal.explBar':
+    'The bar uses the last completed UTC day. The current day is drawn lighter on the chart.',
+  'moderate.goal.chartTitle': 'Official payouts by UTC day',
+  'moderate.goal.chartFoot': 'Line at the top = goal {goal} · lighter bar = today, still open',
+  'moderate.goal.loading': 'Loading…',
+  'moderate.goal.error': 'Could not load payouts. Please try again.',
+  'moderate.goal.retry': 'Try again',
+  'moderate.goal.widgetLabel': 'Daily payout goal',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -653,7 +681,7 @@ const de = {
   'home.howKicker': "So funktioniert's",
   'home.howTitle': 'Drei Schritte, kein Konto im herkömmlichen Sinn',
   'home.howLead':
-    'Sie melden sich direkt hier an. Keine Benutzernamen, keine Passwörter, keine Registrierung per E-Mail.',
+    'Sie melden sich direkt hier an. Keine Passwörter, keine Registrierung per E-Mail.',
   'home.step1Title': 'Anmelden',
   'home.step1Body':
     'Ein Tipp im Browser. Es wird ein sicheres, auf Ihrem Gerät gespeichertes Login verwendet oder neu angelegt. Das ist Ihr Konto — mehr müssen Sie sich nicht merken.',
@@ -781,6 +809,13 @@ const de = {
   'login.helloName': 'Hallo, {name}',
   'login.welcomeHeading': 'Willkommen, {name}',
   'setup.nameTitle': 'Ihr Name',
+  'setup.usernameTitle': 'Ihr 21.gifts-Name',
+  'setup.usernameHint':
+    'Das ist die Adresse, an die Bitcoin geht: du@21.gifts. Empfangen tut weiter Wallet of Satoshi.',
+  'setup.usernameEmpty': 'Bitte einen Benutzernamen eingeben',
+  'setup.usernameInvalid': 'Nur englische Buchstaben, Zahlen, Bindestrich, Unterstrich oder Punkt',
+  'setup.usernameTaken': 'Dieser Benutzername ist schon vergeben',
+  'setup.usernameRequest': 'Benutzername konnte nicht gespeichert werden',
   'setup.addressTitle': 'Ihre Wallet of Satoshi address',
   'setup.continue': 'Weiter',
   'setup.skip': 'Überspringen',
@@ -909,6 +944,7 @@ const de = {
   'link.externalClose': 'Schließen',
 
   'requirements.nameTitle': 'Namen hinzufügen',
+  'requirements.usernameTitle': '21.gifts-Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
   'requirements.addressTitle': 'Wallet of Satoshi address hinterlegen',
   'requirements.close': 'Schließen',
@@ -965,10 +1001,12 @@ const de = {
   'profile.about.errorUnsupported': 'JPEG, PNG oder WebP verwenden',
   'profile.about.errorTooLarge': 'Fotos unter 1 MB halten',
   'profile.copyLink': 'Link zu diesem Profil kopieren',
+  'profile.giftsHeading': '21.gifts-Adresse',
   'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
   'view.noAddress': 'Keine Wallet of Satoshi address',
+  'view.noGiftsAddress': 'Keine 21.gifts-Adresse',
   'view.missing': 'Dieses Profil konnte nicht gefunden werden.',
   'view.error': 'Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'view.retry': 'Erneut versuchen',
@@ -1173,6 +1211,25 @@ const de = {
   'moderate.proposals.proposedBy': 'Vorgeschlagen von {name}',
   'moderate.proposals.error':
     'Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'moderate.goal.title': 'Ziel',
+  'moderate.goal.subtitle': '100 Auszahlungen am Tag',
+  'moderate.goal.percent': '{percent} %',
+  'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
+  'moderate.goal.openHint': 'Tippen für Verlauf und Erklärung',
+  'moderate.goal.closeHint': 'Tippen zum Schliessen',
+  'moderate.goal.explYesterday':
+    'Gestern (UTC {date}) hat 21.gifts {count} offizielle Auszahlungen bezahlt. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
+  'moderate.goal.explOfficial':
+    'Offiziell heisst: 21.gifts selbst hat an eine Person auf der Empfängerliste ausgezahlt. Das geschieht, wenn diese Person an dem UTC-Tag eine Wohnzimmer-Notiz schreibt. Geschenke zwischen Mitgliedern zählen hier nicht.',
+  'moderate.goal.explBar':
+    'Der Balken nimmt den letzten abgeschlossenen UTC-Tag. Der laufende Tag ist im Diagramm heller gezeichnet.',
+  'moderate.goal.chartTitle': 'Offizielle Auszahlungen je UTC-Tag',
+  'moderate.goal.chartFoot': 'Linie oben = Ziel {goal} · heller Balken = heute, noch offen',
+  'moderate.goal.loading': 'Wird geladen…',
+  'moderate.goal.error':
+    'Auszahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'moderate.goal.retry': 'Erneut versuchen',
+  'moderate.goal.widgetLabel': 'Tägliches Auszahlungsziel',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1251,7 +1308,7 @@ const es = {
   'home.howKicker': 'Cómo funciona',
   'home.howTitle': 'Tres pasos, y sin cuenta en el sentido tradicional',
   'home.howLead':
-    'Inicias sesión aquí mismo, en este sitio. Sin nombres de usuario, sin contraseñas y sin registro por correo.',
+    'Inicias sesión aquí mismo, en este sitio. Sin contraseñas y sin registro por correo.',
   'home.step1Title': 'Iniciar sesión',
   'home.step1Body':
     'Un toque en tu navegador. Usa un acceso seguro guardado en tu dispositivo, o crea uno nuevo. Esa es tu cuenta — no hay nada más que recordar.',
@@ -1379,6 +1436,13 @@ const es = {
   'login.helloName': 'Hola, {name}',
   'login.welcomeHeading': 'Hola, {name}',
   'setup.nameTitle': 'Tu nombre',
+  'setup.usernameTitle': 'Tu nombre en 21.gifts',
+  'setup.usernameHint':
+    'Esta es la dirección a la que envían Bitcoin: tu@21.gifts. Wallet of Satoshi sigue recibiéndolo.',
+  'setup.usernameEmpty': 'Escribe un nombre de usuario',
+  'setup.usernameInvalid': 'Usa letras inglesas, números, guion, guion bajo o punto',
+  'setup.usernameTaken': 'Ese nombre de usuario ya está en uso',
+  'setup.usernameRequest': 'No se pudo guardar el nombre de usuario',
   'setup.addressTitle': 'Tu Wallet of Satoshi address',
   'setup.continue': 'Continuar',
   'setup.skip': 'Omitir',
@@ -1502,6 +1566,7 @@ const es = {
   'link.externalClose': 'Cerrar',
 
   'requirements.nameTitle': 'Añade tu nombre',
+  'requirements.usernameTitle': 'Añade tu nombre en 21.gifts',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
   'requirements.addressTitle': 'Añade tu Wallet of Satoshi address',
   'requirements.close': 'Cerrar',
@@ -1558,10 +1623,12 @@ const es = {
   'profile.about.errorUnsupported': 'Usa una foto JPEG, PNG o WebP',
   'profile.about.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
   'profile.copyLink': 'Copiar enlace a este perfil',
+  'profile.giftsHeading': 'Dirección 21.gifts',
   'profile.message': 'Mensaje',
 
   'view.unnamed': 'Sin nombre',
   'view.noAddress': 'Sin Wallet of Satoshi address',
+  'view.noGiftsAddress': 'Sin dirección 21.gifts',
   'view.missing': 'No se pudo encontrar este perfil.',
   'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
   'view.retry': 'Intentar de nuevo',
@@ -1757,6 +1824,24 @@ const es = {
   'moderate.proposals.listLabel': 'Propuestas abiertas de moderación',
   'moderate.proposals.proposedBy': 'Propuesto por {name}',
   'moderate.proposals.error': 'No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo.',
+  'moderate.goal.title': 'Meta',
+  'moderate.goal.subtitle': '100 pagos al día',
+  'moderate.goal.percent': '{percent} %',
+  'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
+  'moderate.goal.openHint': 'Toca para ver el historial y la explicación',
+  'moderate.goal.closeHint': 'Toca para cerrar',
+  'moderate.goal.explYesterday':
+    'Ayer (UTC {date}) 21.gifts pagó {count} pagos oficiales. Eso es el {percent} por ciento de los {goal} al día que buscamos.',
+  'moderate.goal.explOfficial':
+    'Oficial significa que 21.gifts mismo pagó a alguien de la lista de destinatarios. Eso ocurre cuando esa persona escribe una nota en la sala de estar ese día UTC. Los regalos entre miembros no cuentan aquí.',
+  'moderate.goal.explBar':
+    'La barra usa el último día UTC cerrado. El día en curso se dibuja más claro en el gráfico.',
+  'moderate.goal.chartTitle': 'Pagos oficiales por día UTC',
+  'moderate.goal.chartFoot': 'Línea de arriba = meta {goal} · barra más clara = hoy, aún abierto',
+  'moderate.goal.loading': 'Cargando…',
+  'moderate.goal.error': 'No se pudieron cargar los pagos. Inténtalo de nuevo.',
+  'moderate.goal.retry': 'Intentar de nuevo',
+  'moderate.goal.widgetLabel': 'Meta diaria de pagos',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -1833,7 +1918,7 @@ const fil = {
   'home.howKicker': 'Paano ito gumagana',
   'home.howTitle': 'Tatlong hakbang, at walang account sa tradisyonal na kahulugan',
   'home.howLead':
-    'Dito ka mismo magla-log in sa site na ito. Walang username, walang password, at walang pag-sign up gamit ang email.',
+    'Dito ka mismo magla-log in sa site na ito. Walang password, at walang pag-sign up gamit ang email.',
   'home.step1Title': 'Mag-log in',
   'home.step1Body':
     'Isang tap sa browser mo. Gagamitin nito ang secure na login na nakaimbak sa device mo, o gagawa ito ng bago. Iyon na ang account mo — wala nang ibang kailangang tandaan.',
@@ -1962,6 +2047,13 @@ const fil = {
   'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
   'setup.nameTitle': 'Ang pangalan mo',
+  'setup.usernameTitle': 'Ang 21.gifts name mo',
+  'setup.usernameHint':
+    'Ito ang address na padadalhan ng Bitcoin: ikaw@21.gifts. Wallet of Satoshi pa rin ang tumatanggap.',
+  'setup.usernameEmpty': 'Maglagay ng username',
+  'setup.usernameInvalid': 'Mga English na letra, numero, hyphen, underscore, o tuldok lang',
+  'setup.usernameTaken': 'Nakuha na ang username na iyan',
+  'setup.usernameRequest': 'Hindi ma-save ang username',
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
   'setup.continue': 'Magpatuloy',
   'setup.skip': 'Laktawan',
@@ -2088,6 +2180,7 @@ const fil = {
   'link.externalClose': 'Isara',
 
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
+  'requirements.usernameTitle': 'Idagdag ang 21.gifts name mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
   'requirements.addressTitle': 'Idagdag ang Wallet of Satoshi address mo',
   'requirements.close': 'Isara',
@@ -2144,10 +2237,12 @@ const fil = {
   'profile.about.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato',
   'profile.about.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
   'profile.copyLink': 'Kopyahin ang link sa profile na ito',
+  'profile.giftsHeading': '21.gifts address',
   'profile.message': 'Mensahe',
 
   'view.unnamed': 'Walang pangalan',
   'view.noAddress': 'Walang Wallet of Satoshi address',
+  'view.noGiftsAddress': 'Walang 21.gifts address',
   'view.missing': 'Hindi mahanap ang profile na ito.',
   'view.error': 'Hindi ma-load ang profile. Subukan ulit.',
   'view.retry': 'Subukan ulit',
@@ -2349,6 +2444,25 @@ const fil = {
   'moderate.proposals.listLabel': 'Mga bukas na mungkahi para maging moderator',
   'moderate.proposals.proposedBy': 'Iminungkahi ni {name}',
   'moderate.proposals.error': 'Hindi ma-load ang mga bukas na mungkahi. Subukan ulit.',
+  'moderate.goal.title': 'Layunin',
+  'moderate.goal.subtitle': '100 na bayad kada araw',
+  'moderate.goal.percent': '{percent}%',
+  'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
+  'moderate.goal.openHint': 'I-tap para sa kasaysayan at paliwanag',
+  'moderate.goal.closeHint': 'I-tap para isara',
+  'moderate.goal.explYesterday':
+    'Kahapon (UTC {date}) nagbayad ang 21.gifts ng {count} opisyal na bayad. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
+  'moderate.goal.explOfficial':
+    'Opisyal ang ibig sabihin: ang 21.gifts mismo ang nagbayad sa isang tao sa listahan ng tatanggap. Mangyayari iyon kapag nagsulat ang taong iyon ng living-room note sa UTC-araw na iyon. Hindi dito binibilang ang mga gift sa pagitan ng mga miyembro.',
+  'moderate.goal.explBar':
+    'Ginagamit ng bar ang huling kumpletong UTC-araw. Mas maliwanag ang kasalukuyang araw sa tsart.',
+  'moderate.goal.chartTitle': 'Mga opisyal na bayad bawat UTC-araw',
+  'moderate.goal.chartFoot':
+    'Linya sa itaas = layunin {goal} · mas maliwanag na bar = ngayon, bukas pa',
+  'moderate.goal.loading': 'Naglo-load…',
+  'moderate.goal.error': 'Hindi ma-load ang mga bayad. Subukan ulit.',
+  'moderate.goal.retry': 'Subukan ulit',
+  'moderate.goal.widgetLabel': 'Araw-araw na layunin sa bayad',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

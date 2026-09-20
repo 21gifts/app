@@ -348,6 +348,7 @@ flowchart TB
     LI["/login"]
     DO["/donate"]
     SN["/setup/name"]
+    SU["/setup/username"]
     SA["/setup/address"]
     SR["/setup/rules"]
     W["/welcome"]
@@ -374,21 +375,21 @@ flowchart TB
 
 ## Layout and chrome
 
-| Measure            | Value                                       | Use                                                            |
-| ------------------ | ------------------------------------------- | -------------------------------------------------------------- |
-| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner               |
-| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                           |
-| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address |
-| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                      |
-| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation       |
-| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                       |
-| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                 |
-| Marketing pad      | `px-5`                                      | Header, sections, footer                                       |
-| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                              |
-| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/address`, `/setup/rules`                |
-| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                            |
-| Marketing section  | `py-20`                                     | how / why / project / faq                                      |
-| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                |
+| Measure            | Value                                       | Use                                                                |
+| ------------------ | ------------------------------------------- | ------------------------------------------------------------------ |
+| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                   |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                               |
+| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address     |
+| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                          |
+| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation           |
+| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                           |
+| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                     |
+| Marketing pad      | `px-5`                                      | Header, sections, footer                                           |
+| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                  |
+| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules` |
+| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                |
+| Marketing section  | `py-20`                                     | how / why / project / faq                                          |
+| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                    |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden`. App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
@@ -528,7 +529,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address only), **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), **Message** (member profile DM CTA), sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Back home**, **Ask for help**, **Send help**), marketing-shell primary (**Log in** pill, 404 **Back home**), donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `aria-label` = `forum.pay` “Send Bitcoin”) on payable replies, push bell, profile/rules-setup back, Menu **row** icons (the Menu _trigger_ stays labeled) |
 
-**Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/rules` or on `RequirementsOverlay`.
+**Skip** (onboarding name/address only) is a labeled `Button` in the same column as **Continue**. There is no Skip on `/setup/username`, `/setup/rules`, or on `RequirementsOverlay`.
 
 **Notifications** list rows are full-row links/buttons with visible text (not icon-only).
 
@@ -665,7 +666,7 @@ Glyph: `aria-hidden` on the lucide node.
 
 **Introduce yourself.** Title, body, labeled `Button` CTA **Write an introduction**. The CTA dismisses the overlay, focuses the welcome composer (`FORUM_COMPOSE_EVENT` / `requestForumCompose`), and `router.push('/welcome')` only when the path is not already `/welcome`. Close dismisses this mount. No Skip.
 
-**Requirements.** Name, Lightning Address, or living-room rules before a pending post retries. Close dismisses without posting. No Skip.
+**Requirements.** Name, username, Wallet of Satoshi address, or living-room rules before a pending post retries. Close dismisses without posting. No Skip. Username has no Skip.
 
 **External link.** Title **Open external link?**, body warning, destination URL as `text-sm text-app-fg break-all` (user content, not catalogized), labeled **Open link**. Close dismisses without opening. No Skip. App body links stay `font-medium underline underline-offset-2` and inherit colour — not `text-accent`.
 
@@ -883,7 +884,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
+**Anatomy.** Identity panel `max-w-sm` card chrome (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement.
 
 ## Screen recipes
 
@@ -939,6 +940,10 @@ Fill `AppShell` `align="center"`; `HomeWordmark` + LanguageSwitcher. Inner `max-
 
 Fill `AppShell` `align="start"`; `topLeft={<Wordmark />}` (span) `topRight={<SignedInChrome />}`. `OnboardingGate screen="name"` → `NameSetup`: `AppShellHeader` **h1** “Your name” → `NameForm onboarding` (prompt, `Field`, alert, **Continue** and labeled **Skip** in `AppShellFooter`).
 
+### `/setup/username`
+
+Fill `AppShell` `align="start"`; `topLeft={<Wordmark />}` (span) `topRight={<SignedInChrome />}`. `OnboardingGate screen="username"` → `UsernameSetup`: `AppShellHeader` **h1** “Your 21.gifts name”, hint, `UsernameForm onboarding` (field, alert, **Continue** in `AppShellFooter`). No Skip.
+
 ### `/setup/address`
 
 Same column. Wordmark span + Menu. **h1** “Your Wallet of Satoshi address”. Hello line muted when a name exists. `LightningAddressForm onboarding` (**Continue** and labeled **Skip**). Placeholder `you@walletofsatoshi.com` stays (product token).
@@ -957,7 +962,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Composer.
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
-- `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
+- `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, username, Wallet of Satoshi address, or rules agreement.
 - `ExternalLinkWarning` (same overlay chrome, no Skip) when a visitor clicks an external http(s) URL in note, About me, or inbox text. Internal 21.gifts URLs navigate in-app with no overlay.
 
 Author names with `accountId` open `/members/[accountId]`.
@@ -968,7 +973,7 @@ Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />
 
 ### `/members/[accountId]`
 
-Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), Lightning Address, optional role pill, activity **Posts** / **Reactions** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
+Flow `AppShell`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity card (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, activity **Posts** / **Reactions** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement.
 Handbook states: default (About me when set), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (posts feed open, listed note expanded, Amount filled, Post → `RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`, `translate*` (German post in the posts feed). Overlay-address is reachable from a posts-feed reply; About me is not a replyable forum note.
 
 ### `/notifications`
@@ -979,9 +984,9 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for moderators.**). Staff (moderator) see the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Does not fetch the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for moderators.**). Staff (moderator) see the hide-tool lead, the daily payout-goal widget (yesterday UTC vs 100 from `GET /gifts/stats`; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff fetch `GET /gifts/stats` for the widget. Does not fetch the hidden list. No un-hide control.
 
-Handbook states: default hub, forbidden.
+Handbook states: default hub, forbidden, goal-open, loading, error.
 
 ### `/moderate/hidden`
 

@@ -90,6 +90,7 @@ function stubClipboard(writeText: () => Promise<void>): ReturnType<typeof vi.fn>
 const profile: MemberProfile = {
   id: '22222222-2222-4222-8222-222222222222',
   name: 'Carol',
+  username: 'carol',
   location: null,
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
@@ -330,7 +331,7 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
     expect(screen.getByText('Carol')).toBeTruthy();
-    expect(screen.getByText('carol@walletofsatoshi.com')).toBeTruthy();
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
   });
@@ -2911,24 +2912,26 @@ describe('MemberProfileScreen', () => {
   it('shows unnamed and no-address copy when fields are null', () => {
     renderWithLocale(
       <MemberProfileScreen
-        profile={{ ...profile, name: null, lightningAddress: null, role: 'basis' }}
+        profile={{
+          ...profile,
+          name: null,
+          username: null,
+          lightningAddress: null,
+          role: 'basis',
+        }}
         received={[]}
         donated={[]}
       />,
     );
     expect(screen.getByText('Unnamed')).toBeTruthy();
-    expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByText('No 21.gifts address')).toBeTruthy();
   });
 
-  it('treats a blank Lightning Address as missing', () => {
+  it('hides the 21.gifts address when username is missing', () => {
     renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, lightningAddress: '   ' }}
-        received={[]}
-        donated={[]}
-      />,
+      <MemberProfileScreen profile={{ ...profile, username: null }} received={[]} donated={[]} />,
     );
-    expect(screen.getByText('No Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.getByText('No 21.gifts address')).toBeTruthy();
   });
 
   it('posts a reply when the account snapshot is missing', async () => {

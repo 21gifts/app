@@ -163,6 +163,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Your name' })",
   },
   {
+    route: '/setup/username',
+    id: 'default',
+    image: 'setup-username.png',
+    visual: 'screen-setup-username',
+    needle: "getByRole('heading', { name: 'Your 21.gifts name' })",
+  },
+  {
     route: '/setup/address',
     id: 'default',
     image: 'setup-address.png',
@@ -605,6 +612,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'overlay-username',
+    image: 'welcome-overlay-username.png',
+    visual: 'state-welcome-overlay-username',
+    needle: "getByRole('dialog', { name: 'Add your 21.gifts name' })",
+  },
+  {
+    route: '/welcome',
     id: 'overlay-introduce',
     image: 'welcome-overlay-introduce.png',
     visual: 'state-welcome-overlay-introduce',
@@ -777,6 +791,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-overlay-address.png',
     visual: 'state-members-overlay-address',
     needle: 'state-members-overlay-address',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'overlay-username',
+    image: 'members-overlay-username.png',
+    visual: 'state-members-overlay-username',
+    needle: 'state-members-overlay-username',
   },
   {
     route: '/members/[accountId]',
@@ -1190,6 +1211,27 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-forbidden.png',
     visual: 'state-moderate-forbidden',
     needle: 'This page is for moderators.',
+  },
+  {
+    route: '/moderate',
+    id: 'goal-open',
+    image: 'moderate-goal-open.png',
+    visual: 'state-moderate-goal-open',
+    needle: 'Official payouts by UTC day',
+  },
+  {
+    route: '/moderate',
+    id: 'loading',
+    image: 'moderate-loading.png',
+    visual: 'state-moderate-loading',
+    needle: 'Daily payout goal',
+  },
+  {
+    route: '/moderate',
+    id: 'error',
+    image: 'moderate-error.png',
+    visual: 'state-moderate-error',
+    needle: 'Could not load payouts. Please try again.',
   },
   {
     route: '/moderate/hidden',

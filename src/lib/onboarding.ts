@@ -1,7 +1,8 @@
 import type { Account } from '@/lib/api-types';
 
 /** Where a signed-in visitor belongs in the post-login flow. */
-export type OnboardingPath = '/setup/name' | '/setup/address' | '/setup/rules' | '/welcome';
+export type OnboardingPath =
+  '/setup/name' | '/setup/username' | '/setup/address' | '/setup/rules' | '/welcome';
 
 /**
  * Whether the account has a display name to show.
@@ -43,6 +44,8 @@ export function nextOnboardingPath(account: Account): OnboardingPath {
   switch (account.setup) {
     case 'name':
       return '/setup/name';
+    case 'username':
+      return '/setup/username';
     case 'lightning-address':
       return '/setup/address';
     case 'rules':

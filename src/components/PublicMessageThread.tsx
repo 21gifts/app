@@ -182,7 +182,7 @@ export function PublicMessageThread(props: {
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);

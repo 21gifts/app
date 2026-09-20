@@ -315,7 +315,7 @@ export function ForumLoader(): ReactElement | null {
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const payPollGeneration = useRef(0);
