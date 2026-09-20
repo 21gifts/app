@@ -985,6 +985,39 @@ export async function listHiddenMessages(sessionToken: string): Promise<HiddenMe
 }
 
 /**
+ * Signed-in single-note fetch (app path `/forum/messages/:id`).
+ * Staff sessions receive soft-hidden rows; others get 404 → null.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param id - Forum message UUID.
+ * @returns The {@link ForumMessage}, or `null` when the id is unknown (404).
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchForumMessage(
+  sessionToken: string,
+  id: string,
+): Promise<ForumMessage | null> {
+  try {
+    const response = await fetch(`/forum/messages/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumMessageSchema.parse(await response.json());
+  } catch (err) {
+    if (err instanceof Error && err.message === 'Could not load messages. Please try again.') {
+      throw err;
+    }
+    /* Zod / network */
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
  * Fetches one public forum message without a session (HTML note page).
  * Optional `sinceSats` waits on the api until the note has more sats (pay poll).
  *

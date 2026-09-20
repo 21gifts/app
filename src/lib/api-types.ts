@@ -370,6 +370,8 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * Gift-only replies may have empty `text` when `sats > 0`.
+ * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
+ * payloads omit them.
  */
 export const forumMessageSchema = z
   .object({
@@ -392,6 +394,14 @@ export const forumMessageSchema = z
     role: z.enum(ROLE_ORDER).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
     via: z.literal('nostr').optional(),
+    deletedAt: z.string().datetime({ offset: true }).optional(),
+    deletedBy: z
+      .object({
+        id: z.string().min(1).nullable(),
+        name: z.string().min(1).nullable(),
+        role: z.enum(ROLE_ORDER).nullable(),
+      })
+      .optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,

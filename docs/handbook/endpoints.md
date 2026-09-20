@@ -434,6 +434,13 @@
 - **Used by:** `postTrustAppoint` in `MemberTrustActions`.
 - **Auth:** Bearer (founder).
 
+## Endpoint: GET /forum/messages/[id]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id`. App path is `/forum/messages/[id]` so HTML `/messages/[id]` can stay the page. Staff (founder/moderator) receive a soft-hidden row with `deletedAt` / `deletedBy`; unsigned/non-staff hidden ids stay 404.
+- **Errors:** Upstream 401/403/404, or 502 if the api is unreachable.
+- **Used by:** `fetchForumMessage` via `PublicMessageLoader` on `/messages/[id]`.
+- **Auth:** Bearer; staff hide-stamps only when the api role is founder or moderator.
+
 ## Endpoint: DELETE /forum/messages/[id]
 
 - **Purpose:** Same-origin moderation proxy to DELETE /messages/:id.

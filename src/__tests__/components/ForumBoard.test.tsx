@@ -5086,6 +5086,33 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).toHaveBeenCalledWith('m1');
   });
 
+  it('omits interaction controls and the reply composer on a hidden top-level note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, deletedAt: '2026-08-29T15:00:00.000Z', payable: true }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /^React$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
+    expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
+    expect(screen.getByText('₿0')).toBeTruthy();
+  });
+
   it('focuses the reply composer when React is clicked on an expanded note', () => {
     renderWithLocale(
       <ForumBoard

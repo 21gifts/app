@@ -13,14 +13,17 @@ import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import {
+  fetchForumMessage,
   fetchGiftStats,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
+  fetchReplies,
 } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
+import { roleAtLeast } from '@/lib/roles';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -199,20 +202,21 @@ function PublicThreadCard({
 }
 
 /**
- * Client loader for `/messages/[id]`: validates the UUID, fetches the public
- * parent and live replies (and optional photo blobs), and shows a Log in /
- * Back to the forum link from session hydrate state. Opening a reply UUID
- * still shows the parent thread. Unsigned visitors keep the read-only cards.
- * When hydrate is ready and both session and account are set, mounts
- * {@link PublicMessageThread} (`ForumBoard` with `composerHidden`) so copy,
- * reply, Gift on a payable nested reply, and staff delete work. No
+ * Client loader for `/messages/[id]`: validates the UUID, waits for session
+ * hydrate, then fetches the note. Staff (moderator/founder) use bearer
+ * {@link fetchForumMessage} / {@link fetchReplies} so a soft-hidden row can
+ * load with a hide notice; everyone else uses the public fetch (404 → missing).
+ * Opening a reply UUID still shows the parent thread. Unsigned visitors keep
+ * the read-only cards. When hydrate is ready and both session and account are
+ * set, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
+ * so copy, reply, Gift on a payable nested reply, and staff delete work. No
  * OnboardingGate, top-level composer, or envelope.
  *
  * @param props - Dynamic route `id`.
  * @returns Loading, missing, error, unsigned cards, or the signed-in thread.
  */
 export function PublicMessageLoader({ id }: { id: string }): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { fiat } = useFiatPreference();
   const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
@@ -235,15 +239,27 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
       return;
     }
 
+    if (!ready) {
+      return;
+    }
+
     let cancelled = false;
     setStatus('loading');
     setRoot(null);
     setReplies([]);
     setHighlightId(null);
 
+    const staff = session !== null && roleAtLeast(account?.role, 'moderator');
+    const loadNote =
+      staff && session
+        ? (noteId: string) => fetchForumMessage(session, noteId)
+        : fetchPublicMessage;
+    const loadReplies =
+      staff && session ? (rootId: string) => fetchReplies(session, rootId) : fetchPublicReplies;
+
     void (async () => {
       try {
-        const next = await fetchPublicMessage(id);
+        const next = await loadNote(id);
         if (cancelled) {
           return;
         }
@@ -253,7 +269,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         }
         let rootNote = next;
         if (next.parentId !== undefined && next.parentId !== '') {
-          const parent = await fetchPublicMessage(next.parentId);
+          const parent = await loadNote(next.parentId);
           if (cancelled) {
             return;
           }
@@ -263,7 +279,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
           }
           rootNote = parent;
         }
-        const nextReplies = await fetchPublicReplies(rootNote.id);
+        const nextReplies = await loadReplies(rootNote.id);
         if (cancelled) {
           return;
         }
@@ -281,7 +297,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [id, attempt]);
+  }, [id, attempt, ready, session, account]);
 
   useEffect(() => {
     if (!MESSAGE_ID_RE.test(id)) {
@@ -331,9 +347,29 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   }
 
   const signedInThread = ready && session !== null && account !== null;
+  const highlighted =
+    highlightId !== null ? replies.find((reply) => reply.id === highlightId) : undefined;
+  const hiddenNoticeSource =
+    root.deletedAt !== undefined && root.deletedBy !== undefined
+      ? root
+      : highlighted !== undefined &&
+          highlighted.deletedAt !== undefined &&
+          highlighted.deletedBy !== undefined
+        ? highlighted
+        : null;
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
+      {hiddenNoticeSource !== null &&
+      hiddenNoticeSource.deletedAt !== undefined &&
+      hiddenNoticeSource.deletedBy !== undefined ? (
+        <p role="status" className="text-center text-sm text-app-muted">
+          {t('forum.hiddenNotice', {
+            name: hiddenNoticeSource.deletedBy.name ?? t('moderate.unnamed'),
+            time: formatForumTime(hiddenNoticeSource.deletedAt, locale),
+          })}
+        </p>
+      ) : null}
       {signedInThread ? (
         <PublicMessageThread
           root={root}

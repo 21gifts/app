@@ -1410,6 +1410,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'hidden',
+    image: 'messages-id-hidden.png',
+    visual: 'state-messages-id-hidden',
+    needle: 'This note was hidden by',
+  },
+  {
+    route: '/messages/[id]',
     id: 'missing',
     image: 'messages-id-missing.png',
     visual: 'state-messages-id-missing',

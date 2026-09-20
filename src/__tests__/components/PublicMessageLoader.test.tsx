@@ -28,6 +28,7 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({
+  fetchForumMessage: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchPublicReplies: vi.fn(),
@@ -46,14 +47,17 @@ vi.mock('@/lib/api', () => ({
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import {
   deleteMessage,
+  fetchForumMessage,
   fetchGiftStats,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
 } from '@/lib/api';
+import { formatForumTime } from '@/lib/forum-time';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
+const fetchMessageBearer = vi.mocked(fetchForumMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchRepliesPublic = vi.mocked(fetchPublicReplies);
 const fetchRepliesBearer = vi.mocked(fetchReplies);
@@ -122,6 +126,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   fetchMessage.mockReset();
+  fetchMessageBearer.mockReset();
   fetchPhoto.mockReset();
   fetchRepliesPublic.mockReset();
   fetchRepliesBearer.mockReset();
@@ -211,15 +216,157 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
-  it('shows Loading… while session hydrate is not ready', async () => {
+  it('shows Loading… without fetching while session hydrate is not ready', () => {
     hydrate.mockReturnValue({ ready: false });
     fetchMessage.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByText('Hello from Ada')).toBeNull();
+    expect(fetchMessageBearer).not.toHaveBeenCalled();
+    expect(fetchMessage).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+  });
+
+  it('keeps the loaded note and shows footer loading when hydrate drops', async () => {
+    fetchMessage.mockResolvedValue(sample);
+    const view = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getAllByText('Loading…').length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+    hydrate.mockReturnValue({ ready: false });
+    view.rerender(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.getByText('Loading…')).toBeTruthy();
+  });
+
+  it('shows a hidden note and notice to hydrated staff via bearer fetch', async () => {
+    const deletedAt = '2026-08-29T15:00:00.000Z';
+    const hidden: ForumMessage = {
+      ...sample,
+      deletedAt,
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    useAuthStore.setState({
+      session: 'staff-session',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessageBearer.mockResolvedValue(hidden);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    const notice = await screen.findByRole('status');
+    expect(notice.textContent).toBe(
+      `This note was hidden by Marta on ${formatForumTime(deletedAt, 'en')}.`,
+    );
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByText('This profile could not be found.')).toBeNull();
+    expect(fetchMessageBearer).toHaveBeenCalledWith('staff-session', MESSAGE_ID);
+    expect(fetchMessage).not.toHaveBeenCalled();
+  });
+
+  it('uses unnamed when the deleter has no name', async () => {
+    const deletedAt = '2026-08-29T15:00:00.000Z';
+    const hidden: ForumMessage = {
+      ...sample,
+      deletedAt,
+      deletedBy: { id: 'acc_mod', name: null, role: 'moderator' },
+    };
+    useAuthStore.setState({
+      session: 'staff-session',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessageBearer.mockResolvedValue(hidden);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    const notice = await screen.findByRole('status');
+    expect(notice.textContent).toBe(
+      `This note was hidden by Unnamed on ${formatForumTime(deletedAt, 'en')}.`,
+    );
+  });
+
+  it('shows the hide notice from a highlighted hidden reply under a live parent', async () => {
+    const deletedAt = '2026-08-29T15:00:00.000Z';
+    const parentId = '22222222-2222-4222-8222-222222222222';
+    const replyId = MESSAGE_ID;
+    const parent: ForumMessage = { ...sample, id: parentId, text: 'Parent note' };
+    const hiddenReply: ForumMessage = {
+      ...sample,
+      id: replyId,
+      parentId,
+      text: 'Hidden reply',
+      deletedAt,
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    useAuthStore.setState({
+      session: 'staff-session',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessageBearer.mockImplementation(async (session, id) => {
+      expect(session).toBe('staff-session');
+      if (id === replyId) {
+        return hiddenReply;
+      }
+      if (id === parentId) {
+        return parent;
+      }
+      return null;
+    });
+    fetchRepliesBearer.mockResolvedValue([hiddenReply]);
+    renderWithLocale(<PublicMessageLoader id={replyId} />);
+    const notice = await screen.findByRole('status');
+    expect(notice.textContent).toBe(
+      `This note was hidden by Marta on ${formatForumTime(deletedAt, 'en')}.`,
+    );
+    expect(screen.getByText('Parent note')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('Hidden reply')).toBeTruthy();
+    });
+    expect(screen.queryByText('This profile could not be found.')).toBeNull();
   });
 
   it('shows Loading… while the message is fetching', () => {
@@ -768,7 +915,7 @@ describe('PublicMessageLoader', () => {
         missing: [],
       },
     });
-    fetchMessage.mockResolvedValue(sample);
+    fetchMessageBearer.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Delete post' })).toBeTruthy();

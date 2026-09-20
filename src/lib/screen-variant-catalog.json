@@ -1146,6 +1146,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:hidden",
+    "label": "/messages/[id] hidden",
+    "visual": "state-messages-id-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:missing",
     "label": "/messages/[id] missing",
     "visual": "state-messages-id-missing",
