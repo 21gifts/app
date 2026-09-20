@@ -98,8 +98,12 @@ function formatUtcDate(day: string, locale: string): string {
  * @param day - UTC `YYYY-MM-DD`.
  * @returns Short day-month label.
  */
-function chartDayLabel(day: string): string {
-  return `${Number(day.slice(8, 10))}.${day.slice(5, 7)}.`;
+function chartDayLabel(day: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00.000Z`));
 }
 
 /**
@@ -121,7 +125,6 @@ export function ModerateScreen(): ReactElement | null {
   const staff = roleAtLeast(account?.role, 'moderator');
   const [stats, setStats] = useState<GiftStats | null>(null);
   const [goalError, setGoalError] = useState(false);
-  const [goalLoading, setGoalLoading] = useState(false);
   const [goalAttempt, setGoalAttempt] = useState(0);
   const [goalOpen, setGoalOpen] = useState(false);
 
@@ -130,7 +133,6 @@ export function ModerateScreen(): ReactElement | null {
       return;
     }
     let cancelled = false;
-    setGoalLoading(true);
     setGoalError(false);
     void (async () => {
       try {
@@ -145,10 +147,6 @@ export function ModerateScreen(): ReactElement | null {
         }
         setStats(null);
         setGoalError(true);
-      } finally {
-        if (!cancelled) {
-          setGoalLoading(false);
-        }
       }
     })();
     return () => {
@@ -181,7 +179,6 @@ export function ModerateScreen(): ReactElement | null {
         t={t}
         locale={locale}
         stats={stats}
-        loading={goalLoading}
         error={goalError}
         open={goalOpen}
         onToggle={() => {
@@ -224,24 +221,15 @@ function PayoutGoalWidget(props: {
   t: LocaleContextValue['t'];
   locale: Locale;
   stats: GiftStats | null;
-  loading: boolean;
   error: boolean;
   open: boolean;
   onToggle: () => void;
   onRetry: () => void;
 }): ReactElement {
-  const { t, locale, stats, loading, error, open, onToggle, onRetry } = props;
+  const { t, locale, stats, error, open, onToggle, onRetry } = props;
   const shell =
     'flex w-full flex-col gap-3 rounded-3xl border border-app-border-strong bg-app-card-muted p-4';
   const labeled = { 'aria-label': t('moderate.goal.widgetLabel') };
-
-  if (loading && stats === null && !error) {
-    return (
-      <div className={shell} {...labeled}>
-        <p className="text-center text-sm text-app-muted">{t('moderate.goal.loading')}</p>
-      </div>
-    );
-  }
 
   if (error && stats === null) {
     return (
@@ -256,11 +244,19 @@ function PayoutGoalWidget(props: {
     );
   }
 
+  if (stats === null) {
+    return (
+      <div className={shell} {...labeled}>
+        <p className="text-center text-sm text-app-muted">{t('moderate.goal.loading')}</p>
+      </div>
+    );
+  }
+
   const today = utcDayFromMs(Date.now());
   const yesterday = previousUtcDay(today);
-  const count = stats === null ? 0 : countOnDay(stats.spendOverTime, yesterday);
+  const count = countOnDay(stats.spendOverTime, yesterday);
   const percent = Math.min(100, Math.round((count / PAYOUT_GOAL) * 100));
-  const rows = stats === null ? [] : chartRows(stats.spendOverTime, today);
+  const rows = chartRows(stats.spendOverTime, today);
 
   return (
     <div className={shell} {...labeled}>
@@ -315,7 +311,12 @@ function PayoutGoalWidget(props: {
           <p className="text-sm text-app-muted">{t('moderate.goal.explOfficial')}</p>
           <p className="text-sm text-app-muted">{t('moderate.goal.explBar')}</p>
           <p className="text-sm font-medium text-app-fg">{t('moderate.goal.chartTitle')}</p>
-          <PayoutGoalChart rows={rows} today={today} ariaLabel={t('moderate.goal.chartTitle')} />
+          <PayoutGoalChart
+            rows={rows}
+            today={today}
+            locale={locale}
+            ariaLabel={t('moderate.goal.chartTitle')}
+          />
           <p className="text-center text-xs text-app-muted">
             {t('moderate.goal.chartFoot', { goal: PAYOUT_GOAL })}
           </p>
@@ -334,9 +335,10 @@ function PayoutGoalWidget(props: {
 function PayoutGoalChart(props: {
   rows: { day: string; count: number }[];
   today: string;
+  locale: Locale;
   ariaLabel: string;
 }): ReactElement {
-  const { rows, today, ariaLabel } = props;
+  const { rows, today, locale, ariaLabel } = props;
   const width = 800;
   const height = 280;
   const padL = 56;
@@ -421,7 +423,7 @@ function PayoutGoalChart(props: {
                 className="fill-app-muted"
                 fontSize="12"
               >
-                {chartDayLabel(row.day)}
+                {chartDayLabel(row.day, locale)}
               </text>
             ) : null}
           </g>

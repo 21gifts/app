@@ -1131,7 +1131,7 @@ Signed-in basis account. Copy **This page is for moderators.** No tools list.
 
 ### Variant: goal-open
 
-Staff (founder) hub with the payout-goal widget expanded: explanation copy and the 30-UTC-day official-payout count chart (goal line at 100).
+Staff (moderator) hub with the payout-goal widget expanded: explanation copy and the 30-UTC-day official-payout count chart (goal line at 100).
 
 ![21.gifts moderation goal open](images/moderate-goal-open.png)
 
