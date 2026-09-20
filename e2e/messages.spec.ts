@@ -867,7 +867,7 @@ test('welcome external reply shows a badge and keeps the url as text', async ({ 
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
