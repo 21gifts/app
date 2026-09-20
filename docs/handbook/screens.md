@@ -1119,7 +1119,7 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ### Variant: default
 
-Staff (founder) hub with heading **Moderation**, hub lead **Tools for moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for moderators.**
+Staff (moderator) hub with heading **Moderation**, hub lead **Tools for moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for moderators.**
 
 ![21.gifts moderation](images/moderate.png)
 
@@ -1139,13 +1139,13 @@ Signed-in basis account. Copy **This page is for moderators.** No tools list.
 
 ### Variant: default
 
-Staff (founder) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
+Staff (moderator) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
 
 ![21.gifts hidden notes](images/moderate-hidden.png)
 
 ### Variant: visitor
 
-Staff (founder) loaded list with one hidden note written without a 21.gifts account (author **Robin**, text **Hidden visitor note**, the non-interactive **Visitor** badge next to the name, **Hidden by Ada**).
+Staff (moderator) loaded list with one hidden note written without a 21.gifts account (author **Robin**, text **Hidden visitor note**, the non-interactive **Visitor** badge next to the name, **Hidden by Ada**).
 
 ![21.gifts hidden notes visitor](images/moderate-hidden-visitor.png)
 
@@ -1157,19 +1157,19 @@ Signed-in basis account. Copy **This page is for moderators.** No list.
 
 ### Variant: empty
 
-Staff (founder) loaded list with zero hidden notes. Copy **No hidden notes.**
+Staff (moderator) loaded list with zero hidden notes. Copy **No hidden notes.**
 
 ![21.gifts hidden notes empty](images/moderate-hidden-empty.png)
 
 ### Variant: loading
 
-Staff (founder) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
+Staff (moderator) waiting on `GET /forum/messages/hidden`. Copy **Loading…**
 
 ![21.gifts hidden notes loading](images/moderate-hidden-loading.png)
 
 ### Variant: error
 
-Staff (founder) list fetch failed. Button **Try again**.
+Staff (moderator) list fetch failed. Button **Try again**.
 
 ![21.gifts hidden notes error](images/moderate-hidden-error.png)
 
@@ -1183,7 +1183,7 @@ Staff (founder) list fetch failed. Button **Try again**.
 
 ### Variant: default
 
-Staff (founder) loaded queue with at least one open proposal (subject **Rose**, **Proposed by Bob**, **Confirm as moderator**).
+Staff (moderator) loaded queue with at least one open proposal (subject **Rose**, **Proposed by Bob**, **Confirm as moderator**).
 
 ![21.gifts open proposals](images/moderate-proposals.png)
 
@@ -1195,37 +1195,37 @@ Signed-in basis account. Copy **This page is for moderators.** No list.
 
 ### Variant: empty
 
-Staff (founder) loaded list with zero open proposals. Copy **No open proposals.**
+Staff (moderator) loaded list with zero open proposals. Copy **No open proposals.**
 
 ![21.gifts open proposals empty](images/moderate-proposals-empty.png)
 
 ### Variant: loading
 
-Staff (founder) waiting on `GET /trust/proposals`. Copy **Loading…**
+Staff (moderator) waiting on `GET /trust/proposals`. Copy **Loading…**
 
 ![21.gifts open proposals loading](images/moderate-proposals-loading.png)
 
 ### Variant: error
 
-Staff (founder) list fetch failed. Copy **Could not load open proposals. Please try again.** Button **Try again**.
+Staff (moderator) list fetch failed. Copy **Could not load open proposals. Please try again.** Button **Try again**.
 
 ![21.gifts open proposals error](images/moderate-proposals-error.png)
 
 ### Variant: waiting-confirm
 
-Staff (founder) row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button.
+Staff (moderator) row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button.
 
 ![21.gifts open proposals waiting confirm](images/moderate-proposals-waiting-confirm.png)
 
 ### Variant: confirm-error
 
-Staff (founder) Confirm as moderator failed. Copy **Could not update this member. Please try again.**
+Staff (moderator) Confirm as moderator failed. Copy **Could not update this member. Please try again.**
 
 ![21.gifts open proposals confirm error](images/moderate-proposals-confirm-error.png)
 
 ### Variant: confirming
 
-Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spinner; proposal row still visible.
+Staff (moderator) Confirm as moderator POST in flight. Confirm disabled with a spinner; proposal row still visible.
 
 ![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
 
