@@ -1486,6 +1486,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('button', { name: 'Trial' })).toBeDisabled()",
   },
   {
+    route: '/moderate/applications/[accountId]',
+    id: 'trial',
+    image: 'moderate-applications-accountId-trial.png',
+    visual: 'state-moderate-applications-accountId-trial',
+    needle: "getByRole('button', { name: 'Trial' })).toHaveCount(0)",
+  },
+  {
     route: '/moderate/group',
     id: 'default',
     image: 'moderate-group.png',

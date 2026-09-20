@@ -1676,8 +1676,14 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'GET' && pathName === '/funding/applications') {
-    if (bearer(req) === null) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
       json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
       return;
     }
     json(res, 200, { applications: [] });
@@ -1686,8 +1692,14 @@ const server = http.createServer(async (req, res) => {
 
   const fundingApplicationMatch = pathName.match(/^\/funding\/applications\/([^/]+)$/);
   if (method === 'GET' && fundingApplicationMatch) {
-    if (bearer(req) === null) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
       json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
       return;
     }
     json(res, 404, { error: 'Not found' });

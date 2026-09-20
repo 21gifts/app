@@ -1387,7 +1387,7 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 ## Screen: /moderate/applications/[accountId]
 
 - **URL:** `/moderate/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff: applicant name (link `/members/{id}`), applied time, the three convictions as criteria, living-room posts, **Trial** / **Admit** / **Reject**. Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff: applicant name (link `/members/{id}`), applied time, the three convictions as criteria, living-room posts, and status-gated **Trial** / **Admit** / **Reject** (Trial only when `grant.status` is pending; Admit and Reject when pending or trial). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
 - **Actions:** In-card icon back to the queue. Staff Trial / Admit / Reject / Try again. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingTrial`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
@@ -1433,6 +1433,12 @@ Staff (founder) Trial POST failed. Copy **Could not update this member. Please t
 Staff (founder) Trial POST in flight. Trial disabled with a spinner; application still visible.
 
 ![21.gifts grant application deciding](images/moderate-applications-accountId-deciding.png)
+
+### Variant: trial
+
+Staff (founder) loaded application whose `grant.status` is **trial**. **Admit** and **Reject** visible; **Trial** absent.
+
+![21.gifts grant application trial](images/moderate-applications-accountId-trial.png)
 
 ## Screen: /moderate/group
 

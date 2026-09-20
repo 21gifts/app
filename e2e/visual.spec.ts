@@ -7412,6 +7412,25 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'screen-moderate-applications-accountId');
   });
 
+  test('moderate applications accountId trial', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          grant: { ...DETAIL.grant, status: 'trial', trialUtcDate: '2026-09-20' },
+        }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('button', { name: 'Admit' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trial' })).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-applications-accountId-trial');
+  });
+
   test('moderate applications accountId forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await page.goto('/moderate/applications/acc_rose');

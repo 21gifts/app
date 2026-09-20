@@ -1444,5 +1444,11 @@
     "label": "/moderate/applications/[accountId] deciding",
     "visual": "state-moderate-applications-accountId-deciding",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:trial",
+    "label": "/moderate/applications/[accountId] trial",
+    "visual": "state-moderate-applications-accountId-trial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]
