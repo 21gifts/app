@@ -43,7 +43,7 @@ jobs:
           cache-from: type=registry,ref=21gifts/app:buildcache
           cache-to: type=registry,ref=21gifts/app:buildcache,mode=max
           build-args: |
-            GIT_SHA=${{ github.sha }}
+            APP_VERSION=${{ github.run_number }}
 
       - name: Notify infrastructure to pull :beta
         env:
