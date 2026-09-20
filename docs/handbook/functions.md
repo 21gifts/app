@@ -838,9 +838,9 @@
 
 ## Function: WelcomeScreen
 
-- **Purpose:** Fourth post-login screen after name, address, and living-room rules agreement are saved. Embeds `ForumLoader` (forum list + composer) below the heading; card is `max-w-xl`.
+- **Purpose:** Fourth post-login screen after name, address, and living-room rules agreement are saved. Embeds `ForumLoader` (forum list + composer) below the heading. Page column is `max-w-xl` (`Card surface={false}`) so the AppShell frame is the only page-level `rounded-3xl`.
 - **Inputs:** Reads `account.name` from `useAuthStore`.
-- **Returns / side effects:** Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, forum board. No name or address form. No donate CTA. No `LogoutButton` on the card.
+- **Returns / side effects:** Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, forum board. No name or address form. No donate CTA. No `LogoutButton` in the page column.
 - **Used by:** Screen `/welcome`.
 
 ## Function: forumTextPreview
