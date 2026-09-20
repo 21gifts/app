@@ -37,7 +37,8 @@ function revokeIfBlob(url: string): void {
  * (`showFilter` and `showAmount` false; `showAttach` true; the heading is
  * always the catalog `moderate.groupLabel`, never the api row name).
  * JPEG/PNG/WebP stills use {@link prepareForumPhoto} (cap 10); photo-only
- * send is allowed. Thread stills load via {@link fetchConversationMessagePhoto}.
+ * send is allowed. Send is disabled while a pick is still preparing
+ * (`posting || preparing`). Thread stills load via {@link fetchConversationMessagePhoto}.
  * Passes `rateDay` from {@link useLatestRateDay} into {@link InboxScreen}.
  * After a successful group and thread fetch, marks the room read
  * (`markConversationRead`), bumps the badge epoch, and refreshes the
@@ -60,6 +61,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const [messages, setMessages] = useState<ConversationMessage[] | null>(null);
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -225,6 +227,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const onPickFiles = (files: FileList): void => {
     const generation = ++pickGeneration.current;
     const selected = Array.from(files);
+    setPreparing(true);
     void (async () => {
       const nextPhotos = photoDrafts.slice(0, 10);
       let nextError: InboxFormError = null;
@@ -232,34 +235,41 @@ export function ModeratorGroupScreen(): ReactElement | null {
       if (selected.length > remaining) {
         nextError = 'tooMany';
       }
-      for (const file of selected.slice(0, Math.max(0, remaining))) {
-        try {
-          const result = await prepareForumPhoto(file);
-          /* v8 ignore next 3 -- a newer pick replaced this generation */
-          if (generation !== pickGeneration.current) {
-            return;
-          }
-          if (result.ok) {
-            nextPhotos.push(result.photo);
-          } else if (nextError !== 'tooMany') {
-            nextError = result.error;
-          }
-        } catch {
-          /* v8 ignore next 3 -- a newer pick replaced this generation */
-          if (generation !== pickGeneration.current) {
-            return;
-          }
-          if (nextError !== 'tooMany') {
-            nextError = 'unsupported';
+      try {
+        for (const file of selected.slice(0, Math.max(0, remaining))) {
+          try {
+            const result = await prepareForumPhoto(file);
+            /* v8 ignore next 3 -- a newer pick replaced this generation */
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (result.ok) {
+              nextPhotos.push(result.photo);
+            } else if (nextError !== 'tooMany') {
+              nextError = result.error;
+            }
+          } catch {
+            /* v8 ignore next 3 -- a newer pick replaced this generation */
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (nextError !== 'tooMany') {
+              nextError = 'unsupported';
+            }
           }
         }
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        setPhotoDrafts(nextPhotos);
+        setFormError(nextError);
+      } finally {
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation === pickGeneration.current) {
+          setPreparing(false);
+        }
       }
-      /* v8 ignore next 3 -- a newer pick replaced this generation */
-      if (generation !== pickGeneration.current) {
-        return;
-      }
-      setPhotoDrafts(nextPhotos);
-      setFormError(nextError);
     })();
   };
 
@@ -345,7 +355,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
         setFormError(null);
       }}
       onPost={onPost}
-      posting={posting}
+      posting={posting || preparing}
       formError={formError}
       showFilter={false}
       showAmount={false}

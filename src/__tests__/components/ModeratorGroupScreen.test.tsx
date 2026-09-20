@@ -390,6 +390,40 @@ describe('ModeratorGroupScreen', () => {
     expect(screen.queryByText('Add a photo')).toBeNull();
   });
 
+  it('disables send while a still is still being prepared', async () => {
+    let resolvePrepare:
+      | ((value: {
+          ok: true;
+          photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+        }) => void)
+      | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrepare = resolve;
+        }),
+    );
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      resolvePrepare?.({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      await Promise.resolve();
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
   it('posts a photo-only message', async () => {
     postMock.mockResolvedValue({
       id: 'm-photo',
