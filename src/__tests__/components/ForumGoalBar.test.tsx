@@ -45,6 +45,9 @@ describe('ForumGoalBar', () => {
     expect(screen.getByRole('img', { name: 'Goal progress 110 percent' })).toBeTruthy();
     expect(container.querySelector('[class*="fill-app-success"]')).not.toBeNull();
     expect(screen.getByRole('img').querySelector('[style]')).toBeNull();
+    const overflowSvg = container.querySelector('svg[aria-hidden="true"]');
+    expect(overflowSvg?.getAttribute('width')).toBe('10%');
+    expect(overflowSvg?.getAttribute('class') ?? '').toContain('left-full');
   });
 
   it('shows an uncapped 250% label while painted overflow stays capped', () => {
@@ -55,6 +58,9 @@ describe('ForumGoalBar', () => {
     expect(overflow).not.toBeNull();
     expect(overflow?.getAttribute('width')).toBe('100');
     expect(screen.getByRole('img').querySelector('[style]')).toBeNull();
-    expect(container.querySelector('svg[aria-hidden="true"]')?.getAttribute('width')).toBe('100%');
+    const overflowSvg = container.querySelector('svg[aria-hidden="true"]');
+    expect(overflowSvg?.getAttribute('width')).toBe('100%');
+    expect(overflowSvg?.getAttribute('class') ?? '').toContain('absolute');
+    expect(overflowSvg?.getAttribute('class') ?? '').toContain('left-full');
   });
 });

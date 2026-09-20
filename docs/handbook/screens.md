@@ -404,6 +404,24 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ![21.gifts welcome all](images/welcome-all.png)
 
+### Variant: goal-50
+
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. Progress bar at **50%** (orange half-fill). Composer **Ask** field visible. Gift still not on the post.
+
+![21.gifts welcome goal 50](images/welcome-goal-50.png)
+
+### Variant: goal-100
+
+On **All**: top-level Ada note with `sats: 21000` and `goalSats: 21000`. Full orange track, label **100%**, no green overflow.
+
+![21.gifts welcome goal 100](images/welcome-goal-100.png)
+
+### Variant: goal-110
+
+On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. Full orange track plus green overflow (10% of track width past the right edge), label **110%**.
+
+![21.gifts welcome goal 110](images/welcome-goal-110.png)
+
 ### Variant: unpaid
 
 Click **No gifts yet** (German: **Noch ohne Geschenk**) — only loaded notes with exactly zero sats appear. Bob is visible; paid Ada and Carol are hidden. This includes notes without a receiving wallet. The four filters use a two-column grid for readable labels on mobile. Active remains the default.

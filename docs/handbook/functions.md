@@ -30,8 +30,8 @@
 
 ## Function: postMessageVideo
 
-- **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster`.
-- **Inputs:** session token, `{ text, video, poster? }`.
+- **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster` and optional `goalSats` (positive int ≤ 10_000_000; omitted from the form on replies and when unset).
+- **Inputs:** session token, `{ text, video, poster?, goalSats? }`.
 - **Returns / side effects:** `ForumMessage`.
 - **Used by:** `ForumLoader` submit.
 
@@ -1379,9 +1379,9 @@
 
 ## Function: postMessage
 
-- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`.
-- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, optional `photos` array (max 10), and optional `inReplyTo` parent id (thread composer only).
-- **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` from the JSON body when absent. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 uses the api error string when present; otherwise throws `A reply needs a Bitcoin payment`.
+- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo?, goalSats? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`. Optional `goalSats` is a positive int ≤ 10_000_000 on a top-level note; omitted on replies and when unset.
+- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, optional `photos` array (max 10), optional `inReplyTo` parent id (thread composer only), and optional `goalSats` (positive int ≤ 10_000_000).
+- **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` and `goalSats` from the JSON body when absent; omits `goalSats` on replies even if passed. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 uses the api error string when present; otherwise throws `A reply needs a Bitcoin payment`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
 ## Function: postContact
