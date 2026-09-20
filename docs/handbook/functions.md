@@ -5,14 +5,14 @@
 - **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, and `/trust/proposals` which re-exports `proxyTrustProposalsGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm queue, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
-- **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05.
+- **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16.
 
 ## Function: OPTIONS
 
-- **Purpose:** CORS preflight for `/.well-known/nostr.json`.
+- **Purpose:** CORS preflight for `/.well-known/nostr.json` and `/.well-known/lnurlp/[username]`.
 - **Inputs:** none.
 - **Returns / side effects:** 204 with `Access-Control-Allow-Origin: *`.
-- **Used by:** Damus NIP-05 fetch.
+- **Used by:** Damus NIP-05 fetch and LUD-16 payRequest preflight.
 
 ## Function: isForumVideoFile
 
@@ -312,6 +312,27 @@
 - **Returns / side effects:** Heading **Your name** at the top and `NameForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/name`.
 
+## Function: UsernameForm
+
+- **Purpose:** Username field and **Continue**. Posts `POST /me/username`. Cannot skip.
+- **Inputs:** Auth store session; optional `onSaved`.
+- **Returns / side effects:** Taken/invalid/request stay on the form. Success updates the store and calls `onSaved`.
+- **Used by:** `UsernameSetup`, `RequirementsOverlay`.
+
+## Function: UsernameSetup
+
+- **Purpose:** Post-login screen to choose the unique `@21.gifts` username. Cannot skip.
+- **Inputs:** Auth store session; `UsernameForm`.
+- **Returns / side effects:** Heading **Your 21.gifts name**, hint, field, **Continue**. Posts `POST /me/username`. Taken/invalid stay on the form.
+- **Used by:** Screen `/setup/username`.
+
+## Function: UsernameSetupPage
+
+- **Purpose:** Next.js page for `/setup/username`.
+- **Inputs:** None.
+- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `UsernameSetup`.
+- **Used by:** Route `/setup/username`.
+
 ## Function: NameSetupPage
 
 - **Purpose:** Next.js page for `/setup/name`.
@@ -329,16 +350,16 @@
 ## Function: OnboardingGate
 
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
-- **Inputs:** `screen` (`login` / `name` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/trust-chain`.
+- **Inputs:** `screen` (`login` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/trust-chain`.
 
 ## Function: SignedInChrome
 
 - **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -746,7 +767,7 @@
 
 ## Function: ViewProfileScreen
 
-- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text and/or photo, or omits the heading when neither), name, location, and address rows (labels `name.heading` / `location.heading` / `la.heading`) without edit or Message actions. Unset location shows `location.unset`. Copy-profile-link on the card (`profile.copyLink`).
+- **Purpose:** Presentational read-only identity card matching signed-in profile chrome: heading Profile, `AccountActivityChart`, About me inside the card (not a forum post; public `AboutMeSection` with `name={profile.name}` shows filled text and/or photo, or omits the heading when neither), name, location, and public `username@21.gifts` rows (labels `name.heading` / `location.heading` / `profile.giftsHeading`) without edit or Message actions. Unset location shows `location.unset`. Missing username shows `view.noGiftsAddress`. Copy-profile-link on the card (`profile.copyLink`).
 - **Inputs:** `{ profile, viewKey, received, donated }` — `received` is `AccountActivity['receivedOverTime']`; optional `donated` is `AccountActivity['donatedOverTime']`. `viewKey` builds the copy URL `/view/<viewKey>`. `profile` includes `aboutMe`, `aboutMeHasPhoto`, and `location`. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` with `loadPhoto` (`fetchViewAboutMePhoto`).
 - **Returns / side effects:** No menu, logout, back, edit forms, or Message. Copy-profile-link on the card; URL/key never shown as visible text. Language switcher lives on the page, not in this card.
 - **Used by:** `ViewProfileLoader`.
@@ -907,7 +928,7 @@
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; skips advance `setup` without clearing `missing`).
+- **Purpose:** Picks `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; skips advance `setup` without clearing `missing`). Username cannot be skipped.
 - **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
 - **Used by:** `OnboardingGate`.
@@ -956,23 +977,23 @@
 
 ## Function: nextPostRequirement
 
-- **Purpose:** Picks the next field to collect before a forum post (`rules`, then `name`, then `lightning-address`).
+- **Purpose:** Picks the next field to collect before a forum post (`rules`, then `name`, then `username`, then `lightning-address`).
 - **Inputs:** `missing` array from the account or a 409 body.
-- **Returns / side effects:** `'rules'`, `'name'`, `'lightning-address'`, or `null`. No side effects.
+- **Returns / side effects:** `'rules'`, `'name'`, `'username'`, `'lightning-address'`, or `null`. No side effects.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `RequirementsOverlay` flow.
 
 ## Function: nextContactRequirement
 
-- **Purpose:** Picks the next field to collect before a contact send (`rules` before `name`). Lightning-address gaps return `null` — contact does not require a Lightning Address.
+- **Purpose:** Picks the next field to collect before a contact send (`rules` before `name` before `username`). Lightning-address gaps return `null` — contact does not require a Wallet of Satoshi address.
 - **Inputs:** `missing` array from the account or a 409 body.
-- **Returns / side effects:** `'rules'`, `'name'`, or `null`. No side effects.
+- **Returns / side effects:** `'rules'`, `'name'`, `'username'`, or `null`. No side effects.
 - **Used by:** `ContactLoader`, `RequirementsOverlay` flow.
 
 ## Function: RequirementsOverlay
 
-- **Purpose:** Modal to add a missing name (`NameForm` profile), Lightning Address (`LightningAddressForm` profile), or agree to rules before retrying a post. No Skip.
-- **Inputs:** `requirement` (`name` | `rules` | `lightning-address`), `onDismiss`, `onSatisfied`.
-- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`. Title/`aria-label` from `requirements.nameTitle`, `requirements.rulesTitle`, or `requirements.addressTitle`.
+- **Purpose:** Modal to add a missing name (`NameForm` profile), username (`UsernameForm`), Wallet of Satoshi address (`LightningAddressForm` profile), or agree to rules before retrying a post. No Skip.
+- **Inputs:** `requirement` (`name` | `username` | `rules` | `lightning-address`), `onDismiss`, `onSatisfied`.
+- **Returns / side effects:** Dialog UI; merges account fields on success then calls `onSatisfied`. Title/`aria-label` from `requirements.nameTitle`, `requirements.usernameTitle`, `requirements.rulesTitle`, or `requirements.addressTitle`.
 - **Used by:** `ForumLoader`, `ContactLoader`, `MemberProfileScreen`.
 
 ## Function: IntroduceYourselfOverlay
@@ -991,7 +1012,7 @@
 
 ## Function: MemberProfileScreen
 
-- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, Lightning Address, role pill, copy-profile-link, and post/reaction count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text and/or photo, or omits the heading when neither. A labeled Message `Button` (`profile.message`) with a decorative Mail icon sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is a moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Nested Gift Continue looks up sats on the visible feed only (reactions-feed cards when activity is replies; expanded-thread replies otherwise). Collapsing or switching Posts/Reactions cancels a Gift whose target is in the expanded thread or the reactions feed; a parent composer invoice stays. Expanding a reply with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author or a verified member may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so feed amounts are ₿ plus optional preferred-fiat `·` when the conversion is non-null (no FiatPicker on the chart or the feed; member profiles are always signed-in). Uses `nextPostRequirement` so a missing name, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
+- **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, public `username@21.gifts` (`profile.giftsHeading`), role pill, copy-profile-link, and post/reaction count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text and/or photo, or omits the heading when neither. A labeled Message `Button` (`profile.message`) with a decorative Mail icon sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions appear when the viewer is a moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Nested Gift Continue looks up sats on the visible feed only (reactions-feed cards when activity is replies; expanded-thread replies otherwise). Collapsing or switching Posts/Reactions cancels a Gift whose target is in the expanded thread or the reactions feed; a parent composer invoice stays. Expanding a reply with `parentId` navigates to `/messages/{parentId}`. Replies from the parent author or a verified member may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for those roles; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, the profile id is the author id. A payment 403 on unpaid post starts a 1-sat invoice. Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so feed amounts are ₿ plus optional preferred-fiat `·` when the conversion is non-null (no FiatPicker on the chart or the feed; member profiles are always signed-in). Uses `nextPostRequirement` so a missing name, username, Wallet of Satoshi address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries.
 - **Inputs:** `MemberProfile` (includes `aboutMe`, `aboutMeHasPhoto`, and `location`) plus received and donated series; session/account from the auth store. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` / `profileMessage.hasPhoto` with `loadPhoto` (`fetchMessagePhoto`).
 - **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; fetches `GET /gifts/stats` into `rateDay`; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
 - **Used by:** `MemberProfileLoader`.
@@ -1656,6 +1677,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Updated `Account` with `rulesAgreedAt` set. Throws `'Could not save your agreement'` on a non-ok response.
 - **Used by:** `RulesSetup`.
 
+## Function: setUsername
+
+- **Purpose:** POST `/me/username` with the unique LUD-16 local-part.
+- **Inputs:** `sessionToken`, `username`.
+- **Returns / side effects:** Updated `Account`. Throws `'username-taken'` on 409, `'username-invalid'` on 400, `'username-request'` on other failures.
+- **Used by:** `UsernameForm`.
+
+## Function: giftsLightningAddress
+
+- **Purpose:** Build the public `username@21.gifts` address shown on profiles. Loopback hosts fall back to `21.gifts`.
+- **Inputs:** `username` (nullable), optional `hostname`.
+- **Returns / side effects:** `local@domain` or `null`. No I/O.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`.
+
 ## Function: setLightningAddress
 
 - **Purpose:** POST `/me/lightning-address`.
@@ -1872,6 +1907,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/name`.
+
+## Function: proxyMeUsernamePost
+
+- **Purpose:** Proxies POST `/me/username`.
+- **Inputs:** `Request` with JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/username`.
 
 ## Function: proxyMeLocationPost
 

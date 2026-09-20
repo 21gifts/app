@@ -8,11 +8,12 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('@/lib/api', () => ({
   agreeToRules: vi.fn(),
   setName: vi.fn(),
+  setUsername: vi.fn(),
   setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
 
-import { agreeToRules, setLightningAddress } from '@/lib/api';
+import { agreeToRules, setLightningAddress, setUsername } from '@/lib/api';
 
 const account: Account = {
   id: 'acc_1',
@@ -48,6 +49,15 @@ describe('RequirementsOverlay', () => {
     expect(dialog.className).toContain('bg-app-overlay');
     expect(dialog.className).not.toContain('bg-black/40');
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
+
+  it('shows the username form without a Skip control', () => {
+    renderWithLocale(
+      <RequirementsOverlay requirement="username" onDismiss={vi.fn()} onSatisfied={vi.fn()} />,
+    );
+    expect(screen.getByRole('dialog', { name: 'Add your 21.gifts name' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    expect(setUsername).not.toHaveBeenCalled();
   });
 
   it('shows the Lightning Address form without a Skip control', () => {

@@ -463,6 +463,35 @@ export async function fetchMemberReplies(
 }
 
 /**
+ * Sets the unique 21.gifts username (LUD-16 local-part).
+ *
+ * @param sessionToken - Bearer session.
+ * @param username - Handle (`a-z0-9-_.`).
+ * @returns The updated {@link Account}.
+ * @throws Error with visitor-facing copy on 400/409 or other failures.
+ */
+export async function setUsername(sessionToken: string, username: string): Promise<Account> {
+  const response = await fetch('/me/username', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username }),
+  });
+  if (response.status === 409) {
+    throw new Error('username-taken');
+  }
+  if (response.status === 400) {
+    throw new Error('username-invalid');
+  }
+  if (!response.ok) {
+    throw new Error('username-request');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Links or replaces the account's receiving Lightning Address.
  *
  * @param sessionToken - A bearer token from a completed challenge.

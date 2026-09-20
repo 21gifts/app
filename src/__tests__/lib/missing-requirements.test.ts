@@ -30,6 +30,7 @@ describe('nextPostRequirement', () => {
   it('prefers rules, then name, then lightning-address', () => {
     expect(nextPostRequirement(['name', 'rules', 'lightning-address'])).toBe('rules');
     expect(nextPostRequirement(['name', 'lightning-address'])).toBe('name');
+    expect(nextPostRequirement(['username', 'lightning-address'])).toBe('username');
     expect(nextPostRequirement(['lightning-address'])).toBe('lightning-address');
     expect(nextPostRequirement([])).toBeNull();
   });
@@ -39,6 +40,7 @@ describe('nextContactRequirement', () => {
   it('prefers rules over name and ignores lightning-address', () => {
     expect(nextContactRequirement(['name', 'rules'])).toBe('rules');
     expect(nextContactRequirement(['name'])).toBe('name');
+    expect(nextContactRequirement(['username'])).toBe('username');
     expect(nextContactRequirement(['lightning-address'])).toBeNull();
     expect(nextContactRequirement(['name', 'lightning-address'])).toBe('name');
     expect(nextContactRequirement([])).toBeNull();

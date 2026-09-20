@@ -17,6 +17,7 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 
 const profile: ViewProfile = {
   name: 'Ada',
+  username: 'alice',
   location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
@@ -123,7 +124,7 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     });
     expect(screen.getByText('Ada')).toBeTruthy();
-    expect(screen.getByText('alice@walletofsatoshi.com')).toBeTruthy();
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
     expect(screen.getByText('Given')).toBeTruthy();
     expect(screen.getByText('Action required, the account must be activated')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Activate' })).toBeTruthy();

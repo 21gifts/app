@@ -33,7 +33,9 @@ export function ContactLoader(): ReactElement | null {
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<'empty' | 'tooLong' | 'request' | null>(null);
-  const [overlayRequirement, setOverlayRequirement] = useState<'name' | 'rules' | null>(null);
+  const [overlayRequirement, setOverlayRequirement] = useState<
+    'name' | 'username' | 'rules' | null
+  >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
 
   if (session === null) {

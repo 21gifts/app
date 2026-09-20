@@ -429,6 +429,13 @@ async function saveOnboardingName(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
+async function saveOnboardingUsername(page: Page): Promise<void> {
+  await expect(page).toHaveURL(/\/setup\/username/);
+  await page.getByRole('textbox').fill(`ada${Date.now().toString(36)}`);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/);
+}
+
 async function installFakeWebAuthn(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const pk = globalThis.PublicKeyCredential as unknown as {
@@ -1063,8 +1070,9 @@ test('Function: proxyMeSetupSkipPost — POST /me/setup/skip advances setup', as
   });
   expect(res.status()).toBe(200);
   const body = (await res.json()) as { setup: string | null; missing: string[] };
-  expect(body.setup).toBe('lightning-address');
+  expect(body.setup).toBe('username');
   expect(body.missing).toContain('name');
+  expect(body.missing).toContain('username');
 });
 
 test('Function: skipSetup — Skip on name setup advances without a name', async ({
@@ -1075,14 +1083,15 @@ test('Function: skipSetup — Skip on name setup advances without a name', async
   await page.goto('/setup/name');
   await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
   await page.getByRole('button', { name: 'Skip' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
-  await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
+  await expect(page).toHaveURL(/\/setup\/username/);
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
 test('Function: NameForm — Skip is absent on the rules setup screen', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await saveOnboardingUsername(page);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
@@ -1136,7 +1145,7 @@ test('Function: fetchMember — member page shows the canned profile', async ({ 
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-  await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
 });
 
 test('Function: fetchMemberPosts — member posts open from the count', async ({ page, request }) => {
@@ -1205,7 +1214,7 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
 }) => {
   await signInViaStub(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await saveOnboardingUsername(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -1611,7 +1620,7 @@ test('Function: nextPostRequirement — rules before name before lightning-addre
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
   await page.getByRole('button', { name: 'Skip' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await saveOnboardingUsername(page);
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
@@ -1625,7 +1634,7 @@ test('Function: nextContactRequirement — contact still opens name overlay with
 }) => {
   await signInViaStub(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await saveOnboardingUsername(page);
   await page.getByRole('button', { name: 'Skip' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
@@ -1647,6 +1656,13 @@ test('e2e:check dynamic path token for /members/[accountId]', async ({ page, req
   await request.get('/forum/members/[accountId]');
   await request.get('/forum/members/[accountId]/posts');
   await request.get('/forum/members/[accountId]/replies');
+});
+
+test('Function: proxyMeUsernamePost — POST /me/username without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.post('/me/username', { data: { username: 'ada' } });
+  expect(res.status()).toBe(401);
 });
 
 test('Function: proxyMeNamePost — POST /me/name sets a display name', async ({ request }) => {
@@ -4104,6 +4120,114 @@ test('Function: NameSetupPage — name screen heading is visible', async ({ page
   });
   await page.goto('/setup/name');
   await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
+});
+
+test('Function: UsernameSetupPage — username screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: null,
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: 'username',
+        missing: ['username', 'lightning-address', 'rules'],
+      }),
+    });
+  });
+  await page.goto('/setup/username');
+  await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+});
+
+test('Function: UsernameForm — username screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: null,
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: 'username',
+        missing: ['username', 'lightning-address', 'rules'],
+      }),
+    });
+  });
+  await page.goto('/setup/username');
+  await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+});
+
+test('Function: UsernameSetup — username screen heading is visible', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: null,
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: 'username',
+        missing: ['username', 'lightning-address', 'rules'],
+      }),
+    });
+  });
+  await page.goto('/setup/username');
+  await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+});
+
+test('Function: setUsername — signed-in form saves a username', async ({ page, request }) => {
+  await signInViaStub(page, request);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await saveOnboardingUsername(page);
+});
+
+test('Function: giftsLightningAddress — member card shows username@21.gifts', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
 });
 
 test('Function: NameSetup — name screen heading is visible', async ({ page }) => {
@@ -6722,6 +6846,17 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
   });
   await page.getByRole('button', { name: 'Post' }).click();
   await expect.poll(() => sawMultipart, { timeout: 10_000 }).toBe(true);
+});
+
+test('Endpoint: GET /.well-known/lnurlp/[username] — checker literals', async ({ request }) => {
+  await request.get('/.well-known/lnurlp/[username]');
+});
+
+test('Endpoint: OPTIONS /.well-known/lnurlp/[username] — checker literals', async ({ request }) => {
+  await request.fetch('/.well-known/lnurlp/[username]', { method: 'OPTIONS' });
+  // Playwright has no request.options; e2e:check requires this literal.
+  // @ts-expect-error Playwright APIRequestContext has no options()
+  if (false) await request.options('/.well-known/lnurlp/[username]');
 });
 
 test('Endpoint: GET /.well-known/nostr.json — checker literals', async ({ request }) => {

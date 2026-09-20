@@ -78,6 +78,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/setup/username:default",
+    "label": "/setup/username default",
+    "visual": "screen-setup-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/address:default",
     "label": "/setup/address default",
     "visual": "screen-setup-address",
@@ -456,6 +462,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:overlay-username",
+    "label": "/welcome overlay-username",
+    "visual": "state-welcome-overlay-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:overlay-introduce",
     "label": "/welcome overlay-introduce",
     "visual": "state-welcome-overlay-introduce",
@@ -603,6 +615,12 @@
     "id": "/members/[accountId]:overlay-address",
     "label": "/members/[accountId] overlay-address",
     "visual": "state-members-overlay-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:overlay-username",
+    "label": "/members/[accountId] overlay-username",
+    "visual": "state-members-overlay-username",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -7,6 +7,20 @@
 - **Used by:** Damus verification.
 - **Auth:** none.
 
+## Endpoint: GET /.well-known/lnurlp/[username]
+
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Settlement stays on the linked Wallet of Satoshi callback.
+- **Errors:** Upstream 404/502.
+- **Used by:** Lightning wallets.
+- **Auth:** none.
+
+## Endpoint: OPTIONS /.well-known/lnurlp/[username]
+
+- **Purpose:** CORS preflight for LUD-16.
+- **Errors:** none.
+- **Used by:** Browsers and wallets.
+- **Auth:** none.
+
 ## Endpoint: OPTIONS /.well-known/nostr.json
 
 - **Purpose:** CORS preflight for NIP-05.
@@ -75,6 +89,13 @@
 - **Purpose:** Same-origin proxy to set or replace the display name.
 - **Errors:** Upstream 400, or 502 if the api is unreachable.
 - **Used by:** `setName`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/username
+
+- **Purpose:** Same-origin proxy to set the unique `@21.gifts` username (LUD-16 / NIP-05 local-part).
+- **Errors:** Upstream 400/409, or 502 if the api is unreachable.
+- **Used by:** `setUsername`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/location

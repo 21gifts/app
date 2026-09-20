@@ -56,11 +56,13 @@ app/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
 │   │   ├── setup/
 │   │   │   ├── name/page.tsx    # GET /setup/name — first onboarding step
-│   │   │   ├── address/page.tsx # GET /setup/address — second onboarding step
+│   │   │   ├── username/page.tsx # GET /setup/username — unique @21.gifts handle
+│   │   │   ├── address/page.tsx # GET /setup/address — Wallet of Satoshi link
 │   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
 │   │   │   ├── name/route.ts    # POST /me/name
+│   │   │   ├── username/route.ts # POST /me/username
 │   │   │   ├── location/route.ts # POST /me/location
 │   │   │   ├── about/route.ts   # PUT /me/about
 │   │   │   ├── about/photo/route.ts  # GET /me/about/photo same-origin proxy
@@ -83,7 +85,8 @@ app/
 │   │   │   └── stats/
 │   │   │       └── route.ts     # GET /gifts/stats same-origin proxy
 │   │   ├── .well-known/
-│   │   │   └── nostr.json/route.ts  # GET/OPTIONS /.well-known/nostr.json NIP-05 CORS *
+│   │   │   ├── nostr.json/route.ts  # GET/OPTIONS /.well-known/nostr.json NIP-05 CORS *
+│   │   │   └── lnurlp/[username]/route.ts  # GET/OPTIONS /.well-known/lnurlp/:username LUD-16 CORS *
 │   │   ├── messages/
 │   │   │   ├── page.tsx         # GET /messages — signed-in PN inbox
 │   │   │   └── [id]/
@@ -178,7 +181,9 @@ app/
 │   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/address, copy-link)
 │   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + GET /forum/members/:id/activity
 │   │   ├── MemberProfileScreen.tsx # Member identity card + About me + location + activity feeds
-│   │   ├── RequirementsOverlay.tsx # Add name, Wallet of Satoshi address, or agree to rules before retrying a post
+│   │   ├── UsernameSetup.tsx    # Onboarding unique @21.gifts username (no Skip)
+│   │   ├── UsernameForm.tsx     # Username field + Continue (setup + overlay)
+│   │   ├── RequirementsOverlay.tsx # Add name, username, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + payable-reply pay sheet + expand/replies + copy-link + author profile links
@@ -213,6 +218,7 @@ app/
 │   │   ├── request-fiat.ts      # Cookie fiat for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
+│   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
