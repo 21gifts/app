@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, type ReactElement, type UIEvent } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { IconButton } from '@/components/ui';
 
 /** One loaded still in {@link ForumPhotoGallery}. */
 export type ForumPhotoGalleryItem = {
@@ -99,8 +100,11 @@ export function ForumPhotoGallery({
             updateActive(event.currentTarget);
           }}
         >
-          {photos.map(({ index, url }) => (
-            <div key={`${index}:${url}`} className="w-[88%] min-w-[88%] shrink-0 snap-start">
+          {photos.map(({ index, url }, i) => (
+            <div
+              key={`${index}:${url}`}
+              className={`shrink-0 snap-start ${i === photos.length - 1 ? 'w-full min-w-full' : 'w-[88%] min-w-[88%]'}`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from message photo fetches */}
               <img
                 src={url}
@@ -121,12 +125,12 @@ export function ForumPhotoGallery({
       {photos.length > 1 ? (
         <div className="mt-2 flex justify-center gap-5">
           {photos.map((photo, i) => (
-            <button
+            <IconButton
               key={photo.index}
-              type="button"
+              size="sm"
+              variant="ghost"
               aria-label={t('forum.galleryDot', { current: i + 1, total: photos.length })}
               aria-current={i === active ? true : undefined}
-              className="relative isolate inline-flex h-6 w-6 items-center justify-center before:absolute before:content-[''] before:block before:-inset-2.5 before:min-h-11 before:min-w-11 before:rounded-full"
               onClick={() => {
                 const scroller = scrollerRef.current;
                 /* v8 ignore next 3 -- dots only render beside the scroller */
@@ -145,9 +149,9 @@ export function ForumPhotoGallery({
             >
               <span
                 aria-hidden="true"
-                className={`relative z-10 block h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
+                className={`block h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
               />
-            </button>
+            </IconButton>
           ))}
         </div>
       ) : null}

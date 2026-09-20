@@ -1159,12 +1159,14 @@ describe('ForumBoard', () => {
       ]),
     );
     expect(scrollerTokens).not.toContain('flex-col');
-    for (const photo of photos) {
-      const slideTokens = (photo.parentElement?.className ?? '').split(/\s+/);
-      expect(slideTokens).toEqual(
-        expect.arrayContaining(['w-[88%]', 'min-w-[88%]', 'shrink-0', 'snap-start']),
-      );
-    }
+    const firstSlide = (photos[0]?.parentElement?.className ?? '').split(/\s+/);
+    const lastSlide = (photos[1]?.parentElement?.className ?? '').split(/\s+/);
+    expect(firstSlide).toEqual(
+      expect.arrayContaining(['w-[88%]', 'min-w-[88%]', 'shrink-0', 'snap-start']),
+    );
+    expect(lastSlide).toEqual(
+      expect.arrayContaining(['w-full', 'min-w-full', 'shrink-0', 'snap-start']),
+    );
     expect(screen.getByText('1/2')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Photo 2 of 2' })).toBeTruthy();
     expect(screen.queryByText('Photo 1 of 2')).toBeNull();
