@@ -83,7 +83,7 @@ function optionBadgeAriaLabel(
  * trailing slot on `neutral` sits in the same pill after a 1px separator.
  *
  * @param props - See {@link SegmentedControlProps}.
- * @returns The group element, or a pill wrapping the group plus trailing.
+ * @returns The group element (gift), or a pill wrapping the group (neutral; trailing optional).
  */
 export function SegmentedControl<T extends string>({
   value,
@@ -117,27 +117,19 @@ export function SegmentedControl<T extends string>({
       );
     });
 
-    if (trailing === undefined) {
-      return (
-        <div
-          role="group"
-          aria-label={ariaLabel}
-          className={`flex w-full rounded-full border border-app-border bg-app-card-muted p-1${extra}`}
-        >
-          {optionButtons}
-        </div>
-      );
-    }
-
     return (
       <div
-        className={`flex w-full items-center rounded-full border border-app-border bg-app-card-muted p-1 overflow-hidden${extra}`}
+        className={`flex w-full items-center rounded-full border border-app-border bg-app-card-muted p-1${trailing === undefined ? '' : ' overflow-hidden'}${extra}`}
       >
         <div role="group" aria-label={ariaLabel} className="flex min-w-0 flex-1">
           {optionButtons}
         </div>
-        <span aria-hidden="true" className="mx-0.5 w-px self-stretch bg-app-border" />
-        <span className="flex shrink-0 items-center">{trailing}</span>
+        {trailing === undefined ? null : (
+          <>
+            <span aria-hidden="true" className="mx-0.5 w-px self-stretch bg-app-border" />
+            <span className="flex shrink-0 items-center">{trailing}</span>
+          </>
+        )}
       </div>
     );
   }

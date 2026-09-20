@@ -153,42 +153,36 @@ export function PushToggle(): ReactElement | null {
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('profile.push.heading')}
       </p>
-      {showBell ? (
-        <SegmentedControl
-          tone="neutral"
-          value={selected}
-          options={levelOptions}
-          onChange={onLevelPress}
-          ariaLabel={t('profile.push.level.label')}
-          trailing={
-            <IconButton
-              size="sm"
-              variant={subscribed ? 'primary' : 'secondary'}
-              aria-label={ariaName}
-              title={ariaName}
-              aria-pressed={subscribed}
-              disabled={busy}
-              onClick={() => {
-                void onToggle();
-              }}
-            >
-              {subscribed ? (
-                <Bell aria-hidden="true" className="h-4 w-4" fill="currentColor" />
-              ) : (
-                <BellOff aria-hidden="true" className="h-4 w-4" />
-              )}
-            </IconButton>
-          }
-        />
-      ) : (
-        <SegmentedControl
-          tone="neutral"
-          value={selected}
-          options={levelOptions}
-          onChange={onLevelPress}
-          ariaLabel={t('profile.push.level.label')}
-        />
-      )}
+      <SegmentedControl
+        tone="neutral"
+        value={selected}
+        options={levelOptions}
+        onChange={onLevelPress}
+        ariaLabel={t('profile.push.level.label')}
+        {...(showBell
+          ? {
+              trailing: (
+                <IconButton
+                  size="sm"
+                  variant={subscribed ? 'primary' : 'secondary'}
+                  aria-label={ariaName}
+                  title={ariaName}
+                  aria-pressed={subscribed}
+                  disabled={busy}
+                  onClick={() => {
+                    void onToggle();
+                  }}
+                >
+                  {subscribed ? (
+                    <Bell aria-hidden="true" className="h-4 w-4" fill="currentColor" />
+                  ) : (
+                    <BellOff aria-hidden="true" className="h-4 w-4" />
+                  )}
+                </IconButton>
+              ),
+            }
+          : {})}
+      />
       <p className="text-sm text-app-muted">{t('profile.push.level.hint')}</p>
       {levelError ? (
         <p role="alert" className="text-center text-sm text-app-danger">

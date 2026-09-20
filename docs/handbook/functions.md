@@ -581,8 +581,8 @@
 ## Function: SegmentedControl
 
 - **Purpose:** Mutually exclusive option group with `tone` `gift` (compact ₿|USD cells, optional `shell` `app`/`dark`) or `neutral` (full-width forum pills). Gift hit target is `min-h-11 min-w-11` on mobile and desktop. `shell` is ignored for `neutral`. Optional `trailing` on `neutral` sits in the same visual pill after a 1px separator; `role="group"` stays on the option buttons only. Gift ignores `trailing`.
-- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className`, optional `trailing` (neutral only; when set, the visual track wraps options + trailing and `role="group"` stays on the option buttons only).
-- **Returns / side effects:** A `role="group"` track of `type="button"` options with `aria-pressed`. When `trailing` is set on `neutral`, the outer visual track is a non-group pill wrapping that group, a 1px separator, and the trailing node. No network.
+- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className`, optional `trailing` (neutral only; separator + slot after the options).
+- **Returns / side effects:** Gift: a `role="group"` track of `type="button"` options with `aria-pressed`. Neutral: a non-group pill wrapping an inner `role="group"` of those options; when `trailing` is set, a 1px separator and the trailing node follow. No network.
 - **Used by:** `ForumBoard` (`tone="neutral"`), `PushToggle` (`tone="neutral"`, optional `trailing` bell), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`).
 
 ## Function: IconButton
