@@ -48,9 +48,7 @@ describe('ThemeSwitcher', () => {
     expect(section?.className).toContain('border-t');
     expect(section?.className).toContain('border-app-border');
     expect(screen.getByText('Theme').className).toContain('uppercase');
-    expect(screen.getByRole('group', { name: 'Theme' }).parentElement?.className).toContain(
-      'rounded-full',
-    );
+    expect(screen.getByRole('group', { name: 'Theme' }).className).toContain('rounded-full');
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByRole('listbox')).toBeNull();
   });

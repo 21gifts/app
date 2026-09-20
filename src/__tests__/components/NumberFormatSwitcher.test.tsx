@@ -31,7 +31,7 @@ describe('NumberFormatSwitcher', () => {
     expect(section?.className).toContain('border-t');
     expect(section?.className).toContain('border-app-border');
     expect(screen.getByText('Number format').className).toContain('uppercase');
-    expect(screen.getByRole('group', { name: 'Number format' }).parentElement?.className).toContain(
+    expect(screen.getByRole('group', { name: 'Number format' }).className).toContain(
       'rounded-full',
     );
     expect(screen.queryByRole('combobox')).toBeNull();

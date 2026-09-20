@@ -69,11 +69,9 @@ describe('SegmentedControl', () => {
       />,
     );
     const group = screen.getByRole('group', { name: 'Forum view' });
-    const track = group.parentElement;
-    expect(track).not.toBeNull();
-    expect(track?.className).toContain('rounded-full');
-    expect(track?.className).toContain('bg-app-card-muted');
-    expect(track?.className).not.toContain('overflow-hidden');
+    expect(group.className).toContain('rounded-full');
+    expect(group.className).toContain('bg-app-card-muted');
+    expect(group.className).not.toContain('overflow-hidden');
     expect(screen.getByRole('button', { name: 'Active' }).className).toContain('bg-app-btn');
     expect(screen.getByRole('button', { name: 'All' }).className).toContain('text-app-muted');
   });
@@ -90,10 +88,8 @@ describe('SegmentedControl', () => {
       />,
     );
     const group = screen.getByRole('group', { name: 'Forum view' });
-    const track = group.parentElement;
-    expect(track).not.toBeNull();
-    expect(track?.className).toContain('border-app-border');
-    expect(track?.className).not.toContain('border-paper/20');
+    expect(group.className).toContain('border-app-border');
+    expect(group.className).not.toContain('border-paper/20');
     expect(screen.getByRole('button', { name: 'All' }).className).toContain('bg-app-btn');
   });
 

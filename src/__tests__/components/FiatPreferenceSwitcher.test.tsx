@@ -22,7 +22,7 @@ describe('FiatPreferenceSwitcher', () => {
     expect(section?.className).toContain('border-t');
     expect(section?.className).toContain('border-app-border');
     expect(screen.getByText('Fiat currency').className).toContain('uppercase');
-    expect(screen.getByRole('group', { name: 'Fiat currency' }).parentElement?.className).toContain(
+    expect(screen.getByRole('group', { name: 'Fiat currency' }).className).toContain(
       'rounded-full',
     );
     expect(screen.queryByRole('combobox')).toBeNull();

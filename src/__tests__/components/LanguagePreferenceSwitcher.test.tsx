@@ -41,9 +41,7 @@ describe('LanguagePreferenceSwitcher', () => {
     expect(section?.className).toContain('border-t');
     expect(section?.className).toContain('border-app-border');
     expect(screen.getByText('Language').className).toContain('uppercase');
-    expect(screen.getByRole('group', { name: 'Language' }).parentElement?.className).toContain(
-      'rounded-full',
-    );
+    expect(screen.getByRole('group', { name: 'Language' }).className).toContain('rounded-full');
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByRole('listbox')).toBeNull();
   });

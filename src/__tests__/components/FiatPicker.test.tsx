@@ -41,7 +41,7 @@ describe('FiatPicker', () => {
       />,
     );
     const group = screen.getByRole('group', { name: 'Profile fiat' });
-    expect(group.parentElement?.className).toContain('rounded-full');
+    expect(group.className).toContain('rounded-full');
     const usd = screen.getByRole('button', { name: 'USD' });
     expect(usd.className).toContain('bg-app-btn');
     expect(usd.className).not.toContain('bg-app-accent');
