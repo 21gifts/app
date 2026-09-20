@@ -414,8 +414,10 @@ describe('PublicMessageLoader', () => {
     fetchRepliesBearer.mockResolvedValue([]);
     renderWithLocale(<PublicMessageLoader id={replyId} />);
     expect(await screen.findByRole('status')).toBeTruthy();
-    expect(screen.getByText('Hidden reply')).toBeTruthy();
     expect(screen.getByText('Parent note')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('Hidden reply')).toBeTruthy();
+    });
   });
 
   it('shows Loading… while the message is fetching', () => {
