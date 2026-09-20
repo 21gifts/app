@@ -1286,7 +1286,14 @@ describe('InboxScreen', () => {
       />,
     );
     await screen.findByRole('img', { name: 'Bitcoin payment QR code' });
-    const confirm = screen.getByText((_, node) => node?.tagName === 'P' && /\$0\.02/.test(node.textContent ?? '') && new RegExp(formatBitcoin(21).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(node.textContent ?? ''));
+    const confirm = screen.getByText(
+      (_, node) =>
+        node?.tagName === 'P' &&
+        /\$0\.02/.test(node.textContent ?? '') &&
+        new RegExp(formatBitcoin(21).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(
+          node.textContent ?? '',
+        ),
+    );
     expect(confirm).toBeTruthy();
   });
 
