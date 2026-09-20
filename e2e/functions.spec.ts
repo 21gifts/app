@@ -941,6 +941,19 @@ test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page
   await postAndExpectPhotoRow(page, caption);
 });
 
+test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page
+    .locator('input[type="file"]')
+    .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+  await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+  await page.getByRole('button', { name: 'Post' }).click();
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
+  await expect(page.getByText('1/2')).toBeVisible();
+  await expect(page.getByRole('button', { name: '2 / 2' })).toBeVisible();
+});
+
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
   await reachWelcome(page, request);
   await page.getByRole('button', { name: 'Post' }).click();

@@ -292,6 +292,7 @@ describe('PublicMessageLoader', () => {
         'flex',
         'snap-x',
         'snap-mandatory',
+        'gap-3',
         'overflow-x-auto',
         'overscroll-x-contain',
       ]),
@@ -300,9 +301,11 @@ describe('PublicMessageLoader', () => {
     for (const photo of photos) {
       const slideTokens = (photo.parentElement?.className ?? '').split(/\s+/);
       expect(slideTokens).toEqual(
-        expect.arrayContaining(['w-full', 'min-w-full', 'shrink-0', 'snap-start']),
+        expect.arrayContaining(['w-[88%]', 'min-w-[88%]', 'shrink-0', 'snap-start']),
       );
     }
+    expect(screen.getByText('1/2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '2 / 2' })).toBeTruthy();
   });
 
   it('keeps the original still index when an earlier extra still fails to load', async () => {

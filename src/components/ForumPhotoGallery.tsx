@@ -1,0 +1,142 @@
+'use client';
+
+import {
+  useCallback,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactElement,
+  type UIEvent,
+} from 'react';
+
+/** One loaded still in {@link ForumPhotoGallery}. */
+export type ForumPhotoGalleryItem = {
+  /** Original still index (`data-photo-index`). */
+  index: number;
+  /** Object/blob URL. */
+  url: string;
+};
+
+/** Props for {@link ForumPhotoGallery}. */
+export type ForumPhotoGalleryProps = {
+  /** Loaded stills in display order. */
+  photos: ReadonlyArray<ForumPhotoGalleryItem>;
+  /** Shared `<img>` alt. */
+  alt: string;
+  /** Extra classes on the outer wrap (ForumBoard passes `mt-2`). */
+  className?: string;
+  /** Stop card expand/collapse when tapping the gallery. */
+  onPhotoClick?: (event: MouseEvent<HTMLElement>) => void;
+};
+
+/**
+ * Horizontal stride of one snap slide including the scroller gap.
+ *
+ * @param scroller - Overflow row.
+ * @returns Width plus gap, or `0` when layout is not ready.
+ */
+function slideStride(scroller: HTMLElement): number {
+  const slide = scroller.firstElementChild;
+  if (!(slide instanceof HTMLElement)) {
+    return 0;
+  }
+  const gap = Number.parseFloat(getComputedStyle(scroller).gap) || 0;
+  return slide.getBoundingClientRect().width + gap;
+}
+
+/**
+ * Horizontal snap gallery for a note with more than one still: each slide is
+ * 88% wide so the next photo peeks, a `current/total` chip sits on the first
+ * visible still, and dots jump to a still.
+ *
+ * @param props - See {@link ForumPhotoGalleryProps}.
+ * @returns The gallery, or `null` when `photos` is empty.
+ */
+export function ForumPhotoGallery({
+  photos,
+  alt,
+  className,
+  onPhotoClick,
+}: ForumPhotoGalleryProps): ReactElement | null {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+
+  const updateActive = useCallback(
+    (scroller: HTMLElement) => {
+      const stride = slideStride(scroller);
+      if (stride <= 0) {
+        return;
+      }
+      const next = Math.min(
+        photos.length - 1,
+        Math.max(0, Math.round(scroller.scrollLeft / stride)),
+      );
+      setActive(next);
+    },
+    [photos.length],
+  );
+
+  if (photos.length === 0) {
+    return null;
+  }
+
+  const extra = className === undefined || className === '' ? '' : ` ${className}`;
+
+  return (
+    <div className={`flex flex-col${extra}`}>
+      <div className="relative">
+        <div
+          ref={scrollerRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain"
+          onClick={onPhotoClick}
+          onScroll={(event: UIEvent<HTMLDivElement>) => {
+            updateActive(event.currentTarget);
+          }}
+        >
+          {photos.map(({ index, url }) => (
+            <div key={`${index}:${url}`} className="w-[88%] min-w-[88%] shrink-0 snap-start">
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from message photo fetches */}
+              <img
+                src={url}
+                alt={alt}
+                className="max-h-80 w-full rounded-xl object-contain"
+                onClick={onPhotoClick}
+                data-photo-index={index}
+              />
+            </div>
+          ))}
+        </div>
+        <div
+          className="pointer-events-none absolute right-2 top-2 rounded-full bg-app-card-muted/90 px-2 py-0.5 text-xs font-medium tabular-nums lining-nums text-app-fg"
+          aria-hidden="true"
+        >
+          {active + 1}/{photos.length}
+        </div>
+      </div>
+      {photos.length > 1 ? (
+        <div className="mt-2 flex justify-center gap-1.5">
+          {photos.map((photo, i) => (
+            <button
+              key={photo.index}
+              type="button"
+              aria-label={`${i + 1} / ${photos.length}`}
+              aria-current={i === active ? true : undefined}
+              className={`h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
+              onClick={(event) => {
+                onPhotoClick?.(event);
+                const scroller = scrollerRef.current;
+                /* v8 ignore next 3 -- dots only render beside the scroller */
+                if (scroller === null) {
+                  return;
+                }
+                const stride = slideStride(scroller);
+                scroller.scrollTo({ left: stride * i, behavior: 'smooth' });
+                setActive(i);
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}

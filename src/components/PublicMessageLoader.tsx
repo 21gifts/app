@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
@@ -137,19 +138,10 @@ function PublicThreadCard({
           className="max-h-80 w-full rounded-xl object-contain"
         />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
-        <div className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain">
-          {loadedPhotoUrls.map(({ index, url }) => (
-            <div key={`${note.id}:${index}`} className="w-full min-w-full shrink-0 snap-start">
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */}
-              <img
-                src={url}
-                alt={t('forum.photoAlt', { name: note.name })}
-                className="max-h-80 w-full rounded-xl object-contain"
-                data-photo-index={index}
-              />
-            </div>
-          ))}
-        </div>
+        <ForumPhotoGallery
+          photos={loadedPhotoUrls}
+          alt={t('forum.photoAlt', { name: note.name })}
+        />
       ) : null}
       {note.text !== '' ? (
         note.via === 'nostr' ? (
