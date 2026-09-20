@@ -124,9 +124,10 @@ export function SignedInChrome(): ReactElement {
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}
       </button>
+      {/* 7rem = main px-6×2 + chrome px-8×2 so the panel stays on-screen at 320px. */}
       <div
         id="signed-in-menu"
-        className={`absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${open ? '' : 'hidden'}`}
+        className={`absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${open ? '' : 'hidden'}`}
       >
         <Link
           href="/welcome"

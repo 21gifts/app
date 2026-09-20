@@ -280,14 +280,15 @@ Do not add drop shadows on marketing. Do not use colored shadows.
 
 **Motion.**
 
-| Event                | Duration                     | Easing                | Notes                                                      |
-| -------------------- | ---------------------------- | --------------------- | ---------------------------------------------------------- |
-| Color hover          | 150ms                        | `ease` (`transition`) | Buttons, rows, pills                                       |
-| Menu / listbox mount | instant (conditional render) | —                     | No fade required                                           |
-| Theme switch         | instant                      | —                     | Class toggle on `html`; do not animate `color` on `<body>` |
-| Pay sheet open       | instant                      | —                     | Insert in-card; no slide                                   |
-| Spinner              | 1000ms linear infinite       | `animate-spin`        | `Loader2`                                                  |
-| Copy check flash     | 1200ms then revert           | —                     | `ForumBoard` `COPY_RESET_MS`                               |
+| Event            | Duration                     | Easing                | Notes                                                      |
+| ---------------- | ---------------------------- | --------------------- | ---------------------------------------------------------- |
+| Color hover      | 150ms                        | `ease` (`transition`) | Buttons, rows, pills                                       |
+| Menu panel       | instant (`hidden` class)     | —                     | Stays mounted so `PwaInstall` is not remounted             |
+| Listbox mount    | instant (conditional render) | —                     | LanguageSwitcher; no fade required                         |
+| Theme switch     | instant                      | —                     | Class toggle on `html`; do not animate `color` on `<body>` |
+| Pay sheet open   | instant                      | —                     | Insert in-card; no slide                                   |
+| Spinner          | 1000ms linear infinite       | `animate-spin`        | `Loader2`                                                  |
+| Copy check flash | 1200ms then revert           | —                     | `ForumBoard` `COPY_RESET_MS`                               |
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -427,7 +428,7 @@ flowchart TB
 | Log out              | `LogoutButton`                | labeled                                                                             |
 | Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
-Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). AppShell `<main>` has no `overflow-hidden` so the panel is not clipped; the inner scroller is still `overflow-y-auto`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
+Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). `7rem` is AppShell `px-6` plus chrome `px-8` on both sides so the panel stays on-screen at 320 CSS pixels. AppShell `<main>` has no `overflow-hidden` so the panel is not clipped; the inner scroller is still `overflow-y-auto`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
 **Marketing header** stays dedicated (`MarketingHeader`): sticky, `bg-ink/85 backdrop-blur-xl`, `border-b border-paper/10`, `px-5 py-3.5`. Do not reuse `PageChrome` on marketing.
 
