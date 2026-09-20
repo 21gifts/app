@@ -32,10 +32,12 @@ function personLabel(name: string | null, unnamed: string): string {
  * Signed-in staff review of one 21 gifts grant application.
  *
  * Founders and moderators see the applicant, living-room posts, the three
- * convictions as criteria, and Trial / Admit / Reject. Other signed-in
- * visitors see a short forbidden message and no fetch. Renders nothing without
- * a session. In-card back goes to the open-applications queue. A failed
- * decision shows `trustChain.actionFailed`.
+ * convictions as criteria, and status-gated Trial / Admit / Reject (Trial only
+ * when `grant.status` is `pending`; Admit and Reject when `pending` or
+ * `trial`). Other signed-in visitors see a short forbidden message and no
+ * fetch. Renders nothing without a session. In-card back goes to the
+ * open-applications queue. A failed decision shows `trustChain.actionFailed`.
+ * A successful decision leaves the buttons disabled until unmount.
  *
  * @param props - Dynamic route `accountId`.
  * @returns The detail card, forbidden copy, or `null` without a session.
@@ -128,7 +130,6 @@ export function FundingApplicationDetailScreen({
         router.push('/moderate/applications');
       } catch {
         setDecideFailed(true);
-      } finally {
         setDeciding(false);
       }
     })();
@@ -205,46 +206,56 @@ export function FundingApplicationDetailScreen({
             {t('trustChain.actionFailed')}
           </p>
         ) : null}
-        <div className="flex w-full flex-col items-stretch gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={deciding}
-            icon={
-              deciding ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-            }
-            onClick={() => {
-              decide('trial');
-            }}
-          >
-            {t('funding.detail.trial')}
-          </Button>
-          <Button
-            type="button"
-            disabled={deciding}
-            icon={
-              deciding ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-            }
-            onClick={() => {
-              decide('admit');
-            }}
-          >
-            {t('funding.detail.admit')}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={deciding}
-            icon={
-              deciding ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-            }
-            onClick={() => {
-              decide('reject');
-            }}
-          >
-            {t('funding.detail.reject')}
-          </Button>
-        </div>
+        {detail.grant.status === 'pending' || detail.grant.status === 'trial' ? (
+          <div className="flex w-full flex-col items-stretch gap-3">
+            {detail.grant.status === 'pending' ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={deciding}
+                icon={
+                  deciding ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : undefined
+                }
+                onClick={() => {
+                  decide('trial');
+                }}
+              >
+                {t('funding.detail.trial')}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              disabled={deciding}
+              icon={
+                deciding ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : undefined
+              }
+              onClick={() => {
+                decide('admit');
+              }}
+            >
+              {t('funding.detail.admit')}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={deciding}
+              icon={
+                deciding ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : undefined
+              }
+              onClick={() => {
+                decide('reject');
+              }}
+            >
+              {t('funding.detail.reject')}
+            </Button>
+          </div>
+        ) : null}
       </>
     );
   }

@@ -1659,8 +1659,14 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'POST' && pathName === '/funding/apply') {
-    if (bearer(req) === null) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
       json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.role === 'basis') {
+      json(res, 403, { error: 'Forbidden' });
       return;
     }
     json(res, 200, {
@@ -1694,15 +1700,31 @@ const server = http.createServer(async (req, res) => {
       pathName === '/funding/admit' ||
       pathName === '/funding/reject')
   ) {
-    if (bearer(req) === null) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    const status = pathName.endsWith('/trial')
+      ? 'trial'
+      : pathName.endsWith('/admit')
+        ? 'admitted'
+        : 'rejected';
     json(res, 200, {
       id: 'x',
       name: null,
       role: 'verified',
-      funding: { status: 'admitted', trialUtcDate: null, admittedAt: 1, reviewedByName: null },
+      funding: {
+        status,
+        trialUtcDate: status === 'trial' ? '2026-09-20' : null,
+        admittedAt: status === 'admitted' ? 1 : null,
+        reviewedByName: null,
+      },
     });
     return;
   }

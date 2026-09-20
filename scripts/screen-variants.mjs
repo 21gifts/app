@@ -955,6 +955,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'funding-apply-error',
+    image: 'profile-funding-apply-error.png',
+    visual: 'state-profile-funding-apply-error',
+    needle: 'Could not submit your application. Please try again.',
+  },
+  {
+    route: '/profile',
     id: 'funding-pending',
     image: 'profile-funding-pending.png',
     visual: 'state-profile-funding-pending',

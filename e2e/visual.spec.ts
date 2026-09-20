@@ -4580,6 +4580,23 @@ test.describe('profile funding states', () => {
     await shotScreen(page, 'state-profile-funding-none');
   });
 
+  test('profile funding apply-error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.route(/\/funding\/apply$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+    await expect(
+      page.getByText('Could not submit your application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-apply-error');
+  });
+
   test('profile funding pending', async ({ page }) => {
     await seedFundingProfile(page, {
       funding: {

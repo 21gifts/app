@@ -210,6 +210,33 @@ describe('FundingApplicationDetailScreen', () => {
     expect(await screen.findByText('No living-room posts.')).toBeTruthy();
   });
 
+  it('hides Trial when the grant is already on trial', async () => {
+    fetchMock.mockResolvedValue({
+      ...DETAIL,
+      grant: { ...DETAIL.grant, status: 'trial', trialUtcDate: '2026-09-20' },
+    });
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    expect(await screen.findByRole('button', { name: 'Admit' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Trial' })).toBeNull();
+  });
+
+  it('hides decide buttons when the grant is admitted', async () => {
+    fetchMock.mockResolvedValue({
+      ...DETAIL,
+      grant: {
+        ...DETAIL.grant,
+        status: 'admitted',
+        admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+      },
+    });
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    expect(await screen.findByRole('link', { name: 'Rose' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Trial' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Admit' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reject' })).toBeNull();
+  });
+
   it('posts Trial and returns to the queue', async () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Trial' }));
@@ -217,6 +244,9 @@ describe('FundingApplicationDetailScreen', () => {
       expect(trialMock).toHaveBeenCalledWith('sess', 'acc_rose');
     });
     expect(push).toHaveBeenCalledWith('/moderate/applications');
+    expect((screen.getByRole('button', { name: 'Trial' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('posts Admit and returns to the queue', async () => {
