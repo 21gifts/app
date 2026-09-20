@@ -426,6 +426,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-moderation-unread",
+    "label": "/welcome menu-moderation-unread",
+    "visual": "state-welcome-menu-moderation-unread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-amount",
     "label": "/welcome pay-amount",
     "visual": "state-welcome-pay-amount",
@@ -969,6 +975,12 @@
     "id": "/moderate:default",
     "label": "/moderate default",
     "visual": "screen-moderate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate:group-unread",
+    "label": "/moderate group-unread",
+    "visual": "state-moderate-group-unread",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

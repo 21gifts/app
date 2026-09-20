@@ -356,9 +356,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
-- **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)`, `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')`, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)` (default write-badge: writes the home-screen badge), `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) for an `AppShell` / absolute parent slot; when open, a disclosure panel of icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
@@ -405,15 +405,15 @@
 
 ## Function: useUnreadCount
 
-- **Purpose:** Load signed-in unread **notification** and **inbox** counts in parallel (`GET /forum/notifications` + `GET /conversations`). `refreshKey` retriggers the fetches (Menu open). Does not mark notifications or conversations read.
-- **Inputs:** `refreshKey` boolean.
-- **Returns / side effects:** `{ unreadCount, inboxUnreadCount }`. `unreadCount` is the notifications unread count. `inboxUnreadCount` is the number of conversation rows with `unread: true`. The home-screen badge is notification unread + inbox unread, written once both fetches settle. Either side failing contributes 0 to the sum; the other side still writes. Epoch skip applies to that sum write. No session → both counts `0`; badge `0` only when `loadSession() === null` (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. A cancelled fetch updates neither React state nor the badge.
-- **Used by:** `SignedInChrome`.
+- **Purpose:** Load signed-in unread **notification**, **inbox**, and **staff-room** counts in parallel (`GET /forum/notifications` + `GET /conversations`, plus `GET /conversations/moderator-group` when `roleAtLeast(account?.role, 'moderator')`). `refreshKey` retriggers the fetches (Menu open). Does not mark notifications or conversations read.
+- **Inputs:** `refreshKey` boolean; optional `options?: { writeBadge?: boolean }` (omit the object to default). Default writes the home-screen badge. `writeBadge: false` fetches and returns the three counts but does not call `setUnreadAppBadge` (including the logout / session-null `0` write).
+- **Returns / side effects:** `{ unreadCount, inboxUnreadCount, moderationUnreadCount }`. `unreadCount` is the notifications unread count. `inboxUnreadCount` is the number of conversation rows with `unread: true`. `moderationUnreadCount` is `0` or `1` from the staff room (`unread: true` → `1`). When badge writes are enabled (the default), the home-screen badge is notification unread + inbox unread + staff-room unread (`0` or `1`), written once all started fetches settle. A role below moderator skips the staff-room fetch and contributes `0`. A thrown staff-room fetch contributes `0` without failing the other sides. Either of the other sides failing contributes `0` to the sum; the other sides still write. Epoch skip applies to that sum write. No session → all three counts `0`; badge `0` only when writes are enabled and `loadSession() === null` (real logout). A hydrating store (`session` null, token still in storage) does not clear the badge. A cancelled fetch updates neither React state nor the badge.
+- **Used by:** `SignedInChrome` (default write), `ModerateScreen` (`writeBadge: false`).
 
 ## Function: setUnreadAppBadge
 
 - **Purpose:** Set or clear the installed PWA home-screen unread badge via the Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`). When `count > 0` and `setAppBadge` exists, sets that number; otherwise clears when `clearAppBadge` exists. Missing APIs are a no-op. Rejections are swallowed so unsupported or denied badge writes never throw into the UI.
-- **Inputs:** `count` (number) — notification unread plus inbox unread conversations. Positive values request a badge; `0` (and any non-positive) request a clear.
+- **Inputs:** `count` (number) — notification unread plus inbox unread plus staff-room unread (`0` or `1`). Positive values request a badge; `0` (and any non-positive) request a clear.
 - **Returns / side effects:** `void`. Fire-and-forget promises; does not await. No network.
 - **Used by:** `useUnreadCount`, `NotificationsLoader`, `refreshUnreadAppBadge`, `useAuthStore.clearAuth`.
 
@@ -422,7 +422,7 @@
 - **Purpose:** Increment the home-screen badge epoch so in-flight unread fetches do not overwrite a mark-all-read clear, and after inbox mark-read so they do not overwrite the remaining sum.
 - **Inputs:** None.
 - **Returns / side effects:** The new epoch number.
-- **Used by:** `NotificationsLoader`, `InboxLoader`, `useAuthStore.clearAuth`.
+- **Used by:** `NotificationsLoader`, `InboxLoader`, `ModeratorGroupScreen`, `useAuthStore.clearAuth`.
 
 ## Function: unreadAppBadgeEpoch
 
@@ -433,10 +433,10 @@
 
 ## Function: refreshUnreadAppBadge
 
-- **Purpose:** Refresh the installed PWA home-screen badge to notification unread plus inbox unread. Fetches `GET /forum/notifications` and, unless an inbox override is passed, `GET /conversations`. Either side failing contributes 0. Captures the badge epoch at start; skips the write if the epoch changed or `loadSession()` is not still `sessionToken`. Never rejects.
-- **Inputs:** `sessionToken` (string). Optional `inboxUnreadOverride` (number) — when set, skip the conversations fetch and use that inbox unread count (e.g. the local list after mark-read).
+- **Purpose:** Refresh the installed PWA home-screen badge to notification unread plus inbox unread plus staff-room unread (`0` or `1`). Signature `refreshUnreadAppBadge(sessionToken, inboxUnreadOverride?, moderationUnreadOverride?)`. Fetches `GET /forum/notifications` and, unless an inbox override is passed, `GET /conversations`. When the moderation override is omitted, fetch `GET /conversations/moderator-group` only when `roleAtLeast(account?.role, 'moderator')` (`unread` true → `1`, else `0`; throw/404 → `0`); a role below moderator contributes `0` without starting the request. When the moderation override is set, skip that fetch. Any side failing contributes 0. Captures the badge epoch at start; skips the write if the epoch changed or `loadSession()` is not still `sessionToken`. Never rejects.
+- **Inputs:** `sessionToken` (string). Optional `inboxUnreadOverride` (number) — when set, skip the conversations fetch and use that inbox unread count (e.g. the local list after mark-read). Optional `moderationUnreadOverride` (number) — when set, skip the staff-room fetch and use that count (`0` or `1`). When the moderation override is omitted, skip the staff-room fetch unless the signed-in auth-store account is at least moderator.
 - **Returns / side effects:** `Promise<void>`. Calls `setUnreadAppBadge` with the sum only when the epoch is unchanged and `loadSession() === sessionToken`. Fire-and-forget safe.
-- **Used by:** `InboxLoader` after a successful thread load and mark-read.
+- **Used by:** `InboxLoader` after a successful thread load and mark-read (inbox override only; fetches staff-room only when the account is at least moderator). `ModeratorGroupScreen` after opening the room (moderation override `0`).
 
 ## Function: vapidPublicKeyToBytes
 
@@ -2221,7 +2221,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/conversations/:id/read` with Bearer. Non-ok throws; success may ignore body.
 - **Inputs:** Session token and conversation id (encoded in the path).
 - **Returns / side effects:** void, or throws visitor copy.
-- **Used by:** `InboxLoader` after a successful thread fetch (fire-and-forget; failures are ignored).
+- **Used by:** `InboxLoader` after a successful thread fetch (fire-and-forget; failures are ignored). `ModeratorGroupScreen` after a successful group+thread load (fire-and-forget; failures are ignored).
 
 ## Function: proxyConversationsGet
 
@@ -2281,9 +2281,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment). After a successful list fetch, `bumpUnreadAppBadgeEpoch` then set the badge to remaining inbox unread (notifications treated as 0; visiting `/notifications` does not force badge 0 when inbox unread remains). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetch conversations for the inbox count; failure writes 0. Opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed); any other row goes to `/messages/{parentId}` without waiting.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment). After a successful list fetch, `bumpUnreadAppBadgeEpoch` then set the badge to remaining inbox unread plus staff-room unread (`0` or `1`; notifications treated as 0; visiting `/notifications` does not force badge 0 when inbox or staff-room unread remains). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed); any other row goes to `/messages/{parentId}` without waiting.
 - **Inputs:** None (session from the auth store).
-- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget, then `bumpUnreadAppBadgeEpoch` and sets the home-screen badge to remaining inbox unread (notifications treated as 0). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations for the inbox count; failure writes 0. Does not clear remaining inbox unread on error, cancel, or missing session.
+- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget, then `bumpUnreadAppBadgeEpoch` and sets the home-screen badge to remaining inbox unread plus staff-room unread (`0` or `1`; notifications treated as 0). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Does not clear remaining inbox or staff-room unread on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen
@@ -2354,7 +2354,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Product-rule primitive for every viewer permission/visibility check: true when `role` is `min` or higher in the founder > moderator > verified > basis hierarchy. A missing account (`null`/`undefined` role) is never at least any role.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent; `min` — inclusive minimum role.
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
-- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `isReplyPaymentExempt`.
+- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`.
 
 ## Function: isReplyPaymentExempt
 
@@ -2365,9 +2365,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (moderator) see hub lead copy, the hide-tool lead, the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`. A **Moderators** `ButtonLink` → `/moderate/group` is shown when `roleAtLeast(role, 'moderator')`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread. Renders `null` without a session. No un-hide control.
-- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see hub lead copy, the hide-tool lead, the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`, and a **Moderators** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread itself; unread for the Moderators control comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for the Moderators count (network for that count; does not write the home-screen badge).
+- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, or the group thread itself.
 - **Used by:** `ModeratePage`.
 
 ## Function: HiddenNotesPage
@@ -2407,9 +2407,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModeratorGroupScreen
 
-- **Purpose:** Client closed staff-room thread. Moderators (`roleAtLeast(role, 'moderator')`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; `showAmount` false; no in-card back; row `name` replaced by the catalog `moderate.groupLabel` so the heading is always **Moderators**). Other signed-in visitors see heading **Moderators** plus `moderate.groupForbidden` and do not fetch. Renders `null` without a session. Back to `/moderate` is the page chrome (`ProfileChromeLeft` `backHref="/moderate"`), never in the card.
+- **Purpose:** Client closed staff-room thread. Moderators (`roleAtLeast(role, 'moderator')`) fetch `fetchModeratorGroup` then `fetchConversation` and reuse `InboxScreen` as the open thread (`showFilter` false; `showAmount` false; no in-card back; row `name` replaced by the catalog `moderate.groupLabel` so the heading is always **Moderators**). After a successful group+thread load: `markConversationRead`, `bumpUnreadAppBadgeEpoch`, `refreshUnreadAppBadge(session, undefined, 0)` (staff-room unread 0; inbox still fetched). Other signed-in visitors see heading **Moderators** plus `moderate.groupForbidden` and do not fetch. Renders `null` without a session. Back to `/moderate` is the page chrome (`ProfileChromeLeft` `backHref="/moderate"`), never in the card.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /conversations/moderator-group` then `GET /conversations/:id` only when the role is at least moderator.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /conversations/moderator-group` then `GET /conversations/:id` only when the role is at least moderator. After a successful group+thread load: `markConversationRead`, `bumpUnreadAppBadgeEpoch`, `refreshUnreadAppBadge(session, undefined, 0)` (staff-room unread 0; inbox still fetched).
 - **Used by:** `ModeratorGroupPage`.
 
 ## Function: fetchModeratorGroup
@@ -2417,7 +2417,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/conversations/moderator-group` with Bearer and parse `{ conversation }` via `conversationResponseSchema`. Returns the singleton closed staff-room row (`kind` `moderator_group`).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation row, or throws visitor copy.
-- **Used by:** `ModeratorGroupScreen`, `InboxLoader` (`/messages` unlisted `?c=` guard for a moderator).
+- **Used by:** `ModeratorGroupScreen`, `InboxLoader` (`/messages` unlisted `?c=` guard for a moderator), `useUnreadCount` (staff unread), `refreshUnreadAppBadge` (when `moderationUnreadOverride` is omitted and `roleAtLeast(account?.role, 'moderator')`), and `NotificationsLoader` (remaining badge after mark-all-read, staff only).
 
 ## Function: listHiddenMessages
 

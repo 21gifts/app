@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModerateScreen } from '@/components/ModerateScreen';
-import type { Account } from '@/lib/api-types';
+import type { Account, Conversation } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -23,12 +23,24 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn(),
+  listHiddenMessages: vi.fn(),
+  fetchNotifications: vi.fn(),
+  fetchConversations: vi.fn(),
+  fetchModeratorGroup: vi.fn(),
 }));
 
-import { fetchGiftStats } from '@/lib/api';
+import {
+  fetchConversations,
+  fetchGiftStats,
+  fetchModeratorGroup,
+  fetchNotifications,
+} from '@/lib/api';
 import type { GiftStats } from '@/lib/api-types';
 
 const fetchMock = vi.mocked(fetchGiftStats);
+const notificationsMock = vi.mocked(fetchNotifications);
+const conversationsMock = vi.mocked(fetchConversations);
+const groupMock = vi.mocked(fetchModeratorGroup);
 
 const EMPTY_STATS: GiftStats = {
   totalSats: 0,
@@ -75,6 +87,17 @@ function statsWithDays(days: { day: string; giftCount: number }[]): GiftStats {
   };
 }
 
+const GROUP: Conversation = {
+  id: 'conv-mod',
+  kind: 'moderator_group',
+  name: 'Moderators',
+  lastText: 'Hello mods',
+  lastAt: '2026-08-28T15:00:00.000Z',
+  lastFromMe: false,
+  lastSats: 0,
+  unread: false,
+};
+
 const account: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
@@ -97,6 +120,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'));
+  notificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+  conversationsMock.mockResolvedValue([]);
+  groupMock.mockResolvedValue(GROUP);
   useAuthStore.setState({ session: 'sess', account });
   fetchMock.mockResolvedValue(EMPTY_STATS);
 });
@@ -309,5 +335,16 @@ describe('ModerateScreen', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('shows the unread count on Moderators when the group is unread', async () => {
+    groupMock.mockResolvedValue({ ...GROUP, unread: true });
+    renderWithLocale(<ModerateScreen />);
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Moderators, 1 unread' })).toBeTruthy();
+    });
+    const moderators = screen.getByRole('link', { name: 'Moderators, 1 unread' });
+    expect(moderators.getAttribute('href')).toBe('/moderate/group');
+    expect(moderators.textContent).toContain('1');
   });
 });

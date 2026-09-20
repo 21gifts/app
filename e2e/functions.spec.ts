@@ -5312,6 +5312,35 @@ test('Function: useUnreadCount — menu shows inbox unread count', async ({ page
   await expect(page.getByRole('link', { name: 'Messages, 2 unread' })).toBeVisible();
 });
 
+test('Function: useUnreadCount — menu shows moderation unread count', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  await page.route(/\/conversations\/moderator-group$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversation: {
+          id: 'conv-mod',
+          kind: 'moderator_group',
+          name: 'Moderators',
+          lastText: 'Hello mods',
+          lastAt: '2026-08-28T15:00:00.000Z',
+          lastFromMe: false,
+          lastSats: 0,
+          unread: true,
+        },
+      }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Moderation, 1 unread' })).toBeVisible();
+});
+
 test('Function: resyncPushSubscription — signed-in chrome still shows Menu', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');

@@ -1,5 +1,7 @@
-import { fetchConversations, fetchNotifications } from '@/lib/api';
+import { fetchConversations, fetchModeratorGroup, fetchNotifications } from '@/lib/api';
+import { roleAtLeast } from '@/lib/roles';
 import { loadSession } from '@/lib/session-storage';
+import { useAuthStore } from '@/stores/auth-store';
 
 type AppBadgeNavigator = Navigator & {
   setAppBadge?: (contents?: number) => Promise<void>;
@@ -38,7 +40,8 @@ export function unreadAppBadgeEpoch(): number {
  * throw into the UI.
  *
  * @param count - Unread in-app notification count plus inbox unread
- * conversations. Values greater than 0 set the badge; zero clears it.
+ * conversations plus staff-room unread (`0` or `1`). Values greater than 0
+ * set the badge; zero clears it.
  */
 export function setUnreadAppBadge(count: number): void {
   const nav = navigator as AppBadgeNavigator;
@@ -50,24 +53,36 @@ export function setUnreadAppBadge(count: number): void {
 }
 
 /**
- * Refresh the home-screen badge to notification unread plus inbox unread.
+ * Refresh the home-screen badge to notification unread plus inbox unread plus
+ * staff-room unread (`0` or `1`).
  *
  * Fetches `GET /forum/notifications` and, unless `inboxUnreadOverride` is
- * passed, `GET /conversations`. Either side failing contributes `0`. Captures
- * the badge epoch at start; skips the write if it changed (callers that already
- * know a newer count should `bumpUnreadAppBadgeEpoch` first) or if
- * `loadSession()` is no longer `sessionToken`. Fetch errors are
- * swallowed so callers can fire-and-forget.
+ * passed, `GET /conversations`. Unless `moderationUnreadOverride` is passed,
+ * fetches `GET /conversations/moderator-group` only when
+ * `roleAtLeast(account?.role, 'moderator')` on the signed-in auth-store
+ * account (`unread` true → `1`, else `0`; throw/404 → `0`). A role below
+ * moderator contributes `0` without starting that request. When
+ * `moderationUnreadOverride` is set, skip the fetch and use that number
+ * (even for staff). Any side failing contributes `0`. Captures the badge
+ * epoch at start; skips the write if it changed (callers that already know a
+ * newer count should `bumpUnreadAppBadgeEpoch` first) or if `loadSession()` is
+ * no longer `sessionToken`. Fetch errors are swallowed so callers can
+ * fire-and-forget.
  *
  * @param sessionToken - Bearer token for the signed-in session.
  * @param inboxUnreadOverride - When set, use this inbox unread count instead of
  * fetching conversations (e.g. the local list after mark-read).
+ * @param moderationUnreadOverride - When set, use this staff-room unread count
+ * instead of fetching the moderator group (e.g. `0` after opening the room).
+ * When omitted, still skip the fetch if the signed-in account is below
+ * moderator.
  * @returns Resolves after the badge write is requested or skipped. Never
  * rejects.
  */
 export async function refreshUnreadAppBadge(
   sessionToken: string,
   inboxUnreadOverride?: number,
+  moderationUnreadOverride?: number,
 ): Promise<void> {
   const epoch = unreadAppBadgeEpoch();
   const notificationsPromise = fetchNotifications(sessionToken).then(
@@ -81,12 +96,25 @@ export async function refreshUnreadAppBadge(
           (rows) => rows.filter((row) => row.unread).length,
           () => 0,
         );
-  const [notificationUnread, inboxUnread] = await Promise.all([notificationsPromise, inboxPromise]);
+  const moderationPromise =
+    moderationUnreadOverride !== undefined
+      ? Promise.resolve(moderationUnreadOverride)
+      : roleAtLeast(useAuthStore.getState().account?.role, 'moderator')
+        ? fetchModeratorGroup(sessionToken).then(
+            (conversation) => (conversation.unread ? 1 : 0),
+            () => 0,
+          )
+        : Promise.resolve(0);
+  const [notificationUnread, inboxUnread, moderationUnread] = await Promise.all([
+    notificationsPromise,
+    inboxPromise,
+    moderationPromise,
+  ]);
   if (epoch !== unreadAppBadgeEpoch()) {
     return;
   }
   if (loadSession() !== sessionToken) {
     return;
   }
-  setUnreadAppBadge(notificationUnread + inboxUnread);
+  setUnreadAppBadge(notificationUnread + inboxUnread + moderationUnread);
 }

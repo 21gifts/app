@@ -246,6 +246,10 @@ const GROUP = {
 
 async function stubModeratorGroup(page: import('@playwright/test').Page): Promise<void> {
   await page.route('**/conversations/moderator-group', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -253,6 +257,10 @@ async function stubModeratorGroup(page: import('@playwright/test').Page): Promis
     });
   });
   await page.route('**/conversations/conv-mod', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -279,6 +287,80 @@ test('moderators see the Moderators hub link', async ({ page }) => {
     'href',
     '/moderate/group',
   );
+});
+
+test('moderators see the Moderators hub unread count', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  await page.route('**/conversations/moderator-group', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversation: { ...GROUP, unread: true } }),
+    });
+  });
+  await page.goto('/moderate');
+  await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toHaveAttribute(
+    'href',
+    '/moderate/group',
+  );
+});
+
+test('opening the unread Moderators room POSTs /conversations/:id/read', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  const readPosts: string[] = [];
+  await page.route(/\/conversations\/conv-mod\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    readPosts.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/conversations\/moderator-group$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversation: { ...GROUP, unread: true } }),
+    });
+  });
+  await page.route(/\/conversations\/conv-mod$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello mods',
+            createdAt: '2026-08-28T15:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  const readPost = page.waitForRequest(
+    (req) => req.method() === 'POST' && /\/conversations\/conv-mod\/read$/.test(req.url()),
+  );
+  await page.goto('/moderate/group');
+  await expect(page.getByText('Hello mods')).toBeVisible();
+  await readPost;
+  expect(readPosts).toHaveLength(1);
 });
 
 test('Function: ModeratorGroupPage — moderators see the group thread', async ({ page }) => {

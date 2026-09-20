@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
-import { fetchAccountActivity, fetchConversations, fetchNotifications } from '@/lib/api';
+import {
+  fetchAccountActivity,
+  fetchConversations,
+  fetchModeratorGroup,
+  fetchNotifications,
+} from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
@@ -101,6 +106,7 @@ vi.mock('@/lib/api', () => ({
   }),
   fetchNotifications: vi.fn().mockResolvedValue({ notifications: [], unreadCount: 0 }),
   fetchConversations: vi.fn().mockResolvedValue([]),
+  fetchModeratorGroup: vi.fn().mockRejectedValue(new Error('no group')),
 }));
 
 const useAccountTotalsActual = (
@@ -138,6 +144,7 @@ beforeEach(() => {
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
   vi.mocked(fetchConversations).mockResolvedValue([]);
+  vi.mocked(fetchModeratorGroup).mockRejectedValue(new Error('no group'));
   vi.mocked(resyncPushSubscription).mockResolvedValue(undefined);
   vi.mocked(enablePush).mockResolvedValue(undefined);
   vi.mocked(usePasskeyLogin).mockReturnValue({
@@ -543,6 +550,37 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
+  });
+
+  it('shows the unread count on Moderation when greater than zero', async () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+    vi.mocked(fetchModeratorGroup).mockResolvedValue({
+      id: 'conv-mod',
+      kind: 'moderator_group',
+      name: 'Moderators',
+      lastText: 'Hello mods',
+      lastAt: '2026-08-28T15:00:00.000Z',
+      lastFromMe: false,
+      lastSats: 0,
+      unread: true,
+    });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Moderation, 1 unread' })).toBeTruthy();
+    });
+    const moderation = screen.getByRole('link', { name: 'Moderation, 1 unread' });
+    expect(moderation.getAttribute('href')).toBe('/moderate');
+    expect(moderation.textContent).toContain('1');
+    const count = moderation.querySelector('.tabular-nums');
+    expect(count?.textContent).toBe('1');
+    expect(count?.className.includes('ml-auto')).toBe(true);
+    expect(count?.className.includes('font-semibold')).toBe(true);
+    expect(count?.className.includes('lining-nums')).toBe(true);
   });
 
   it.each(['founder', 'moderator'] as const)(
