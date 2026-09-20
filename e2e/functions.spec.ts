@@ -6274,7 +6274,7 @@ test('Function: isReplyPaymentExempt — a founder posts a reaction without an i
   };
   let invoiceRequests = 0;
   let replyBody: unknown = null;
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() === 'POST') {
       replyBody = route.request().postDataJSON();
       await route.fulfill({
