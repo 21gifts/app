@@ -11,6 +11,7 @@ import {
   markNotificationRead,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import { roleAtLeast } from '@/lib/roles';
 import { loadSession } from '@/lib/session-storage';
 import type { Notification } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -21,8 +22,11 @@ import { useAuthStore } from '@/stores/auth-store';
  * mark-all-read).
  *
  * Captures the badge epoch at start and skips the write if it changed or
- * `loadSession()` is not still `sessionToken`, after both fetches settle. A
- * side that fails contributes 0.
+ * `loadSession()` is not still `sessionToken`, after the started fetches
+ * settle. Fetches `GET /conversations/moderator-group` only when
+ * `roleAtLeast(account?.role, 'moderator')`; a role below moderator
+ * contributes `0` without starting that request. A side that fails
+ * contributes 0.
  *
  * @param sessionToken - Bearer token for the signed-in session.
  */
@@ -32,10 +36,12 @@ async function setHomeScreenBadgeToRemainingUnread(sessionToken: string): Promis
     (rows) => rows.filter((row) => row.unread).length,
     () => 0,
   );
-  const moderationPromise = fetchModeratorGroup(sessionToken).then(
-    (conversation) => (conversation.unread ? 1 : 0),
-    () => 0,
-  );
+  const moderationPromise = roleAtLeast(useAuthStore.getState().account?.role, 'moderator')
+    ? fetchModeratorGroup(sessionToken).then(
+        (conversation) => (conversation.unread ? 1 : 0),
+        () => 0,
+      )
+    : Promise.resolve(0);
   const [inboxCount, moderationCount] = await Promise.all([inboxPromise, moderationPromise]);
   if (epoch !== unreadAppBadgeEpoch() || loadSession() !== sessionToken) {
     return;
@@ -51,7 +57,9 @@ async function setHomeScreenBadgeToRemainingUnread(sessionToken: string): Promis
  * as read fire-and-forget and refreshes the home-screen badge to remaining inbox
  * unread plus staff-room unread (`0` or `1`; notifications are treated as 0;
  * visiting this screen does not force the badge to 0 when inbox or staff-room
- * unread remains). Renders nothing when there is no
+ * unread remains). Fetches the staff room only when
+ * `roleAtLeast(account?.role, 'moderator')`; below moderator the remaining
+ * badge is inbox unread only. Renders nothing when there is no
  * session. There is no composer; opening a `moderator_appointed` row waits for
  * `markNotificationRead` (then still goes to `/welcome` if that POST fails, and
  * skips navigation if the session changed), and any other row goes to the public

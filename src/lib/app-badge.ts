@@ -1,5 +1,7 @@
 import { fetchConversations, fetchModeratorGroup, fetchNotifications } from '@/lib/api';
+import { roleAtLeast } from '@/lib/roles';
 import { loadSession } from '@/lib/session-storage';
+import { useAuthStore } from '@/stores/auth-store';
 
 type AppBadgeNavigator = Navigator & {
   setAppBadge?: (contents?: number) => Promise<void>;
@@ -56,8 +58,12 @@ export function setUnreadAppBadge(count: number): void {
  *
  * Fetches `GET /forum/notifications` and, unless `inboxUnreadOverride` is
  * passed, `GET /conversations`. Unless `moderationUnreadOverride` is passed,
- * also fetches `GET /conversations/moderator-group` (`unread` true → `1`, else
- * `0`; throw/404 → `0`). Any side failing contributes `0`. Captures the badge
+ * fetches `GET /conversations/moderator-group` only when
+ * `roleAtLeast(account?.role, 'moderator')` on the signed-in auth-store
+ * account (`unread` true → `1`, else `0`; throw/404 → `0`). A role below
+ * moderator contributes `0` without starting that request. When
+ * `moderationUnreadOverride` is set, skip the fetch and use that number
+ * (even for staff). Any side failing contributes `0`. Captures the badge
  * epoch at start; skips the write if it changed (callers that already know a
  * newer count should `bumpUnreadAppBadgeEpoch` first) or if `loadSession()` is
  * no longer `sessionToken`. Fetch errors are swallowed so callers can
@@ -68,6 +74,8 @@ export function setUnreadAppBadge(count: number): void {
  * fetching conversations (e.g. the local list after mark-read).
  * @param moderationUnreadOverride - When set, use this staff-room unread count
  * instead of fetching the moderator group (e.g. `0` after opening the room).
+ * When omitted, still skip the fetch if the signed-in account is below
+ * moderator.
  * @returns Resolves after the badge write is requested or skipped. Never
  * rejects.
  */
@@ -91,10 +99,12 @@ export async function refreshUnreadAppBadge(
   const moderationPromise =
     moderationUnreadOverride !== undefined
       ? Promise.resolve(moderationUnreadOverride)
-      : fetchModeratorGroup(sessionToken).then(
-          (conversation) => (conversation.unread ? 1 : 0),
-          () => 0,
-        );
+      : roleAtLeast(useAuthStore.getState().account?.role, 'moderator')
+        ? fetchModeratorGroup(sessionToken).then(
+            (conversation) => (conversation.unread ? 1 : 0),
+            () => 0,
+          )
+        : Promise.resolve(0);
   const [notificationUnread, inboxUnread, moderationUnread] = await Promise.all([
     notificationsPromise,
     inboxPromise,

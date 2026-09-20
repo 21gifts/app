@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Conversation } from '@/lib/api-types';
+import type { Account, Conversation } from '@/lib/api-types';
 
 vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
@@ -14,6 +14,7 @@ import {
   setUnreadAppBadge,
   unreadAppBadgeEpoch,
 } from '@/lib/app-badge';
+import { useAuthStore } from '@/stores/auth-store';
 
 const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const fetchConversationsMock = vi.mocked(fetchConversations);
@@ -39,6 +40,24 @@ const STAFF_ROOM: Conversation = {
   lastFromMe: false,
   lastSats: 0,
   unread: true,
+};
+
+const ACCOUNT: Account = {
+  id: 'acc_1',
+  linkingKey: '02abcdef',
+  role: 'basis',
+  name: 'Ada',
+  location: null,
+  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1_700_000_000,
+  rulesAgreedAt: 1_700_000_001,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  setup: null,
+  missing: [],
 };
 
 afterEach(() => {
@@ -154,6 +173,7 @@ describe('refreshUnreadAppBadge', () => {
 
   beforeEach(() => {
     window.localStorage.setItem('21gifts.session', 'tok');
+    useAuthStore.setState({ account: null });
     setAppBadge.mockClear();
     clearAppBadge.mockClear();
     fetchNotificationsMock.mockReset();
@@ -183,11 +203,22 @@ describe('refreshUnreadAppBadge', () => {
   });
 
   it('uses inboxUnreadOverride and skips fetchConversations', async () => {
+    useAuthStore.setState({ account: { ...ACCOUNT, role: 'moderator' } });
     fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
     await refreshUnreadAppBadge('tok', 2);
     expect(fetchConversationsMock).not.toHaveBeenCalled();
     expect(fetchModeratorGroupMock).toHaveBeenCalledWith('tok');
     expect(setAppBadge).toHaveBeenCalledWith(6);
+  });
+
+  it('skips the staff-room fetch for an account below moderator', async () => {
+    useAuthStore.setState({ account: ACCOUNT });
+    fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
+    fetchConversationsMock.mockResolvedValue([UNREAD_ROW]);
+    fetchModeratorGroupMock.mockResolvedValue(STAFF_ROOM);
+    await refreshUnreadAppBadge('tok');
+    expect(fetchModeratorGroupMock).not.toHaveBeenCalled();
+    expect(setAppBadge).toHaveBeenCalledWith(5);
   });
 
   it('uses moderationUnreadOverride and skips fetchModeratorGroup', async () => {
@@ -199,6 +230,7 @@ describe('refreshUnreadAppBadge', () => {
   });
 
   it('adds staff-room unread when the group is unread', async () => {
+    useAuthStore.setState({ account: { ...ACCOUNT, role: 'moderator' } });
     fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
     fetchConversationsMock.mockResolvedValue([UNREAD_ROW]);
     fetchModeratorGroupMock.mockResolvedValue(STAFF_ROOM);
@@ -207,6 +239,7 @@ describe('refreshUnreadAppBadge', () => {
   });
 
   it('treats a read staff room as 0', async () => {
+    useAuthStore.setState({ account: { ...ACCOUNT, role: 'moderator' } });
     fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
     fetchConversationsMock.mockResolvedValue([]);
     fetchModeratorGroupMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
@@ -269,6 +302,7 @@ describe('refreshUnreadAppBadge', () => {
   });
 
   it('starts notifications, inbox, and staff-room fetches before any settles', async () => {
+    useAuthStore.setState({ account: { ...ACCOUNT, role: 'moderator' } });
     fetchNotificationsMock.mockImplementation(() => new Promise(() => undefined));
     fetchConversationsMock.mockImplementation(() => new Promise(() => undefined));
     fetchModeratorGroupMock.mockImplementation(() => new Promise(() => undefined));

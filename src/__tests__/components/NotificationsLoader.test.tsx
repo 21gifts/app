@@ -116,7 +116,13 @@ beforeEach(() => {
   window.localStorage.setItem('21gifts.session', 'sess');
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  const role = useAuthStore.getState().account?.role;
+  if (role !== 'moderator' && role !== 'founder') {
+    expect(groupMock).not.toHaveBeenCalled();
+  }
+  cleanup();
+});
 
 describe('NotificationsLoader', () => {
   it('renders nothing when there is no session', () => {
@@ -135,6 +141,7 @@ describe('NotificationsLoader', () => {
     });
     expect(setBadgeMock).toHaveBeenCalledWith(0);
     expect(vi.mocked(bumpUnreadAppBadgeEpoch)).toHaveBeenCalled();
+    expect(groupMock).not.toHaveBeenCalled();
   });
 
   it('clears the badge again after mark-all-read resolves', async () => {
@@ -357,13 +364,13 @@ describe('NotificationsLoader', () => {
       { ...UNREAD_CONVERSATION, id: 'c2' },
       { ...UNREAD_CONVERSATION, id: 'c3', unread: false },
     ]);
-    groupMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByText('Bob replied')).toBeTruthy();
     await waitFor(() => {
       expect(setBadgeMock).toHaveBeenCalledWith(2);
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(0);
+    expect(groupMock).not.toHaveBeenCalled();
   });
 
   it('clears the home-screen badge when remaining inbox unread cannot be loaded', async () => {
@@ -374,9 +381,11 @@ describe('NotificationsLoader', () => {
     await waitFor(() => {
       expect(setBadgeMock).toHaveBeenCalledWith(0);
     });
+    expect(groupMock).not.toHaveBeenCalled();
   });
 
   it('sets the home-screen badge to remaining inbox unread plus staff-room unread', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     listMock.mockResolvedValue(LIST);
     conversationsMock.mockResolvedValue([
       UNREAD_CONVERSATION,
@@ -388,9 +397,24 @@ describe('NotificationsLoader', () => {
     await waitFor(() => {
       expect(setBadgeMock).toHaveBeenCalledWith(3);
     });
+    expect(groupMock).toHaveBeenCalledWith('sess');
+  });
+
+  it('treats a read staff room as 0 on the remaining badge', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    listMock.mockResolvedValue(LIST);
+    conversationsMock.mockResolvedValue([UNREAD_CONVERSATION]);
+    groupMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(1);
+    });
+    expect(groupMock).toHaveBeenCalledWith('sess');
   });
 
   it('keeps remaining inbox unread on the home-screen badge when the staff-room fetch fails', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     listMock.mockResolvedValue(LIST);
     conversationsMock.mockResolvedValue([
       UNREAD_CONVERSATION,
@@ -403,6 +427,7 @@ describe('NotificationsLoader', () => {
       expect(setBadgeMock).toHaveBeenCalledWith(2);
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(3);
+    expect(groupMock).toHaveBeenCalledWith('sess');
   });
 
   it('does not write a stale inbox badge after the epoch bumps again', async () => {
