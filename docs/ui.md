@@ -781,7 +781,7 @@ Do not use orange. This is law, not a gift CTA.
 Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). React expands a collapsed card and focuses the reply composer when already expanded; it does not collapse. Copy/delete stay sibling IconButtons that do not expand. Gift is only on a payable reply, never on a post. The action row is a sibling after that control, still inside the `li`. Inner React/pay/copy/delete controls `stopPropagation`. Focus ring on the expandable region.
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies: Gift `IconButton` (`forum.pay`) when `payable`, plus the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Row is `mt-2`; `flex flex-wrap items-start gap-5` when Gift and trash are both visible. The pay sheet can sit inside that reply `li` when its id is `payMessageId`. No nested reply composer. Not a labeled button.
+**Forum moderation.** Moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies: Gift `IconButton` (`forum.pay`) when `payable`, a copy `IconButton` (`forum.copyReplyLink`, always present, copies that reply's own `/messages/<id>` permalink), plus the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Row is `mt-2`; `flex flex-wrap items-start gap-5` when more than one of those three controls is visible (copy alone stays `mt-2`). The pay sheet can sit inside that reply `li` when its id is `payMessageId`. No nested reply composer. Not a labeled button.
 
 ### Inbox thread bubbles
 
@@ -828,7 +828,7 @@ Do not restyle QR for dark mode.
 
 **Do not** color-code roles (no green verified, no orange founder). Type + optional hint is the encoding. Hint copy already in catalogs (`forum.role.*Hint`).
 
-The same anatomy is reused for a **Visitor** badge (`forum.via.nostr`), shown for a row with `via: 'nostr'` — written by someone with no 21.gifts account (shown because they sent bitcoin to a post). The badge word is technology-neutral because of Principles §4 (visitors are never shown the underlying protocol). On the forum board it is an interactive button with a togglable hint paragraph (`forum.via.nostrHint`, same slot and one-open toggle as a role pill); on the unsigned permalink card, the quoted/nested note card, and the moderators' hidden list (`/moderate/hidden`, `HiddenNotesScreen`) it is a non-interactive `<span>` with no hint. Never color-coded, same as role badges.
+The same anatomy is reused for an **External** badge (`forum.via.nostr`), shown for a row with `via: 'nostr'` — written by someone with no 21.gifts account (shown because they sent bitcoin to a post). The badge word is technology-neutral because of Principles §4 (visitors are never shown the underlying protocol). On the forum board it is an interactive button with a togglable hint paragraph (`forum.via.nostrHint`, same slot and one-open toggle as a role pill); on the unsigned permalink card, the quoted/nested note card, and the moderators' hidden list (`/moderate/hidden`, `HiddenNotesScreen`) it is a non-interactive `<span>` with no hint. Never color-coded, same as role badges.
 
 ### Chart
 
@@ -990,9 +990,9 @@ Handbook states: default hub, forbidden.
 
 ### `/moderate/hidden`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **Visitor** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **External** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
 
-Handbook states: default list, forbidden, empty, loading, error, visitor.
+Handbook states: default list, forbidden, empty, loading, error, external.
 
 ### `/moderate/group`
 
@@ -1014,7 +1014,7 @@ Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `Onbo
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (cookie, otherwise locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (cookie, otherwise locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 

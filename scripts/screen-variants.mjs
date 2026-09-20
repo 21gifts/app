@@ -1221,10 +1221,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/hidden',
-    id: 'visitor',
-    image: 'moderate-hidden-visitor.png',
-    visual: 'state-moderate-hidden-visitor',
-    needle: 'Hidden visitor note',
+    id: 'external',
+    image: 'moderate-hidden-external.png',
+    visual: 'state-moderate-hidden-external',
+    needle: 'Hidden external note',
   },
   {
     route: '/moderate/hidden',
@@ -1403,9 +1403,9 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'expanded-visitor',
-    image: 'welcome-expanded-visitor.png',
-    visual: 'state-welcome-expanded-visitor',
+    id: 'expanded-external',
+    image: 'welcome-expanded-external.png',
+    visual: 'state-welcome-expanded-external',
     needle: 'Wrote from another app',
   },
   {
@@ -1421,6 +1421,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-copy.png',
     visual: 'state-welcome-copy',
     needle: 'Copy link to this note',
+  },
+  {
+    route: '/welcome',
+    id: 'reply-copy',
+    image: 'welcome-reply-copy.png',
+    visual: 'state-welcome-reply-copy',
+    needle: 'Copy link to this reply',
   },
   {
     route: '/welcome',
@@ -1522,9 +1529,9 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
-    id: 'visitor-reply',
-    image: 'messages-id-visitor-reply.png',
-    visual: 'state-messages-id-visitor-reply',
+    id: 'external-reply',
+    image: 'messages-id-external-reply.png',
+    visual: 'state-messages-id-external-reply',
     needle: 'Greetings! https://example.com/hello',
   },
   {

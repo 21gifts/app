@@ -2519,7 +2519,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toBe('Diese Person hat 21.gifts gegründet.');
   });
 
-  it('shows a Visitor badge and hint on a top-level note', () => {
+  it('shows an External badge and hint on a top-level note', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -2535,7 +2535,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const tag = screen.getByRole('button', { name: 'Visitor' });
+    const tag = screen.getByRole('button', { name: 'External' });
     expect(tag.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
@@ -2605,7 +2605,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
 
-  it('shows a Visitor badge and hint on a reply and keeps a url as plain text', () => {
+  it('shows an External badge and hint on a reply and keeps a url as plain text', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -2636,7 +2636,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const tag = screen.getByRole('button', { name: 'Visitor' });
+    const tag = screen.getByRole('button', { name: 'External' });
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Robin')).toBeTruthy();
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
@@ -2713,12 +2713,12 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Visitor' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'External' })).toBeTruthy();
     expect(screen.getByText('send ₿69')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
-  it('localizes the Visitor badge', () => {
+  it('localizes the External badge', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -2735,8 +2735,8 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Besucher' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Besucher' }));
+    expect(screen.getByRole('button', { name: 'Extern' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Extern' }));
     expect(screen.getByRole('status').textContent).toContain('anderen App');
   });
 
@@ -3284,7 +3284,7 @@ describe('ForumBoard', () => {
     });
   });
 
-  it('copies a reply link using its parentId', async () => {
+  it("copies a reply's own permalink", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -3292,7 +3292,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[{ ...SAMPLE, id: 'reply-1', parentId: 'parent-1' }]}
+        messages={[SAMPLE]}
         error={false}
         loading={false}
         posting={false}
@@ -3302,13 +3302,198 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-own-link',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    const replyCard = document.querySelector('[data-reply-id="r-own-link"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
     await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/parent-1`);
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/r-own-link`);
+      expect(
+        within(replyCard)
+          .getByRole('button', { name: 'Copy link to this reply' })
+          .getAttribute('data-copied'),
+      ).toBe('true');
     });
+    expect(
+      screen.getByRole('button', { name: 'Copy link to this note' }).getAttribute('data-copied'),
+    ).toBeNull();
+  });
+
+  it('shows the reply copy control alone with the mt-2 row class when not payable or deletable', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-plain',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-plain"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(copyButton.parentElement?.className).toBe('mt-2');
+  });
+
+  it('shows the flex row class when a payable reply also has the copy control', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-payable',
+            name: 'Bob',
+            text: 'A payable reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-payable"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+  });
+
+  it('shows the flex row class when a deletable reply also has the copy control', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-deletable',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-deletable"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+  });
+
+  it('does not toggle the note card when clicking the reply copy control', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        onToggleExpand={onToggleExpand}
+        replies={[
+          {
+            id: 'r-stop',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-stop"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('shows the reply composer only when expanded', () => {

@@ -112,7 +112,7 @@ test('Function: listHiddenMessages — staff list shows a hidden note', async ({
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
 });
 
-test('Function: HiddenNotesScreen — a visitor row shows the badge, a member row does not', async ({
+test('Function: HiddenNotesScreen — an external row shows the badge, a member row does not', async ({
   page,
 }) => {
   await seedAdaSession(page, 'founder');
@@ -125,7 +125,7 @@ test('Function: HiddenNotesScreen — a visitor row shows the badge, a member ro
           {
             id: 'h2',
             name: 'Robin',
-            text: 'Hidden visitor note',
+            text: 'Hidden external note',
             via: 'nostr',
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 0,
@@ -142,11 +142,11 @@ test('Function: HiddenNotesScreen — a visitor row shows the badge, a member ro
     });
   });
   await page.goto('/moderate/hidden');
-  await expect(page.getByText('Hidden visitor note', { exact: true })).toBeVisible();
-  const visitorRow = page.locator('li', { hasText: 'Robin' });
-  await expect(visitorRow.getByText('Visitor', { exact: true })).toBeVisible();
+  await expect(page.getByText('Hidden external note', { exact: true })).toBeVisible();
+  const externalRow = page.locator('li', { hasText: 'Robin' });
+  await expect(externalRow.getByText('External', { exact: true })).toBeVisible();
   const memberRow = page.locator('li', { hasText: 'Bob' });
-  await expect(memberRow.getByText(/visitor/i)).toHaveCount(0);
+  await expect(memberRow.getByText(/external/i)).toHaveCount(0);
 });
 
 test('Function: proxyMessagesHiddenGet — GET /forum/messages/hidden without bearer is 401', async ({

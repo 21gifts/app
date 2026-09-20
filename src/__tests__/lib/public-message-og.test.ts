@@ -217,7 +217,7 @@ describe('publicMessageOgMetadata', () => {
     });
   });
 
-  it('uses fully generic metadata with no visitor-chosen string', () => {
+  it('uses fully generic metadata with no author-chosen string', () => {
     const note: ForumMessage = {
       ...sample,
       via: 'nostr',
@@ -227,41 +227,43 @@ describe('publicMessageOgMetadata', () => {
       photoCount: 1,
     };
     const meta = publicMessageOgMetadata(MESSAGE_ID, note);
-    expect(meta.title).toBe('Visitor on 21.gifts');
-    expect(meta.description).toBe('A reply from a visitor who sent bitcoin to a post on 21.gifts.');
+    expect(meta.title).toBe('External author on 21.gifts');
+    expect(meta.description).toBe(
+      'A reply from someone outside 21.gifts who sent bitcoin to a post.',
+    );
     expect(meta.openGraph).toEqual({
       type: 'website',
       url: `https://21.gifts/messages/${MESSAGE_ID}`,
       siteName: '21.gifts',
-      title: 'Visitor on 21.gifts',
-      description: 'A reply from a visitor who sent bitcoin to a post on 21.gifts.',
+      title: 'External author on 21.gifts',
+      description: 'A reply from someone outside 21.gifts who sent bitcoin to a post.',
       images: [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
     });
     expect(meta.twitter).toEqual({
       card: 'summary_large_image',
-      title: 'Visitor on 21.gifts',
-      description: 'A reply from a visitor who sent bitcoin to a post on 21.gifts.',
+      title: 'External author on 21.gifts',
+      description: 'A reply from someone outside 21.gifts who sent bitcoin to a post.',
       images: [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
     });
-    const visitorName = '21.gifts Support';
+    const authorName = '21.gifts Support';
     const noteText = 'Official announcement https://example.com';
     const photoRoute = `/messages/${MESSAGE_ID}/photo`;
-    expect(meta.title).not.toContain(visitorName);
+    expect(meta.title).not.toContain(authorName);
     expect(meta.title).not.toContain(noteText);
     expect(meta.title).not.toContain(photoRoute);
-    expect(meta.description).not.toContain(visitorName);
+    expect(meta.description).not.toContain(authorName);
     expect(meta.description).not.toContain(noteText);
     expect(meta.description).not.toContain(photoRoute);
-    expect(meta.openGraph!.title).not.toContain(visitorName);
+    expect(meta.openGraph!.title).not.toContain(authorName);
     expect(meta.openGraph!.title).not.toContain(noteText);
     expect(meta.openGraph!.title).not.toContain(photoRoute);
-    expect(meta.openGraph!.description).not.toContain(visitorName);
+    expect(meta.openGraph!.description).not.toContain(authorName);
     expect(meta.openGraph!.description).not.toContain(noteText);
     expect(meta.openGraph!.description).not.toContain(photoRoute);
-    expect(meta.twitter!.title).not.toContain(visitorName);
+    expect(meta.twitter!.title).not.toContain(authorName);
     expect(meta.twitter!.title).not.toContain(noteText);
     expect(meta.twitter!.title).not.toContain(photoRoute);
-    expect(meta.twitter!.description).not.toContain(visitorName);
+    expect(meta.twitter!.description).not.toContain(authorName);
     expect(meta.twitter!.description).not.toContain(noteText);
     expect(meta.twitter!.description).not.toContain(photoRoute);
   });

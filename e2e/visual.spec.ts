@@ -1084,7 +1084,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-gifts');
   });
 
-  test('state /welcome expanded-visitor', async ({ page }) => {
+  test('state /welcome expanded-external', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -1137,8 +1137,8 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
-    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
-    await page.getByRole('button', { name: 'Visitor', exact: true }).first().click();
+    await expect(page.getByText('External', { exact: true }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'External', exact: true }).first().click();
     await expect(
       page.getByText(
         'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
@@ -1149,7 +1149,7 @@ test.describe('onboarding screens', () => {
       page.getByText('Greetings! https://example.com/hello', { exact: true }),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-expanded-visitor');
+    await shotScreen(page, 'state-welcome-expanded-external');
   });
 
   test('state /welcome quoted-note', async ({ page }) => {
@@ -1245,6 +1245,57 @@ test.describe('onboarding screens', () => {
       page.getByRole('button', { name: 'Copy link to this note' }).first(),
     ).toBeVisible();
     await shotScreen(page, 'state-welcome-copy');
+  });
+
+  test('state /welcome reply-copy', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-reply-copy',
+              name: 'Bob',
+              text: 'Nice one',
+              createdAt: '2026-08-28T12:02:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    const replyCopyButton = page.getByRole('button', { name: 'Copy link to this reply' });
+    await replyCopyButton.click();
+    await expect(replyCopyButton).toHaveAttribute('data-copied', 'true');
+    await shotScreen(page, 'state-welcome-reply-copy');
   });
 
   test('state /welcome translate', async ({ page }) => {
@@ -3651,7 +3702,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-thread');
   });
 
-  test('state /messages/[id] visitor-reply', async ({ page }) => {
+  test('state /messages/[id] external-reply', async ({ page }) => {
     const parentId = '11111111-1111-4111-8111-111111111111';
     const parent = {
       id: parentId,
@@ -3697,11 +3748,11 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${parentId}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
-    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('External', { exact: true }).first()).toBeVisible();
     await expect(
       page.getByText('Greetings! https://example.com/hello', { exact: true }),
     ).toBeVisible();
-    await shotScreen(page, 'state-messages-id-visitor-reply');
+    await shotScreen(page, 'state-messages-id-external-reply');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {
@@ -6536,7 +6587,7 @@ test.describe('moderate hidden screens', () => {
     await shotScreen(page, 'screen-moderate-hidden');
   });
 
-  test('state /moderate/hidden visitor', async ({ page }) => {
+  test('state /moderate/hidden external', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/forum/messages/hidden', async (route) => {
       await route.fulfill({
@@ -6547,7 +6598,7 @@ test.describe('moderate hidden screens', () => {
             {
               id: 'h2',
               name: 'Robin',
-              text: 'Hidden visitor note',
+              text: 'Hidden external note',
               via: 'nostr',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
@@ -6563,9 +6614,9 @@ test.describe('moderate hidden screens', () => {
       });
     });
     await page.goto('/moderate/hidden');
-    await expect(page.getByText('Hidden visitor note', { exact: true })).toBeVisible();
-    await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
-    await shotScreen(page, 'state-moderate-hidden-visitor');
+    await expect(page.getByText('Hidden external note', { exact: true })).toBeVisible();
+    await expect(page.getByText('External', { exact: true }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-hidden-external');
   });
 
   test('moderate hidden forbidden', async ({ page }) => {

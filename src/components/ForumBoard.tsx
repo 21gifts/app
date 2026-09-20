@@ -792,10 +792,7 @@ export function ForumBoard({
   };
 
   const copyMessageLink = async (messageId: string): Promise<void> => {
-    /* v8 ignore next -- copy control only mounts when a list is on screen */
-    const message = messages === null ? undefined : messages.find((item) => item.id === messageId);
-    const targetId = message?.parentId ?? messageId;
-    const url = `${window.location.origin}/messages/${targetId}`;
+    const url = `${window.location.origin}/messages/${messageId}`;
     try {
       await navigator.clipboard.writeText(url);
       /* v8 ignore next 3 -- copy resolved after unmount */
@@ -1265,38 +1262,54 @@ export function ForumBoard({
                                 {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
                               </p>
                             ) : null}
-                            {reply.payable || onDeleted !== undefined ? (
-                              <div
-                                className={
-                                  reply.payable && onDeleted !== undefined
-                                    ? 'mt-2 flex flex-wrap items-start gap-5'
-                                    : 'mt-2'
-                                }
+                            <div
+                              className={
+                                reply.payable || onDeleted !== undefined
+                                  ? 'mt-2 flex flex-wrap items-start gap-5'
+                                  : 'mt-2'
+                              }
+                            >
+                              {reply.payable ? (
+                                <IconButton
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  aria-label={t('forum.pay')}
+                                  disabled={payBusy}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onPayOpen(reply.id);
+                                  }}
+                                >
+                                  <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                </IconButton>
+                              ) : null}
+                              <IconButton
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                aria-label={t('forum.copyReplyLink')}
+                                title={t('forum.copyReplyLink')}
+                                data-copied={copiedId === reply.id ? 'true' : undefined}
+                                onClick={(event) => {
+                                  stopCardToggle(event);
+                                  void copyMessageLink(reply.id);
+                                }}
                               >
-                                {reply.payable ? (
-                                  <IconButton
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    aria-label={t('forum.pay')}
-                                    disabled={payBusy}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      onPayOpen(reply.id);
-                                    }}
-                                  >
-                                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                                  </IconButton>
-                                ) : null}
-                                {onDeleted !== undefined ? (
-                                  <DeletePostControl
-                                    kind="reply"
-                                    messageId={reply.id}
-                                    onDeleted={onDeleted}
-                                  />
-                                ) : null}
-                              </div>
-                            ) : null}
+                                {copiedId === reply.id ? (
+                                  <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                                )}
+                              </IconButton>
+                              {onDeleted !== undefined ? (
+                                <DeletePostControl
+                                  kind="reply"
+                                  messageId={reply.id}
+                                  onDeleted={onDeleted}
+                                />
+                              ) : null}
+                            </div>
                             {payMessageId === reply.id ? (
                               <ForumPaySheet
                                 messageId={reply.id}

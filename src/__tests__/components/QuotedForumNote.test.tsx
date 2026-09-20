@@ -455,7 +455,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
   });
 
-  it('shows a Visitor badge on a nested quoted note and keeps the url as plain text', async () => {
+  it('shows an External badge on a nested quoted note and keeps the url as plain text', async () => {
     const viaQuoted: ForumMessage = {
       ...quotedNote,
       role: 'basis',
@@ -474,14 +474,14 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText('Visitor')).toBeTruthy();
+      expect(screen.getByText('External')).toBeTruthy();
     });
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
     expect(screen.queryByText('Founder')).toBeNull();
   });
 
-  it('uses the visitor aria-label for a quoted note with via nostr', async () => {
+  it('uses the external aria-label for a quoted note with via nostr', async () => {
     const viaQuoted: ForumMessage = {
       ...quotedNote,
       role: 'basis',
@@ -501,7 +501,7 @@ describe('ForumQuotedBody', () => {
     );
     await waitFor(() => {
       expect(
-        screen.getByRole('link', { name: 'Open linked note from visitor Robin' }),
+        screen.getByRole('link', { name: 'Open linked note from Robin (external)' }),
       ).toBeTruthy();
     });
   });
@@ -528,7 +528,7 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(screen.getByText(viaQuoted.text)).toBeTruthy();
     });
-    expect(screen.getByText('Visitor')).toBeTruthy();
+    expect(screen.getByText('External')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
