@@ -284,6 +284,32 @@ describe('PublicMessageLoader', () => {
     expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
     expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
     expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+    const scroller = photos[0]?.parentElement?.parentElement;
+    expect(scroller?.contains(photos[1] ?? null)).toBe(true);
+    const scrollerTokens = (scroller?.className ?? '').split(/\s+/);
+    expect(scrollerTokens).toEqual(
+      expect.arrayContaining([
+        'flex',
+        'snap-x',
+        'snap-mandatory',
+        'gap-3',
+        'overflow-x-auto',
+        'overscroll-x-contain',
+      ]),
+    );
+    expect(scrollerTokens).not.toContain('flex-col');
+    const firstSlide = (photos[0]?.parentElement?.className ?? '').split(/\s+/);
+    const lastSlide = (photos[1]?.parentElement?.className ?? '').split(/\s+/);
+    expect(firstSlide).toEqual(
+      expect.arrayContaining(['w-[88%]', 'min-w-[88%]', 'shrink-0', 'snap-start']),
+    );
+    expect(lastSlide).toEqual(
+      expect.arrayContaining(['w-full', 'min-w-full', 'shrink-0', 'snap-start']),
+    );
+    expect(screen.getByText('1/2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Photo 2 of 2' })).toBeTruthy();
+    expect(screen.queryByText('Photo 1 of 2')).toBeNull();
+    expect(screen.queryByText('Photo 2 of 2')).toBeNull();
   });
 
   it('keeps the original still index when an earlier extra still fails to load', async () => {

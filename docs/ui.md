@@ -477,13 +477,13 @@ flowchart LR
 
 Profile photo and story are a **reserved slot**, not a shipped feature. Do not ship UI that pretends they exist. Do not spec HTTP. When they land, they occupy this slot so the screen does not invent a look:
 
-| Part         | Spec                                                                                                                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Avatar       | 96×96px (`h-24 w-24`), circle (`rounded-full`), `object-cover`, 1:1 crop, above the profile `h1` or immediately under it, centered                                                                           |
-| Aspect       | 1:1 only for the profile portrait. Forum message photos stay `max-h-80 w-full rounded-xl object-contain`                                                                                                     |
-| Fallback     | Two-letter initials from `name` (first grapheme of first two words, else first two), Outfit 600 24px, on `bg-app-card-muted text-app-fg`. If no name: lucide `Gift` 32px `text-app-muted` in the same circle |
-| Story        | `body-sm text-app-muted`, centered, under the name row, max 4 lines (`line-clamp-4`) on the card; full text on a future expanded view — not designed here                                                    |
-| Forum photos | Already specified in `ForumBoard`; not the profile portrait                                                                                                                                                  |
+| Part         | Spec                                                                                                                                                                                                                                                                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Avatar       | 96×96px (`h-24 w-24`), circle (`rounded-full`), `object-cover`, 1:1 crop, above the profile `h1` or immediately under it, centered                                                                                                                                                                                                       |
+| Aspect       | 1:1 only for the profile portrait. Forum message photos stay `max-h-80 w-full rounded-xl object-contain` for a single still. When `photoCount > 1`, stills sit in `ForumPhotoGallery`: earlier stills 88% so the next photo peeks, last still full width, `current/total` chip, dots — not a full-width stack that hides further stills. |
+| Fallback     | Two-letter initials from `name` (first grapheme of first two words, else first two), Outfit 600 24px, on `bg-app-card-muted text-app-fg`. If no name: lucide `Gift` 32px `text-app-muted` in the same circle                                                                                                                             |
+| Story        | `body-sm text-app-muted`, centered, under the name row, max 4 lines (`line-clamp-4`) on the card; full text on a future expanded view — not designed here                                                                                                                                                                                |
+| Forum photos | Already specified in `ForumBoard`; not the profile portrait                                                                                                                                                                                                                                                                              |
 
 Do not use a colored placeholder, a camera badge, or a progress ring.
 
@@ -774,7 +774,7 @@ Do not use orange. This is law, not a gift CTA.
 
 1. Row: `name` (`text-sm font-medium`) + optional **Badge** + `time` (`text-xs text-app-subtle`).
 2. Optional role hint `text-xs text-app-muted`.
-3. Optional photo/video (`rounded-xl`, `max-h-80`).
+3. Optional photo/video (`rounded-xl`, `max-h-80`). Multiple stills (`photoCount > 1`) use `ForumPhotoGallery` (earlier stills 88% peek, last still full width, `current/total` chip, dots).
 4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text.
 5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (React when `parentId` is unset, lucide `Reply`, `forum.react` “React”; copy; delete when present; Gift only when `parentId` is set and `payable`) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 

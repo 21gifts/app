@@ -24,6 +24,7 @@ import {
   type ReactElement,
 } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
+import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
@@ -865,7 +866,7 @@ export function ForumBoard({
           const expanded = expandedId === message.id;
           const copied = copiedId === message.id;
 
-          const stopCardToggle = (event: MouseEvent): void => {
+          const stopCardToggle = (event: { stopPropagation(): void }): void => {
             event.stopPropagation();
           };
           const copyLabelKey =
@@ -971,19 +972,12 @@ export function ForumBoard({
                     onClick={stopCardToggle}
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
-                  <div>
-                    {loadedPhotoUrls.map(({ index, url }) => (
-                      /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
-                      <img
-                        key={`${message.id}:${index}`}
-                        src={url}
-                        alt={t('forum.photoAlt', { name: message.name })}
-                        className="mt-2 max-h-80 w-full rounded-xl object-contain"
-                        onClick={stopCardToggle}
-                        data-photo-index={index}
-                      />
-                    ))}
-                  </div>
+                  <ForumPhotoGallery
+                    photos={loadedPhotoUrls}
+                    alt={t('forum.photoAlt', { name: message.name })}
+                    className="mt-2"
+                    onPhotoClick={stopCardToggle}
+                  />
                 ) : null}
                 {message.text !== '' ? (
                   <div className="mt-2">
