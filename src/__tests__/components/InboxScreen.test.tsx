@@ -806,6 +806,39 @@ describe('InboxScreen', () => {
     expect(push).toHaveBeenCalledWith('/members/acc_ada');
   });
 
+  it('shows another staff reply on a contact thread as the actor name, not You', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[THREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-1"
+        onOpen={() => undefined}
+        messages={[{ ...MESSAGE, name: 'Rose Otero', fromMe: false, accountId: 'acc_rose' }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getByText('Rose Otero')).toBeTruthy();
+    expect(screen.queryByText(getCatalog('en')['inbox.you'])).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
+    const incoming = screen.getByRole('listitem');
+    expect(incoming.getAttribute('data-from-me')).toBe('false');
+    expect(incoming.className).toContain('bg-app-card-muted');
+    expect(incoming.className).not.toContain('bg-app-btn');
+    expect(incoming.className).not.toContain('self-end');
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_rose');
+  });
+
   it('links heading then incoming author when both have accountId', () => {
     renderWithLocale(
       <InboxScreen
