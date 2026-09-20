@@ -880,7 +880,7 @@
 
 ## Function: ForumGoalBar
 
-SVG progress bar for a top-level forum note's collected sats versus an optional whole-sat ask. Orange fill through 100% of the track; overflow past 100% continues in green (`app-success`) as an in-flow sibling at most one extra track width, so the `{percent}%` label stays readable. The label is uncapped (110, 250, …). Renders nothing when `goalSats` is missing or `<= 0`. Lengths use SVG `width` / `x` attributes, not React `style`.
+SVG progress bar for a top-level forum note's collected sats versus an optional whole-sat ask. One SVG: orange fill in user units 0–100; overflow past 100% continues in green (`app-success`) from `x=100` at most another 100 units (visual max 200%). The `{percent}%` label is a sibling, so it stays readable, and is uncapped (110, 250, …). Renders nothing when `goalSats` is missing or `<= 0`. Lengths use SVG `width` / `x` / `viewBox` attributes, not React `style`.
 
 - **Purpose:** Show collected-versus-goal progress on a top-level note that has a positive `goalSats`.
 - **Inputs:** `sats` (collected) and `goalSats` (whole-sat goal). Non-positive or non-finite `goalSats` yields `null`.

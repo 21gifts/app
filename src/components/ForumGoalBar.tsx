@@ -21,10 +21,10 @@ function forumGoalRatio(sats: number, goalSats: number): number {
  * Progress bar of collected sats versus an optional whole-sat goal.
  *
  * Renders nothing when `goalSats` is missing or `<= 0`. Fill is bitcoin-orange
- * through 100% of the track; overflow past 100% continues in green as an
- * in-flow sibling, at most one extra track width (visual max 200%), so the
- * percent label stays readable. The percent label is not capped. Lengths use
- * SVG `width` / `x` attributes, not React `style`.
+ * in SVG user units 0–100; overflow past 100% continues in green from `x=100`,
+ * at most another 100 units (visual max 200%). The percent label is a sibling
+ * so it stays readable, and is not capped. Lengths use SVG `width` / `x` /
+ * `viewBox` attributes, not React `style`.
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
@@ -45,34 +45,32 @@ export function ForumGoalBar({
   const percent = forumGoalPercent(sats, goalSats);
   const fillWidth = Math.min(100, ratio * 100);
   const overflowWidth = percent > 100 ? Math.min(100, percent - 100) : 0;
+  const viewWidth = 100 + overflowWidth;
   const percentLabel = String(percent);
   return (
     <div className="mt-2 flex items-center gap-2">
-      <div className="flex min-w-0 flex-1 items-center">
-        <svg
-          viewBox="0 0 100 8"
-          preserveAspectRatio="none"
-          role="img"
-          aria-label={t('forum.goalBarAria', { percent: percentLabel })}
-          className="h-2 min-w-0 flex-1"
-        >
-          <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-border" />
-          {fillWidth > 0 ? (
-            <rect x="0" y="0" width={fillWidth} height="8" rx="4" className="fill-app-accent" />
-          ) : null}
-        </svg>
-        {overflowWidth > 0 ? (
-          <svg
-            viewBox="0 0 100 8"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-            className="h-2 shrink-0"
-            width={`${overflowWidth}%`}
-          >
-            <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-success" />
-          </svg>
+      <svg
+        viewBox={`0 0 ${viewWidth} 8`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={t('forum.goalBarAria', { percent: percentLabel })}
+        className="h-2 min-w-0 flex-1"
+      >
+        <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-border" />
+        {fillWidth > 0 ? (
+          <rect x="0" y="0" width={fillWidth} height="8" rx="4" className="fill-app-accent" />
         ) : null}
-      </div>
+        {overflowWidth > 0 ? (
+          <rect
+            x="100"
+            y="0"
+            width={overflowWidth}
+            height="8"
+            rx="4"
+            className="fill-app-success"
+          />
+        ) : null}
+      </svg>
       <span className="shrink-0 tabular-nums text-xs text-app-muted">
         {t('forum.goalPercent', { percent: percentLabel })}
       </span>

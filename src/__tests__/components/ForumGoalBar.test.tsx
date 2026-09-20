@@ -42,26 +42,26 @@ describe('ForumGoalBar', () => {
   it('shows 110% with overflow fill', () => {
     const { container } = renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} />);
     expect(screen.getByText('110%')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Goal progress 110 percent' })).toBeTruthy();
+    const img = screen.getByRole('img', { name: 'Goal progress 110 percent' });
+    expect(img.getAttribute('viewBox')).toBe('0 0 110 8');
     expect(container.querySelector('[class*="fill-app-success"]')).not.toBeNull();
-    expect(screen.getByRole('img').querySelector('[style]')).toBeNull();
-    const overflowSvg = container.querySelector('svg[aria-hidden="true"]');
-    expect(overflowSvg?.getAttribute('width')).toBe('10%');
-    expect(overflowSvg?.getAttribute('class') ?? '').toContain('shrink-0');
-    expect(overflowSvg?.getAttribute('class') ?? '').not.toContain('absolute');
+    expect(img.querySelector('[style]')).toBeNull();
+    const overflow = container.querySelector('[class*="fill-app-success"]');
+    expect(overflow?.getAttribute('x')).toBe('100');
+    expect(overflow?.getAttribute('width')).toBe('10');
+    expect(container.querySelector('svg[aria-hidden="true"]')).toBeNull();
   });
 
   it('shows an uncapped 250% label while painted overflow stays capped', () => {
     const { container } = renderWithLocale(<ForumGoalBar sats={52500} goalSats={21000} />);
     expect(screen.getByText('250%')).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Goal progress 250 percent' })).toBeTruthy();
+    const img = screen.getByRole('img', { name: 'Goal progress 250 percent' });
+    expect(img.getAttribute('viewBox')).toBe('0 0 200 8');
     const overflow = container.querySelector('[class*="fill-app-success"]');
     expect(overflow).not.toBeNull();
+    expect(overflow?.getAttribute('x')).toBe('100');
     expect(overflow?.getAttribute('width')).toBe('100');
-    expect(screen.getByRole('img').querySelector('[style]')).toBeNull();
-    const overflowSvg = container.querySelector('svg[aria-hidden="true"]');
-    expect(overflowSvg?.getAttribute('width')).toBe('100%');
-    expect(overflowSvg?.getAttribute('class') ?? '').toContain('shrink-0');
-    expect(overflowSvg?.getAttribute('class') ?? '').not.toContain('absolute');
+    expect(img.querySelector('[style]')).toBeNull();
+    expect(container.querySelector('svg[aria-hidden="true"]')).toBeNull();
   });
 });
