@@ -3417,6 +3417,26 @@ describe('ForumBoard', () => {
   });
 
   it('shows the flex row class when a deletable reply also has the copy control', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
