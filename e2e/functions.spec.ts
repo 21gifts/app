@@ -3495,6 +3495,20 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
 
+test('Function: proxyMessagesComposeTargetGet — GET /messages/compose-target without a session is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/messages/compose-target');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: fetchComposeTarget — GET /messages/compose-target without a session is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/messages/compose-target');
+  expect(res.status()).toBe(401);
+});
+
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
   await openPayInvoice(page, request);
 });

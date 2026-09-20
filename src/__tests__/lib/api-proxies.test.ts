@@ -41,6 +41,7 @@ import {
   proxyNotificationsReadAllPost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
+  proxyMessagesComposeTargetGet,
   proxyMessagesGet,
   proxyMessagesHiddenGet,
   proxyMessagesInvoicePost,
@@ -271,6 +272,12 @@ describe('api proxy wrappers', () => {
     const url = fetchMock.mock.calls[0]?.[0] as URL;
     expect(url.pathname).toBe('/gifts');
     expect(url.searchParams.get('day')).toBe('2026-06-01');
+  });
+
+  it('proxyMessagesComposeTargetGet hits /messages/compose-target', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesComposeTargetGet(new Request('http://localhost/messages/compose-target'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/compose-target');
   });
 
   it('proxyMessagesGet hits /messages', async () => {

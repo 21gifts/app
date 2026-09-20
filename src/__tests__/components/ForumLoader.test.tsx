@@ -34,6 +34,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
+  fetchComposeTarget: vi.fn(),
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
@@ -66,6 +67,7 @@ import {
   fetchPublicMessage,
   fetchReplies,
   markNotificationRead,
+  fetchComposeTarget,
   postMessage,
   postMessageInvoice,
   postMessageVideo,
@@ -83,6 +85,7 @@ const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
+const composeTargetMock = vi.mocked(fetchComposeTarget);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
 const photoMock = vi.mocked(fetchMessagePhoto);
 const repliesMock = vi.mocked(fetchReplies);
@@ -94,7 +97,7 @@ const postVideoMock = vi.mocked(postMessageVideo);
 const account: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
-  role: 'basis',
+  role: 'verified',
   name: 'Ada',
   location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
@@ -253,6 +256,8 @@ async function revealAll(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks();
   fetchMock.mockResolvedValue(forumPage([]));
+  composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0 });
+  invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
   fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
   markNotificationReadMock.mockResolvedValue({
     id: 'n-mod',
@@ -4379,6 +4384,7 @@ describe('ForumLoader', () => {
   });
 
   it('requires a sat amount to reply on someone else’s note', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
@@ -4394,7 +4400,8 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi Bob');
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi Bob');
     });
     expect(postMock).not.toHaveBeenCalled();
   });

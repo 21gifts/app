@@ -41,7 +41,8 @@ export function roleAtLeast(role: Role | null | undefined, min: Role): boolean {
 /**
  * True when the signed-in account may reply without paying.
  *
- * Parent author, and anyone at least verified, are exempt.
+ * Anyone at least verified is exempt. Basis, including the parent author, must
+ * pay 1 sat to 21.gifts to write.
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId`, if the api sent one.
@@ -52,11 +53,9 @@ export function isReplyPaymentExempt(
   account: { id: string; role: Role } | null,
   parentAccountId: string | undefined,
 ): boolean {
+  void parentAccountId;
   if (account === null) {
     return false;
   }
-  if (roleAtLeast(account.role, 'verified')) {
-    return true;
-  }
-  return parentAccountId !== undefined && parentAccountId === account.id;
+  return roleAtLeast(account.role, 'verified');
 }

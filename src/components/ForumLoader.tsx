@@ -24,6 +24,7 @@ import {
   fetchReplies,
   markNotificationRead,
   postMessage,
+  fetchComposeTarget,
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
@@ -1388,6 +1389,20 @@ export function ForumLoader({
     setPosting(true);
     setFormError(null);
     try {
+      if (account !== null && !roleAtLeast(account.role, 'verified')) {
+        const target = await fetchComposeTarget(session);
+        const invoice = await postMessageInvoice(session, target.messageId, 1, trimmed);
+        setPayMessageId(target.messageId);
+        setPayError(null);
+        setPayInvoice({
+          messageId: target.messageId,
+          pr: invoice.pr,
+          amountSats: invoice.amountSats,
+        });
+        startPayPoll(target.messageId, target.sats);
+        pendingPostRef.current = null;
+        return;
+      }
       const created =
         pendingVideo !== null
           ? await postMessageVideo(session, {
@@ -1767,6 +1782,54 @@ export function ForumLoader({
     }
   };
 
+  const runComposePay = async (
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    try {
+      const target = await fetchComposeTarget(session);
+      const comment =
+        trimmed === '' ? `inReplyTo:${parentId}\n` : `inReplyTo:${parentId}\n${trimmed}`;
+      const invoice = await postMessageInvoice(session, target.messageId, sats, comment);
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(target.messageId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      startPayPoll(target.messageId, target.sats);
+    } catch (err) {
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      }
+    } finally {
+      setReplyPosting(false);
+    }
+  };
+
   const onReplyPost = (): void => {
     /* v8 ignore next 3 -- reply composer only mounts when expanded */
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
@@ -1797,6 +1860,9 @@ export function ForumLoader({
       }
       if (parsed === 'empty' && (exempt || authorUnknown)) {
         return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
+      }
+      if (parsed === 'empty' && !exempt) {
+        return runComposePay(trimmed, parentId, 1, isRetry);
       }
       const sats = parsed === 'empty' ? 1 : parsed;
       return runPaidReply(trimmed, parentId, sats, parentSats, isRetry);

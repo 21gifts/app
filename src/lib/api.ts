@@ -1571,6 +1571,31 @@ export async function postMessageVideo(
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link messageInvoiceSchema}.
  */
+export async function fetchComposeTarget(
+  sessionToken: string,
+): Promise<{ messageId: string; sats: number }> {
+  const response = await fetch('/messages/compose-target', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  const body: unknown = await response.json();
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    typeof (body as { messageId?: unknown }).messageId !== 'string' ||
+    typeof (body as { sats?: unknown }).sats !== 'number'
+  ) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return {
+    messageId: (body as { messageId: string }).messageId,
+    sats: (body as { sats: number }).sats,
+  };
+}
+
 export async function postMessageInvoice(
   sessionToken: string,
   messageId: string,

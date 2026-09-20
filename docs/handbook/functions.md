@@ -2551,12 +2551,26 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported | choice`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. After a choice button, `retry` repeats that ceremony. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
+## Function: fetchComposeTarget
+
+- **Purpose:** GET `/messages/compose-target` so a basis account can invoice 1 sat to 21.gifts (the platform profile note) before posting or replying.
+- **Inputs:** session token.
+- **Returns / side effects:** `{ messageId, sats }` of the payable platform profile note, or throws collapsed copy.
+- **Used by:** `ForumLoader`.
+
 ## Function: postMessageInvoice
 
 - **Purpose:** POST `/messages/:id/invoice` with `{ sats }` or `{ sats, text }` when the visitor attached a reply comment. Empty `text` is omitted.
 - **Inputs:** session token, message id, sats, optional text.
 - **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy. 409 `missing_requirements` throws `MissingRequirementsError`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
+
+## Function: proxyMessagesComposeTargetGet
+
+- **Purpose:** Same-origin proxy for `GET /messages/compose-target`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/messages/compose-target/route.ts`.
 
 ## Function: proxyMessagesInvoicePost
 
