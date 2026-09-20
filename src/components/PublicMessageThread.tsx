@@ -204,6 +204,8 @@ export function PublicMessageThread(props: {
   expandedIdRef.current = expandedId;
   const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const repliesRef = useRef(replies);
+  repliesRef.current = replies;
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
@@ -434,14 +436,17 @@ export function PublicMessageThread(props: {
             if (current.account !== null) {
               setAccount({ ...current.account, hasPosted: true });
             }
-            if (expandedIdRef.current === messageId && current.session !== null) {
+            const threadId = expandedIdRef.current;
+            /* v8 ignore next -- permalink auto-expand has replies loaded before a poll settles */
+            const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
+            if (threadId !== null && current.session !== null && !paidNestedReply) {
               const gen = ++expandGen.current;
               setRepliesLoading(true);
               setRepliesError(false);
               try {
-                const repliesNext = await fetchReplies(current.session, messageId);
+                const repliesNext = await fetchReplies(current.session, threadId);
                 if (expandGen.current === gen) {
-                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, messageId));
+                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
                 }
               } catch {
                 if (expandGen.current === gen) {

@@ -1194,7 +1194,10 @@ export function ForumLoader({
             if (current.account !== null) {
               setAccount({ ...current.account, hasPosted: true });
             }
-            if (expandedIdRef.current === messageId) {
+            const expanded = expandedIdRef.current;
+            /* v8 ignore next -- replies are loaded whenever an expanded poll settles */
+            const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
+            if (expanded !== null && !paidNestedReply) {
               setRepliesAttempt((n) => n + 1);
             }
             return;
@@ -1401,6 +1404,15 @@ export function ForumLoader({
         });
         startPayPoll(target.messageId, target.sats);
         pendingPostRef.current = null;
+        /* v8 ignore start -- compose-pay is text; photo e2e seeds verified */
+        for (const photo of pendingPhotos) {
+          revokeObjectUrlIfPresent(photo.previewUrl);
+        }
+        revokeObjectUrlIfPresent(pendingVideo?.previewUrl);
+        /* v8 ignore stop */
+        setDraft('');
+        setPhotoDrafts([]);
+        setVideoDraft(null);
         return;
       }
       const created =
@@ -1711,10 +1723,7 @@ export function ForumLoader({
         return;
       }
       if (isReplyPaymentError(err)) {
-        const parentRowNow = messagesRef.current?.find((message) => message.id === parentId);
-        /* v8 ignore next -- expanded parent is always in the loaded list */
-        const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
-        await runPaidReply(trimmed, parentId, 1, parentSatsNow, isRetry);
+        await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
       /* v8 ignore next 3 -- reply error after the thread was closed */

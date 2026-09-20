@@ -3519,11 +3519,22 @@ test('Function: proxyMessagesComposeTargetGet — GET /messages/compose-target w
   expect(res.status()).toBe(401);
 });
 
-test('Function: fetchComposeTarget — GET /messages/compose-target without a session is 401', async ({
+test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', async ({
+  page,
   request,
 }) => {
-  const res = await request.get('/messages/compose-target');
-  expect(res.status()).toBe(401);
+  await reachWelcome(page, request);
+  await page.getByLabel('Your message').fill('Hello gifts');
+  const compose = page.waitForRequest(
+    (req) => req.method() === 'GET' && new URL(req.url()).pathname === '/messages/compose-target',
+  );
+  const invoice = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await page.getByRole('button', { name: 'Post' }).click();
+  await compose;
+  await invoice;
 });
 
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {

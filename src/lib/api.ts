@@ -1557,19 +1557,13 @@ export async function postMessageVideo(
 }
 
 /**
- * Requests a BOLT11 invoice to pay a public forum message.
- *
- * Does not increment the message `sats` total — that updates only after the
- * payment is confirmed on the api.
+ * Loads the official platform profile note so a basis account can invoice
+ * 1 sat to 21.gifts before posting or replying.
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param messageId - Forum message UUID from the public JSON.
- * @param sats - Whole satoshis to pay (≥ 1).
- * @param text - Optional NIP-57 comment shown as the gift reply body.
- * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
- * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
- * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
- * {@link messageInvoiceSchema}.
+ * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`.
+ * @throws Error with collapsed visitor copy on non-2xx, or when the body is
+ * not `{ messageId, sats }`.
  */
 export async function fetchComposeTarget(
   sessionToken: string,
@@ -1596,6 +1590,21 @@ export async function fetchComposeTarget(
   };
 }
 
+/**
+ * Requests a BOLT11 invoice to pay a public forum message.
+ *
+ * Does not increment the message `sats` total — that updates only after the
+ * payment is confirmed on the api.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param messageId - Forum message UUID from the public JSON.
+ * @param sats - Whole satoshis to pay (≥ 1).
+ * @param text - Optional NIP-57 comment shown as the gift reply body.
+ * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
+ * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
+ * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
+ * {@link messageInvoiceSchema}.
+ */
 export async function postMessageInvoice(
   sessionToken: string,
   messageId: string,

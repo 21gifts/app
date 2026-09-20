@@ -2322,6 +2322,7 @@ describe('ForumLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'Hello gifts');
     });
     expect(postMock).not.toHaveBeenCalled();
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
   });
 
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
@@ -4426,6 +4427,48 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('refetches the open thread after a compose-pay confirms', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    expect(repliesMock).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(publicFetchMock).toHaveBeenCalledWith(
+        'fee-note',
+        expect.objectContaining({ sinceSats: 0 }),
+      );
+    });
+    await waitFor(() => {
+      expect(repliesMock.mock.calls.length).toBeGreaterThan(1);
+    });
+  });
+
   it('opens the overlay when a compose-pay invoice is missing a name', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue([FOREIGN]);
@@ -5153,7 +5196,8 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi');
     });
     expect(postMock).toHaveBeenCalled();
   });
@@ -5274,7 +5318,8 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'own' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'own');
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m1\nown');
     });
   });
 
