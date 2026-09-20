@@ -64,6 +64,18 @@ describe('ForumNoteText', () => {
     expect(classes).not.toContain('text-app-fg');
   });
 
+  it('does not treat a substring of text-app-btn-fg as button foreground', () => {
+    renderWithLocale(
+      <ForumNoteText
+        text={`${'a'.repeat(280)} TAILWORD`}
+        className="mt-2 whitespace-pre-wrap text-sm text-app-btn-fg/70"
+      />,
+    );
+    const classes = screen.getByRole('button', { name: 'Show more' }).className.split(/\s+/);
+    expect(classes).toContain('text-app-fg');
+    expect(classes).not.toContain('text-app-btn-fg');
+  });
+
   it('uses the German Show more label', () => {
     renderWithLocale(<ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" />, 'de');
     expect(screen.getByRole('button', { name: 'Mehr anzeigen' })).toBeTruthy();

@@ -277,7 +277,9 @@ export function ForumQuotedBody({
       {displayText !== '' ? (
         <NoteTranslate
           text={displayText}
-          {...(className.includes('text-app-btn-fg') ? { tone: 'onButton' as const } : {})}
+          {...(className.split(/\s+/).includes('text-app-btn-fg')
+            ? { tone: 'onButton' as const }
+            : {})}
         />
       ) : null}
       {resolvedNotes.map((note) => (

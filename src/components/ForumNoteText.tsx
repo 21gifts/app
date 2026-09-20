@@ -50,7 +50,7 @@ export function ForumNoteText({
           <button
             type="button"
             className={
-              className.includes('text-app-btn-fg')
+              className.split(/\s+/).includes('text-app-btn-fg')
                 ? 'text-sm font-medium text-app-btn-fg underline underline-offset-2'
                 : 'text-sm font-medium text-app-fg underline underline-offset-2'
             }
