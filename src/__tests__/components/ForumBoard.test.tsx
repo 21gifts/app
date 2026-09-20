@@ -2347,9 +2347,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe(
-      'Enter a whole number to ask for.',
-    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number to ask for.');
   });
 
   it('renders ForumGoalBar 110% on a top-level note with a goal', () => {

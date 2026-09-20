@@ -227,7 +227,14 @@ describe('PublicMessageLoader', () => {
   it('does not show the goal bar on a reply even when goalSats is set', async () => {
     fetchMessage.mockResolvedValue({ ...sample, text: 'Parent note' });
     fetchRepliesPublic.mockResolvedValue([
-      { ...sample, id: '33333333-3333-4333-8333-333333333333', parentId: MESSAGE_ID, sats: 23100, goalSats: 21000, text: 'Reply gift' },
+      {
+        ...sample,
+        id: '33333333-3333-4333-8333-333333333333',
+        parentId: MESSAGE_ID,
+        sats: 23100,
+        goalSats: 21000,
+        text: 'Reply gift',
+      },
     ]);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {

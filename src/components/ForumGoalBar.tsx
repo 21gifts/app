@@ -28,15 +28,17 @@ function forumGoalRatio(sats: number, goalSats: number): number {
  * at most one extra track width (visual max 200%). The percent label is not
  * capped. Lengths use SVG `width` / `x` attributes, not React `style`.
  *
- * @param props.sats - Collected sats on the note.
- * @param props.goalSats - Whole-sat goal; `<= 0` → `null`.
+ * @param sats - Collected sats on the note.
+ * @param goalSats - Whole-sat goal; `<= 0` → `null`.
  * @returns The bar, or `null`.
  */
-export function ForumGoalBar(props: {
+export function ForumGoalBar({
+  sats,
+  goalSats,
+}: {
   sats: number;
   goalSats: number;
 }): ReactElement | null {
-  const { sats, goalSats } = props;
   const { t } = useTranslations();
   if (!Number.isFinite(goalSats) || goalSats <= 0) {
     return null;
@@ -58,14 +60,7 @@ export function ForumGoalBar(props: {
       >
         <rect x="0" y="0" width="100" height="8" rx="4" className="fill-app-border" />
         {fillWidth > 0 ? (
-          <rect
-            x="0"
-            y="0"
-            width={fillWidth}
-            height="8"
-            rx="4"
-            className="fill-app-accent"
-          />
+          <rect x="0" y="0" width={fillWidth} height="8" rx="4" className="fill-app-accent" />
         ) : null}
         {overflowWidth > 0 ? (
           <rect

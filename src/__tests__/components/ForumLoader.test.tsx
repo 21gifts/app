@@ -395,9 +395,7 @@ describe('ForumLoader', () => {
     for (const value of ['abc', '0', '10000001']) {
       fireEvent.change(screen.getByLabelText('Ask'), { target: { value } });
       fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-      expect(screen.getByRole('alert').textContent).toBe(
-        'Enter a whole number to ask for.',
-      );
+      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number to ask for.');
       expect(postMock).not.toHaveBeenCalled();
     }
   });
