@@ -40,31 +40,12 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
+import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
 const PAY_POLL_MS = 2000;
-
-/**
- * True when the signed-in account may reply without paying.
- *
- * @param account - Live account, or `null` when the snapshot is missing.
- * @param parentAccountId - Parent note `accountId`, or the profile id when omitted.
- * @returns Whether `POST /messages` is allowed without a zap.
- */
-function isReplyPaymentExempt(
-  account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
-  parentAccountId: string | undefined,
-): boolean {
-  if (account === null) {
-    return false;
-  }
-  if (account.role === 'founder' || account.role === 'moderator' || account.role === 'verified') {
-    return true;
-  }
-  return parentAccountId !== undefined && parentAccountId === account.id;
-}
 
 /** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;
@@ -1119,7 +1100,7 @@ export function MemberProfileScreen({
             </Button>
           </div>
           {account !== null &&
-          (account.role === 'founder' || account.role === 'moderator') &&
+          roleAtLeast(account.role, 'moderator') &&
           listedProfile.id !== account.id ? (
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
           ) : null}

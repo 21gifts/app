@@ -764,81 +764,93 @@ describe('InboxLoader', () => {
     expect(screen.queryByText('Hello mods')).toBeNull();
   });
 
-  it('opens an unlisted PM for a moderator after the staff-room id differs', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, role: 'moderator' },
-    });
-    searchParams.set('c', 'missing');
-    listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
-    renderWithLocale(<InboxLoader />);
-    expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    expect(groupMock).toHaveBeenCalledWith('sess');
-    await waitFor(() => {
-      expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
-    });
-  });
-
-  it('shows neutral loading, not the list, while the staff-room lookup runs', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, role: 'moderator' },
-    });
-    searchParams.set('c', 'missing');
-    listMock.mockResolvedValue([OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
-    let resolveGroup!: (value: Conversation) => void;
-    groupMock.mockImplementation(
-      () =>
-        new Promise<Conversation>((resolve) => {
-          resolveGroup = resolve;
-        }),
-    );
-    renderWithLocale(<InboxLoader />);
-    await waitFor(() => {
-      expect(groupMock).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByText('Loading…')).toBeTruthy();
-    expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
-    expect(threadMock).not.toHaveBeenCalled();
-    await act(async () => {
-      resolveGroup({ ...THREAD, id: 'conv-mods', kind: 'moderator_group', name: 'Moderators' });
-    });
-    expect(await screen.findByText('Hello')).toBeTruthy();
-    expect(groupMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('opens an unlisted PM when the staff-room fetch fails', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, role: 'moderator' },
-    });
-    searchParams.set('c', 'missing');
-    listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
-    groupMock.mockRejectedValue(new Error('boom'));
-    renderWithLocale(<InboxLoader />);
-    expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    await waitFor(() => {
-      expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
-    });
-  });
-
-  it('does not open an unlisted staff-room id for a moderator', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, role: 'moderator' },
-    });
-    searchParams.set('c', 'conv-mods');
-    listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
-    renderWithLocale(<InboxLoader />);
-    expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
-    await waitFor(() => {
+  it.each(['founder', 'moderator'] as const)(
+    'opens an unlisted PM for a %s after the staff-room id differs',
+    async (role) => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, role },
+      });
+      searchParams.set('c', 'missing');
+      listMock.mockResolvedValue([THREAD]);
+      threadMock.mockResolvedValue([MESSAGE]);
+      renderWithLocale(<InboxLoader />);
+      expect(await screen.findByLabelText('Your message')).toBeTruthy();
       expect(groupMock).toHaveBeenCalledWith('sess');
-    });
-    expect(threadMock).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText('Your message')).toBeNull();
-  });
+      await waitFor(() => {
+        expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
+      });
+    },
+  );
+
+  it.each(['founder', 'moderator'] as const)(
+    'shows neutral loading, not the list, while the staff-room lookup runs as %s',
+    async (role) => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, role },
+      });
+      searchParams.set('c', 'missing');
+      listMock.mockResolvedValue([OLDER]);
+      threadMock.mockResolvedValue([MESSAGE]);
+      let resolveGroup!: (value: Conversation) => void;
+      groupMock.mockImplementation(
+        () =>
+          new Promise<Conversation>((resolve) => {
+            resolveGroup = resolve;
+          }),
+      );
+      renderWithLocale(<InboxLoader />);
+      await waitFor(() => {
+        expect(groupMock).toHaveBeenCalledTimes(1);
+      });
+      expect(screen.getByText('Loading…')).toBeTruthy();
+      expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
+      expect(threadMock).not.toHaveBeenCalled();
+      await act(async () => {
+        resolveGroup({ ...THREAD, id: 'conv-mods', kind: 'moderator_group', name: 'Moderators' });
+      });
+      expect(await screen.findByText('Hello')).toBeTruthy();
+      expect(groupMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each(['founder', 'moderator'] as const)(
+    'opens an unlisted PM when the staff-room fetch fails as %s',
+    async (role) => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, role },
+      });
+      searchParams.set('c', 'missing');
+      listMock.mockResolvedValue([THREAD]);
+      threadMock.mockResolvedValue([MESSAGE]);
+      groupMock.mockRejectedValue(new Error('boom'));
+      renderWithLocale(<InboxLoader />);
+      expect(await screen.findByLabelText('Your message')).toBeTruthy();
+      await waitFor(() => {
+        expect(threadMock).toHaveBeenCalledWith('sess', 'missing');
+      });
+    },
+  );
+
+  it.each(['founder', 'moderator'] as const)(
+    'does not open an unlisted staff-room id for a %s',
+    async (role) => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, role },
+      });
+      searchParams.set('c', 'conv-mods');
+      listMock.mockResolvedValue([THREAD]);
+      threadMock.mockResolvedValue([MESSAGE]);
+      renderWithLocale(<InboxLoader />);
+      expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
+      await waitFor(() => {
+        expect(groupMock).toHaveBeenCalledWith('sess');
+      });
+      expect(threadMock).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText('Your message')).toBeNull();
+    },
+  );
 });

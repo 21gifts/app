@@ -42,6 +42,7 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
+import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -87,29 +88,6 @@ function isAuthorWalletError(err: unknown): boolean {
     return false;
   }
   return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
-}
-
-/**
- * True when the signed-in account may reply without paying.
- *
- * Parent author, moderator, founder, and verified are exempt.
- *
- * @param account - Live account, or `null` when the snapshot is missing.
- * @param parentAccountId - Parent note `accountId`, if the api sent one.
- *   Missing id is not treated as exempt; the caller may POST unpaid and map 403.
- * @returns Whether `POST /messages` is allowed without a zap.
- */
-function isReplyPaymentExempt(
-  account: { id: string; role: 'basis' | 'verified' | 'moderator' | 'founder' } | null,
-  parentAccountId: string | undefined,
-): boolean {
-  if (account === null) {
-    return false;
-  }
-  if (account.role === 'founder' || account.role === 'moderator' || account.role === 'verified') {
-    return true;
-  }
-  return parentAccountId !== undefined && parentAccountId === account.id;
 }
 
 /**
@@ -1594,7 +1572,7 @@ export function ForumLoader(): ReactElement | null {
         onShowNewPosts={showNewPosts}
         moderatorAppointedAvailable={moderatorAppointedId !== null}
         onShowModeratorAppointed={showModeratorAppointed}
-        {...(account !== null && (account.role === 'founder' || account.role === 'moderator')
+        {...(account !== null && roleAtLeast(account.role, 'moderator')
           ? {
               onDeleted: (messageId: string) => {
                 /* v8 ignore next 3 -- a second confirm for the same id is a remount race */

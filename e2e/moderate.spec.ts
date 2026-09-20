@@ -16,7 +16,7 @@ const HIDDEN = {
 
 async function seedAdaSession(
   page: import('@playwright/test').Page,
-  role: 'basis' | 'moderator' | 'founder' = 'basis',
+  role: 'basis' | 'verified' | 'moderator' | 'founder' = 'basis',
 ): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -65,7 +65,10 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
     'href',
     '/moderate/hidden',
   );
-  await expect(page.getByRole('link', { name: 'Moderators' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Moderators' })).toHaveAttribute(
+    'href',
+    '/moderate/group',
+  );
   await expect(page.getByText('Hidden by Ada')).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
@@ -190,7 +193,7 @@ async function stubModeratorGroup(page: import('@playwright/test').Page): Promis
   });
 }
 
-test('confirmed moderators see the Moderators hub link', async ({ page }) => {
+test('moderators see the Moderators hub link', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await page.goto('/moderate');
   await expect(page.getByRole('link', { name: 'Moderators' })).toHaveAttribute(
@@ -199,22 +202,43 @@ test('confirmed moderators see the Moderators hub link', async ({ page }) => {
   );
 });
 
-test('Function: ModeratorGroupPage — confirmed moderators see the group thread', async ({
-  page,
-}) => {
+test('Function: ModeratorGroupPage — moderators see the group thread', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroup(page);
   await page.goto('/moderate/group');
   await expect(page.getByText('Hello mods')).toBeVisible();
 });
 
-test('Function: ModeratorGroupScreen — founders see the forbidden copy', async ({ page }) => {
+test('Function: ModeratorGroupPage — founders see the group thread', async ({ page }) => {
   await seedAdaSession(page, 'founder');
+  await stubModeratorGroup(page);
   await page.goto('/moderate/group');
-  await expect(page.getByText('This room is for confirmed moderators.')).toBeVisible();
+  await expect(page.getByText('Hello mods')).toBeVisible();
 });
 
-test('Function: fetchModeratorGroup — confirmed moderators see Hello mods', async ({ page }) => {
+test('Function: ModeratorGroupScreen — basis visitors see the forbidden copy', async ({ page }) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/moderate/group');
+  await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
+});
+
+test('Function: roleAtLeast — a founder opens the Moderators tool from the hub', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'founder');
+  await stubModeratorGroup(page);
+  await page.goto('/moderate');
+  await page.getByRole('link', { name: 'Moderators' }).click();
+  await expect(page.getByText('Hello mods')).toBeVisible();
+});
+
+test('Function: roleRank — a verified member ranks below the staff room', async ({ page }) => {
+  await seedAdaSession(page, 'verified');
+  await page.goto('/moderate/group');
+  await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
+});
+
+test('Function: fetchModeratorGroup — moderators see Hello mods', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroup(page);
   await page.goto('/moderate/group');

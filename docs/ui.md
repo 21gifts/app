@@ -976,9 +976,9 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for founders and moderators.**). Staff (founder or moderator) see the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Confirmed moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Does not fetch the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for founders and moderators.**). Staff (founder or moderator) see the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Founders and moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Does not fetch the hidden list. No un-hide control.
 
-Handbook states: default hub, forbidden, moderator.
+Handbook states: default hub, forbidden.
 
 ### `/moderate/hidden`
 
@@ -988,7 +988,7 @@ Handbook states: default list, forbidden, empty, loading, error, visitor.
 
 ### `/moderate/group`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → confirmed moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Founders and other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
 
 Handbook states: default, forbidden, empty, loading, error.
 

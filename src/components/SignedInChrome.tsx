@@ -26,6 +26,7 @@ import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
+import { roleAtLeast } from '@/lib/roles';
 import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -201,7 +202,7 @@ export function SignedInChrome(): ReactElement {
           <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.trustChain')}
         </Link>
-        {account?.role === 'founder' || account?.role === 'moderator' ? (
+        {roleAtLeast(account?.role, 'moderator') ? (
           <Link
             href="/moderate"
             onClick={() => {

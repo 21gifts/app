@@ -8,17 +8,8 @@ import { Button, Card } from '@/components/ui';
 import { listHiddenMessages } from '@/lib/api';
 import type { HiddenMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
-
-/**
- * True when `role` may use the hide tool and the hidden-notes list.
- *
- * @param role - Account role, or `undefined` when the account is missing.
- * @returns Whether the visitor is a founder or moderator.
- */
-function isStaffRole(role: string | undefined): boolean {
-  return role === 'founder' || role === 'moderator';
-}
 
 /**
  * Signed-in list of hidden living-room notes.
@@ -34,7 +25,7 @@ export function HiddenNotesScreen(): ReactElement | null {
   const { t, locale } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const staff = isStaffRole(account?.role);
+  const staff = roleAtLeast(account?.role, 'moderator');
   const [messages, setMessages] = useState<HiddenMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
