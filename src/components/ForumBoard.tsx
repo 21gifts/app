@@ -1,6 +1,17 @@
 'use client';
 
-import { ArrowLeft, ArrowUp, Check, Gift, ImagePlus, Link2, Loader2, Send, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUp,
+  Check,
+  Gift,
+  ImagePlus,
+  Link2,
+  Loader2,
+  Reply,
+  Send,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -524,8 +535,9 @@ function fallbackCopy(text: string): boolean {
  * expand for oldest-first replies + reply composer (labeled Amount field;
  * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
  * text-plus-gift shows the amount under the body), copy-link control,
- * payable-reply pay sheet (Gift on nested replies and on top-level cards with
- * `parentId`; never on posts), optional inline
+ * React control on posts (`forum.react`, lucide Reply; expands the reply
+ * composer), payable-reply pay sheet (Gift on nested replies and on top-level
+ * cards with `parentId`; never on posts), optional inline
  * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
@@ -603,6 +615,7 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -1020,6 +1033,25 @@ export function ForumBoard({
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
                   {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                 </button>
+                {message.parentId === undefined ? (
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('forum.react')}
+                    title={t('forum.react')}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      if (expandedId !== message.id) {
+                        onToggleExpand(message.id);
+                      } else {
+                        replyComposerRef.current?.focus();
+                      }
+                    }}
+                  >
+                    <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  </IconButton>
+                ) : null}
                 {message.parentId !== undefined && message.payable ? (
                   <IconButton
                     type="button"
@@ -1289,6 +1321,7 @@ export function ForumBoard({
                   <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
                     <div className="flex items-end gap-2">
                       <textarea
+                        ref={replyComposerRef}
                         aria-label={t('forum.replyComposerLabel')}
                         placeholder={t('forum.replyPlaceholder')}
                         value={replyDraft}

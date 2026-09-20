@@ -283,7 +283,7 @@ export function SignedInChrome(): ReactElement {
         />
         <LogoutButton />
         <p className="px-3 py-2 text-xs text-app-muted tabular-nums lining-nums">
-          {t('app.version', { sha: getAppVersion() })}
+          {t('app.version', { version: getAppVersion() })}
         </p>
       </div>
       {showIntroduce ? (
