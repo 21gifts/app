@@ -137,6 +137,7 @@ describe('AppShell', () => {
     expect(chrome?.contains(screen.getByTestId('right'))).toBe(true);
     expect(chrome?.firstElementChild?.className).toContain('empty:hidden');
     expect(chrome?.lastElementChild?.className).toContain('empty:hidden');
+    expect(chrome?.lastElementChild?.className).toContain('ml-auto');
 
     rerender(
       <AppShell mode="fill" topLeft={null} topRight={null}>
@@ -149,6 +150,7 @@ describe('AppShell', () => {
     expect(emptyChrome?.firstElementChild?.className).toContain('empty:hidden');
     expect(emptyChrome?.firstElementChild?.childNodes.length).toBe(0);
     expect(emptyChrome?.lastElementChild?.className).toContain('empty:hidden');
+    expect(emptyChrome?.lastElementChild?.className).toContain('ml-auto');
     expect(emptyChrome?.lastElementChild?.childNodes.length).toBe(0);
   });
 

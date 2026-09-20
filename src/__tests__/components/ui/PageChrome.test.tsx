@@ -20,6 +20,7 @@ describe('PageChrome', () => {
     const chrome = main?.querySelector('[data-app-chrome]');
     expect(chrome).toBeTruthy();
     expect(chrome?.lastElementChild?.className).toContain('empty:hidden');
+    expect(chrome?.lastElementChild?.className).toContain('ml-auto');
     expect(chrome?.lastElementChild?.childNodes.length).toBe(0);
   });
 
@@ -31,6 +32,7 @@ describe('PageChrome', () => {
     );
     const chrome = container.querySelector('[data-app-chrome]');
     expect(chrome?.contains(screen.getByTestId('slot'))).toBe(true);
+    expect(chrome?.lastElementChild?.className).toContain('ml-auto');
   });
 
   it('renders topLeft in the frame chrome row', () => {
@@ -77,6 +79,7 @@ describe('PageChrome', () => {
     );
     const rightHost = container.querySelector('[data-app-chrome]')?.lastElementChild;
     expect(rightHost?.className).toContain('empty:hidden');
+    expect(rightHost?.className).toContain('ml-auto');
     expect(rightHost?.childNodes.length).toBe(0);
   });
 

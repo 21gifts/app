@@ -111,7 +111,7 @@ export function AppShell({
             <div ref={setTopLeftEl} className="flex min-w-0 items-center gap-2 empty:hidden">
               {showPageTopLeft ? topLeft : null}
             </div>
-            <div className="flex shrink-0 items-center gap-2 empty:hidden">
+            <div className="ml-auto flex shrink-0 items-center gap-2 empty:hidden">
               {hasRight ? topRight : null}
             </div>
           </div>
