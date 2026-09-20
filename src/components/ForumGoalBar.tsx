@@ -46,7 +46,7 @@ export function ForumGoalBar({
   const ratio = forumGoalRatio(sats, goalSats);
   const percent = forumGoalPercent(sats, goalSats);
   const fillWidth = Math.min(100, ratio * 100);
-  const overflowWidth = ratio > 1 ? Math.min(100, (ratio - 1) * 100) : 0;
+  const overflowWidth = percent > 100 ? Math.min(100, percent - 100) : 0;
   const percentLabel = String(percent);
   return (
     <div className="mt-2 flex items-center gap-2 overflow-visible">

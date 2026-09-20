@@ -33,6 +33,12 @@ describe('ForumGoalBar', () => {
     expect(screen.getByRole('img').querySelector('[style]')).toBeNull();
   });
 
+  it('keeps a floored 100% label orange with no green sliver', () => {
+    const { container } = renderWithLocale(<ForumGoalBar sats={21001} goalSats={21000} />);
+    expect(screen.getByText('100%')).toBeTruthy();
+    expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
+  });
+
   it('shows 110% with overflow fill', () => {
     const { container } = renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} />);
     expect(screen.getByText('110%')).toBeTruthy();
