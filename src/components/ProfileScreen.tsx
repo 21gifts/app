@@ -21,8 +21,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
- * and address forms, PushToggle (three-stage notification level plus optional
- * Web Push bell), LanguagePreferenceSwitcher, ThemeSwitcher,
+ * and address forms, PushToggle (All/Active/Mentions always; This device On/Off
+ * when Push APIs are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`

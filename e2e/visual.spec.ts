@@ -3433,6 +3433,43 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-messages-id');
   });
 
+  test('state /messages/[id] photos', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111112';
+    const jpeg = Buffer.from(
+      '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+      'base64',
+    );
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 2,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/messages/${id}/photo`, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
+    });
+    await page.route(`**/messages/${id}/photo/1.jpg`, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
+    await expect(page.getByText('1/2')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-photos');
+  });
+
   test('state /messages/[id] signed-in', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await page.addInitScript(() => {
@@ -4339,7 +4376,10 @@ test.describe('profile activity chart variants', () => {
     await seedAdaProfile(page);
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await page.goto('/profile');
-    await page.getByRole('button', { name: 'Enable notifications' }).click();
+    await page
+      .getByRole('group', { name: 'This device' })
+      .getByRole('button', { name: 'On' })
+      .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-profile-push-enable-error');
   });
@@ -5437,6 +5477,33 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: 'Messages, 2 unread' })).toBeVisible();
     await shotScreen(page, 'state-welcome-menu-inbox-unread');
+  });
+
+  test('welcome menu-moderation-unread', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await emptyForum(page);
+    await page.route('**/conversations/moderator-group', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversation: {
+            id: 'conv-mod',
+            kind: 'moderator_group',
+            name: 'Moderators',
+            lastText: 'Hello mods',
+            lastAt: '2026-08-28T15:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Moderation, 1 unread' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-moderation-unread');
   });
 
   test('welcome pay-amount', async ({ page }, testInfo) => {
@@ -6575,6 +6642,37 @@ test.describe('moderate screens', () => {
     await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
+  });
+
+  test('moderate group-unread', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await page.route('**/conversations/moderator-group', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversation: {
+            id: 'conv-mod',
+            kind: 'moderator_group',
+            name: 'Moderators',
+            lastText: 'Hello mods',
+            lastAt: '2026-08-28T15:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: true,
+          },
+        }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toBeVisible();
+    await expect(page.getByText('12%')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-unread');
   });
 
   test('moderate forbidden', async ({ page }) => {

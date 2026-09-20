@@ -941,6 +941,43 @@ test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page
   await postAndExpectPhotoRow(page, caption);
 });
 
+test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ page }) => {
+  const jpeg = Buffer.from(
+    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+    'base64',
+  );
+  await seedAdaSession(page);
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+            photoCount: 2,
+            hasVideo: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m-photo\/photo/, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'All' }).click();
+  await expect(page.getByText('1/2')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toBeVisible();
+});
+
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
   await reachWelcome(page, request);
   await page.getByRole('button', { name: 'Post' }).click();
@@ -5312,6 +5349,35 @@ test('Function: useUnreadCount — menu shows inbox unread count', async ({ page
   await expect(page.getByRole('link', { name: 'Messages, 2 unread' })).toBeVisible();
 });
 
+test('Function: useUnreadCount — menu shows moderation unread count', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  await page.route(/\/conversations\/moderator-group$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversation: {
+          id: 'conv-mod',
+          kind: 'moderator_group',
+          name: 'Moderators',
+          lastText: 'Hello mods',
+          lastAt: '2026-08-28T15:00:00.000Z',
+          lastFromMe: false,
+          lastSats: 0,
+          unread: true,
+        },
+      }),
+    });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Moderation, 1 unread' })).toBeVisible();
+});
+
 test('Function: resyncPushSubscription — signed-in chrome still shows Menu', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
@@ -6634,57 +6700,71 @@ test('Function: accountNotificationLevel — profile selects All when the field 
   await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: PushToggle — profile shows the enable notifications control', async ({ page }) => {
+test('Function: PushToggle — profile shows the this-device On/Off control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
-  await expect(page.getByText('Enable notifications')).toHaveCount(0);
+  const device = page.getByRole('group', { name: 'This device' });
+  await expect(device).toBeVisible();
+  await expect(device.getByRole('button', { name: 'Off' })).toBeVisible();
   await expect(
     page.getByRole('paragraph').getByText('Notifications', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('Off', { exact: true })).toBeVisible();
 });
 
-test('Function: vapidPublicKeyToBytes — profile shows the enable notifications control', async ({
+test('Function: vapidPublicKeyToBytes — profile shows the this-device control', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
-test('Function: registerPushWorker — profile shows the enable notifications control', async ({
-  page,
-}) => {
+test('Function: registerPushWorker — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
-test('Function: enablePush — profile shows the enable notifications control', async ({ page }) => {
+test('Function: enablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
-test('Function: disablePush — profile shows the enable notifications control', async ({ page }) => {
+test('Function: disablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
-test('Function: isStandaloneDisplay — profile shows the enable notifications control', async ({
-  page,
-}) => {
+test('Function: isStandaloneDisplay — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
-test('Function: isIosSafari — profile shows the enable notifications control', async ({ page }) => {
+test('Function: isIosSafari — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toBeVisible();
 });
 
 test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) => {

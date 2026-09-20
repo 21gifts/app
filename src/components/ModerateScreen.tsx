@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations, type LocaleContextValue } from '@/components/LocaleProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { fetchGiftStats } from '@/lib/api';
 import type { GiftStats } from '@/lib/api-types';
 import type { Locale } from '@/lib/locale';
@@ -111,10 +112,12 @@ function chartDayLabel(day: string, locale: string): string {
  *
  * Moderators see hub copy, the daily payout-goal widget (from
  * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals, and
- * Moderators tools. The Moderators control goes to `/moderate/group`.
- * Other signed-in visitors see a short forbidden message and no tools
- * list. Does not fetch hidden notes, proposals, or the group thread.
- * Renders nothing without a session.
+ * Moderators tools. The Moderators control goes to `/moderate/group` and
+ * shows a staff-room unread count when greater than zero. Other signed-in
+ * visitors see a short forbidden message and no tools list. Does not fetch
+ * hidden notes, proposals, or the group thread; unread for the Moderators
+ * control comes from {@link useUnreadCount}. Renders nothing without a
+ * session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
  */
@@ -127,6 +130,7 @@ export function ModerateScreen(): ReactElement | null {
   const [goalError, setGoalError] = useState(false);
   const [goalAttempt, setGoalAttempt] = useState(0);
   const [goalOpen, setGoalOpen] = useState(false);
+  const { moderationUnreadCount } = useUnreadCount(true, { writeBadge: false });
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -202,8 +206,22 @@ export function ModerateScreen(): ReactElement | null {
         </li>
         <li className="flex w-full flex-col items-center gap-3">
           <p className="text-center text-sm text-app-muted">{t('moderate.groupLead')}</p>
-          <ButtonLink href="/moderate/group" variant="secondary" size="lg">
+          <ButtonLink
+            href="/moderate/group"
+            variant="secondary"
+            size="lg"
+            {...(moderationUnreadCount > 0
+              ? {
+                  'aria-label': t('moderate.groupUnread', { count: String(moderationUnreadCount) }),
+                }
+              : {})}
+          >
             {t('moderate.groupLabel')}
+            {moderationUnreadCount > 0 ? (
+              <span className="font-semibold tabular-nums lining-nums">
+                {moderationUnreadCount}
+              </span>
+            ) : null}
           </ButtonLink>
         </li>
       </ul>

@@ -34,9 +34,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Profile with same-line given/received amounts only when that
  * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
- * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`,
- * notifications with an unread count when greater than zero, messages with an
- * inbox unread count when greater than zero, contact, optional PWA install,
+ * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
+ * with a staff-room unread count when greater than zero, notifications with an
+ * unread count when greater than zero, messages with an inbox unread count
+ * when greater than zero, contact, optional PWA install,
  * and log out). The Menu ends with a quiet
  * Version line (`app.version` / `getAppVersion()`). When onboarding
  * is complete and `hasPosted` is false, also mounts
@@ -59,7 +60,7 @@ export function SignedInChrome(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { donatedSats, receivedSats, loading } = useAccountTotals();
-  const { unreadCount, inboxUnreadCount } = useUnreadCount(open);
+  const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
   const showIntroduce =
     account !== null &&
     account.setup === null &&
@@ -205,6 +206,11 @@ export function SignedInChrome(): ReactElement {
         {roleAtLeast(account?.role, 'moderator') ? (
           <Link
             href="/moderate"
+            aria-label={
+              moderationUnreadCount > 0
+                ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
+                : t('nav.moderate')
+            }
             onClick={() => {
               setOpen(false);
             }}
@@ -212,6 +218,11 @@ export function SignedInChrome(): ReactElement {
           >
             <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {t('nav.moderate')}
+            {moderationUnreadCount > 0 ? (
+              <span className="ml-auto font-semibold tabular-nums lining-nums">
+                {moderationUnreadCount}
+              </span>
+            ) : null}
           </Link>
         ) : null}
         <Link

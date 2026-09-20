@@ -570,6 +570,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-moderation-unread',
+    image: 'welcome-menu-moderation-unread.png',
+    visual: 'state-welcome-menu-moderation-unread',
+    needle: "getByRole('link', { name: 'Moderation, 1 unread' })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',
@@ -1207,6 +1214,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate',
+    id: 'group-unread',
+    image: 'moderate-group-unread.png',
+    visual: 'state-moderate-group-unread',
+    needle: "getByRole('link', { name: 'Moderators, 1 unread' })",
+  },
+  {
+    route: '/moderate',
     id: 'forbidden',
     image: 'moderate-forbidden.png',
     visual: 'state-moderate-forbidden',
@@ -1379,6 +1393,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id.png',
     visual: 'screen-messages-id',
     needle: 'Hello from Ada',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'photos',
+    image: 'messages-id-photos.png',
+    visual: 'state-messages-id-photos',
+    needle: 'state-messages-id-photos',
   },
   {
     route: '/messages/[id]',
