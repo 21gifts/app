@@ -807,7 +807,7 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Composer
 
-**Anatomy.** Top-level forum note: column with optional Ask `Field` (`forum.askAmountLabel`) above a `flex items-center gap-2` row. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
+**Anatomy.** Top-level forum note: column with a `flex items-center gap-2` row and an optional Ask `Field` (`forum.askAmountLabel`) on a second row under it. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
 
 - Ask (forum note only): `Field` `forum.askAmountLabel`, `inputMode="numeric"`. Empty = no goal. Invalid input sets `formError` `ask`.
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer, and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
