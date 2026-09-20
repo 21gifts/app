@@ -1726,8 +1726,8 @@ test.describe('onboarding screens', () => {
     const group = page.getByRole('group', { name: 'Fiat currency' }).last();
     await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
     await group.scrollIntoViewIfNeeded();
-    // Viewport-only capture after document scroll keeps the Fiat currency row
-    // in frame.
+    // Viewport-only capture after AppShell scroller scroll keeps the Fiat
+    // currency row in frame.
     await shotScreen(page, 'state-profile-fiat', false);
   });
 
