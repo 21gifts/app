@@ -100,7 +100,7 @@ function QuotedForumNote({
         href={`/messages/${note.id}`}
         aria-label={
           note.via === 'nostr'
-            ? t('forum.quotedNoteVisitor', { name: note.name })
+            ? t('forum.quotedNoteExternal', { name: note.name })
             : t('forum.quotedNote', { name: note.name })
         }
         className="block"

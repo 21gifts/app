@@ -2519,7 +2519,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toBe('Diese Person hat 21.gifts gegründet.');
   });
 
-  it('shows a Visitor badge and hint on a top-level note', () => {
+  it('shows an External badge and hint on a top-level note', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -2535,7 +2535,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const tag = screen.getByRole('button', { name: 'Visitor' });
+    const tag = screen.getByRole('button', { name: 'External' });
     expect(tag.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
@@ -2605,7 +2605,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
 
-  it('shows a Visitor badge and hint on a reply and keeps a url as plain text', () => {
+  it('shows an External badge and hint on a reply and keeps a url as plain text', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -2636,7 +2636,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    const tag = screen.getByRole('button', { name: 'Visitor' });
+    const tag = screen.getByRole('button', { name: 'External' });
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Robin')).toBeTruthy();
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
@@ -2713,12 +2713,12 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Visitor' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'External' })).toBeTruthy();
     expect(screen.getByText('send ₿69')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
-  it('localizes the Visitor badge', () => {
+  it('localizes the External badge', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -2735,8 +2735,8 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Besucher' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Besucher' }));
+    expect(screen.getByRole('button', { name: 'Extern' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Extern' }));
     expect(screen.getByRole('status').textContent).toContain('anderen App');
   });
 
@@ -3284,7 +3284,7 @@ describe('ForumBoard', () => {
     });
   });
 
-  it('copies a reply link using its parentId', async () => {
+  it('labels the copy control of a reply shown as a feed card and copies its own permalink', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -3292,7 +3292,7 @@ describe('ForumBoard', () => {
     });
     renderWithLocale(
       <ForumBoard
-        messages={[{ ...SAMPLE, id: 'reply-1', parentId: 'parent-1' }]}
+        messages={[{ ...SAMPLE, id: 'r-feed', parentId: 'parent-1' }]}
         error={false}
         loading={false}
         posting={false}
@@ -3305,10 +3305,426 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    expect(screen.queryByRole('button', { name: 'Copy link to this note' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this reply' }));
     await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/parent-1`);
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/r-feed`);
+      expect(
+        screen.getByRole('button', { name: 'Copy link to this reply' }).getAttribute('data-copied'),
+      ).toBe('true');
     });
+  });
+
+  it("copies a reply's own permalink", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-own-link',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-own-link"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/r-own-link`);
+      expect(
+        within(replyCard)
+          .getByRole('button', { name: 'Copy link to this reply' })
+          .getAttribute('data-copied'),
+      ).toBe('true');
+    });
+    expect(
+      screen.getByRole('button', { name: 'Copy link to this note' }).getAttribute('data-copied'),
+    ).toBeNull();
+    expect(screen.queryByText('Copy link to this reply')).toBeNull();
+  });
+
+  it('falls back to execCommand for a reply permalink when the clipboard write rejects', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[
+            {
+              id: 'r-fallback',
+              name: 'Bob',
+              text: 'A reply',
+              createdAt: '2026-08-28T12:30:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              photoCount: 0,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ]}
+          {...modeProps('all')}
+        />,
+      );
+      const replyCard = document.querySelector('[data-reply-id="r-fallback"]') as HTMLElement;
+      fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+      await waitFor(() => {
+        expect(execCommand).toHaveBeenCalledWith('copy');
+        expect(
+          within(replyCard)
+            .getByRole('button', { name: 'Copy link to this reply' })
+            .getAttribute('data-copied'),
+        ).toBe('true');
+      });
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/messages/r-fallback`);
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+      Object.defineProperty(document, 'execCommand', {
+        configurable: true,
+        value: originalExecCommand,
+      });
+      if (originalClipboard === undefined) {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      } else {
+        Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      }
+    }
+  });
+
+  it('leaves a reply copy control unmarked when both copy paths fail', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => false);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[
+            {
+              id: 'r-copy-fails',
+              name: 'Bob',
+              text: 'A reply',
+              createdAt: '2026-08-28T12:30:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              photoCount: 0,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ]}
+          {...modeProps('all')}
+        />,
+      );
+      const replyCard = document.querySelector('[data-reply-id="r-copy-fails"]') as HTMLElement;
+      fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+      await waitFor(() => {
+        expect(errorSpy).toHaveBeenCalledWith('Copy link failed');
+      });
+      expect(execCommand).toHaveBeenCalledWith('copy');
+      expect(
+        within(replyCard)
+          .getByRole('button', { name: 'Copy link to this reply' })
+          .getAttribute('data-copied'),
+      ).toBeNull();
+    } finally {
+      errorSpy.mockRestore();
+      Object.defineProperty(document, 'execCommand', {
+        configurable: true,
+        value: originalExecCommand,
+      });
+      if (originalClipboard === undefined) {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      } else {
+        Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      }
+    }
+  });
+
+  it('shows the reply copy control alone with the mt-2 row class when not payable or deletable', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-plain',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-plain"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(copyButton.parentElement?.className).toBe('mt-2');
+  });
+
+  it('shows the flex row class when a payable reply also has the copy control', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-payable',
+            name: 'Bob',
+            text: 'A payable reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-payable"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+  });
+
+  it('shows the flex row class when a deletable reply also has the copy control', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-deletable',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-deletable"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+  });
+
+  it('keeps the flex row class for a viewer without the trash when the board was given onDeleted', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-no-trash',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        onDeleted={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-no-trash"]') as HTMLElement;
+    const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
+    expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+  });
+
+  it('does not toggle the note card when clicking the reply copy control', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        onToggleExpand={onToggleExpand}
+        replies={[
+          {
+            id: 'r-stop',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-stop"]') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy link to this reply' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('shows the reply composer only when expanded', () => {

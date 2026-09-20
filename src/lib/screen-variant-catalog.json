@@ -1002,9 +1002,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/moderate/hidden:visitor",
-    "label": "/moderate/hidden visitor",
-    "visual": "state-moderate-hidden-visitor",
+    "id": "/moderate/hidden:external",
+    "label": "/moderate/hidden external",
+    "visual": "state-moderate-hidden-external",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1158,9 +1158,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:expanded-visitor",
-    "label": "/welcome expanded-visitor",
-    "visual": "state-welcome-expanded-visitor",
+    "id": "/welcome:expanded-external",
+    "label": "/welcome expanded-external",
+    "visual": "state-welcome-expanded-external",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1173,6 +1173,12 @@
     "id": "/welcome:copy",
     "label": "/welcome copy",
     "visual": "state-welcome-copy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reply-copy",
+    "label": "/welcome reply-copy",
+    "visual": "state-welcome-reply-copy",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1260,9 +1266,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/messages/[id]:visitor-reply",
-    "label": "/messages/[id] visitor-reply",
-    "visual": "state-messages-id-visitor-reply",
+    "id": "/messages/[id]:external-reply",
+    "label": "/messages/[id] external-reply",
+    "visual": "state-messages-id-external-reply",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
