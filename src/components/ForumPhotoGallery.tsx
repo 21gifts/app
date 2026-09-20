@@ -8,6 +8,7 @@ import {
   type ReactElement,
   type UIEvent,
 } from 'react';
+import { useTranslations } from '@/components/LocaleProvider';
 
 /** One loaded still in {@link ForumPhotoGallery}. */
 export type ForumPhotoGalleryItem = {
@@ -58,6 +59,7 @@ export function ForumPhotoGallery({
   className,
   onPhotoClick,
 }: ForumPhotoGalleryProps): ReactElement | null {
+  const { t } = useTranslations();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
@@ -110,18 +112,18 @@ export function ForumPhotoGallery({
           className="pointer-events-none absolute right-2 top-2 rounded-full bg-app-card-muted/90 px-2 py-0.5 text-xs font-medium tabular-nums lining-nums text-app-fg"
           aria-hidden="true"
         >
-          {active + 1}/{photos.length}
+          {t('forum.galleryPosition', { current: active + 1, total: photos.length })}
         </div>
       </div>
       {photos.length > 1 ? (
-        <div className="mt-2 flex justify-center gap-1.5">
+        <div className="mt-2 flex justify-center gap-5">
           {photos.map((photo, i) => (
             <button
               key={photo.index}
               type="button"
-              aria-label={`${i + 1} / ${photos.length}`}
+              aria-label={t('forum.galleryDot', { current: i + 1, total: photos.length })}
               aria-current={i === active ? true : undefined}
-              className={`h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
+              className="relative isolate inline-flex h-6 w-6 items-center justify-center before:absolute before:content-[''] before:block before:-inset-2.5 before:min-h-11 before:min-w-11 before:rounded-full"
               onClick={(event) => {
                 onPhotoClick?.(event);
                 const scroller = scrollerRef.current;
@@ -133,7 +135,12 @@ export function ForumPhotoGallery({
                 scroller.scrollTo({ left: stride * i, behavior: 'smooth' });
                 setActive(i);
               }}
-            />
+            >
+              <span
+                aria-hidden="true"
+                className={`relative z-10 block h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
+              />
+            </button>
           ))}
         </div>
       ) : null}

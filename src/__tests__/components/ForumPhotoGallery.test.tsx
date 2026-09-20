@@ -47,8 +47,12 @@ describe('ForumPhotoGallery', () => {
       );
       expect(slideTokens).not.toContain('min-w-full');
     }
-    expect(screen.getByRole('button', { name: '1 / 2' }).getAttribute('aria-current')).toBe('true');
-    expect(screen.getByRole('button', { name: '2 / 2' }).getAttribute('aria-current')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Photo 1 of 2' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Photo 2 of 2' }).getAttribute('aria-current'),
+    ).toBeNull();
   });
 
   it('updates the chip when the scroller moves', () => {
@@ -75,7 +79,9 @@ describe('ForumPhotoGallery', () => {
     });
     fireEvent.scroll(scroller as HTMLElement);
     expect(screen.getByText('2/2')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '2 / 2' }).getAttribute('aria-current')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Photo 2 of 2' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
   });
 
   it('ignores scroll when layout has no stride', () => {
@@ -116,7 +122,7 @@ describe('ForumPhotoGallery', () => {
       y: 0,
       toJSON: () => undefined,
     });
-    fireEvent.click(screen.getByRole('button', { name: '2 / 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
     expect(onPhotoClick).toHaveBeenCalledTimes(1);
     expect(scrollTo).toHaveBeenCalledWith({ left: 200, behavior: 'smooth' });
     expect(screen.getByText('2/2')).toBeTruthy();
@@ -127,7 +133,7 @@ describe('ForumPhotoGallery', () => {
       <ForumPhotoGallery photos={[{ index: 0, url: 'blob:g0' }]} alt="Photo from Ada" />,
     );
     expect(screen.getByText('1/1')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: '1 / 1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Photo 1 of 1' })).toBeNull();
   });
 
   it('forwards a scroller click and omits extra class when className is empty', () => {

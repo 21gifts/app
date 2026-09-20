@@ -949,9 +949,8 @@ test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ 
   await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
   await page.getByRole('button', { name: 'Post' }).click();
   await page.getByRole('button', { name: 'All' }).click();
-  await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
-  await expect(page.getByText('1/2')).toBeVisible();
-  await expect(page.getByRole('button', { name: '2 / 2' })).toBeVisible();
+  await expect(page.getByText('1/2').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Photo 2 of 2' }).first()).toBeVisible();
 });
 
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {

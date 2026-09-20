@@ -854,12 +854,13 @@
 
 ## Function: ForumPhotoGallery
 
-- **Purpose:** Horizontal snap gallery for a note with `photoCount > 1`. Each still is an 88% slide (`min-w-[88%] shrink-0 snap-start`, `gap-3`) so the next photo peeks. A `current/total` chip sits on the visible still. Dots under the scroller jump to a still (`aria-label` `1 / n`). Empty `photos` returns `null`. Single still has the chip and no dots.
+- **Purpose:** Horizontal snap gallery for a note with `photoCount > 1`. Each still is an 88% slide (`min-w-[88%] shrink-0 snap-start`, `gap-3`) so the next photo peeks. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots under the scroller (`gap-5`, 24px paint / 44px hit slop, `forum.galleryDot`) jump to a still. Empty `photos` returns `null`. Single still has the chip and no dots.
 - **Inputs:** `photos` (`{ index, url }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`).
 - **Returns / side effects:** React element. Local scroll index only. No network. Blob `<img>` URLs from the parent.
 - **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
 
 ## Function: ForumBoard
+
 
 
 
