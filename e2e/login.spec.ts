@@ -176,7 +176,7 @@ test('login NotAllowedError shows an account choice instead of creating', async 
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in with existing account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(/\/login/);
 });
 
