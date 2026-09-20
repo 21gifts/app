@@ -21,18 +21,27 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * The home-screen app badge is the **sum** of notification unread, inbox
  * unread, and staff-room unread (`0` or `1`), written once all started
- * fetches settle (success or failure). A side that was not started, or that
- * failed, contributes `0` to the sum. A hydrating store (`session` null while
- * `loadSession()` still has a token) does not clear the badge. Logout
- * (`loadSession()` null) clears it to `0`. A cancelled fetch does not update
+ * fetches settle (success or failure), unless `options.writeBadge` is
+ * `false`. A side that was not started, or that failed, contributes `0` to
+ * the sum. A hydrating store (`session` null while `loadSession()` still has
+ * a token) does not clear the badge. Logout (`loadSession()` null) clears it
+ * to `0` when badge writes are enabled. `writeBadge: false` still fetches and
+ * returns the three counts but never calls `setUnreadAppBadge`, including
+ * that logout / session-null `0` write. A cancelled fetch does not update
  * React state or the badge. An epoch change after the fetches started skips
  * the badge write.
  *
  * @param refreshKey - Changing this value starts another fetch while signed in.
+ * @param options - Optional. Omit to keep the default badge write. When
+ * `writeBadge` is `false`, still fetches and returns the three counts but
+ * never writes the home-screen badge (including logout / session-null).
  * @returns Notification unread count, inbox unread count, and staff-room unread
  * count (`0` or `1`).
  */
-export function useUnreadCount(refreshKey: boolean): {
+export function useUnreadCount(
+  refreshKey: boolean,
+  options?: { writeBadge?: boolean },
+): {
   unreadCount: number;
   inboxUnreadCount: number;
   moderationUnreadCount: number;
@@ -40,6 +49,7 @@ export function useUnreadCount(refreshKey: boolean): {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
+  const writeBadge = options?.writeBadge !== false;
   const [unreadCount, setUnreadCount] = useState(0);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [moderationUnreadCount, setModerationUnreadCount] = useState(0);
@@ -50,7 +60,7 @@ export function useUnreadCount(refreshKey: boolean): {
       setUnreadCount(0);
       setInboxUnreadCount(0);
       setModerationUnreadCount(0);
-      if (loadSession() === null) {
+      if (writeBadge && loadSession() === null) {
         setUnreadAppBadge(0);
       }
       return () => {
@@ -118,16 +128,18 @@ export function useUnreadCount(refreshKey: boolean): {
       if (cancelled || epoch !== unreadAppBadgeEpoch()) {
         return;
       }
-      setUnreadAppBadge(
-        (notifications.ok ? notifications.unreadCount : 0) +
-          (conversations.ok ? conversations.unreadCount : 0) +
-          (moderation.ok ? moderation.unreadCount : 0),
-      );
+      if (writeBadge) {
+        setUnreadAppBadge(
+          (notifications.ok ? notifications.unreadCount : 0) +
+            (conversations.ok ? conversations.unreadCount : 0) +
+            (moderation.ok ? moderation.unreadCount : 0),
+        );
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [session, refreshKey, staff]);
+  }, [session, refreshKey, staff, writeBadge]);
 
   return { unreadCount, inboxUnreadCount, moderationUnreadCount };
 }

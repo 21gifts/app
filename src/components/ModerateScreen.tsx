@@ -130,7 +130,7 @@ export function ModerateScreen(): ReactElement | null {
   const [goalError, setGoalError] = useState(false);
   const [goalAttempt, setGoalAttempt] = useState(0);
   const [goalOpen, setGoalOpen] = useState(false);
-  const { moderationUnreadCount } = useUnreadCount(true);
+  const { moderationUnreadCount } = useUnreadCount(true, { writeBadge: false });
 
   useEffect(() => {
     if (session === null || !staff) {

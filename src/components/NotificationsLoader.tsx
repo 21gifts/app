@@ -16,8 +16,9 @@ import type { Notification } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Set the home-screen badge to remaining inbox unread plus staff-room unread
- * (`0` or `1`) after notifications became 0 (list viewed / mark-all-read).
+ * Set the home-screen badge to remaining unread: inbox unread plus staff-room
+ * unread (`0` or `1`) after notifications became 0 (list viewed /
+ * mark-all-read).
  *
  * Captures the badge epoch at start and skips the write if it changed or
  * `loadSession()` is not still `sessionToken`, after both fetches settle. A
@@ -25,7 +26,7 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * @param sessionToken - Bearer token for the signed-in session.
  */
-async function setHomeScreenBadgeToInboxUnread(sessionToken: string): Promise<void> {
+async function setHomeScreenBadgeToRemainingUnread(sessionToken: string): Promise<void> {
   const epoch = unreadAppBadgeEpoch();
   const inboxPromise = fetchConversations(sessionToken).then(
     (rows) => rows.filter((row) => row.unread).length,
@@ -81,14 +82,14 @@ export function NotificationsLoader(): ReactElement | null {
         }
         setNotifications(next.notifications);
         bumpUnreadAppBadgeEpoch();
-        void setHomeScreenBadgeToInboxUnread(session);
+        void setHomeScreenBadgeToRemainingUnread(session);
         void markAllNotificationsRead(session)
           .then(() => {
             if (useAuthStore.getState().session !== session) {
               return;
             }
             bumpUnreadAppBadgeEpoch();
-            void setHomeScreenBadgeToInboxUnread(session);
+            void setHomeScreenBadgeToRemainingUnread(session);
           })
           .catch(() => undefined);
       } catch {

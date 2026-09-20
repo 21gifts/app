@@ -79,6 +79,19 @@ function Probe({ refreshKey }: { refreshKey: boolean }): ReactElement {
   );
 }
 
+function NoBadgeProbe(): ReactElement {
+  const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(true, {
+    writeBadge: false,
+  });
+  return (
+    <>
+      <p>count:{unreadCount}</p>
+      <p>inbox:{inboxUnreadCount}</p>
+      <p>moderation:{moderationUnreadCount}</p>
+    </>
+  );
+}
+
 describe('useUnreadCount', () => {
   beforeEach(() => {
     fetchMock.mockReset();
@@ -506,5 +519,24 @@ describe('useUnreadCount', () => {
       expect(screen.getByText('count:0')).toBeTruthy();
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(1);
+  });
+
+  it('does not write the home-screen badge when writeBadge is false', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
+    conversationsMock.mockResolvedValue([UNREAD_ROW]);
+    moderationMock.mockResolvedValue(STAFF_ROOM);
+    renderWithLocale(<NoBadgeProbe />);
+    await waitFor(() => {
+      expect(screen.getByText('moderation:1')).toBeTruthy();
+      expect(screen.getByText('count:4')).toBeTruthy();
+      expect(screen.getByText('inbox:1')).toBeTruthy();
+    });
+    expect(setBadgeMock).not.toHaveBeenCalled();
+    await act(async () => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    expect(screen.getByText('moderation:0')).toBeTruthy();
+    expect(setBadgeMock).not.toHaveBeenCalled();
   });
 });
