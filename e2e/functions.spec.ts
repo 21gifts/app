@@ -3262,9 +3262,7 @@ async function expectWrongAccountHint(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 }
 
-test('Function: isWrongAccountError — leftover session shows the retry hint', async ({
-  page,
-}) => {
+test('Function: isWrongAccountError — leftover session shows the retry hint', async ({ page }) => {
   await expectWrongAccountHint(page);
 });
 
