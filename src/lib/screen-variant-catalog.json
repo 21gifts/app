@@ -1098,6 +1098,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/group:stipend",
+    "label": "/moderate/group stipend",
+    "visual": "state-moderate-group-stipend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:forbidden",
     "label": "/moderate/group forbidden",
     "visual": "state-moderate-group-forbidden",

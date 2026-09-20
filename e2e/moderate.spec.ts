@@ -280,6 +280,94 @@ async function stubModeratorGroup(page: import('@playwright/test').Page): Promis
   });
 }
 
+async function stubModeratorGroupStipend(page: import('@playwright/test').Page): Promise<void> {
+  await page.route('**/conversations/moderator-group', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversation: GROUP }),
+    });
+  });
+  await page.route('**/conversations/conv-mod', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Rose Otero',
+            text: 'Great work today, moderators!',
+            createdAt: '2026-08-28T15:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+          {
+            id: 'g1',
+            name: '21.gifts',
+            text: '21gifts moderator · Rose Otero',
+            createdAt: '2026-08-28T15:01:00.000Z',
+            fromMe: false,
+            sats: 6158,
+            giftFor: 'm1',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 6158,
+        totalBtc: '0.00006158',
+        totalUsd: '5.00',
+        totalChf: '4.00',
+        totalEur: '4.50',
+        totalPhp: '280.00',
+        giftCount: 1,
+        recipientCount: 1,
+        firstPaidAt: '2026-08-28T15:01:00.000Z',
+        lastPaidAt: '2026-08-28T15:01:00.000Z',
+        spendOverTime: [
+          {
+            day: '2026-08-28',
+            sats: 6158,
+            cumulativeSats: 6158,
+            btc: '0.00006158',
+            cumulativeBtc: '0.00006158',
+            usd: '5.00',
+            cumulativeUsd: '5.00',
+            chf: '4.00',
+            eur: '4.50',
+            php: '280.00',
+            cumulativeChf: '4.00',
+            cumulativeEur: '4.50',
+            cumulativePhp: '280.00',
+          },
+        ],
+        byRecipient: [],
+        byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+}
+
 test('moderators see the Moderators hub link', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await page.goto('/moderate');
@@ -410,4 +498,38 @@ test('Function: proxyModeratorGroupGet — GET /conversations/moderator-group wi
   request,
 }) => {
   expect((await request.get('/conversations/moderator-group')).status()).toBe(401);
+});
+
+test('Function: groupThreadGifts — the moderator group nests a stipend under its message', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'moderator');
+  await stubModeratorGroupStipend(page);
+  await page.goto('/moderate/group');
+  await expect(page.getByText('Great work today, moderators!')).toBeVisible();
+  const note = page.getByRole('note', { name: /21\.gifts/ });
+  await expect(note).toBeVisible();
+  await expect(note).toHaveAttribute('data-gift-for', 'm1');
+  await expect(note).toHaveAttribute('data-message-id', 'g1');
+});
+
+test('Function: preferredFiatSuffix — the nested stipend line shows a fiat suffix', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'moderator');
+  await stubModeratorGroupStipend(page);
+  await page.goto('/moderate/group');
+  const note = page.getByRole('note', { name: /21\.gifts/ });
+  await expect(note).toContainText('$5.00');
+});
+
+test('Function: useLatestRateDay — the moderator group thread loads a live fiat rate', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'moderator');
+  await stubModeratorGroupStipend(page);
+  const statsRequest = page.waitForRequest((req) => /\/gifts\/stats/.test(req.url()));
+  await page.goto('/moderate/group');
+  await statsRequest;
+  await expect(page.getByRole('note', { name: /21\.gifts/ })).toContainText('$5.00');
 });

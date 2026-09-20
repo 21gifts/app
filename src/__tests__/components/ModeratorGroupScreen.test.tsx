@@ -32,6 +32,7 @@ vi.mock('@/lib/api', () => ({
   fetchConversation: vi.fn(),
   postConversationMessage: vi.fn(),
   markConversationRead: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock('@/lib/app-badge', () => ({
 
 import {
   fetchConversation,
+  fetchGiftStats,
   fetchModeratorGroup,
   markConversationRead,
   postConversationMessage,
@@ -50,6 +52,7 @@ const groupMock = vi.mocked(fetchModeratorGroup);
 const threadMock = vi.mocked(fetchConversation);
 const postMock = vi.mocked(postConversationMessage);
 const markReadMock = vi.mocked(markConversationRead);
+const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
 
@@ -99,6 +102,8 @@ beforeEach(() => {
   threadMock.mockResolvedValue([MESSAGE]);
   markReadMock.mockResolvedValue(undefined);
   refreshMock.mockResolvedValue(undefined);
+  giftStatsMock.mockReset();
+  giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -327,5 +332,38 @@ describe('ModeratorGroupScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
+  });
+
+  it('shows a fiat suffix on a sats message when gift stats resolve', async () => {
+    giftStatsMock.mockResolvedValue({
+      spendOverTime: [
+        {
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        },
+      ],
+    } as never);
+    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
+  it('survives a failing stats fetch', async () => {
+    giftStatsMock.mockRejectedValueOnce(new Error('stats down'));
+    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    await waitFor(() => {
+      expect(giftStatsMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 });

@@ -569,9 +569,10 @@ export type Conversation = z.infer<typeof conversationSchema>;
  * not when another staff member sent as the platform. `text` may be empty on
  * a gift-only row (`sats > 0`). `sats` is the validated payment on that
  * message (0 for text-only). `accountId` is the optional 21.gifts sender id
- * on thread messages. For a staff viewer, `name` and optional `accountId`
- * are that actor when the api sends them. Members still see platform
- * identity (`21.gifts`) on official replies.
+ * on thread messages. `giftFor` is the optional id of the thread message this
+ * row is a paid gift for (moderator-group stipend rows). For a staff viewer,
+ * `name` and optional `accountId` are that actor when the api sends them.
+ * Members still see platform identity (`21.gifts`) on official replies.
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
@@ -582,6 +583,8 @@ export const conversationMessageSchema = z.object({
   sats: z.number().int().nonnegative(),
   /** Optional 21.gifts sender id on thread messages. */
   accountId: z.string().min(1).optional(),
+  /** Optional id of the thread message this row is a paid gift for (moderator-group stipend rows). */
+  giftFor: z.string().min(1).optional(),
 });
 
 /**

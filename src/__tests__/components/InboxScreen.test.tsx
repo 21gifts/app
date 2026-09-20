@@ -2,9 +2,10 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { InboxScreen } from '@/components/InboxScreen';
+import { InboxScreen, groupThreadGifts, type ThreadGiftGroup } from '@/components/InboxScreen';
 import type { Conversation, ConversationMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
+import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
@@ -83,6 +84,85 @@ const MESSAGE: ConversationMessage = {
   fromMe: false,
   sats: 0,
 };
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+describe('groupThreadGifts', () => {
+  it('returns one empty-gifts group per plain message in list order', () => {
+    const first = { ...MESSAGE, id: 'm1', text: 'A' };
+    const second = { ...MESSAGE, id: 'm2', text: 'B' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([first, second]);
+    expect(groups).toEqual([
+      { message: first, gifts: [] },
+      { message: second, gifts: [] },
+    ]);
+  });
+
+  it('nests one gift under its parent and drops it from the top level', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = { ...MESSAGE, id: 'g1', giftFor: 'm1', sats: 21, text: '' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([parent, gift]);
+    expect(groups).toEqual([{ message: parent, gifts: [gift] }]);
+  });
+
+  it('nests two gifts on one parent in list order', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const firstGift = { ...MESSAGE, id: 'g1', giftFor: 'm1', sats: 21, text: '' };
+    const secondGift = { ...MESSAGE, id: 'g2', giftFor: 'm1', sats: 7, text: '' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([parent, firstGift, secondGift]);
+    expect(groups).toEqual([{ message: parent, gifts: [firstGift, secondGift] }]);
+  });
+
+  it('keeps a gift with an unknown parent as a top-level group', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const orphan = { ...MESSAGE, id: 'g1', giftFor: 'missing', sats: 21, text: '' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([parent, orphan]);
+    expect(groups).toEqual([
+      { message: parent, gifts: [] },
+      { message: orphan, gifts: [] },
+    ]);
+  });
+
+  it('keeps a self-referencing giftFor as a top-level group', () => {
+    const self = { ...MESSAGE, id: 'm1', giftFor: 'm1', sats: 21, text: '' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([self]);
+    expect(groups).toEqual([{ message: self, gifts: [] }]);
+  });
+
+  it('nests a gift that appears before its parent in list order', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = { ...MESSAGE, id: 'g1', giftFor: 'm1', sats: 21, text: '' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([gift, parent]);
+    expect(groups).toEqual([{ message: parent, gifts: [gift] }]);
+  });
+
+  it('does not nest a gift whose parent is itself a gift', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = { ...MESSAGE, id: 'g1', giftFor: 'm1', sats: 21, text: '' };
+    const nested = { ...MESSAGE, id: 'g2', giftFor: 'g1', sats: 7, text: '' };
+    const groups: ThreadGiftGroup[] = groupThreadGifts([parent, gift, nested]);
+    expect(groups).toEqual([
+      { message: parent, gifts: [gift] },
+      { message: nested, gifts: [] },
+    ]);
+  });
+
+  it('never drops a message, whatever the gift links look like', () => {
+    const a = { ...MESSAGE, id: 'a', giftFor: 'b' };
+    const b = { ...MESSAGE, id: 'b', giftFor: 'a' };
+    const c = { ...MESSAGE, id: 'c', giftFor: 'c' };
+    const d = { ...MESSAGE, id: 'd', giftFor: 'missing' };
+    const groups = groupThreadGifts([a, b, c, d]);
+    const seen = groups.flatMap((group) => [group.message.id, ...group.gifts.map((g) => g.id)]);
+    expect([...seen].sort()).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
 
 describe('InboxScreen', () => {
   it('shows loading copy', () => {
@@ -1003,6 +1083,7 @@ describe('InboxScreen', () => {
     );
     expect(screen.getAllByText('send ₿21')).toHaveLength(2);
     expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
   });
 
@@ -1179,5 +1260,226 @@ describe('InboxScreen', () => {
     );
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  });
+
+  it('shows the fiat value next to the amount in the pay sheet', async () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
+        rateDay={RATE_DAY}
+      />,
+    );
+    await screen.findByRole('img', { name: 'Bitcoin payment QR code' });
+    const confirm = screen.getByText(
+      (_, node) =>
+        node?.tagName === 'P' &&
+        /\$0\.02/.test(node.textContent ?? '') &&
+        new RegExp(formatBitcoin(21).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(
+          node.textContent ?? '',
+        ),
+    );
+    expect(confirm).toBeTruthy();
+  });
+
+  it('nests a gift under the parent listitem and not as its own listitem', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    const li = items[0]!;
+    const note = within(li).getByRole('note');
+    expect(li.contains(note)).toBe(true);
+    expect(note.getAttribute('data-message-id')).toBe('g1');
+    expect(note.getAttribute('data-gift-for')).toBe('m1');
+    expect(note.textContent).toContain('Bob');
+    expect(note.textContent).toContain(formatBitcoin(21));
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
+  });
+
+  it('includes the fiat suffix on a nested gift line and aria-label', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={RATE_DAY}
+      />,
+    );
+    const note = screen.getByRole('note');
+    expect(note.textContent).toContain('$0.02');
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
+  });
+
+  it('styles a nested gift inside an own bubble with the bubble foreground', () => {
+    const parent = { ...MESSAGE, id: 'm1', fromMe: true };
+    const gift = { ...MESSAGE, id: 'g1', name: '21.gifts', text: '', sats: 21, giftFor: 'm1' };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={RATE_DAY}
+      />,
+    );
+    const note = screen.getByRole('note');
+    expect(note.closest('li')?.getAttribute('data-from-me')).toBe('true');
+    expect(note.className).toContain('border-app-btn-fg/20');
+    expect(note.querySelector('span')?.className).toContain('text-app-btn-fg/80');
+    expect(note.querySelector('time')?.className).toContain('text-app-btn-fg/70');
+  });
+
+  it('keeps a nested gift ₿-only when the rate conversion is unusable', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={{ ...RATE_DAY, usd: '0.00' }}
+      />,
+    );
+    const note = screen.getByRole('note');
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
+    expect(note.textContent).not.toContain('$0.02');
+  });
+
+  it('renders an orphan gift as its own top-level gift-only bubble', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE, { ...MESSAGE, id: 'g1', text: '', sats: 21, giftFor: 'missing' }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.getByText('send ₿21')).toBeTruthy();
+    expect(screen.getByText('Hello team')).toBeTruthy();
+  });
+
+  it('shows a fiat suffix on gift-only bubbles and the text+sats amount line', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[
+          { ...MESSAGE, id: 'g1', text: '', sats: 21, fromMe: true },
+          { ...MESSAGE, id: 'g0', text: '', sats: 21, fromMe: false },
+          { ...MESSAGE, id: 'g2', text: 'Hi', sats: 21, fromMe: false },
+        ]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={RATE_DAY}
+      />,
+    );
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    expect(items[0]?.textContent).toContain('send ₿21');
+    expect(items[1]?.textContent).toContain('send ₿21');
+    expect(items[2]?.textContent).toContain('Hi');
+    expect(items[2]?.textContent).toContain('₿21');
+    expect(screen.getAllByText('$0.02')).toHaveLength(3);
   });
 });

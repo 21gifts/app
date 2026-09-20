@@ -1354,6 +1354,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/group',
+    id: 'stipend',
+    image: 'moderate-group-stipend.png',
+    visual: 'state-moderate-group-stipend',
+    needle: 'Rose Otero',
+  },
+  {
+    route: '/moderate/group',
     id: 'forbidden',
     image: 'moderate-group-forbidden.png',
     visual: 'state-moderate-group-forbidden',

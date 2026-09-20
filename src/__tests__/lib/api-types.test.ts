@@ -506,6 +506,32 @@ describe('conversationMessageSchema', () => {
     expect(conversationMessageSchema.parse(message)).toEqual(message);
   });
 
+  it('accepts an optional giftFor', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+      sats: 0,
+      giftFor: 'm0',
+    };
+    expect(conversationMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('omits giftFor when absent', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+      sats: 0,
+    };
+    const result = conversationMessageSchema.parse(message);
+    expect(result.giftFor).toBeUndefined();
+  });
+
   it('accepts empty text with sats', () => {
     const message = {
       id: 'm1',

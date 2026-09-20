@@ -550,6 +550,7 @@ const en = {
   'inbox.you': 'You',
   'inbox.sentPreview': 'You: {text}',
   'inbox.authorProfile': 'View profile',
+  'inbox.giftForLabel': 'Paid by {name}: {amount}',
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
@@ -1180,6 +1181,7 @@ const de = {
   'inbox.you': 'Du',
   'inbox.sentPreview': 'Du: {text}',
   'inbox.authorProfile': 'Profil anzeigen',
+  'inbox.giftForLabel': 'Bezahlt von {name}: {amount}',
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
@@ -1802,6 +1804,7 @@ const es = {
   'inbox.you': 'Tú',
   'inbox.sentPreview': 'Tú: {text}',
   'inbox.authorProfile': 'Ver perfil',
+  'inbox.giftForLabel': 'Pagado por {name}: {amount}',
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
@@ -2427,6 +2430,7 @@ const fil = {
   'inbox.you': 'Ikaw',
   'inbox.sentPreview': 'Ikaw: {text}',
   'inbox.authorProfile': 'Tingnan ang profile',
+  'inbox.giftForLabel': 'Binayaran ng {name}: {amount}',
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',
