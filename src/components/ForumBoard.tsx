@@ -44,6 +44,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
@@ -134,6 +135,8 @@ export interface ForumPayInvoice {
 export interface ForumBoardProps {
   /** Loaded messages newest-first (API window), or `null` before the first successful load. */
   messages: ForumMessage[] | null;
+  /** Catalog key when `messages` is a successful empty list. Default `forum.empty`. */
+  emptyKey?: 'forum.empty' | 'shops.empty';
   /** True when the latest fetch failed. Copy comes from `forum.error`. */
   error: boolean;
   /** True while a fetch is in flight. */
@@ -522,12 +525,14 @@ function fallbackCopy(text: string): boolean {
  * frame header (`top-2`, or `top-14` for New posts when both show).
  * Optional `permalinkTargetId` rings the matching nested reply only; optional
  * `nearEndRef` attaches to the note about eight rows from the visible end.
+ * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink/truncate state.
  * @returns The forum board element.
  */
 export function ForumBoard({
   messages,
+  emptyKey = 'forum.empty',
   error,
   loading,
   refreshing = false,
@@ -813,7 +818,7 @@ export function ForumBoard({
   } else if (error && messages === null) {
     middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
-    middle = <p className="text-center text-sm text-app-muted">{t('forum.empty')}</p>;
+    middle = <p className="text-center text-sm text-app-muted">{t(emptyKey)}</p>;
   } else if (messages !== null && visible !== null && visible.length === 0) {
     middle = (
       <p className="text-center text-sm text-app-muted">
@@ -844,6 +849,8 @@ export function ForumBoard({
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const copied = copiedId === message.id;
+          const shopNote = message.parentId === undefined && isShopNote(message.text);
+          const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
 
           const stopCardToggle = (event: { stopPropagation(): void }): void => {
             event.stopPropagation();
@@ -918,6 +925,15 @@ export function ForumBoard({
                         {t('forum.via.nostr')}
                       </button>
                     ) : null}
+                    {shopNote ? (
+                      <Link
+                        href="/shops"
+                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted no-underline"
+                        onClick={stopCardToggle}
+                      >
+                        {t('forum.shopTag')}
+                      </Link>
+                    ) : null}
                   </div>
                   <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                     {formatForumTime(message.createdAt, locale)}
@@ -961,28 +977,28 @@ export function ForumBoard({
                     onPhotoClick={stopCardToggle}
                   />
                 ) : null}
-                {message.text !== '' ? (
+                {displayText !== '' ? (
                   <div className="mt-2">
                     {message.via === 'nostr' ? (
                       <>
                         {truncate ? (
                           <ForumNoteText
                             plain
-                            text={message.text}
+                            text={displayText}
                             className="whitespace-pre-wrap text-sm text-app-fg"
                           />
                         ) : (
                           <LinkedText
                             plain
-                            text={message.text}
+                            text={displayText}
                             className="whitespace-pre-wrap text-sm text-app-fg"
                           />
                         )}
-                        <NoteTranslate plain text={message.text} />
+                        <NoteTranslate plain text={displayText} />
                       </>
                     ) : (
                       <ForumQuotedBody
-                        text={message.text}
+                        text={displayText}
                         knownNotes={[...messages, ...(Array.isArray(replies) ? replies : [])]}
                         excludeId={message.id}
                         rateDay={rateDay ?? null}

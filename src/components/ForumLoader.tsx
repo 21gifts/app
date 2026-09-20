@@ -36,6 +36,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
+import { ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import {
@@ -284,7 +285,8 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
 }
 
 /**
- * Client loader for the public forum on `/welcome`.
+ * Client loader for the public forum on `/welcome`. Also used on `/shops` with
+ * `feed="shops"` (hashtag filter, no laws hint, compose appends `#21GiftsShop`).
  *
  * Reads the session and account from the auth store, fetches the first page of
  * 20 messages for the current mode with a cancelled-flag pattern matching
@@ -316,7 +318,11 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  *
  * @returns The forum board, or `null` without a session.
  */
-export function ForumLoader(): ReactElement | null {
+export function ForumLoader({
+  feed = 'living-room',
+}: {
+  feed?: 'living-room' | 'shops';
+} = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
@@ -1407,7 +1413,8 @@ export function ForumLoader(): ReactElement | null {
       setFormError('empty');
       return;
     }
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+    const body = feed === 'shops' ? ensureShopHashtag(trimmed) : trimmed;
+    if (body.length > FORUM_MESSAGE_MAX_LENGTH) {
       setFormError('tooLong');
       return;
     }
@@ -1416,7 +1423,7 @@ export function ForumLoader(): ReactElement | null {
       const pendingPhotos = photoDrafts;
       const pendingVideo = videoDraft;
       pendingPostRef.current = () => {
-        startNotePost(trimmed, pendingPhotos, pendingVideo, true);
+        startNotePost(body, pendingPhotos, pendingVideo, true);
         return Promise.resolve();
       };
       return;
@@ -1424,7 +1431,7 @@ export function ForumLoader(): ReactElement | null {
     pickGeneration.current += 1;
     const pendingPhotos = photoDrafts;
     const pendingVideo = videoDraft;
-    startNotePost(trimmed, pendingPhotos, pendingVideo, false);
+    startNotePost(body, pendingPhotos, pendingVideo, false);
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
@@ -1790,7 +1797,12 @@ export function ForumLoader(): ReactElement | null {
         />
       ) : null}
       <ForumBoard
-        messages={messages}
+        messages={
+          messages !== null && feed === 'shops'
+            ? messages.filter((row) => isShopNote(row.text))
+            : messages
+        }
+        {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
         moderatorAppointedAvailable={moderatorAppointedId !== null}
@@ -1907,7 +1919,7 @@ export function ForumLoader(): ReactElement | null {
         unpaidNewCount={
           feedMode === 'unpaid' || messages === null ? 0 : unpaidNewCount(messages, unpaidSeenAt)
         }
-        lawsVisible={lawsVisible}
+        lawsVisible={feed === 'shops' ? false : lawsVisible}
         onDismissLaws={onDismissLaws}
         expandedId={expandedId}
         onToggleExpand={onToggleExpand}

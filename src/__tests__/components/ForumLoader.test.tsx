@@ -395,6 +395,103 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
   });
 
+  it('feed="shops" lists only #21GiftsShop notes', async () => {
+    fetchMock.mockResolvedValue([
+      SAMPLE,
+      { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
+    ]);
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    expect(screen.queryByText('Hello from Ada')).toBeNull();
+    expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
+  });
+
+  it('feed="shops" shows shops.empty when no listed note is a shop', async () => {
+    fetchMock.mockResolvedValue([SAMPLE]);
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+  });
+
+  it('feed="shops" hides the laws hint even when forumLawsDismissed is false', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    expect(
+      screen.queryByText(
+        '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+      ),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+  });
+
+  it('feed="shops" appends #21GiftsShop on a top-level post', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+    });
+  });
+
+  it('feed="shops" does not duplicate #21GiftsShop when the draft already has it', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'Cafe Luna\n\n#21GiftsShop' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+    });
+  });
+
+  it('default living-room post does not append #21GiftsShop', async () => {
+    fetchMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'm2',
+      text: 'Hello',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
+    });
+  });
+
   it('dismisses the laws hint and persists via dismissForumLaws', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     dismissLawsMock.mockResolvedValue({ ...account, forumLawsDismissed: true });

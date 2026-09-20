@@ -12,6 +12,7 @@ const en = {
   'nav.handbook': 'Handbook',
   'nav.login': 'Log in',
   'nav.home': 'Home',
+  'nav.shops': 'Shops',
   'nav.legal': 'Legal & Privacy',
   'nav.rules': 'Living room rules',
   'nav.inbox': 'Messages',
@@ -414,6 +415,7 @@ const en = {
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
     'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
@@ -523,6 +525,11 @@ const en = {
   'contact.errorTooLong': 'Keep it to 500 characters',
   'contact.errorRequest': 'Could not send your message',
   'contact.rulesLink': 'Living room rules',
+
+  'shops.heading': 'Shops',
+  'shops.lead':
+    'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
+  'shops.empty': 'No shops yet — add the first one.',
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
@@ -695,6 +702,7 @@ const de = {
   'nav.handbook': 'Handbuch',
   'nav.login': 'Anmelden',
   'nav.home': 'Start',
+  'nav.shops': 'Shops',
   'nav.legal': 'Impressum & Datenschutz',
   'nav.rules': 'Wohnzimmerregeln',
   'nav.inbox': 'Posteingang',
@@ -1090,6 +1098,7 @@ const de = {
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
     'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
@@ -1202,6 +1211,11 @@ const de = {
   'contact.errorTooLong': 'Maximal 500 Zeichen',
   'contact.errorRequest': 'Nachricht konnte nicht gesendet werden',
   'contact.rulesLink': 'Wohnzimmerregeln',
+
+  'shops.heading': 'Shops',
+  'shops.lead':
+    'Fügen Sie einen Shop hinzu wie einen Wohnzimmer-Beitrag. Er erscheint hier und im Forum mit einem #Shop-Tag.',
+  'shops.empty': 'Noch keine Shops — fügen Sie den ersten hinzu.',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
@@ -1381,6 +1395,7 @@ const es = {
   'nav.handbook': 'Manual',
   'nav.login': 'Iniciar sesión',
   'nav.home': 'Inicio',
+  'nav.shops': 'Tiendas',
   'nav.legal': 'Aviso legal y privacidad',
   'nav.rules': 'Reglas del salón',
   'nav.inbox': 'Bandeja',
@@ -1771,6 +1786,7 @@ const es = {
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
     'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
@@ -1879,6 +1895,11 @@ const es = {
   'contact.errorTooLong': 'Máximo 500 caracteres',
   'contact.errorRequest': 'No se pudo enviar el mensaje',
   'contact.rulesLink': 'Reglas del salón',
+
+  'shops.heading': 'Tiendas',
+  'shops.lead':
+    'Añada una tienda igual que un mensaje del salón. Aparece aquí y en el foro con una etiqueta #Shop.',
+  'shops.empty': 'Aún no hay tiendas — añada la primera.',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
@@ -2047,6 +2068,7 @@ const fil = {
   'nav.handbook': 'Handbook',
   'nav.login': 'Mag-log in',
   'nav.home': 'Home',
+  'nav.shops': 'Mga Tindahan',
   'nav.legal': 'Legal at Privacy',
   'nav.rules': 'Mga patakaran sa living room',
   'nav.inbox': 'Mga mensahe',
@@ -2441,6 +2463,7 @@ const fil = {
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
     'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
@@ -2555,6 +2578,11 @@ const fil = {
   'contact.errorTooLong': 'Hanggang 500 na karakter',
   'contact.errorRequest': 'Hindi maipadala ang mensahe',
   'contact.rulesLink': 'Mga patakaran sa living room',
+
+  'shops.heading': 'Mga Tindahan',
+  'shops.lead':
+    'Magdagdag ng shop gaya ng isang living-room post. Lilitaw ito rito at sa forum na may #Shop na tag.',
+  'shops.empty': 'Wala pang mga shop — magdagdag ng una.',
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',
