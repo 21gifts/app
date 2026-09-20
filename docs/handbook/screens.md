@@ -549,7 +549,7 @@ On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row 
 
 ### Variant: photos
 
-On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) and the attach control visible in the composer.
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in a horizontal snap scroller (first still in view, swipe/scroll for the next) and the attach control visible in the composer.
 
 ![21.gifts welcome photos](images/welcome-photos.png)
 
@@ -561,7 +561,7 @@ After a successful post of caption **Hello with this photo.** plus a JPEG: the r
 
 ### Variant: photos-and-text
 
-On **All**: forum row from Ada with two stills (**Photo from Ada**) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+On **All**: forum row from Ada with two stills (**Photo from Ada**) in a horizontal snap scroller (first still in view, swipe/scroll for the next) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
 
 ![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 
@@ -828,7 +828,7 @@ Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto
 
 ### Variant: posts-open-photos
 
-Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) above the text, same ForumBoard paint as `/welcome` `photos`.
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in a horizontal snap scroller (first still in view, swipe/scroll for the next) above the text, same ForumBoard paint as `/welcome` `photos`.
 
 ![21.gifts member posts open with photos](images/members-posts-open-photos.png)
 

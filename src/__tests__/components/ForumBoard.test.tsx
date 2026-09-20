@@ -1109,6 +1109,63 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('listitem').getAttribute('data-message-id')).toBe('m-photo');
   });
 
+  it('renders a horizontal snap gallery when photoCount is greater than one', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            id: 'm-gallery',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+            photoCount: 2,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-gallery:0': 'blob:g0', 'm-gallery:1': 'blob:g1' }}
+        {...modeProps('all')}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos).toHaveLength(2);
+    expect(photos[0]?.getAttribute('data-photo-index')).toBe('0');
+    expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
+    const scroller = photos[0]?.parentElement?.parentElement;
+    expect(scroller?.contains(photos[1] ?? null)).toBe(true);
+    const scrollerTokens = (scroller?.className ?? '').split(/\s+/);
+    expect(scrollerTokens).toEqual(
+      expect.arrayContaining([
+        'flex',
+        'snap-x',
+        'snap-mandatory',
+        'overflow-x-auto',
+        'overscroll-x-contain',
+      ]),
+    );
+    expect(scrollerTokens).not.toContain('flex-col');
+    for (const photo of photos) {
+      const slideTokens = (photo.parentElement?.className ?? '').split(/\s+/);
+      expect(slideTokens).toEqual(
+        expect.arrayContaining(['w-full', 'min-w-full', 'shrink-0', 'snap-start']),
+      );
+    }
+  });
+
   it('renders omitted photoCount as a photo or as text depending on hasPhoto', () => {
     renderWithLocale(
       <ForumBoard

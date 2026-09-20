@@ -971,17 +971,24 @@ export function ForumBoard({
                     onClick={stopCardToggle}
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
-                  <div>
+                  <div
+                    className="mt-2 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
+                    onClick={stopCardToggle}
+                  >
                     {loadedPhotoUrls.map(({ index, url }) => (
-                      /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
-                      <img
+                      <div
                         key={`${message.id}:${index}`}
-                        src={url}
-                        alt={t('forum.photoAlt', { name: message.name })}
-                        className="mt-2 max-h-80 w-full rounded-xl object-contain"
-                        onClick={stopCardToggle}
-                        data-photo-index={index}
-                      />
+                        className="w-full min-w-full shrink-0 snap-start"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */}
+                        <img
+                          src={url}
+                          alt={t('forum.photoAlt', { name: message.name })}
+                          className="max-h-80 w-full rounded-xl object-contain"
+                          onClick={stopCardToggle}
+                          data-photo-index={index}
+                        />
+                      </div>
                     ))}
                   </div>
                 ) : null}

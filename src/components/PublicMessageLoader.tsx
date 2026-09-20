@@ -137,16 +137,17 @@ function PublicThreadCard({
           className="max-h-80 w-full rounded-xl object-contain"
         />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
-        <div>
+        <div className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain">
           {loadedPhotoUrls.map(({ index, url }) => (
-            /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
-            <img
-              key={`${note.id}:${index}`}
-              src={url}
-              alt={t('forum.photoAlt', { name: note.name })}
-              className="max-h-80 w-full rounded-xl object-contain"
-              data-photo-index={index}
-            />
+            <div key={`${note.id}:${index}`} className="w-full min-w-full shrink-0 snap-start">
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */}
+              <img
+                src={url}
+                alt={t('forum.photoAlt', { name: note.name })}
+                className="max-h-80 w-full rounded-xl object-contain"
+                data-photo-index={index}
+              />
+            </div>
           ))}
         </div>
       ) : null}

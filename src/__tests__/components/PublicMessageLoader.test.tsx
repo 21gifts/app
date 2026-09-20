@@ -284,6 +284,25 @@ describe('PublicMessageLoader', () => {
     expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
     expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
     expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+    const scroller = photos[0]?.parentElement?.parentElement;
+    expect(scroller?.contains(photos[1] ?? null)).toBe(true);
+    const scrollerTokens = (scroller?.className ?? '').split(/\s+/);
+    expect(scrollerTokens).toEqual(
+      expect.arrayContaining([
+        'flex',
+        'snap-x',
+        'snap-mandatory',
+        'overflow-x-auto',
+        'overscroll-x-contain',
+      ]),
+    );
+    expect(scrollerTokens).not.toContain('flex-col');
+    for (const photo of photos) {
+      const slideTokens = (photo.parentElement?.className ?? '').split(/\s+/);
+      expect(slideTokens).toEqual(
+        expect.arrayContaining(['w-full', 'min-w-full', 'shrink-0', 'snap-start']),
+      );
+    }
   });
 
   it('keeps the original still index when an earlier extra still fails to load', async () => {
