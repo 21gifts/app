@@ -84,14 +84,14 @@ function isAbortError(err: unknown): boolean {
  *
  * Reads the session from the auth store, fetches the conversation list, and
  * opens `?c=` only after that list loaded, unless the list has that id as
- * `moderator_group` (new empty PMs are not yet listed). For a founder or
- * moderator an unlisted `?c=` first resolves {@link fetchModeratorGroup}
+ * `moderator_group` (new empty PMs are not yet listed). When the role is at
+ * least moderator, an unlisted `?c=` first resolves {@link fetchModeratorGroup}
  * once per id, with neutral loading instead of the list; a match never
  * opens, other roles and a failed lookup fall through. The composer sends
  * free text
  * directly, or mints an invoice from its amount field and long-polls for the
  * paid gift row. Renders nothing when there is no session.
- * Founder/moderator get the origin filter; members see the full inbound list.
+ * Moderators get the origin filter; members see the full inbound list.
  * After a successful thread load and mark-read, bumps the badge epoch and
  * refreshes the home-screen badge to notifications unread plus remaining
  * inbox unread.

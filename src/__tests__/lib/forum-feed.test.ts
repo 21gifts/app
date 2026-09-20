@@ -201,13 +201,13 @@ describe('forum-feed', () => {
     expect(visibleForumMessages([ADA, UNPAID_VERIFIED, BOB], 'active')).toEqual([ADA]);
   });
 
-  it('popular drops unpaid founder and moderator notes', () => {
+  it('popular drops unpaid moderator notes', () => {
     expect(
       visibleForumMessages([ADA, UNPAID_FOUNDER, CAROL, UNPAID_MODERATOR, BOB], 'popular'),
     ).toEqual([CAROL, ADA]);
   });
 
-  it('unpaid keeps unpaid founder and moderator notes', () => {
+  it('unpaid keeps unpaid moderator notes', () => {
     expect(visibleForumMessages([ADA, UNPAID_FOUNDER, UNPAID_MODERATOR, BOB], 'unpaid')).toEqual([
       UNPAID_FOUNDER,
       UNPAID_MODERATOR,

@@ -107,7 +107,7 @@ describe('HiddenNotesScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     renderWithLocale(<HiddenNotesScreen />);
     expect(screen.getByRole('heading', { name: 'Hidden notes' })).toBeTruthy();
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
     expect(screen.queryByText('Moderation')).toBeNull();
     expect(screen.queryByText('No hidden notes.')).toBeNull();
@@ -118,14 +118,14 @@ describe('HiddenNotesScreen', () => {
   it('shows forbidden copy for a verified account and does not fetch', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     renderWithLocale(<HiddenNotesScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(listMock).not.toHaveBeenCalled();
   });
 
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<HiddenNotesScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(listMock).not.toHaveBeenCalled();
   });
 

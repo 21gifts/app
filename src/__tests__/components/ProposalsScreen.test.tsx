@@ -77,7 +77,7 @@ describe('ProposalsScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     renderWithLocale(<ProposalsScreen />);
     expect(screen.getByRole('heading', { name: 'Open proposals' })).toBeTruthy();
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByText('No open proposals.')).toBeNull();
     expect(screen.queryByRole('list')).toBeNull();
     expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
@@ -88,14 +88,14 @@ describe('ProposalsScreen', () => {
   it('shows forbidden copy for a verified account and does not fetch', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     renderWithLocale(<ProposalsScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(proposalsMock).not.toHaveBeenCalled();
   });
 
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<ProposalsScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(proposalsMock).not.toHaveBeenCalled();
   });
 

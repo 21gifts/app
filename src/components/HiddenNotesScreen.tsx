@@ -14,7 +14,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Signed-in list of hidden living-room notes.
  *
- * Founders and moderators see the hide-tool copy and the hidden-note list
+ * Moderators see the hide-tool copy and the hidden-note list
  * (newest-hidden first). Other signed-in visitors see a short forbidden
  * message and no list. Fetches {@link listHiddenMessages} itself. Renders
  * nothing without a session. In-card back goes to the moderation hub.

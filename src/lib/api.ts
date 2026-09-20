@@ -707,7 +707,7 @@ async function postTrustAction(
 /**
  * Verifies that a basis member is a real person (in-person confirmation).
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of a moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
@@ -722,7 +722,7 @@ export async function postTrustVerify(
 /**
  * Proposes a verified member as moderator.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of a moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
@@ -737,7 +737,7 @@ export async function postTrustPropose(
 /**
  * Confirms a pending moderator proposal (must be a different staff member).
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of a moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
@@ -767,7 +767,7 @@ export async function postTrustAppoint(
 const TRUST_PROPOSALS_LOAD_ERROR = 'Could not load moderator proposals. Please try again.';
 
 /**
- * Fetches open moderator proposals for founders and moderators.
+ * Fetches open moderator proposals for moderators.
  *
  * Hits same-origin `GET /trust/proposals` (Bearer). Next.js forbids a
  * `route.ts` beside `/moderate/proposals`, so the proxy lives at this path.
@@ -925,7 +925,7 @@ export async function fetchMessages(sessionToken: string): Promise<ForumMessage[
 const HIDDEN_NOTES_ERROR = 'Could not load hidden notes. Please try again.';
 
 /**
- * Fetches hidden forum notes for founders and moderators.
+ * Fetches hidden forum notes for moderators.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The hidden-note list.
@@ -1297,7 +1297,7 @@ export async function postContact(sessionToken: string, text: string): Promise<C
 
 /**
  * Fetches private-message threads the session may see (own threads, plus
- * official 21.gifts threads when the account is founder or moderator).
+ * official 21.gifts threads when the role is at least moderator).
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns Threads newest-last-message first.
@@ -1319,7 +1319,7 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
 }
 
 /**
- * Fetches the closed moderator-group thread for a moderator or founder.
+ * Fetches the closed moderator-group thread for a moderator.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The singleton {@link Conversation} row.
@@ -1843,7 +1843,7 @@ export async function finishPasskeyAuthentication(
 }
 
 /**
- * Deletes a forum post and its replies using a moderator or founder session.
+ * Deletes a forum post and its replies using a moderator session.
  *
  * @param sessionToken - Bearer session.
  * @param messageId - Forum post UUID.

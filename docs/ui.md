@@ -420,7 +420,7 @@ On `fill` + `align="center"`, the first eligible `Card` (`chrome` not `false`) h
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
-| Moderation           | `Shield`                      | `/moderate` — founder or moderator only                                             |
+| Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |
 | Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero               |
 | Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero                    |
 | Contact              | `MessageCircle`               | `/contact`                                                                          |
@@ -538,7 +538,7 @@ Content translation under a note or reply body is a labeled underline text contr
 
 **Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Skip**, **Activate**, **Try again**.
 
-Founder/moderator **Trash2** on notes and nested replies is icon-only with inline confirm (`DeletePostControl`).
+Moderator **Trash2** on notes and nested replies is icon-only with inline confirm (`DeletePostControl`).
 
 **Button size scale (one).**
 
@@ -718,7 +718,7 @@ Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-
 | `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`   | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                                                                                                            |
 | `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications All / Active / Mentions (default track, no extra `className`) |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (founder/moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses the default one-row flex track (All / Active / Mentions, no extra `className`).
+Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses the default one-row flex track (All / Active / Mentions, no extra `className`).
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
 
@@ -780,7 +780,7 @@ Do not use orange. This is law, not a gift CTA.
 Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). React expands a collapsed card and focuses the reply composer when already expanded; it does not collapse. Copy/delete stay sibling IconButtons that do not expand. Gift is only on a payable reply, never on a post. The action row is a sibling after that control, still inside the `li`. Inner React/pay/copy/delete controls `stopPropagation`. Focus ring on the expandable region.
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
 
-**Forum moderation.** Founder/moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies: Gift `IconButton` (`forum.pay`) when `payable`, plus the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Row is `mt-2`; `flex flex-wrap items-start gap-5` when Gift and trash are both visible. The pay sheet can sit inside that reply `li` when its id is `payMessageId`. No nested reply composer. Not a labeled button.
+**Forum moderation.** Moderator `DeletePostControl`: icon-only `Trash2` `IconButton` ghost `sm` with inline confirm (Check / X IconButtons + `forum.deleteConfirm` copy). Nested replies: Gift `IconButton` (`forum.pay`) when `payable`, plus the same `DeletePostControl` with `kind="reply"` (`forum.deleteReply` / `forum.deleteReplyConfirm`). Row is `mt-2`; `flex flex-wrap items-start gap-5` when Gift and trash are both visible. The pay sheet can sit inside that reply `li` when its id is `payMessageId`. No nested reply composer. Not a labeled button.
 
 ### Inbox thread bubbles
 
@@ -955,7 +955,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Laws `Banner`.
 - `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Founder/moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, Lightning Address, or rules agreement.
 - `ExternalLinkWarning` (same overlay chrome, no Skip) when a visitor clicks an external http(s) URL in note, About me, or inbox text. Internal 21.gifts URLs navigate in-app with no overlay.
@@ -979,19 +979,19 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for founders and moderators.**). Staff (founder or moderator) see the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Founders and moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Does not fetch the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for moderators.**). Staff (moderator) see the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Does not fetch the hidden list. No un-hide control.
 
 Handbook states: default hub, forbidden.
 
 ### `/moderate/hidden`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (founder or moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **Visitor** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate` → **h1** **Hidden notes** (`h1` ramp) → lead (soft hide of the note and its untagged direct replies; not a hard delete). Staff (moderator) list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times); a row with a `via` value shows the non-interactive **Visitor** badge next to the author name. Empty `moderate.empty`. Loading. Error + labeled **Try again**. Non-staff signed-in visitors see the heading plus forbidden copy and no list. No un-hide control. No hidden photo/video fetch.
 
 Handbook states: default list, forbidden, empty, loading, error, visitor.
 
 ### `/moderate/group`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → moderators get `InboxScreen` as one open thread (`Card xl`, `showFilter` false, `showAmount` false): **h1** **Moderators** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** + text-only composer with icon send. Other signed-in visitors see `Card xl` → **h1** **Moderators** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
 
 Handbook states: default, forbidden, empty, loading, error.
 
@@ -1005,7 +1005,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text; read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text; read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 

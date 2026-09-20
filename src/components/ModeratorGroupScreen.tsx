@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Signed-in closed moderator-group thread.
  *
- * Founders and moderators fetch {@link fetchModeratorGroup} then
+ * Moderators fetch {@link fetchModeratorGroup} then
  * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread
  * (`showFilter` and `showAmount` false; the heading is always the catalog
  * `moderate.groupLabel`, never the api row name).

@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Signed-in moderation hub of staff tools.
  *
- * Founders and moderators see hub copy and labeled Hidden notes, Open
+ * Moderators see hub copy and labeled Hidden notes, Open
  * proposals, and Moderators tools. The Moderators control goes to
  * `/moderate/group`. Other signed-in visitors see a short forbidden message
  * and no tools list. Does not fetch hidden notes, proposals, or the group
