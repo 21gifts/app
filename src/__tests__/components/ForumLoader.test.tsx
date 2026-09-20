@@ -2323,6 +2323,35 @@ describe('ForumLoader', () => {
     });
     expect(postMock).not.toHaveBeenCalled();
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
+  it('rejects a basis photo draft instead of invoicing 21.gifts', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    expect(composeTargetMock).not.toHaveBeenCalled();
+    expect(postMock).not.toHaveBeenCalled();
   });
 
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
@@ -4425,6 +4454,27 @@ describe('ForumLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi Bob');
     });
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(500) },
+    });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    expect(composeTargetMock).not.toHaveBeenCalled();
   });
 
   it('refetches the open thread after a compose-pay confirms', async () => {

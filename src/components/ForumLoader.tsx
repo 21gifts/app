@@ -1200,6 +1200,10 @@ export function ForumLoader({
             if (expanded !== null && !paidNestedReply) {
               setRepliesAttempt((n) => n + 1);
             }
+            payMessageIdRef.current = null;
+            payWaitingRef.current = false;
+            setFeedMode('all');
+            refreshMessages();
             return;
           }
         } catch {
@@ -1404,12 +1408,6 @@ export function ForumLoader({
         });
         startPayPoll(target.messageId, target.sats);
         pendingPostRef.current = null;
-        /* v8 ignore start -- compose-pay is text; photo e2e seeds verified */
-        for (const photo of pendingPhotos) {
-          revokeObjectUrlIfPresent(photo.previewUrl);
-        }
-        revokeObjectUrlIfPresent(pendingVideo?.previewUrl);
-        /* v8 ignore stop */
         setDraft('');
         setPhotoDrafts([]);
         setVideoDraft(null);
@@ -1812,10 +1810,10 @@ export function ForumLoader({
       if (generation !== payPollGeneration.current) {
         return;
       }
-      setPayMessageId(target.messageId);
+      setPayMessageId(parentId);
       setPayError(null);
       setPayInvoice({
-        messageId: target.messageId,
+        messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
@@ -1865,6 +1863,11 @@ export function ForumLoader({
     const parentAccountId = parentRow?.accountId;
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');

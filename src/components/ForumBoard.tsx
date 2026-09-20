@@ -1729,6 +1729,28 @@ export function ForumBoard({
         </form>
       ) : null}
 
+      {payMessageId !== null &&
+      payInvoice !== null &&
+      !(messages !== null && messages.some((row) => row.id === payMessageId)) &&
+      !(replies !== null && replies.some((row) => row.id === payMessageId)) ? (
+        <ForumPaySheet
+          messageId={payInvoice.messageId}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          payWaiting={payWaiting}
+          onPayDraftChange={onPayDraftChange}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={onPayCancel}
+          rateDay={rateDay}
+          showPaymentQr={showPaymentQr}
+          onInteract={(event) => {
+            event.stopPropagation();
+          }}
+        />
+      ) : null}
+
       {!composerHidden && formError === 'empty' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorEmpty')}

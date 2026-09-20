@@ -1495,6 +1495,7 @@ describe('PublicMessageThread', () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     submitComposer();
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),

@@ -637,10 +637,10 @@ export function MemberProfileScreen({
       if (generation !== payPollGeneration.current) {
         return;
       }
-      setPayMessageId(target.messageId);
+      setPayMessageId(parentId);
       setPayError(null);
       setPayInvoice({
-        messageId: target.messageId,
+        messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
