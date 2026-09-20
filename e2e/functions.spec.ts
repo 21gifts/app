@@ -3230,14 +3230,46 @@ test('Function: LoginCard — choice heading is reachable', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
 });
 
-test('Function: isWrongAccountError — login heading is visible', async ({ page }) => {
+/** Hydrate a leftover session whose GET /me is the duplicate-account 403. */
+async function expectWrongAccountHint(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-wrong-account');
+  });
+  await page.route('**/me', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname !== '/me' && !url.pathname.endsWith('/me')) {
+      await route.continue();
+      return;
+    }
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'You signed in with the wrong account. Please try again with the correct account.',
+      }),
+    });
+  });
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+}
+
+test('Function: isWrongAccountError — leftover session shows the retry hint', async ({
+  page,
+}) => {
+  await expectWrongAccountHint(page);
 });
 
-test('Function: WrongAccountError — login heading is visible', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+test('Function: WrongAccountError — leftover session shows the retry hint', async ({ page }) => {
+  await expectWrongAccountHint(page);
 });
 
 test('Function: InAppBrowserView — Telegram WebView shows Open in browser', async ({ page }) => {
