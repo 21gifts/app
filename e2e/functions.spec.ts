@@ -585,6 +585,12 @@ test('Function: proxyMessagesRepliesGet — GET /forum/messages/[id]/replies wit
   expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyForumMessageGet — GET /forum/messages/[id] without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/messages/[id]')).status()).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyPublicMessageGet — GET /public-messages/[id] is reachable', async ({
   request,
 }) => {
@@ -3222,6 +3228,46 @@ test('Function: LoginCard — choice heading is reachable', async ({ page }) => 
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in with existing account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+});
+
+/** Hydrate a leftover session whose GET /me is the duplicate-account 403. */
+async function expectWrongAccountHint(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-wrong-account');
+  });
+  await page.route('**/me', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname !== '/me' && !url.pathname.endsWith('/me')) {
+      await route.continue();
+      return;
+    }
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'You signed in with the wrong account. Please try again with the correct account.',
+      }),
+    });
+  });
+  await page.goto('/login');
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+}
+
+test('Function: isWrongAccountError — leftover session shows the retry hint', async ({ page }) => {
+  await expectWrongAccountHint(page);
+});
+
+test('Function: WrongAccountError — leftover session shows the retry hint', async ({ page }) => {
+  await expectWrongAccountHint(page);
 });
 
 test('Function: InAppBrowserView — Telegram WebView shows Open in browser', async ({ page }) => {
@@ -5901,6 +5947,66 @@ test('Function: fetchPublicMessage — public note loads via the client fetch', 
   });
   await page.goto(`/messages/${id}`);
   await expect(page.getByText('Ada', { exact: true })).toBeVisible();
+});
+
+test('Function: fetchForumMessage — staff hidden note loads via the bearer fetch', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Hidden from the living room',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'moderator',
+        replyCount: 0,
+        deletedAt: '2026-08-29T15:00:00.000Z',
+        deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByRole('status')).toContainText('This note was hidden by Marta');
+  await expect(page.getByText('Hidden from the living room')).toBeVisible();
 });
 
 test('Function: fetchPublicMessagePhoto — public note with photo shows alt', async ({ page }) => {

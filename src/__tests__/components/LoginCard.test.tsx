@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginCard } from '@/components/LoginCard';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
+import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -34,7 +35,7 @@ function stubExecCommand(impl: (commandId: string) => boolean): ReturnType<typeo
 }
 
 /** Points the mocked passkey hook at a fixed state for the next render. */
-function mockPasskey(status: PasskeyStatus = 'idle'): void {
+function mockPasskey(status: PasskeyStatus = 'idle', error: string | null = null): void {
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status,
     login: loginSpy,
@@ -42,13 +43,13 @@ function mockPasskey(status: PasskeyStatus = 'idle'): void {
     authenticate: authenticateSpy,
     retry: retrySpy,
     cancel: cancelPasskeySpy,
-    error: null,
+    error: status === 'error' ? error : null,
   });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
   mockPasskey('idle');
 });
@@ -132,6 +133,32 @@ describe('LoginCard', () => {
     expect(alert.className).not.toContain('text-app-muted');
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
     expect(retrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the dedicated wrong-account copy when passkey error is that string', () => {
+    mockPasskey('error', WRONG_ACCOUNT_ERROR);
+    renderWithLocale(<LoginCard />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(WRONG_ACCOUNT_ERROR);
+    expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
+    expect(alert.className).toContain('text-app-danger');
+    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(retrySpy).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
+  it('shows the dedicated wrong-account copy when the store flag is set', () => {
+    useAuthStore.setState({ wrongAccount: true });
+    renderWithLocale(<LoginCard />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(WRONG_ACCOUNT_ERROR);
+    expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+    expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(retrySpy).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().wrongAccount).toBe(false);
   });
 
   it('shows the in-app escape card when isInAppBrowser is true', async () => {

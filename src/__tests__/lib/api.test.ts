@@ -21,6 +21,7 @@ import {
   fetchTrustProposals,
   fetchMessagePhoto,
   fetchMessages,
+  fetchForumMessage,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
@@ -31,7 +32,10 @@ import {
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  WRONG_ACCOUNT_ERROR,
+  WrongAccountError,
   listHiddenMessages,
   markAllNotificationsRead,
   markConversationRead,
@@ -121,6 +125,26 @@ describe('fetchMe', () => {
   it('throws on a non-401 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(fetchMe('sess')).rejects.toThrow('Failed to fetch account: 500');
+  });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(fetchMe('sess')).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('throws the generic fetch-account error on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
+    await expect(fetchMe('sess')).rejects.toThrow('Failed to fetch account: 403');
+  });
+
+  it('throws the generic fetch-account error on 403 with an unreadable body', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: () => Promise.reject(new Error('nope')),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMe('sess')).rejects.toThrow('Failed to fetch account: 403');
   });
 
   it('throws when the body fails validation', async () => {
@@ -2007,6 +2031,42 @@ describe('fetchPublicMessage', () => {
   });
 });
 
+describe('fetchForumMessage', () => {
+  it('GETs /forum/messages/:id with Bearer and returns the message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchForumMessage('sess', 'uuid')).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/uuid', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchForumMessage('sess', 'uuid')).resolves.toBeNull();
+  });
+
+  it('throws visitor copy on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchForumMessage('sess', 'uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('rethrows visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchForumMessage('sess', 'uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'm1' } });
+    await expect(fetchForumMessage('sess', 'uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
 describe('fetchPublicMessagePhoto', () => {
   it('returns the blob without Authorization', async () => {
     const blob = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
@@ -2847,6 +2907,18 @@ describe('finishPasskeyRegistration', () => {
       'Failed to finish passkey registration: 400',
     );
   });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('throws the generic finish error on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 403',
+    );
+  });
 });
 
 describe('startPasskeyAuthentication', () => {
@@ -2877,6 +2949,34 @@ describe('finishPasskeyAuthentication', () => {
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
       'Failed to finish passkey authentication: 400',
     );
+  });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('throws the generic finish error on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
+      'Failed to finish passkey authentication: 403',
+    );
+  });
+});
+
+describe('isWrongAccountError', () => {
+  it('is true for WrongAccountError instances', () => {
+    expect(isWrongAccountError(new WrongAccountError())).toBe(true);
+  });
+
+  it('is true for Error whose message is the api string', () => {
+    expect(isWrongAccountError(new Error(WRONG_ACCOUNT_ERROR))).toBe(true);
+  });
+
+  it('is false for other values', () => {
+    expect(isWrongAccountError(new Error('nope'))).toBe(false);
+    expect(isWrongAccountError('nope')).toBe(false);
+    expect(isWrongAccountError(null)).toBe(false);
   });
 });
 

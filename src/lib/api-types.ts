@@ -370,6 +370,8 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * Gift-only replies may have empty `text` when `sats > 0`.
+ * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
+ * payloads omit them.
  */
 export const forumMessageSchema = z
   .object({
@@ -392,6 +394,14 @@ export const forumMessageSchema = z
     role: z.enum(ROLE_ORDER).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
     via: z.literal('nostr').optional(),
+    deletedAt: z.string().datetime({ offset: true }).optional(),
+    deletedBy: z
+      .object({
+        id: z.string().min(1).nullable(),
+        name: z.string().min(1).nullable(),
+        role: z.enum(ROLE_ORDER).nullable(),
+      })
+      .optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
@@ -559,9 +569,10 @@ export type Conversation = z.infer<typeof conversationSchema>;
  * not when another staff member sent as the platform. `text` may be empty on
  * a gift-only row (`sats > 0`). `sats` is the validated payment on that
  * message (0 for text-only). `accountId` is the optional 21.gifts sender id
- * on thread messages. For a staff viewer, `name` and optional `accountId`
- * are that actor when the api sends them. Members still see platform
- * identity (`21.gifts`) on official replies.
+ * on thread messages. `giftFor` is the optional id of the thread message this
+ * row is a paid gift for (moderator-group stipend rows). For a staff viewer,
+ * `name` and optional `accountId` are that actor when the api sends them.
+ * Members still see platform identity (`21.gifts`) on official replies.
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
@@ -572,6 +583,8 @@ export const conversationMessageSchema = z.object({
   sats: z.number().int().nonnegative(),
   /** Optional 21.gifts sender id on thread messages. */
   accountId: z.string().min(1).optional(),
+  /** Optional id of the thread message this row is a paid gift for (moderator-group stipend rows). */
+  giftFor: z.string().min(1).optional(),
 });
 
 /**

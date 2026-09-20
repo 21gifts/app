@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  isWrongAccountError,
   startPasskeyAuthentication,
   startPasskeyRegistration,
+  WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import {
@@ -111,6 +113,8 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const abortRef = useRef<AbortController | null>(null);
   const choiceOfferedRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setWrongAccount = useAuthStore((state) => state.setWrongAccount);
 
   const guard = useCallback((runId: number): void => {
     if (runId !== runIdRef.current) {
@@ -204,18 +208,28 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     [guard, setAuth],
   );
 
-  const finishWithError = useCallback((runId: number, error: unknown): void => {
-    if (error instanceof SupersededError || runId !== runIdRef.current) {
-      return;
-    }
-    if (isUserCancel(error)) {
-      setLastError(null);
-      setStatus(choiceOfferedRef.current ? 'choice' : 'idle');
-      return;
-    }
-    setLastError(error instanceof Error ? error.message : String(error));
-    setStatus('error');
-  }, []);
+  const finishWithError = useCallback(
+    (runId: number, error: unknown): void => {
+      if (error instanceof SupersededError || runId !== runIdRef.current) {
+        return;
+      }
+      if (isUserCancel(error)) {
+        setLastError(null);
+        setStatus(choiceOfferedRef.current ? 'choice' : 'idle');
+        return;
+      }
+      if (isWrongAccountError(error)) {
+        clearAuth();
+        setWrongAccount(true);
+        setLastError(WRONG_ACCOUNT_ERROR);
+        setStatus('error');
+        return;
+      }
+      setLastError(error instanceof Error ? error.message : String(error));
+      setStatus('error');
+    },
+    [clearAuth, setWrongAccount],
+  );
 
   const register = useCallback(
     (viewKey?: string): void => {

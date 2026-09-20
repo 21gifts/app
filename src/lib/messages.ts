@@ -177,6 +177,8 @@ const en = {
   'login.submit': 'Log in',
   'login.preparing': 'Preparing your login…',
   'login.error': 'Something went wrong. Please try again.',
+  'login.wrongAccount':
+    'You signed in with the wrong account. Please try again with the correct account.',
   'login.retry': 'Try again',
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
@@ -275,6 +277,7 @@ const en = {
   'forum.errorRateLimit': 'Too many messages. Please wait a moment and try again.',
   'forum.listLabel': 'All messages',
   'forum.react': 'React',
+  'forum.hiddenNotice': 'This note was hidden by {name} on {time}.',
   'forum.pay': 'Send Bitcoin',
   'forum.payAmountLabel': 'Amount',
   'forum.payAmountPlaceholder': '21',
@@ -549,6 +552,7 @@ const en = {
   'inbox.you': 'You',
   'inbox.sentPreview': 'You: {text}',
   'inbox.authorProfile': 'View profile',
+  'inbox.giftForLabel': 'Paid by {name}: {amount}',
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
@@ -799,6 +803,8 @@ const de = {
   'login.submit': 'Anmelden',
   'login.preparing': 'Anmeldung wird vorbereitet…',
   'login.error': 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+  'login.wrongAccount':
+    'Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto.',
   'login.retry': 'Erneut versuchen',
   'login.choiceHeading': 'Haben Sie schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
@@ -895,6 +901,7 @@ const de = {
     'Zu viele Nachrichten. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
   'forum.listLabel': 'Alle Nachrichten',
   'forum.react': 'Reagieren',
+  'forum.hiddenNotice': 'Diese Notiz wurde von {name} am {time} ausgeblendet.',
   'forum.pay': 'Bitcoin senden',
   'forum.payAmountLabel': 'Betrag',
   'forum.payAmountPlaceholder': '21',
@@ -1178,6 +1185,7 @@ const de = {
   'inbox.you': 'Du',
   'inbox.sentPreview': 'Du: {text}',
   'inbox.authorProfile': 'Profil anzeigen',
+  'inbox.giftForLabel': 'Bezahlt von {name}: {amount}',
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
@@ -1431,6 +1439,8 @@ const es = {
   'login.submit': 'Iniciar sesión',
   'login.preparing': 'Preparando tu inicio de sesión…',
   'login.error': 'Algo salió mal. Inténtalo de nuevo.',
+  'login.wrongAccount':
+    'Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta.',
   'login.retry': 'Intentar de nuevo',
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
@@ -1524,6 +1534,7 @@ const es = {
   'forum.errorRateLimit': 'Demasiados mensajes. Espera un momento e inténtalo de nuevo.',
   'forum.listLabel': 'Todos los mensajes',
   'forum.react': 'Reaccionar',
+  'forum.hiddenNotice': 'Esta nota fue ocultada por {name} el {time}.',
   'forum.pay': 'Enviar Bitcoin',
   'forum.payAmountLabel': 'Importe',
   'forum.payAmountPlaceholder': '21',
@@ -1799,6 +1810,7 @@ const es = {
   'inbox.you': 'Tú',
   'inbox.sentPreview': 'Tú: {text}',
   'inbox.authorProfile': 'Ver perfil',
+  'inbox.giftForLabel': 'Pagado por {name}: {amount}',
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
@@ -2046,6 +2058,8 @@ const fil = {
   'login.submit': 'Mag-log in',
   'login.preparing': 'Inihahanda ang login mo…',
   'login.error': 'May nangyaring mali. Subukan ulit.',
+  'login.wrongAccount':
+    'Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account.',
   'login.retry': 'Subukan ulit',
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',
@@ -2141,6 +2155,7 @@ const fil = {
   'forum.errorRateLimit': 'Sobrang daming mensahe. Maghintay sandali at subukan ulit.',
   'forum.listLabel': 'Lahat ng mensahe',
   'forum.react': 'Tumugon',
+  'forum.hiddenNotice': 'Itinago ni {name} ang notang ito noong {time}.',
   'forum.pay': 'Magpadala ng Bitcoin',
   'forum.payAmountLabel': 'Halaga',
   'forum.payAmountPlaceholder': '21',
@@ -2423,6 +2438,7 @@ const fil = {
   'inbox.you': 'Ikaw',
   'inbox.sentPreview': 'Ikaw: {text}',
   'inbox.authorProfile': 'Tingnan ang profile',
+  'inbox.giftForLabel': 'Binayaran ng {name}: {amount}',
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',

@@ -119,7 +119,10 @@ export function HiddenNotesScreen(): ReactElement | null {
       <ul aria-label={t('moderate.listLabel')} className="flex w-full flex-col gap-3">
         {messages.map((row) => (
           <li key={row.id}>
-            <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
+            <Link
+              href={`/messages/${row.id}`}
+              className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 no-underline"
+            >
               <span className="flex w-full items-baseline justify-between gap-2">
                 {row.via !== undefined ? (
                   <span className="flex flex-wrap items-center gap-2">
@@ -150,7 +153,7 @@ export function HiddenNotesScreen(): ReactElement | null {
                   {formatForumTime(row.deletedAt, locale)}
                 </time>
               </span>
-            </div>
+            </Link>
           </li>
         ))}
       </ul>

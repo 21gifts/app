@@ -28,6 +28,7 @@ import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
@@ -45,13 +46,11 @@ import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import type { NumberFormatStyle } from '@/lib/number-format';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
   formatBitcoin,
   formatFiatDisplay,
   satsToFiatAmount,
-  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import {
@@ -118,37 +117,6 @@ function previewPaySats(draft: string): number | null {
     return null;
   }
   return sats;
-}
-
-/**
- * Preferred-fiat suffix next to a ₿ amount, or `null` when the rate or
- * conversion is missing (₿-only).
- *
- * @param sats - Whole sats.
- * @param rateDay - Latest gift-day totals, or `null`.
- * @param fiat - Visitor preference.
- * @param numberFormat - Grouping style.
- * @returns ` · ` plus formatted fiat, or `null`.
- */
-function preferredFiatSuffix(
-  sats: number,
-  rateDay: FiatRateDay | null,
-  fiat: FiatCode,
-  numberFormat: NumberFormatStyle,
-): ReactElement | null {
-  if (rateDay === null) {
-    return null;
-  }
-  const amount = satsToFiatAmount(sats, rateDay, fiat);
-  if (amount === null) {
-    return null;
-  }
-  return (
-    <>
-      <span aria-hidden="true"> · </span>
-      <span>{formatFiatDisplay(amount, fiat, numberFormat)}</span>
-    </>
-  );
 }
 
 /** Active pay invoice shown under a forum card. */
@@ -537,8 +505,10 @@ function fallbackCopy(text: string): boolean {
  * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
  * text-plus-gift shows the amount under the body), copy-link control,
  * React control on posts (`forum.react`, lucide Reply; expands the reply
- * composer), payable-reply pay sheet (Gift on nested replies and on top-level
- * cards with `parentId`; never on posts), optional inline
+ * composer; omitted when `deletedAt` is set), payable-reply pay sheet (Gift
+ * on nested replies and on top-level cards with `parentId`; never on posts;
+ * omitted when `deletedAt` is set), staff Delete omitted when `deletedAt` is
+ * set, optional inline
  * photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
@@ -1026,7 +996,7 @@ export function ForumBoard({
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
                   {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                 </button>
-                {message.parentId === undefined ? (
+                {message.parentId === undefined && message.deletedAt === undefined ? (
                   <IconButton
                     type="button"
                     size="sm"
@@ -1045,7 +1015,9 @@ export function ForumBoard({
                     <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </IconButton>
                 ) : null}
-                {message.parentId !== undefined && message.payable ? (
+                {message.parentId !== undefined &&
+                message.payable &&
+                message.deletedAt === undefined ? (
                   <IconButton
                     type="button"
                     size="sm"
@@ -1078,7 +1050,7 @@ export function ForumBoard({
                     <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
                 </IconButton>
-                {onDeleted !== undefined ? (
+                {onDeleted !== undefined && message.deletedAt === undefined ? (
                   <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                 ) : null}
                 {message.parentId === undefined ? (
@@ -1260,12 +1232,13 @@ export function ForumBoard({
                             ) : null}
                             <div
                               className={
-                                reply.payable || onDeleted !== undefined
+                                reply.deletedAt === undefined &&
+                                (reply.payable || onDeleted !== undefined)
                                   ? 'mt-2 flex flex-wrap items-start gap-5'
                                   : 'mt-2'
                               }
                             >
-                              {reply.payable ? (
+                              {reply.deletedAt === undefined && reply.payable ? (
                                 <IconButton
                                   type="button"
                                   size="sm"
@@ -1298,7 +1271,7 @@ export function ForumBoard({
                                   <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                                 )}
                               </IconButton>
-                              {onDeleted !== undefined ? (
+                              {reply.deletedAt === undefined && onDeleted !== undefined ? (
                                 <DeletePostControl
                                   kind="reply"
                                   messageId={reply.id}
@@ -1327,82 +1300,84 @@ export function ForumBoard({
                       })}
                     </ul>
                   ) : null}
-                  <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                    <div className="flex items-end gap-2">
-                      <textarea
-                        ref={replyComposerRef}
-                        aria-label={t('forum.replyComposerLabel')}
-                        placeholder={t('forum.replyPlaceholder')}
-                        value={replyDraft}
-                        onChange={(event) => onReplyDraftChange(event.target.value)}
-                        maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                        rows={2}
-                        disabled={
-                          replyPosting || repliesLoading || repliesError || replies === null
-                        }
-                        className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
-                      />
-                      <Field
-                        id="forum-reply-amount"
-                        label={t('forum.replyAmountLabel')}
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        placeholder={t('forum.payAmountPlaceholder')}
-                        value={replyAmountDraft}
-                        disabled={
-                          replyPosting || repliesLoading || repliesError || replies === null
-                        }
-                        onChange={(event) => onReplyAmountDraftChange?.(event.target.value)}
-                        className="w-24"
-                      />
-                      <IconButton
-                        type="submit"
-                        size="lg"
-                        variant="primary"
-                        disabled={
-                          replyPosting || repliesLoading || repliesError || replies === null
-                        }
-                        aria-label={t('forum.post')}
-                      >
-                        {replyPosting ? (
-                          <Loader2
-                            aria-hidden="true"
-                            className="block h-5 w-5 shrink-0 animate-spin"
-                          />
-                        ) : (
-                          <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                        )}
-                      </IconButton>
-                    </div>
-                    {replyFormError === 'empty' ? (
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.errorEmpty')}
-                      </p>
-                    ) : null}
-                    {replyFormError === 'amount' ? (
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.errorReplyPayment')}
-                      </p>
-                    ) : null}
-                    {replyFormError === 'tooLong' ? (
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.errorTooLong')}
-                      </p>
-                    ) : null}
-                    {replyFormError === 'request' ? (
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.errorRequest')}
-                      </p>
-                    ) : null}
-                    {replyFormError === 'rateLimit' ? (
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.errorRateLimit')}
-                      </p>
-                    ) : null}
-                  </form>
+                  {message.deletedAt === undefined ? (
+                    <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                      <div className="flex items-end gap-2">
+                        <textarea
+                          ref={replyComposerRef}
+                          aria-label={t('forum.replyComposerLabel')}
+                          placeholder={t('forum.replyPlaceholder')}
+                          value={replyDraft}
+                          onChange={(event) => onReplyDraftChange(event.target.value)}
+                          maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                          rows={2}
+                          disabled={
+                            replyPosting || repliesLoading || repliesError || replies === null
+                          }
+                          className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+                        />
+                        <Field
+                          id="forum-reply-amount"
+                          label={t('forum.replyAmountLabel')}
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          placeholder={t('forum.payAmountPlaceholder')}
+                          value={replyAmountDraft}
+                          disabled={
+                            replyPosting || repliesLoading || repliesError || replies === null
+                          }
+                          onChange={(event) => onReplyAmountDraftChange?.(event.target.value)}
+                          className="w-24"
+                        />
+                        <IconButton
+                          type="submit"
+                          size="lg"
+                          variant="primary"
+                          disabled={
+                            replyPosting || repliesLoading || repliesError || replies === null
+                          }
+                          aria-label={t('forum.post')}
+                        >
+                          {replyPosting ? (
+                            <Loader2
+                              aria-hidden="true"
+                              className="block h-5 w-5 shrink-0 animate-spin"
+                            />
+                          ) : (
+                            <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                          )}
+                        </IconButton>
+                      </div>
+                      {replyFormError === 'empty' ? (
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.errorEmpty')}
+                        </p>
+                      ) : null}
+                      {replyFormError === 'amount' ? (
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.errorReplyPayment')}
+                        </p>
+                      ) : null}
+                      {replyFormError === 'tooLong' ? (
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.errorTooLong')}
+                        </p>
+                      ) : null}
+                      {replyFormError === 'request' ? (
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.errorRequest')}
+                        </p>
+                      ) : null}
+                      {replyFormError === 'rateLimit' ? (
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.errorRateLimit')}
+                        </p>
+                      ) : null}
+                    </form>
+                  ) : null}
                 </div>
               ) : null}
             </li>

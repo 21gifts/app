@@ -725,6 +725,37 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-error');
   });
 
+  test('login wrong-account', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-wrong-account');
+    });
+    await page.route('**/me', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname !== '/me' && !url.pathname.endsWith('/me')) {
+        await route.continue();
+        return;
+      }
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'You signed in with the wrong account. Please try again with the correct account.',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-wrong-account');
+  });
+
   test('login choice', async ({ page }) => {
     await page.addInitScript(() => {
       const pk = globalThis.PublicKeyCredential as unknown as {
@@ -3522,6 +3553,60 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
     await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
     await shotScreen(page, 'state-messages-id-signed-in');
+  });
+
+  test('state /messages/[id] hidden', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+          role: 'moderator',
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Janet',
+          text: 'Thank you, Father Severin.',
+          createdAt: '2026-09-20T10:01:48.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'moderator',
+          replyCount: 0,
+          deletedAt: '2026-09-20T10:02:28.000Z',
+          deletedBy: { id: 'acc_janet', name: 'Janet', role: 'moderator' },
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('status')).toContainText('This note was hidden by Janet');
+    await expect(page.getByText('Thank you, Father Severin.')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-hidden');
   });
 
   test('state /messages/[id] missing', async ({ page }) => {
@@ -7048,6 +7133,7 @@ test.describe('moderate group screens', () => {
       createdAt: string;
       fromMe: boolean;
       sats: number;
+      giftFor?: string;
     }>,
   ): Promise<void> {
     await page.route('**/conversations/conv-mod', async (route) => {
@@ -7075,6 +7161,77 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByText('Hello mods')).toBeVisible();
     await shotScreen(page, 'screen-moderate-group');
+  });
+
+  test('moderate group stipend', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm1',
+        name: 'Rose Otero',
+        text: 'Great work today, moderators!',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+      {
+        id: 'g1',
+        name: '21.gifts',
+        text: '21gifts moderator · Rose Otero',
+        createdAt: '2026-08-28T15:01:00.000Z',
+        fromMe: false,
+        sats: 6158,
+        giftFor: 'm1',
+      },
+    ]);
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalSats: 6158,
+          totalBtc: '0.00006158',
+          totalUsd: '5.00',
+          totalChf: '4.00',
+          totalEur: '4.50',
+          totalPhp: '280.00',
+          giftCount: 1,
+          recipientCount: 1,
+          firstPaidAt: '2026-08-28T15:01:00.000Z',
+          lastPaidAt: '2026-08-28T15:01:00.000Z',
+          spendOverTime: [
+            {
+              day: '2026-08-28',
+              sats: 6158,
+              cumulativeSats: 6158,
+              btc: '0.00006158',
+              cumulativeBtc: '0.00006158',
+              usd: '5.00',
+              cumulativeUsd: '5.00',
+              chf: '4.00',
+              eur: '4.50',
+              php: '280.00',
+              cumulativeChf: '4.00',
+              cumulativeEur: '4.50',
+              cumulativePhp: '280.00',
+            },
+          ],
+          byRecipient: [],
+          byMonth: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+          },
+        }),
+      });
+    });
+    await page.goto('/moderate/group');
+    await expect(page.getByText('Great work today, moderators!')).toBeVisible();
+    await expect(page.getByRole('note', { name: /21\.gifts/ })).toContainText('$5.00');
+    await shotScreen(page, 'state-moderate-group-stipend');
   });
 
   test('moderate group forbidden', async ({ page }) => {

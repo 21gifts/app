@@ -33,6 +33,18 @@ describe('getCatalog', () => {
     expect(getCatalog('de')['forum.react']).toBe('Reagieren');
     expect(getCatalog('es')['forum.react']).toBe('Reaccionar');
     expect(getCatalog('fil')['forum.react']).toBe('Tumugon');
+    expect(getCatalog('en')['forum.hiddenNotice']).toBe(
+      'This note was hidden by {name} on {time}.',
+    );
+    expect(getCatalog('de')['forum.hiddenNotice']).toBe(
+      'Diese Notiz wurde von {name} am {time} ausgeblendet.',
+    );
+    expect(getCatalog('es')['forum.hiddenNotice']).toBe(
+      'Esta nota fue ocultada por {name} el {time}.',
+    );
+    expect(getCatalog('fil')['forum.hiddenNotice']).toBe(
+      'Itinago ni {name} ang notang ito noong {time}.',
+    );
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       expect(catalog['la.heading']).toBe('Wallet of Satoshi address');

@@ -48,6 +48,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:wrong-account",
+    "label": "/login wrong-account",
+    "visual": "state-login-wrong-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:choice",
     "label": "/login choice",
     "visual": "state-login-choice",
@@ -1098,6 +1104,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/group:stipend",
+    "label": "/moderate/group stipend",
+    "visual": "state-moderate-group-stipend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:forbidden",
     "label": "/moderate/group forbidden",
     "visual": "state-moderate-group-forbidden",
@@ -1143,6 +1155,12 @@
     "id": "/messages/[id]:signed-in",
     "label": "/messages/[id] signed-in",
     "visual": "state-messages-id-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:hidden",
+    "label": "/messages/[id] hidden",
+    "visual": "state-messages-id-hidden",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

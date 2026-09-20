@@ -12,6 +12,11 @@ interface AuthState {
   /** The authenticated account, or `null` when logged out. */
   account: Account | null;
   /**
+   * True after a wrong-account 403 until the visitor retries login.
+   * Survives {@link AuthState.clearAuth} so `/login` can show the hint.
+   */
+  wrongAccount: boolean;
+  /**
    * Records a completed login and persists the token to storage.
    *
    * @param session - The session (bearer) token.
@@ -30,6 +35,14 @@ interface AuthState {
   setAccount(account: Account): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
   clearAuth(): void;
+  /**
+   * Sets whether the last refusal was the duplicate-account 403.
+   *
+   * @param value - `true` to show the dedicated `/login` hint.
+   */
+  setWrongAccount(value: boolean): void;
+  /** Clears the dedicated wrong-account hint. Does not touch the session. */
+  clearWrongAccount(): void;
 }
 
 /**
@@ -43,9 +56,10 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   account: null,
+  wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
-    set({ session, account });
+    set({ session, account, wrongAccount: false });
   },
   setAccount: (account) => {
     set({ account });
@@ -55,5 +69,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
     set({ session: null, account: null });
+  },
+  setWrongAccount: (value) => {
+    set({ wrongAccount: value });
+  },
+  clearWrongAccount: () => {
+    set({ wrongAccount: false });
   },
 }));

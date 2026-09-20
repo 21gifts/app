@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { fetchMe } from '@/lib/api';
+import { fetchMe, isWrongAccountError } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -10,13 +10,15 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * A valid token logs the visitor in unless a newer in-page session already
  * won. A rejected token calls `clearAuth` when the in-memory session is
- * absent or still that token. Unmount invalidates in-flight hydration.
+ * absent or still that token. `WrongAccountError` also sets `wrongAccount`
+ * so `/login` can show the retry hint. Unmount invalidates in-flight hydration.
  *
  * @returns Whether this mount has finished checking storage / `/me`.
  */
 export function useHydrateSession(): { ready: boolean } {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setWrongAccount = useAuthStore((state) => state.setWrongAccount);
   const hydrateGen = useRef(0);
   const [ready, setReady] = useState(false);
 
@@ -51,6 +53,21 @@ export function useHydrateSession(): { ready: boolean } {
         setAuth(token, maybeAccount);
       })
       .catch((error: unknown) => {
+        if (isWrongAccountError(error)) {
+          if (gen !== hydrateGen.current) {
+            return;
+          }
+          if (loadSession() !== token) {
+            return;
+          }
+          const current = useAuthStore.getState();
+          if (current.session !== null && current.session !== token) {
+            return;
+          }
+          clearAuth();
+          setWrongAccount(true);
+          return;
+        }
         console.error('Session hydration failed', error);
       })
       .finally(() => {
@@ -61,7 +78,7 @@ export function useHydrateSession(): { ready: boolean } {
     return (): void => {
       hydrateGen.current += 1;
     };
-  }, [setAuth, clearAuth]);
+  }, [setAuth, clearAuth, setWrongAccount]);
 
   return { ready };
 }

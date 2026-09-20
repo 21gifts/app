@@ -506,6 +506,32 @@ describe('conversationMessageSchema', () => {
     expect(conversationMessageSchema.parse(message)).toEqual(message);
   });
 
+  it('accepts an optional giftFor', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+      sats: 0,
+      giftFor: 'm0',
+    };
+    expect(conversationMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('omits giftFor when absent', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+      sats: 0,
+    };
+    const result = conversationMessageSchema.parse(message);
+    expect(result.giftFor).toBeUndefined();
+  });
+
   it('accepts empty text with sats', () => {
     const message = {
       id: 'm1',
@@ -646,6 +672,18 @@ describe('forumMessageSchema', () => {
   it('accepts an optional parentId on replies', () => {
     expect(forumMessageSchema.parse(base).parentId).toBeUndefined();
     expect(forumMessageSchema.parse({ ...base, parentId: 'parent-1' }).parentId).toBe('parent-1');
+  });
+
+  it('accepts optional deletedAt and deletedBy on staff hidden rows', () => {
+    const hidden = forumMessageSchema.parse({
+      ...base,
+      deletedAt: '2026-08-29T15:00:00.000Z',
+      deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+    });
+    expect(hidden.deletedAt).toBe('2026-08-29T15:00:00.000Z');
+    expect(hidden.deletedBy).toEqual({ id: 'acc_mod', name: 'Ada', role: 'moderator' });
+    expect(forumMessageSchema.parse(base).deletedAt).toBeUndefined();
+    expect(forumMessageSchema.parse(base).deletedBy).toBeUndefined();
   });
 
   it('accepts an empty text when hasPhoto is true', () => {

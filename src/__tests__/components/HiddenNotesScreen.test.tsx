@@ -172,6 +172,7 @@ describe('HiddenNotesScreen', () => {
     expect(items[1]?.textContent).toContain('Dan');
     expect(items[2]?.textContent).toContain('Carol');
     expect(items[2]?.textContent).toContain('Older hide');
+    expect(document.querySelector('a[href="/messages/h1"]')).toBeTruthy();
     const created = screen.getAllByText(formatForumTime(HIDDEN.createdAt, 'en'));
     const hiddenAt = screen.getAllByText(formatForumTime(HIDDEN.deletedAt, 'en'));
     expect(created.length).toBeGreaterThan(0);

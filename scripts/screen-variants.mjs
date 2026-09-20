@@ -129,6 +129,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'wrong-account',
+    image: 'login-wrong-account.png',
+    visual: 'state-login-wrong-account',
+    needle: 'You signed in with the wrong account. Please try again with the correct account.',
+  },
+  {
+    route: '/login',
     id: 'choice',
     image: 'login-choice.png',
     visual: 'state-login-choice',
@@ -1354,6 +1361,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/group',
+    id: 'stipend',
+    image: 'moderate-group-stipend.png',
+    visual: 'state-moderate-group-stipend',
+    needle: 'Rose Otero',
+  },
+  {
+    route: '/moderate/group',
     id: 'forbidden',
     image: 'moderate-group-forbidden.png',
     visual: 'state-moderate-group-forbidden',
@@ -1407,6 +1421,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-signed-in.png',
     visual: 'state-messages-id-signed-in',
     needle: "getByRole('button', { name: 'Menu' })",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'hidden',
+    image: 'messages-id-hidden.png',
+    visual: 'state-messages-id-hidden',
+    needle: 'This note was hidden by',
   },
   {
     route: '/messages/[id]',

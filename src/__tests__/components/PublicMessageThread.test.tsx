@@ -142,6 +142,7 @@ function renderThread(
   props: Partial<{
     root: ForumMessage;
     highlightId: string | null;
+    seedReply: ForumMessage;
     onRootDeleted: () => void;
   }> = {},
 ): ReturnType<typeof renderWithLocale> {
@@ -149,6 +150,7 @@ function renderThread(
     <PublicMessageThread
       root={props.root ?? root}
       highlightId={props.highlightId ?? null}
+      {...(props.seedReply !== undefined ? { seedReply: props.seedReply } : {})}
       onRootDeleted={props.onRootDeleted ?? vi.fn()}
     />,
   );
@@ -941,6 +943,132 @@ describe('PublicMessageThread', () => {
     });
     const target = document.querySelector('[data-permalink-target="true"]');
     expect(target?.getAttribute('data-reply-id')).toBe(REPLY_ID);
+  });
+
+  it('keeps a seeded hidden permalink reply when fetchReplies omits it', async () => {
+    signIn();
+    vi.mocked(fetchReplies).mockResolvedValue([]);
+    const hidden: ForumMessage = {
+      ...root,
+      id: '55555555-5555-4555-8555-555555555555',
+      parentId: root.id,
+      text: 'Hidden reply',
+      deletedAt: '2026-08-29T15:00:00.000Z',
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    renderWithLocale(
+      <PublicMessageThread
+        root={root}
+        highlightId={hidden.id}
+        seedReply={hidden}
+        onRootDeleted={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Hidden reply')).toBeTruthy();
+    });
+  });
+
+  it('does not append a seed without deletedAt', async () => {
+    signIn();
+    vi.mocked(fetchReplies).mockResolvedValue([]);
+    const live: ForumMessage = {
+      ...root,
+      id: '55555555-5555-4555-8555-555555555555',
+      parentId: root.id,
+      text: 'Hidden reply',
+    };
+    renderThread({ highlightId: live.id, seedReply: live });
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    });
+    expect(screen.queryByText('Hidden reply')).toBeNull();
+  });
+
+  it('does not duplicate a seeded hidden reply already returned by fetchReplies', async () => {
+    signIn();
+    const hidden: ForumMessage = {
+      ...root,
+      id: '55555555-5555-4555-8555-555555555555',
+      parentId: root.id,
+      text: 'Hidden reply',
+      deletedAt: '2026-08-29T15:00:00.000Z',
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    vi.mocked(fetchReplies).mockResolvedValue([hidden]);
+    renderThread({ highlightId: hidden.id, seedReply: hidden });
+    await waitFor(() => {
+      expect(screen.getByText('Hidden reply')).toBeTruthy();
+    });
+    expect(screen.getAllByText('Hidden reply')).toHaveLength(1);
+  });
+
+  it('does not append a seed whose parent is not the root', async () => {
+    signIn();
+    vi.mocked(fetchReplies).mockResolvedValue([]);
+    const hidden: ForumMessage = {
+      ...root,
+      id: '55555555-5555-4555-8555-555555555555',
+      parentId: '77777777-7777-4777-8777-777777777777',
+      text: 'Hidden reply',
+      deletedAt: '2026-08-29T15:00:00.000Z',
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    renderThread({ highlightId: hidden.id, seedReply: hidden });
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
+    });
+    expect(screen.queryByText('Hidden reply')).toBeNull();
+  });
+
+  it('does not append a seeded hidden reply when the fetched id is not the root', async () => {
+    signIn();
+    vi.mocked(fetchReplies).mockResolvedValue([]);
+    const hidden: ForumMessage = {
+      ...root,
+      id: '55555555-5555-4555-8555-555555555555',
+      parentId: root.id,
+      text: 'Hidden reply',
+      deletedAt: '2026-08-29T15:00:00.000Z',
+      deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
+    };
+    const otherRoot: ForumMessage = {
+      ...root,
+      id: '66666666-6666-4666-8666-666666666666',
+      text: 'Other parent',
+    };
+    const view = renderWithLocale(
+      <PublicMessageThread
+        root={root}
+        highlightId={hidden.id}
+        seedReply={hidden}
+        onRootDeleted={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Hidden reply')).toBeTruthy();
+    });
+    view.rerender(
+      <PublicMessageThread
+        root={otherRoot}
+        highlightId={hidden.id}
+        seedReply={hidden}
+        onRootDeleted={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('sess', otherRoot.id);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Hidden reply')).toBeNull();
+    });
+    const callsBeforeClick = vi.mocked(fetchReplies).mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(vi.mocked(fetchReplies).mock.calls.length).toBeGreaterThan(callsBeforeClick);
+    });
+    expect(vi.mocked(fetchReplies).mock.calls.at(-1)?.[1]).toBe(root.id);
+    expect(screen.queryByText('Hidden reply')).toBeNull();
   });
 
   it('calls onRootDeleted after a staff delete of the root', async () => {

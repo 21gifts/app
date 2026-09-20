@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
   fetchConversation,
   fetchModeratorGroup,
@@ -39,6 +40,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
+  const rateDay = useLatestRateDay();
   const [group, setGroup] = useState<Conversation | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -188,6 +190,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       formError={formError}
       showFilter={false}
       showAmount={false}
+      rateDay={rateDay}
     />
   );
 }

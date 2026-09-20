@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
   fetchConversation,
   fetchConversations,
@@ -103,6 +104,7 @@ export function InboxLoader(): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const rateDay = useLatestRateDay();
   const openId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [error, setError] = useState(false);
@@ -486,6 +488,7 @@ export function InboxLoader(): ReactElement | null {
         setPayWaiting(false);
       }}
       payWaiting={payWaiting}
+      rateDay={rateDay}
     />
   );
 }
