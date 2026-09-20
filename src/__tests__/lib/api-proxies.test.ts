@@ -18,6 +18,7 @@ import {
   proxyMeAboutPhotoGet,
   proxyMeAboutPut,
   proxyMeNamePost,
+  proxyMeUsernamePost,
   proxyMeRulesAgreementPost,
   proxyMeSetupSkipPost,
   proxyMembersActivityGet,
@@ -88,6 +89,15 @@ describe('api proxy wrappers', () => {
     await proxyMeNamePost(new Request('http://localhost/me/name', { method: 'POST', body: '{}' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/name');
+  });
+
+  it('proxyMeUsernamePost hits POST /me/username', async () => {
+    const fetchMock = stubApi();
+    await proxyMeUsernamePost(
+      new Request('http://localhost/me/username', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/username');
   });
 
   it('proxyMeLocationPost hits POST /me/location', async () => {

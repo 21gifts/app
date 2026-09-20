@@ -7,6 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Card } from '@/components/ui';
 import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
+import { giftsLightningAddress } from '@/lib/gifts-address';
 
 /**
  * Public read-only identity card matching signed-in profile chrome without
@@ -27,7 +28,9 @@ export function ViewProfileScreen({
   donated?: AccountActivity['donatedOverTime'];
 }): ReactElement {
   const { t } = useTranslations();
-  const address = profile.lightningAddress;
+  /* v8 ignore next -- SSR: no window */
+  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const address = giftsLightningAddress(profile.username, host);
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
 
@@ -71,12 +74,12 @@ export function ViewProfileScreen({
       </div>
       <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
         <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-          {t('la.heading')}
+          {t('profile.giftsHeading')}
         </p>
         {address !== null && address.trim() !== '' ? (
           <p className="min-w-0 truncate font-mono text-sm text-app-fg">{address}</p>
         ) : (
-          <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noAddress')}</p>
+          <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
         )}
       </div>
     </Card>

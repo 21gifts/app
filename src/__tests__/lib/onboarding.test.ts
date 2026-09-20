@@ -31,6 +31,16 @@ describe('onboarding', () => {
     expect(nextOnboardingPath(base)).toBe('/setup/name');
   });
 
+  it('maps setup username to the username screen', () => {
+    const account = {
+      ...base,
+      name: 'Ada',
+      setup: 'username' as const,
+      missing: ['username', 'lightning-address', 'rules'] as Account['missing'],
+    };
+    expect(nextOnboardingPath(account)).toBe('/setup/username');
+  });
+
   it('maps setup lightning-address to the address screen', () => {
     const account = {
       ...base,

@@ -231,6 +231,18 @@ Heading **Send help**, explainer lead, **Open the forum**.
 Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts name setup](images/setup-name.png)
 
+## Screen: /setup/username
+
+- **URL:** `/setup/username` — after the display name (`account.setup === 'username'`). Cannot skip.
+- **What the user sees:** Fill `AppShell` with Wordmark top-left and one **Menu** top-right. Heading **Your 21.gifts name**, hint that Bitcoin is sent to `you@21.gifts` while Wallet of Satoshi still receives it, username field, **Continue**. No Skip.
+- **Actions:** Enter a LUD-16 handle and **Continue** (`POST /me/username`). Taken or invalid handles stay on this screen. After save, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **Calls:** `AppShell`, `Wordmark`, `UsernameSetup`, `SignedInChrome`, `OnboardingGate`, `setUsername`.
+
+### Variant: default
+
+Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
+![21.gifts username setup](images/setup-username.png)
+
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — second screen after login (`account.setup === 'address'`; name may already be saved or skipped).

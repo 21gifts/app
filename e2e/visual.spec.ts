@@ -13,6 +13,7 @@ const E2E_ACCOUNT = {
   linkingKey: `02${'a'.repeat(62)}`,
   role: 'basis' as const,
   name: null as string | null,
+  username: null as string | null,
   location: null as string | null,
   lightningAddress: null as string | null,
   lightningAddressVerified: false,
@@ -21,8 +22,10 @@ const E2E_ACCOUNT = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   aboutMe: null as string | null,
-  setup: 'name' as 'name' | 'lightning-address' | 'rules' | null,
-  missing: ['name', 'lightning-address', 'rules'] as Array<'name' | 'lightning-address' | 'rules'>,
+  setup: 'name' as 'name' | 'username' | 'lightning-address' | 'rules' | null,
+  missing: ['name', 'username', 'lightning-address', 'rules'] as Array<
+    'name' | 'username' | 'lightning-address' | 'rules'
+  >,
 };
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
@@ -444,12 +447,13 @@ const quotedNote = {
 const RULES_SETUP_ACCOUNT = {
   ...E2E_ACCOUNT,
   name: 'Ada',
+  username: 'ada',
   lightningAddress: 'alice@walletofsatoshi.com',
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
   setup: 'rules' as const,
-  missing: ['rules'] as Array<'name' | 'lightning-address' | 'rules'>,
+  missing: ['rules'] as Array<'name' | 'username' | 'lightning-address' | 'rules'>,
 };
 
 /** Signed-in visitor at `/setup/rules` (name + address saved, rules not agreed). */
@@ -672,6 +676,7 @@ test.describe('screen baselines', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -754,6 +759,28 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/name');
     await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
     await shotScreen(page, 'screen-setup-name');
+  });
+
+  test('screen /setup/username', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          setup: 'username',
+          missing: ['username', 'lightning-address', 'rules'],
+        }),
+      });
+    });
+    await page.goto('/setup/username');
+    await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+    await shotScreen(page, 'screen-setup-username');
   });
 
   test('screen /setup/address', async ({ page }) => {
@@ -883,6 +910,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -917,6 +945,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -952,6 +981,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1079,6 +1109,7 @@ test.describe('onboarding screens', () => {
           role: 'founder',
           name: 'Cyrill',
           forumLawsDismissed: true,
+          username: 'cyrill',
           lightningAddress: 'cyrill@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1142,6 +1173,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1170,6 +1202,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1195,6 +1228,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1225,6 +1259,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1252,6 +1287,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1281,6 +1317,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1308,6 +1345,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1355,6 +1393,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1438,6 +1477,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           forumLawsDismissed: true,
@@ -1492,6 +1532,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1525,6 +1566,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -1562,6 +1604,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -1578,6 +1621,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
@@ -1619,6 +1663,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -1635,6 +1680,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -1700,6 +1746,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -1716,6 +1763,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -1793,6 +1841,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -1809,6 +1858,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -1895,6 +1945,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -1911,6 +1962,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -1976,6 +2028,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -1992,6 +2045,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2043,6 +2097,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2059,6 +2114,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2110,6 +2166,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2126,6 +2183,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2171,6 +2229,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2187,6 +2246,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2232,6 +2292,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2248,6 +2309,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2313,6 +2375,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2329,6 +2392,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2396,6 +2460,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2412,6 +2477,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2423,7 +2489,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await expect(page.getByText('carol@walletofsatoshi.com')).toBeVisible();
+    await expect(page.getByText('carol@21.gifts')).toBeVisible();
     await expect(page.getByText('profileMessage: null')).toHaveCount(0);
     await shotScreen(page, 'state-members-note-null');
   });
@@ -2440,6 +2506,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2465,6 +2532,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2494,6 +2562,7 @@ test.describe('onboarding screens', () => {
           id: ownId,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2510,6 +2579,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           role: 'basis',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2555,6 +2625,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2653,6 +2724,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           role: 'basis',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
@@ -2687,6 +2759,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2703,6 +2776,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2775,6 +2849,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2791,6 +2866,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2867,6 +2943,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2883,6 +2960,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -2956,6 +3034,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -2972,6 +3051,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -3047,6 +3127,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           setup: null,
@@ -3063,6 +3144,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
+          username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
@@ -3163,6 +3245,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -3555,6 +3638,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -3586,6 +3670,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -3616,6 +3701,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -3689,6 +3775,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -3723,6 +3810,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           lightningAddressVerified: false,
           createdAt: 1,
@@ -3904,6 +3992,7 @@ test.describe('profile activity chart variants', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -4069,6 +4158,7 @@ test.describe('welcome forum variants', () => {
           role,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -5418,6 +5508,7 @@ test.describe('welcome forum variants', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -5446,6 +5537,7 @@ test.describe('welcome forum variants', () => {
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -5502,6 +5594,7 @@ test.describe('contact screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -5613,6 +5706,7 @@ test.describe('inbox screens', () => {
           role,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -6059,6 +6153,7 @@ test.describe('notifications screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           location: null,
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -6155,6 +6250,7 @@ test.describe('moderate screens', () => {
           ...E2E_ACCOUNT,
           role,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -6215,6 +6311,7 @@ test.describe('moderate hidden screens', () => {
           ...E2E_ACCOUNT,
           role,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -6349,6 +6446,7 @@ test.describe('moderate proposals screens', () => {
           ...E2E_ACCOUNT,
           role,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -6487,6 +6585,7 @@ test.describe('moderate group screens', () => {
           ...E2E_ACCOUNT,
           role,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
@@ -6613,6 +6712,7 @@ test.describe('trust-chain screens', () => {
           ...E2E_ACCOUNT,
           role,
           name: 'Ada',
+          username: 'alice',
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),

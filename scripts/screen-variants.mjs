@@ -156,6 +156,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Your name' })",
   },
   {
+    route: '/setup/username',
+    id: 'default',
+    image: 'setup-username.png',
+    visual: 'screen-setup-username',
+    needle: "getByRole('heading', { name: 'Your 21.gifts name' })",
+  },
+  {
     route: '/setup/address',
     id: 'default',
     image: 'setup-address.png',

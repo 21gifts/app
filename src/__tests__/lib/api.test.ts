@@ -54,6 +54,7 @@ import {
   setLightningAddress,
   setLocation,
   setName,
+  setUsername,
   skipSetup,
   resolveLightningAddress,
   startPasskeyAuthentication,
@@ -503,6 +504,38 @@ describe('setName', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setName('sess', 'x')).rejects.toThrow();
+  });
+});
+
+describe('setUsername', () => {
+  it('posts the username and returns the validated account', async () => {
+    const named = { ...account, username: 'ada' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: named });
+
+    await expect(setUsername('sess', 'ada')).resolves.toEqual(named);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/username`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'ada' }),
+    });
+  });
+
+  it('throws username-taken on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Username is already in use' } });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow('username-taken');
+  });
+
+  it('throws username-invalid on 400', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setUsername('sess', 'Ada Lovelace')).rejects.toThrow('username-invalid');
+  });
+
+  it('throws username-request on other failures', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow('username-request');
   });
 });
 

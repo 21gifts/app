@@ -1,5 +1,5 @@
 /** Requirement keys the api may list as still missing for a post. */
-export type MissingRequirement = 'name' | 'lightning-address' | 'rules';
+export type MissingRequirement = 'name' | 'username' | 'lightning-address' | 'rules';
 
 /**
  * Api 409 `missing_requirements` rejection for forum or contact posts.
@@ -17,7 +17,7 @@ export class MissingRequirementsError extends Error {
   }
 }
 
-const REQUIREMENT_SET = new Set<string>(['name', 'lightning-address', 'rules']);
+const REQUIREMENT_SET = new Set<string>(['name', 'username', 'lightning-address', 'rules']);
 
 /**
  * Parses a 409 `missing_requirements` body into {@link MissingRequirementsError}.
@@ -48,19 +48,22 @@ export function parseMissingRequirements(body: unknown): MissingRequirementsErro
 
 /**
  * Next overlay field to collect before a forum post: rules, then name, then
- * lightning-address.
+ * username, then lightning-address.
  *
  * @param missing - Account or 409 missing list.
- * @returns `'rules'`, `'name'`, `'lightning-address'`, or `null` when posting may proceed.
+ * @returns `'rules'`, `'name'`, `'username'`, `'lightning-address'`, or `null` when posting may proceed.
  */
 export function nextPostRequirement(
   missing: readonly MissingRequirement[],
-): 'rules' | 'name' | 'lightning-address' | null {
+): 'rules' | 'name' | 'username' | 'lightning-address' | null {
   if (missing.includes('rules')) {
     return 'rules';
   }
   if (missing.includes('name')) {
     return 'name';
+  }
+  if (missing.includes('username')) {
+    return 'username';
   }
   if (missing.includes('lightning-address')) {
     return 'lightning-address';
@@ -69,20 +72,23 @@ export function nextPostRequirement(
 }
 
 /**
- * Next overlay field to collect before a contact send: rules, then name.
- * Lightning-address gaps do not open an overlay for contact.
+ * Next overlay field to collect before a contact send: rules, then name,
+ * then username. Lightning-address gaps do not open an overlay for contact.
  *
  * @param missing - Account or 409 missing list.
- * @returns `'rules'`, `'name'`, or `null` when the send may proceed.
+ * @returns `'rules'`, `'name'`, `'username'`, or `null` when the send may proceed.
  */
 export function nextContactRequirement(
   missing: readonly MissingRequirement[],
-): 'rules' | 'name' | null {
+): 'rules' | 'name' | 'username' | null {
   if (missing.includes('rules')) {
     return 'rules';
   }
   if (missing.includes('name')) {
     return 'name';
+  }
+  if (missing.includes('username')) {
+    return 'username';
   }
   return null;
 }

@@ -5,6 +5,7 @@ const MISSING_KEY = 'b'.repeat(64);
 
 const VIEW_PROFILE = {
   name: 'Ada',
+  username: 'alice',
   location: null,
   lightningAddress: 'alice@walletofsatoshi.com',
   lightningAddressVerified: false,
@@ -49,8 +50,8 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText('Name')).toBeVisible();
   await expect(page.getByText('Ada')).toBeVisible();
-  await expect(page.getByText('Wallet of Satoshi address')).toBeVisible();
-  await expect(page.getByText('alice@walletofsatoshi.com')).toBeVisible();
+  await expect(page.getByText('21.gifts address')).toBeVisible();
+  await expect(page.getByText('alice@21.gifts')).toBeVisible();
   await expect(page.getByText('No gifts yet.')).toBeVisible();
   await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();

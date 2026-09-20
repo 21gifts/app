@@ -55,6 +55,10 @@ const nextConfig: NextConfig = {
         source: '/.well-known/nostr.json',
         headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
       },
+      {
+        source: '/.well-known/lnurlp/:username',
+        headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
+      },
       { source: '/', headers: [hsts] },
       { source: '/:path*', headers: [hsts] },
     ];

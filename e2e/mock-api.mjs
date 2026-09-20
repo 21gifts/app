@@ -108,6 +108,10 @@ function hasName(account) {
   return account.name !== null && String(account.name).trim() !== '';
 }
 
+function hasUsername(account) {
+  return account.username !== null && String(account.username).trim() !== '';
+}
+
 function hasLightningAddress(account) {
   return account.lightningAddress !== null && String(account.lightningAddress).trim() !== '';
 }
@@ -116,10 +120,51 @@ function hasRules(account) {
   return account.rulesAgreedAt !== null;
 }
 
+/**
+ * Derive a LUD-16 local-part from a display name (same charset as the api).
+ *
+ * @param {string} name
+ * @returns {string | null}
+ */
+function usernameFromName(name) {
+  const slug = String(name)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32);
+  if (slug === '' || slug === 'user') {
+    return null;
+  }
+  return slug;
+}
+
+/**
+ * True when another account already owns this handle.
+ *
+ * @param {string} username
+ * @param {string} accountId
+ * @returns {boolean}
+ */
+function usernameTaken(username, accountId) {
+  const needle = username.trim().toLowerCase();
+  for (const row of byToken.values()) {
+    if (
+      row.id !== accountId &&
+      hasUsername(row) &&
+      String(row.username).trim().toLowerCase() === needle
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Refresh `missing` from filled fields. */
 function refreshMissing(account) {
   const missing = [];
   if (!hasName(account)) missing.push('name');
+  if (!hasUsername(account)) missing.push('username');
   if (!hasLightningAddress(account)) missing.push('lightning-address');
   if (!hasRules(account)) missing.push('rules');
   account.missing = missing;
@@ -133,6 +178,14 @@ function refreshMissing(account) {
 function afterFieldWrite(account) {
   refreshMissing(account);
   if (account.setup === 'name' && hasName(account)) {
+    account.setup = hasUsername(account)
+      ? hasLightningAddress(account)
+        ? hasRules(account)
+          ? null
+          : 'rules'
+        : 'lightning-address'
+      : 'username';
+  } else if (account.setup === 'username' && hasUsername(account)) {
     account.setup = hasLightningAddress(account)
       ? hasRules(account)
         ? null
@@ -151,6 +204,7 @@ function newAccount(linkingKey) {
     linkingKey,
     role: 'basis',
     name: null,
+    username: null,
     location: null,
     lightningAddress: null,
     lightningAddressVerified: false,
@@ -161,7 +215,7 @@ function newAccount(linkingKey) {
     aboutMe: null,
     aboutMeHasPhoto: false,
     setup: 'name',
-    missing: ['name', 'lightning-address', 'rules'],
+    missing: ['name', 'username', 'lightning-address', 'rules'],
   };
   return account;
 }
@@ -171,6 +225,7 @@ const E2E_MEMBER_ID = '22222222-2222-4222-8222-222222222222';
 const E2E_MEMBER_PROFILE = {
   id: E2E_MEMBER_ID,
   name: 'Carol',
+  username: 'carol',
   location: 'Zug',
   role: 'verified',
   lightningAddress: 'carol@walletofsatoshi.com',
@@ -917,7 +972,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (account.setup === parsed.step) {
       if (parsed.step === 'name') {
-        account.setup = 'lightning-address';
+        account.setup = 'username';
       } else {
         account.setup = 'rules';
       }
@@ -1185,6 +1240,50 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.name = trimmed;
+    if (!hasUsername(account)) {
+      let derived = usernameFromName(trimmed);
+      if (derived !== null && usernameTaken(derived, account.id)) {
+        derived = `${derived}-${account.id.replace(/[^a-z0-9]/g, '').slice(0, 8)}`.slice(0, 32);
+      }
+      if (derived !== null && !usernameTaken(derived, account.id)) {
+        account.username = derived;
+      }
+    }
+    afterFieldWrite(account);
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/username') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a "username" string' });
+      return;
+    }
+    if (typeof parsed?.username !== 'string') {
+      json(res, 400, { error: 'Expected a JSON body with a "username" string' });
+      return;
+    }
+    const username = parsed.username.trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(username) || username === '_') {
+      json(res, 400, {
+        error: 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+      });
+      return;
+    }
+    if (usernameTaken(username, account.id)) {
+      json(res, 409, { error: 'Username is already in use' });
+      return;
+    }
+    account.username = username;
     afterFieldWrite(account);
     json(res, 200, account);
     return;

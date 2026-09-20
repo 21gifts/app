@@ -71,6 +71,16 @@ export async function proxyMeNamePost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/username to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMeUsernamePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/username');
+}
+
+/**
  * Proxies POST /me/location to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

@@ -18,6 +18,8 @@ export const accountSchema = z.object({
   linkingKey: z.string().nullable(),
   role: z.enum(ROLE_ORDER),
   name: z.string().min(1).nullable(),
+  /** Unique LUD-16 / NIP-05 local-part. Optional so older api bodies still parse. */
+  username: z.string().min(1).nullable().optional(),
   location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
@@ -31,9 +33,9 @@ export const accountSchema = z.object({
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
-  setup: z.enum(['name', 'lightning-address', 'rules']).nullable(),
+  setup: z.enum(['name', 'username', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
-  missing: z.array(z.enum(['name', 'lightning-address', 'rules'])),
+  missing: z.array(z.enum(['name', 'username', 'lightning-address', 'rules'])),
   /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
@@ -100,6 +102,8 @@ export function accountNotificationLevel(account: Account): NotificationLevel {
  */
 export const viewProfileSchema = z.object({
   name: z.string().min(1).nullable(),
+  /** Unique LUD-16 / NIP-05 local-part. Optional so older api bodies still parse. */
+  username: z.string().min(1).nullable().optional(),
   location: z.string().min(1).nullable(),
   lightningAddress: z.string().nullable(),
   lightningAddressVerified: z.boolean(),
@@ -702,6 +706,8 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
 export const memberProfileSchema = z.object({
   id: z.string(),
   name: z.string().min(1).nullable(),
+  /** Unique LUD-16 / NIP-05 local-part. Optional so older api bodies still parse. */
+  username: z.string().min(1).nullable().optional(),
   location: z.string().min(1).nullable(),
   role: z.enum(ROLE_ORDER),
   lightningAddress: z.string().nullable(),

@@ -72,6 +72,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/setup/username:default",
+    "label": "/setup/username default",
+    "visual": "screen-setup-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/address:default",
     "label": "/setup/address default",
     "visual": "screen-setup-address",

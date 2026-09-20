@@ -5,14 +5,18 @@ import { useState, type ReactElement } from 'react';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
+import { UsernameForm } from '@/components/UsernameForm';
 import { Button, Card, IconButton } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
+/** Field collected by {@link RequirementsOverlay} before a pending post retries. */
+export type OverlayRequirement = 'name' | 'username' | 'rules' | 'lightning-address';
+
 /** Props for {@link RequirementsOverlay}. */
 export interface RequirementsOverlayProps {
   /** Field the visitor must add before the pending post retries. */
-  requirement: 'name' | 'rules' | 'lightning-address';
+  requirement: OverlayRequirement;
   /** Closes the overlay without posting. */
   onDismiss: () => void;
   /** Called after the requirement is saved so the loader can retry. */
@@ -20,8 +24,9 @@ export interface RequirementsOverlayProps {
 }
 
 /**
- * Modal to add a missing name, Lightning Address, or living-room rules
- * agreement before retrying a forum or contact post. No Skip control.
+ * Modal to add a missing name, 21.gifts username, Wallet of Satoshi
+ * address, or living-room rules agreement before retrying a forum or
+ * contact post. No Skip control.
  *
  * @param props - See {@link RequirementsOverlayProps}.
  * @returns The overlay dialog.
@@ -40,9 +45,11 @@ export function RequirementsOverlay({
   const titleKey =
     requirement === 'name'
       ? 'requirements.nameTitle'
-      : requirement === 'rules'
-        ? 'requirements.rulesTitle'
-        : 'requirements.addressTitle';
+      : requirement === 'username'
+        ? 'requirements.usernameTitle'
+        : requirement === 'rules'
+          ? 'requirements.rulesTitle'
+          : 'requirements.addressTitle';
 
   const handleAgree = (): void => {
     if (session === null || busy) {
@@ -98,6 +105,8 @@ export function RequirementsOverlay({
         </div>
         {requirement === 'name' ? (
           <NameForm variant="profile" onSaved={onSatisfied} />
+        ) : requirement === 'username' ? (
+          <UsernameForm onSaved={onSatisfied} />
         ) : requirement === 'lightning-address' ? (
           <LightningAddressForm variant="profile" onSaved={onSatisfied} />
         ) : (
