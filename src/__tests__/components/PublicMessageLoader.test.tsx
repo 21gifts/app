@@ -840,8 +840,8 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getByText('Visitor')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Visitor' })).toBeNull();
+    expect(screen.getByText('External')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
@@ -862,8 +862,8 @@ describe('PublicMessageLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getByText('Visitor')).toBeTruthy();
+    expect(screen.getByText('External')).toBeTruthy();
     expect(screen.getByText('₿69')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Visitor' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
   });
 });

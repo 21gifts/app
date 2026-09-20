@@ -292,13 +292,14 @@ const en = {
   'forum.previewAlt': 'Selected photo',
   'forum.photoAlt': 'Photo from {name}',
   'forum.quotedNote': 'Open linked note from {name}',
-  'forum.quotedNoteVisitor': 'Open linked note from visitor {name}',
+  'forum.quotedNoteExternal': 'Open linked note from {name} (external)',
   'forum.removePhoto': 'Remove photo',
   'forum.removeVideo': 'Remove video',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
   'forum.errorTooMany': 'You can add up to 10 photos',
   'forum.copyLink': 'Copy link to this note',
+  'forum.copyReplyLink': 'Copy link to this reply',
   'forum.replyCount': '{count} reactions',
   'forum.replyComposerLabel': 'Your reaction',
   'forum.replyPlaceholder': 'Write a reaction',
@@ -408,7 +409,7 @@ const en = {
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
-  'forum.via.nostr': 'Visitor',
+  'forum.via.nostr': 'External',
   'forum.via.nostrHint':
     'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
 
@@ -909,7 +910,7 @@ const de = {
   'forum.previewAlt': 'Ausgewähltes Foto',
   'forum.photoAlt': 'Foto von {name}',
   'forum.quotedNote': 'Verknüpfte Notiz von {name} öffnen',
-  'forum.quotedNoteVisitor': 'Verknüpfte Notiz von Besucher {name} öffnen',
+  'forum.quotedNoteExternal': 'Verknüpfte Notiz von {name} (extern) öffnen',
   'forum.removePhoto': 'Foto entfernen',
   'forum.removeVideo': 'Video entfernen',
   'forum.errorUnsupported':
@@ -917,6 +918,7 @@ const de = {
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
   'forum.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'forum.copyLink': 'Link zu dieser Notiz kopieren',
+  'forum.copyReplyLink': 'Link zu dieser Antwort kopieren',
   'forum.replyCount': '{count} Reaktionen',
   'forum.replyComposerLabel': 'Ihre Reaktion',
   'forum.replyPlaceholder': 'Reaktion schreiben',
@@ -1029,7 +1031,7 @@ const de = {
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
-  'forum.via.nostr': 'Besucher',
+  'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
     'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
 
@@ -1533,13 +1535,14 @@ const es = {
   'forum.previewAlt': 'Foto seleccionada',
   'forum.photoAlt': 'Foto de {name}',
   'forum.quotedNote': 'Abrir la nota enlazada de {name}',
-  'forum.quotedNoteVisitor': 'Abrir la nota enlazada del visitante {name}',
+  'forum.quotedNoteExternal': 'Abrir la nota enlazada de {name} (externo)',
   'forum.removePhoto': 'Quitar foto',
   'forum.removeVideo': 'Quitar vídeo',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
   'forum.errorTooMany': 'Puedes añadir hasta 10 fotos',
   'forum.copyLink': 'Copiar enlace a esta nota',
+  'forum.copyReplyLink': 'Copiar enlace a esta respuesta',
   'forum.replyCount': '{count} reacciones',
   'forum.replyComposerLabel': 'Tu reacción',
   'forum.replyPlaceholder': 'Escribe una reacción',
@@ -1651,7 +1654,7 @@ const es = {
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
-  'forum.via.nostr': 'Visitante',
+  'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
     'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
 
@@ -2146,13 +2149,14 @@ const fil = {
   'forum.previewAlt': 'Napiling litrato',
   'forum.photoAlt': 'Litrato mula kay {name}',
   'forum.quotedNote': 'Buksan ang naka-link na nota mula kay {name}',
-  'forum.quotedNoteVisitor': 'Buksan ang naka-link na nota mula sa bisitang si {name}',
+  'forum.quotedNoteExternal': 'Buksan ang naka-link na nota mula kay {name} (panlabas)',
   'forum.removePhoto': 'Alisin ang litrato',
   'forum.removeVideo': 'Alisin ang bidyo',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
   'forum.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
   'forum.copyLink': 'Kopyahin ang link sa notang ito',
+  'forum.copyReplyLink': 'Kopyahin ang link sa tugong ito',
   'forum.replyCount': '{count} na reaksyon',
   'forum.replyComposerLabel': 'Iyong reaksyon',
   'forum.replyPlaceholder': 'Sumulat ng reaksyon',
@@ -2265,7 +2269,7 @@ const fil = {
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
-  'forum.via.nostr': 'Bisita',
+  'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
     'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
 

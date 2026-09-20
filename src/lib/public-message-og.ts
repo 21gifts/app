@@ -6,8 +6,8 @@ import { getApiUrl } from '@/lib/config';
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
-const VISITOR_OG_TITLE = 'Visitor on 21.gifts';
-const VISITOR_OG_DESCRIPTION = 'A reply from a visitor who sent bitcoin to a post on 21.gifts.';
+const EXTERNAL_OG_TITLE = 'External author on 21.gifts';
+const EXTERNAL_OG_DESCRIPTION = 'A reply from someone outside 21.gifts who sent bitcoin to a post.';
 const DESCRIPTION_MAX = 300;
 
 /**
@@ -71,8 +71,8 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
     return {};
   }
   if (note.via !== undefined) {
-    const title = VISITOR_OG_TITLE;
-    const description = VISITOR_OG_DESCRIPTION;
+    const title = EXTERNAL_OG_TITLE;
+    const description = EXTERNAL_OG_DESCRIPTION;
     return {
       title,
       description,

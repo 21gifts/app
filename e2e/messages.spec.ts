@@ -841,7 +841,7 @@ test('quoted public note hides the raw URL and opens the linked note', async ({ 
   await expect(page).toHaveURL(/\/messages\/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec/);
 });
 
-test('welcome visitor reply shows a badge and keeps the url as text', async ({ page }) => {
+test('welcome external reply shows a badge and keeps the url as text', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -919,8 +919,8 @@ test('welcome visitor reply shows a badge and keeps the url as text', async ({ p
   });
   await page.goto('/welcome');
   await page.getByText('Thank you both — that helps.').click();
-  await expect(page.getByRole('button', { name: 'Visitor', exact: true }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Visitor', exact: true }).first().click();
+  await expect(page.getByRole('button', { name: 'External', exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'External', exact: true }).first().click();
   await expect(
     page.getByText(
       'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
@@ -933,7 +933,7 @@ test('welcome visitor reply shows a badge and keeps the url as text', async ({ p
   await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
 });
 
-test('unsigned permalink visitor reply is a span and keeps the url as text', async ({ page }) => {
+test('unsigned permalink external reply is a span and keeps the url as text', async ({ page }) => {
   const parentId = ID;
   await page.route(`**/public-messages/${parentId}/replies`, async (route) => {
     await route.fulfill({
@@ -979,10 +979,83 @@ test('unsigned permalink visitor reply is a span and keeps the url as text', asy
   });
   await page.goto(`/messages/${parentId}`);
   await expect(page.getByText('Hello from Ada')).toBeVisible();
-  await expect(page.getByText('Visitor', { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /visitor/i })).toHaveCount(0);
+  await expect(page.getByText('External', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /external/i })).toHaveCount(0);
   await expect(
     page.getByText('Greetings! https://example.com/hello', { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
+});
+
+test('welcome reply copy control copies the reply permalink', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-ada',
+            name: 'Ada',
+            text: 'Thank you both — that helps.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'moderator',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/messages/**/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r-copy-permalink',
+            name: 'Bob',
+            text: 'Nice one',
+            createdAt: '2026-08-28T12:02:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByText('Thank you both — that helps.').click();
+  const replyCopyButton = page.getByRole('button', { name: 'Copy link to this reply' });
+  await replyCopyButton.click();
+  await expect(replyCopyButton).toHaveAttribute('data-copied', 'true');
 });
