@@ -1296,7 +1296,6 @@ export function ForumBoard({
                                   stopCardToggle(event);
                                   void copyMessageLink(reply.id);
                                 }}
-
                               >
                                 {copiedId === reply.id ? (
                                   <Check aria-hidden="true" className="h-3.5 w-3.5" />
