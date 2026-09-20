@@ -282,6 +282,13 @@
 - **Used by:** `fetchPublicReplies`.
 - **Auth:** Public.
 
+## Endpoint: GET /messages/compose-target
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats }` for the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying.
+- **Errors:** Upstream 401/409/400/503, or 502 if the api is unreachable.
+- **Used by:** `fetchComposeTarget`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /messages/[id]/invoice
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).

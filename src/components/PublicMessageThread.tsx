@@ -10,6 +10,7 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
+  fetchComposeTarget,
   fetchGiftStats,
   fetchMessagePhoto,
   fetchPublicMessage,
@@ -533,11 +534,73 @@ export function PublicMessageThread(props: {
         return;
       }
       if (isReplyPaymentError(err)) {
-        await runPaidReply(token, trimmed, parentId, 1, isRetry, note.sats);
+        await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
       if (expandedIdRef.current === parentId) {
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      }
+    } finally {
+      setReplyPosting(false);
+    }
+  };
+
+  const runComposePay = async (
+    token: string,
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    try {
+      const target = await fetchComposeTarget(token);
+      const invoice = await postMessageInvoice(
+        token,
+        target.messageId,
+        sats,
+        `inReplyTo:${parentId}\n${trimmed}`,
+      );
+      /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(target.messageId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      setReplyPosting(false);
+      startPayPoll(target.messageId, target.sats);
+    } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the compose invoice failed */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      /* v8 ignore stop */
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(
+          err instanceof Error && /1[-–]500 characters/i.test(err.message)
+            ? 'tooLong'
+            : isRateLimitError(err)
+              ? 'rateLimit'
+              : 'request',
+        );
       }
     } finally {
       setReplyPosting(false);
@@ -816,11 +879,13 @@ export function PublicMessageThread(props: {
           baselineSats,
         );
       }
-      if (parsed === 'empty' && (exempt || authorUnknown)) {
-        return runReplyPost(token, trimmed, parentId, isRetry);
+      if (parsed === 'empty') {
+        if (exempt || authorUnknown) {
+          return runReplyPost(token, trimmed, parentId, isRetry);
+        }
+        return runComposePay(token, trimmed, parentId, 1, isRetry);
       }
-      const sats = parsed === 'empty' ? 1 : parsed;
-      return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {

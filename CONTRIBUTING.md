@@ -92,6 +92,7 @@ app/
 │   │   │   └── lnurlp/[username]/route.ts  # GET/OPTIONS /.well-known/lnurlp/:username LUD-16 CORS *
 │   │   ├── messages/
 │   │   │   ├── page.tsx         # GET /messages — signed-in PN inbox
+│   │   │   ├── compose-target/route.ts  # GET /messages/compose-target platform fee note
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx     # GET /messages/[id] — public forum note; per-note Open Graph
 │   │   │       ├── invoice/route.ts  # POST /messages/:id/invoice payable-reply pay sheet

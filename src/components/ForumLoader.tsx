@@ -1793,9 +1793,13 @@ export function ForumLoader({
     const generation = payPollGeneration.current;
     try {
       const target = await fetchComposeTarget(session);
-      const comment =
-        trimmed === '' ? `inReplyTo:${parentId}\n` : `inReplyTo:${parentId}\n${trimmed}`;
-      const invoice = await postMessageInvoice(session, target.messageId, sats, comment);
+      const invoice = await postMessageInvoice(
+        session,
+        target.messageId,
+        sats,
+        `inReplyTo:${parentId}\n${trimmed}`,
+      );
+      /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -1811,9 +1815,11 @@ export function ForumLoader({
       pendingPostRef.current = null;
       startPayPoll(target.messageId, target.sats);
     } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
         return;
       }
+      /* v8 ignore stop */
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);
@@ -1858,14 +1864,13 @@ export function ForumLoader({
       if (trimmed === '' && parsed === 'empty') {
         return runPaidReply(trimmed, parentId, DEFAULT_FORUM_PAY_SATS, parentSats, isRetry);
       }
-      if (parsed === 'empty' && (exempt || authorUnknown)) {
-        return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
-      }
-      if (parsed === 'empty' && !exempt) {
+      if (parsed === 'empty') {
+        if (exempt || authorUnknown) {
+          return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
+        }
         return runComposePay(trimmed, parentId, 1, isRetry);
       }
-      const sats = parsed === 'empty' ? 1 : parsed;
-      return runPaidReply(trimmed, parentId, sats, parentSats, isRetry);
+      return runPaidReply(trimmed, parentId, parsed, parentSats, isRetry);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {

@@ -5143,7 +5143,10 @@ test.describe('profile funding states', () => {
 });
 
 test.describe('welcome forum variants', () => {
-  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'verified' | 'moderator' = 'basis',
+  ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -5912,7 +5915,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         const parsed = route.request().postDataJSON() as {
@@ -6212,7 +6215,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome posting-photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     let release: () => void = () => undefined;
     const held = new Promise<void>((resolve) => {
       release = resolve;

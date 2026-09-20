@@ -18,6 +18,7 @@ import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { Button, Card } from '@/components/ui';
 import {
+  fetchComposeTarget,
   fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
@@ -599,10 +600,62 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
-        const parentRowNow = posts?.find((message) => message.id === parentId);
-        /* v8 ignore next -- expanded parent is a loaded post */
-        const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
-        await runPaidReply(token, trimmed, parentId, 1, isRetry, parentSatsNow);
+        await runComposePay(token, trimmed, parentId, 1, isRetry);
+        return;
+      }
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      }
+    } finally {
+      setReplyPosting(false);
+    }
+  };
+
+  const runComposePay = async (
+    token: string,
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    try {
+      const target = await fetchComposeTarget(token);
+      const invoice = await postMessageInvoice(
+        token,
+        target.messageId,
+        sats,
+        `inReplyTo:${parentId}\n${trimmed}`,
+      );
+      /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(target.messageId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      startPayPoll(target.messageId, target.sats);
+    } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the compose invoice failed */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      /* v8 ignore stop */
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
         return;
       }
       if (expandedIdRef.current === parentId) {
@@ -891,7 +944,9 @@ export function MemberProfileScreen({
     const token = session;
     const parentId = expandedId;
     const parentRow = posts?.find((message) => message.id === parentId);
-    const exempt = isReplyPaymentExempt(account, parentRow?.accountId ?? profile.id);
+    const parentAccountId = parentRow?.accountId;
+    const exempt = isReplyPaymentExempt(account, parentAccountId);
+    const authorUnknown = parentAccountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -909,11 +964,13 @@ export function MemberProfileScreen({
           baselineSats,
         );
       }
-      if (parsed === 'empty' && exempt) {
-        return runReplyPost(token, trimmed, parentId, isRetry);
+      if (parsed === 'empty') {
+        if (exempt || authorUnknown) {
+          return runReplyPost(token, trimmed, parentId, isRetry);
+        }
+        return runComposePay(token, trimmed, parentId, 1, isRetry);
       }
-      const sats = parsed === 'empty' ? 1 : parsed;
-      return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {

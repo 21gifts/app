@@ -2556,7 +2556,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/messages/compose-target` so a basis account can invoice 1 sat to 21.gifts (the platform profile note) before posting or replying.
 - **Inputs:** session token.
 - **Returns / side effects:** `{ messageId, sats }` of the payable platform profile note, or throws collapsed copy.
-- **Used by:** `ForumLoader`.
+- **Used by:** `ForumLoader`, `PublicMessageThread`, `MemberProfileScreen`.
 
 ## Function: postMessageInvoice
 

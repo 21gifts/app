@@ -4,6 +4,7 @@ import { PublicMessageThread } from '@/components/PublicMessageThread';
 import {
   agreeToRules,
   deleteMessage,
+  fetchComposeTarget,
   fetchGiftStats,
   fetchMessagePhoto,
   fetchPublicMessage,
@@ -33,6 +34,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
+  fetchComposeTarget: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
@@ -162,6 +164,7 @@ beforeEach(() => {
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(fetchGiftStats).mockResolvedValue({ spendOverTime: [] } as never);
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+  vi.mocked(fetchComposeTarget).mockResolvedValue({ messageId: 'fee-note', sats: 0 });
   vi.mocked(postMessage).mockResolvedValue({
     ...root,
     id: '99999999-9999-4999-8999-999999999999',
@@ -421,7 +424,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+      );
     });
   });
 
@@ -513,7 +522,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+      );
     });
   });
 
@@ -541,6 +556,81 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('maps a compose-pay failure onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('offline'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('maps an explicit-amount length error onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('maps an explicit-amount failure onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('offline'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('maps an explicit-amount rate-limit onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
+    });
+  });
+
+  it('maps a compose-pay length error onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('maps a compose-pay rate-limit onto the reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
+    });
+  });
+
   it('invoices 1 sat when a non-exempt member replies with text and an empty amount', async () => {
     signIn();
     renderThread();
@@ -548,7 +638,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+      );
     });
   });
 
@@ -573,7 +669,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+      );
     });
   });
 
@@ -684,7 +786,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'reply');
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nreply`,
+      );
     });
   });
 
@@ -815,6 +923,52 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('retries an explicit-amount reply after a missing_requirements overlay', async () => {
+    vi.mocked(postMessageInvoice)
+      .mockRejectedValueOnce(new MissingRequirementsError(['name']))
+      .mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 5 });
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    signIn({ name: null, missing: [] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks');
+    });
+  });
+
+  it('shows a request error when an explicit-amount overlay retry is still missing requirements', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
+    vi.mocked(setName).mockResolvedValue({
+      ...account,
+      name: 'Ada',
+      missing: [],
+      setup: null,
+    });
+    signIn({ name: null, missing: [] });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
     });
   });
 
