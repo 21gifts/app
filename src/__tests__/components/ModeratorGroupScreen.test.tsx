@@ -551,6 +551,43 @@ describe('ModeratorGroupScreen', () => {
     expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-pic', 0);
   });
 
+  it('does not apply a photo blob after the account is no longer staff', async () => {
+    let resolvePhoto: ((blob: Blob) => void) | undefined;
+    photoMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalled();
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    });
+    await act(async () => {
+      resolvePhoto?.(new Blob(['jpeg'], { type: 'image/jpeg' }));
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(screen.getByText('This room is for moderators.')).toBeTruthy();
+  });
+
   it('skips a still when the photo fetch fails and loads the next', async () => {
     threadMock.mockResolvedValue([
       {

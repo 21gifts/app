@@ -105,7 +105,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   }, [session, staff, attempt]);
 
   useEffect(() => {
-    if (session === null || messages === null || group === null) {
+    if (session === null || !staff || messages === null || group === null) {
       return;
     }
     const conversationId = group.id;
@@ -165,7 +165,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, messages, group?.id]);
+  }, [session, staff, messages, group?.id]);
 
   useEffect(() => {
     return () => {
