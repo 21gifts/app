@@ -1014,7 +1014,7 @@ test('welcome reply copy control copies the reply permalink', async ({ page, con
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

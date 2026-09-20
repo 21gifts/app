@@ -953,7 +953,7 @@ test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ 
     'base64',
   );
   await seedAdaSession(page);
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
