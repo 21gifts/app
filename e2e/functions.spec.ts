@@ -406,10 +406,16 @@ async function seedGermanNoteWelcome(page: Page): Promise<void> {
   });
 }
 
+async function confirmNewAccount(page: Page): Promise<void> {
+  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+}
+
 async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
@@ -496,6 +502,7 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await openSignedInMenu(page);
@@ -3151,6 +3158,15 @@ test('Function: LoginCard — a single Log in button is visible', async ({ page 
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
 });
 
+test('Function: LoginCard — choice heading is reachable', async ({ page }) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in with existing account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+});
+
 test('Function: InAppBrowserView — Telegram WebView shows Open in browser', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
@@ -3734,6 +3750,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
@@ -3751,6 +3768,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
@@ -3789,6 +3807,7 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
@@ -3804,6 +3823,7 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
@@ -3812,6 +3832,7 @@ test('Function: credentialToJSON — create passkey reaches the signed-in view',
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
@@ -3820,6 +3841,7 @@ test('Function: base64UrlToBytes — create passkey reaches the signed-in view',
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
@@ -3828,6 +3850,7 @@ test('Function: bytesToBase64Url — create passkey reaches the signed-in view',
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });

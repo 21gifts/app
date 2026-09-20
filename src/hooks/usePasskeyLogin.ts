@@ -15,14 +15,23 @@ import {
 } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Discrete states of the passkey login flow. */
-export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported';
+/**
+ * Discrete states of the passkey login flow.
+ *
+ * `choice` is the account question after `login()` gets `NotAllowedError`
+ * outside an in-app browser.
+ */
+export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported' | 'choice';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
   /** Where the passkey flow currently is. */
   status: PasskeyStatus;
-  /** One-tap login: existing passkey, or create when the browser has none. */
+  /**
+   * Authenticate with an existing discoverable passkey. On `NotAllowedError`
+   * outside an in-app browser, status becomes `choice` instead of creating
+   * an account.
+   */
   login: () => void;
   /**
    * Create a new discoverable passkey and sign in.
@@ -75,17 +84,6 @@ function isIosWebAuthnHost(): boolean {
 }
 
 /**
- * Pause so the iOS WebAuthn sheet can close before a second ceremony.
- *
- * @returns Resolves after 400ms.
- */
-function waitForIosSheetToClose(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 400);
-  });
-}
-
-/**
  * Thrown when a newer click or unmount superseded this ceremony.
  */
 class SupersededError extends Error {
@@ -111,6 +109,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const entryKindRef = useRef<'login' | 'register' | 'authenticate'>('login');
   const lastViewKeyRef = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
+  const choiceOfferedRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const guard = useCallback((runId: number): void => {
@@ -123,6 +122,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     runIdRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
+    choiceOfferedRef.current = false;
     setLastError(null);
     setStatus('idle');
   }, []);
@@ -168,6 +168,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       );
       guard(runId);
       setAuth(session.token, session.account);
+      choiceOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');
     },
@@ -196,6 +197,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       );
       guard(runId);
       setAuth(session.token, session.account);
+      choiceOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');
     },
@@ -208,7 +210,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     }
     if (isUserCancel(error)) {
       setLastError(null);
-      setStatus('idle');
+      setStatus(choiceOfferedRef.current ? 'choice' : 'idle');
       return;
     }
     setLastError(error instanceof Error ? error.message : String(error));
@@ -266,22 +268,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           setStatus('unsupported');
           return;
         }
-        lastKindRef.current = 'register';
-        lastViewKeyRef.current = undefined;
-        const createController = new AbortController();
-        abortRef.current = createController;
-        try {
-          if (isIosWebAuthnHost()) {
-            await waitForIosSheetToClose();
-            guard(runId);
-          }
-          await completeRegistration(runId, createController);
-        } catch (createError: unknown) {
-          finishWithError(runId, createError);
-        }
+        choiceOfferedRef.current = true;
+        setLastError(null);
+        setStatus('choice');
       }
     })();
-  }, [beginRun, completeAuthentication, completeRegistration, finishWithError, guard]);
+  }, [beginRun, completeAuthentication, finishWithError]);
 
   const retry = useCallback((): void => {
     if (entryKindRef.current === 'login') {
@@ -300,6 +292,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       runIdRef.current += 1;
       abortRef.current?.abort();
       abortRef.current = null;
+      choiceOfferedRef.current = false;
     };
   }, []);
 

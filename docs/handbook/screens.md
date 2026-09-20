@@ -172,8 +172,8 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Fill `AppShell` with `HomeWordmark` top-left (`/` when unsigned, `/welcome` when a session is hydrated); light language switcher top-right (not the marketing header). Idle **Log in**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
-- **Actions:** Change language. Log in (existing login, or create one when the browser has none). In an in-app browser: open the page in the system browser or copy the link.
+- **What the user sees:** Fill `AppShell` with `HomeWordmark` top-left (`/` when unsigned, `/welcome` when a session is hydrated); light language switcher top-right (not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Error is terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
 ### Variant: idle
@@ -193,6 +193,12 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 Login begin or finish failed. Copy **Something went wrong. Please try again.** and **Try again**.
 
 ![21.gifts login error](images/login-error.png)
+
+### Variant: choice
+
+After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account** and **Open a new account**. No account is created until the visitor clicks **Open a new account** and completes the create ceremony.
+
+![21.gifts login choice](images/login-choice.png)
 
 ### Variant: in-app
 
