@@ -101,7 +101,7 @@ export function AppShell({
   return (
     <AppShellContext.Provider value={ctx}>
       <main
-        className={`relative flex h-[var(--app-height)] flex-col items-center overflow-hidden overscroll-y-none px-6 py-4${extra}`}
+        className={`relative flex h-[var(--app-height)] flex-col items-center overscroll-y-none px-6 py-4${extra}`}
       >
         <section className="flex min-h-0 w-full flex-1 flex-col overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm">
           <div

@@ -29,6 +29,6 @@ describe('ProfilePage', () => {
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
-    expect(main?.className).toContain('overflow-hidden');
+    expect(main?.className).not.toContain('overflow-hidden');
   });
 });

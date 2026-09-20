@@ -80,9 +80,11 @@ export function SignedInChrome(): ReactElement {
     };
     const onMouseDown = (event: MouseEvent): void => {
       const root = rootRef.current;
-      if (root !== null && !root.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (root !== null && root.contains(target)) {
+        return;
       }
+      setOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('mousedown', onMouseDown);

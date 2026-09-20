@@ -126,10 +126,12 @@ function expectMenuClosed(): void {
 
 function expectMenuOpen(): void {
   const panel = menuPanel();
+  const trigger = screen.getByRole('button', { name: 'Menu' });
   expect(panel.className.includes('hidden')).toBe(false);
-  expect(panel.className).toContain('fixed');
-  expect(document.body.contains(panel)).toBe(true);
-  expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe('true');
+  expect(panel.className).toContain('absolute');
+  expect(panel.parentElement).toBe(trigger.parentElement);
+  expect(panel.parentElement).not.toBe(document.body);
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
 }
 
 beforeEach(() => {
@@ -192,7 +194,7 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
-  it('keeps the menu open when mousedown stays on the portaled panel', () => {
+  it('keeps the menu open when mousedown stays on the panel', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();

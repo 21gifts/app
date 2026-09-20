@@ -395,7 +395,7 @@ flowchart TB
 
 **Safe area / visualViewport.** `AppShell` plus `--app-height` from `visualViewport` (bootstrap script + `useAppHeight` / `AppHeightSync`) is the height source. `--app-height` follows `visualViewport.height` only when scale is 1 (keyboard / browser chrome). Do not follow a pinch-zoom visual viewport. `html { touch-action: manipulation }` disables double-tap-zoom; pinch-zoom stays. Do not add `env(safe-area-inset-*)` here.
 
-**`AppShell` slots.** `AppShell` always draws the page frame: a viewport-height `<main>` with one `rounded-3xl` `<section>`. Chrome (wordmark + Menu / language) is that frame’s first row (`[data-app-chrome]`). `fill` and `flow` share this geometry (`h-[var(--app-height)]`, `overflow-hidden`, inner `overflow-y-auto` scroller). `mode` stays on the API so call sites compile. `PageChrome` still passes `mode="flow"`. Card never hosts page chrome. `surface={false}` is the page-body column (no radius/border/bg/shadow/`p-8`). Default Card is still a nested visual panel for overlays and notes. Never `justify-center` on `<main>` or the overflow scroller. Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
+**`AppShell` slots.** `AppShell` always draws the page frame: a viewport-height `<main>` with one `rounded-3xl` `<section>`. Chrome (wordmark + Menu / language) is that frame’s first row (`[data-app-chrome]`). `fill` and `flow` share this geometry (`h-[var(--app-height)]`, inner `overflow-y-auto` scroller). `mode` stays on the API so call sites compile. `PageChrome` still passes `mode="flow"`. Card never hosts page chrome. `surface={false}` is the page-body column (no radius/border/bg/shadow/`p-8`). Default Card is still a nested visual panel for overlays and notes. Never `justify-center` on `<main>` or the overflow scroller. Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
 ```
 [ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Language ]
@@ -427,7 +427,7 @@ flowchart TB
 | Log out              | `LogoutButton`                | labeled                                                                             |
 | Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
-Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel: `createPortal` to `document.body`, `fixed right-14 top-24 z-50 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (not in-tree `absolute`, so the page frame cannot clip it). Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
+Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 min-w-[18rem] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). AppShell `<main>` has no `overflow-hidden` so the panel is not clipped; the inner scroller is still `overflow-y-auto`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
 **Marketing header** stays dedicated (`MarketingHeader`): sticky, `bg-ink/85 backdrop-blur-xl`, `border-b border-paper/10`, `px-5 py-3.5`. Do not reuse `PageChrome` on marketing.
 
@@ -563,7 +563,7 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 **Anatomy.** `AppShell` always draws one `rounded-3xl` page frame. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). `fill` and `flow` share locked-height inner-scroller geometry. Card never hosts page chrome. `PageChrome` is the flow-mode wrapper (`mode="flow"`); prefer `AppShell` on new routes.
 
-**Tokens.** `h-[var(--app-height)]` and `overflow-hidden` for both `fill` and `flow`, `px-6` `py-4`, `bg` inherited from `body`. Never Tailwind viewport-height utilities on app routes.
+**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, inner `overflow-y-auto`, `bg` inherited from `body`. Never Tailwind viewport-height utilities on app routes.
 
 **API.**
 
