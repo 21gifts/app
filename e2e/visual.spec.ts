@@ -7876,6 +7876,8 @@ test.describe('moderate group screens', () => {
       fromMe: boolean;
       sats: number;
       giftFor?: string;
+      hasPhoto?: boolean;
+      photoCount?: number;
     }>,
   ): Promise<void> {
     await page.route('**/conversations/conv-mod', async (route) => {
@@ -8060,6 +8062,33 @@ test.describe('moderate group screens', () => {
     await expect(page.getByText('A Quick Technical Note')).toBeVisible();
     await expect(page.getByText(QUOTED_NOTE_URL)).toHaveCount(0);
     await shotScreen(page, 'state-moderate-group-quoted-note');
+  });
+
+  test('moderate group photo', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    await page.route('**/conversations/conv-mod/messages/m-photo/photo', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+      });
+    });
+    await page.goto('/moderate/group');
+    await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-photo');
   });
 });
 

@@ -1577,6 +1577,13 @@ export const SCREEN_VARIANTS = [
     needle: 'moderate group quoted-note',
   },
   {
+    route: '/moderate/group',
+    id: 'photo',
+    image: 'moderate-group-photo.png',
+    visual: 'state-moderate-group-photo',
+    needle: 'moderate group photo',
+  },
+  {
     route: '/moderate/handbook',
     id: 'default',
     image: 'moderate-handbook.png',

@@ -148,6 +148,17 @@ describe('NoteTranslate', () => {
     expect(translateNote).toHaveBeenCalledWith(german, 'en');
   });
 
+  it('paints Show more with button foreground on a long onButton translation', async () => {
+    const translated = `${'a'.repeat(280)} TRANSTAIL`;
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    renderWithLocale(<NoteTranslate tone="onButton" text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    const more = await screen.findByRole('button', { name: 'Show more' });
+    const classes = more.className.split(/\s+/);
+    expect(classes).toContain('text-app-btn-fg');
+    expect(classes).not.toContain('text-app-fg');
+  });
+
   it('shows an error and retries successfully', async () => {
     vi.mocked(translateNote)
       .mockRejectedValueOnce(new Error('offline'))

@@ -1559,6 +1559,12 @@ Moderator. Loaded group thread whose body is a public forum note URL. Nested quo
 
 ![21.gifts moderator group quoted note](images/moderate-group-quoted-note.png)
 
+### Variant: photo
+
+Moderator. Loaded group thread with one attached still and no text. Image alt **Photo from Ada**.
+
+![21.gifts moderator group photo](images/moderate-group-photo.png)
+
 ## Screen: /moderate/handbook
 
 - **URL:** `/moderate/handbook` — signed-in staff handbook of how 21.gifts works. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Hub is `/moderate`.

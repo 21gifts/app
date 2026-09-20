@@ -1770,7 +1770,7 @@ export async function postConversationInvoice(
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Conversation UUID.
  * @param text - Message body as typed (api trims and validates length).
- * @param photos - Optional JPEG stills (`contentType` + raw base64 `data`).
+ * @param photos - Optional JPEG/PNG/WebP stills (`contentType` + raw base64 `data`).
  *   When non-empty, the JSON body also sends `photo` (first still) and
  *   `photos` (all stills, max 10). Omitted for existing 3-argument callers.
  * @returns The created {@link ConversationMessage}.

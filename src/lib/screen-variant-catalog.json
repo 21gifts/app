@@ -1290,6 +1290,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/group:photo",
+    "label": "/moderate/group photo",
+    "visual": "state-moderate-group-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/handbook:default",
     "label": "/moderate/handbook default",
     "visual": "screen-moderate-handbook",
