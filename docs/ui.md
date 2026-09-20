@@ -1010,7 +1010,7 @@ Handbook states: default, forbidden, empty, loading, error.
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → in-card icon back to `/moderate/applications` → **h1** **Grant application**. Staff: applicant, convictions as criteria, living-room posts, **Trial** / **Admit** / **Reject**. Failed decision uses `trustChain.actionFailed`. Non-staff: heading + forbidden copy.
 
-Handbook states: default.
+Handbook states: default, forbidden, empty, loading, error, decide-failed, deciding.
 
 ### `/moderate/hidden`
 

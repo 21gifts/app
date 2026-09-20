@@ -1394,6 +1394,42 @@ Staff (founder) loaded application for **Rose** with a living-room post and **Tr
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
 
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** No fetch.
+
+![21.gifts grant application forbidden](images/moderate-applications-accountId-forbidden.png)
+
+### Variant: empty
+
+Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** Trial / Admit / Reject still visible.
+
+![21.gifts grant application empty](images/moderate-applications-accountId-empty.png)
+
+### Variant: loading
+
+Staff (founder) waiting on `GET /funding/applications/:accountId`. Copy **Loading…**
+
+![21.gifts grant application loading](images/moderate-applications-accountId-loading.png)
+
+### Variant: error
+
+Staff (founder) detail fetch failed. Copy **Could not load this application. Please try again.** Button **Try again**.
+
+![21.gifts grant application error](images/moderate-applications-accountId-error.png)
+
+### Variant: decide-failed
+
+Staff (founder) Trial POST failed. Copy **Could not update this member. Please try again.**
+
+![21.gifts grant application decide failed](images/moderate-applications-accountId-decide-failed.png)
+
+### Variant: deciding
+
+Staff (founder) Trial POST in flight. Trial disabled with a spinner; application still visible.
+
+![21.gifts grant application deciding](images/moderate-applications-accountId-deciding.png)
+
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).

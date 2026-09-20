@@ -7394,6 +7394,94 @@ test.describe('moderate applications screens', () => {
     await expect(page.getByRole('button', { name: 'Trial' })).toBeVisible();
     await shotScreen(page, 'screen-moderate-applications-accountId');
   });
+
+  test('moderate applications accountId forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-forbidden');
+  });
+
+  test('moderate applications accountId empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...DETAIL, messages: [] }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByText('No living-room posts.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-empty');
+  });
+
+  test('moderate applications accountId loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-loading');
+  });
+
+  test('moderate applications accountId error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(
+      page.getByText('Could not load this application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-error');
+  });
+
+  test('moderate applications accountId decide-failed', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/trial', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Trial' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-decide-failed');
+  });
+
+  test('moderate applications accountId deciding', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/trial', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Trial' }).click();
+    await expect(page.getByRole('button', { name: 'Trial' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-applications-accountId-deciding');
+  });
 });
 
 test.describe('moderate group screens', () => {
