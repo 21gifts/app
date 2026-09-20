@@ -793,7 +793,7 @@ Inbox direction is unmistakable without a Sent folder and without orange. Incomi
 
 **List outbound last-text.** Compact sent chip on the right of the conversation row, same fill: `self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg`. Copy stays `inbox.sentPreview`. Unread inbound rows use a semibold counterpart name (`font-semibold`) and last text `line-clamp-2 text-sm text-app-fg`; read inbound last text stays `line-clamp-2 text-sm text-app-muted`. Empty `lastText` omits the preview (gift-only last rows with `lastSats > 0` show the formatted amount with the same chip vs muted split). Thread bubbles above are unchanged.
 
-**Attached gift (`giftFor`).** A message that another message's `giftFor` points at renders
+**Attached gift (`giftFor`).** A message whose `giftFor` points at another message renders
 inside that parent's bubble (the parent `<li>`), as a footer line below the parent's text — not
 a second bubble — so it reads as part of that message. A hairline separates it: `mt-3 border-t
 pt-2`, `border-app-border` in an incoming bubble and `border-app-btn-fg/20` in an own

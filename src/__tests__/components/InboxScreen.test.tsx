@@ -1262,6 +1262,34 @@ describe('InboxScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
   });
 
+  it('shows the fiat value next to the amount in the pay sheet', async () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
+        rateDay={RATE_DAY}
+      />,
+    );
+    await screen.findByRole('img', { name: 'Bitcoin payment QR code' });
+    const confirm = screen.getByText((_, node) => node?.tagName === 'P' && /\$0\.02/.test(node.textContent ?? '') && new RegExp(formatBitcoin(21).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(node.textContent ?? ''));
+    expect(confirm).toBeTruthy();
+  });
+
   it('nests a gift under the parent listitem and not as its own listitem', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };

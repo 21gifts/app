@@ -632,6 +632,7 @@ export function InboxScreen({
               {t('forum.payConfirm', {
                 amount: formatBitcoin(invoice.amountSats, numberFormat),
               })}
+              {preferredFiatSuffix(invoice.amountSats, rateDay, fiat, numberFormat)}
             </p>
             {showPaymentQr ? <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} /> : null}
             {walletButton}

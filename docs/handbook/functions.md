@@ -1455,7 +1455,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Picks the last `spendOverTime` day with `sats > 0` so forum notes can scale sats into fiat from gift-day totals.
 - **Inputs:** Oldest-first series of `{ sats, usd, chf, eur, php }`.
 - **Returns / side effects:** That day, or `null` when every day is empty.
-- **Used by:** `ForumLoader`, `PublicMessageLoader`, `MemberProfileScreen`.
+- **Used by:** `useLatestRateDay`, `PublicMessageLoader`, `MemberProfileScreen`.
 
 ## Function: useLatestRateDay
 
@@ -1471,7 +1471,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Scales whole sats into a two-decimal fiat string using one gift day's totals (`Math.round` on cents).
 - **Inputs:** `sats`, `day` (`FiatRateDay | null`), `code` (`FiatCode`).
 - **Returns / side effects:** `"0.02"`-style string, or `null` when the day or that fiat is missing or the gift-day total is `"0.00"` (not a usable rate).
-- **Used by:** `ForumBoard`, `PublicMessageLoader`.
+- **Used by:** `ForumBoard`, `PublicMessageLoader`, `preferredFiatSuffix`, `InboxScreen`.
 
 ## Function: preferredFiatSuffix
 
@@ -2215,9 +2215,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Pure grouping helper for an inbox/moderator-group thread. A message whose
   `giftFor` equals a DIFFERENT message's id present in the same list is removed from the top
-  level and appended to that parent's `gifts`, in original list order; an unknown or
-  self-referencing `giftFor` leaves the message as an ordinary top-level entry with empty
-  `gifts`. Order of top-level messages is preserved regardless of where a gift appears in the
+  level and appended to that parent's `gifts`, in original list order; a `giftFor` that is
+  unknown, self-referencing, or names a message that is itself a gift leaves the message as an
+  ordinary top-level entry with empty `gifts`, so no message is ever dropped. Order of top-level messages is preserved regardless of where a gift appears in the
   input array.
 - **Inputs:** Oldest-first `ConversationMessage[]`.
 - **Returns / side effects:** `ThreadGiftGroup[]` (`{ message, gifts }` per top-level message).
@@ -2226,7 +2226,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field (`showAmount` false hides the field; the staff room is text only). When `showFilter` is true (moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Rows with `kind` `moderator_group` are never listed; the closed staff room lives on `/moderate/group`. Members (`showFilter` false) see inbound rows except `moderator_group` and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus / Moderators). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text. A staff viewer sees another staff reply as an incoming muted card with that person's `name` (profile link when `accountId` is set). `fromMe` / `inbox.you` only when this session is the actor. Optional `rateDay` is the latest gift-day totals. Every thread sats amount (gift-only bubble, text+sats line, and nested gift line) shows a preferred-fiat suffix via `preferredFiatSuffix` when `rateDay` is usable, else ₿-only. A message another message's `giftFor` points at renders via `groupThreadGifts` as a nested `role="note"` line inside the parent's `<li>` (name, ₿ amount, fiat suffix, time; not shown as its own top-level row) instead of a separate bubble.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field (`showAmount` false hides the field; the staff room is text only). When `showFilter` is true (moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Rows with `kind` `moderator_group` are never listed; the closed staff room lives on `/moderate/group`. Members (`showFilter` false) see inbound rows except `moderator_group` and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus / Moderators). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text. A staff viewer sees another staff reply as an incoming muted card with that person's `name` (profile link when `accountId` is set). `fromMe` / `inbox.you` only when this session is the actor. Optional `rateDay` is the latest gift-day totals. Every thread sats amount (gift-only bubble, text+sats line, and nested gift line) shows a preferred-fiat suffix via `preferredFiatSuffix` when `rateDay` is usable, else ₿-only. A message whose `giftFor` points at another message renders via `groupThreadGifts` as a nested `role="note"` line inside the parent's `<li>` (name, ₿ amount, fiat suffix, time; not shown as its own top-level row) instead of a separate bubble.
 - **Inputs:** List/thread/composer state from `InboxLoader` or `ModeratorGroupScreen`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`, `ModeratorGroupScreen`.
