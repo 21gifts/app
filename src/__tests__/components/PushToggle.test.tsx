@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PushToggle } from '@/components/PushToggle';
 import { postNotificationLevel } from '@/lib/api';
@@ -95,19 +95,28 @@ describe('PushToggle', () => {
       value: { getRegistration: vi.fn().mockResolvedValue(undefined) },
     });
     renderWithLocale(<PushToggle />);
-    expect(await screen.findByRole('button', { name: 'Enable notifications' })).toBeTruthy();
+    const device = await screen.findByRole('group', { name: 'This device' });
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
   });
 
-  it('still shows the enable control when getRegistration throws', async () => {
+  it('still shows the this-device control when getRegistration throws', async () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
       value: { getRegistration: vi.fn().mockRejectedValue(new Error('boom')) },
     });
     renderWithLocale(<PushToggle />);
-    expect(await screen.findByRole('button', { name: 'Enable notifications' })).toBeTruthy();
+    const device = await screen.findByRole('group', { name: 'This device' });
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 
-  it('ignores a second click while enable is in flight', async () => {
+  it('ignores a second On click while enable is in flight', async () => {
     let resolveEnable: (() => void) | undefined;
     vi.mocked(enablePush).mockImplementation(
       () =>
@@ -116,41 +125,63 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    const button = await screen.findByRole('button', { name: 'Enable notifications' });
-    fireEvent.click(button);
-    fireEvent.click(button);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    const onButton = within(device).getByRole('button', { name: 'On' });
+    fireEvent.click(onButton);
+    fireEvent.click(onButton);
     await waitFor(() => {
       expect(enablePush).toHaveBeenCalledTimes(1);
     });
     resolveEnable?.();
-    expect(await screen.findByRole('button', { name: 'Disable notifications' })).toBeTruthy();
+    await waitFor(() => {
+      expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
   });
 
-  it('hides the bell when service worker or PushManager is missing and keeps the level control', async () => {
+  it('treats Off while unsubscribed as a no-op', async () => {
+    renderWithLocale(<PushToggle />);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    fireEvent.click(within(device).getByRole('button', { name: 'Off' }));
+    expect(enablePush).not.toHaveBeenCalled();
+    expect(disablePush).not.toHaveBeenCalled();
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('hides the this-device pill when service worker or PushManager is missing and keeps the level control', async () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
       value: undefined,
     });
     renderWithLocale(<PushToggle />);
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Enable notifications' })).toBeNull();
-    });
     expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole('group', { name: 'This device' })).toBeNull();
+    });
     expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Active' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
   });
 
-  it('shows an icon-only enable control when not subscribed', async () => {
+  it('shows a labeled On/Off this-device control when not subscribed', async () => {
     renderWithLocale(<PushToggle />);
-    const button = await screen.findByRole('button', { name: 'Enable notifications' });
+    const device = await screen.findByRole('group', { name: 'This device' });
+    const offButton = within(device).getByRole('button', { name: 'Off' });
+    const onButton = within(device).getByRole('button', { name: 'On' });
     expect(screen.getByText('Notifications')).toBeTruthy();
-    expect(screen.getByText('Off')).toBeTruthy();
-    expect(screen.queryByText('Enable notifications')).toBeNull();
-    expect(button.getAttribute('aria-pressed')).toBe('false');
-    expect(button.className).toContain('border-app-border-strong');
-    expect(button.className).not.toContain('bg-app-btn');
-    expect(button.querySelector('svg')).not.toBeNull();
+    expect(offButton.textContent).toBe('Off');
+    expect(onButton.textContent).toBe('On');
+    expect(offButton.getAttribute('aria-pressed')).toBe('true');
+    expect(onButton.getAttribute('aria-pressed')).toBe('false');
+    expect(offButton.className).toContain('bg-app-btn');
+    expect(onButton.className).not.toContain('bg-app-btn');
+    expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Active' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
   });
 
   it('shows the iOS install hint when Safari is not standalone', async () => {
@@ -160,56 +191,90 @@ describe('PushToggle', () => {
     expect(
       await screen.findByText('On iPhone, add 21.gifts to your Home Screen to get notifications.'),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Enable notifications' })).toBeTruthy();
+    const device = screen.getByRole('group', { name: 'This device' });
+    expect(within(device).getByRole('button', { name: 'Off' })).toBeTruthy();
   });
 
-  it('enables push on click', async () => {
+  it('enables push on On', async () => {
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Enable notifications' }));
+    const device = await screen.findByRole('group', { name: 'This device' });
+    fireEvent.click(within(device).getByRole('button', { name: 'On' }));
     await waitFor(() => {
       expect(enablePush).toHaveBeenCalledWith('tok');
     });
-    const button = await screen.findByRole('button', { name: 'Disable notifications' });
-    expect(screen.getByText('On')).toBeTruthy();
-    expect(screen.queryByText('Off')).toBeNull();
-    expect(screen.queryByText('Disable notifications')).toBeNull();
-    expect(button.getAttribute('aria-pressed')).toBe('true');
-    expect(button.className).toContain('bg-app-btn');
-    expect(button.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(within(device).getByRole('button', { name: 'On' }).className).toContain('bg-app-btn');
+  });
+
+  it('treats On while subscribed as a no-op', async () => {
+    stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
+    renderWithLocale(<PushToggle />);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    fireEvent.click(within(device).getByRole('button', { name: 'On' }));
+    expect(enablePush).not.toHaveBeenCalled();
+    expect(disablePush).not.toHaveBeenCalled();
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 
   it('disables push when already subscribed', async () => {
     stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
     renderWithLocale(<PushToggle />);
-    const subscribedButton = await screen.findByRole('button', { name: 'Disable notifications' });
-    expect(screen.getByText('On')).toBeTruthy();
-    expect(screen.queryByText('Off')).toBeNull();
-    expect(screen.queryByText('Disable notifications')).toBeNull();
-    expect(subscribedButton.getAttribute('aria-pressed')).toBe('true');
-    expect(subscribedButton.className).toContain('bg-app-btn');
-    expect(subscribedButton.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
-    fireEvent.click(subscribedButton);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    const onButton = within(device).getByRole('button', { name: 'On' });
+    const offButton = within(device).getByRole('button', { name: 'Off' });
+    expect(onButton.getAttribute('aria-pressed')).toBe('true');
+    expect(offButton.getAttribute('aria-pressed')).toBe('false');
+    expect(onButton.className).toContain('bg-app-btn');
+    fireEvent.click(offButton);
     await waitFor(() => {
       expect(disablePush).toHaveBeenCalledWith('tok');
     });
-    const button = await screen.findByRole('button', { name: 'Enable notifications' });
-    expect(screen.getByText('Off')).toBeTruthy();
-    expect(screen.queryByText('On')).toBeNull();
-    expect(button.getAttribute('aria-pressed')).toBe('false');
-    expect(button.className).not.toContain('bg-app-btn');
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('shows Off and unavailable copy when disablePush throws', async () => {
+    stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
+    vi.mocked(disablePush).mockRejectedValueOnce(new Error('delete failed'));
+    renderWithLocale(<PushToggle />);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    fireEvent.click(within(device).getByRole('button', { name: 'Off' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Notifications are not available in this browser.')).toBeTruthy();
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
   });
 
   it('shows unavailable copy when enable fails', async () => {
     vi.mocked(enablePush).mockRejectedValue(new Error('Notification permission denied'));
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Enable notifications' }));
+    const device = await screen.findByRole('group', { name: 'This device' });
+    fireEvent.click(within(device).getByRole('button', { name: 'On' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Notifications are not available in this browser.')).toBeTruthy();
   });
 
-  it('shows the three notification stages and selects All when the field is missing', async () => {
+  it('shows the three notification stages and selects All when the field is missing', () => {
     renderWithLocale(<PushToggle />);
-    expect(await screen.findByRole('group', { name: 'Notification level' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'false',
@@ -224,10 +289,10 @@ describe('PushToggle', () => {
     ).toBeTruthy();
   });
 
-  it('selects Mentions when the account stores that level', async () => {
+  it('selects Mentions when the account stores that level', () => {
     useAuthStore.setState({ account: accountWithLevel('mentions') });
     renderWithLocale(<PushToggle />);
-    expect(await screen.findByRole('button', { name: 'Mentions' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mentions' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -236,7 +301,7 @@ describe('PushToggle', () => {
 
   it('posts Active and presses that option', async () => {
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'active');
     });
@@ -246,16 +311,16 @@ describe('PushToggle', () => {
     expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
   });
 
-  it('does not post when All is already selected', async () => {
+  it('does not post when All is already selected', () => {
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'All' }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
     expect(postNotificationLevel).not.toHaveBeenCalled();
   });
 
   it('keeps All and shows an error when the level POST fails', async () => {
     vi.mocked(postNotificationLevel).mockRejectedValue(new Error('boom'));
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Could not save notification level.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
@@ -271,7 +336,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
@@ -294,7 +359,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
@@ -317,7 +382,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
@@ -339,7 +404,7 @@ describe('PushToggle', () => {
     );
     const setAccountSpy = vi.spyOn(useAuthStore.getState(), 'setAccount');
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
@@ -356,16 +421,16 @@ describe('PushToggle', () => {
   it('uses the posted level when the response omits notificationLevel', async () => {
     vi.mocked(postNotificationLevel).mockResolvedValueOnce(ACCOUNT);
     renderWithLocale(<PushToggle />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Active' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     await waitFor(() => {
       expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
     });
   });
 
-  it('selects All when the account is missing', async () => {
+  it('selects All when the account is missing', () => {
     useAuthStore.setState({ account: null, session: 'tok' });
     renderWithLocale(<PushToggle />);
-    expect(await screen.findByRole('button', { name: 'All' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
   });
 });

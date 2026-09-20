@@ -32,7 +32,7 @@ export interface SegmentedControlProps<T extends string> {
   tone: SegmentedControlTone;
   /** Gift on marketing-dark. Default `app`. Ignored for `neutral`. */
   shell?: SegmentedControlShell;
-  /** Extra classes on the outer track. */
+  /** Extra classes on the group. */
   className?: string;
 }
 
@@ -77,7 +77,9 @@ function optionBadgeAriaLabel(
 }
 
 /**
- * Mutually exclusive option group (forum mode, ₿|USD chart scales).
+ * Mutually exclusive option group (forum mode, ₿|USD chart scales). Neutral is
+ * a single `role="group"` pill; Forum `!grid` still lays out the option buttons
+ * via `className` on the group.
  *
  * @param props - See {@link SegmentedControlProps}.
  * @returns The group element.

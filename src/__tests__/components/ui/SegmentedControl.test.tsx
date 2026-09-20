@@ -71,6 +71,7 @@ describe('SegmentedControl', () => {
     const group = screen.getByRole('group', { name: 'Forum view' });
     expect(group.className).toContain('rounded-full');
     expect(group.className).toContain('bg-app-card-muted');
+    expect(group.className).not.toContain('overflow-hidden');
     expect(screen.getByRole('button', { name: 'Active' }).className).toContain('bg-app-btn');
     expect(screen.getByRole('button', { name: 'All' }).className).toContain('text-app-muted');
   });
