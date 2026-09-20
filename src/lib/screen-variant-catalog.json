@@ -1368,12 +1368,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/moderate/hidden:visitor",
-    "label": "/moderate/hidden visitor",
-    "visual": "state-moderate-hidden-visitor",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/moderate/applications:default",
     "label": "/moderate/applications default",
     "visual": "screen-moderate-applications",
@@ -1407,18 +1401,6 @@
     "id": "/moderate/applications/[accountId]:default",
     "label": "/moderate/applications/[accountId] default",
     "visual": "screen-moderate-applications-accountId",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:expanded-visitor",
-    "label": "/welcome expanded-visitor",
-    "visual": "state-welcome-expanded-visitor",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages/[id]:visitor-reply",
-    "label": "/messages/[id] visitor-reply",
-    "visual": "state-messages-id-visitor-reply",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
