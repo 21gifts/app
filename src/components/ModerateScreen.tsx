@@ -246,7 +246,9 @@ function PayoutGoalWidget(props: {
   if (error && stats === null) {
     return (
       <div className={`${shell} items-center`} {...labeled}>
-        <p className="text-center text-sm text-app-muted">{t('moderate.goal.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('moderate.goal.error')}
+        </p>
         <Button variant="secondary" size="sm" onClick={onRetry}>
           {t('moderate.goal.retry')}
         </Button>
@@ -270,10 +272,7 @@ function PayoutGoalWidget(props: {
         onClick={onToggle}
       >
         <div className="flex w-full items-start justify-between gap-3">
-          <div>
-            <p className="text-base font-semibold text-app-fg">{t('moderate.goal.title')}</p>
-            <p className="text-sm text-app-muted">{t('moderate.goal.subtitle')}</p>
-          </div>
+          <p className="text-base font-semibold text-app-fg">{t('moderate.goal.title')}</p>
           <div className="shrink-0 text-right">
             <p className="text-2xl font-semibold tabular-nums lining-nums text-app-fg">
               {t('moderate.goal.percent', { percent })}
@@ -283,6 +282,7 @@ function PayoutGoalWidget(props: {
             </p>
           </div>
         </div>
+        <p className="text-sm text-app-muted">{t('moderate.goal.subtitle')}</p>
         <svg
           className="h-3 w-full"
           viewBox="0 0 100 12"

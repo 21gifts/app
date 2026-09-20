@@ -300,7 +300,9 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<ModerateScreen />);
     await waitFor(() => {
-      expect(screen.getByText('Could not load payouts. Please try again.')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Could not load payouts. Please try again.',
+      );
     });
     fetchMock.mockResolvedValue(EMPTY_STATS);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
