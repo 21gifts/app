@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { NotificationsScreen } from '@/components/NotificationsScreen';
 import {
   fetchConversations,
+  fetchModeratorGroup,
   fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -15,28 +16,30 @@ import type { Notification } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Set the home-screen badge to remaining inbox unread after notifications
- * became 0 (list viewed / mark-all-read).
+ * Set the home-screen badge to remaining inbox unread plus staff-room unread
+ * (`0` or `1`) after notifications became 0 (list viewed / mark-all-read).
  *
- * Captures the badge epoch at start and skips the write if it changed.
- * A conversations fetch failure writes `0`.
+ * Captures the badge epoch at start and skips the write if it changed or
+ * `loadSession()` is not still `sessionToken`, after both fetches settle. A
+ * side that fails contributes 0.
  *
  * @param sessionToken - Bearer token for the signed-in session.
  */
 async function setHomeScreenBadgeToInboxUnread(sessionToken: string): Promise<void> {
   const epoch = unreadAppBadgeEpoch();
-  try {
-    const rows = await fetchConversations(sessionToken);
-    if (epoch !== unreadAppBadgeEpoch() || loadSession() !== sessionToken) {
-      return;
-    }
-    setUnreadAppBadge(rows.filter((row) => row.unread).length);
-  } catch {
-    if (epoch !== unreadAppBadgeEpoch() || loadSession() !== sessionToken) {
-      return;
-    }
-    setUnreadAppBadge(0);
+  const inboxPromise = fetchConversations(sessionToken).then(
+    (rows) => rows.filter((row) => row.unread).length,
+    () => 0,
+  );
+  const moderationPromise = fetchModeratorGroup(sessionToken).then(
+    (conversation) => (conversation.unread ? 1 : 0),
+    () => 0,
+  );
+  const [inboxCount, moderationCount] = await Promise.all([inboxPromise, moderationPromise]);
+  if (epoch !== unreadAppBadgeEpoch() || loadSession() !== sessionToken) {
+    return;
   }
+  setUnreadAppBadge(inboxCount + moderationCount);
 }
 
 /**
@@ -45,8 +48,9 @@ async function setHomeScreenBadgeToInboxUnread(sessionToken: string): Promise<vo
  * Reads the session from the auth store and fetches notifications (posts, replies,
  * payments, and moderator appointment). After a successful list fetch, marks all
  * as read fire-and-forget and refreshes the home-screen badge to remaining inbox
- * unread (notifications are treated as 0; visiting this screen does not force
- * the badge to 0 when inbox unread remains). Renders nothing when there is no
+ * unread plus staff-room unread (`0` or `1`; notifications are treated as 0;
+ * visiting this screen does not force the badge to 0 when inbox or staff-room
+ * unread remains). Renders nothing when there is no
  * session. There is no composer; opening a `moderator_appointed` row waits for
  * `markNotificationRead` (then still goes to `/welcome` if that POST fails, and
  * skips navigation if the session changed), and any other row goes to the public

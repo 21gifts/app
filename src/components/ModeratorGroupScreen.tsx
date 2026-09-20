@@ -4,12 +4,18 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
-import { fetchConversation, fetchModeratorGroup, postConversationMessage } from '@/lib/api';
+import {
+  fetchConversation,
+  fetchModeratorGroup,
+  markConversationRead,
+  postConversationMessage,
+} from '@/lib/api';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -19,10 +25,12 @@ import { useAuthStore } from '@/stores/auth-store';
  * Moderators fetch {@link fetchModeratorGroup} then
  * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread
  * (`showFilter` and `showAmount` false; the heading is always the catalog
- * `moderate.groupLabel`, never the api row name).
- * Other signed-in visitors and a missing account see forbidden copy and do
- * not fetch. Renders nothing without a session. Back to the moderation hub is
- * the page chrome (no in-card back).
+ * `moderate.groupLabel`, never the api row name). After a successful group
+ * and thread fetch, marks the room read (`markConversationRead`), bumps the
+ * badge epoch, and refreshes the home-screen badge with staff-room unread
+ * `0`. Other signed-in visitors and a missing account see forbidden copy and
+ * do not fetch. Renders nothing without a session. Back to the moderation hub
+ * is the page chrome (no in-card back).
  *
  * @returns The group thread, forbidden copy, or `null` without a session.
  */
@@ -55,8 +63,11 @@ export function ModeratorGroupScreen(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setGroup(nextGroup);
+        setGroup({ ...nextGroup, unread: false });
         setMessages(nextMessages);
+        void markConversationRead(session, nextGroup.id).catch(() => undefined);
+        bumpUnreadAppBadgeEpoch();
+        void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);
       } catch {
         if (cancelled) {
           return;

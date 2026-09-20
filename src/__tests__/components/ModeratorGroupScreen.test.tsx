@@ -31,13 +31,27 @@ vi.mock('@/lib/api', () => ({
   fetchModeratorGroup: vi.fn(),
   fetchConversation: vi.fn(),
   postConversationMessage: vi.fn(),
+  markConversationRead: vi.fn(),
+}));
+vi.mock('@/lib/app-badge', () => ({
+  bumpUnreadAppBadgeEpoch: vi.fn(),
+  refreshUnreadAppBadge: vi.fn(),
 }));
 
-import { fetchConversation, fetchModeratorGroup, postConversationMessage } from '@/lib/api';
+import {
+  fetchConversation,
+  fetchModeratorGroup,
+  markConversationRead,
+  postConversationMessage,
+} from '@/lib/api';
+import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 
 const groupMock = vi.mocked(fetchModeratorGroup);
 const threadMock = vi.mocked(fetchConversation);
 const postMock = vi.mocked(postConversationMessage);
+const markReadMock = vi.mocked(markConversationRead);
+const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
+const refreshMock = vi.mocked(refreshUnreadAppBadge);
 
 const account: Account = {
   id: 'acc_1',
@@ -83,6 +97,8 @@ beforeEach(() => {
   push.mockReset();
   groupMock.mockResolvedValue(GROUP);
   threadMock.mockResolvedValue([MESSAGE]);
+  markReadMock.mockResolvedValue(undefined);
+  refreshMock.mockResolvedValue(undefined);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -109,6 +125,7 @@ describe('ModeratorGroupScreen', () => {
       expect(screen.queryByLabelText('Your message')).toBeNull();
       expect(groupMock).not.toHaveBeenCalled();
       expect(threadMock).not.toHaveBeenCalled();
+      expect(markReadMock).not.toHaveBeenCalled();
     },
   );
 
@@ -141,6 +158,11 @@ describe('ModeratorGroupScreen', () => {
       expect(await screen.findByText('Hello mods')).toBeTruthy();
       expect(groupMock).toHaveBeenCalledWith('sess');
       expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id);
+      await waitFor(() => {
+        expect(markReadMock).toHaveBeenCalledWith('sess', GROUP.id);
+      });
+      expect(bumpMock).toHaveBeenCalled();
+      expect(refreshMock).toHaveBeenCalledWith('sess', undefined, 0);
       expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
       expect(screen.queryByText('Staff room')).toBeNull();
       expect(screen.getByLabelText('Your message')).toBeTruthy();
@@ -267,6 +289,34 @@ describe('ModeratorGroupScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Follow up')).toBeTruthy();
     expect(postMock).toHaveBeenCalledWith('sess', 'conv-mod', 'Follow up');
+  });
+
+  it('still renders the thread when markConversationRead fails', async () => {
+    markReadMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledWith('sess', GROUP.id);
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('still renders the thread when refreshUnreadAppBadge rejects', async () => {
+    refreshMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledWith('sess', undefined, 0);
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('does not mark read on a group fetch error', async () => {
+    groupMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(markReadMock).not.toHaveBeenCalled();
+    expect(refreshMock).not.toHaveBeenCalled();
   });
 
   it('shows a send error when post fails', async () => {

@@ -570,6 +570,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-moderation-unread',
+    image: 'welcome-menu-moderation-unread.png',
+    visual: 'state-welcome-menu-moderation-unread',
+    needle: "getByRole('link', { name: 'Moderation, 1 unread' })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',

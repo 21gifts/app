@@ -14,6 +14,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
   fetchConversations: vi.fn(),
+  fetchModeratorGroup: vi.fn(),
   markNotificationRead: vi.fn(),
   markAllNotificationsRead: vi.fn(),
 }));
@@ -25,6 +26,7 @@ vi.mock('@/lib/app-badge', () => ({
 
 import {
   fetchConversations,
+  fetchModeratorGroup,
   fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -34,6 +36,7 @@ import type { Conversation } from '@/lib/api-types';
 
 const listMock = vi.mocked(fetchNotifications);
 const conversationsMock = vi.mocked(fetchConversations);
+const groupMock = vi.mocked(fetchModeratorGroup);
 const markReadMock = vi.mocked(markNotificationRead);
 const markAllMock = vi.mocked(markAllNotificationsRead);
 const setBadgeMock = vi.mocked(setUnreadAppBadge);
@@ -44,6 +47,17 @@ const UNREAD_CONVERSATION: Conversation = {
   name: 'Bob',
   lastText: 'Hi',
   lastAt: '2026-08-28T12:00:00.000Z',
+  lastFromMe: false,
+  lastSats: 0,
+  unread: true,
+};
+
+const STAFF_ROOM: Conversation = {
+  id: 'conv-mod',
+  kind: 'moderator_group',
+  name: 'Moderators',
+  lastText: 'Hello mods',
+  lastAt: '2026-08-28T15:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
   unread: true,
@@ -95,6 +109,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
   conversationsMock.mockResolvedValue([]);
+  groupMock.mockRejectedValue(new Error('no group'));
   markAllMock.mockResolvedValue(undefined);
   markReadMock.mockResolvedValue({ ...ROW, readAt: '2026-08-28T13:00:00.000Z' });
   useAuthStore.setState({ session: 'sess', account });
@@ -342,6 +357,7 @@ describe('NotificationsLoader', () => {
       { ...UNREAD_CONVERSATION, id: 'c2' },
       { ...UNREAD_CONVERSATION, id: 'c3', unread: false },
     ]);
+    groupMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByText('Bob replied')).toBeTruthy();
     await waitFor(() => {
@@ -358,6 +374,35 @@ describe('NotificationsLoader', () => {
     await waitFor(() => {
       expect(setBadgeMock).toHaveBeenCalledWith(0);
     });
+  });
+
+  it('sets the home-screen badge to remaining inbox unread plus staff-room unread', async () => {
+    listMock.mockResolvedValue(LIST);
+    conversationsMock.mockResolvedValue([
+      UNREAD_CONVERSATION,
+      { ...UNREAD_CONVERSATION, id: 'c2' },
+    ]);
+    groupMock.mockResolvedValue(STAFF_ROOM);
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(3);
+    });
+  });
+
+  it('keeps remaining inbox unread on the home-screen badge when the staff-room fetch fails', async () => {
+    listMock.mockResolvedValue(LIST);
+    conversationsMock.mockResolvedValue([
+      UNREAD_CONVERSATION,
+      { ...UNREAD_CONVERSATION, id: 'c2' },
+    ]);
+    groupMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(setBadgeMock).toHaveBeenCalledWith(2);
+    });
+    expect(setBadgeMock).not.toHaveBeenCalledWith(3);
   });
 
   it('does not write a stale inbox badge after the epoch bumps again', async () => {
