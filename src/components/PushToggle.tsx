@@ -101,6 +101,10 @@ export function PushToggle(): ReactElement | null {
         }
       } catch {
         setErrorKey('profile.push.unavailable');
+        // disablePush unsubscribes locally even when the api DELETE rejects.
+        if (next === 'off') {
+          setSubscribed(false);
+        }
       } finally {
         setBusy(false);
       }

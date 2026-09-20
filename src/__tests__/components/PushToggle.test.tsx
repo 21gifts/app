@@ -244,6 +244,25 @@ describe('PushToggle', () => {
     );
   });
 
+  it('shows Off and unavailable copy when disablePush throws', async () => {
+    stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
+    vi.mocked(disablePush).mockRejectedValueOnce(new Error('delete failed'));
+    renderWithLocale(<PushToggle />);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    fireEvent.click(within(device).getByRole('button', { name: 'Off' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Notifications are not available in this browser.')).toBeTruthy();
+    expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
   it('shows unavailable copy when enable fails', async () => {
     vi.mocked(enablePush).mockRejectedValue(new Error('Notification permission denied'));
     renderWithLocale(<PushToggle />);
