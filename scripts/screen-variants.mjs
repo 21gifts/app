@@ -1735,10 +1735,15 @@ export const SCREEN_VARIANTS = [
     id: 'goal-110',
     image: 'messages-id-goal-110.png',
     visual: 'state-messages-id-goal-110',
-    needle: '110%',    id: 'photos',
+    needle: '110%',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'photos',
     image: 'messages-id-photos.png',
     visual: 'state-messages-id-photos',
-    needle: 'state-messages-id-photos',  },
+    needle: 'state-messages-id-photos',
+  },
   {
     route: '/messages/[id]',
     id: 'signed-in',

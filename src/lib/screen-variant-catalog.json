@@ -1425,9 +1425,13 @@
     "id": "/messages/[id]:goal-110",
     "label": "/messages/[id] goal-110",
     "visual": "state-messages-id-goal-110",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:photos",
     "label": "/messages/[id] photos",
-    "visual": "state-messages-id-photos",    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+    "visual": "state-messages-id-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:signed-in",
