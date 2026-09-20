@@ -14,7 +14,7 @@ const translatedBodySchema = z.object({
  * Read DeepL API v2 config from `TRANSLATE_URL` (used as-is as the POST URL)
  * and required `TRANSLATE_API_KEY`.
  *
- * @returns Parsed upstream URL and API key, or null when the URL is invalid/empty or the key is missing/empty.
+ * @returns Parsed upstream URL and API key, or null when the URL is invalid/empty or the key is missing or blank after trim.
  * @throws Does not throw.
  */
 export function getTranslateUpstream(): { url: URL; apiKey: string } | null {

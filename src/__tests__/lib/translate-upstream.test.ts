@@ -164,9 +164,11 @@ describe('proxyTranslatePost', () => {
   it('accepts exactly 500 characters and forwards DeepL headers and body only', async () => {
     process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
     process.env.TRANSLATE_API_KEY = 'secret-key';
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ translations: [{ text: 'translated' }] }), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ translations: [{ text: 'translated' }] }), { status: 200 }),
+      );
     vi.stubGlobal('fetch', fetchMock);
     const text = 'x'.repeat(500);
     const response = await proxyTranslatePost(
