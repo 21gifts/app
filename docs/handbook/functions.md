@@ -2354,7 +2354,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Product-rule primitive for every viewer permission/visibility check: true when `role` is `min` or higher in the founder > moderator > verified > basis hierarchy. A missing account (`null`/`undefined` role) is never at least any role.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent; `min` — inclusive minimum role.
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
-- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `isReplyPaymentExempt`.
+- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`.
 
 ## Function: isReplyPaymentExempt
 
