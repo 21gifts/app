@@ -417,8 +417,6 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-
-
   it('returns to idle when the user cancels', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,

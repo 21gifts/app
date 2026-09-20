@@ -87,7 +87,9 @@ async function installFakeWebAuthn(page: Page, alreadyRegistered = false): Promi
 }
 
 async function confirmNewAccount(page: Page): Promise<void> {
-  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
 }
 
@@ -169,7 +171,9 @@ test('login NotAllowedError shows an account choice instead of creating', async 
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in with existing account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
@@ -193,9 +197,13 @@ test('login Log in with existing account does not start register', async ({ page
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Log in with existing account' }).click();
-  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
   expect(registerBegins).toBe(0);
 });
 

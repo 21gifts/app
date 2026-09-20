@@ -407,7 +407,9 @@ async function seedGermanNoteWelcome(page: Page): Promise<void> {
 }
 
 async function confirmNewAccount(page: Page): Promise<void> {
-  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
 }
 
@@ -3162,7 +3164,9 @@ test('Function: LoginCard — choice heading is reachable', async ({ page }) => 
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in with existing account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
 });

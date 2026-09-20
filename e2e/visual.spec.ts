@@ -745,8 +745,7 @@ test.describe('login variant baselines', () => {
           get: async (options?: CredentialRequestOptions) => {
             const publicKey = options?.publicKey;
             const challenge = publicKey?.challenge;
-            const isBytes =
-              challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+            const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
             if (!publicKey || !isBytes) {
               throw new Error('invalid request options');
             }
