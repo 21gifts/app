@@ -6183,7 +6183,7 @@ test.describe('moderate screens', () => {
     await seedAda(page, 'founder');
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-    await expect(page.getByText('Tools for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('Tools for moderators.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
@@ -6193,7 +6193,7 @@ test.describe('moderate screens', () => {
   test('moderate forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await page.goto('/moderate');
-    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
   });
 });
@@ -6289,7 +6289,7 @@ test.describe('moderate hidden screens', () => {
   test('moderate hidden forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await page.goto('/moderate/hidden');
-    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-hidden-forbidden');
   });
 
@@ -6399,7 +6399,7 @@ test.describe('moderate proposals screens', () => {
     await stubProposals(page);
     await page.goto('/moderate/proposals');
     await expect(page.getByRole('heading', { name: 'Open proposals' })).toBeVisible();
-    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-proposals-forbidden');
   });
 
@@ -6558,7 +6558,7 @@ test.describe('moderate group screens', () => {
   test('moderate group forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await page.goto('/moderate/group');
-    await expect(page.getByText('This room is for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('This room is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-forbidden');
   });
 

@@ -96,7 +96,7 @@ export interface InboxScreenProps {
   posting: boolean;
   /** Client-side composer validation or request failure. */
   formError: InboxFormError;
-  /** True for founder/moderator: show Direct/Contact/Damus. Members see the full inbound list. */
+  /** True for a moderator: show Direct/Contact/Damus. Members see the full inbound list. */
   showFilter: boolean;
   /** Amount draft for the composer sats field. */
   amountDraft?: string;
@@ -160,7 +160,7 @@ function inboxAuthorProfileButton(
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 500-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room is text only). Members (`showFilter`
- * false) see inbound rows except `moderator_group`. Founder/moderator
+ * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
  * closed staff room lives on `/moderate/group`). Origin labels come from

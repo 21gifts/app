@@ -56,8 +56,8 @@ async function runTrustAction(
 /**
  * Staff-only Trust Chain actions on another member's identity card.
  *
- * Hidden when signed out, when the viewer is not founder/moderator, or when
- * the subject is the viewer. Founders may verify and appoint; moderators
+ * Hidden when signed out, when the viewer is not a moderator, or when
+ * the subject is the viewer. Founders may appoint; moderators
  * verify, propose, or confirm. Subjects already moderator or founder see a
  * link to the public chain instead of buttons.
  *

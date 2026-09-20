@@ -27,6 +27,13 @@ const forumPhotos = new Map();
 /** @type {Map<string, Buffer>} */
 const aboutMePhotos = new Map();
 
+/** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
+const ROLE_ORDER = ['basis', 'verified', 'moderator', 'founder'];
+
+function roleAtLeast(role, min) {
+  return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
+}
+
 function hex(bytes) {
   return Buffer.from(bytes).toString('hex');
 }
@@ -298,7 +305,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (account.role !== 'founder' && account.role !== 'moderator') {
+    if (!roleAtLeast(account.role, 'moderator')) {
       json(res, 403, { error: 'Forbidden' });
       return;
     }
@@ -763,7 +770,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (account.role !== 'founder' && account.role !== 'moderator') {
+    if (!roleAtLeast(account.role, 'moderator')) {
       json(res, 403, { error: 'Forbidden' });
       return;
     }

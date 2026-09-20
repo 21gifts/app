@@ -99,7 +99,7 @@ test('Function: ProposalsScreen — basis visitors see the forbidden copy', asyn
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate/proposals');
   await expect(page.getByRole('heading', { name: 'Open proposals' })).toBeVisible();
-  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('list')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
   await page.getByRole('button', { name: 'Menu' }).click();

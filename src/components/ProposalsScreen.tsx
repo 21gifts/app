@@ -25,7 +25,7 @@ function personLabel(name: string | null, unnamed: string): string {
 /**
  * Signed-in staff confirm queue of open moderator proposals.
  *
- * Founders and moderators see one list: Confirm as moderator when they did not
+ * Moderators see one list: Confirm as moderator when they did not
  * propose; waiting copy when `proposedBy.id === account.id`. Other signed-in
  * visitors see a short forbidden message and no list. Fetches
  * {@link fetchTrustProposals} only and confirms with {@link postTrustConfirm}.
