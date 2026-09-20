@@ -20,7 +20,7 @@ const byPasskeyCredential = new Map();
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
-/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, lastFromMe: boolean, lastReadAt?: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string, fromMe: boolean }> }>} */
+/** @type {Array<{ id: string, kind: 'member_member' | 'member_platform' | 'member_damus', name: string, lastText: string, lastAt: string, lastFromMe: boolean, lastReadAt?: string, ownerId: string, messages: Array<{ id: string, name: string, text: string, createdAt: string, fromMe: boolean, giftFor?: string }> }>} */
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
@@ -758,6 +758,9 @@ const server = http.createServer(async (req, res) => {
           createdAt: message.createdAt,
           fromMe: message.fromMe === true,
           sats: Number(message.sats ?? 0),
+          ...(typeof message.giftFor === 'string' && message.giftFor !== ''
+            ? { giftFor: message.giftFor }
+            : {}),
         })),
       });
       return;

@@ -23,6 +23,7 @@ vi.mock('@/lib/api', () => ({
   postConversationInvoice: vi.fn(),
   markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock('@/lib/app-badge', () => ({
 import {
   fetchConversation,
   fetchConversations,
+  fetchGiftStats,
   fetchModeratorGroup,
   postConversationInvoice,
   markConversationRead,
@@ -46,6 +48,7 @@ const groupMock = vi.mocked(fetchModeratorGroup);
 const invoiceMock = vi.mocked(postConversationInvoice);
 const markReadMock = vi.mocked(markConversationRead);
 const postMock = vi.mocked(postConversationMessage);
+const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
 
@@ -114,6 +117,8 @@ beforeEach(() => {
     lastSats: 0,
     unread: false,
   });
+  giftStatsMock.mockReset();
+  giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -853,4 +858,41 @@ describe('InboxLoader', () => {
       expect(screen.queryByLabelText('Your message')).toBeNull();
     },
   );
+
+  it('shows a fiat suffix on a sats message when gift stats resolve', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    giftStatsMock.mockResolvedValue({
+      spendOverTime: [
+        {
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        },
+      ],
+    } as never);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
+  it('survives a failing stats fetch', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    giftStatsMock.mockRejectedValueOnce(new Error('stats down'));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    await waitFor(() => {
+      expect(giftStatsMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
 });

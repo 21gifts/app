@@ -3,9 +3,11 @@
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import {
@@ -14,7 +16,14 @@ import {
   type ConversationMessage,
 } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
-import { formatBitcoin } from '@/lib/stats-money';
+import type { NumberFormatStyle } from '@/lib/number-format';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
@@ -113,6 +122,71 @@ export interface InboxScreenProps {
    * staff room passes false (text only, no gifts).
    */
   showAmount?: boolean;
+  /** Latest gift-day totals for the preferred-fiat suffix, or `null` without a usable rate. */
+  rateDay?: FiatRateDay | null;
+}
+
+/** One thread message plus the paid gifts that belong to it. */
+export interface ThreadGiftGroup {
+  /** The triggering message, rendered as today. */
+  message: ConversationMessage;
+  /** Gifts whose `giftFor` points at `message.id`, in list order. */
+  gifts: ConversationMessage[];
+}
+
+/**
+ * Groups `giftFor` messages under the thread message they belong to.
+ *
+ * A message with `giftFor` equal to the id of a DIFFERENT message that is
+ * present in `messages` is removed from the top level and appended to that
+ * parent's `gifts`, in the original list order. A `giftFor` that matches no
+ * message in the list, or matches the message's own id, is not a gift link:
+ * that message stays an ordinary top-level entry. Messages without `giftFor`
+ * are unchanged. The relative order of top-level messages is preserved.
+ *
+ * @param messages - Oldest-first thread messages.
+ * @returns Ordered top-level groups, each with its own gifts in list order.
+ */
+export function groupThreadGifts(messages: ConversationMessage[]): ThreadGiftGroup[] {
+  const ids = new Set(messages.map((message) => message.id));
+  const isGift = (message: ConversationMessage): boolean =>
+    message.giftFor !== undefined && message.giftFor !== message.id && ids.has(message.giftFor);
+
+  const groups: ThreadGiftGroup[] = [];
+  const byId = new Map<string, ThreadGiftGroup>();
+  for (const message of messages) {
+    if (isGift(message)) {
+      continue;
+    }
+    const group: ThreadGiftGroup = { message, gifts: [] };
+    groups.push(group);
+    byId.set(message.id, group);
+  }
+  for (const message of messages) {
+    if (!isGift(message)) {
+      continue;
+    }
+    const parent = byId.get(message.giftFor as string);
+    if (parent !== undefined) {
+      parent.gifts.push(message);
+    }
+  }
+  return groups;
+}
+
+/** Plain-text ₿ amount plus optional fiat suffix for a nested gift `aria-label`. */
+function giftAmountText(
+  sats: number,
+  rateDay: FiatRateDay | null,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): string {
+  const bitcoin = formatBitcoin(sats, numberFormat);
+  if (rateDay === null) {
+    return bitcoin;
+  }
+  const amount = satsToFiatAmount(sats, rateDay, fiat);
+  return amount === null ? bitcoin : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
 }
 
 /**
@@ -206,10 +280,12 @@ export function InboxScreen({
   onPayCancel = () => undefined,
   payWaiting = false,
   showAmount = true,
+  rateDay = null,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
   const [filter, setFilter] = useState<InboxFilter>('direct');
   const [showPaymentQr, setShowPaymentQr] = useState(false);
 
@@ -324,7 +400,7 @@ export function InboxScreen({
         ) : null}
         {messages !== null ? (
           <ul aria-label={t('inbox.threadLabel')} className="flex w-full flex-col gap-3">
-            {messages.map((message) => (
+            {groupThreadGifts(messages).map(({ message, gifts }) => (
               <li
                 key={message.id}
                 data-message-id={message.id}
@@ -381,6 +457,7 @@ export function InboxScreen({
                     {t('forum.giftReply', {
                       amount: formatBitcoin(message.sats, numberFormat),
                     })}
+                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                   </p>
                 ) : null}
                 {message.text !== '' && message.sats > 0 ? (
@@ -392,8 +469,49 @@ export function InboxScreen({
                     }
                   >
                     {formatBitcoin(message.sats, numberFormat)}
+                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                   </p>
                 ) : null}
+                {gifts.map((gift) => (
+                  <div
+                    key={gift.id}
+                    role="note"
+                    aria-label={t('inbox.giftForLabel', {
+                      name: gift.name,
+                      amount: giftAmountText(gift.sats, rateDay, fiat, numberFormat),
+                    })}
+                    data-message-id={gift.id}
+                    data-gift-for={message.id}
+                    className={
+                      message.fromMe
+                        ? 'mt-3 border-t border-app-btn-fg/20 pt-2'
+                        : 'mt-3 border-t border-app-border pt-2'
+                    }
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <span
+                        className={
+                          message.fromMe
+                            ? 'text-xs tabular-nums lining-nums text-app-btn-fg/80'
+                            : 'text-xs tabular-nums lining-nums text-app-muted'
+                        }
+                      >
+                        {gift.name}
+                        {' · '}
+                        {formatBitcoin(gift.sats, numberFormat)}
+                        {preferredFiatSuffix(gift.sats, rateDay, fiat, numberFormat)}
+                      </span>
+                      <time
+                        dateTime={gift.createdAt}
+                        className={
+                          message.fromMe ? 'text-xs text-app-btn-fg/70' : 'text-xs text-app-subtle'
+                        }
+                      >
+                        {formatForumTime(gift.createdAt, locale)}
+                      </time>
+                    </div>
+                  </div>
+                ))}
               </li>
             ))}
           </ul>

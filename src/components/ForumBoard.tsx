@@ -28,6 +28,7 @@ import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
@@ -45,13 +46,11 @@ import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import type { NumberFormatStyle } from '@/lib/number-format';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
   formatBitcoin,
   formatFiatDisplay,
   satsToFiatAmount,
-  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import {
@@ -118,37 +117,6 @@ function previewPaySats(draft: string): number | null {
     return null;
   }
   return sats;
-}
-
-/**
- * Preferred-fiat suffix next to a ₿ amount, or `null` when the rate or
- * conversion is missing (₿-only).
- *
- * @param sats - Whole sats.
- * @param rateDay - Latest gift-day totals, or `null`.
- * @param fiat - Visitor preference.
- * @param numberFormat - Grouping style.
- * @returns ` · ` plus formatted fiat, or `null`.
- */
-function preferredFiatSuffix(
-  sats: number,
-  rateDay: FiatRateDay | null,
-  fiat: FiatCode,
-  numberFormat: NumberFormatStyle,
-): ReactElement | null {
-  if (rateDay === null) {
-    return null;
-  }
-  const amount = satsToFiatAmount(sats, rateDay, fiat);
-  if (amount === null) {
-    return null;
-  }
-  return (
-    <>
-      <span aria-hidden="true"> · </span>
-      <span>{formatFiatDisplay(amount, fiat, numberFormat)}</span>
-    </>
-  );
 }
 
 /** Active pay invoice shown under a forum card. */

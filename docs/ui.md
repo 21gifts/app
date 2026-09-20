@@ -785,13 +785,26 @@ Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome
 
 ### Inbox thread bubbles
 
-Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, expand).
+Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, expand). Every ₿ amount shown in an inbox/moderator-group thread (gift-only bubble, text+sats line, and the nested gift line below) now carries the same preferred-fiat suffix the forum already shows (` · $X.XX`, ₿-only without a usable rate) via the shared `preferredFiatSuffix` helper.
 
 **Incoming (`fromMe === false`).** Full-width muted note card (same chrome as the forum note card body): `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`. Inner: name `text-sm font-medium text-app-fg`, time `text-xs text-app-subtle`, body `mt-2 whitespace-pre-wrap text-sm text-app-fg`.
 
 **Sent (`fromMe === true`).** Filled form-primary, right, content-sized: `self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg`. No border, no muted fill. Inner: name `text-sm font-medium text-app-btn-fg`, time `text-xs text-app-btn-fg/70`, body `mt-2 whitespace-pre-wrap text-sm text-app-btn-fg`. Label `inbox.you`.
 
 **List outbound last-text.** Compact sent chip on the right of the conversation row, same fill: `self-end w-fit max-w-full line-clamp-2 rounded-2xl rounded-br-md bg-app-btn px-3 py-1.5 text-sm text-app-btn-fg`. Copy stays `inbox.sentPreview`. Unread inbound rows use a semibold counterpart name (`font-semibold`) and last text `line-clamp-2 text-sm text-app-fg`; read inbound last text stays `line-clamp-2 text-sm text-app-muted`. Empty `lastText` omits the preview (gift-only last rows with `lastSats > 0` show the formatted amount with the same chip vs muted split). Thread bubbles above are unchanged.
+
+**Attached gift (`giftFor`).** A message that another message's `giftFor` points at renders
+inside that parent's bubble (the parent `<li>`), as a footer line below the parent's text — not
+a second bubble — so it reads as part of that message. A hairline separates it: `mt-3 border-t
+pt-2`, `border-app-border` in an incoming bubble and `border-app-btn-fg/20` in an own
+(`fromMe`) bubble. Text follows the bubble it sits in: name/amount `text-xs tabular-nums
+lining-nums text-app-muted` (incoming) or `text-app-btn-fg/80` (own), time `text-xs
+text-app-subtle` or `text-app-btn-fg/70`. `role="note"`. Content: `{name} ·
+{formatBitcoin}` plus the preferred-fiat suffix, and a right-aligned `formatForumTime`. The
+gift's own `text` is never shown here (the parent already names the person).
+`aria-label` is catalog `inbox.giftForLabel` (**Paid by {name}: {amount}**), `amount` being
+the ₿ text plus fiat suffix text when present. `data-message-id` stays the gift's own id;
+`data-gift-for` is the parent message's id.
 
 ### Composer
 
