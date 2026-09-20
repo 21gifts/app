@@ -653,7 +653,7 @@
 
 ## Function: AppShellHeader
 
-- **Purpose:** Registers flex-none header content into the nearest `AppShell` fill layout (DOM portal into the shell `<header>` host). Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers flex-none header content into the nearest `AppShell` page frame (DOM portal into the shell `<header>` host). Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (typically an onboarding `h1`).
 - **Returns / side effects:** Portal into the shell header host when present; otherwise the children. Layout only.
 - **Used by:**
@@ -663,7 +663,7 @@
 
 ## Function: AppShellFooter
 
-- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` fill layout (DOM portal into the shell `<footer>` host; `pb-8` on that host). Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` page frame (DOM portal into the shell `<footer>` host; `pb-8` on that host). Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (typically Continue / Skip / Agree buttons).
 - **Returns / side effects:** Portal into the shell footer host when present; otherwise the children. Layout only.
 - **Used by:**

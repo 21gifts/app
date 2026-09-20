@@ -368,7 +368,7 @@ test.beforeEach(async ({ page }, testInfo) => {
 /**
  * Playwright fullPage stitches viewport chunks; sticky chrome is painted
  * into every chunk. Force document flow so each header appears once.
- * The fixed New posts pill is a viewport shot, not unstuck here.
+ * The sticky New posts pill is a viewport shot, not unstuck here.
  *
  * @param page - Page under test.
  */
