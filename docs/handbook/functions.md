@@ -2221,7 +2221,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/conversations/:id/read` with Bearer. Non-ok throws; success may ignore body.
 - **Inputs:** Session token and conversation id (encoded in the path).
 - **Returns / side effects:** void, or throws visitor copy.
-- **Used by:** `InboxLoader` after a successful thread fetch (fire-and-forget; failures are ignored).
+- **Used by:** `InboxLoader` after a successful thread fetch (fire-and-forget; failures are ignored). `ModeratorGroupScreen` after a successful group+thread load (fire-and-forget; failures are ignored).
 
 ## Function: proxyConversationsGet
 
@@ -2417,7 +2417,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** GET `/conversations/moderator-group` with Bearer and parse `{ conversation }` via `conversationResponseSchema`. Returns the singleton closed staff-room row (`kind` `moderator_group`).
 - **Inputs:** Session token.
 - **Returns / side effects:** Conversation row, or throws visitor copy.
-- **Used by:** `ModeratorGroupScreen`, `InboxLoader` (`/messages` unlisted `?c=` guard for a moderator).
+- **Used by:** `ModeratorGroupScreen`, `InboxLoader` (`/messages` unlisted `?c=` guard for a moderator), `useUnreadCount` (staff unread), `refreshUnreadAppBadge` (when `moderationUnreadOverride` is omitted), and `NotificationsLoader` (remaining badge after mark-all-read).
 
 ## Function: listHiddenMessages
 
