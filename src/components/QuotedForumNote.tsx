@@ -176,8 +176,9 @@ function QuotedForumNote({
  * Remaining body text plus nested posts for resolved `/messages/<uuid>` URLs.
  *
  * @param props - Body text, already-loaded notes, the containing message id,
- *   fiat conversion, optional feed truncation, and an optional click handler
- *   for the nested card.
+ *   fiat conversion, optional feed truncation, optional remaining-text
+ *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`), and
+ *   an optional click handler for the nested card.
  * @returns The stripped paragraph, nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved.
  * @throws Does not throw.
@@ -189,6 +190,7 @@ export function ForumQuotedBody({
   rateDay,
   fiat,
   truncate = true,
+  className = 'whitespace-pre-wrap text-sm text-app-fg',
   onActivate,
 }: {
   text: string;
@@ -197,6 +199,7 @@ export function ForumQuotedBody({
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
   truncate?: boolean;
+  className?: string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
   const candidateIds = useMemo(() => {
@@ -264,9 +267,9 @@ export function ForumQuotedBody({
     <>
       {displayText !== '' ? (
         truncate ? (
-          <ForumNoteText text={displayText} className="whitespace-pre-wrap text-sm text-app-fg" />
+          <ForumNoteText text={displayText} className={className} />
         ) : (
-          <LinkedText text={displayText} className="whitespace-pre-wrap text-sm text-app-fg" />
+          <LinkedText text={displayText} className={className} />
         )
       ) : null}
       {displayText !== '' ? <NoteTranslate text={displayText} /> : null}

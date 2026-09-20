@@ -1,8 +1,9 @@
 'use client';
 
-import { ArrowLeft, Loader2, Send } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Loader2, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
+  type ChangeEvent,
   type FormEvent,
   type ReactElement,
   useContext,
@@ -13,17 +14,18 @@ import {
 } from 'react';
 import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
@@ -106,7 +108,16 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 
 /** Client-side composer validation or request failure. */
 export type InboxFormError =
-  'empty' | 'tooLong' | 'request' | 'amount' | 'rateLimit' | 'authorWallet' | null;
+  | 'empty'
+  | 'tooLong'
+  | 'request'
+  | 'amount'
+  | 'rateLimit'
+  | 'authorWallet'
+  | 'unsupported'
+  | 'tooLarge'
+  | 'tooMany'
+  | null;
 
 /** Open Lightning invoice shown in the inbox pay sheet. */
 export interface InboxInvoice {
@@ -167,6 +178,22 @@ export interface InboxScreenProps {
   showAmount?: boolean;
   /** Latest gift-day totals for the preferred-fiat suffix, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
+  /**
+   * Show the ImagePlus attach control and photo drafts. Default false so Direct
+   * / Contact / Damus threads stay text + sats.
+   */
+  showAttach?: boolean;
+  /** Prepared stills for the composer preview. Default empty. */
+  photoDrafts?: ForumPhotoPayload[];
+  /** Called with the chosen `FileList` when the attach input changes. */
+  onPickFiles?: (files: FileList) => void;
+  /** Removes a prepared still by index. */
+  onRemovePhoto?: (index: number) => void;
+  /**
+   * Blob URLs for thread stills, keyed `${messageId}:${index}`. Default empty
+   * so inbox DMs stay text + sats until a parent wires photos.
+   */
+  photoUrls?: Record<string, string>;
 }
 
 /** One thread message plus the paid gifts that belong to it. */
@@ -299,7 +326,16 @@ function inboxAuthorProfileButton(
  * thread messages are full-width muted note cards; `fromMe` messages render
  * as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only
  * bubbles use `forum.giftReply`; text+sats show the amount under the body.
- * An open `invoice` shows the Wallet of Satoshi / QR pay sheet. The
+ * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
+ * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
+ * `showAttach` (default false) adds the forum ImagePlus control, still
+ * previews, and photo-only send; `photoUrls` renders attached stills on
+ * bubbles. Optional `rateDay` is the latest gift-day totals; every thread
+ * sats amount shows a preferred-fiat suffix via `preferredFiatSuffix` when
+ * `rateDay` is usable, else ₿-only. A message whose `giftFor` points at
+ * another message renders via {@link groupThreadGifts} as a nested
+ * `role="note"` line inside the parent's list item. An open `invoice` shows the
+ * Wallet of Satoshi / QR pay sheet. The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
@@ -344,6 +380,11 @@ export function InboxScreen({
   payWaiting = false,
   showAmount = true,
   rateDay = null,
+  showAttach = false,
+  photoDrafts = [],
+  onPickFiles = () => undefined,
+  onRemovePhoto = () => undefined,
+  photoUrls = {},
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -355,6 +396,7 @@ export function InboxScreen({
   const paySheetWasOpen = useRef(false);
   const payWaitingWasOn = useRef(false);
   const payQrWasOn = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
   const [showPaymentQr, setShowPaymentQr] = useState(false);
 
@@ -427,6 +469,14 @@ export function InboxScreen({
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const files = event.target.files;
+    if (files !== null && files.length > 0) {
+      onPickFiles(files);
+    }
+    event.target.value = '';
   };
 
   const filtered =
@@ -565,8 +615,13 @@ export function InboxScreen({
                   </time>
                 </div>
                 {message.text !== '' ? (
-                  <LinkedText
+                  <ForumQuotedBody
                     text={message.text}
+                    knownNotes={[]}
+                    excludeId={message.id}
+                    rateDay={null}
+                    fiat={fiat}
+                    truncate={false}
                     className={
                       message.fromMe
                         ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
@@ -588,6 +643,26 @@ export function InboxScreen({
                     {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
                   </p>
                 ) : null}
+                {Array.from(
+                  {
+                    length: message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0,
+                  },
+                  (_, index) => {
+                    const url = photoUrls[`${message.id}:${index}`];
+                    if (url === undefined) {
+                      return null;
+                    }
+                    return (
+                      /* eslint-disable-next-line @next/next/no-img-element -- blob URLs from fetchConversationMessagePhoto */
+                      <img
+                        key={`${message.id}:${index}`}
+                        src={url}
+                        alt={t('inbox.photoAlt', { name: message.name })}
+                        className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                      />
+                    );
+                  },
+                )}
                 {message.text !== '' && message.sats > 0 ? (
                   <p
                     className={
@@ -644,45 +719,161 @@ export function InboxScreen({
             ))}
           </ul>
         ) : null}
-        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
-          <textarea
-            aria-label={t('inbox.composerLabel')}
-            placeholder={t('inbox.placeholder')}
-            value={draft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            maxLength={CONTACT_MESSAGE_MAX_LENGTH}
-            rows={2}
-            disabled={posting || messagesLoading}
-            className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
-          />
-          {showAmount ? (
-            <Field
-              className="w-24"
-              label={t('inbox.amountLabel')}
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder={t('forum.payAmountPlaceholder')}
-              value={amountDraft}
-              disabled={posting || messagesLoading}
-              onChange={(event) => onAmountDraftChange(event.target.value)}
-            />
+        <form
+          onSubmit={handleSubmit}
+          className={showAttach ? 'flex w-full flex-col gap-2' : 'flex w-full items-end gap-2'}
+        >
+          {showAttach ? (
+            <div className="flex items-center gap-2">
+              <IconButton
+                type="button"
+                size="lg"
+                variant="secondary"
+                aria-label={t('inbox.attach')}
+                disabled={posting || messagesLoading}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+              >
+                <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              </IconButton>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={posting || messagesLoading}
+                onChange={handleFileChange}
+              />
+              <textarea
+                aria-label={t('inbox.composerLabel')}
+                placeholder={t('inbox.placeholder')}
+                value={draft}
+                onChange={(event) => onDraftChange(event.target.value)}
+                maxLength={CONTACT_MESSAGE_MAX_LENGTH}
+                rows={2}
+                disabled={posting || messagesLoading}
+                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+              />
+              {showAmount ? (
+                <Field
+                  className="w-24"
+                  label={t('inbox.amountLabel')}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder={t('forum.payAmountPlaceholder')}
+                  value={amountDraft}
+                  disabled={posting || messagesLoading}
+                  onChange={(event) => onAmountDraftChange(event.target.value)}
+                />
+              ) : null}
+              <IconButton
+                type="submit"
+                size="lg"
+                variant="primary"
+                disabled={posting || messagesLoading}
+                aria-label={t('inbox.send')}
+              >
+                {posting ? (
+                  <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+                ) : (
+                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                )}
+              </IconButton>
+            </div>
+          ) : (
+            <>
+              <textarea
+                aria-label={t('inbox.composerLabel')}
+                placeholder={t('inbox.placeholder')}
+                value={draft}
+                onChange={(event) => onDraftChange(event.target.value)}
+                maxLength={CONTACT_MESSAGE_MAX_LENGTH}
+                rows={2}
+                disabled={posting || messagesLoading}
+                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+              />
+              {showAmount ? (
+                <Field
+                  className="w-24"
+                  label={t('inbox.amountLabel')}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder={t('forum.payAmountPlaceholder')}
+                  value={amountDraft}
+                  disabled={posting || messagesLoading}
+                  onChange={(event) => onAmountDraftChange(event.target.value)}
+                />
+              ) : null}
+              <IconButton
+                type="submit"
+                size="lg"
+                variant="primary"
+                disabled={posting || messagesLoading}
+                aria-label={t('inbox.send')}
+              >
+                {posting ? (
+                  <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+                ) : (
+                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                )}
+              </IconButton>
+            </>
+          )}
+          {showAttach && photoDrafts.length === 1 ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+              <img
+                src={photoDrafts[0]!.previewUrl}
+                alt={t('inbox.previewAlt')}
+                className="h-20 w-20 rounded-lg object-cover"
+              />
+              <IconButton
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  onRemovePhoto(0);
+                }}
+                disabled={posting}
+                aria-label={t('inbox.removePhoto')}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          ) : showAttach && photoDrafts.length > 1 ? (
+            <ul className="flex flex-wrap items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {photoDrafts.map((photo, index) => (
+                <li key={`${photo.previewUrl}:${index}`} className="flex items-start gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+                  <img
+                    src={photo.previewUrl}
+                    alt={t('inbox.previewAlt')}
+                    className="h-20 w-20 rounded-lg object-cover"
+                  />
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      onRemovePhoto(index);
+                    }}
+                    disabled={posting}
+                    aria-label={t('inbox.removePhoto')}
+                  >
+                    <X aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                </li>
+              ))}
+            </ul>
           ) : null}
-          <IconButton
-            type="submit"
-            size="lg"
-            variant="primary"
-            disabled={posting || messagesLoading}
-            aria-label={t('inbox.send')}
-          >
-            {posting ? (
-              <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
-            ) : (
-              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-            )}
-          </IconButton>
         </form>
         {formError === 'empty' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
@@ -712,6 +903,21 @@ export function InboxScreen({
         {formError === 'authorWallet' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorAuthorWallet')}
+          </p>
+        ) : null}
+        {formError === 'unsupported' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('inbox.errorUnsupported')}
+          </p>
+        ) : null}
+        {formError === 'tooLarge' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('inbox.errorTooLarge')}
+          </p>
+        ) : null}
+        {formError === 'tooMany' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('inbox.errorTooMany')}
           </p>
         ) : null}
         {invoice !== null && isSmartphone ? (

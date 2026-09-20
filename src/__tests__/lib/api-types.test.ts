@@ -617,6 +617,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
     expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
@@ -630,6 +632,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
     };
     const outgoing = { ...incoming, fromMe: true };
     expect(conversationMessageSchema.parse(incoming)).toEqual(incoming);
@@ -655,6 +659,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
       accountId: 'acc_1',
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
@@ -694,6 +700,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: true,
       sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
   });
@@ -707,6 +715,8 @@ describe('conversationMessageSchema', () => {
         createdAt: '2026-08-28T12:00:00.000Z',
         fromMe: false,
         sats: 0,
+        hasPhoto: false,
+        photoCount: 0,
         accountId: '',
       }),
     ).toThrow();

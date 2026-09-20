@@ -28,6 +28,7 @@ import {
   proxyContactPost,
   proxyConversationGet,
   proxyConversationInvoicePost,
+  proxyConversationMessagePhotoGet,
   proxyConversationPost,
   proxyConversationReadPost,
   proxyConversationsGet,
@@ -347,6 +348,31 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/c1/invoice');
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+  });
+
+  it('proxyConversationMessagePhotoGet hits /photo', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationMessagePhotoGet(
+      new Request('http://localhost/conversations/c1/messages/m1/photo'),
+      'c1',
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
+      '/conversations/c1/messages/m1/photo',
+    );
+  });
+
+  it('proxyConversationMessagePhotoGet hits an extra still file', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationMessagePhotoGet(
+      new Request('http://localhost/conversations/c1/messages/m1/photo/2.jpg'),
+      'c1',
+      'm1',
+      '2.jpg',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
+      '/conversations/c1/messages/m1/photo/2.jpg',
+    );
   });
 
   it('proxyConversationReadPost encodes the id', async () => {

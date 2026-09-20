@@ -653,6 +653,22 @@ test('Function: proxyConversationReadPost — POST /conversations/[id]/read with
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyConversationMessagePhotoGet — GET photo without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/conversations/c1/messages/m1/photo')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: fetchConversationMessagePhoto — GET extra still without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/conversations/c1/messages/m1/photo/1.jpg')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyNotificationsGet — GET /forum/notifications without bearer is 401', async ({
   request,
 }) => {

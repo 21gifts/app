@@ -603,20 +603,24 @@ export type Conversation = z.infer<typeof conversationSchema>;
  *
  * `fromMe` is true when this message was sent by this session as the actor,
  * not when another staff member sent as the platform. `text` may be empty on
- * a gift-only row (`sats > 0`). `sats` is the validated payment on that
- * message (0 for text-only). `accountId` is the optional 21.gifts sender id
- * on thread messages. `giftFor` is the optional id of the thread message this
- * row is a paid gift for (moderator-group stipend rows). For a staff viewer,
- * `name` and optional `accountId` are that actor when the api sends them.
- * Members still see platform identity (`21.gifts`) on official replies.
+ * a gift-only or photo-only row (`sats > 0` or `hasPhoto`). `sats` is the
+ * validated payment on that message (0 for text-only). `hasPhoto` /
+ * `photoCount` (0–10) flag attached stills. `accountId` is the optional
+ * 21.gifts sender id on thread messages. `giftFor` is the optional id of the
+ * thread message this row is a paid gift for (moderator-group stipend rows).
+ * For a staff viewer, `name` and optional `accountId` are that actor when the
+ * api sends them. Members still see platform identity (`21.gifts`) on official
+ * replies.
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  text: z.string(), // empty allowed (gift-only)
+  text: z.string(), // empty allowed (gift-only or photo-only)
   createdAt: z.string().datetime({ offset: true }),
   fromMe: z.boolean(),
   sats: z.number().int().nonnegative(),
+  hasPhoto: z.boolean().default(false),
+  photoCount: z.number().int().min(0).max(10).default(0),
   /** Optional 21.gifts sender id on thread messages. */
   accountId: z.string().min(1).optional(),
   /** Optional id of the thread message this row is a paid gift for (moderator-group stipend rows). */
