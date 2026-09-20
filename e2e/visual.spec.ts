@@ -6606,6 +6606,7 @@ test.describe('moderate screens', () => {
 
   test('moderate group-unread', async ({ page }) => {
     await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
     await page.route('**/conversations/moderator-group', async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
@@ -6630,6 +6631,7 @@ test.describe('moderate screens', () => {
     });
     await page.goto('/moderate');
     await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toBeVisible();
+    await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-unread');
   });
 
