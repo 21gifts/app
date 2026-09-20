@@ -11,16 +11,22 @@ export interface ForumNoteTextProps {
   text: string;
   /** Paragraph className (keep whitespace-pre-wrap from the caller). */
   className: string;
+  /** When true, forward plain rendering to {@link LinkedText} (no autolinks). */
+  plain?: boolean;
 }
 
 /**
  * Render a public forum note or reply body, collapsing long text behind Show more.
  *
- * @param props - Body text and paragraph className.
+ * @param props - Body text, paragraph className, and optional plain mode.
  * @returns The paragraph, or null when text is empty.
  * @throws Does not throw.
  */
-export function ForumNoteText({ text, className }: ForumNoteTextProps): ReactElement | null {
+export function ForumNoteText({
+  text,
+  className,
+  plain = false,
+}: ForumNoteTextProps): ReactElement | null {
   const { t } = useTranslations();
   const [expanded, setExpanded] = useState(false);
   const { preview, truncated } = forumTextPreview(text);
@@ -30,13 +36,14 @@ export function ForumNoteText({ text, className }: ForumNoteTextProps): ReactEle
   }
 
   if (!truncated || expanded) {
-    return <LinkedText text={text} className={className} />;
+    return <LinkedText text={text} className={className} {...(plain ? { plain: true } : {})} />;
   }
 
   return (
     <LinkedText
       text={preview}
       className={className}
+      {...(plain ? { plain: true } : {})}
       suffix={
         <>
           …{' '}

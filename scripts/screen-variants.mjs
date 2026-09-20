@@ -1185,18 +1185,18 @@ export const SCREEN_VARIANTS = [
     needle: 'This page is for founders and moderators.',
   },
   {
-    route: '/moderate',
-    id: 'moderator',
-    image: 'moderate-moderator.png',
-    visual: 'state-moderate-moderator',
-    needle: 'Moderators',
-  },
-  {
     route: '/moderate/hidden',
     id: 'default',
     image: 'moderate-hidden.png',
     visual: 'screen-moderate-hidden',
     needle: 'Hidden note',
+  },
+  {
+    route: '/moderate/hidden',
+    id: 'visitor',
+    image: 'moderate-hidden-visitor.png',
+    visual: 'state-moderate-hidden-visitor',
+    needle: 'Hidden visitor note',
   },
   {
     route: '/moderate/hidden',
@@ -1294,7 +1294,7 @@ export const SCREEN_VARIANTS = [
     id: 'forbidden',
     image: 'moderate-group-forbidden.png',
     visual: 'state-moderate-group-forbidden',
-    needle: 'This room is for confirmed moderators.',
+    needle: 'This room is for founders and moderators.',
   },
   {
     route: '/moderate/group',
@@ -1372,6 +1372,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-expanded-gifts.png',
     visual: 'state-welcome-expanded-gifts',
     needle: 'send ₿21',
+  },
+  {
+    route: '/welcome',
+    id: 'expanded-visitor',
+    image: 'welcome-expanded-visitor.png',
+    visual: 'state-welcome-expanded-visitor',
+    needle: 'Wrote from another app',
   },
   {
     route: '/welcome',
@@ -1484,6 +1491,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-thread.png',
     visual: 'state-messages-id-thread',
     needle: 'state-messages-id-thread',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'visitor-reply',
+    image: 'messages-id-visitor-reply.png',
+    visual: 'state-messages-id-visitor-reply',
+    needle: 'Greetings! https://example.com/hello',
   },
   {
     route: '/messages/[id]',

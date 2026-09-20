@@ -13,6 +13,7 @@ import {
   postTrustVerify,
 } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -80,7 +81,7 @@ export function MemberTrustActions({
   if (session === null || account === null) {
     return null;
   }
-  if (account.role !== 'founder' && account.role !== 'moderator') {
+  if (!roleAtLeast(account.role, 'moderator')) {
     return null;
   }
   if (profile.id === account.id) {
@@ -96,7 +97,8 @@ export function MemberTrustActions({
   const showWaiting =
     profile.role === 'verified' && proposedBy !== null && proposedBy.id === account.id;
   const showAppoint =
-    account.role === 'founder' && (profile.role === 'basis' || profile.role === 'verified');
+    roleAtLeast(account.role, 'founder') &&
+    (profile.role === 'basis' || profile.role === 'verified');
 
   const run = (action: () => Promise<unknown>, patch: Partial<MemberProfile>): void => {
     /* v8 ignore next 3 — the action button is disabled while busy */

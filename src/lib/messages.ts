@@ -281,6 +281,7 @@ const en = {
   'forum.previewAlt': 'Selected photo',
   'forum.photoAlt': 'Photo from {name}',
   'forum.quotedNote': 'Open linked note from {name}',
+  'forum.quotedNoteVisitor': 'Open linked note from visitor {name}',
   'forum.removePhoto': 'Remove photo',
   'forum.removeVideo': 'Remove video',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
@@ -393,6 +394,9 @@ const en = {
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
+  'forum.via.nostr': 'Visitor',
+  'forum.via.nostrHint':
+    'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
 
   'rules.pageTitle': 'Living room rules',
   'rules.heading': 'Living room rules',
@@ -554,8 +558,8 @@ const en = {
   'moderate.retry': 'Try again',
   'moderate.listLabel': 'Hidden notes',
   'moderate.groupLabel': 'Moderators',
-  'moderate.groupLead': 'Closed staff room for confirmed moderators.',
-  'moderate.groupForbidden': 'This room is for confirmed moderators.',
+  'moderate.groupLead': 'Closed staff room for founders and moderators.',
+  'moderate.groupForbidden': 'This room is for founders and moderators.',
   'moderate.groupError': 'Could not load the staff room. Please try again.',
   'moderate.hiddenBy': 'Hidden by {name}',
   'moderate.unnamed': 'Unnamed',
@@ -862,6 +866,7 @@ const de = {
   'forum.previewAlt': 'Ausgewähltes Foto',
   'forum.photoAlt': 'Foto von {name}',
   'forum.quotedNote': 'Verknüpfte Notiz von {name} öffnen',
+  'forum.quotedNoteVisitor': 'Verknüpfte Notiz von Besucher {name} öffnen',
   'forum.removePhoto': 'Foto entfernen',
   'forum.removeVideo': 'Video entfernen',
   'forum.errorUnsupported':
@@ -978,6 +983,9 @@ const de = {
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
+  'forum.via.nostr': 'Besucher',
+  'forum.via.nostrHint':
+    'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
 
   'rules.pageTitle': 'Wohnzimmerregeln',
   'rules.heading': 'Wohnzimmerregeln',
@@ -1145,8 +1153,10 @@ const de = {
   'moderate.retry': 'Erneut versuchen',
   'moderate.listLabel': 'Ausgeblendete Notizen',
   'moderate.groupLabel': 'Moderatoren',
-  'moderate.groupLead': 'Geschlossener Staff-Raum für bestätigte Moderatorinnen und Moderatoren.',
-  'moderate.groupForbidden': 'Dieser Raum ist für bestätigte Moderatorinnen und Moderatoren.',
+  'moderate.groupLead':
+    'Geschlossener Staff-Raum für Gründerpersonen und Moderatorinnen oder Moderatoren.',
+  'moderate.groupForbidden':
+    'Dieser Raum ist für Gründerpersonen und Moderatorinnen oder Moderatoren.',
   'moderate.groupError':
     'Der Staff-Raum konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.hiddenBy': 'Ausgeblendet von {name}',
@@ -1449,6 +1459,7 @@ const es = {
   'forum.previewAlt': 'Foto seleccionada',
   'forum.photoAlt': 'Foto de {name}',
   'forum.quotedNote': 'Abrir la nota enlazada de {name}',
+  'forum.quotedNoteVisitor': 'Abrir la nota enlazada del visitante {name}',
   'forum.removePhoto': 'Quitar foto',
   'forum.removeVideo': 'Quitar vídeo',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
@@ -1563,6 +1574,9 @@ const es = {
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
+  'forum.via.nostr': 'Visitante',
+  'forum.via.nostrHint':
+    'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
 
   'rules.pageTitle': 'Reglas del salón',
   'rules.heading': 'Reglas del salón',
@@ -1723,8 +1737,8 @@ const es = {
   'moderate.retry': 'Intentar de nuevo',
   'moderate.listLabel': 'Notas ocultas',
   'moderate.groupLabel': 'Moderadores',
-  'moderate.groupLead': 'Sala de personal cerrada para moderadores confirmados.',
-  'moderate.groupForbidden': 'Esta sala es para moderadores confirmados.',
+  'moderate.groupLead': 'Sala de personal cerrada para personas fundadoras y moderadoras.',
+  'moderate.groupForbidden': 'Esta sala es para personas fundadoras y moderadoras.',
   'moderate.groupError': 'No se pudo cargar la sala de personal. Inténtalo de nuevo.',
   'moderate.hiddenBy': 'Ocultada por {name}',
   'moderate.unnamed': 'Sin nombre',
@@ -2026,6 +2040,7 @@ const fil = {
   'forum.previewAlt': 'Napiling litrato',
   'forum.photoAlt': 'Litrato mula kay {name}',
   'forum.quotedNote': 'Buksan ang naka-link na nota mula kay {name}',
+  'forum.quotedNoteVisitor': 'Buksan ang naka-link na nota mula sa bisitang si {name}',
   'forum.removePhoto': 'Alisin ang litrato',
   'forum.removeVideo': 'Alisin ang bidyo',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
@@ -2141,6 +2156,9 @@ const fil = {
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
+  'forum.via.nostr': 'Bisita',
+  'forum.via.nostrHint':
+    'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
 
   'rules.pageTitle': 'Mga patakaran sa living room',
   'rules.heading': 'Mga patakaran sa living room',
@@ -2307,8 +2325,8 @@ const fil = {
   'moderate.retry': 'Subukan ulit',
   'moderate.listLabel': 'Mga nakatagong nota',
   'moderate.groupLabel': 'Mga Moderator',
-  'moderate.groupLead': 'Saradong staff room para sa mga kumpirmadong moderator.',
-  'moderate.groupForbidden': 'Ang silid na ito ay para sa mga kumpirmadong moderator.',
+  'moderate.groupLead': 'Saradong staff room para sa mga founder at moderator.',
+  'moderate.groupForbidden': 'Ang silid na ito ay para sa mga founder at moderator.',
   'moderate.groupError': 'Hindi ma-load ang staff room. Subukan ulit.',
   'moderate.hiddenBy': 'Itinago ni {name}',
   'moderate.unnamed': 'Walang pangalan',

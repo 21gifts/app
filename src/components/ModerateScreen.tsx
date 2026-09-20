@@ -3,23 +3,14 @@
 import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ButtonLink, Card } from '@/components/ui';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
-
-/**
- * True when `role` may use the hide tool and the hidden-notes list.
- *
- * @param role - Account role, or `undefined` when the account is missing.
- * @returns Whether the visitor is a founder or moderator.
- */
-function isStaffRole(role: string | undefined): boolean {
-  return role === 'founder' || role === 'moderator';
-}
 
 /**
  * Signed-in moderation hub of staff tools.
  *
- * Founders and moderators see hub copy and labeled Hidden notes and Open
- * proposals tools. Moderators also see a Moderators control to
+ * Founders and moderators see hub copy and labeled Hidden notes, Open
+ * proposals, and Moderators tools. The Moderators control goes to
  * `/moderate/group`. Other signed-in visitors see a short forbidden message
  * and no tools list. Does not fetch hidden notes, proposals, or the group
  * thread. Renders nothing without a session.
@@ -30,7 +21,7 @@ export function ModerateScreen(): ReactElement | null {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const staff = isStaffRole(account?.role);
+  const staff = roleAtLeast(account?.role, 'moderator');
 
   if (session === null) {
     return null;
@@ -65,14 +56,12 @@ export function ModerateScreen(): ReactElement | null {
             {t('moderate.proposals.heading')}
           </ButtonLink>
         </li>
-        {account?.role === 'moderator' ? (
-          <li className="flex w-full flex-col items-center gap-3">
-            <p className="text-center text-sm text-app-muted">{t('moderate.groupLead')}</p>
-            <ButtonLink href="/moderate/group" variant="secondary" size="lg">
-              {t('moderate.groupLabel')}
-            </ButtonLink>
-          </li>
-        ) : null}
+        <li className="flex w-full flex-col items-center gap-3">
+          <p className="text-center text-sm text-app-muted">{t('moderate.groupLead')}</p>
+          <ButtonLink href="/moderate/group" variant="secondary" size="lg">
+            {t('moderate.groupLabel')}
+          </ButtonLink>
+        </li>
       </ul>
     </Card>
   );

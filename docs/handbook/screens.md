@@ -2,6 +2,8 @@
 
 Every variant below is captured in all four Linux Chromium combos (desktop/mobile × light/dark). Markdown images are the desktop-light shot. The other combo PNGs are visual-test baselines only.
 
+**Role hierarchy.** Roles are ordered founder > moderator > verified > basis. A higher role can always do and see everything a lower role can; there are no exceptions. Wherever this handbook names a role for a screen, tool or control it means that role **or higher**. The app checks this with `roleAtLeast` (`src/lib/roles.ts`); an equality test on the viewer's role is a defect.
+
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
@@ -444,6 +446,12 @@ On **All**, click **Show reactions** on a note — the note's ₿ amount and the
 On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21**) and a text reply with the gift amount under the body. The in-card composer still has **Write a reaction** and **Amount**.
 
 ![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
+
+### Variant: expanded-visitor
+
+On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows a **Visitor** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+
+![21.gifts welcome expanded visitor](images/welcome-expanded-visitor.png)
 
 ### Variant: quoted-note
 
@@ -988,7 +996,7 @@ Notifications section with `role="alert"` after clicking Enable notifications wh
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Founder/moderator see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text (`inbox.threadUnread`); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Open a thread, send a reply, return via **All conversations** (chrome link), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
-- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (moderators, unlisted `?c=` only), `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
+- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (founder or moderator, unlisted `?c=` only), `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -1104,14 +1112,14 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Confirmed moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for confirmed moderators.** Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
-- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Confirmed moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. Heading **Moderation**. Staff (founder or moderator) see hub lead **Tools for founders and moderators.**, the hide-tool lead, a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Founders and moderators also see **Moderators** `ButtonLink` → `/moderate/group` with lead **Closed staff room for founders and moderators.** Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only for founder|moderator, after Trust Chain. Menu has no Open proposals row.
+- **Actions:** Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Founders and moderators also open **Moderators** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, and labeled **Open proposals** control → `/moderate/proposals`.
+Staff (founder) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for founders and moderators.**
 
 ![21.gifts moderation](images/moderate.png)
 
@@ -1121,16 +1129,10 @@ Signed-in basis account. Copy **This page is for founders and moderators.** No t
 
 ![21.gifts moderation forbidden](images/moderate-forbidden.png)
 
-### Variant: moderator
-
-Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders and moderators.**, hide-tool lead, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators** control → `/moderate/group` with lead **Closed staff room for confirmed moderators.**
-
-![21.gifts moderation moderator](images/moderate-moderator.png)
-
 ## Screen: /moderate/hidden
 
 - **URL:** `/moderate/hidden` — signed-in hidden-notes list for founders and moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. No un-hide control. No hidden photo/video fetch.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (founder or moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, a non-interactive **Visitor** badge next to the name when the row has a `via` value, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for founders and moderators.** and no list. No un-hide control. No hidden photo/video fetch.
 - **Actions:** In-card icon back to the hub `/moderate`. Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HiddenNotesPage`, `HiddenNotesScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. List only for `role` founder|moderator; others see forbidden copy and do not fetch.
@@ -1140,6 +1142,12 @@ Staff (moderator) hub with heading **Moderation**, hub lead **Tools for founders
 Staff (founder) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
 
 ![21.gifts hidden notes](images/moderate-hidden.png)
+
+### Variant: visitor
+
+Staff (founder) loaded list with one hidden note written without a 21.gifts account (author **Robin**, text **Hidden visitor note**, the non-interactive **Visitor** badge next to the name, **Hidden by Ada**).
+
+![21.gifts hidden notes visitor](images/moderate-hidden-visitor.png)
 
 ### Variant: forbidden
 
@@ -1224,38 +1232,38 @@ Staff (founder) Confirm as moderator POST in flight. Confirm disabled with a spi
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators**. Confirmed moderators fetch the singleton group then the thread and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators** (never the api row name); the composer is text only (no **Amount** field, no gifts). Founders and other signed-in visitors see heading **Moderators** plus **This room is for confirmed moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages.
-- **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Confirmed moderators send a reply and **Try again** on fetch error.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators**. Founders and moderators fetch the singleton group then the thread and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators** (never the api row name); the composer is text only (no **Amount** field, no gifts). Other signed-in visitors see heading **Moderators** plus **This room is for founders and moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages.
+- **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Founders and moderators send a reply and **Try again** on fetch error.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, `fetchConversation`, `postConversationMessage`.
-- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only for `role` moderator; founders and others see forbidden copy and do not fetch.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only for `role` founder|moderator; others see forbidden copy and do not fetch.
 
 ### Variant: default
 
-Confirmed moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
+Founder or moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
 
 ![21.gifts moderator group](images/moderate-group.png)
 
 ### Variant: forbidden
 
-Signed-in founder (or other non-moderator). Heading **Moderators**. Copy **This room is for confirmed moderators.** No thread fetch.
+Signed-in non-staff visitor (verified or basis). Heading **Moderators**. Copy **This room is for founders and moderators.** No thread fetch.
 
 ![21.gifts moderator group forbidden](images/moderate-group-forbidden.png)
 
 ### Variant: empty
 
-Confirmed moderator. Group exists, zero messages. Composer **Your message** visible.
+Founder or moderator. Group exists, zero messages. Composer **Your message** visible.
 
 ![21.gifts moderator group empty](images/moderate-group-empty.png)
 
 ### Variant: loading
 
-Confirmed moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
+Founder or moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
 
 ![21.gifts moderator group loading](images/moderate-group-loading.png)
 
 ### Variant: error
 
-Confirmed moderator fetch failed. Button **Try again**.
+Founder or moderator fetch failed. Button **Try again**.
 
 ![21.gifts moderator group error](images/moderate-group-error.png)
 
@@ -1331,6 +1339,12 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 3000) showing `formatBitcoin` (`₿3'000`). Opened on the parent UUID.
 
 ![21.gifts public message thread](images/messages-id-thread.png)
+
+### Variant: visitor-reply
+
+Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each author line shows a non-interactive **Visitor** span next to the name (same slot as a role pill; not a button, no hint). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+
+![21.gifts public message visitor reply](images/messages-id-visitor-reply.png)
 
 ### Variant: quoted-note
 

@@ -110,6 +110,21 @@ describe('NoteTranslate', () => {
     expect(screen.getByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
   });
 
+  it('autolinks a url in the translated body', async () => {
+    vi.mocked(translateNote).mockResolvedValue('See https://example.com/hello');
+    renderWithLocale(<NoteTranslate text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByRole('link', { name: 'https://example.com/hello' })).toBeTruthy();
+  });
+
+  it('renders the translated body as plain text when plain', async () => {
+    vi.mocked(translateNote).mockResolvedValue('See https://example.com/hello');
+    renderWithLocale(<NoteTranslate plain text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('See https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
   it('truncates a long translation behind Show more', async () => {
     const translated = `${'a'.repeat(280)} TRANSTAIL`;
     vi.mocked(translateNote).mockResolvedValue(translated);

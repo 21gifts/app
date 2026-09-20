@@ -15,6 +15,7 @@ import {
   notificationSchema,
   FORUM_MESSAGE_MAX_LENGTH,
   forumMessageSchema,
+  hiddenMessageSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
   memberProfileSchema,
@@ -961,6 +962,54 @@ describe('forumMessageSchema', () => {
 
   it('rejects an unknown role', () => {
     expect(() => forumMessageSchema.parse({ ...message, role: 'admin' })).toThrow();
+  });
+
+  it('parses a reply with via nostr and omits via when absent', () => {
+    const reply = {
+      ...message,
+      parentId: 'parent-1',
+      via: 'nostr' as const,
+      payable: false,
+    };
+    expect(forumMessageSchema.parse(reply).via).toBe('nostr');
+    const parsed = forumMessageSchema.parse(message);
+    expect(parsed.via).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'via')).toBe(false);
+  });
+
+  it('rejects an unknown via value', () => {
+    expect(() => forumMessageSchema.parse({ ...message, via: 'something-else' })).toThrow();
+  });
+});
+
+describe('hiddenMessageSchema', () => {
+  const hidden = {
+    id: 'h1',
+    name: 'Bob',
+    text: 'Hidden note',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    hasPhoto: false,
+    parentId: null,
+    deletedAt: '2026-08-29T15:00:00.000Z',
+    deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+  };
+
+  it('parses a hidden note with via nostr and omits via when absent', () => {
+    expect(hiddenMessageSchema.parse({ ...hidden, via: 'nostr' as const }).via).toBe('nostr');
+    const parsed = hiddenMessageSchema.parse(hidden);
+    expect(parsed.via).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'via')).toBe(false);
+  });
+
+  it('accepts another non-empty via value', () => {
+    expect(hiddenMessageSchema.parse({ ...hidden, via: 'something-else' }).via).toBe(
+      'something-else',
+    );
+  });
+
+  it('rejects an empty via value', () => {
+    expect(() => hiddenMessageSchema.parse({ ...hidden, via: '' })).toThrow();
   });
 });
 

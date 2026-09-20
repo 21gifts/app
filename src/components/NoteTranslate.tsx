@@ -18,16 +18,18 @@ import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
 export interface NoteTranslateProps {
   /** Raw public note or reply text. */
   text: string;
+  /** When true, render the translated body as plain text with no autolinks. */
+  plain?: boolean;
 }
 
 /**
  * Offer an on-demand translation when the note differs from the active UI locale.
  *
- * @param props - Raw public note or reply text.
+ * @param props - Raw public note or reply text and optional plain mode.
  * @returns Translation control and result, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */
-export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null {
+export function NoteTranslate({ text, plain = false }: NoteTranslateProps): ReactElement | null {
   const { locale, t } = useTranslations();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -104,6 +106,7 @@ export function NoteTranslate({ text }: NoteTranslateProps): ReactElement | null
             <ForumNoteText
               text={translatedText}
               className="mt-2 whitespace-pre-wrap text-sm text-app-fg"
+              {...(plain ? { plain: true } : {})}
             />
           ) : null}
           <button

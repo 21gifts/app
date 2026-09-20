@@ -85,6 +85,8 @@ function QuotedForumNote({
     note.role === 'founder' || note.role === 'moderator' || note.role === 'verified'
       ? t(ROLE_LABEL_KEYS[note.role])
       : null;
+  const viaLabel = note.via === 'nostr' ? t('forum.via.nostr') : null;
+  const badgeLabel = roleLabel ?? viaLabel;
   const handleActivate = (event: { stopPropagation: () => void }): void => {
     onActivate?.(event);
   };
@@ -96,15 +98,19 @@ function QuotedForumNote({
     >
       <Link
         href={`/messages/${note.id}`}
-        aria-label={t('forum.quotedNote', { name: note.name })}
+        aria-label={
+          note.via === 'nostr'
+            ? t('forum.quotedNoteVisitor', { name: note.name })
+            : t('forum.quotedNote', { name: note.name })
+        }
         className="block"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-app-fg">{note.name}</span>
-            {roleLabel !== null ? (
+            {badgeLabel !== null ? (
               <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                {roleLabel}
+                {badgeLabel}
               </span>
             ) : null}
           </span>
@@ -122,7 +128,24 @@ function QuotedForumNote({
         ) : null}
       </Link>
       {note.text !== '' ? (
-        truncate ? (
+        note.via === 'nostr' ? (
+          <>
+            {truncate ? (
+              <ForumNoteText
+                plain
+                text={note.text}
+                className="whitespace-pre-wrap text-sm text-app-fg"
+              />
+            ) : (
+              <LinkedText
+                plain
+                text={note.text}
+                className="whitespace-pre-wrap text-sm text-app-fg"
+              />
+            )}
+            <NoteTranslate plain text={note.text} />
+          </>
+        ) : truncate ? (
           <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
         ) : (
           <LinkedText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />

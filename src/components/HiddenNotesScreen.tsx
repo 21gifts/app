@@ -8,17 +8,8 @@ import { Button, Card } from '@/components/ui';
 import { listHiddenMessages } from '@/lib/api';
 import type { HiddenMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
-
-/**
- * True when `role` may use the hide tool and the hidden-notes list.
- *
- * @param role - Account role, or `undefined` when the account is missing.
- * @returns Whether the visitor is a founder or moderator.
- */
-function isStaffRole(role: string | undefined): boolean {
-  return role === 'founder' || role === 'moderator';
-}
 
 /**
  * Signed-in list of hidden living-room notes.
@@ -34,7 +25,7 @@ export function HiddenNotesScreen(): ReactElement | null {
   const { t, locale } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const staff = isStaffRole(account?.role);
+  const staff = roleAtLeast(account?.role, 'moderator');
   const [messages, setMessages] = useState<HiddenMessage[] | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -130,9 +121,20 @@ export function HiddenNotesScreen(): ReactElement | null {
           <li key={row.id}>
             <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
               <span className="flex w-full items-baseline justify-between gap-2">
-                <span className="text-sm font-medium text-app-fg">
-                  {row.name !== '' ? row.name : t('moderate.unnamed')}
-                </span>
+                {row.via !== undefined ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-app-fg">
+                      {row.name !== '' ? row.name : t('moderate.unnamed')}
+                    </span>
+                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                      {t('forum.via.nostr')}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium text-app-fg">
+                    {row.name !== '' ? row.name : t('moderate.unnamed')}
+                  </span>
+                )}
                 <time dateTime={row.createdAt} className="text-xs text-app-subtle">
                   {formatForumTime(row.createdAt, locale)}
                 </time>
