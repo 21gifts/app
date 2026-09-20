@@ -275,7 +275,7 @@ function PayoutGoalWidget(props: {
             <p className="text-sm text-app-muted">{t('moderate.goal.subtitle')}</p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-2xl font-semibold text-app-accent">
+            <p className="text-2xl font-semibold tabular-nums lining-nums text-app-fg">
               {t('moderate.goal.percent', { percent })}
             </p>
             <p className="text-xs text-app-muted">
@@ -384,7 +384,7 @@ function PayoutGoalChart(props: {
         strokeWidth="2"
       />
       {rows.map((row, i) => {
-        const h = (row.count / PAYOUT_GOAL) * innerH;
+        const h = (Math.min(row.count, PAYOUT_GOAL) / PAYOUT_GOAL) * innerH;
         const displayH = row.count > 0 ? Math.max(h, 3) : 0;
         const x = padL + i * slot + slot * 0.18;
         const y = padT + innerH - displayH;
@@ -399,6 +399,7 @@ function PayoutGoalChart(props: {
                 height={displayH}
                 rx={3}
                 className={isToday ? 'fill-app-subtle' : 'fill-app-accent'}
+                data-testid="payout-goal-chart-bar"
               />
             ) : null}
             {row.count >= 30 ? (

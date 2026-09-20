@@ -203,6 +203,13 @@ describe('ModerateScreen', () => {
     });
     expect(screen.getByText('yesterday 150 of 100')).toBeTruthy();
     expect(screen.getByTestId('payout-goal-fill').getAttribute('width')).toBe('100');
+    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
+    const chartBars = screen.getAllByTestId('payout-goal-chart-bar');
+    expect(chartBars.length).toBeGreaterThan(0);
+    for (const bar of chartBars) {
+      expect(Number(bar.getAttribute('height'))).toBeLessThanOrEqual(220);
+      expect(Number(bar.getAttribute('y'))).toBeGreaterThanOrEqual(24);
+    }
   });
 
   it('shows loading copy while payout stats are in flight', () => {
