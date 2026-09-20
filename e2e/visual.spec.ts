@@ -4606,7 +4606,9 @@ test.describe('profile funding states', () => {
       },
     });
     await page.goto('/profile');
-    await expect(page.getByText('You are on a one-day trial. Review repeats tomorrow.')).toBeVisible();
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
     await shotScreen(page, 'state-profile-funding-trial');
   });
 
@@ -7337,7 +7339,7 @@ test.describe('moderate applications screens', () => {
     await stubApplications(page);
     await page.goto('/moderate/applications');
     await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
-    await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-forbidden');
   });
 
@@ -7371,7 +7373,9 @@ test.describe('moderate applications screens', () => {
       });
     });
     await page.goto('/moderate/applications');
-    await expect(page.getByText('Could not load open applications. Please try again.')).toBeVisible();
+    await expect(
+      page.getByText('Could not load open applications. Please try again.'),
+    ).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-error');
   });
 

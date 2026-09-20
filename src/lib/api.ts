@@ -916,7 +916,7 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
 }
 
 /**
- * Fetches open grant applications for founders and moderators.
+ * Fetches open grant applications for moderators.
  *
  * Hits same-origin `GET /funding/applications` (Bearer). Next.js forbids a
  * `route.ts` beside `/moderate/applications`, so the proxy lives at this path.

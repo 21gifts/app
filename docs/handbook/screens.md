@@ -1358,7 +1358,7 @@ Staff (founder) loaded queue with at least one open application (subject **Rose*
 
 ### Variant: forbidden
 
-Signed-in basis account. Copy **This page is for founders and moderators.** No list.
+Signed-in basis account. Copy **This page is for moderators.** No list.
 
 ![21.gifts open applications forbidden](images/moderate-applications-forbidden.png)
 

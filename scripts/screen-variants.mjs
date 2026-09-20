@@ -1406,7 +1406,7 @@ export const SCREEN_VARIANTS = [
     id: 'forbidden',
     image: 'moderate-applications-forbidden.png',
     visual: 'state-moderate-applications-forbidden',
-    needle: 'This page is for founders and moderators.',
+    needle: 'This page is for moderators.',
   },
   {
     route: '/moderate/applications',

@@ -75,7 +75,7 @@ describe('FundingApplicationsScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     renderWithLocale(<FundingApplicationsScreen />);
     expect(screen.getByRole('heading', { name: 'Open applications' })).toBeTruthy();
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByRole('list')).toBeNull();
     expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
@@ -85,14 +85,14 @@ describe('FundingApplicationsScreen', () => {
   it('shows forbidden copy for a verified account and does not fetch', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     renderWithLocale(<FundingApplicationsScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(listMock).not.toHaveBeenCalled();
   });
 
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<FundingApplicationsScreen />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(listMock).not.toHaveBeenCalled();
   });
 

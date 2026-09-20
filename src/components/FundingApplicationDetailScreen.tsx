@@ -173,7 +173,10 @@ export function FundingApplicationDetailScreen({
           <li className="text-center text-sm text-app-fg">{t('about.conv2Title')}</li>
           <li className="text-center text-sm text-app-fg">{t('about.conv3Title')}</li>
         </ul>
-        <Link href="/about" className="text-center text-sm text-app-fg underline underline-offset-2">
+        <Link
+          href="/about"
+          className="text-center text-sm text-app-fg underline underline-offset-2"
+        >
           {t('nav.about')}
         </Link>
         {detail.messages.length === 0 ? (

@@ -127,7 +127,7 @@ test('Function: FundingApplicationsScreen — basis visitors see the forbidden c
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate/applications');
   await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
-  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('list')).toHaveCount(0);
 });
 
@@ -160,7 +160,7 @@ test('Function: FundingApplicationDetailScreen — basis visitors see the forbid
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate/applications/[accountId]');
   await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
-  await expect(page.getByText('This page is for founders and moderators.')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toBeVisible();
 });
 
 test('Function: fetchFundingApplication — staff see Trial Admit Reject', async ({ page }) => {

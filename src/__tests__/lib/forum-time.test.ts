@@ -43,9 +43,7 @@ describe('formatForumTime', () => {
 describe('formatForumTimeFromMs', () => {
   it('matches formatForumTime for a valid epoch', () => {
     const ms = Date.parse('2026-08-28T12:00:00.000Z');
-    expect(formatForumTimeFromMs(ms, 'en')).toBe(
-      formatForumTime('2026-08-28T12:00:00.000Z', 'en'),
-    );
+    expect(formatForumTimeFromMs(ms, 'en')).toBe(formatForumTime('2026-08-28T12:00:00.000Z', 'en'));
   });
 
   it('returns String(ms) when the instant is invalid', () => {

@@ -139,7 +139,7 @@ describe('FundingApplicationDetailScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     expect(screen.getByRole('heading', { name: 'Grant application' })).toBeTruthy();
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Open applications' }).getAttribute('href')).toBe(
       '/moderate/applications',
     );
@@ -149,7 +149,7 @@ describe('FundingApplicationDetailScreen', () => {
   it('shows forbidden copy when the account is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    expect(screen.getByText('This page is for founders and moderators.')).toBeTruthy();
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

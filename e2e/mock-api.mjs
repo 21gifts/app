@@ -1658,6 +1658,55 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/funding/apply') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, {
+      funding: { status: 'pending', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+    });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/funding/applications') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { applications: [] });
+    return;
+  }
+
+  const fundingApplicationMatch = pathName.match(/^\/funding\/applications\/([^/]+)$/);
+  if (method === 'GET' && fundingApplicationMatch) {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  if (
+    method === 'POST' &&
+    (pathName === '/funding/trial' ||
+      pathName === '/funding/admit' ||
+      pathName === '/funding/reject')
+  ) {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, {
+      id: 'x',
+      name: null,
+      role: 'verified',
+      funding: { status: 'admitted', trialUtcDate: null, admittedAt: 1, reviewedByName: null },
+    });
+    return;
+  }
+
   json(res, 404, { error: 'Not found' });
 });
 

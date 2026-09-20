@@ -654,7 +654,7 @@ const en = {
   'funding.detail.error': 'Could not load this application. Please try again.',
   'funding.detail.trial': 'Trial',
   'funding.detail.admit': 'Admit',
-  'funding.detail.reject': 'Reject',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
+  'funding.detail.reject': 'Reject',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1326,7 +1326,8 @@ const de = {
   'funding.admitted': 'Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen.',
   'funding.reviewedBy': 'Geprüft von einer Moderatorin oder einem Moderator',
   'funding.reviewedOn': 'Geprüft von einer Moderatorin oder einem Moderator am {date}',
-  'funding.applyError': 'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+  'funding.applyError':
+    'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
   'funding.applications.lead':
     'Prüfen Sie Wohnzimmer-Beiträge an den drei Überzeugungen. Gewähren Sie einen eintägigen Probezugang oder eine endgültige Zulassung.',
@@ -1342,7 +1343,7 @@ const de = {
     'Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'funding.detail.trial': 'Probe',
   'funding.detail.admit': 'Zulassen',
-  'funding.detail.reject': 'Ablehnen',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
+  'funding.detail.reject': 'Ablehnen',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -2001,7 +2002,8 @@ const es = {
     'Revisa los mensajes del salón frente a las tres convicciones. Concede una prueba de un día o una admisión definitiva.',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
-  'funding.applications.error': 'No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo.',
+  'funding.applications.error':
+    'No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo.',
   'funding.detail.heading': 'Solicitud de beca',
   'funding.detail.criteria': 'Revisión frente a las tres convicciones',
   'funding.detail.postsLabel': 'Mensajes del salón',
@@ -2009,7 +2011,7 @@ const es = {
   'funding.detail.error': 'No se pudo cargar esta solicitud. Inténtalo de nuevo.',
   'funding.detail.trial': 'Prueba',
   'funding.detail.admit': 'Admitir',
-  'funding.detail.reject': 'Rechazar',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
+  'funding.detail.reject': 'Rechazar',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2685,7 +2687,7 @@ const fil = {
   'funding.detail.error': 'Hindi ma-load ang aplikasyong ito. Subukan ulit.',
   'funding.detail.trial': 'Trial',
   'funding.detail.admit': 'Admit',
-  'funding.detail.reject': 'Reject',>>>>>>> 321c7c17 (Show verification and grant status, and a staff application queue)
+  'funding.detail.reject': 'Reject',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
