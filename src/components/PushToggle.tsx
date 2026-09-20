@@ -1,9 +1,8 @@
 'use client';
 
-import { Bell, BellOff } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { IconButton, SegmentedControl } from '@/components/ui';
+import { SegmentedControl } from '@/components/ui';
 import { postNotificationLevel } from '@/lib/api';
 import { accountNotificationLevel, type NotificationLevel } from '@/lib/api-types';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
@@ -11,18 +10,16 @@ import { useAuthStore } from '@/stores/auth-store';
 
 type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 
+type DevicePushValue = 'on' | 'off';
+
 /**
  * Profile identity-card Notifications section: uppercase heading, a three-stage
- * `SegmentedControl` (All / Active / Mentions) whenever a session exists, and
- * an icon-only Bell `IconButton` as the trailing control in the same pill when
- * Push/Service Worker APIs are present. Off is a secondary outline BellOff; on
- * is a primary filled Bell (`fill="currentColor"`). The button stays icon-only
- * — fill vs outline plus `aria-pressed` encode on/off. The level control stays
- * visible when Push APIs are missing (in-app list still uses the level).
- * The level control is omitted while Push APIs are still being inspected so
- * the pill does not switch trees under the option buttons. Renders nothing
- * without a session. On iPhone Safari outside standalone, also
- * shows an install hint under the level hint. A successful level POST merges
+ * `SegmentedControl` (All / Active / Mentions) whenever a session exists, and a
+ * second On / Off `SegmentedControl` (`aria.push`) when Push/Service Worker APIs
+ * are ready. The level control stays visible while Push APIs are inspected and
+ * when they are missing (in-app list still uses the level). Renders nothing
+ * without a session. On iPhone Safari outside standalone, also shows an install
+ * hint under the device pill. A successful level POST merges
  * `notificationLevel` into the current store account and ignores the response
  * if the session no longer matches.
  *
@@ -80,27 +77,36 @@ export function PushToggle(): ReactElement | null {
     };
   }, []);
 
-  const onToggle = useCallback(async (): Promise<void> => {
-    /* v8 ignore next 3 -- the button is unmounted without a session */
-    if (session === null || busy) {
-      return;
-    }
-    setBusy(true);
-    setErrorKey(null);
-    try {
-      if (subscribed) {
-        await disablePush(session);
-        setSubscribed(false);
-      } else {
-        await enablePush(session);
-        setSubscribed(true);
+  const onDeviceChange = useCallback(
+    async (next: DevicePushValue): Promise<void> => {
+      /* v8 ignore next 3 -- the control is unmounted without a session */
+      if (session === null || busy) {
+        return;
       }
-    } catch {
-      setErrorKey('profile.push.unavailable');
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, session, subscribed]);
+      if (next === 'on' && subscribed) {
+        return;
+      }
+      if (next === 'off' && !subscribed) {
+        return;
+      }
+      setBusy(true);
+      setErrorKey(null);
+      try {
+        if (next === 'off') {
+          await disablePush(session);
+          setSubscribed(false);
+        } else {
+          await enablePush(session);
+          setSubscribed(true);
+        }
+      } catch {
+        setErrorKey('profile.push.unavailable');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, session, subscribed],
+  );
 
   const onLevelChange = useCallback(
     async (next: NotificationLevel): Promise<void> => {
@@ -139,8 +145,6 @@ export function PushToggle(): ReactElement | null {
     return null;
   }
 
-  const showBell = phase === 'ready';
-  const ariaName = subscribed ? t('profile.push.disable') : t('profile.push.enable');
   const levelOptions = [
     { value: 'all' as const, label: t('profile.push.level.all') },
     { value: 'active' as const, label: t('profile.push.level.active') },
@@ -149,54 +153,44 @@ export function PushToggle(): ReactElement | null {
   const onLevelPress = (next: NotificationLevel): void => {
     void onLevelChange(next);
   };
+  const onDevicePress = (next: DevicePushValue): void => {
+    void onDeviceChange(next);
+  };
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('profile.push.heading')}
       </p>
-      {phase === 'checking' ? null : (
-        <SegmentedControl
-          tone="neutral"
-          value={selected}
-          options={levelOptions}
-          onChange={onLevelPress}
-          ariaLabel={t('profile.push.level.label')}
-          {...(showBell
-            ? {
-                trailing: (
-                  <IconButton
-                    size="sm"
-                    variant={subscribed ? 'primary' : 'secondary'}
-                    aria-label={ariaName}
-                    title={ariaName}
-                    aria-pressed={subscribed}
-                    disabled={busy}
-                    onClick={() => {
-                      void onToggle();
-                    }}
-                  >
-                    {subscribed ? (
-                      <Bell aria-hidden="true" className="h-4 w-4" fill="currentColor" />
-                    ) : (
-                      <BellOff aria-hidden="true" className="h-4 w-4" />
-                    )}
-                  </IconButton>
-                ),
-              }
-            : {})}
-        />
-      )}
+      <SegmentedControl
+        tone="neutral"
+        value={selected}
+        options={levelOptions}
+        onChange={onLevelPress}
+        ariaLabel={t('profile.push.level.label')}
+      />
       <p className="text-sm text-app-muted">{t('profile.push.level.hint')}</p>
       {levelError ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('profile.push.level.error')}
         </p>
       ) : null}
-      {showBell && showInstallHint ? (
+      {phase === 'ready' ? (
+        <SegmentedControl
+          tone="neutral"
+          value={subscribed ? 'on' : 'off'}
+          options={[
+            { value: 'on' as const, label: t('profile.push.on') },
+            { value: 'off' as const, label: t('profile.push.off') },
+          ]}
+          onChange={onDevicePress}
+          ariaLabel={t('aria.push')}
+        />
+      ) : null}
+      {phase === 'ready' && showInstallHint ? (
         <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
       ) : null}
-      {showBell && errorKey !== null ? (
+      {phase === 'ready' && errorKey !== null ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t(errorKey)}
         </p>

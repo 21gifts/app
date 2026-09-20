@@ -6663,58 +6663,59 @@ test('Function: accountNotificationLevel — profile selects All when the field 
   await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: PushToggle — profile shows the enable notifications control', async ({ page }) => {
+test('Function: PushToggle — profile shows the this-device On/Off control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
-  await expect(page.getByText('Enable notifications')).toHaveCount(0);
+  const device = page.getByRole('group', { name: 'This device' });
+  await expect(device).toBeVisible();
+  await expect(device.getByRole('button', { name: 'Off' })).toBeVisible();
   await expect(
     page.getByRole('paragraph').getByText('Notifications', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('Off', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('On', { exact: true })).toHaveCount(0);
 });
 
-test('Function: vapidPublicKeyToBytes — profile shows the enable notifications control', async ({
+test('Function: vapidPublicKeyToBytes — profile shows the this-device control', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
 });
 
-test('Function: registerPushWorker — profile shows the enable notifications control', async ({
-  page,
-}) => {
+test('Function: registerPushWorker — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
 });
 
-test('Function: enablePush — profile shows the enable notifications control', async ({ page }) => {
+test('Function: enablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
 });
 
-test('Function: disablePush — profile shows the enable notifications control', async ({ page }) => {
+test('Function: disablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
 });
 
-test('Function: isStandaloneDisplay — profile shows the enable notifications control', async ({
-  page,
-}) => {
+test('Function: isStandaloneDisplay — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
 });
 
-test('Function: isIosSafari — profile shows the enable notifications control', async ({ page }) => {
+test('Function: isIosSafari — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Enable notifications' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Off' })).toBeVisible();
 });
 
 test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) => {
