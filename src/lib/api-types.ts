@@ -360,6 +360,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * field still parses and the board stays lit.
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
+ * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * Gift-only replies may have empty `text` when `sats > 0`.
  */
@@ -383,6 +384,7 @@ export const forumMessageSchema = z
       .default(null),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
+    via: z.literal('nostr').optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
@@ -406,6 +408,8 @@ export const forumListSchema = z.object({
  * note. `hasVideo` / `videoContentType` default when an older api omits them.
  * `deletedBy.id`, `deletedBy.name`, and `deletedBy.role` may be null when the
  * deleter row is missing.
+ * `via` is any non-empty string marking a row written without a 21.gifts
+ * account (today the api sends `'nostr'`); only an empty string fails the parse.
  */
 export const hiddenMessageSchema = z.object({
   id: z.string().min(1),
@@ -427,6 +431,7 @@ export const hiddenMessageSchema = z.object({
     name: z.string().min(1).nullable(),
     role: z.enum(['basis', 'verified', 'moderator', 'founder']).nullable(),
   }),
+  via: z.string().min(1).optional(),
 });
 
 /**

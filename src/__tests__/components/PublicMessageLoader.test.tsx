@@ -823,4 +823,47 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByText(/just for information:/)).toBeTruthy();
     expect(screen.queryByText(quotedUrl)).toBeNull();
   });
+
+  it('marks an unsigned via reply with a non-interactive badge and plain url text', async () => {
+    const reply: ForumMessage = {
+      ...sample,
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Robin',
+      via: 'nostr',
+      text: 'Greetings! https://example.com/hello',
+      sats: 0,
+      payable: false,
+    };
+    fetchMessage.mockResolvedValue(sample);
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('Visitor')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Visitor' })).toBeNull();
+    expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
+  it('marks an unsigned via gift reply with a badge and no body paragraph', async () => {
+    const reply: ForumMessage = {
+      ...sample,
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Robin',
+      via: 'nostr',
+      text: '',
+      sats: 69,
+      payable: false,
+    };
+    fetchMessage.mockResolvedValue(sample);
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('Visitor')).toBeTruthy();
+    expect(screen.getByText('₿69')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Visitor' })).toBeNull();
+  });
 });
