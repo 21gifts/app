@@ -648,6 +648,18 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse({ ...base, parentId: 'parent-1' }).parentId).toBe('parent-1');
   });
 
+  it('accepts optional deletedAt and deletedBy on staff hidden rows', () => {
+    const hidden = forumMessageSchema.parse({
+      ...base,
+      deletedAt: '2026-08-29T15:00:00.000Z',
+      deletedBy: { id: 'acc_mod', name: 'Ada', role: 'moderator' },
+    });
+    expect(hidden.deletedAt).toBe('2026-08-29T15:00:00.000Z');
+    expect(hidden.deletedBy).toEqual({ id: 'acc_mod', name: 'Ada', role: 'moderator' });
+    expect(forumMessageSchema.parse(base).deletedAt).toBeUndefined();
+    expect(forumMessageSchema.parse(base).deletedBy).toBeUndefined();
+  });
+
   it('accepts an empty text when hasPhoto is true', () => {
     const photoOnly = { ...base, text: '', hasPhoto: true };
     expect(forumMessageSchema.parse(photoOnly)).toEqual({

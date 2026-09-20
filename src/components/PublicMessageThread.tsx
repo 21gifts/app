@@ -141,23 +141,53 @@ const IDLE_BOARD = {
 /* v8 ignore stop */
 
 /**
+ * Appends the opened hidden permalink reply when Bearer replies omit it.
+ *
+ * @param list - Replies returned by `fetchReplies`.
+ * @param seed - Opened hidden reply, if the route id is that child.
+ * @param rootId - Public parent id.
+ * @param expandedId - Id passed to that `fetchReplies` call.
+ * @returns `list`, or `list` plus `seed` when the guards pass.
+ */
+function withSeededHiddenReply(
+  list: ForumMessage[],
+  seed: ForumMessage | undefined,
+  rootId: string,
+  expandedId: string,
+): ForumMessage[] {
+  if (
+    seed === undefined ||
+    expandedId !== rootId ||
+    seed.parentId !== rootId ||
+    seed.deletedAt === undefined ||
+    list.some((row) => row.id === seed.id)
+  ) {
+    return list;
+  }
+  return [...list, seed];
+}
+
+/**
  * Signed-in permalink thread: one root note on {@link ForumBoard} with the
  * same copy, expand/reply, photo, translate, and staff delete actions as
  * `/welcome`. Gift only on a payable nested reply. Auto-expands the root so
  * the thread and in-card reply composer are available. No top-level composer,
  * feed filters, or envelope.
  *
- * @param props - Public parent note, optional reply highlight id, root-delete hook.
+ * @param props - Public parent note, optional reply highlight id, optional
+ *   seedReply (hidden permalink reply kept after Bearer refetch), root-delete hook.
  * @returns The interactive thread board and requirements overlay.
  */
 export function PublicMessageThread(props: {
   root: ForumMessage;
   /** Route id when it is a reply UUID; otherwise null. */
   highlightId: string | null;
+  /** Hidden permalink reply kept after Bearer refetch. */
+  seedReply?: ForumMessage;
   /** After a successful staff delete of the root note. */
   onRootDeleted: () => void;
 }): ReactElement {
-  const { root, highlightId, onRootDeleted } = props;
+  const { root, highlightId, seedReply, onRootDeleted } = props;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -334,7 +364,7 @@ export function PublicMessageThread(props: {
       try {
         const next = await fetchReplies(token, messageId);
         if (expandGen.current === gen) {
-          setReplies(next);
+          setReplies(withSeededHiddenReply(next, seedReply, root.id, messageId));
         }
       } catch {
         if (expandGen.current === gen) {
@@ -412,7 +442,7 @@ export function PublicMessageThread(props: {
               try {
                 const repliesNext = await fetchReplies(current.session, messageId);
                 if (expandGen.current === gen) {
-                  setReplies(repliesNext);
+                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, messageId));
                 }
               } catch {
                 if (expandGen.current === gen) {
@@ -743,7 +773,7 @@ export function PublicMessageThread(props: {
       try {
         const next = await fetchReplies(session, messageId);
         if (expandGen.current === gen) {
-          setReplies(next);
+          setReplies(withSeededHiddenReply(next, seedReply, root.id, messageId));
         }
       } catch {
         if (expandGen.current === gen) {
@@ -815,7 +845,7 @@ export function PublicMessageThread(props: {
       try {
         const next = await fetchReplies(session, messageId);
         if (expandGen.current === gen) {
-          setReplies(next);
+          setReplies(withSeededHiddenReply(next, seedReply, root.id, messageId));
         }
       } catch {
         if (expandGen.current === gen) {

@@ -10,6 +10,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/forum/messages')).status()).toBe(401);
   expect((await request.get('/forum/messages/hidden')).status()).toBe(401);
   expect((await request.post('/forum/messages')).status()).toBe(401);
+  expect((await request.get('/forum/messages/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/public-messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);

@@ -44,6 +44,7 @@ import {
   proxyMessagesPost,
   proxyMessagesRepliesGet,
   proxyMessagesVideoGet,
+  proxyForumMessageGet,
   proxyPublicMessageGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
@@ -261,6 +262,20 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMessagesRepliesGet(new Request('http://localhost/forum/messages/m1/replies'), 'm1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/replies');
+  });
+
+  it('proxyForumMessageGet hits /messages/:id with the incoming request', async () => {
+    const fetchMock = stubApi();
+    await proxyForumMessageGet(
+      new Request('http://localhost/forum/messages/m1', {
+        headers: { authorization: 'Bearer sess' },
+      }),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
+    expect(
+      new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get('authorization'),
+    ).toBe('Bearer sess');
   });
 
   it('proxyPublicMessageGet hits /messages/:id', async () => {

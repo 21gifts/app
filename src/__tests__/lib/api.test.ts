@@ -21,6 +21,7 @@ import {
   fetchTrustProposals,
   fetchMessagePhoto,
   fetchMessages,
+  fetchForumMessage,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
@@ -2002,6 +2003,42 @@ describe('fetchPublicMessage', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'm1' } });
     await expect(fetchPublicMessage('uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchForumMessage', () => {
+  it('GETs /forum/messages/:id with Bearer and returns the message', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchForumMessage('sess', 'uuid')).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/uuid', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchForumMessage('sess', 'uuid')).resolves.toBeNull();
+  });
+
+  it('throws visitor copy on other non-ok responses', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchForumMessage('sess', 'uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('rethrows visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchForumMessage('sess', 'uuid')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'm1' } });
+    await expect(fetchForumMessage('sess', 'uuid')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
   });

@@ -355,6 +355,19 @@ export async function proxyMessagesRepliesGet(
 }
 
 /**
+ * Proxies GET /messages/:id to the 21.gifts api (authenticated).
+ *
+ * App path is `/forum/messages/:id`. Staff sessions receive soft-hidden rows.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyForumMessageGet(request: Request, messageId: string): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}`);
+}
+
+/**
  * Proxies GET /messages/:id to the 21.gifts api (public; no auth).
  *
  * App path is `/public-messages/:id` so `/messages/:id` can serve HTML.
