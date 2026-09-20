@@ -1135,6 +1135,18 @@ Staff (moderator) hub with the payout-goal widget expanded: explanation copy and
 
 ![21.gifts moderation goal open](images/moderate-goal-open.png)
 
+### Variant: loading
+
+Staff (moderator) hub with the payout-goal widget showing **Loading…** while `GET /gifts/stats` is in flight. Tools list still visible.
+
+![21.gifts moderation loading](images/moderate-loading.png)
+
+### Variant: error
+
+Staff (moderator) hub with the payout-goal widget showing **Could not load payouts. Please try again.** and labeled **Try again**. Tools list still visible.
+
+![21.gifts moderation error](images/moderate-error.png)
+
 ## Screen: /moderate/hidden
 
 - **URL:** `/moderate/hidden` — signed-in hidden-notes list for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).

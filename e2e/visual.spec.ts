@@ -6264,6 +6264,30 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('Official payouts by UTC day')).toBeVisible();
     await shotScreen(page, 'state-moderate-goal-open');
   });
+
+  test('moderate loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/gifts/stats', () => new Promise(() => undefined));
+    await page.goto('/moderate');
+    await expect(
+      page.getByRole('group', { name: 'Daily payout goal' }).getByText('Loading…'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-loading');
+  });
+
+  test('moderate error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-error');
+  });
 });
 
 test.describe('moderate hidden screens', () => {

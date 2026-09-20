@@ -135,6 +135,28 @@ test('Function: ModerateScreen — payout goal expands', async ({ page }) => {
   await expect(page.getByText('Official payouts by UTC day')).toBeVisible();
 });
 
+test('Function: ModerateScreen — payout goal loading', async ({ page }) => {
+  await seedAdaSession(page, 'founder');
+  await page.route('**/gifts/stats', () => new Promise(() => undefined));
+  await page.goto('/moderate');
+  await expect(
+    page.getByRole('group', { name: 'Daily payout goal' }).getByText('Loading…'),
+  ).toBeVisible();
+});
+
+test('Function: ModerateScreen — payout goal error', async ({ page }) => {
+  await seedAdaSession(page, 'founder');
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'unavailable' }),
+    });
+  });
+  await page.goto('/moderate');
+  await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
+});
+
 test('Function: ModerateScreen — basis visitors see the forbidden copy', async ({ page }) => {
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate');

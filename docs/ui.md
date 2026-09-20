@@ -981,7 +981,7 @@ Handbook states: default list, empty, loading, error.
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** **Moderation** (`h1` ramp) → hub lead (`moderate.hubLead` **Tools for moderators.**). Staff (moderator) see the hide-tool lead, the daily payout-goal widget (yesterday UTC vs 100 from `GET /gifts/stats`; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`. Moderators also see **Moderators** `ButtonLink` → `/moderate/group`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff fetch `GET /gifts/stats` for the widget. Does not fetch the hidden list. No un-hide control.
 
-Handbook states: default hub, forbidden, goal-open.
+Handbook states: default hub, forbidden, goal-open, loading, error.
 
 ### `/moderate/hidden`
 

@@ -1192,6 +1192,20 @@ export const SCREEN_VARIANTS = [
     needle: 'Official payouts by UTC day',
   },
   {
+    route: '/moderate',
+    id: 'loading',
+    image: 'moderate-loading.png',
+    visual: 'state-moderate-loading',
+    needle: 'Daily payout goal',
+  },
+  {
+    route: '/moderate',
+    id: 'error',
+    image: 'moderate-error.png',
+    visual: 'state-moderate-error',
+    needle: 'Could not load payouts. Please try again.',
+  },
+  {
     route: '/moderate/hidden',
     id: 'default',
     image: 'moderate-hidden.png',
