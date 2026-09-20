@@ -775,7 +775,8 @@ Do not use orange. This is law, not a gift CTA.
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`). Multiple stills (`photoCount > 1`) use `ForumPhotoGallery` (earlier stills 88% peek, last still full width, `current/total` chip, dots).
 4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text.
-5. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (React when `parentId` is unset, lucide `Reply`, `forum.react` “React”; copy; delete when present; Gift only when `parentId` is set and `payable`) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
+5. Optional `ForumGoalBar` on a top-level note with a positive `goalSats`: orange `app-accent` through 100%, green `app-success` overflow, uncapped percent label. Not on replies. On `/welcome` it sits between body and footer; on unsigned `/messages/[id]` it sits after the amount line.
+6. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (React when `parentId` is unset, lucide `Reply`, `forum.react` “React”; copy; delete when present; Gift only when `parentId` is set and `payable`) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
 Expand: header, media, body text, and `NoteTranslate` sit in a `role="button"` (click to expand replies). Footer amount and reply count are buttons that also call `onToggleExpand` (accessible names stay the visible ₿ text and reply-count text, not `forum.expand` / `forum.collapse`). React expands a collapsed card and focuses the reply composer when already expanded; it does not collapse. Copy/delete stay sibling IconButtons that do not expand. The copy control always copies the card's own `/messages/<uuid>`; its label is `forum.copyLink`, or `forum.copyReplyLink` when the card is a reply (`parentId` set, e.g. the reactions feed of a member profile). Gift is only on a payable reply, never on a post. The action row is a sibling after that control, still inside the `li`. Inner React/pay/copy/delete controls `stopPropagation`. Focus ring on the expandable region.
 Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome.
@@ -815,7 +816,7 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 - Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
 - Send/Post: `IconButton` lg primary, lucide `Send`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
-- Goal bar (top-level notes with a positive ask): orange `app-accent` through 100%, green `app-success` overflow, uncapped percent label.
+- Goal bar lives on the note card, not in this form (see Note card).
 
 **States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`) including empty-post and invalid-Ask.
 
