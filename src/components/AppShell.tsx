@@ -103,7 +103,7 @@ export function AppShell({
       <main
         className={`relative flex h-[var(--app-height)] flex-col items-center overflow-hidden overscroll-y-none px-6 py-4${extra}`}
       >
-        <section className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-3xl border border-app-border bg-app-card shadow-sm">
+        <section className="flex min-h-0 w-full flex-1 flex-col overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm">
           <div
             data-app-chrome
             className="relative z-40 flex flex-none items-center justify-between gap-2 px-8 pt-6 pb-2"

@@ -125,7 +125,10 @@ function expectMenuClosed(): void {
 }
 
 function expectMenuOpen(): void {
-  expect(menuPanel().className.includes('hidden')).toBe(false);
+  const panel = menuPanel();
+  expect(panel.className.includes('hidden')).toBe(false);
+  expect(panel.className).toContain('fixed');
+  expect(document.body.contains(panel)).toBe(true);
   expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe('true');
 }
 
@@ -187,6 +190,23 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
     expectMenuClosed();
+  });
+
+  it('keeps the menu open when mousedown stays on the portaled panel', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.mouseDown(menuPanel());
+    expectMenuOpen();
+  });
+
+  it('keeps the menu open when mousedown stays on the Menu trigger', () => {
+    renderWithLocale(<SignedInChrome />);
+    const trigger = screen.getByRole('button', { name: 'Menu' });
+    fireEvent.click(trigger);
+    expectMenuOpen();
+    fireEvent.mouseDown(trigger);
+    expectMenuOpen();
   });
 
   it('opens the menu with Profile and Log out, and omits zero totals', async () => {

@@ -55,6 +55,7 @@ describe('AppShell', () => {
 
     const frame = main?.querySelector(':scope > section');
     expect(frame?.className).toContain('rounded-3xl');
+    expect(frame?.className).not.toContain('overflow-hidden');
     expect(main?.querySelectorAll(':scope > section').length).toBe(1);
 
     const header = main?.querySelector('header');
