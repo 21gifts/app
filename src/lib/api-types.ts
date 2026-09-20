@@ -508,9 +508,10 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * `GET /conversations/moderator-group`. `lastText` may be empty when the
  * thread was opened from a forum note and has no messages yet, or when the
  * last row is gift-only (`lastSats > 0`). `lastFromMe` is true when the last
- * message was sent by the session (including staff sending as the platform
- * account). `lastSats` is the satoshis on that last message (0 for text-only).
- * `accountId` is the optional 21.gifts counterpart id on list rows.
+ * message was sent by this session as the actor, not when another staff
+ * member sent as the platform. `lastSats` is the satoshis on that last
+ * message (0 for text-only). `accountId` is the optional 21.gifts counterpart
+ * id on list rows.
  * `unread` is true when the viewer has inbound mail newer than last-read.
  */
 export const conversationSchema = z.object({
@@ -554,11 +555,13 @@ export type Conversation = z.infer<typeof conversationSchema>;
 /**
  * Runtime schema for one message in `GET /conversations/:id`.
  *
- * `fromMe` is true when this message was sent by the session (including staff
- * sending as the platform account). `text` may be empty on a gift-only row
- * (`sats > 0`). `sats` is the validated payment on that message (0 for
- * text-only). `accountId` is the optional 21.gifts sender id on thread
- * messages.
+ * `fromMe` is true when this message was sent by this session as the actor,
+ * not when another staff member sent as the platform. `text` may be empty on
+ * a gift-only row (`sats > 0`). `sats` is the validated payment on that
+ * message (0 for text-only). `accountId` is the optional 21.gifts sender id
+ * on thread messages. For a staff viewer, `name` and optional `accountId`
+ * are that actor when the api sends them. Members still see platform
+ * identity (`21.gifts`) on official replies.
  */
 export const conversationMessageSchema = z.object({
   id: z.string().min(1),
