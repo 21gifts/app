@@ -21,6 +21,12 @@ import {
   memberProfileSchema,
   moderatorProposalSchema,
   moderatorProposalsResponseSchema,
+  ownerFundingSchema,
+  fundingApplyResponseSchema,
+  fundingApplicationSchema,
+  fundingApplicationsResponseSchema,
+  fundingApplicationDetailSchema,
+  fundingDecisionResultSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -154,6 +160,44 @@ describe('memberProfileSchema', () => {
     ).toThrow();
   });
 
+  it('accepts omitted fundingReviewedAt', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).fundingReviewedAt).toBeUndefined();
+  });
+
+  it('accepts fundingReviewedAt null and a number', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+      fundingReviewedAt: null as number | null,
+    };
+    expect(memberProfileSchema.parse(profile).fundingReviewedAt).toBeNull();
+    expect(
+      memberProfileSchema.parse({ ...profile, fundingReviewedAt: 1_700_000_000 }).fundingReviewedAt,
+    ).toBe(1_700_000_000);
+  });
+
   it('rejects an empty location', () => {
     expect(() =>
       memberProfileSchema.parse({
@@ -252,6 +296,93 @@ describe('moderatorProposalsResponseSchema', () => {
 
   it('rejects a non-array proposals value', () => {
     expect(() => moderatorProposalsResponseSchema.parse({ proposals: proposal })).toThrow();
+  });
+});
+
+describe('ownerFundingSchema', () => {
+  const funding = {
+    status: 'none' as const,
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
+  };
+
+  it('accepts each status', () => {
+    for (const status of ['none', 'pending', 'trial', 'admitted', 'rejected'] as const) {
+      expect(ownerFundingSchema.parse({ ...funding, status }).status).toBe(status);
+    }
+  });
+
+  it('rejects a missing field', () => {
+    expect(() => ownerFundingSchema.parse({ status: 'none' })).toThrow();
+  });
+});
+
+describe('fundingApplyResponseSchema', () => {
+  it('unwraps a funding object', () => {
+    const funding = {
+      status: 'pending' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+    };
+    expect(fundingApplyResponseSchema.parse({ funding })).toEqual({ funding });
+  });
+});
+
+describe('fundingApplicationSchema', () => {
+  it('accepts a pending application', () => {
+    const row = {
+      accountId: 'acc_rose',
+      name: 'Rose',
+      role: 'verified' as const,
+      appliedAt: 1,
+    };
+    expect(fundingApplicationSchema.parse(row)).toEqual(row);
+    expect(fundingApplicationSchema.parse({ ...row, name: null }).name).toBeNull();
+  });
+});
+
+describe('fundingApplicationsResponseSchema', () => {
+  it('accepts an empty list', () => {
+    expect(fundingApplicationsResponseSchema.parse({ applications: [] })).toEqual({
+      applications: [],
+    });
+  });
+});
+
+describe('fundingApplicationDetailSchema', () => {
+  it('accepts a detail with no messages', () => {
+    const detail = {
+      account: {
+        id: 'acc_rose',
+        name: 'Rose',
+        role: 'verified' as const,
+        lightningAddress: null,
+      },
+      grant: {
+        status: 'pending' as const,
+        appliedAt: 1,
+        trialUtcDate: null,
+        admittedAt: null,
+        decidedAt: null,
+      },
+      messages: [],
+    };
+    expect(fundingApplicationDetailSchema.parse(detail)).toEqual(detail);
+  });
+});
+
+describe('fundingDecisionResultSchema', () => {
+  it('accepts a nullable funding object', () => {
+    expect(
+      fundingDecisionResultSchema.parse({
+        id: 'acc_1',
+        name: null,
+        role: 'verified',
+        funding: null,
+      }).funding,
+    ).toBeNull();
   });
 });
 
@@ -486,6 +617,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
     expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
@@ -499,6 +632,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
     };
     const outgoing = { ...incoming, fromMe: true };
     expect(conversationMessageSchema.parse(incoming)).toEqual(incoming);
@@ -524,6 +659,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
       accountId: 'acc_1',
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
@@ -537,6 +674,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
       giftFor: 'm0',
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
@@ -563,6 +702,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: true,
       sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
   });
@@ -576,6 +717,8 @@ describe('conversationMessageSchema', () => {
         createdAt: '2026-08-28T12:00:00.000Z',
         fromMe: false,
         sats: 0,
+        hasPhoto: false,
+        photoCount: 0,
         accountId: '',
       }),
     ).toThrow();
@@ -923,6 +1066,33 @@ describe('accountSchema', () => {
   it('rejects a garbage notificationLevel', () => {
     expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
     expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
+  });
+
+  it('accepts omitted funding', () => {
+    expect(accountSchema.parse(account).funding).toBeUndefined();
+  });
+
+  it('accepts funding null', () => {
+    expect(accountSchema.parse({ ...account, funding: null }).funding).toBeNull();
+  });
+
+  it('accepts a funding object', () => {
+    const funding = {
+      status: 'none' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+    };
+    expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+  });
+
+  it('rejects a garbage funding status', () => {
+    expect(() =>
+      accountSchema.parse({
+        ...account,
+        funding: { status: 'open', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+      }),
+    ).toThrow();
   });
 });
 

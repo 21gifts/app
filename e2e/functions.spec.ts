@@ -653,6 +653,22 @@ test('Function: proxyConversationReadPost — POST /conversations/[id]/read with
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyConversationMessagePhotoGet — GET photo without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/conversations/c1/messages/m1/photo')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyConversationMessagePhotoGet — GET extra still without bearer', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/conversations/c1/messages/m1/photo/1.jpg')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyNotificationsGet — GET /forum/notifications without bearer is 401', async ({
   request,
 }) => {
@@ -5447,6 +5463,7 @@ test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ p
   await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/welcome');
+  await expect(page.getByRole('link', { name: 'Shops' })).toHaveAttribute('href', '/shops');
   await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
     'href',
@@ -5764,6 +5781,71 @@ test('Function: resolveAppHeight — document has --app-height', async ({ page }
     getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
   );
   expect(value).not.toBe('');
+});
+
+test('Function: resolveAppHeight — short keyboard visualViewport does not shrink the page frame', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+    const inner = window.innerHeight;
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        height: Math.round(inner * 0.6),
+        offsetTop: Math.round(inner * 0.15),
+        scale: 1,
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByLabel('Your message').focus();
+  const measured = await page.evaluate(() => {
+    const inner = window.innerHeight;
+    const vv = window.visualViewport;
+    const main = document.querySelector('main');
+    return {
+      appHeight: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+      inner,
+      short: vv === null || vv === undefined ? 0 : Math.round(vv.height),
+      mainHeight: main === null ? 0 : Math.round(main.getBoundingClientRect().height),
+    };
+  });
+  expect(measured.short).toBeGreaterThan(0);
+  expect(measured.short).toBeLessThan(measured.inner);
+  expect(measured.appHeight).toBe(`${measured.inner}px`);
+  expect(measured.mainHeight).toBe(measured.inner);
 });
 
 test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {

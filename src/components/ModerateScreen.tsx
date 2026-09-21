@@ -111,13 +111,14 @@ function chartDayLabel(day: string, locale: string): string {
  * Signed-in moderation hub of staff tools.
  *
  * Moderators see the daily payout-goal widget (from
- * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals,
- * Moderators chat group, and Handbook tools. The Moderators chat group
- * control goes to `/moderate/group` and shows a staff-room unread count
- * when greater than zero. Handbook goes to `/moderate/handbook`. Other
+ * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals, Open
+ * applications, Moderators chat group, and Handbook tools. The Moderators
+ * chat group control goes to `/moderate/group` and shows a staff-room unread
+ * count when greater than zero. Handbook goes to `/moderate/handbook`. Other
  * signed-in visitors see a short forbidden message and no tools list.
- * Does not fetch hidden notes, proposals, or the group thread; unread for
- * the Moderators chat group control comes from {@link useUnreadCount}.
+ * Does not fetch hidden notes, proposals, applications, or the group thread;
+ * unread for the Moderators chat group control comes from
+ * {@link useUnreadCount}.
  * Renders nothing without a session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
@@ -201,6 +202,12 @@ export function ModerateScreen(): ReactElement | null {
         <li className="flex w-full flex-col items-center gap-3">
           <ButtonLink href="/moderate/proposals" variant="secondary" size="lg">
             {t('moderate.proposals.heading')}
+          </ButtonLink>
+        </li>
+        <li className="flex w-full flex-col items-center gap-3">
+          <p className="text-center text-sm text-app-muted">{t('funding.applications.lead')}</p>
+          <ButtonLink href="/moderate/applications" variant="secondary" size="lg">
+            {t('funding.applications.heading')}
           </ButtonLink>
         </li>
         <li className="flex w-full flex-col items-center gap-3">

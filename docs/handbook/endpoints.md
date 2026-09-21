@@ -184,7 +184,7 @@
 
 ## Endpoint: GET /me
 
-- **Purpose:** Same-origin proxy of the signed-in account.
+- **Purpose:** Same-origin proxy of the signed-in account, including optional `funding` (`null` for `basis`).
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
 - **Used by:** `fetchMe`.
 - **Auth:** Bearer.
@@ -338,16 +338,30 @@
 
 ## Endpoint: GET /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` (true iff this session is the actor) and `sats`, and optional `accountId` (sender). For a staff viewer, incoming `name` and optional `accountId` are the actor. Members still see platform identity (`21.gifts`) on official replies. Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` (true iff this session is the actor) and `sats`, `hasPhoto` / `photoCount` (client defaults omitted fields to false / 0), and optional `accountId` (sender). For a staff viewer, incoming `name` and optional `accountId` are the actor. Members still see platform identity (`21.gifts`) on official replies. Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversation` on `/messages?c=` and on `/moderate/group`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters). Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe` and optional `accountId` (sender).
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed on the Moderators group when at least one photo is present. Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationMessage` in the inbox composer and in `ModeratorGroupScreen`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /conversations/[id]/messages/[messageId]/photo
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id/messages/:messageId/photo` (still 0). Staff-room stills are private; 401 without a session.
+- **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
+- **Used by:** `fetchConversationMessagePhoto` from `ModeratorGroupScreen`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /conversations/[id]/messages/[messageId]/photo/[file]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id/messages/:messageId/photo/:file`. Filename must match `{1-9}.{jpg|jpeg|png|webp}`; otherwise 404 without calling the api. The proxy always requests `{n}.jpg` from the api.
+- **Errors:** 404 for an unsupported filename; upstream 401/404/503, or 502 if the api is unreachable.
+- **Used by:** `fetchConversationMessagePhoto` for indices 1–9.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]/invoice
@@ -433,6 +447,48 @@
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `postTrustAppoint` in `MemberTrustActions`.
 - **Auth:** Bearer (founder).
+
+## Endpoint: POST /funding/apply
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. Effective `none` or `rejected` becomes pending.
+- **Errors:** Upstream 401/403/409/503, or 502 if the api is unreachable.
+- **Used by:** `postFundingApply` via `FundingStatusCard` on `/profile`.
+- **Auth:** Bearer session; the api requires a role other than `basis`.
+
+## Endpoint: GET /funding/applications
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/applications`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchFundingApplications` via `FundingApplicationsScreen` on `/moderate/applications`. `ModerateScreen` on `/moderate` does not call this GET.
+- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+
+## Endpoint: GET /funding/applications/[accountId]
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications/:accountId` (staff review payload: account, grant, living-room posts).
+- **Errors:** Upstream 401/403/404/503, or 502 if the api is unreachable.
+- **Used by:** `fetchFundingApplication` via `FundingApplicationDetailScreen` on `/moderate/applications/[accountId]`.
+- **Auth:** Bearer session; the api requires founder or moderator.
+
+## Endpoint: POST /funding/trial
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/trial` with `{ accountId }`. Target must be effective pending.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postFundingTrial` in `FundingApplicationDetailScreen`.
+- **Auth:** Bearer (founder or moderator).
+
+## Endpoint: POST /funding/admit
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/admit` with `{ accountId }`. Target pending or trial.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postFundingAdmit` in `FundingApplicationDetailScreen`.
+- **Auth:** Bearer (founder or moderator).
+
+## Endpoint: POST /funding/reject
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/reject` with `{ accountId }`. The subject may re-apply.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postFundingReject` in `FundingApplicationDetailScreen`.
+- **Auth:** Bearer (founder or moderator).
 
 ## Endpoint: GET /forum/messages/[id]
 

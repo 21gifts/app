@@ -301,6 +301,70 @@ export async function proxyTrustAppointModeratorPost(request: Request): Promise<
 }
 
 /**
+ * Proxies POST /funding/apply to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyFundingApplyPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/apply');
+}
+
+/**
+ * Proxies GET /funding/applications to the 21.gifts api (staff Bearer).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyFundingApplicationsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/applications');
+}
+
+/**
+ * Proxies GET /funding/applications/:accountId to the 21.gifts api (staff Bearer).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Subject account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyFundingApplicationGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/funding/applications/${encodeURIComponent(accountId)}`);
+}
+
+/**
+ * Proxies POST /funding/trial to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingTrialPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/trial');
+}
+
+/**
+ * Proxies POST /funding/admit to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingAdmitPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/admit');
+}
+
+/**
+ * Proxies POST /funding/reject to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingRejectPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/reject');
+}
+
+/**
  * Proxies GET /gifts to the 21.gifts api (forwards `day` query).
  *
  * @param request - Incoming App Router request.
@@ -509,6 +573,26 @@ export async function proxyConversationReadPost(
   conversationId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/conversations/${encodeURIComponent(conversationId)}/read`);
+}
+
+/**
+ * Proxies GET /conversations/:id/messages/:messageId/photo or an indexed
+ * photo file to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param conversationId - Conversation UUID from the dynamic route segment.
+ * @param messageId - Conversation message id from the dynamic route segment.
+ * @param file - Optional indexed photo filename such as `1.jpg`.
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyConversationMessagePhotoGet(
+  request: Request,
+  conversationId: string,
+  messageId: string,
+  file?: string,
+): Promise<Response> {
+  const base = `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/photo`;
+  return proxyApiRequest(request, file === undefined || file === '' ? base : `${base}/${file}`);
 }
 
 /**

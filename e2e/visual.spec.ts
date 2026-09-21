@@ -1020,6 +1020,73 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('welcome shop-tag', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+            {
+              id: 'm2',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+            },
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('link', { name: '#Shop' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-shop-tag');
+  });
+
   test('state /welcome expanded', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -2983,6 +3050,93 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-staff-verify');
   });
 
+  test('state /members funding-reviewed', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('button', { name: /Reviewed by a moderator on/ })).toBeVisible();
+    await shotScreen(page, 'state-members-funding-reviewed');
+  });
+
+  test('state /members funding-reviewed-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: /Reviewed by a moderator on/ }).click();
+    await expect(page.getByText('Reviewed by a moderator', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-members-funding-reviewed-open');
+  });
+
   test('state /members translate', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
@@ -4475,6 +4629,143 @@ test.describe('profile activity chart variants', () => {
   });
 });
 
+test.describe('profile funding states', () => {
+  // Goldens are regenerated on the build host.
+  async function seedFundingProfile(
+    page: Page,
+    extras: {
+      role?: 'basis' | 'verified';
+      funding?: unknown;
+    } = {},
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: extras.role ?? 'verified',
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          funding:
+            extras.funding === undefined && extras.role !== 'basis'
+              ? {
+                  status: 'none',
+                  trialUtcDate: null,
+                  admittedAt: null,
+                  reviewedByName: null,
+                }
+              : extras.funding,
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+  }
+
+  test('profile funding not-verified', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'basis', funding: null });
+    await page.goto('/profile');
+    await expect(page.getByText('You are not verified yet.')).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-not-verified');
+  });
+
+  test('profile funding none', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.goto('/profile');
+    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-none');
+  });
+
+  test('profile funding applying', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.route(/\/funding\/apply$/, async () => {
+      await new Promise(() => undefined);
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-funding-applying');
+  });
+
+  test('profile funding apply-error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.route(/\/funding\/apply$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+    await expect(
+      page.getByText('Could not submit your application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-apply-error');
+  });
+
+  test('profile funding pending', async ({ page }) => {
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'pending',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile');
+    await expect(
+      page.getByText('Your application is open. A moderator will review your posts.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-pending');
+  });
+
+  test('profile funding trial', async ({ page }) => {
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'trial',
+        trialUtcDate: '2026-09-20',
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-trial');
+  });
+
+  test('profile funding admitted', async ({ page }) => {
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        reviewedByName: 'Ada',
+      },
+    });
+    await page.goto('/profile');
+    await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-admitted');
+  });
+});
+
 test.describe('welcome forum variants', () => {
   async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {
@@ -5196,6 +5487,28 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByLabel('Your message')).toHaveValue('Caption before attaching a photo.');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-text');
+  });
+
+  test('welcome keyboard-viewport', async ({ page }) => {
+    await page.addInitScript(() => {
+      const inner = window.innerHeight;
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true,
+        value: {
+          height: Math.round(inner * 0.6),
+          offsetTop: Math.round(inner * 0.15),
+          scale: 1,
+          addEventListener() {},
+          removeEventListener() {},
+        },
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').focus();
+    await shotScreen(page, 'state-welcome-keyboard-viewport');
   });
 
   test('welcome composer-photo', async ({ page }) => {
@@ -5971,6 +6284,101 @@ test.describe('welcome forum variants', () => {
   });
 });
 
+test.describe('shops screens', () => {
+  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  test('shops default', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByRole('link', { name: '#Shop' })).toBeVisible();
+    await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
+    await shotScreen(page, 'screen-shops');
+  });
+
+  test('shops empty', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await shotScreen(page, 'state-shops-empty');
+  });
+
+  test('shops loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/shops');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-shops-loading');
+    release();
+  });
+
+  test('shops error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-shops-error');
+  });
+});
+
 test.describe('contact screens', () => {
   async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {
@@ -6528,6 +6936,65 @@ test.describe('inbox screens', () => {
     }
     await shotScreen(page, 'state-messages-thread-pay-qr');
   });
+
+  test('messages thread-quoted-note', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: `see ${QUOTED_NOTE_URL}`,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(quotedNote),
+      });
+    });
+    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
+      });
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText('A Quick Technical Note')).toBeVisible();
+    await expect(page.getByText(QUOTED_NOTE_URL)).toHaveCount(0);
+    await shotScreen(page, 'state-messages-thread-quoted-note');
+  });
 });
 
 test.describe('notifications screens', () => {
@@ -6729,6 +7196,7 @@ test.describe('moderate screens', () => {
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open applications' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Moderators chat group' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
@@ -7081,6 +7549,275 @@ test.describe('moderate proposals screens', () => {
   });
 });
 
+test.describe('moderate applications screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const APPLICATION = {
+    accountId: 'acc_rose',
+    name: 'Rose',
+    role: 'verified' as const,
+    appliedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+  };
+
+  const DETAIL = {
+    account: {
+      id: 'acc_rose',
+      name: 'Rose',
+      role: 'verified' as const,
+      lightningAddress: 'rose@walletofsatoshi.com',
+    },
+    grant: {
+      status: 'pending' as const,
+      appliedAt: APPLICATION.appliedAt,
+      trialUtcDate: null,
+      admittedAt: null,
+      decidedAt: null,
+    },
+    messages: [
+      {
+        id: 'msg_1',
+        name: 'Rose',
+        text: 'Living-room note.',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'verified',
+        replyCount: 0,
+      },
+    ],
+  };
+
+  async function stubApplications(
+    page: Page,
+    applications: Array<typeof APPLICATION> | 'hang' = [],
+  ): Promise<void> {
+    if (applications === 'hang') {
+      await page.route('**/funding/applications', async () => {
+        /* hang */
+      });
+      return;
+    }
+    await page.route('**/funding/applications', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      const url = route.request().url();
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(url).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ applications }),
+      });
+    });
+  }
+
+  test('screen /moderate/applications', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page, [APPLICATION]);
+    await page.goto('/moderate/applications');
+    await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
+    await expect(page.getByText('Rose')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-applications');
+  });
+
+  test('moderate applications forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await stubApplications(page);
+    await page.goto('/moderate/applications');
+    await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-forbidden');
+  });
+
+  test('moderate applications empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page);
+    await page.goto('/moderate/applications');
+    await expect(page.getByText('No open applications.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-empty');
+  });
+
+  test('moderate applications loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page, 'hang');
+    await page.goto('/moderate/applications');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-loading');
+  });
+
+  test('moderate applications error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications', async (route) => {
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications');
+    await expect(
+      page.getByText('Could not load open applications. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-error');
+  });
+
+  test('screen /moderate/applications/[accountId]', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
+    await expect(page.getByText('Living-room note.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trial' })).toBeVisible();
+    await shotScreen(page, 'screen-moderate-applications-accountId');
+  });
+
+  test('moderate applications accountId trial', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          grant: { ...DETAIL.grant, status: 'trial', trialUtcDate: '2026-09-20' },
+        }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('button', { name: 'Admit' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trial' })).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-applications-accountId-trial');
+  });
+
+  test('moderate applications accountId forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-forbidden');
+  });
+
+  test('moderate applications accountId empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...DETAIL, messages: [] }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByText('No living-room posts.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-empty');
+  });
+
+  test('moderate applications accountId loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-loading');
+  });
+
+  test('moderate applications accountId error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(
+      page.getByText('Could not load this application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-error');
+  });
+
+  test('moderate applications accountId decide-failed', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/trial', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Trial' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-decide-failed');
+  });
+
+  test('moderate applications accountId deciding', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/trial', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Trial' }).click();
+    await expect(page.getByRole('button', { name: 'Trial' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-applications-accountId-deciding');
+  });
+});
+
 test.describe('moderate group screens', () => {
   // Goldens are regenerated on the build host.
   async function seedAda(
@@ -7139,6 +7876,8 @@ test.describe('moderate group screens', () => {
       fromMe: boolean;
       sats: number;
       giftFor?: string;
+      hasPhoto?: boolean;
+      photoCount?: number;
     }>,
   ): Promise<void> {
     await page.route('**/conversations/conv-mod', async (route) => {
@@ -7147,6 +7886,33 @@ test.describe('moderate group screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({ messages }),
       });
+    });
+  }
+
+  const TINY_GIF = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64',
+  );
+
+  async function attachGif(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: TINY_GIF,
+    });
+  }
+
+  async function hangCreateImageBitmap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+  }
+
+  async function stubTooLargeJpeg(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
     });
   }
 
@@ -7277,6 +8043,142 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-moderate-group-error');
+  });
+
+  test('moderate group composer-photo', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
+      timeout: 10_000,
+    });
+    await shotScreen(page, 'state-moderate-group-composer-photo');
+  });
+
+  test('moderate group composer-photos', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    await shotScreen(page, 'state-moderate-group-composer-photos');
+  });
+
+  test('moderate group quoted-note', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm1',
+        name: 'Ada',
+        text: `see ${QUOTED_NOTE_URL}`,
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+    ]);
+    await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(quotedNote),
+      });
+    });
+    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/technical-note.jpg')),
+      });
+    });
+    await page.goto('/moderate/group');
+    await expect(page.getByText('A Quick Technical Note')).toBeVisible();
+    await expect(page.getByText(QUOTED_NOTE_URL)).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-group-quoted-note');
+  });
+
+  test('moderate group photo', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm-photo',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    await page.route('**/conversations/conv-mod/messages/m-photo/photo', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+      });
+    });
+    await page.goto('/moderate/group');
+    await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-photo');
+  });
+
+  test('moderate group preparing-photo', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await hangCreateImageBitmap(page);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-group-preparing-photo');
+  });
+
+  test('moderate group error-unsupported', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await attachGif(page);
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-group-error-unsupported');
+  });
+
+  test('moderate group error-too-large', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await stubTooLargeJpeg(page);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-error-too-large');
+  });
+
+  test('moderate group error-too-many', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
+    await shotScreen(page, 'state-moderate-group-error-too-many');
   });
 });
 

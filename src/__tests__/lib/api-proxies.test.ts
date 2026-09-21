@@ -28,6 +28,7 @@ import {
   proxyContactPost,
   proxyConversationGet,
   proxyConversationInvoicePost,
+  proxyConversationMessagePhotoGet,
   proxyConversationPost,
   proxyConversationReadPost,
   proxyConversationsGet,
@@ -55,6 +56,12 @@ import {
   proxyTrustProposeModeratorPost,
   proxyTrustProposalsGet,
   proxyTrustVerifyPost,
+  proxyFundingAdmitPost,
+  proxyFundingApplicationGet,
+  proxyFundingApplicationsGet,
+  proxyFundingApplyPost,
+  proxyFundingRejectPost,
+  proxyFundingTrialPost,
   proxyViewAboutPhotoGet,
   proxyViewGet,
 } from '@/lib/api-proxies';
@@ -343,6 +350,31 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
   });
 
+  it('proxyConversationMessagePhotoGet hits /photo', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationMessagePhotoGet(
+      new Request('http://localhost/conversations/c1/messages/m1/photo'),
+      'c1',
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
+      '/conversations/c1/messages/m1/photo',
+    );
+  });
+
+  it('proxyConversationMessagePhotoGet hits an extra still file', async () => {
+    const fetchMock = stubApi();
+    await proxyConversationMessagePhotoGet(
+      new Request('http://localhost/conversations/c1/messages/m1/photo/2.jpg'),
+      'c1',
+      'm1',
+      '2.jpg',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(
+      '/conversations/c1/messages/m1/photo/2.jpg',
+    );
+  });
+
   it('proxyConversationReadPost encodes the id', async () => {
     const fetchMock = stubApi();
     await proxyConversationReadPost(
@@ -588,5 +620,56 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/appoint-moderator');
+  });
+
+  it('proxyFundingApplyPost hits POST /funding/apply', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingApplyPost(
+      new Request('http://localhost/funding/apply', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/apply');
+  });
+
+  it('proxyFundingApplicationsGet hits GET /funding/applications', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingApplicationsGet(new Request('http://localhost/funding/applications'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/applications');
+  });
+
+  it('proxyFundingApplicationGet hits GET /funding/applications/:accountId', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingApplicationGet(
+      new Request('http://localhost/funding/applications/acc%2F1'),
+      'acc/1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/applications/acc%2F1');
+  });
+
+  it('proxyFundingTrialPost hits POST /funding/trial', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingTrialPost(
+      new Request('http://localhost/funding/trial', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/trial');
+  });
+
+  it('proxyFundingAdmitPost hits POST /funding/admit', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingAdmitPost(
+      new Request('http://localhost/funding/admit', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/admit');
+  });
+
+  it('proxyFundingRejectPost hits POST /funding/reject', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingRejectPost(
+      new Request('http://localhost/funding/reject', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/reject');
   });
 });

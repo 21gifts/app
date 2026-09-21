@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatForumTime } from '@/lib/forum-time';
+import { formatForumTime, formatForumTimeFromMs } from '@/lib/forum-time';
 
 describe('formatForumTime', () => {
   const iso = '2026-08-28T12:00:00.000Z';
@@ -37,5 +37,16 @@ describe('formatForumTime', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+});
+
+describe('formatForumTimeFromMs', () => {
+  it('matches formatForumTime for a valid epoch', () => {
+    const ms = Date.parse('2026-08-28T12:00:00.000Z');
+    expect(formatForumTimeFromMs(ms, 'en')).toBe(formatForumTime('2026-08-28T12:00:00.000Z', 'en'));
+  });
+
+  it('returns String(ms) when the instant is invalid', () => {
+    expect(formatForumTimeFromMs(Number.NaN, 'en')).toBe('NaN');
   });
 });

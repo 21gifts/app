@@ -11,6 +11,7 @@ import {
   ScrollText,
   Share2,
   Shield,
+  Store,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -32,7 +33,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Profile with same-line given/received amounts only when that
+ * rows (Home, Shops, Profile with same-line given/received amounts only when that
  * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a staff-room unread count when greater than zero, notifications with an
@@ -142,6 +143,16 @@ export function SignedInChrome(): ReactElement {
         >
           <Home aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.home')}
+        </Link>
+        <Link
+          href="/shops"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('nav.shops')}
         </Link>
         <Link
           href="/profile"

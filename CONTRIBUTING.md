@@ -80,6 +80,8 @@ app/
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
+│   │   ├── shops/
+│   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -105,6 +107,8 @@ app/
 │   │   │   └── [id]/
 │   │   │       ├── route.ts     # GET/POST /conversations/[id]
 │   │   │       ├── invoice/route.ts  # POST /conversations/:id/invoice
+│   │   │       ├── messages/[messageId]/photo/route.ts # GET conversation photo 0
+│   │   │       ├── messages/[messageId]/photo/[file]/route.ts # GET extra stills 1–9
 │   │   │       └── read/route.ts # POST /conversations/[id]/read
 │   │   ├── forum/
 │   │   │   ├── messages/
@@ -121,6 +125,13 @@ app/
 │   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
 │   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
 │   │   │   └── appoint-moderator/route.ts  # POST /trust/appoint-moderator
+│   │   ├── funding/
+│   │   │   ├── apply/route.ts                    # POST /funding/apply
+│   │   │   ├── applications/route.ts             # GET /funding/applications
+│   │   │   ├── applications/[accountId]/route.ts # GET /funding/applications/:id
+│   │   │   ├── trial/route.ts                    # POST /funding/trial
+│   │   │   ├── admit/route.ts                    # POST /funding/admit
+│   │   │   └── reject/route.ts                   # POST /funding/reject
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -133,6 +144,8 @@ app/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
 │   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   ├── applications/page.tsx # GET /moderate/applications — grant queue
+│   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — grant review
 │   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
 │   │   │   └── handbook/page.tsx     # GET /moderate/handbook — staff handbook
 │   │   ├── trust-chain/
@@ -169,9 +182,12 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
+│   │   ├── FundingApplicationsScreen.tsx # Signed-in /moderate/applications grant queue
+│   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /moderate/applications/:id grant review
+│   │   ├── FundingStatusCard.tsx # Owner profile verification / 21 gifts grant
 │   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
 │   │   ├── ModerateHandbookScreen.tsx # Signed-in /moderate/handbook staff chapters
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
@@ -190,7 +206,8 @@ app/
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + payable-reply pay sheet + expand/replies + copy-link + author profile links
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome forum
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome and /shops
+│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
@@ -234,6 +251,7 @@ app/
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
+│   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
@@ -275,6 +293,7 @@ app/
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm queue
+│   ├── applications.spec.ts     # /moderate/applications grant queue and review
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

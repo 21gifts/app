@@ -27,12 +27,17 @@ vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
 }));
 
+vi.mock('@/lib/forum-photo', () => ({
+  prepareForumPhoto: vi.fn(),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchModeratorGroup: vi.fn(),
   fetchConversation: vi.fn(),
   postConversationMessage: vi.fn(),
   markConversationRead: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchConversationMessagePhoto: vi.fn(),
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -41,12 +46,14 @@ vi.mock('@/lib/app-badge', () => ({
 
 import {
   fetchConversation,
+  fetchConversationMessagePhoto,
   fetchGiftStats,
   fetchModeratorGroup,
   markConversationRead,
   postConversationMessage,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
+import { prepareForumPhoto } from '@/lib/forum-photo';
 
 const groupMock = vi.mocked(fetchModeratorGroup);
 const threadMock = vi.mocked(fetchConversation);
@@ -55,6 +62,8 @@ const markReadMock = vi.mocked(markConversationRead);
 const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
+const photoMock = vi.mocked(fetchConversationMessagePhoto);
+const prepareMock = vi.mocked(prepareForumPhoto);
 
 const account: Account = {
   id: 'acc_1',
@@ -93,6 +102,8 @@ const MESSAGE: ConversationMessage = {
   createdAt: '2026-08-28T15:00:00.000Z',
   fromMe: false,
   sats: 0,
+  hasPhoto: false,
+  photoCount: 0,
 };
 
 beforeEach(() => {
@@ -105,6 +116,11 @@ beforeEach(() => {
   refreshMock.mockResolvedValue(undefined);
   giftStatsMock.mockReset();
   giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
+  photoMock.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }));
+  prepareMock.mockResolvedValue({
+    ok: true,
+    photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+  });
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -283,6 +299,8 @@ describe('ModeratorGroupScreen', () => {
       createdAt: '2026-08-28T16:00:00.000Z',
       fromMe: true,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
@@ -366,5 +384,319 @@ describe('ModeratorGroupScreen', () => {
       expect(giftStatsMock).toHaveBeenCalled();
     });
     expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
+  it('shows the photo attach control', async () => {
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
+  });
+
+  it('disables send while a still is still being prepared', async () => {
+    let resolvePrepare:
+      | ((value: {
+          ok: true;
+          photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+        }) => void)
+      | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrepare = resolve;
+        }),
+    );
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      resolvePrepare?.({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      await Promise.resolve();
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('posts a photo-only message', async () => {
+    postMock.mockResolvedValue({
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    expect(screen.queryByText('Remove photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByText('Add a photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-mod', '', [
+        { contentType: 'image/jpeg', data: 'abc' },
+      ]);
+    });
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+  });
+
+  it('sets tooMany when more than 10 stills are chosen', async () => {
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const files = Array.from(
+      { length: 11 },
+      (_, i) => new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${i}.jpg`, { type: 'image/jpeg' }),
+    );
+    await act(async () => {
+      fireEvent.change(input, { target: { files } });
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('sets tooLarge when prepareForumPhoto returns tooLarge', async () => {
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+  });
+
+  it('sets unsupported when prepareForumPhoto rejects', async () => {
+    prepareMock.mockRejectedValueOnce(new Error('decode'));
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+  });
+
+  it('loads a stored photo when hasPhoto is true and photoCount is 0', async () => {
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-legacy',
+        text: '',
+        hasPhoto: true,
+        photoCount: 0,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-legacy',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-legacy', 0);
+  });
+
+  it('loads a stored photo blob for a hasPhoto row', async () => {
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-pic', 0);
+  });
+
+  it('does not apply a photo blob after the account is no longer staff', async () => {
+    let resolvePhoto: ((blob: Blob) => void) | undefined;
+    photoMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalled();
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    });
+    await act(async () => {
+      resolvePhoto?.(new Blob(['jpeg'], { type: 'image/jpeg' }));
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(screen.getByText('This room is for moderators.')).toBeTruthy();
+  });
+
+  it('revokes loaded photo blobs and drops drafts when the account is no longer staff', async () => {
+    const revoke = vi.fn();
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    });
+    expect(screen.getByText('This room is for moderators.')).toBeTruthy();
+    expect(revoke).toHaveBeenCalledWith('blob:group-photo');
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
+  });
+
+  it('revokes photo blobs that are no longer on the thread', async () => {
+    const revoke = vi.fn();
+    threadMock.mockResolvedValueOnce([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    threadMock.mockResolvedValueOnce([MESSAGE]);
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account });
+    });
+    await waitFor(() => {
+      expect(revoke).toHaveBeenCalledWith('blob:group-photo');
+    });
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('skips a still when the photo fetch fails and loads the next', async () => {
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-fail',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+      {
+        ...MESSAGE,
+        id: 'm-ok',
+        name: 'Bob',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    photoMock
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-next',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Bob')).toBeTruthy();
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-fail', 0);
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-ok', 0);
   });
 });

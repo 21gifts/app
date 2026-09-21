@@ -29,10 +29,19 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
 }));
 
+vi.mock('@/lib/note-translate', () => ({
+  fetchTranslateAvailable: vi.fn(),
+  translateNote: vi.fn(),
+}));
+
 import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
+import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
+const fetchAvailable = vi.mocked(fetchTranslateAvailable);
+const translate = vi.mocked(translateNote);
+const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 
 const PARENT_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';
 const QUOTED_ID = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
@@ -71,8 +80,11 @@ const parentNote: ForumMessage = {
 beforeEach(() => {
   fetchMessage.mockReset();
   fetchPhoto.mockReset();
+  fetchAvailable.mockReset();
+  translate.mockReset();
   fetchMessage.mockResolvedValue(null);
   fetchPhoto.mockRejectedValue(new Error('no photo'));
+  fetchAvailable.mockResolvedValue(false);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -114,6 +126,27 @@ describe('ForumQuotedBody', () => {
     expect(screen.getByText('just a note')).toBeTruthy();
     expect(fetchMessage).not.toHaveBeenCalled();
     expect(fetchPhoto).not.toHaveBeenCalled();
+  });
+
+  it('translates outgoing button-tone text with button foreground classes', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue('Can anyone lend me a few satoshi this week?');
+    renderWithLocale(
+      <ForumQuotedBody
+        text={german}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+        className="mt-2 whitespace-pre-wrap text-sm text-app-btn-fg"
+      />,
+    );
+    const translateButton = await screen.findByRole('button', { name: 'Translate' });
+    expect(translateButton.className).toContain('text-app-btn-fg');
+    fireEvent.click(translateButton);
+    const body = await screen.findByText('Can anyone lend me a few satoshi this week?');
+    expect(body.closest('p')?.className).toContain('text-app-btn-fg');
   });
 
   it('shows a fiat suffix on the nested post when conversion is available', async () => {

@@ -22,6 +22,19 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/conversations/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/conversations/[id]/read')).status()).toBeGreaterThanOrEqual(400);
+  expect(
+    (await request.get('/conversations/[id]/messages/[messageId]/photo')).status(),
+  ).toBeGreaterThanOrEqual(400);
+  expect(
+    (await request.get('/conversations/[id]/messages/[messageId]/photo/[file]')).status(),
+  ).toBeGreaterThanOrEqual(400);
+  expect(
+    (await request.get('/conversations/c1/messages/m1/photo')).status(),
+  ).toBeGreaterThanOrEqual(400);
+  expect(
+    (await request.get('/conversations/c1/messages/m1/photo/1.jpg')).status(),
+  ).toBeGreaterThanOrEqual(400);
+  expect((await request.get('/conversations/c1/messages/m1/photo/0.jpg')).status()).toBe(404);
   expect((await request.get('/forum/notifications')).status()).toBe(401);
   expect((await request.post('/forum/notifications/read-all')).status()).toBe(401);
   expect((await request.post('/forum/notifications/[id]/read')).status()).toBeGreaterThanOrEqual(
@@ -55,6 +68,14 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/trust/propose-moderator')).status()).toBe(401);
   expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);
   expect((await request.post('/trust/appoint-moderator')).status()).toBe(401);
+  expect((await request.post('/funding/apply')).status()).toBe(401);
+  expect((await request.get('/funding/applications')).status()).toBe(401);
+  expect((await request.get('/funding/applications/[accountId]')).status()).toBeGreaterThanOrEqual(
+    400,
+  );
+  expect((await request.post('/funding/trial')).status()).toBe(401);
+  expect((await request.post('/funding/admit')).status()).toBe(401);
+  expect((await request.post('/funding/reject')).status()).toBe(401);
   expect((await request.get('/gifts')).status()).toBe(400);
   expect((await request.post('/auth/passkey/register/begin')).status()).toBe(200);
   expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);

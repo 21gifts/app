@@ -12,25 +12,30 @@ function stubInnerHeight(height: number): void {
 
 function stubVisualViewport(
   height: number,
-  scale?: number,
+  extras?: { scale?: number; offsetTop?: number },
 ): {
   height: number;
+  offsetTop?: number;
   addEventListener: ReturnType<typeof vi.fn>;
   removeEventListener: ReturnType<typeof vi.fn>;
 } {
-  const visualViewport =
-    scale === undefined
-      ? {
-          height,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-        }
-      : {
-          height,
-          scale,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-        };
+  const visualViewport: {
+    height: number;
+    scale?: number;
+    offsetTop?: number;
+    addEventListener: ReturnType<typeof vi.fn>;
+    removeEventListener: ReturnType<typeof vi.fn>;
+  } = {
+    height,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
+  if (extras !== undefined && extras.scale !== undefined) {
+    visualViewport.scale = extras.scale;
+  }
+  if (extras !== undefined && extras.offsetTop !== undefined) {
+    visualViewport.offsetTop = extras.offsetTop;
+  }
   vi.stubGlobal('visualViewport', visualViewport);
   return visualViewport;
 }
@@ -117,7 +122,7 @@ describe('useAppHeight', () => {
   it('does not shrink --app-height while visualViewport is zoomed', () => {
     stubInnerHeight(640);
     document.documentElement.style.setProperty('--app-height', '640px');
-    stubVisualViewport(320, 2);
+    stubVisualViewport(320, { scale: 2 });
 
     renderHook(() => {
       useAppHeight();
@@ -128,7 +133,7 @@ describe('useAppHeight', () => {
 
   it('sets --app-height when visualViewport.scale is 1', () => {
     stubInnerHeight(480);
-    stubVisualViewport(480, 1);
+    stubVisualViewport(480, { scale: 1 });
 
     renderHook(() => {
       useAppHeight();
@@ -137,7 +142,7 @@ describe('useAppHeight', () => {
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('480px');
   });
 
-  it('uses innerHeight when visualViewport is shorter and no text field is focused', () => {
+  it('uses innerHeight when visualViewport is shorter', () => {
     stubInnerHeight(852);
     stubVisualViewport(511);
 
@@ -148,7 +153,7 @@ describe('useAppHeight', () => {
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
   });
 
-  it('follows visualViewport.height while a textarea is focused', () => {
+  it('does not shrink --app-height while a textarea is focused', () => {
     stubInnerHeight(852);
     stubVisualViewport(511);
 
@@ -160,7 +165,45 @@ describe('useAppHeight', () => {
       useAppHeight();
     });
 
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+  });
+
+  it('covers visualViewport.offsetTop when the keyboard scrolls the visual viewport', () => {
+    stubInnerHeight(700);
+    stubVisualViewport(500, { offsetTop: 250 });
+
+    renderHook(() => {
+      useAppHeight();
+    });
+
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('750px');
+  });
+
+  it('keeps innerHeight after focus when the keyboard shortens visualViewport like iPhone Safari', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(852);
+    renderHook(() => {
+      useAppHeight();
+    });
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+
+    const textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.focus();
+    visualViewport.height = 511;
+    visualViewport.offsetTop = 200;
+    const resize = visualViewport.addEventListener.mock.calls.find((call) => call[0] === 'resize');
+    expect(resize).toBeDefined();
+    if (resize === undefined) {
+      throw new Error('missing visualViewport resize listener');
+    }
+    const onResize = resize[1];
+    if (typeof onResize !== 'function') {
+      throw new Error('visualViewport resize listener is not a function');
+    }
+    onResize();
+
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
   });
 
   it('registers document focus listeners and window resize and removes them on unmount', () => {
@@ -186,59 +229,6 @@ describe('useAppHeight', () => {
     expect(winRemove).toHaveBeenCalledWith('orientationchange', expect.any(Function));
     expect(docRemove).toHaveBeenCalledWith('focusin', expect.any(Function));
     expect(docRemove).toHaveBeenCalledWith('focusout', expect.any(Function));
-  });
-
-  it('follows visualViewport.height while a text input is focused', () => {
-    stubInnerHeight(852);
-    stubVisualViewport(511);
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    document.body.appendChild(input);
-    input.focus();
-
-    renderHook(() => {
-      useAppHeight();
-    });
-
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
-  });
-
-  it('uses innerHeight while a non-text input is focused', () => {
-    stubInnerHeight(852);
-    stubVisualViewport(511);
-
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    document.body.appendChild(input);
-    input.focus();
-
-    renderHook(() => {
-      useAppHeight();
-    });
-
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
-  });
-
-  it('follows visualViewport.height while a contenteditable element is focused', () => {
-    stubInnerHeight(852);
-    stubVisualViewport(511);
-
-    const editor = document.createElement('div');
-    Object.defineProperty(editor, 'isContentEditable', {
-      configurable: true,
-      get: () => true,
-    });
-    const activeSpy = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(editor);
-    try {
-      renderHook(() => {
-        useAppHeight();
-      });
-
-      expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
-    } finally {
-      activeSpy.mockRestore();
-    }
   });
 
   it('treats a missing activeElement as unfocused', () => {

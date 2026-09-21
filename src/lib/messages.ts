@@ -12,6 +12,7 @@ const en = {
   'nav.handbook': 'Handbook',
   'nav.login': 'Log in',
   'nav.home': 'Home',
+  'nav.shops': 'Shops',
   'nav.legal': 'Legal & Privacy',
   'nav.rules': 'Living room rules',
   'nav.inbox': 'Messages',
@@ -414,6 +415,7 @@ const en = {
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
     'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
@@ -524,6 +526,11 @@ const en = {
   'contact.errorRequest': 'Could not send your message',
   'contact.rulesLink': 'Living room rules',
 
+  'shops.heading': 'Shops',
+  'shops.lead':
+    'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
+  'shops.empty': 'No shops yet — add the first one.',
+
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
   'inbox.filterLabel': 'Conversation type',
@@ -538,6 +545,13 @@ const en = {
   'inbox.composerLabel': 'Your message',
   'inbox.placeholder': 'Write a message',
   'inbox.send': 'Send',
+  'inbox.attach': 'Add a photo',
+  'inbox.previewAlt': 'Selected photo',
+  'inbox.removePhoto': 'Remove photo',
+  'inbox.errorUnsupported': 'Use a JPEG, PNG, or WebP photo',
+  'inbox.errorTooLarge': 'Keep photos under 1 MB',
+  'inbox.errorTooMany': 'You can add up to 10 photos',
+  'inbox.photoAlt': 'Photo from {name}',
   'inbox.errorEmpty': 'Enter a message',
   'inbox.errorTooLong': 'Keep it to 500 characters',
   'inbox.errorRequest': 'Could not send your message',
@@ -620,13 +634,41 @@ const en = {
     'It does not mean they are a good person, and it does not mean they are entitled to receive money. It only means this person really exists and has a 21.gifts account.',
   'moderate.handbook.funding.title': 'Official funding program',
   'moderate.handbook.funding.body':
-    'Verified people can be proposed in the Moderators chat group to take part in the official 21.gifts funding program.',
+    'Verified members can apply on their profile with the three convictions. Staff review the queue, then grant a one-day trial or admit.',
   'moderate.handbook.funding.rulesLead': 'The rules are simple.',
   'moderate.handbook.funding.rulePrinciples': 'Follow the 3 principles of 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Daily Bitcoin payments are mandatory',
   'moderate.handbook.funding.ruleRecord': 'Please keep a record of the daily payments',
   'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
   'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
+  'funding.heading': '21 gifts grant',
+  'funding.notVerified': 'You are not verified yet.',
+  'funding.verifyHow':
+    'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
+  'funding.notAdmitted': 'You are not admitted to daily 21.gifts grant payouts.',
+  'funding.apply': 'Apply for the 21 gifts grant',
+  'funding.conditions':
+    'Daily grants go to people whose living-room posts reflect the three convictions.',
+  'funding.pending': 'Your application is open. A moderator will review your posts.',
+  'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
+  'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
+  'funding.reviewedBy': 'Reviewed by a moderator',
+  'funding.reviewedOn': 'Reviewed by a moderator on {date}',
+  'funding.applyError': 'Could not submit your application. Please try again.',
+  'funding.applications.heading': 'Open applications',
+  'funding.applications.lead':
+    'Review living-room posts against the three convictions. Grant a one-day trial or a final admission.',
+  'funding.applications.empty': 'No open applications.',
+  'funding.applications.listLabel': 'Open grant applications',
+  'funding.applications.error': 'Could not load open applications. Please try again.',
+  'funding.detail.heading': 'Grant application',
+  'funding.detail.criteria': 'Review against the three convictions',
+  'funding.detail.postsLabel': 'Living-room posts',
+  'funding.detail.emptyPosts': 'No living-room posts.',
+  'funding.detail.error': 'Could not load this application. Please try again.',
+  'funding.detail.trial': 'Trial',
+  'funding.detail.admit': 'Admit',
+  'funding.detail.reject': 'Reject',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -667,6 +709,7 @@ const de = {
   'nav.handbook': 'Handbuch',
   'nav.login': 'Anmelden',
   'nav.home': 'Start',
+  'nav.shops': 'Shops',
   'nav.legal': 'Impressum & Datenschutz',
   'nav.rules': 'Wohnzimmerregeln',
   'nav.inbox': 'Posteingang',
@@ -1062,6 +1105,7 @@ const de = {
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
     'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
@@ -1175,6 +1219,11 @@ const de = {
   'contact.errorRequest': 'Nachricht konnte nicht gesendet werden',
   'contact.rulesLink': 'Wohnzimmerregeln',
 
+  'shops.heading': 'Shops',
+  'shops.lead':
+    'Fügen Sie einen Shop hinzu wie einen Wohnzimmer-Beitrag. Er erscheint hier und im Forum mit einem #Shop-Tag.',
+  'shops.empty': 'Noch keine Shops — fügen Sie den ersten hinzu.',
+
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
   'inbox.filterLabel': 'Art der Unterhaltung',
@@ -1189,6 +1238,13 @@ const de = {
   'inbox.composerLabel': 'Ihre Nachricht',
   'inbox.placeholder': 'Nachricht schreiben',
   'inbox.send': 'Senden',
+  'inbox.attach': 'Foto hinzufügen',
+  'inbox.previewAlt': 'Ausgewähltes Foto',
+  'inbox.removePhoto': 'Foto entfernen',
+  'inbox.errorUnsupported': 'JPEG, PNG oder WebP verwenden',
+  'inbox.errorTooLarge': 'Fotos unter 1 MB halten',
+  'inbox.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
+  'inbox.photoAlt': 'Foto von {name}',
   'inbox.errorEmpty': 'Bitte schreiben Sie eine Nachricht',
   'inbox.errorTooLong': 'Maximal 500 Zeichen',
   'inbox.errorRequest': 'Nachricht konnte nicht gesendet werden',
@@ -1277,13 +1333,45 @@ const de = {
     'Es bedeutet nicht, dass es ein guter Mensch ist oder dass die Person berechtigt sein soll, Geld zu erhalten. Es bedeutet nur, dass es diesen Menschen wirklich gibt und dass er ein Konto bei 21.gifts hat.',
   'moderate.handbook.funding.title': 'Offizielles Förderprogramm',
   'moderate.handbook.funding.body':
-    'Verifizierte Personen können in der Moderatoren Chatgruppe vorgeschlagen werden, um am offiziellen 21.gifts-Förderprogramm teilzunehmen.',
+    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange und gewährt dann einen eintägigen Probezugang oder lässt zu.',
   'moderate.handbook.funding.rulesLead': 'Die Regeln sind einfach.',
   'moderate.handbook.funding.rulePrinciples': 'Die 3 Prinzipien von 21.gifts befolgen',
   'moderate.handbook.funding.ruleDaily': 'Tägliche Bitcoin-Zahlungen sind Pflicht',
   'moderate.handbook.funding.ruleRecord': 'Bitte führt Buch über die täglichen Zahlungen',
   'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
   'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
+  'funding.heading': '21-Förderprogramm',
+  'funding.notVerified': 'Sie sind noch nicht verifiziert.',
+  'funding.verifyHow':
+    'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
+  'funding.notAdmitted': 'Sie sind nicht zum täglichen 21.gifts-Förderprogramm zugelassen.',
+  'funding.apply': 'Für 21 Förderprogramm bewerben',
+  'funding.conditions':
+    'Tägliche Förderungen gehen an Menschen, deren Wohnzimmer-Beiträge die drei Überzeugungen widerspiegeln.',
+  'funding.pending':
+    'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
+  'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
+  'funding.admitted': 'Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen.',
+  'funding.reviewedBy': 'Geprüft von einer Moderatorin oder einem Moderator',
+  'funding.reviewedOn': 'Geprüft von einer Moderatorin oder einem Moderator am {date}',
+  'funding.applyError':
+    'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+  'funding.applications.heading': 'Offene Bewerbungen',
+  'funding.applications.lead':
+    'Prüfen Sie Wohnzimmer-Beiträge an den drei Überzeugungen. Gewähren Sie einen eintägigen Probezugang oder eine endgültige Zulassung.',
+  'funding.applications.empty': 'Keine offenen Bewerbungen.',
+  'funding.applications.listLabel': 'Offene Förderbewerbungen',
+  'funding.applications.error':
+    'Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'funding.detail.heading': 'Förderbewerbung',
+  'funding.detail.criteria': 'Prüfung an den drei Überzeugungen',
+  'funding.detail.postsLabel': 'Wohnzimmer-Beiträge',
+  'funding.detail.emptyPosts': 'Keine Wohnzimmer-Beiträge.',
+  'funding.detail.error':
+    'Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'funding.detail.trial': 'Probe',
+  'funding.detail.admit': 'Zulassen',
+  'funding.detail.reject': 'Ablehnen',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -1321,6 +1409,7 @@ const es = {
   'nav.handbook': 'Manual',
   'nav.login': 'Iniciar sesión',
   'nav.home': 'Inicio',
+  'nav.shops': 'Tiendas',
   'nav.legal': 'Aviso legal y privacidad',
   'nav.rules': 'Reglas del salón',
   'nav.inbox': 'Bandeja',
@@ -1711,6 +1800,7 @@ const es = {
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
     'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
@@ -1820,6 +1910,11 @@ const es = {
   'contact.errorRequest': 'No se pudo enviar el mensaje',
   'contact.rulesLink': 'Reglas del salón',
 
+  'shops.heading': 'Tiendas',
+  'shops.lead':
+    'Añade una tienda igual que un mensaje del salón. Aparece aquí y en el foro con una etiqueta #Shop.',
+  'shops.empty': 'Aún no hay tiendas — añade la primera.',
+
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
   'inbox.filterLabel': 'Tipo de conversación',
@@ -1834,6 +1929,13 @@ const es = {
   'inbox.composerLabel': 'Tu mensaje',
   'inbox.placeholder': 'Escribe un mensaje',
   'inbox.send': 'Enviar',
+  'inbox.attach': 'Añadir una foto',
+  'inbox.previewAlt': 'Foto seleccionada',
+  'inbox.removePhoto': 'Quitar foto',
+  'inbox.errorUnsupported': 'Usa una foto JPEG, PNG o WebP',
+  'inbox.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
+  'inbox.errorTooMany': 'Puedes añadir hasta 10 fotos',
+  'inbox.photoAlt': 'Foto de {name}',
   'inbox.errorEmpty': 'Escribe un mensaje',
   'inbox.errorTooLong': 'Máximo 500 caracteres',
   'inbox.errorRequest': 'No se pudo enviar el mensaje',
@@ -1916,13 +2018,42 @@ const es = {
     'No significa que sea una buena persona ni que tenga derecho a recibir dinero. Solo significa que esa persona existe de verdad y tiene una cuenta en 21.gifts.',
   'moderate.handbook.funding.title': 'Programa oficial de apoyo',
   'moderate.handbook.funding.body':
-    'Las personas verificadas pueden proponerse en el chat de moderadores para participar en el programa oficial de apoyo de 21.gifts.',
+    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo revisa la cola y luego otorga un día de prueba o admite.',
   'moderate.handbook.funding.rulesLead': 'Las reglas son simples.',
   'moderate.handbook.funding.rulePrinciples': 'Seguir los 3 principios de 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Los pagos diarios en Bitcoin son obligatorios',
   'moderate.handbook.funding.ruleRecord': 'Por favor, lleven un registro de los pagos diarios',
   'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
   'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
+  'funding.heading': 'Beca 21 gifts',
+  'funding.notVerified': 'Aún no estás verificada o verificado.',
+  'funding.verifyHow':
+    'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
+  'funding.notAdmitted': 'No estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
+  'funding.apply': 'Solicitar la beca 21 gifts',
+  'funding.conditions':
+    'Las becas diarias van a personas cuyos mensajes del salón reflejan las tres convicciones.',
+  'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
+  'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
+  'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
+  'funding.reviewedBy': 'Revisado por una persona moderadora',
+  'funding.reviewedOn': 'Revisado por una persona moderadora el {date}',
+  'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
+  'funding.applications.heading': 'Solicitudes abiertas',
+  'funding.applications.lead':
+    'Revisa los mensajes del salón frente a las tres convicciones. Concede una prueba de un día o una admisión definitiva.',
+  'funding.applications.empty': 'No hay solicitudes abiertas.',
+  'funding.applications.listLabel': 'Solicitudes abiertas de beca',
+  'funding.applications.error':
+    'No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo.',
+  'funding.detail.heading': 'Solicitud de beca',
+  'funding.detail.criteria': 'Revisión frente a las tres convicciones',
+  'funding.detail.postsLabel': 'Mensajes del salón',
+  'funding.detail.emptyPosts': 'No hay mensajes del salón.',
+  'funding.detail.error': 'No se pudo cargar esta solicitud. Inténtalo de nuevo.',
+  'funding.detail.trial': 'Prueba',
+  'funding.detail.admit': 'Admitir',
+  'funding.detail.reject': 'Rechazar',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -1958,6 +2089,7 @@ const fil = {
   'nav.handbook': 'Handbook',
   'nav.login': 'Mag-log in',
   'nav.home': 'Home',
+  'nav.shops': 'Mga Tindahan',
   'nav.legal': 'Legal at Privacy',
   'nav.rules': 'Mga patakaran sa living room',
   'nav.inbox': 'Mga mensahe',
@@ -2352,6 +2484,7 @@ const fil = {
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
+  'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
     'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
@@ -2467,6 +2600,11 @@ const fil = {
   'contact.errorRequest': 'Hindi maipadala ang mensahe',
   'contact.rulesLink': 'Mga patakaran sa living room',
 
+  'shops.heading': 'Mga Tindahan',
+  'shops.lead':
+    'Magdagdag ng shop gaya ng isang living-room post. Lilitaw ito rito at sa forum na may #Shop na tag.',
+  'shops.empty': 'Wala pang mga shop — magdagdag ng una.',
+
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',
   'inbox.filterLabel': 'Uri ng usapan',
@@ -2481,6 +2619,13 @@ const fil = {
   'inbox.composerLabel': 'Iyong mensahe',
   'inbox.placeholder': 'Sumulat ng mensahe',
   'inbox.send': 'Ipadala',
+  'inbox.attach': 'Magdagdag ng litrato',
+  'inbox.previewAlt': 'Napiling litrato',
+  'inbox.removePhoto': 'Alisin ang litrato',
+  'inbox.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato',
+  'inbox.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
+  'inbox.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
+  'inbox.photoAlt': 'Litrato mula kay {name}',
   'inbox.errorEmpty': 'Maglagay ng mensahe',
   'inbox.errorTooLong': 'Hanggang 500 na karakter',
   'inbox.errorRequest': 'Hindi maipadala ang mensahe',
@@ -2564,13 +2709,41 @@ const fil = {
     'Hindi ito nangangahulugang mabuting tao siya, at hindi ito nangangahulugang karapat-dapat siyang tumanggap ng pera. Ibig sabihin lang nito na totoong umiiral ang taong ito at may account siya sa 21.gifts.',
   'moderate.handbook.funding.title': 'Opisyal na programa ng tulong',
   'moderate.handbook.funding.body':
-    'Puwedeng i-propose sa chat group ng mga moderator ang mga verified na tao para sumali sa opisyal na programa ng tulong ng 21.gifts.',
+    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Sinusuri ng staff ang pila, tapos nagbibigay ng one-day trial o admit.',
   'moderate.handbook.funding.rulesLead': 'Simple lang ang mga patakaran.',
   'moderate.handbook.funding.rulePrinciples': 'Sundin ang 3 prinsipyo ng 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Mandatory ang araw-araw na bayad sa Bitcoin',
   'moderate.handbook.funding.ruleRecord': 'Mangyaring magtago ng tala ng araw-araw na bayad',
   'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
   'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
+  'funding.heading': '21 gifts grant',
+  'funding.notVerified': 'Hindi ka pa nabe-verify.',
+  'funding.verifyHow':
+    'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
+  'funding.notAdmitted': 'Hindi ka admitted sa araw-araw na 21.gifts grant payouts.',
+  'funding.apply': 'Mag-apply para sa 21 gifts grant',
+  'funding.conditions':
+    'Ang araw-araw na grant ay para sa mga taong ang living-room posts ay sumasalamin sa tatlong paniniwala.',
+  'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
+  'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
+  'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
+  'funding.reviewedBy': 'Nireview ng isang moderator',
+  'funding.reviewedOn': 'Nireview ng isang moderator noong {date}',
+  'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
+  'funding.applications.heading': 'Mga bukas na aplikasyon',
+  'funding.applications.lead':
+    'Suriin ang living-room posts laban sa tatlong paniniwala. Magbigay ng one-day trial o pinal na admission.',
+  'funding.applications.empty': 'Walang bukas na aplikasyon.',
+  'funding.applications.listLabel': 'Mga bukas na grant application',
+  'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',
+  'funding.detail.heading': 'Grant application',
+  'funding.detail.criteria': 'Suriin laban sa tatlong paniniwala',
+  'funding.detail.postsLabel': 'Mga living-room post',
+  'funding.detail.emptyPosts': 'Walang living-room posts.',
+  'funding.detail.error': 'Hindi ma-load ang aplikasyong ito. Subukan ulit.',
+  'funding.detail.trial': 'Trial',
+  'funding.detail.admit': 'Admit',
+  'funding.detail.reject': 'Reject',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

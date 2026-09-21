@@ -20,16 +20,22 @@ export interface NoteTranslateProps {
   text: string;
   /** When true, render the translated body as plain text with no autolinks. */
   plain?: boolean;
+  /** `onButton` uses `text-app-btn-fg` so the control stays readable on `bg-app-btn`. */
+  tone?: 'default' | 'onButton';
 }
 
 /**
  * Offer an on-demand translation when the note differs from the active UI locale.
  *
- * @param props - Raw public note or reply text and optional plain mode.
+ * @param props - Raw public note or reply text, optional plain mode, and optional button tone.
  * @returns Translation control and result, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */
-export function NoteTranslate({ text, plain = false }: NoteTranslateProps): ReactElement | null {
+export function NoteTranslate({
+  text,
+  plain = false,
+  tone = 'default',
+}: NoteTranslateProps): ReactElement | null {
   const { locale, t } = useTranslations();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -90,8 +96,14 @@ export function NoteTranslate({ text, plain = false }: NoteTranslateProps): Reac
       });
   };
 
-  const controlClass =
-    'mt-2 text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50';
+  const onButton = tone === 'onButton';
+  const controlClass = onButton
+    ? 'mt-2 text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50'
+    : 'mt-2 text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50';
+  const bodyClass = onButton
+    ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
+    : 'mt-2 whitespace-pre-wrap text-sm text-app-fg';
+  const errorClass = onButton ? 'mt-2 text-sm text-app-btn-fg' : 'mt-2 text-sm text-app-danger';
 
   return (
     <div
@@ -105,7 +117,7 @@ export function NoteTranslate({ text, plain = false }: NoteTranslateProps): Reac
           {showTranslation ? (
             <ForumNoteText
               text={translatedText}
-              className="mt-2 whitespace-pre-wrap text-sm text-app-fg"
+              className={bodyClass}
               {...(plain ? { plain: true } : {})}
             />
           ) : null}
@@ -126,7 +138,7 @@ export function NoteTranslate({ text, plain = false }: NoteTranslateProps): Reac
       ) : (
         <>
           {status === 'error' ? (
-            <p role="alert" className="mt-2 text-sm text-app-danger">
+            <p role="alert" className={errorClass}>
               {t('forum.translateError')}
             </p>
           ) : null}

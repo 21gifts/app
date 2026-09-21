@@ -20,6 +20,10 @@ import {
   memberProfileSchema,
   messageInvoiceSchema,
   moderatorProposalsResponseSchema,
+  fundingApplyResponseSchema,
+  fundingApplicationDetailSchema,
+  fundingApplicationsResponseSchema,
+  fundingDecisionResultSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -44,6 +48,10 @@ import {
   type MemberProfile,
   type MessageInvoice,
   type ModeratorProposal,
+  type FundingApplication,
+  type FundingApplicationDetail,
+  type FundingDecisionResult,
+  type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
   type TrustActionResult,
@@ -873,6 +881,172 @@ export async function fetchTrustProposals(sessionToken: string): Promise<Moderat
   }
 }
 
+const FUNDING_APPLY_ERROR = 'Could not submit your application. Please try again.';
+const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Please try again.';
+const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
+const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
+
+/**
+ * Applies for the 21 gifts grant (verified and above).
+ *
+ * Hits same-origin `POST /funding/apply` (Bearer). Role `basis` is 403.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link OwnerFunding} object.
+ * @throws Error with visitor-facing copy on 401/403/409/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingApplyResponseSchema}.
+ */
+export async function postFundingApply(sessionToken: string): Promise<OwnerFunding> {
+  try {
+    const response = await fetch('/funding/apply', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_APPLY_ERROR);
+    }
+    return fundingApplyResponseSchema.parse(await response.json()).funding;
+  } catch {
+    throw new Error(FUNDING_APPLY_ERROR);
+  }
+}
+
+/**
+ * Fetches open grant applications for moderators.
+ *
+ * Hits same-origin `GET /funding/applications` (Bearer). Next.js forbids a
+ * `route.ts` beside `/moderate/applications`, so the proxy lives at this path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The open-application list (oldest `appliedAt` first).
+ * @throws Error with visitor-facing copy on 401/403/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingApplicationsResponseSchema}.
+ */
+export async function fetchFundingApplications(
+  sessionToken: string,
+): Promise<FundingApplication[]> {
+  try {
+    const response = await fetch('/funding/applications', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_APPLICATIONS_LOAD_ERROR);
+    }
+    return fundingApplicationsResponseSchema.parse(await response.json()).applications;
+  } catch {
+    throw new Error(FUNDING_APPLICATIONS_LOAD_ERROR);
+  }
+}
+
+/**
+ * Fetches one grant application for staff review.
+ *
+ * Hits same-origin `GET /funding/applications/:accountId` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param accountId - Subject account id.
+ * @returns Account, grant, and living-room posts.
+ * @throws Error with visitor-facing copy on 401/403/404/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingApplicationDetailSchema}.
+ */
+export async function fetchFundingApplication(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingApplicationDetail> {
+  try {
+    const response = await fetch(`/funding/applications/${encodeURIComponent(accountId)}`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_APPLICATION_LOAD_ERROR);
+    }
+    return fundingApplicationDetailSchema.parse(await response.json());
+  } catch {
+    throw new Error(FUNDING_APPLICATION_LOAD_ERROR);
+  }
+}
+
+/**
+ * Posts a staff funding decision with the signed-in session.
+ *
+ * @param path - Same-origin proxy path.
+ * @param sessionToken - Bearer session.
+ * @param accountId - Subject account id.
+ * @returns Parsed {@link FundingDecisionResult}.
+ * @throws Error with visitor-facing copy on any failure.
+ */
+async function postFundingAction(
+  path: string,
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId }),
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_ACTION_ERROR);
+    }
+    return fundingDecisionResultSchema.parse(await response.json());
+  } catch {
+    throw new Error(FUNDING_ACTION_ERROR);
+  }
+}
+
+/**
+ * Grants a one-day trial (staff). Target must be effective pending.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postFundingTrial(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  return postFundingAction('/funding/trial', sessionToken, accountId);
+}
+
+/**
+ * Admits a member to daily grant payouts (staff). Target pending or trial.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postFundingAdmit(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  return postFundingAction('/funding/admit', sessionToken, accountId);
+}
+
+/**
+ * Rejects a grant application (staff). The subject may re-apply.
+ *
+ * @param sessionToken - Bearer session of a founder or moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postFundingReject(
+  sessionToken: string,
+  accountId: string,
+): Promise<FundingDecisionResult> {
+  return postFundingAction('/funding/reject', sessionToken, accountId);
+}
+
 /**
  * Fetches given and received activity for the signed-in account.
  *
@@ -972,11 +1146,13 @@ export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | nul
 /**
  * Fetches one page of public top-level forum messages (newest first).
  *
- * Sends `GET /forum/messages` with an optional mode and cursor and an always
- * present limit (20 by default).
+ * Sends `GET /forum/messages` with an optional mode, optional hashtag (the
+ * name without a leading `#`), and cursor and an always present limit (20 by
+ * default).
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param args - Optional feed mode, page size, and non-empty page cursor.
+ * @param args - Optional feed mode, hashtag name without `#`, page size, and
+ * non-empty page cursor.
  * @returns The validated page; `nextCursor` is `null` when the response omits it.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link forumListSchema}.
@@ -987,12 +1163,16 @@ export async function fetchMessages(
     mode?: 'active' | 'unpaid' | 'all' | 'popular';
     limit?: number;
     cursor?: string | null;
+    hashtag?: string;
   } = {},
 ): Promise<ForumFeedPage> {
   try {
     const query = new URLSearchParams();
     if (args.mode !== undefined) {
       query.set('mode', args.mode);
+    }
+    if (args.hashtag !== undefined && args.hashtag !== '') {
+      query.set('hashtag', args.hashtag);
     }
     query.set('limit', String(args.limit ?? 20));
     if (args.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
@@ -1590,6 +1770,9 @@ export async function postConversationInvoice(
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Conversation UUID.
  * @param text - Message body as typed (api trims and validates length).
+ * @param photos - Optional JPEG/PNG/WebP stills (`contentType` + raw base64 `data`).
+ *   When non-empty, the JSON body also sends `photo` (first still) and
+ *   `photos` (all stills, max 10). Omitted for existing 3-argument callers.
  * @returns The created {@link ConversationMessage}.
  * @throws Error when the api rejects the text (400) — the api error string
  * when present, otherwise a fallback — on any other non-2xx status, or when
@@ -1599,14 +1782,19 @@ export async function postConversationMessage(
   sessionToken: string,
   id: string,
   text: string,
+  photos?: { contentType: string; data: string }[],
 ): Promise<ConversationMessage> {
+  const stills = photos !== undefined && photos.length > 0 ? photos.slice(0, 10) : [];
   const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
+    }),
   });
   if (response.status === 400) {
     const raw = await readApiError(response);
@@ -1616,6 +1804,46 @@ export async function postConversationMessage(
     throw new Error('Could not send your message');
   }
   return conversationMessageSchema.parse(await response.json());
+}
+
+/**
+ * Fetches the JPEG/PNG/WebP bytes for one indexed conversation message photo.
+ *
+ * Auth is a Bearer token in JS memory, so callers must use the returned blob
+ * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
+ * same-origin photo path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param conversationId - Conversation UUID.
+ * @param messageId - Conversation message id.
+ * @param index - Zero-based photo index. Index zero uses the legacy route.
+ * @returns The photo body as a `Blob`.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * response is empty — same family as {@link fetchMessagePhoto}; does not leak
+ * status.
+ */
+export async function fetchConversationMessagePhoto(
+  sessionToken: string,
+  conversationId: string,
+  messageId: string,
+  index = 0,
+): Promise<Blob> {
+  try {
+    const base = `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/photo`;
+    const response = await fetch(index <= 0 ? base : `${base}/${index}.jpg`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return blob;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
 }
 
 /**
