@@ -431,7 +431,16 @@ export function InboxScreen({
       shellScrollToTop(scroller);
       hadOpenThreadRef.current = false;
     }
-  }, [openId, messagesReady, messagesLoading, messagesError, lastMessageId, scroller, inShell]);
+  }, [
+    openId,
+    messagesReady,
+    messagesLoading,
+    messagesError,
+    lastMessageId,
+    scroller,
+    inShell,
+    photoUrls,
+  ]);
 
   useLayoutEffect(() => {
     if (inShell && scroller === null) {
