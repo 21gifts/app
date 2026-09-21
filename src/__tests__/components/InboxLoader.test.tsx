@@ -16,6 +16,10 @@ vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => searchParams,
 }));
 
+vi.mock('@/lib/forum-photo', () => ({
+  prepareForumPhoto: vi.fn(),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchConversations: vi.fn(),
   fetchConversation: vi.fn(),
@@ -23,6 +27,7 @@ vi.mock('@/lib/api', () => ({
   postConversationInvoice: vi.fn(),
   markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
+  fetchConversationMessagePhoto: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
 }));
 vi.mock('@/lib/app-badge', () => ({
@@ -33,6 +38,7 @@ vi.mock('@/lib/app-badge', () => ({
 
 import {
   fetchConversation,
+  fetchConversationMessagePhoto,
   fetchConversations,
   fetchGiftStats,
   fetchModeratorGroup,
@@ -41,6 +47,7 @@ import {
   postConversationMessage,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
+import { prepareForumPhoto } from '@/lib/forum-photo';
 
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
@@ -51,6 +58,8 @@ const postMock = vi.mocked(postConversationMessage);
 const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
+const photoMock = vi.mocked(fetchConversationMessagePhoto);
+const prepareMock = vi.mocked(prepareForumPhoto);
 
 const account: Account = {
   id: 'acc_1',
@@ -133,6 +142,11 @@ beforeEach(() => {
   });
   giftStatsMock.mockReset();
   giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
+  photoMock.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }));
+  prepareMock.mockResolvedValue({
+    ok: true,
+    photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+  });
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -967,6 +981,424 @@ describe('InboxLoader', () => {
       expect(giftStatsMock).toHaveBeenCalled();
     });
     expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
+  it('shows the photo attach control on an open thread and keeps Amount', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
+  });
+
+  it('hides attach on the conversation list', async () => {
+    listMock.mockResolvedValue([THREAD]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('21.gifts')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a photo' })).toBeNull();
+    expect(document.querySelector('input[type="file"]')).toBeNull();
+  });
+
+  it('posts a photo-only message after remove and re-pick', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    postMock.mockResolvedValue({
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    expect(screen.queryByText('Remove photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByText('Add a photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', '', [
+        { contentType: 'image/jpeg', data: 'abc' },
+      ]);
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+  });
+
+  it('sets tooMany when more than 10 stills are chosen', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const files = Array.from(
+      { length: 11 },
+      (_, i) => new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${i}.jpg`, { type: 'image/jpeg' }),
+    );
+    await act(async () => {
+      fireEvent.change(input, { target: { files } });
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('sets tooLarge when prepareForumPhoto returns tooLarge', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+  });
+
+  it('sets unsupported when prepareForumPhoto rejects', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    prepareMock.mockRejectedValueOnce(new Error('decode'));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+  });
+
+  it('disables send while a still is still being prepared', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    let resolvePrepare:
+      | ((value: {
+          ok: true;
+          photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+        }) => void)
+      | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrepare = resolve;
+        }),
+    );
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      resolvePrepare?.({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      await Promise.resolve();
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('loads a stored photo blob for a hasPhoto row', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-1', 'm-pic', 0);
+  });
+
+  it('loads a stored photo when hasPhoto is true and photoCount is 0', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-legacy',
+        text: '',
+        hasPhoto: true,
+        photoCount: 0,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-legacy',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-1', 'm-legacy', 0);
+  });
+
+  it('skips a still when the photo fetch fails and loads the next', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-fail',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+      {
+        ...MESSAGE,
+        id: 'm-ok',
+        name: 'Bob',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    photoMock
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-next',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Bob')).toBeTruthy();
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-1', 'm-fail', 0);
+    expect(photoMock).toHaveBeenCalledWith('sess', 'conv-1', 'm-ok', 0);
+  });
+
+  it('revokes loaded photo blobs on unmount', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    view.unmount();
+    expect(revoke).toHaveBeenCalledWith('blob:inbox-photo');
+  });
+
+  it('revokes photo blobs when the session is lost while mounted', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({ session: null, account });
+    });
+    expect(revoke).toHaveBeenCalledWith('blob:inbox-photo');
+  });
+
+  it('clears drafts on thread switch and drops a hung prepare', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    let resolvePrepare:
+      | ((value: {
+          ok: true;
+          photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+        }) => void)
+      | undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePrepare = resolve;
+        }),
+    );
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    await act(async () => {
+      resolvePrepare?.({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+  });
+
+  it('revokes photo blobs that are no longer on the thread', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValueOnce([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    threadMock.mockResolvedValueOnce([MESSAGE]);
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account });
+    });
+    await waitFor(() => {
+      expect(revoke).toHaveBeenCalledWith('blob:inbox-photo');
+    });
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('does not fetch photos when session is null', () => {
+    useAuthStore.setState({ session: null, account });
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    const { container } = renderWithLocale(<InboxLoader />);
+    expect(container.firstChild).toBeNull();
+    expect(photoMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps empty validation and 3-arg text post without photos', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    postMock.mockResolvedValue({
+      id: 'm2',
+      name: 'Ada',
+      text: 'Follow up',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
+    });
+    expect(postMock.mock.calls[0]?.length).toBe(3);
   });
 });
 

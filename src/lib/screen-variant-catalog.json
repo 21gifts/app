@@ -1086,6 +1086,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-composer-photo",
+    "label": "/messages thread-composer-photo",
+    "visual": "state-messages-thread-composer-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-composer-photos",
+    "label": "/messages thread-composer-photos",
+    "visual": "state-messages-thread-composer-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-photo",
+    "label": "/messages thread-photo",
+    "visual": "state-messages-thread-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",

@@ -1339,6 +1339,27 @@ export const SCREEN_VARIANTS = [
     needle: 'messages thread-quoted-note',
   },
   {
+    route: '/messages',
+    id: 'thread-composer-photo',
+    image: 'messages-thread-composer-photo.png',
+    visual: 'state-messages-thread-composer-photo',
+    needle: 'messages thread-composer-photo',
+  },
+  {
+    route: '/messages',
+    id: 'thread-composer-photos',
+    image: 'messages-thread-composer-photos.png',
+    visual: 'state-messages-thread-composer-photos',
+    needle: 'messages thread-composer-photos',
+  },
+  {
+    route: '/messages',
+    id: 'thread-photo',
+    image: 'messages-thread-photo.png',
+    visual: 'state-messages-thread-photo',
+    needle: 'messages thread-photo',
+  },
+  {
     route: '/notifications',
     id: 'default',
     image: 'notifications.png',
