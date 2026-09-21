@@ -1,8 +1,14 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { InboxScreen, groupThreadGifts, type ThreadGiftGroup } from '@/components/InboxScreen';
+import {
+  InboxScreen,
+  groupThreadGifts,
+  type InboxScreenProps,
+  type ThreadGiftGroup,
+} from '@/components/InboxScreen';
 import type { Conversation, ConversationMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
@@ -11,6 +17,24 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 const push = vi.fn();
 const originalUserAgent = navigator.userAgent;
 const locationStub = { href: 'http://localhost/' };
+const htmlElementScrollTo = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
+const htmlElementScrollHeight = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  'scrollHeight',
+);
+
+function restoreHtmlElementScroll(): void {
+  if (htmlElementScrollTo === undefined) {
+    Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo');
+  } else {
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', htmlElementScrollTo);
+  }
+  if (htmlElementScrollHeight === undefined) {
+    Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+  } else {
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', htmlElementScrollHeight);
+  }
+}
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
@@ -28,6 +52,7 @@ afterEach(() => {
     configurable: true,
     value: originalUserAgent,
   });
+  restoreHtmlElementScroll();
 });
 
 const THREAD: Conversation = {
@@ -92,6 +117,29 @@ const RATE_DAY: FiatRateDay = {
   eur: '90000.00',
   php: '5600000.00',
 };
+
+/** Default open-thread props; tests override list / loading / error branches. */
+function inboxScreenProps(overrides: Partial<InboxScreenProps> = {}): InboxScreenProps {
+  return {
+    conversations: [THREAD],
+    error: false,
+    loading: false,
+    onRetry: () => undefined,
+    openId: 'conv-1',
+    onOpen: () => undefined,
+    messages: [MESSAGE],
+    messagesLoading: false,
+    messagesError: false,
+    onRetryMessages: () => undefined,
+    draft: '',
+    onDraftChange: () => undefined,
+    onPost: () => undefined,
+    posting: false,
+    formError: null,
+    showFilter: false,
+    ...overrides,
+  };
+}
 
 describe('groupThreadGifts', () => {
   it('returns one empty-gifts group per plain message in list order', () => {
@@ -1481,5 +1529,281 @@ describe('InboxScreen', () => {
     expect(items[2]?.textContent).toContain('Hi');
     expect(items[2]?.textContent).toContain('₿21');
     expect(screen.getAllByText('$0.02')).toHaveLength(3);
+  });
+
+  it('scrolls the AppShell scroller to the bottom for an open thread', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('scrolls the AppShell scroller to the bottom when an invoice pay sheet opens', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            invoice: { pr: 'lnbc21n1test', amountSats: 21 },
+            payWaiting: true,
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('does not scroll to the bottom when the invoice pay sheet closes', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            invoice: { pr: 'lnbc21n1test', amountSats: 21 },
+            payWaiting: true,
+          })}
+        />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ invoice: null, payWaiting: false })} />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to window while the AppShell scroller is mounting', () => {
+    const windowScrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    expect(windowScrollTo).not.toHaveBeenCalled();
+    windowScrollTo.mockRestore();
+  });
+
+  it('sets AppShell scroller scrollTop to the bottom when scrollTo is missing', () => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    expect(scroller.scrollTop).toBe(1200);
+  });
+
+  it('scrolls the window to the bottom for an open thread outside AppShell', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(<InboxScreen {...inboxScreenProps()} />);
+    expect(scrollTo).toHaveBeenCalledWith(0, document.documentElement.scrollHeight);
+    scrollTo.mockRestore();
+  });
+
+  it('does not scroll to the bottom on the conversation list', () => {
+    const windowScrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const { container, rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />
+      </AppShell>,
+    );
+    expect(windowScrollTo).not.toHaveBeenCalled();
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    const scrollTo = vi.fn();
+    scroller.scrollTo = scrollTo;
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({ openId: null, messages: null, conversations: [THREAD, DIRECT] })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    windowScrollTo.mockRestore();
+  });
+
+  it('does not scroll to the bottom when openId is empty', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ openId: '' })} />);
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
+  });
+
+  it('does not scroll to the bottom while messages are loading', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ messages: [MESSAGE], messagesLoading: true })} />,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
+  });
+
+  it('does not scroll to the bottom when the thread fetch failed', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ messages: [MESSAGE], messagesError: true })} />,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
+  });
+
+  it('scrolls to the bottom again when the last message id changes', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const { rerender } = renderWithLocale(<InboxScreen {...inboxScreenProps()} />);
+    expect(scrollTo).toHaveBeenCalledWith(0, document.documentElement.scrollHeight);
+    scrollTo.mockClear();
+    rerender(
+      <InboxScreen
+        {...inboxScreenProps({
+          messages: [MESSAGE, { ...MESSAGE, id: 'm2', text: 'Next' }],
+        })}
+      />,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, document.documentElement.scrollHeight);
+    scrollTo.mockRestore();
+  });
+
+  it('scrolls to the bottom for an empty open thread so the composer is in view', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ messages: [] })} />);
+    expect(scrollTo).toHaveBeenCalledWith(0, document.documentElement.scrollHeight);
+    scrollTo.mockRestore();
+  });
+
+  it('scrolls the AppShell scroller to the top once when returning to the list', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({ openId: null, messages: null, conversations: [THREAD, DIRECT] })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('sets AppShell scroller scrollTop to the top when scrollTo is missing', () => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    const { container, rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.scrollTop = 800;
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />
+      </AppShell>,
+    );
+    const listScroller = container.querySelector('.overflow-y-auto');
+    expect(listScroller).toBeTruthy();
+    if (!(listScroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    expect(listScroller.scrollTop).toBe(0);
+  });
+
+  it('scrolls the window to the top once when returning to the list outside AppShell', () => {
+    const { rerender } = renderWithLocale(<InboxScreen {...inboxScreenProps()} />);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    rerender(<InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    scrollTo.mockClear();
+    rerender(<InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />);
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
   });
 });
