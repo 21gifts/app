@@ -5604,7 +5604,7 @@ test('Function: useAppShellScroller — welcome inner scroller drives New posts'
     replyCount: 0,
   }));
   let messagesBody: unknown = { messages: first };
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
