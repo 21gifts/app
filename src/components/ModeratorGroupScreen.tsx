@@ -409,8 +409,11 @@ export function ModeratorGroupScreen(): ReactElement | null {
                   data: photo.data,
                 })),
               );
-        /* v8 ignore next -- first message in an empty staff-room thread */
-        setMessages((prev) => (prev === null ? [created] : [...prev, created]));
+        setMessages((prev) => {
+          /* v8 ignore next -- first message in an empty staff-room thread */
+          if (prev === null) return [created];
+          return [...prev, created];
+        });
         setDraft('');
         setPhotoDrafts([]);
         if (created.hasPhoto) {
