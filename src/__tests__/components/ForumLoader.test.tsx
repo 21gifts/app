@@ -397,10 +397,7 @@ describe('ForumLoader', () => {
 
   it('feed="shops" lists only #21GiftsShop notes', async () => {
     fetchMock.mockResolvedValue(
-      forumPage([
-        SAMPLE,
-        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
-      ]),
+      forumPage([SAMPLE, { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
     );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
@@ -459,10 +456,7 @@ describe('ForumLoader', () => {
       account: { ...account, forumLawsDismissed: true },
     });
     fetchMock.mockResolvedValue(
-      forumPage([
-        SAMPLE,
-        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 },
-      ]),
+      forumPage([SAMPLE, { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 }]),
     );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
@@ -590,10 +584,7 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        'sess',
-        expect.objectContaining({ cursor: 'cur_2' }),
-      );
+      expect(fetchMock).toHaveBeenCalledWith('sess', expect.objectContaining({ cursor: 'cur_2' }));
     });
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
