@@ -333,7 +333,15 @@ export function ForumAskWizard({
               <ForumGoalBar sats={0} goalSats={parsedAsk} rateDay={rateDay} />
             ) : null}
           </div>
-          <Button type="button" variant="primary" size="lg" disabled={posting} onClick={onPost}>
+          <Button
+            type="button"
+            variant="primary"
+            size="lg"
+            disabled={
+              posting || (draft.trim() === '' && photoDrafts.length === 0 && videoDraft === null)
+            }
+            onClick={onPost}
+          >
             {posting ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : null}
             {t('forum.post')}
           </Button>

@@ -83,7 +83,10 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.getByText('0%')).toBeTruthy();
     expect(screen.getByText('Post')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect((screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });
 
@@ -105,6 +108,13 @@ describe('ForumAskWizard', () => {
     rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(4);
+  });
+
+  it('disables preview Post without text or media', () => {
+    renderWithLocale(<ForumAskWizard step={4} onStepChange={() => undefined} {...idle} />);
+    expect((screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('caps the text step at composerMaxLength', () => {
