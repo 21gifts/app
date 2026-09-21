@@ -4984,7 +4984,6 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
-    await fulfillRateDay(page);
   }
 
   async function stubPayInvoice(page: Page): Promise<void> {
@@ -5269,6 +5268,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome goal-50', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -5298,6 +5298,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome goal-100', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -5327,6 +5328,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome goal-110', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -5358,6 +5360,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome ask-amount', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Ask for money' }).click();
@@ -5370,6 +5373,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome ask-open', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -5436,6 +5440,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome ask-preview', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Ask for money' }).click();
