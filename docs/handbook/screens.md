@@ -1292,7 +1292,7 @@ Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of S
 
 ### Variant: thread-quoted-note
 
-Open Direct thread. Incoming bubble text includes a public forum note URL; the nested quoted-note card shows **A Quick Technical Note** and hides the raw `https://21.gifts/messages/<uuid>` URL. Composer with ImagePlus attach visible.
+Open Direct thread. Incoming bubble text includes a public forum note URL; the nested quoted-note card shows **A Quick Technical Note** and hides the raw `https://21.gifts/messages/<uuid>` URL.
 
 ![21.gifts inbox thread quoted note](images/messages-thread-quoted-note.png)
 

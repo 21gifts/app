@@ -514,6 +514,9 @@ export function InboxLoader(): ReactElement | null {
   }
 
   const onPickFiles = (files: FileList): void => {
+    if (posting || payWaiting || invoice !== null) {
+      return;
+    }
     const generation = ++pickGeneration.current;
     const selected = Array.from(files);
     setPreparing(true);
@@ -595,6 +598,7 @@ export function InboxLoader(): ReactElement | null {
     if (sats !== 'empty') {
       pickGeneration.current += 1;
       setPhotoDrafts([]);
+      setPreparing(false);
       void (async () => {
         let minted;
         try {
@@ -649,6 +653,7 @@ export function InboxLoader(): ReactElement | null {
           setAmountDraft('');
           pickGeneration.current += 1;
           setPhotoDrafts([]);
+          setPreparing(false);
           setInvoice(null);
           setPayWaiting(false);
           const gift =

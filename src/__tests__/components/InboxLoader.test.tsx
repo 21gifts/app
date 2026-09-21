@@ -1399,6 +1399,55 @@ describe('InboxLoader', () => {
     );
   });
 
+  it('ignores a pick during the pay sheet and does not leave send disabled after pay', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    const gift: ConversationMessage = {
+      id: 'gift-1',
+      name: 'Ada',
+      text: 'For you',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      fromMe: true,
+      sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'For you' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(prepareMock).not.toHaveBeenCalled();
+    await act(async () => {
+      resolvePoll?.([MESSAGE, gift]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('For you')).toBeTruthy();
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+    });
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
   it('mints an amount invoice without attaching selected photos and clears drafts after pay', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
