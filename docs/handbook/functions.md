@@ -973,7 +973,7 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 - **Purpose:** Append `\n\n#21GiftsShop` when missing; empty/whitespace becomes `#21GiftsShop`; already-tagged text is unchanged.
 - **Inputs:** `text: string`.
-- **Returns / side effects:** Text to POST. No network.
+- **Returns / side effects:** Text to POST when the author is unpaid-write exempt, otherwise the compose-fee invoice comment. No network.
 - **Used by:** `ForumLoader` (shops compose).
 
 ## Function: RulesDocument

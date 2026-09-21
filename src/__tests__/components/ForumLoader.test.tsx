@@ -605,6 +605,30 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" invoices a basis post with #21GiftsShop', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        'Cafe Luna\n\n#21GiftsShop',
+      );
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it('feed="shops" shows a zero-sat basis shop note immediately', async () => {
     window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
     useAuthStore.setState({
