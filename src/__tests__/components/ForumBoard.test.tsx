@@ -471,7 +471,7 @@ describe('ForumBoard', () => {
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');
-    const button = screen.getByRole('button', { name: 'Post', exact: true });
+    const button = screen.getByRole('button', { name: /^Post$/ });
     expect(button).toBeTruthy();
     expect(button.textContent?.trim()).toBe('');
     expect(screen.getByLabelText('Add a photo or video').textContent?.trim()).toBe('');
@@ -2451,7 +2451,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    const button = screen.getByRole('button', { name: 'Post', exact: true }) as HTMLButtonElement;
+    const button = screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.querySelector('.animate-spin')).toBeTruthy();
   });
@@ -2476,7 +2476,7 @@ describe('ForumBoard', () => {
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     expect(onDraftChange).toHaveBeenCalledWith('Hi');
-    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });
 
