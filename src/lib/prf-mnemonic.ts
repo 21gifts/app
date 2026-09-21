@@ -126,14 +126,16 @@ export async function obtainPrfFirst(credential: PublicKeyCredential): Promise<U
  * @returns PRF first bytes, or `null`.
  */
 export async function obtainPrfFirstFromGet(
-  allowCredentialId: BufferSource,
+  allowCredentialId: Uint8Array,
 ): Promise<Uint8Array | null> {
   const salt = await prfEvalFirstSalt();
+  const idBytes = new Uint8Array(allowCredentialId.byteLength);
+  idBytes.set(allowCredentialId);
   const assertion = (await navigator.credentials.get({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
       rpId: window.location.hostname,
-      allowCredentials: [{ type: 'public-key', id: allowCredentialId }],
+      allowCredentials: [{ type: 'public-key', id: idBytes }],
       userVerification: 'required',
       extensions: { prf: { eval: { first: Uint8Array.from(salt) } } },
     },
