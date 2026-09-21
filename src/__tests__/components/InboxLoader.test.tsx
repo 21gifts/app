@@ -101,6 +101,8 @@ const MESSAGE: ConversationMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   fromMe: false,
   sats: 0,
+  hasPhoto: false,
+  photoCount: 0,
 };
 
 beforeEach(() => {
@@ -209,6 +211,8 @@ describe('InboxLoader', () => {
       createdAt: '2026-08-28T13:00:00.000Z',
       fromMe: true,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
@@ -245,6 +249,8 @@ describe('InboxLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       fromMe: true,
       sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
     };
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -289,6 +295,8 @@ describe('InboxLoader', () => {
         createdAt: '2026-08-28T14:00:00.000Z',
         fromMe: true,
         sats: 21,
+        hasPhoto: false,
+        photoCount: 0,
       },
     ]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
@@ -359,6 +367,8 @@ describe('InboxLoader', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       fromMe: true,
       sats: 1,
+      hasPhoto: false,
+      photoCount: 0,
     };
     threadMock.mockResolvedValueOnce([MESSAGE]).mockResolvedValueOnce([MESSAGE, gift]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc1n1test', amountSats: 1, messageId: 'missing' });
@@ -565,6 +575,8 @@ describe('InboxLoader', () => {
           createdAt: '2026-08-28T14:00:00.000Z',
           fromMe: true,
           sats: 21,
+          hasPhoto: false,
+          photoCount: 0,
         },
       ]);
     });
@@ -660,6 +672,8 @@ describe('InboxLoader', () => {
         createdAt: '2026-08-28T13:00:00.000Z',
         fromMe: true,
         sats: 0,
+        hasPhoto: false,
+        photoCount: 0,
       });
     });
     expect(screen.queryByText('Follow up')).toBeNull();

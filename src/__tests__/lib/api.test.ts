@@ -5,6 +5,7 @@ import {
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
+  fetchConversationMessagePhoto,
   fetchConversations,
   fetchModeratorGroup,
   fetchNotifications,
@@ -2415,6 +2416,8 @@ const conversationMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   fromMe: false,
   sats: 0,
+  hasPhoto: false,
+  photoCount: 0,
 };
 
 describe('fetchConversations', () => {
@@ -2677,6 +2680,82 @@ describe('postConversationMessage', () => {
     stubFetch({ ok: false, status: 503, body: {} });
     await expect(postConversationMessage('sess', 'c1', 'x')).rejects.toThrow(
       'Could not send your message',
+    );
+  });
+
+  it('posts photos with the first still duplicated as photo', async () => {
+    const stills = [
+      { contentType: 'image/jpeg', data: 'aaa' },
+      { contentType: 'image/png', data: 'bbb' },
+    ];
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...conversationMessage, hasPhoto: true, photoCount: 2 },
+    });
+    await expect(postConversationMessage('sess', 'conv-1', 'Hi', stills)).resolves.toEqual({
+      ...conversationMessage,
+      hasPhoto: true,
+      photoCount: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/conv-1', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hi', photo: stills[0], photos: stills }),
+    });
+  });
+});
+
+describe('fetchConversationMessagePhoto', () => {
+  it('fetches index 0 from /photo', async () => {
+    const blob = new Blob(['jpeg'], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => blob,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchConversationMessagePhoto('sess', 'c1', 'm1')).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1/messages/m1/photo', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('fetches extra stills from /photo/n.jpg', async () => {
+    const blob = new Blob(['jpeg'], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => blob,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchConversationMessagePhoto('sess', 'c1', 'm1', 2)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1/messages/m1/photo/2.jpg', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy when empty or not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => new Blob([]),
+      }),
+    );
+    await expect(fetchConversationMessagePhoto('sess', 'c1', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        blob: async () => new Blob(['x']),
+      }),
+    );
+    await expect(fetchConversationMessagePhoto('sess', 'c1', 'm1')).rejects.toThrow(
+      'Could not load messages. Please try again.',
     );
   });
 });

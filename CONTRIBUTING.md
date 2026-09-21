@@ -107,6 +107,8 @@ app/
 │   │   │   └── [id]/
 │   │   │       ├── route.ts     # GET/POST /conversations/[id]
 │   │   │       ├── invoice/route.ts  # POST /conversations/:id/invoice
+│   │   │       ├── messages/[messageId]/photo/route.ts # GET conversation photo 0
+│   │   │       ├── messages/[messageId]/photo/[file]/route.ts # GET extra stills 1–9
 │   │   │       └── read/route.ts # POST /conversations/[id]/read
 │   │   ├── forum/
 │   │   │   ├── messages/

@@ -1770,6 +1770,9 @@ export async function postConversationInvoice(
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Conversation UUID.
  * @param text - Message body as typed (api trims and validates length).
+ * @param photos - Optional JPEG/PNG/WebP stills (`contentType` + raw base64 `data`).
+ *   When non-empty, the JSON body also sends `photo` (first still) and
+ *   `photos` (all stills, max 10). Omitted for existing 3-argument callers.
  * @returns The created {@link ConversationMessage}.
  * @throws Error when the api rejects the text (400) — the api error string
  * when present, otherwise a fallback — on any other non-2xx status, or when
@@ -1779,14 +1782,19 @@ export async function postConversationMessage(
   sessionToken: string,
   id: string,
   text: string,
+  photos?: { contentType: string; data: string }[],
 ): Promise<ConversationMessage> {
+  const stills = photos !== undefined && photos.length > 0 ? photos.slice(0, 10) : [];
   const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
+    }),
   });
   if (response.status === 400) {
     const raw = await readApiError(response);
@@ -1796,6 +1804,46 @@ export async function postConversationMessage(
     throw new Error('Could not send your message');
   }
   return conversationMessageSchema.parse(await response.json());
+}
+
+/**
+ * Fetches the JPEG/PNG/WebP bytes for one indexed conversation message photo.
+ *
+ * Auth is a Bearer token in JS memory, so callers must use the returned blob
+ * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
+ * same-origin photo path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param conversationId - Conversation UUID.
+ * @param messageId - Conversation message id.
+ * @param index - Zero-based photo index. Index zero uses the legacy route.
+ * @returns The photo body as a `Blob`.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * response is empty — same family as {@link fetchMessagePhoto}; does not leak
+ * status.
+ */
+export async function fetchConversationMessagePhoto(
+  sessionToken: string,
+  conversationId: string,
+  messageId: string,
+  index = 0,
+): Promise<Blob> {
+  try {
+    const base = `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/photo`;
+    const response = await fetch(index <= 0 ? base : `${base}/${index}.jpg`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return blob;
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
 }
 
 /**

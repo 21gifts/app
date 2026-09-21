@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
   fetchConversation,
+  fetchConversationMessagePhoto,
   fetchModeratorGroup,
   markConversationRead,
   postConversationMessage,
@@ -17,21 +18,36 @@ import {
   type ConversationMessage,
 } from '@/lib/api-types';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
+import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Revoke a blob URL; data URLs from {@link prepareForumPhoto} are left alone. */
+function revokeIfBlob(url: string): void {
+  if (url.startsWith('blob:')) {
+    URL.revokeObjectURL(url);
+  }
+}
 
 /**
  * Signed-in closed moderator-group thread.
  *
  * Moderators fetch {@link fetchModeratorGroup} then
  * {@link fetchConversation} and reuse {@link InboxScreen} as the open thread
- * (`showFilter` and `showAmount` false; the heading is always the catalog
- * `moderate.groupLabel`, never the api row name). After a successful group
- * and thread fetch, marks the room read (`markConversationRead`), bumps the
- * badge epoch, and refreshes the home-screen badge with staff-room unread
- * `0`. Other signed-in visitors and a missing account see forbidden copy and
- * do not fetch. Renders nothing without a session. Back to the moderation hub
- * is the page chrome (no in-card back).
+ * (`showFilter` and `showAmount` false; `showAttach` true; the heading is
+ * always the catalog `moderate.groupLabel`, never the api row name).
+ * JPEG/PNG/WebP stills use {@link prepareForumPhoto} (cap 10); photo-only
+ * send is allowed. Send is disabled while a pick is still preparing
+ * (`posting || preparing`). Thread stills load via {@link fetchConversationMessagePhoto}.
+ * Losing staff while mounted bumps `pickGeneration`, clears drafts and
+ * preparing, and revokes blob URLs (same cleanup as unmount). Passes
+ * `rateDay` from {@link useLatestRateDay} into {@link InboxScreen}.
+ * After a successful group and thread fetch, marks the room read
+ * (`markConversationRead`), bumps the badge epoch, and refreshes the
+ * home-screen badge with staff-room unread `0`. Other signed-in visitors
+ * and a missing account see forbidden copy and do not fetch. Renders
+ * nothing without a session. Back to the moderation hub is the page
+ * chrome (no in-card back).
  *
  * @returns The group thread, forbidden copy, or `null` without a session.
  */
@@ -47,7 +63,13 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const [messages, setMessages] = useState<ConversationMessage[] | null>(null);
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
+  const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrlsRef = useRef(photoUrls);
+  photoUrlsRef.current = photoUrls;
+  const pickGeneration = useRef(0);
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -83,6 +105,113 @@ export function ModeratorGroupScreen(): ReactElement | null {
       cancelled = true;
     };
   }, [session, staff, attempt]);
+
+  useEffect(() => {
+    if (session === null || !staff) {
+      pickGeneration.current += 1;
+      setPreparing(false);
+      setPhotoDrafts([]);
+      setFormError(null);
+      const urls = photoUrlsRef.current;
+      for (const url of Object.values(urls)) {
+        revokeIfBlob(url);
+      }
+      if (Object.keys(urls).length > 0) {
+        setPhotoUrls({});
+      }
+    }
+  }, [session, staff]);
+
+  useEffect(() => {
+    if (session === null || !staff || messages === null || group === null) {
+      return;
+    }
+    const conversationId = group.id;
+    let cancelled = false;
+    const liveKeys = new Set(
+      messages.flatMap((message) => {
+        const count = message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0;
+        return Array.from({ length: count }, (_, index) => `${message.id}:${index}`);
+      }),
+    );
+    const stale = Object.entries(photoUrlsRef.current).filter(([key]) => !liveKeys.has(key));
+    if (stale.length > 0) {
+      for (const [, url] of stale) {
+        revokeIfBlob(url);
+      }
+      setPhotoUrls((prev) => {
+        const next = { ...prev };
+        for (const [key] of stale) {
+          delete next[key];
+        }
+        return next;
+      });
+    }
+    const missing = messages.flatMap((message) => {
+      const count = message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0;
+      return Array.from({ length: count }, (_, index) => ({
+        id: message.id,
+        index,
+        key: `${message.id}:${index}`,
+      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
+    });
+    if (missing.length === 0) {
+      return;
+    }
+    void (async () => {
+      for (const photo of missing) {
+        /* v8 ignore next 3 -- skip ids filled while earlier fetches in this loop ran */
+        if (photoUrlsRef.current[photo.key] !== undefined) {
+          continue;
+        }
+        let blob: Blob;
+        try {
+          blob = await fetchConversationMessagePhoto(
+            session,
+            conversationId,
+            photo.id,
+            photo.index,
+          );
+        } catch {
+          /* v8 ignore next 3 -- unmount during a failed fetch */
+          if (cancelled) {
+            return;
+          }
+          continue;
+        }
+        /* v8 ignore next 3 -- unmount after a successful fetch */
+        if (cancelled) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        /* v8 ignore next 4 -- unmount after createObjectURL */
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPhotoUrls((prev) => {
+          /* v8 ignore next 4 -- race if the same id was filled while the fetch was in flight */
+          if (prev[photo.key] !== undefined) {
+            URL.revokeObjectURL(url);
+            return prev;
+          }
+          return { ...prev, [photo.key]: url };
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, staff, messages, group?.id]);
+
+  useEffect(() => {
+    return () => {
+      pickGeneration.current += 1;
+      for (const url of Object.values(photoUrlsRef.current)) {
+        revokeIfBlob(url);
+      }
+    };
+  }, []);
 
   if (session === null) {
     return null;
@@ -132,9 +261,63 @@ export function ModeratorGroupScreen(): ReactElement | null {
     );
   }
 
+  const onPickFiles = (files: FileList): void => {
+    const generation = ++pickGeneration.current;
+    const selected = Array.from(files);
+    setPreparing(true);
+    void (async () => {
+      const nextPhotos = photoDrafts.slice(0, 10);
+      let nextError: InboxFormError = null;
+      const remaining = 10 - nextPhotos.length;
+      if (selected.length > remaining) {
+        nextError = 'tooMany';
+      }
+      try {
+        for (const file of selected.slice(0, Math.max(0, remaining))) {
+          try {
+            const result = await prepareForumPhoto(file);
+            /* v8 ignore next 3 -- a newer pick replaced this generation */
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (result.ok) {
+              nextPhotos.push(result.photo);
+            } else if (nextError !== 'tooMany') {
+              nextError = result.error;
+            }
+          } catch {
+            /* v8 ignore next 3 -- a newer pick replaced this generation */
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (nextError !== 'tooMany') {
+              nextError = 'unsupported';
+            }
+          }
+        }
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        setPhotoDrafts(nextPhotos);
+        setFormError(nextError);
+      } finally {
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation === pickGeneration.current) {
+          setPreparing(false);
+        }
+      }
+    })();
+  };
+
+  const onRemovePhoto = (index: number): void => {
+    setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
+    setFormError(null);
+  };
+
   const onPost = (): void => {
     const trimmed = draft.trim();
-    if (trimmed === '') {
+    if (trimmed === '' && photoDrafts.length === 0) {
       setFormError('empty');
       return;
     }
@@ -142,14 +325,37 @@ export function ModeratorGroupScreen(): ReactElement | null {
       setFormError('tooLong');
       return;
     }
+    pickGeneration.current += 1;
     const conversationId = group.id;
+    const pendingPhotos = photoDrafts;
     setPosting(true);
     setFormError(null);
     void (async () => {
       try {
-        const created = await postConversationMessage(session, conversationId, trimmed);
+        const created =
+          pendingPhotos.length === 0
+            ? await postConversationMessage(session, conversationId, trimmed)
+            : await postConversationMessage(
+                session,
+                conversationId,
+                trimmed,
+                pendingPhotos.map((photo) => ({
+                  contentType: photo.contentType,
+                  data: photo.data,
+                })),
+              );
         setMessages([...messages, created]);
         setDraft('');
+        setPhotoDrafts([]);
+        if (created.hasPhoto) {
+          setPhotoUrls((prev) => {
+            const next = { ...prev };
+            pendingPhotos.forEach((photo, index) => {
+              next[`${created.id}:${index}`] = photo.previewUrl;
+            });
+            return next;
+          });
+        }
         setGroup({
           ...group,
           lastText: created.text,
@@ -186,11 +392,16 @@ export function ModeratorGroupScreen(): ReactElement | null {
         setFormError(null);
       }}
       onPost={onPost}
-      posting={posting}
+      posting={posting || preparing}
       formError={formError}
       showFilter={false}
       showAmount={false}
       rateDay={rateDay}
+      showAttach
+      photoDrafts={photoDrafts}
+      onPickFiles={onPickFiles}
+      onRemovePhoto={onRemovePhoto}
+      photoUrls={photoUrls}
     />
   );
 }

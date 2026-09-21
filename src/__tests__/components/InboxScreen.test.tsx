@@ -9,7 +9,8 @@ import {
   type InboxScreenProps,
   type ThreadGiftGroup,
 } from '@/components/InboxScreen';
-import type { Conversation, ConversationMessage } from '@/lib/api-types';
+import { fetchPublicMessage } from '@/lib/api';
+import type { Conversation, ConversationMessage, ForumMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -38,6 +39,11 @@ function restoreHtmlElementScroll(): void {
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
+}));
+
+vi.mock('@/lib/api', () => ({
+  fetchPublicMessage: vi.fn(),
+  fetchPublicMessagePhoto: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -112,6 +118,8 @@ const MESSAGE: ConversationMessage = {
   createdAt: '2026-08-28T12:00:00.000Z',
   fromMe: false,
   sats: 0,
+  hasPhoto: false,
+  photoCount: 0,
 };
 
 const RATE_DAY: FiatRateDay = {
@@ -1839,5 +1847,358 @@ describe('InboxScreen', () => {
     rerender(<InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />);
     expect(scrollTo).not.toHaveBeenCalled();
     scrollTo.mockRestore();
+  });
+
+  it('hides the attach control by default', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Add a photo' })).toBeNull();
+    expect(document.querySelector('input[type="file"]')).toBeNull();
+  });
+
+  it('previews one or many attached stills', () => {
+    const drafts = [
+      { contentType: 'image/jpeg' as const, data: 'a', previewUrl: 'data:image/jpeg;base64,a' },
+      { contentType: 'image/jpeg' as const, data: 'b', previewUrl: 'data:image/jpeg;base64,b' },
+    ];
+    const onRemovePhoto = vi.fn();
+    const { rerender } = renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+        showAttach
+        photoDrafts={[drafts[0]!]}
+        onRemovePhoto={onRemovePhoto}
+      />,
+    );
+    expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    expect(screen.queryByText('Remove photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(onRemovePhoto).toHaveBeenCalledWith(0);
+    rerender(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+        showAttach
+        photoDrafts={drafts}
+        onRemovePhoto={onRemovePhoto}
+      />,
+    );
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
+    expect(screen.queryByText('Remove photo')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[1]!);
+    expect(onRemovePhoto).toHaveBeenCalledWith(1);
+  });
+
+  it('forwards chosen files to onPickFiles', () => {
+    const onPickFiles = vi.fn();
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+        showAttach
+        onPickFiles={onPickFiles}
+      />,
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(onPickFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the attach control when showAttach is true', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAmount={false}
+        showAttach
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
+    expect(document.querySelector('input[type="file"]')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  it('uses default attach handlers and the amount field when showAttach is true', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        showAttach
+        photoDrafts={[
+          { contentType: 'image/jpeg', data: 'a', previewUrl: 'data:image/jpeg;base64,a' },
+        ]}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(screen.queryByText('Remove photo')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a photo')).toBeNull();
+  });
+
+  it('renders a thread photo from photoUrls', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[{ ...MESSAGE, hasPhoto: true, photoCount: 1 }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        photoUrls={{ 'm1:0': 'blob:inbox-photo' }}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+  });
+
+  it('renders a thread photo when hasPhoto is true and photoCount is 0', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[{ ...MESSAGE, hasPhoto: true, photoCount: 0 }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        photoUrls={{ 'm1:0': 'blob:inbox-legacy-photo' }}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+  });
+
+  it('unfurls a pasted public note URL and hides the raw link', async () => {
+    const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
+    const quotedUrl = `https://21.gifts/messages/${quotedId}`;
+    const quoted: ForumMessage = {
+      id: quotedId,
+      name: 'Cyrill',
+      text: 'Nested post',
+      createdAt: '2026-08-20T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      replyCount: 0,
+      role: 'founder',
+    };
+    vi.mocked(fetchPublicMessage).mockResolvedValue(quoted);
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[{ ...MESSAGE, text: `see ${quotedUrl}` }]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    expect(await screen.findByText('Nested post')).toBeTruthy();
+    expect(screen.queryByText(quotedUrl)).toBeNull();
+  });
+
+  it('shows attach validation errors', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError="unsupported"
+        showFilter={false}
+        showAttach
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+  });
+
+  it('shows tooLarge and tooMany attach errors', () => {
+    const { rerender } = renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError="tooLarge"
+        showFilter={false}
+        showAttach
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    rerender(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError="tooMany"
+        showFilter={false}
+        showAttach
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
   });
 });

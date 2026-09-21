@@ -576,6 +576,26 @@ export async function proxyConversationReadPost(
 }
 
 /**
+ * Proxies GET /conversations/:id/messages/:messageId/photo or an indexed
+ * photo file to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param conversationId - Conversation UUID from the dynamic route segment.
+ * @param messageId - Conversation message id from the dynamic route segment.
+ * @param file - Optional indexed photo filename such as `1.jpg`.
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyConversationMessagePhotoGet(
+  request: Request,
+  conversationId: string,
+  messageId: string,
+  file?: string,
+): Promise<Response> {
+  const base = `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/photo`;
+  return proxyApiRequest(request, file === undefined || file === '' ? base : `${base}/${file}`);
+}
+
+/**
  * Proxies GET /notifications to the 21.gifts api (app path `/forum/notifications`).
  *
  * HTML `/notifications` is the page; Next.js forbids a `route.ts` beside that
