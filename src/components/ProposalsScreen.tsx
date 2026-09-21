@@ -23,7 +23,7 @@ function personLabel(name: string | null, unnamed: string): string {
 }
 
 /**
- * Signed-in staff confirm queue of open moderator proposals.
+ * Signed-in staff confirm/reject queue of open moderator proposals.
  *
  * Moderators see one list: Confirm as moderator when they did not
  * propose; waiting copy when `proposedBy.id === account.id`. Reject is on

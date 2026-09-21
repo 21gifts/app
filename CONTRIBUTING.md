@@ -144,7 +144,7 @@ app/
 │   │   ├── moderate/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
-│   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm/reject queue
 │   │   │   ├── applications/page.tsx # GET /moderate/applications — grant queue
 │   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — grant review
 │   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
@@ -293,7 +293,7 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
-│   ├── proposals.spec.ts        # /moderate/proposals staff confirm queue
+│   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /moderate/applications grant queue and review
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
