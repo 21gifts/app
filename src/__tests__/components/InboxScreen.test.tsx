@@ -1584,6 +1584,49 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
+  it('does not scroll to the bottom when the invoice pay sheet closes', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            invoice: { pr: 'lnbc21n1test', amountSats: 21 },
+            payWaiting: true,
+          })}
+        />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ invoice: null, payWaiting: false })} />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to window while the AppShell scroller is mounting', () => {
+    const windowScrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    expect(windowScrollTo).not.toHaveBeenCalled();
+    windowScrollTo.mockRestore();
+  });
+
   it('sets AppShell scroller scrollTop to the bottom when scrollTo is missing', () => {
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
       configurable: true,

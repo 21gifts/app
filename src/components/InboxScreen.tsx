@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import {
   type FormEvent,
   type ReactElement,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
-import { useAppShellScroller } from '@/components/AppShell';
+import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -343,8 +344,12 @@ export function InboxScreen({
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const inShell = useContext(AppShellContext) !== null;
   const scroller = useAppShellScroller();
   const hadOpenThreadRef = useRef(false);
+  const paySheetWasOpen = useRef(false);
+  const payWaitingWasOn = useRef(false);
+  const payQrWasOn = useRef(false);
   const [filter, setFilter] = useState<InboxFilter>('direct');
   const [showPaymentQr, setShowPaymentQr] = useState(false);
 
@@ -364,6 +369,9 @@ export function InboxScreen({
   }, []);
 
   useLayoutEffect(() => {
+    if (inShell && scroller === null) {
+      return;
+    }
     const threadOpen = openId !== null && openId !== '';
     if (threadOpen) {
       hadOpenThreadRef.current = true;
@@ -376,13 +384,36 @@ export function InboxScreen({
       shellScrollToTop(scroller);
       hadOpenThreadRef.current = false;
     }
+  }, [openId, messagesReady, messagesLoading, messagesError, lastMessageId, scroller, inShell]);
+
+  useLayoutEffect(() => {
+    if (inShell && scroller === null) {
+      return;
+    }
+    const threadOpen = openId !== null && openId !== '';
+    const paySheetOpen = invoice !== null;
+    const sheetOpened = paySheetOpen && !paySheetWasOpen.current;
+    const waitingAppeared = paySheetOpen && payWaiting && !payWaitingWasOn.current;
+    const qrAppeared = paySheetOpen && showPaymentQr && !payQrWasOn.current;
+    paySheetWasOpen.current = paySheetOpen;
+    payWaitingWasOn.current = paySheetOpen && payWaiting;
+    payQrWasOn.current = paySheetOpen && showPaymentQr;
+    if (
+      threadOpen &&
+      messagesReady &&
+      messagesLoading === false &&
+      messagesError === false &&
+      (sheetOpened || waitingAppeared || qrAppeared)
+    ) {
+      shellScrollToBottom(scroller);
+    }
   }, [
     openId,
     messagesReady,
     messagesLoading,
     messagesError,
-    lastMessageId,
     scroller,
+    inShell,
     invoice,
     payWaiting,
     showPaymentQr,
