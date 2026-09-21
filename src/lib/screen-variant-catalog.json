@@ -1416,6 +1416,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:shop-tag",
+    "label": "/welcome shop-tag",
+    "visual": "state-welcome-shop-tag",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:default",
+    "label": "/shops default",
+    "visual": "screen-shops",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:empty",
+    "label": "/shops empty",
+    "visual": "state-shops-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:loading",
+    "label": "/shops loading",
+    "visual": "state-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:error",
+    "label": "/shops error",
+    "visual": "state-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:translate",
     "label": "/messages/[id] translate",
     "visual": "state-messages-id-translate",
@@ -1467,36 +1497,6 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:shop-tag",
-    "label": "/welcome shop-tag",
-    "visual": "state-welcome-shop-tag",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:default",
-    "label": "/shops default",
-    "visual": "screen-shops",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:empty",
-    "label": "/shops empty",
-    "visual": "state-shops-empty",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:loading",
-    "label": "/shops loading",
-    "visual": "state-shops-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:error",
-    "label": "/shops error",
-    "visual": "state-shops-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

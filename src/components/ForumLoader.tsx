@@ -559,7 +559,10 @@ export function ForumLoader({
           ).filter((row) => !deletedIds.current.has(row.id));
           return [...optimistic, ...merged.filter((row) => !optimisticIds.has(row.id))];
         });
-        if (messagesRef.current === null) {
+        if (
+          messagesRef.current === null ||
+          (feed === 'shops' && filterListed(messagesRef.current).length === 0)
+        ) {
           nextCursorRef.current = next.nextCursor;
           setNextCursor(next.nextCursor);
         }

@@ -531,6 +531,37 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" retries later pages after a failed cursor fetch then refresh', async () => {
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
+      .mockResolvedValue(
+        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+      );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+  });
+
   it('feed="shops" shows empty when a later cursor page fails', async () => {
     fetchMock
       .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
