@@ -505,7 +505,7 @@ test('Function: fetchConversationMessagePhoto — group thread shows the attache
       body: JSON.stringify({ conversation: GROUP }),
     });
   });
-  await page.route('**/conversations/conv-mod', async (route) => {
+  await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
