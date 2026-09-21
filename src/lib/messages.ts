@@ -1281,7 +1281,7 @@ const de = {
   'notifications.photoOnly': 'Foto-Reaktion',
   'notifications.photoPost': 'Foto',
   'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
-  'notifications.moderatorProposal': '{name} hat eine Moderation vorgeschlagen',
+  'notifications.moderatorProposal': '{name} hat einen Moderator vorgeschlagen',
 
   'moderate.heading': 'Moderation',
   'moderate.toolsLabel': 'Moderationswerkzeuge',

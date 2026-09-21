@@ -1365,7 +1365,7 @@ Staff (moderator) list fetch failed. Button **Try again**.
 
 ## Screen: /moderate/proposals
 
-- **URL:** `/moderate/proposals` — signed-in staff confirm queue. Same onboarding gate as `/moderate`. JSON is `/trust/proposals`. Hub is `/moderate`.
+- **URL:** `/moderate/proposals` — signed-in staff confirm/reject queue. Same onboarding gate as `/moderate`. JSON is `/trust/proposals`. Hub is `/moderate`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open proposals**. Staff rows: subject name (link `/members/{id}`), **Proposed by {name}**, time, **Reject** on every open row, **Confirm as moderator** only when not self-proposed, or **Waiting for another moderator to confirm.** plus **Reject** when self-proposed. Empty / Loading… / error+Try again. Failed confirm or reject: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only (no Open proposals row).
 - **Actions:** In-card icon back to hub. Staff confirm, reject, or Try again. Busy disables Confirm and Reject. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ProposalsPage`, `ProposalsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchTrustProposals`, `postTrustConfirm`, `postTrustReject`.
