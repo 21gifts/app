@@ -508,16 +508,18 @@ export function MemberProfileScreen({
                 const repliesNext = await fetchReplies(current.session, threadId);
                 if (expandGen.current === gen) {
                   setReplies(repliesNext);
-                  /* v8 ignore start -- posts/activity maps: identity arms and empty activity feed are not hit from the single-note compose-pay fixture */
                   setPosts((prev) => {
+                    /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
                     if (prev === null) {
                       return prev;
                     }
                     return prev.map((row) =>
+                      /* v8 ignore next -- other listed notes keep their counts */
                       row.id === threadId ? { ...row, replyCount: row.replyCount + 1 } : row,
                     );
                   });
                   setActivityReplies((prev) => {
+                    /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
                     if (prev === null) {
                       return prev;
                     }
@@ -525,7 +527,6 @@ export function MemberProfileScreen({
                       row.id === threadId ? { ...row, replyCount: row.replyCount + 1 } : row,
                     );
                   });
-                  /* v8 ignore stop */
                 }
               } catch {
                 if (expandGen.current === gen) {
