@@ -2382,6 +2382,7 @@ const conversation = {
   lastFromMe: false,
   lastSats: 0,
   unread: false,
+  unreadMessageCount: 0,
 };
 
 const conversationMessage = {

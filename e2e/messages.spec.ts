@@ -487,12 +487,12 @@ test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) 
   });
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '21.gifts, Unread' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '21.gifts, 1 unread' })).toBeVisible();
   expect(readPosts).toEqual([]);
   const readPost = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
   );
-  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
   await readPost;
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
   expect(readPosts).toHaveLength(1);

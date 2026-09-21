@@ -2902,7 +2902,7 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
   const readPost = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
   );
-  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
   await readPost;
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
 });
@@ -6827,7 +6827,7 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   await expect.poll(() => notificationGets).toBeGreaterThan(0);
   const beforeThread = notificationGets;
-  await page.getByRole('button', { name: '21.gifts, Unread' }).click();
+  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
   await expect.poll(() => notificationGets).toBe(beforeThread + 1);
 });
