@@ -247,6 +247,22 @@ describe('FundingApplicationDetailScreen', () => {
     expect(rejectMock).not.toHaveBeenCalled();
   });
 
+  it('posts Reject when No is clicked on the truth step', async () => {
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    await waitFor(() => {
+      expect(rejectMock).toHaveBeenCalledWith('sess', 'acc_rose');
+    });
+    expect(push).toHaveBeenCalledWith('/moderate/applications');
+    expect(admitMock).not.toHaveBeenCalled();
+  });
+
   it('posts Reject when requirement is not met', async () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Requirement not met' }));
