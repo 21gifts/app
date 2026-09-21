@@ -21,13 +21,12 @@ export function isShopNote(text: string): boolean {
  * Removes `#21GiftsShop` tokens from display text (case-insensitive).
  *
  * @param text - Stored forum post body.
- * @returns Collapsed leftover blank lines and extra spaces, trimmed; empty if only the hashtag was present.
+ * @returns Text without shop hashtag tokens; leftover blank lines collapsed; trimmed.
  */
 export function stripShopHashtag(text: string): string {
   return text
     .replace(SHOP_HASHTAG_TOKEN_GLOBAL, '')
     .replace(/\n{3,}/g, '\n\n')
-    .replace(/ {2,}/g, ' ')
     .trim();
 }
 

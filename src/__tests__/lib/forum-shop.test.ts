@@ -26,6 +26,10 @@ describe('forum-shop', () => {
     it('removes a trailing shop hashtag and leftover blank lines', () => {
       expect(stripShopHashtag('Cafe Luna\n\n#21GiftsShop')).toBe('Cafe Luna');
     });
+
+    it('does not collapse unrelated double spaces in the body', () => {
+      expect(stripShopHashtag('Open  daily\n\n#21GiftsShop')).toBe('Open  daily');
+    });
   });
 
   describe('ensureShopHashtag', () => {
