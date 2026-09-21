@@ -619,12 +619,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith(
-        'sess',
-        'fee-note',
-        1,
-        'Cafe Luna\n\n#21GiftsShop',
-      );
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'Cafe Luna\n\n#21GiftsShop');
     });
     expect(postMock).not.toHaveBeenCalled();
   });
