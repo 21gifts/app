@@ -121,7 +121,7 @@ export function HandbookCopyLink({
       {copied ? (
         <Check
           aria-hidden="true"
-          className={`h-4 w-4 ${tone === 'app' ? 'text-app-accent' : 'text-accent'}`}
+          className={`h-4 w-4 ${tone === 'app' ? 'text-app-fg' : 'text-accent'}`}
         />
       ) : (
         <Link2 aria-hidden="true" className="h-4 w-4" />

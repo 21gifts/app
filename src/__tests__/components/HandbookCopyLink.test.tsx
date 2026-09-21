@@ -93,7 +93,8 @@ describe('HandbookCopyLink', () => {
     await waitFor(() => {
       const svg = button.querySelector('svg');
       expect(svg?.classList.contains('lucide-check')).toBe(true);
-      expect(svg?.classList.contains('text-app-accent')).toBe(true);
+      expect(svg?.classList.contains('text-app-fg')).toBe(true);
+      expect(svg?.classList.contains('text-app-accent')).toBe(false);
       expect(svg?.classList.contains('text-accent')).toBe(false);
     });
   });
