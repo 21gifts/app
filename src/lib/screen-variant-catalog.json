@@ -672,6 +672,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:funding-reviewed",
+    "label": "/members/[accountId] funding-reviewed",
+    "visual": "state-members-funding-reviewed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:funding-reviewed-open",
+    "label": "/members/[accountId] funding-reviewed-open",
+    "visual": "state-members-funding-reviewed-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",
@@ -735,6 +747,48 @@
     "id": "/profile:push-enable-error",
     "label": "/profile push-enable-error",
     "visual": "state-profile-push-enable-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-not-verified",
+    "label": "/profile funding-not-verified",
+    "visual": "state-profile-funding-not-verified",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-none",
+    "label": "/profile funding-none",
+    "visual": "state-profile-funding-none",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-applying",
+    "label": "/profile funding-applying",
+    "visual": "state-profile-funding-applying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-apply-error",
+    "label": "/profile funding-apply-error",
+    "visual": "state-profile-funding-apply-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-pending",
+    "label": "/profile funding-pending",
+    "visual": "state-profile-funding-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-trial",
+    "label": "/profile funding-trial",
+    "visual": "state-profile-funding-trial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-admitted",
+    "label": "/profile funding-admitted",
+    "visual": "state-profile-funding-admitted",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1098,6 +1152,84 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/applications:default",
+    "label": "/moderate/applications default",
+    "visual": "screen-moderate-applications",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications:forbidden",
+    "label": "/moderate/applications forbidden",
+    "visual": "state-moderate-applications-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications:empty",
+    "label": "/moderate/applications empty",
+    "visual": "state-moderate-applications-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications:loading",
+    "label": "/moderate/applications loading",
+    "visual": "state-moderate-applications-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications:error",
+    "label": "/moderate/applications error",
+    "visual": "state-moderate-applications-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:default",
+    "label": "/moderate/applications/[accountId] default",
+    "visual": "screen-moderate-applications-accountId",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:forbidden",
+    "label": "/moderate/applications/[accountId] forbidden",
+    "visual": "state-moderate-applications-accountId-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:empty",
+    "label": "/moderate/applications/[accountId] empty",
+    "visual": "state-moderate-applications-accountId-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:loading",
+    "label": "/moderate/applications/[accountId] loading",
+    "visual": "state-moderate-applications-accountId-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:error",
+    "label": "/moderate/applications/[accountId] error",
+    "visual": "state-moderate-applications-accountId-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:decide-failed",
+    "label": "/moderate/applications/[accountId] decide-failed",
+    "visual": "state-moderate-applications-accountId-decide-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:deciding",
+    "label": "/moderate/applications/[accountId] deciding",
+    "visual": "state-moderate-applications-accountId-deciding",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:trial",
+    "label": "/moderate/applications/[accountId] trial",
+    "visual": "state-moderate-applications-accountId-trial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:default",
     "label": "/moderate/group default",
     "visual": "screen-moderate-group",
@@ -1329,138 +1461,6 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:funding-reviewed",
-    "label": "/members/[accountId] funding-reviewed",
-    "visual": "state-members-funding-reviewed",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:funding-reviewed-open",
-    "label": "/members/[accountId] funding-reviewed-open",
-    "visual": "state-members-funding-reviewed-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-not-verified",
-    "label": "/profile funding-not-verified",
-    "visual": "state-profile-funding-not-verified",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-none",
-    "label": "/profile funding-none",
-    "visual": "state-profile-funding-none",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-applying",
-    "label": "/profile funding-applying",
-    "visual": "state-profile-funding-applying",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-apply-error",
-    "label": "/profile funding-apply-error",
-    "visual": "state-profile-funding-apply-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-pending",
-    "label": "/profile funding-pending",
-    "visual": "state-profile-funding-pending",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-trial",
-    "label": "/profile funding-trial",
-    "visual": "state-profile-funding-trial",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-admitted",
-    "label": "/profile funding-admitted",
-    "visual": "state-profile-funding-admitted",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications:default",
-    "label": "/moderate/applications default",
-    "visual": "screen-moderate-applications",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications:forbidden",
-    "label": "/moderate/applications forbidden",
-    "visual": "state-moderate-applications-forbidden",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications:empty",
-    "label": "/moderate/applications empty",
-    "visual": "state-moderate-applications-empty",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications:loading",
-    "label": "/moderate/applications loading",
-    "visual": "state-moderate-applications-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications:error",
-    "label": "/moderate/applications error",
-    "visual": "state-moderate-applications-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:default",
-    "label": "/moderate/applications/[accountId] default",
-    "visual": "screen-moderate-applications-accountId",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:forbidden",
-    "label": "/moderate/applications/[accountId] forbidden",
-    "visual": "state-moderate-applications-accountId-forbidden",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:empty",
-    "label": "/moderate/applications/[accountId] empty",
-    "visual": "state-moderate-applications-accountId-empty",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:loading",
-    "label": "/moderate/applications/[accountId] loading",
-    "visual": "state-moderate-applications-accountId-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:error",
-    "label": "/moderate/applications/[accountId] error",
-    "visual": "state-moderate-applications-accountId-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:decide-failed",
-    "label": "/moderate/applications/[accountId] decide-failed",
-    "visual": "state-moderate-applications-accountId-decide-failed",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:deciding",
-    "label": "/moderate/applications/[accountId] deciding",
-    "visual": "state-moderate-applications-accountId-deciding",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/moderate/applications/[accountId]:trial",
-    "label": "/moderate/applications/[accountId] trial",
-    "visual": "state-moderate-applications-accountId-trial",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]
