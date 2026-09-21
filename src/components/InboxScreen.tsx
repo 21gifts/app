@@ -422,10 +422,10 @@ export function InboxScreen({
   const lastPhotoUrls =
     lastMessageId === ''
       ? ''
-      : Object.keys(photoUrls)
-          .filter((key) => key.startsWith(lastPhotoPrefix))
+      : Object.entries(photoUrls)
+          .filter(([key]) => key.startsWith(lastPhotoPrefix))
+          .map(([key, url]) => `${key}=${url}`)
           .sort()
-          .map((key) => `${key}=${photoUrls[key] ?? ''}`)
           .join('\0');
 
   useEffect(() => {
