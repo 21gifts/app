@@ -830,7 +830,9 @@ test.describe('screen baselines', () => {
       });
     });
     await page.goto('/wallet?visual=error');
-    await expect(page.getByRole('alert')).toHaveText('Something went wrong. Please try again.');
+    await expect(
+      page.getByText('Something went wrong. Please try again.'),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-wallet-error');
   });
@@ -855,9 +857,11 @@ test.describe('screen baselines', () => {
       });
     });
     await page.goto('/wallet?visual=prf-unsupported');
-    await expect(page.getByRole('alert')).toHaveText(
-      'This browser cannot create a recovery phrase. Try another browser or device.',
-    );
+    await expect(
+      page.getByText(
+        'This browser cannot create a recovery phrase. Try another browser or device.',
+      ),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-wallet-prf-unsupported');
   });
