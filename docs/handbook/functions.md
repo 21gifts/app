@@ -2329,10 +2329,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: creationOptionsFromJSON
 
-- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present.
-- **Inputs:** Record from `POST /auth/passkey/register/begin`.
+- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present and client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
+- **Inputs:** Record from `POST /auth/passkey/register/begin` or `POST /auth/passkey/replace/begin`.
 - **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
-- **Used by:** `usePasskeyLogin.register`.
+- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
 
 ## Function: credentialToJSON
 
@@ -2385,7 +2385,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: requestOptionsFromJSON
 
-- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`.
+- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`. Copies client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
 - **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
 - **Used by:** `usePasskeyLogin.authenticate`.
