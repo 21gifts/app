@@ -64,6 +64,7 @@ export function readPrfFirst(credential: PublicKeyCredential): Uint8Array | unde
  *
  * @param prfFirst - Authenticator `prf.results.first`.
  * @returns Twelve English BIP-39 words.
+ * @throws TypeError when `prfFirst` is not a BufferSource.
  */
 export async function mnemonicFromPrfFirst(prfFirst: BufferSource): Promise<string> {
   const ikm = Uint8Array.from(toUint8Array(prfFirst));

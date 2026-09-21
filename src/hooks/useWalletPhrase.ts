@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { finishPasskeyReplace, postWalletBackupSeen, startPasskeyReplace } from '@/lib/api';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import {
@@ -114,6 +114,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   const setupWallet = account?.setup === 'wallet';
   const words = useMemo(() => (mnemonic ? mnemonic.split(/\s+/).filter(Boolean) : []), [mnemonic]);
   const showingWords = words.length === 12;
+  const inFlight = useRef(false);
 
   const view: WalletPhraseView = useMemo(() => {
     const visual = visualParam();
@@ -147,10 +148,11 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, []);
 
   const activate = useCallback(async () => {
-    if (session === null) {
+    if (session === null || inFlight.current) {
       return;
     }
     const token = session;
+    inFlight.current = true;
     setStatus('busy');
     setError(null);
     try {
@@ -205,14 +207,17 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       fail(err);
+    } finally {
+      inFlight.current = false;
     }
   }, [fail, session, setAccount]);
 
   const showPhrase = useCallback(async () => {
-    if (session === null) {
+    if (session === null || inFlight.current) {
       return;
     }
     const token = session;
+    inFlight.current = true;
     setStatus('busy');
     setError(null);
     try {
@@ -237,17 +242,20 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       fail(err);
+    } finally {
+      inFlight.current = false;
     }
   }, [fail, session]);
 
   const confirmSaved = useCallback(async () => {
-    if (session === null) {
+    if (session === null || inFlight.current) {
       return;
     }
     if (visualParam() !== null && mnemonic === WALLET_VISUAL_FIXTURE_MNEMONIC) {
       return;
     }
     const token = session;
+    inFlight.current = true;
     setStatus('busy');
     setError(null);
     try {
@@ -265,6 +273,8 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       fail(err);
+    } finally {
+      inFlight.current = false;
     }
   }, [fail, mnemonic, router, session, setAccount]);
 

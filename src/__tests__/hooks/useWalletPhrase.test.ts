@@ -448,6 +448,30 @@ describe('useWalletPhrase', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('runs only one activate at a time', async () => {
+    let release: (() => void) | undefined;
+    vi.mocked(startPasskeyReplace).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ challengeId: 'ch', options: { challenge: 'aa' } });
+        }),
+    );
+    const { result } = renderHook(() => useWalletPhrase());
+    let first: Promise<void> | undefined;
+    let second: Promise<void> | undefined;
+    await act(async () => {
+      first = result.current.activate();
+      second = result.current.activate();
+    });
+    expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      release?.();
+      await first;
+      await second;
+    });
+    expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+  });
+
   it('does not keep a phrase when backup-seen runs after replace then the session ends', async () => {
     vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
