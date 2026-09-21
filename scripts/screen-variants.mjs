@@ -447,7 +447,7 @@ export const SCREEN_VARIANTS = [
     id: 'error-ask',
     image: 'welcome-error-ask.png',
     visual: 'state-welcome-error-ask',
-    needle: 'Enter a whole number to ask for.',
+    needle: 'welcome error-ask',
   },
   {
     route: '/welcome',
