@@ -2437,7 +2437,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
-    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 0 }]));
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, sats: 1, replyCount: 0 }]));
     repliesMock.mockResolvedValueOnce([]).mockResolvedValue([
       {
         id: 'r-new',
@@ -2471,10 +2471,12 @@ describe('ForumLoader', () => {
       replyCount: 0,
     });
     renderWithLocale(<ForumLoader />);
-    await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
+    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
     expect(screen.getByText('0 reactions')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
@@ -2490,6 +2492,9 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hi')).toBeTruthy();
       expect(screen.getByText('1 reactions')).toBeTruthy();
     });
+    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 
   it('keeps a compose invoice on the composer when the fee note is listed', async () => {

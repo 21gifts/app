@@ -453,7 +453,7 @@ export function PublicMessageThread(props: {
                     if (prev.id !== threadId) {
                       return prev;
                     }
-                    return { ...prev, replyCount: Math.max(prev.replyCount, nextList.length) };
+                    return { ...prev, replyCount: prev.replyCount + 1 };
                   });
                 }
               } catch {

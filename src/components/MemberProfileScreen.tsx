@@ -514,9 +514,7 @@ export function MemberProfileScreen({
                       return prev;
                     }
                     return prev.map((row) =>
-                      row.id === threadId
-                        ? { ...row, replyCount: Math.max(row.replyCount, repliesNext.length) }
-                        : row,
+                      row.id === threadId ? { ...row, replyCount: row.replyCount + 1 } : row,
                     );
                   });
                   setActivityReplies((prev) => {
@@ -524,9 +522,7 @@ export function MemberProfileScreen({
                       return prev;
                     }
                     return prev.map((row) =>
-                      row.id === threadId
-                        ? { ...row, replyCount: Math.max(row.replyCount, repliesNext.length) }
-                        : row,
+                      row.id === threadId ? { ...row, replyCount: row.replyCount + 1 } : row,
                     );
                   });
                   /* v8 ignore stop */

@@ -1859,7 +1859,7 @@ export function ForumLoader({
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
-      startPayPoll(target.messageId, target.sats, true, parentId);
+      startPayPoll(target.messageId, target.sats, false, parentId);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
