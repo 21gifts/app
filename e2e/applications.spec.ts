@@ -199,12 +199,6 @@ const DECISION = {
   },
 };
 
-test('Function: postFundingTrial — POST /funding/trial without bearer is 401', async ({
-  request,
-}) => {
-  expect((await request.post('/funding/trial')).status()).toBe(401);
-});
-
 test('Function: postFundingAdmit — four yes posts admit and returns to the queue', async ({
   page,
 }) => {

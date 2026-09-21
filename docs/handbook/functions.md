@@ -1223,13 +1223,6 @@
 - **Returns / side effects:** Account, grant, and living-room posts. Throws visitor copy `Could not load this application. Please try again.` on 401/403/404/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingApplicationDetailScreen`.
 
-## Function: postFundingTrial
-
-- **Purpose:** POST `/funding/trial` with `{ accountId }` (staff). Target must be effective pending.
-- **Inputs:** Bearer `sessionToken`, subject `accountId`.
-- **Returns / side effects:** `FundingDecisionResult`. Throws visitor copy `Could not update this member. Please try again.` on any failure.
-- **Used by:** none in the staff UI (same-origin `POST /funding/trial` remains).
-
 ## Function: postFundingAdmit
 
 - **Purpose:** POST `/funding/admit` with `{ accountId }` (staff). Target pending or trial.
