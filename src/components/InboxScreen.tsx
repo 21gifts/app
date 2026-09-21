@@ -842,7 +842,7 @@ export function InboxScreen({
                       </span>
                       <span className="flex items-baseline gap-2">
                         {unreadMessageCount > 0 ? (
-                          <span className="font-semibold tabular-nums lining-nums">
+                          <span className="text-sm font-semibold tabular-nums lining-nums">
                             {unreadMessageCount}
                           </span>
                         ) : null}

@@ -1219,6 +1219,7 @@ describe('InboxScreen', () => {
     const count = row.querySelector('.tabular-nums.lining-nums');
     expect(count?.textContent).toBe('2');
     expect(count?.className).toContain('font-semibold');
+    expect(count?.className).toContain('text-sm');
     expect(within(row).queryByText('Unread')).toBeNull();
   });
 
