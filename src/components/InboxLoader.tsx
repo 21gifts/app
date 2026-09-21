@@ -425,19 +425,15 @@ export function InboxLoader(): ReactElement | null {
           if (controller.signal.aborted || openIdRef.current !== conversationId) {
             return;
           }
-          let recovered = false;
           setMessages((prev) => {
             if (prev === null) {
-              recovered = true;
+              setNextCursor(page.nextCursor);
+              setMessagesError(false);
               return page.messages;
             }
             const freshIds = new Set(page.messages.map((message) => message.id));
             return [...prev.filter((message) => !freshIds.has(message.id)), ...page.messages];
           });
-          if (recovered) {
-            setNextCursor(page.nextCursor);
-            setMessagesError(false);
-          }
           setDraft('');
           setAmountDraft('');
           setInvoice(null);
