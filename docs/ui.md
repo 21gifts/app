@@ -808,17 +808,17 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Composer
 
-**Anatomy.** Top-level forum note: column with a `flex items-center gap-2` row and an optional Ask `Field` (`forum.askAmountLabel`) on a second row under it. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
+**Anatomy.** Top-level forum note: **Send a post** / **Ask for money** `SegmentedControl tone="neutral"` (`forum.composePost` / `forum.composeAsk`, 2-col `!rounded-2xl`). Post is attach + textarea + Send. Ask is `ForumAskWizard` (amount → photos → text → preview with labeled **Post**). There is no leftover Ask field on the Post messenger. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox: `items-end`. Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + send (`flex items-center gap-2`); still previews are a row below.
 
-- Ask (forum note only): `Field` `forum.askAmountLabel`, `inputMode="numeric"`. Empty = no goal. Invalid input sets `formError` `ask`.
-- Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer, and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
+- Ask wizard (forum note only, when Ask is selected): step 1 amount `id="forum-ask-amount"` `forum.askAmountLabel` `inputMode="numeric"` (Continue disabled until `parseForumAskAmount` returns 1..10_000_000); step 2 photos (Skip and Continue both go to step 3); step 3 text; step 4 preview card with `ForumGoalBar` at 0 collected and labeled **Post** (the only Ask submit).
+- Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer (Post path and Ask step 2), and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
 - Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
-- Send/Post: `IconButton` lg primary, lucide `Send`. Loading: `Loader2`.
+- Send/Post: Post path `IconButton` lg primary, lucide `Send`. Ask preview: labeled `Button` `forum.post`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
-- Goal bar lives on the note card, not in this form (see Note card).
+- Goal bar lives on the note card and on Ask preview, not on the Post messenger (see Note card).
 
-**States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`) including empty-post and invalid-Ask.
+**States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`) including empty-post. Invalid Ask keeps Continue disabled on step 1.
 
 ### Pay sheet
 

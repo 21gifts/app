@@ -406,7 +406,7 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: goal-50
 
-On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. Progress bar at **50%** (orange half-fill). Composer **Ask** field visible. Gift still not on the post.
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. Progress bar at **50%** (orange half-fill). Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
 
 ![21.gifts welcome goal 50](images/welcome-goal-50.png)
 
@@ -478,7 +478,7 @@ Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidd
 
 ### Variant: empty
 
-Empty copy **No messages yet — be the first to write one.** plus composer (attach + textarea + Post, then a second-row Ask field).
+Empty copy **No messages yet — be the first to write one.** plus composer (**Send a post** / **Ask for money** pill, attach + textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
