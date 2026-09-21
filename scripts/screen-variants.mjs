@@ -965,7 +965,7 @@ export const SCREEN_VARIANTS = [
     id: 'funding-applying',
     image: 'profile-funding-applying.png',
     visual: 'state-profile-funding-applying',
-    needle: "shotScreen(page, 'state-profile-funding-applying')",
+    needle: "getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeDisabled()",
   },
   {
     route: '/profile',

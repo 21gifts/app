@@ -177,8 +177,7 @@ test('Function: fetchFundingApplication — staff see Trial Admit Reject', async
   await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
 });
 
-test('Function: postFundingTrial — Trial control is labeled', async ({ page }) => {
-  await seedAdaSession(page, 'founder');
+async function stubDetail(page: import('@playwright/test').Page): Promise<void> {
   await page.route('**/funding/applications/acc_rose', async (route) => {
     await route.fulfill({
       status: 200,
@@ -186,34 +185,72 @@ test('Function: postFundingTrial — Trial control is labeled', async ({ page })
       body: JSON.stringify(DETAIL),
     });
   });
+}
+
+const DECISION = {
+  id: 'acc_rose',
+  name: 'Rose',
+  role: 'verified' as const,
+  funding: {
+    status: 'trial' as const,
+    trialUtcDate: '2026-09-20',
+    admittedAt: null,
+    reviewedByName: 'Ada',
+  },
+};
+
+async function clickFundingAction(
+  page: import('@playwright/test').Page,
+  path: '/funding/trial' | '/funding/admit' | '/funding/reject',
+  name: 'Trial' | 'Admit' | 'Reject',
+  funding: {
+    status: 'trial' | 'admitted' | 'rejected';
+    trialUtcDate: string | null;
+    admittedAt: number | null;
+    reviewedByName: string | null;
+  },
+): Promise<void> {
+  await seedAdaSession(page, 'founder');
+  await stubDetail(page);
+  await stubApplications(page, []);
+  await page.route(`**${path}`, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...DECISION, funding }),
+    });
+  });
   await page.goto('/moderate/applications/acc_rose');
-  await expect(page.getByRole('button', { name: 'Trial' })).toBeVisible();
+  const posted = page.waitForRequest((req) => req.method() === 'POST' && req.url().includes(path));
+  await page.getByRole('button', { name }).click();
+  expect((await posted).method()).toBe('POST');
+  await expect(page).toHaveURL(/\/moderate\/applications$/);
+}
+
+test('Function: postFundingTrial — Trial posts and returns to the queue', async ({ page }) => {
+  await clickFundingAction(page, '/funding/trial', 'Trial', DECISION.funding);
 });
 
-test('Function: postFundingAdmit — Admit control is labeled', async ({ page }) => {
-  await seedAdaSession(page, 'founder');
-  await page.route('**/funding/applications/acc_rose', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(DETAIL),
-    });
+test('Function: postFundingAdmit — Admit posts and returns to the queue', async ({ page }) => {
+  await clickFundingAction(page, '/funding/admit', 'Admit', {
+    status: 'admitted',
+    trialUtcDate: null,
+    admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+    reviewedByName: 'Ada',
   });
-  await page.goto('/moderate/applications/acc_rose');
-  await expect(page.getByRole('button', { name: 'Admit' })).toBeVisible();
 });
 
-test('Function: postFundingReject — Reject control is labeled', async ({ page }) => {
-  await seedAdaSession(page, 'founder');
-  await page.route('**/funding/applications/acc_rose', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(DETAIL),
-    });
+test('Function: postFundingReject — Reject posts and returns to the queue', async ({ page }) => {
+  await clickFundingAction(page, '/funding/reject', 'Reject', {
+    status: 'rejected',
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
   });
-  await page.goto('/moderate/applications/acc_rose');
-  await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
 });
 
 test('Function: FundingStatusCard — basis profile shows not verified', async ({ page }) => {
@@ -222,12 +259,35 @@ test('Function: FundingStatusCard — basis profile shows not verified', async (
   await expect(page.getByText('You are not verified yet.')).toBeVisible();
 });
 
-test('Function: postFundingApply — verified profile shows Apply for the 21 gifts grant', async ({
-  page,
-}) => {
+test('Function: postFundingApply — verified profile posts apply', async ({ page }) => {
   await seedAdaSession(page, 'verified');
+  await page.route(/\/funding\/apply$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        funding: {
+          status: 'pending',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    });
+  });
   await page.goto('/profile');
-  await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+  const posted = page.waitForRequest(
+    (req) => req.method() === 'POST' && /\/funding\/apply$/.test(new URL(req.url()).pathname),
+  );
+  await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+  expect((await posted).method()).toBe('POST');
+  await expect(
+    page.getByText('Your application is open. A moderator will review your posts.'),
+  ).toBeVisible();
 });
 
 test('Function: proxyFundingApplicationsGet — GET /funding/applications without bearer is 401', async ({
