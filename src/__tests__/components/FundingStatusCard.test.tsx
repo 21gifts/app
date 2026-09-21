@@ -102,6 +102,11 @@ describe('FundingStatusCard', () => {
   it('shows apply for none status with convictions and About link', () => {
     renderWithLocale(<FundingStatusCard />);
     expect(screen.getByText('You are not admitted to daily 21.gifts grant payouts.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByText('Giving is a duty')).toBeTruthy();
     expect(screen.getByText('Direct, with no middleman')).toBeTruthy();
     expect(screen.getByText('Bitcoin is the most effective money')).toBeTruthy();

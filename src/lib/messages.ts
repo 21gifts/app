@@ -634,7 +634,7 @@ const en = {
     'It does not mean they are a good person, and it does not mean they are entitled to receive money. It only means this person really exists and has a 21.gifts account.',
   'moderate.handbook.funding.title': 'Official funding program',
   'moderate.handbook.funding.body':
-    'Verified members can apply on their profile with the three convictions. Staff review the queue, then grant a one-day trial or admit.',
+    'Verified members can apply on their profile with the three convictions. Staff review the queue, then grant a one-day trial or admit. Daily gifts still go out as before until 25 September 2026. From that UTC day, only admitted members (or a same-day trial) receive them.',
   'moderate.handbook.funding.rulesLead': 'The rules are simple.',
   'moderate.handbook.funding.rulePrinciples': 'Follow the 3 principles of 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Daily Bitcoin payments are mandatory',
@@ -646,6 +646,8 @@ const en = {
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
   'funding.notAdmitted': 'You are not admitted to daily 21.gifts grant payouts.',
+  'funding.grace':
+    'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
   'funding.conditions':
     'Daily grants go to people whose living-room posts reflect the three convictions.',
@@ -1333,7 +1335,7 @@ const de = {
     'Es bedeutet nicht, dass es ein guter Mensch ist oder dass die Person berechtigt sein soll, Geld zu erhalten. Es bedeutet nur, dass es diesen Menschen wirklich gibt und dass er ein Konto bei 21.gifts hat.',
   'moderate.handbook.funding.title': 'Offizielles Förderprogramm',
   'moderate.handbook.funding.body':
-    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange und gewährt dann einen eintägigen Probezugang oder lässt zu.',
+    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange und gewährt dann einen eintägigen Probezugang oder lässt zu. Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem UTC-Tag erhalten nur noch zugelassene Mitglieder (oder eine Probe für denselben Tag) welche.',
   'moderate.handbook.funding.rulesLead': 'Die Regeln sind einfach.',
   'moderate.handbook.funding.rulePrinciples': 'Die 3 Prinzipien von 21.gifts befolgen',
   'moderate.handbook.funding.ruleDaily': 'Tägliche Bitcoin-Zahlungen sind Pflicht',
@@ -1345,6 +1347,8 @@ const de = {
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
   'funding.notAdmitted': 'Sie sind nicht zum täglichen 21.gifts-Förderprogramm zugelassen.',
+  'funding.grace':
+    'Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem Tag erhalten nur noch zugelassene Mitglieder welche. Bewerben Sie sich jetzt, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
   'funding.conditions':
     'Tägliche Förderungen gehen an Menschen, deren Wohnzimmer-Beiträge die drei Überzeugungen widerspiegeln.',
@@ -2018,7 +2022,7 @@ const es = {
     'No significa que sea una buena persona ni que tenga derecho a recibir dinero. Solo significa que esa persona existe de verdad y tiene una cuenta en 21.gifts.',
   'moderate.handbook.funding.title': 'Programa oficial de apoyo',
   'moderate.handbook.funding.body':
-    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo revisa la cola y luego otorga un día de prueba o admite.',
+    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo revisa la cola y luego otorga un día de prueba o admite. Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día UTC, solo las personas admitidas (o en prueba ese mismo día) los reciben.',
   'moderate.handbook.funding.rulesLead': 'Las reglas son simples.',
   'moderate.handbook.funding.rulePrinciples': 'Seguir los 3 principios de 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Los pagos diarios en Bitcoin son obligatorios',
@@ -2030,6 +2034,8 @@ const es = {
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
   'funding.notAdmitted': 'No estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
+  'funding.grace':
+    'Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día, solo las personas admitidas los reciben. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
   'funding.conditions':
     'Las becas diarias van a personas cuyos mensajes del salón reflejan las tres convicciones.',
@@ -2709,7 +2715,7 @@ const fil = {
     'Hindi ito nangangahulugang mabuting tao siya, at hindi ito nangangahulugang karapat-dapat siyang tumanggap ng pera. Ibig sabihin lang nito na totoong umiiral ang taong ito at may account siya sa 21.gifts.',
   'moderate.handbook.funding.title': 'Opisyal na programa ng tulong',
   'moderate.handbook.funding.body':
-    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Sinusuri ng staff ang pila, tapos nagbibigay ng one-day trial o admit.',
+    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Sinusuri ng staff ang pila, tapos nagbibigay ng one-day trial o admit. Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa UTC day na iyon, admitted members (o same-day trial) na lang ang tatanggap.',
   'moderate.handbook.funding.rulesLead': 'Simple lang ang mga patakaran.',
   'moderate.handbook.funding.rulePrinciples': 'Sundin ang 3 prinsipyo ng 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Mandatory ang araw-araw na bayad sa Bitcoin',
@@ -2721,6 +2727,8 @@ const fil = {
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
   'funding.notAdmitted': 'Hindi ka admitted sa araw-araw na 21.gifts grant payouts.',
+  'funding.grace':
+    'Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa araw na iyon, admitted members na lang ang tatanggap. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
   'funding.conditions':
     'Ang araw-araw na grant ay para sa mga taong ang living-room posts ay sumasalamin sa tatlong paniniwala.',
