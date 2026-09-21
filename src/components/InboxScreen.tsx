@@ -94,6 +94,8 @@ function shellScrollToBottom(scroller: HTMLElement | null): void {
  *
  * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
  */
+const EMPTY_PHOTO_URLS: Readonly<Record<string, string>> = {};
+
 function shellScrollToTop(scroller: HTMLElement | null): void {
   if (scroller !== null) {
     if (typeof scroller.scrollTo === 'function') {
@@ -384,7 +386,7 @@ export function InboxScreen({
   photoDrafts = [],
   onPickFiles = () => undefined,
   onRemovePhoto = () => undefined,
-  photoUrls = {},
+  photoUrls = EMPTY_PHOTO_URLS,
 }: InboxScreenProps): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
