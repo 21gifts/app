@@ -147,7 +147,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Moderators' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Moderation tools' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -158,7 +158,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Moderators' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -176,13 +176,13 @@ describe('ModerateScreen', () => {
       useAuthStore.setState({ session: 'sess', account: { ...account, role } });
       renderWithLocale(<ModerateScreen />);
       expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
-      expect(screen.getByText('Tools for moderators.')).toBeTruthy();
+      expect(screen.queryByText('Tools for moderators.')).toBeNull();
       expect(
-        screen.getByText(
+        screen.queryByText(
           'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
         ),
-      ).toBeTruthy();
-      expect(screen.getByText('Closed staff room for moderators.')).toBeTruthy();
+      ).toBeNull();
+      expect(screen.queryByText('Closed staff room for moderators.')).toBeNull();
       expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
       expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
         '/moderate/hidden',
@@ -190,7 +190,7 @@ describe('ModerateScreen', () => {
       expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
         '/moderate/proposals',
       );
-      expect(screen.getByRole('link', { name: 'Moderators' }).getAttribute('href')).toBe(
+      expect(screen.getByRole('link', { name: 'Moderators chat group' }).getAttribute('href')).toBe(
         '/moderate/group',
       );
       await waitFor(() => {
@@ -341,9 +341,9 @@ describe('ModerateScreen', () => {
     groupMock.mockResolvedValue({ ...GROUP, unread: true });
     renderWithLocale(<ModerateScreen />);
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Moderators, 1 unread' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeTruthy();
     });
-    const moderators = screen.getByRole('link', { name: 'Moderators, 1 unread' });
+    const moderators = screen.getByRole('link', { name: 'Moderators chat group, 1 unread' });
     expect(moderators.getAttribute('href')).toBe('/moderate/group');
     expect(moderators.textContent).toContain('1');
   });

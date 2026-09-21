@@ -123,7 +123,7 @@ describe('ModeratorGroupScreen', () => {
     (role) => {
       useAuthStore.setState({ session: 'sess', account: { ...account, role } });
       renderWithLocale(<ModeratorGroupScreen />);
-      expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Moderators chat group' })).toBeTruthy();
       expect(screen.getByText('This room is for moderators.')).toBeTruthy();
       expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
       expect(screen.queryByRole('list', { name: 'Conversations' })).toBeNull();
@@ -154,7 +154,7 @@ describe('ModeratorGroupScreen', () => {
       );
       threadMock.mockResolvedValue([MESSAGE]);
       renderWithLocale(<ModeratorGroupScreen />);
-      expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Moderators chat group' })).toBeTruthy();
       expect(screen.getByText('Loading…')).toBeTruthy();
       await act(async () => {
         resolveGroup?.(GROUP);
@@ -168,7 +168,7 @@ describe('ModeratorGroupScreen', () => {
       });
       expect(bumpMock).toHaveBeenCalled();
       expect(refreshMock).toHaveBeenCalledWith('sess', undefined, 0);
-      expect(screen.getByRole('heading', { name: 'Moderators' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Moderators chat group' })).toBeTruthy();
       expect(screen.queryByText('Staff room')).toBeNull();
       expect(screen.getByLabelText('Your message')).toBeTruthy();
       expect(screen.queryByLabelText('Amount')).toBeNull();

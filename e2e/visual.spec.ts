@@ -6726,10 +6726,9 @@ test.describe('moderate screens', () => {
     await stubPayoutGoal(page);
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-    await expect(page.getByText('Tools for moderators.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderators chat group' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
@@ -6760,7 +6759,7 @@ test.describe('moderate screens', () => {
       });
     });
     await page.goto('/moderate');
-    await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-unread');
   });

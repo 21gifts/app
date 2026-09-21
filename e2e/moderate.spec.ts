@@ -60,12 +60,11 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
   await stubHiddenList(page);
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-  await expect(page.getByText('Tools for moderators.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveAttribute(
     'href',
     '/moderate/hidden',
   );
-  await expect(page.getByRole('link', { name: 'Moderators' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Moderators chat group' })).toHaveAttribute(
     'href',
     '/moderate/group',
   );
@@ -371,7 +370,7 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
 test('moderators see the Moderators hub link', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await page.goto('/moderate');
-  await expect(page.getByRole('link', { name: 'Moderators' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Moderators chat group' })).toHaveAttribute(
     'href',
     '/moderate/group',
   );
@@ -391,7 +390,7 @@ test('moderators see the Moderators hub unread count', async ({ page }) => {
     });
   });
   await page.goto('/moderate');
-  await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toHaveAttribute(
     'href',
     '/moderate/group',
   );
@@ -477,7 +476,7 @@ test('Function: roleAtLeast — a founder opens the Moderators tool from the hub
   await seedAdaSession(page, 'founder');
   await stubModeratorGroup(page);
   await page.goto('/moderate');
-  await page.getByRole('link', { name: 'Moderators' }).click();
+  await page.getByRole('link', { name: 'Moderators chat group' }).click();
   await expect(page.getByText('Hello mods')).toBeVisible();
 });
 

@@ -568,7 +568,6 @@ const en = {
   'notifications.moderatorAppointed': 'You are a moderator',
 
   'moderate.heading': 'Moderation',
-  'moderate.hubLead': 'Tools for moderators.',
   'moderate.toolsLabel': 'Moderation tools',
   'moderate.lead':
     'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
@@ -578,9 +577,8 @@ const en = {
   'moderate.error': 'Could not load hidden notes. Please try again.',
   'moderate.retry': 'Try again',
   'moderate.listLabel': 'Hidden notes',
-  'moderate.groupLabel': 'Moderators',
-  'moderate.groupUnread': 'Moderators, {count} unread',
-  'moderate.groupLead': 'Closed staff room for moderators.',
+  'moderate.groupLabel': 'Moderators chat group',
+  'moderate.groupUnread': 'Moderators chat group, {count} unread',
   'moderate.groupForbidden': 'This room is for moderators.',
   'moderate.groupError': 'Could not load the staff room. Please try again.',
   'moderate.hiddenBy': 'Hidden by {name}',
@@ -594,7 +592,6 @@ const en = {
   'moderate.goal.subtitle': '100 payouts a day',
   'moderate.goal.percent': '{percent}%',
   'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
-  'moderate.goal.openHint': 'Tap for history and explanation',
   'moderate.goal.closeHint': 'Tap to close',
   'moderate.goal.explYesterday':
     'Yesterday (UTC {date}) 21.gifts paid {count} official payouts. That is {percent} percent of the {goal} a day we are aiming for.',
@@ -1202,7 +1199,6 @@ const de = {
   'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
 
   'moderate.heading': 'Moderation',
-  'moderate.hubLead': 'Werkzeuge für Moderatorinnen oder Moderatoren.',
   'moderate.toolsLabel': 'Moderationswerkzeuge',
   'moderate.lead':
     'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
@@ -1213,9 +1209,8 @@ const de = {
     'Ausgeblendete Notizen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.retry': 'Erneut versuchen',
   'moderate.listLabel': 'Ausgeblendete Notizen',
-  'moderate.groupLabel': 'Moderatoren',
-  'moderate.groupUnread': 'Moderatoren, {count} ungelesen',
-  'moderate.groupLead': 'Geschlossener Staff-Raum für Moderatorinnen oder Moderatoren.',
+  'moderate.groupLabel': 'Moderatoren Chatgruppe',
+  'moderate.groupUnread': 'Moderatoren Chatgruppe, {count} ungelesen',
   'moderate.groupForbidden': 'Dieser Raum ist für Moderatorinnen oder Moderatoren.',
   'moderate.groupError':
     'Der Staff-Raum konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
@@ -1231,7 +1226,6 @@ const de = {
   'moderate.goal.subtitle': '100 Auszahlungen am Tag',
   'moderate.goal.percent': '{percent} %',
   'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
-  'moderate.goal.openHint': 'Tippen für Verlauf und Erklärung',
   'moderate.goal.closeHint': 'Tippen zum Schliessen',
   'moderate.goal.explYesterday':
     'Gestern (UTC {date}) hat 21.gifts {count} offizielle Auszahlungen bezahlt. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
@@ -1826,7 +1820,6 @@ const es = {
   'notifications.moderatorAppointed': 'Ahora eres moderador',
 
   'moderate.heading': 'Moderación',
-  'moderate.hubLead': 'Herramientas para personas moderadoras.',
   'moderate.toolsLabel': 'Herramientas de moderación',
   'moderate.lead':
     'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
@@ -1836,9 +1829,8 @@ const es = {
   'moderate.error': 'No se pudieron cargar las notas ocultas. Inténtalo de nuevo.',
   'moderate.retry': 'Intentar de nuevo',
   'moderate.listLabel': 'Notas ocultas',
-  'moderate.groupLabel': 'Moderadores',
-  'moderate.groupUnread': 'Moderadores, {count} sin leer',
-  'moderate.groupLead': 'Sala de personal cerrada para personas moderadoras.',
+  'moderate.groupLabel': 'Chat de moderadores',
+  'moderate.groupUnread': 'Chat de moderadores, {count} sin leer',
   'moderate.groupForbidden': 'Esta sala es para personas moderadoras.',
   'moderate.groupError': 'No se pudo cargar la sala de personal. Inténtalo de nuevo.',
   'moderate.hiddenBy': 'Ocultada por {name}',
@@ -1852,7 +1844,6 @@ const es = {
   'moderate.goal.subtitle': '100 pagos al día',
   'moderate.goal.percent': '{percent} %',
   'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
-  'moderate.goal.openHint': 'Toca para ver el historial y la explicación',
   'moderate.goal.closeHint': 'Toca para cerrar',
   'moderate.goal.explYesterday':
     'Ayer (UTC {date}) 21.gifts pagó {count} pagos oficiales. Eso es el {percent} por ciento de los {goal} al día que buscamos.',
@@ -2454,7 +2445,6 @@ const fil = {
   'notifications.moderatorAppointed': 'Isa ka nang moderator',
 
   'moderate.heading': 'Moderasyon',
-  'moderate.hubLead': 'Mga tool para sa mga moderator.',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',
   'moderate.lead':
     'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',
@@ -2464,9 +2454,8 @@ const fil = {
   'moderate.error': 'Hindi ma-load ang mga nakatagong nota. Subukan ulit.',
   'moderate.retry': 'Subukan ulit',
   'moderate.listLabel': 'Mga nakatagong nota',
-  'moderate.groupLabel': 'Mga Moderator',
-  'moderate.groupUnread': 'Mga Moderator, {count} hindi pa nababasa',
-  'moderate.groupLead': 'Saradong staff room para sa mga moderator.',
+  'moderate.groupLabel': 'Chat group ng mga moderator',
+  'moderate.groupUnread': 'Chat group ng mga moderator, {count} hindi pa nababasa',
   'moderate.groupForbidden': 'Ang silid na ito ay para sa mga moderator.',
   'moderate.groupError': 'Hindi ma-load ang staff room. Subukan ulit.',
   'moderate.hiddenBy': 'Itinago ni {name}',
@@ -2480,7 +2469,6 @@ const fil = {
   'moderate.goal.subtitle': '100 na bayad kada araw',
   'moderate.goal.percent': '{percent}%',
   'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
-  'moderate.goal.openHint': 'I-tap para sa kasaysayan at paliwanag',
   'moderate.goal.closeHint': 'I-tap para isara',
   'moderate.goal.explYesterday':
     'Kahapon (UTC {date}) nagbayad ang 21.gifts ng {count} opisyal na bayad. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
