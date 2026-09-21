@@ -5758,6 +5758,22 @@ test('Function: useAppHeight — document has --app-height', async ({ page }) =>
   expect(value).not.toBe('');
 });
 
+test('Function: resolveAppHeight — document has --app-height', async ({ page }) => {
+  await page.goto('/login');
+  const value = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  );
+  expect(value).not.toBe('');
+});
+
+test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {
+  await page.goto('/login');
+  const value = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  );
+  expect(value).not.toBe('');
+});
+
 test('Function: AppShellHeader — name screen heading is visible', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
