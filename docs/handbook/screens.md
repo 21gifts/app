@@ -1571,6 +1571,30 @@ Moderator. Loaded group thread with one attached still and no text. Image alt **
 
 ![21.gifts moderator group photo](images/moderate-group-photo.png)
 
+### Variant: preparing-photo
+
+Moderator. Empty thread. JPEG attach in flight; **Send** disabled; no **Selected photo** yet.
+
+![21.gifts moderator group preparing photo](images/moderate-group-preparing-photo.png)
+
+### Variant: error-unsupported
+
+Moderator. Empty thread. Attach a GIF → **Use a JPEG, PNG, or WebP photo**. No **Selected photo**.
+
+![21.gifts moderator group error unsupported](images/moderate-group-error-unsupported.png)
+
+### Variant: error-too-large
+
+Moderator. Empty thread. Encoded JPEG over 1 MB → **Keep photos under 1 MB**.
+
+![21.gifts moderator group error too large](images/moderate-group-error-too-large.png)
+
+### Variant: error-too-many
+
+Moderator. Empty thread. Eleven files → **You can add up to 10 photos**.
+
+![21.gifts moderator group error too many](images/moderate-group-error-too-many.png)
+
 ## Screen: /moderate/handbook
 
 - **URL:** `/moderate/handbook` — signed-in staff handbook of how 21.gifts works. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Hub is `/moderate`.

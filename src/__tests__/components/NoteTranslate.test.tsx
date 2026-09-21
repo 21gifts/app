@@ -159,6 +159,15 @@ describe('NoteTranslate', () => {
     expect(classes).not.toContain('text-app-fg');
   });
 
+  it('paints the error alert with button foreground when tone is onButton', async () => {
+    vi.mocked(translateNote).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<NoteTranslate tone="onButton" text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    const classes = (await screen.findByRole('alert')).className.split(/\s+/);
+    expect(classes).toContain('text-app-btn-fg');
+    expect(classes).not.toContain('text-app-danger');
+  });
+
   it('shows an error and retries successfully', async () => {
     vi.mocked(translateNote)
       .mockRejectedValueOnce(new Error('offline'))

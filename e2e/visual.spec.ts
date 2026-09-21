@@ -7889,6 +7889,33 @@ test.describe('moderate group screens', () => {
     });
   }
 
+  const TINY_GIF = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64',
+  );
+
+  async function attachGif(page: Page): Promise<void> {
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: TINY_GIF,
+    });
+  }
+
+  async function hangCreateImageBitmap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+  }
+
+  async function stubTooLargeJpeg(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+  }
+
   test('screen /moderate/group', async ({ page }) => {
     await seedAda(page, 'moderator');
     await mockGroup(page);
@@ -8102,6 +8129,56 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByAltText('Photo from Ada')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-photo');
+  });
+
+  test('moderate group preparing-photo', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await hangCreateImageBitmap(page);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-group-preparing-photo');
+  });
+
+  test('moderate group error-unsupported', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await attachGif(page);
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-group-error-unsupported');
+  });
+
+  test('moderate group error-too-large', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await stubTooLargeJpeg(page);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-error-too-large');
+  });
+
+  test('moderate group error-too-many', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
+    await shotScreen(page, 'state-moderate-group-error-too-many');
   });
 });
 

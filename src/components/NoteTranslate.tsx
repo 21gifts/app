@@ -103,6 +103,7 @@ export function NoteTranslate({
   const bodyClass = onButton
     ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
     : 'mt-2 whitespace-pre-wrap text-sm text-app-fg';
+  const errorClass = onButton ? 'mt-2 text-sm text-app-btn-fg' : 'mt-2 text-sm text-app-danger';
 
   return (
     <div
@@ -137,7 +138,7 @@ export function NoteTranslate({
       ) : (
         <>
           {status === 'error' ? (
-            <p role="alert" className="mt-2 text-sm text-app-danger">
+            <p role="alert" className={errorClass}>
               {t('forum.translateError')}
             </p>
           ) : null}
