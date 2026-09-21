@@ -304,7 +304,7 @@ function inboxAuthorProfileButton(
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
  * message count is greater than zero, the digits sit right of the name
- * (`font-semibold tabular-nums lining-nums`) and the list button
+ * (`text-sm font-semibold tabular-nums lining-nums`) and the list button
  * `aria-label` is `inbox.threadUnread` with `{name}` and `{count}`; the
  * word Unread is not visible text. Heading and incoming author names with a
  * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
