@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
+import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { LocationForm } from '@/components/LocationForm';
@@ -21,8 +22,9 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
- * and address forms, PushToggle (All/Active/Mentions always; This device On/Off
- * when Push APIs are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
+ * and address forms, FundingStatusCard (verification / 21 gifts grant),
+ * PushToggle (All/Active/Mentions always; This device On/Off when Push APIs
+ * are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`
@@ -97,6 +99,7 @@ export function ProfileScreen(): ReactElement {
       <NameForm variant="profile" />
       <LocationForm />
       <LightningAddressForm variant="profile" />
+      <FundingStatusCard />
       <PushToggle />
       <LanguagePreferenceSwitcher />
       <ThemeSwitcher />

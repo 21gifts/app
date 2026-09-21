@@ -17,3 +17,18 @@ export function formatForumTime(iso: string, locale: string): string {
     timeStyle: 'short',
   }).format(instant);
 }
+
+/**
+ * Formats an epoch-ms timestamp the same way as {@link formatForumTime}.
+ *
+ * @param ms - Epoch milliseconds from the api.
+ * @param locale - Active UI locale (BCP 47).
+ * @returns Medium date + short time, or `String(ms)` when the instant is invalid.
+ */
+export function formatForumTimeFromMs(ms: number, locale: string): string {
+  const instant = new Date(ms);
+  if (Number.isNaN(instant.getTime())) {
+    return String(ms);
+  }
+  return formatForumTime(instant.toISOString(), locale);
+}

@@ -8,6 +8,26 @@ export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
 export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
 
 /**
+ * Runtime schema for the owner `funding` object on `GET /me`.
+ *
+ * `status` is effective (`none` when there is no grant row). `trialUtcDate` is
+ * the UTC day when status is `trial`. `admittedAt` is epoch ms when admitted.
+ * `reviewedByName` is the live display name of the deciding staff member when
+ * admitted, else `null`.
+ */
+export const ownerFundingSchema = z.object({
+  status: z.enum(['none', 'pending', 'trial', 'admitted', 'rejected']),
+  trialUtcDate: z.string().nullable(),
+  admittedAt: z.number().nullable(),
+  reviewedByName: z.string().nullable(),
+});
+
+/**
+ * Owner-facing funding-program grant JSON.
+ */
+export type OwnerFunding = z.infer<typeof ownerFundingSchema>;
+
+/**
  * Runtime schema for an {@link Account} as returned by the api.
  *
  * Kept as the single source of truth: {@link Account} is inferred from it so
@@ -47,6 +67,12 @@ export const accountSchema = z.object({
    * parse; missing means {@link accountNotificationLevel} returns `all`.
    */
   notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
+  /**
+   * Owner funding-program grant. Optional so mixed deploys parse. `basis` is
+   * `null`; verified+ is an object (`status: 'none'` when there is no row).
+   * Missing or `undefined` is the same as `null` (no funding object).
+   */
+  funding: ownerFundingSchema.nullable().optional(),
 });
 
 /**
@@ -81,6 +107,8 @@ export const accountSchema = z.object({
  * `notificationLevel` is `all` (every living-room post, reply, and gift),
  * `active` (posts with gifts), or `mentions` (admin/staff posts and events
  * that involve the owner). Omitted on older api builds; treat as `all`.
+ * `funding` is the owner grant object, `null` for `basis`, and omitted on
+ * older api builds (treat missing like `null`).
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -746,6 +774,11 @@ export const memberProfileSchema = z.object({
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
   trust: accountTrustSchema.optional().default(accountTrustNull),
+  /**
+   * Admission time (epoch ms) when the member is admitted to daily grants.
+   * Optional so mixed deploys parse; `null` when not admitted.
+   */
+  fundingReviewedAt: z.number().nullable().optional(),
 });
 
 /**
@@ -839,3 +872,79 @@ export const moderatorProposalsResponseSchema = z.object({
  * One open moderator proposal from the api.
  */
 export type ModeratorProposal = z.infer<typeof moderatorProposalSchema>;
+
+/**
+ * Runtime schema for `POST /funding/apply` success `{ funding }`.
+ */
+export const fundingApplyResponseSchema = z.object({
+  funding: ownerFundingSchema,
+});
+
+/**
+ * Runtime schema for one open grant application from `GET /funding/applications`.
+ */
+export const fundingApplicationSchema = z.object({
+  accountId: z.string().min(1),
+  name: z.string().nullable(),
+  role: z.enum(ROLE_ORDER),
+  appliedAt: z.number(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /funding/applications`.
+ */
+export const fundingApplicationsResponseSchema = z.object({
+  applications: z.array(fundingApplicationSchema),
+});
+
+/**
+ * One open grant application from the api.
+ */
+export type FundingApplication = z.infer<typeof fundingApplicationSchema>;
+
+/**
+ * Runtime schema for the grant snapshot on `GET /funding/applications/:accountId`.
+ *
+ * `status` is effective. Times are epoch ms.
+ */
+export const fundingGrantSchema = z.object({
+  status: z.enum(['none', 'pending', 'trial', 'admitted', 'rejected']),
+  appliedAt: z.number(),
+  trialUtcDate: z.string().nullable(),
+  admittedAt: z.number().nullable(),
+  decidedAt: z.number().nullable(),
+});
+
+/**
+ * Runtime schema for `GET /funding/applications/:accountId`.
+ */
+export const fundingApplicationDetailSchema = z.object({
+  account: z.object({
+    id: z.string().min(1),
+    name: z.string().nullable(),
+    role: z.enum(ROLE_ORDER),
+    lightningAddress: z.string().nullable(),
+  }),
+  grant: fundingGrantSchema,
+  messages: z.array(forumMessageSchema),
+});
+
+/**
+ * Staff review payload for one grant application.
+ */
+export type FundingApplicationDetail = z.infer<typeof fundingApplicationDetailSchema>;
+
+/**
+ * Runtime schema for a successful staff funding POST (`trial` / `admit` / `reject`).
+ */
+export const fundingDecisionResultSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  role: z.enum(ROLE_ORDER),
+  funding: ownerFundingSchema.nullable(),
+});
+
+/**
+ * Updated account snapshot after a staff funding decision.
+ */
+export type FundingDecisionResult = z.infer<typeof fundingDecisionResultSchema>;

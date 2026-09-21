@@ -148,6 +148,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Moderation tools' })).toBeNull();
@@ -160,6 +161,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -187,12 +189,20 @@ describe('ModerateScreen', () => {
         ),
       ).toBeNull();
       expect(screen.queryByText('Closed staff room for moderators.')).toBeNull();
+      expect(
+        screen.getByText(
+          'Review living-room posts against the three convictions. Grant a one-day trial or a final admission.',
+        ),
+      ).toBeTruthy();
       expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
       expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
         '/moderate/hidden',
       );
       expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
         '/moderate/proposals',
+      );
+      expect(screen.getByRole('link', { name: 'Open applications' }).getAttribute('href')).toBe(
+        '/moderate/applications',
       );
       expect(screen.getByRole('link', { name: 'Moderators chat group' }).getAttribute('href')).toBe(
         '/moderate/group',

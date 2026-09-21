@@ -2983,6 +2983,93 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-staff-verify');
   });
 
+  test('state /members funding-reviewed', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('button', { name: /Reviewed by a moderator on/ })).toBeVisible();
+    await shotScreen(page, 'state-members-funding-reviewed');
+  });
+
+  test('state /members funding-reviewed-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: /Reviewed by a moderator on/ }).click();
+    await expect(page.getByText('Reviewed by a moderator', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-members-funding-reviewed-open');
+  });
+
   test('state /members translate', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
@@ -4472,6 +4559,143 @@ test.describe('profile activity chart variants', () => {
       .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-profile-push-enable-error');
+  });
+});
+
+test.describe('profile funding states', () => {
+  // Goldens are regenerated on the build host.
+  async function seedFundingProfile(
+    page: Page,
+    extras: {
+      role?: 'basis' | 'verified';
+      funding?: unknown;
+    } = {},
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: extras.role ?? 'verified',
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          funding:
+            extras.funding === undefined && extras.role !== 'basis'
+              ? {
+                  status: 'none',
+                  trialUtcDate: null,
+                  admittedAt: null,
+                  reviewedByName: null,
+                }
+              : extras.funding,
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+  }
+
+  test('profile funding not-verified', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'basis', funding: null });
+    await page.goto('/profile');
+    await expect(page.getByText('You are not verified yet.')).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-not-verified');
+  });
+
+  test('profile funding none', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.goto('/profile');
+    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-none');
+  });
+
+  test('profile funding applying', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.route(/\/funding\/apply$/, async () => {
+      await new Promise(() => undefined);
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-funding-applying');
+  });
+
+  test('profile funding apply-error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.route(/\/funding\/apply$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+    await expect(
+      page.getByText('Could not submit your application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-apply-error');
+  });
+
+  test('profile funding pending', async ({ page }) => {
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'pending',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile');
+    await expect(
+      page.getByText('Your application is open. A moderator will review your posts.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-pending');
+  });
+
+  test('profile funding trial', async ({ page }) => {
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'trial',
+        trialUtcDate: '2026-09-20',
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-trial');
+  });
+
+  test('profile funding admitted', async ({ page }) => {
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        reviewedByName: 'Ada',
+      },
+    });
+    await page.goto('/profile');
+    await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-admitted');
   });
 });
 
@@ -6729,6 +6953,7 @@ test.describe('moderate screens', () => {
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open applications' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Moderators chat group' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
@@ -7078,6 +7303,275 @@ test.describe('moderate proposals screens', () => {
     await page.getByRole('button', { name: 'Confirm as moderator' }).click();
     await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-proposals-confirming');
+  });
+});
+
+test.describe('moderate applications screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  const APPLICATION = {
+    accountId: 'acc_rose',
+    name: 'Rose',
+    role: 'verified' as const,
+    appliedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+  };
+
+  const DETAIL = {
+    account: {
+      id: 'acc_rose',
+      name: 'Rose',
+      role: 'verified' as const,
+      lightningAddress: 'rose@walletofsatoshi.com',
+    },
+    grant: {
+      status: 'pending' as const,
+      appliedAt: APPLICATION.appliedAt,
+      trialUtcDate: null,
+      admittedAt: null,
+      decidedAt: null,
+    },
+    messages: [
+      {
+        id: 'msg_1',
+        name: 'Rose',
+        text: 'Living-room note.',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        role: 'verified',
+        replyCount: 0,
+      },
+    ],
+  };
+
+  async function stubApplications(
+    page: Page,
+    applications: Array<typeof APPLICATION> | 'hang' = [],
+  ): Promise<void> {
+    if (applications === 'hang') {
+      await page.route('**/funding/applications', async () => {
+        /* hang */
+      });
+      return;
+    }
+    await page.route('**/funding/applications', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      const url = route.request().url();
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(url).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ applications }),
+      });
+    });
+  }
+
+  test('screen /moderate/applications', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page, [APPLICATION]);
+    await page.goto('/moderate/applications');
+    await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
+    await expect(page.getByText('Rose')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-applications');
+  });
+
+  test('moderate applications forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await stubApplications(page);
+    await page.goto('/moderate/applications');
+    await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-forbidden');
+  });
+
+  test('moderate applications empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page);
+    await page.goto('/moderate/applications');
+    await expect(page.getByText('No open applications.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-empty');
+  });
+
+  test('moderate applications loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page, 'hang');
+    await page.goto('/moderate/applications');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-loading');
+  });
+
+  test('moderate applications error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications', async (route) => {
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications');
+    await expect(
+      page.getByText('Could not load open applications. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-error');
+  });
+
+  test('screen /moderate/applications/[accountId]', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
+    await expect(page.getByText('Living-room note.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trial' })).toBeVisible();
+    await shotScreen(page, 'screen-moderate-applications-accountId');
+  });
+
+  test('moderate applications accountId trial', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          grant: { ...DETAIL.grant, status: 'trial', trialUtcDate: '2026-09-20' },
+        }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('button', { name: 'Admit' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trial' })).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-applications-accountId-trial');
+  });
+
+  test('moderate applications accountId forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-forbidden');
+  });
+
+  test('moderate applications accountId empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...DETAIL, messages: [] }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByText('No living-room posts.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-empty');
+  });
+
+  test('moderate applications accountId loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-loading');
+  });
+
+  test('moderate applications accountId error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(
+      page.getByText('Could not load this application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-error');
+  });
+
+  test('moderate applications accountId decide-failed', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/trial', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Trial' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-decide-failed');
+  });
+
+  test('moderate applications accountId deciding', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/trial', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Trial' }).click();
+    await expect(page.getByRole('button', { name: 'Trial' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-applications-accountId-deciding');
   });
 });
 

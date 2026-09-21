@@ -121,6 +121,13 @@ app/
 │   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
 │   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
 │   │   │   └── appoint-moderator/route.ts  # POST /trust/appoint-moderator
+│   │   ├── funding/
+│   │   │   ├── apply/route.ts                    # POST /funding/apply
+│   │   │   ├── applications/route.ts             # GET /funding/applications
+│   │   │   ├── applications/[accountId]/route.ts # GET /funding/applications/:id
+│   │   │   ├── trial/route.ts                    # POST /funding/trial
+│   │   │   ├── admit/route.ts                    # POST /funding/admit
+│   │   │   └── reject/route.ts                   # POST /funding/reject
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── donate/
@@ -133,6 +140,8 @@ app/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
 │   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   ├── applications/page.tsx # GET /moderate/applications — grant queue
+│   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — grant review
 │   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
 │   │   │   └── handbook/page.tsx     # GET /moderate/handbook — staff handbook
 │   │   ├── trust-chain/
@@ -169,9 +178,12 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
+│   │   ├── FundingApplicationsScreen.tsx # Signed-in /moderate/applications grant queue
+│   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /moderate/applications/:id grant review
+│   │   ├── FundingStatusCard.tsx # Owner profile verification / 21 gifts grant
 │   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
 │   │   ├── ModerateHandbookScreen.tsx # Signed-in /moderate/handbook staff chapters
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
@@ -275,6 +287,7 @@ app/
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm queue
+│   ├── applications.spec.ts     # /moderate/applications grant queue and review
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
