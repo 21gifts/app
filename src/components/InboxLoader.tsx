@@ -365,6 +365,8 @@ export function InboxLoader(): ReactElement | null {
                       lastSats: gift.sats,
                       lastFromMe: gift.fromMe,
                       lastAt: gift.createdAt,
+                      unread: false,
+                      unreadMessageCount: 0,
                     }
                   : row,
               );
