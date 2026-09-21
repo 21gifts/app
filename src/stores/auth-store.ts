@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Account } from '@/lib/api-types';
 import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 import { clearSession, saveSession } from '@/lib/session-storage';
+import { clearSessionPhrase } from '@/lib/tab-phrase';
 
 /**
  * Shape of the authentication store.
@@ -65,6 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ account });
   },
   clearAuth: () => {
+    clearSessionPhrase();
     clearSession();
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);

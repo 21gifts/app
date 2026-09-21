@@ -11,40 +11,14 @@ import {
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON, credentialToJSON } from '@/lib/webauthn-browser';
+import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** In-tab recovery phrase. Never written to localStorage or sent to the API. */
-let sessionMnemonic: string | null = null;
+export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 
 /** Fixture words for visual `/wallet:phrase` and `/wallet:confirm` (not live PRF). */
 export const WALLET_VISUAL_FIXTURE_MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
-
-/**
- * Store a derived recovery phrase in tab memory so `/wallet` can show it
- * after register or replace without persisting it.
- *
- * @param mnemonic - Space-separated BIP-39 words.
- */
-export function rememberSessionPhrase(mnemonic: string): void {
-  sessionMnemonic = mnemonic;
-}
-
-/**
- * Current in-memory recovery phrase, or `null`.
- *
- * @returns The phrase, or `null`.
- */
-export function peekSessionPhrase(): string | null {
-  return sessionMnemonic;
-}
-
-/**
- * Drop the in-memory recovery phrase.
- */
-export function clearSessionPhrase(): void {
-  sessionMnemonic = null;
-}
 
 /** Busy / idle / error for {@link useWalletPhrase}. */
 export type WalletPhraseStatus = 'idle' | 'busy' | 'error';

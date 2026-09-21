@@ -2486,21 +2486,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Store 12 words in tab RAM.
 - **Inputs:** Mnemonic string.
 - **Returns / side effects:** Module-level variable. Never localStorage.
-- **Used by:** `usePasskeyLogin`, `useWalletPhrase`.
+- **Used by:** `usePasskeyLogin`, `useWalletPhrase`. Implemented in `tab-phrase`.
 
 ## Function: peekSessionPhrase
 
 - **Purpose:** Read tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** String or `null`.
-- **Used by:** `useWalletPhrase`.
+- **Used by:** `useWalletPhrase`. Implemented in `tab-phrase`.
 
 ## Function: clearSessionPhrase
 
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** Clears the module variable.
-- **Used by:** `useWalletPhrase.confirmSaved`.
+- **Used by:** `useWalletPhrase.confirmSaved`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
 ## Function: useWalletPhrase
 

@@ -10,7 +10,7 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { clearSessionPhrase, rememberSessionPhrase } from '@/hooks/useWalletPhrase';
+import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { mnemonicFromPrfFirst, obtainPrfFirst } from '@/lib/prf-mnemonic';
 import {
   creationOptionsFromJSON,
@@ -279,6 +279,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       setStatus('unsupported');
       return;
     }
+    clearSessionPhrase();
     entryKindRef.current = 'login';
     const { runId, controller } = beginRun('authenticate');
     void (async () => {

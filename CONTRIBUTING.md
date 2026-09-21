@@ -256,6 +256,7 @@ app/
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
+│   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids

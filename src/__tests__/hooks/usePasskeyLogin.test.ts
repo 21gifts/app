@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
-import { rememberSessionPhrase } from '@/hooks/useWalletPhrase';
+import { rememberSessionPhrase } from '@/lib/tab-phrase';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -44,13 +44,11 @@ vi.mock('@/lib/prf-mnemonic', () => ({
     ),
 }));
 
-vi.mock('@/hooks/useWalletPhrase', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/hooks/useWalletPhrase')>();
-  return {
-    ...actual,
-    rememberSessionPhrase: vi.fn(),
-  };
-});
+vi.mock('@/lib/tab-phrase', () => ({
+  rememberSessionPhrase: vi.fn(),
+  clearSessionPhrase: vi.fn(),
+  peekSessionPhrase: vi.fn(() => null),
+}));
 
 const account = {
   id: 'acc_1',

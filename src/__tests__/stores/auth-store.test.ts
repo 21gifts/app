@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge } from '@/lib/app-badge';
 import { clearSession, saveSession } from '@/lib/session-storage';
+import { peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/session-storage', () => ({
@@ -71,12 +72,14 @@ describe('useAuthStore', () => {
   });
 
   it('clearAuth wipes state and clears storage', () => {
+    rememberSessionPhrase('one two three');
     useAuthStore.getState().setAuth('tok', account);
     useAuthStore.getState().clearAuth();
 
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
     expect(state.account).toBeNull();
+    expect(peekSessionPhrase()).toBeNull();
     expect(clearSession).toHaveBeenCalledTimes(1);
     expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();
     expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
