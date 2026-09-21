@@ -876,6 +876,7 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | Forum no messages           | muted `text-sm` catalog `forum.empty` | Composer still shown      |
 | Forum no paid               | `forum.emptyPaid`                     | Mode switcher still shown |
 | Forum no gifts yet / unpaid | `forum.emptyUnpaid`                   | Mode switcher still shown |
+| Shops none                  | `shops.empty`                         | Composer still shown      |
 | Inbox none (member)         | `inbox.empty`                         | None                      |
 | Inbox none (staff Direct)   | `inbox.empty`                         | Filter still shown        |
 | Inbox none (staff Contact)  | `inbox.empty.contact`                 | Filter still shown        |
@@ -1034,6 +1035,12 @@ Handbook states: default, forbidden.
 ### `/contact`
 
 Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Contact → lead → rules link (`text-app-fg underline`) → Composer (textarea + `IconButton` Send). Alerts. Success navigates to inbox.
+
+### `/shops`
+
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` → **h1** Shops → lead `shops.lead` → `ForumLoader feed="shops"` (same ForumBoard as `/welcome`: mode pills, composer, cards). Laws hint absent. Shop cards: `#Shop` pill. Empty `shops.empty`. Loading. Error + Try again.
+
+Handbook states: default, empty, loading, error.
 
 ### `/rules`
 

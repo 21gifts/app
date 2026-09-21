@@ -165,6 +165,8 @@ export interface ForumBoardProps {
   onRetry: () => void;
   /** Client-side composer validation or request failure. */
   formError: ForumFormError;
+  /** New-post composer `maxLength`. Default {@link FORUM_MESSAGE_MAX_LENGTH}. */
+  composerMaxLength?: number;
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
   /** Amount draft for the open pay sheet. */
@@ -547,6 +549,7 @@ export function ForumBoard({
   onPost,
   onRetry,
   formError,
+  composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
   payMessageId,
   payDraft,
   payBusy,
@@ -1545,7 +1548,7 @@ export function ForumBoard({
               placeholder={t('forum.placeholder')}
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
-              maxLength={FORUM_MESSAGE_MAX_LENGTH}
+              maxLength={composerMaxLength}
               rows={2}
               disabled={posting}
               className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"

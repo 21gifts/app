@@ -450,6 +450,24 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" unpaid chip counts only shop notes', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue([
+      SAMPLE,
+      { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 },
+    ]);
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+  });
+
   it('feed="shops" does not duplicate #21GiftsShop when the draft already has it', async () => {
     fetchMock.mockResolvedValue([]);
     postMock.mockResolvedValue({

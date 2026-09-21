@@ -480,6 +480,26 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Dismiss')).toBeNull();
   });
 
+  it('sets the new-post textarea maxLength from composerMaxLength', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerMaxLength={486}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe('486');
+  });
+
   it('hides the composer and mode control when composerHidden', () => {
     renderWithLocale(
       <ForumBoard

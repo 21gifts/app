@@ -7,14 +7,21 @@ const SHOP_HASHTAG_TOKEN = /#21GiftsShop(?![A-Za-z0-9_])/i;
 /** Global form of {@link SHOP_HASHTAG_TOKEN} for replacement. */
 const SHOP_HASHTAG_TOKEN_GLOBAL = /#21GiftsShop(?![A-Za-z0-9_])/gi;
 
-/** True when `text` contains a `#21GiftsShop` token (case-insensitive; next char not `[A-Za-z0-9_]`). */
+/**
+ * True when `text` contains a `#21GiftsShop` token (case-insensitive; next char not `[A-Za-z0-9_]`).
+ *
+ * @param text - Stored forum post body.
+ * @returns Whether the body is a shop note.
+ */
 export function isShopNote(text: string): boolean {
   return SHOP_HASHTAG_TOKEN.test(text);
 }
 
 /**
- * Remove `#21GiftsShop` tokens from display text (case-insensitive), collapse leftover
- * blank lines / extra spaces, trim. Empty string if only the hashtag was present.
+ * Removes `#21GiftsShop` tokens from display text (case-insensitive).
+ *
+ * @param text - Stored forum post body.
+ * @returns Collapsed leftover blank lines and extra spaces, trimmed; empty if only the hashtag was present.
  */
 export function stripShopHashtag(text: string): string {
   return text
@@ -25,9 +32,10 @@ export function stripShopHashtag(text: string): string {
 }
 
 /**
- * If `isShopNote(text)` already, return `text` unchanged (do not trim inner content).
- * If `text.trim() === ''`, return `#21GiftsShop`.
- * Otherwise append `\n\n#21GiftsShop`.
+ * Appends `#21GiftsShop` when `text` is not already a shop note.
+ *
+ * @param text - Composer or stored body.
+ * @returns `text` unchanged when already a shop note; `#21GiftsShop` when blank; otherwise `text` plus `\n\n#21GiftsShop`.
  */
 export function ensureShopHashtag(text: string): string {
   if (isShopNote(text)) {

@@ -36,7 +36,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
+import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import {
@@ -316,6 +316,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  * copy) and does not auto-scroll the newest note. Renders nothing when there
  * is no session.
  *
+ * @param feed - Optional `'living-room'` (default) or `'shops'`.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
@@ -445,6 +446,11 @@ export function ForumLoader({
           .sort()
           .join('\0');
 
+  const listedNotes = (rows: ForumMessage[] | null): ForumMessage[] | null => {
+    if (rows === null) return null;
+    return feed === 'shops' ? rows.filter((row) => isShopNote(row.text)) : rows;
+  };
+
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
    * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras).
@@ -513,12 +519,9 @@ export function ForumLoader({
       }
       const atTop = shellScrollTop(scroller) < 8;
       const visibleNext = next.messages.filter((message) => !deletedIds.current.has(message.id));
-      if (
-        !replace &&
-        !forceApply &&
-        !atTop &&
-        hasUnseenForumPosts(messagesRef.current, visibleNext)
-      ) {
+      const currentListed = listedNotes(messagesRef.current);
+      const fetchedListed = listedNotes(visibleNext) ?? visibleNext;
+      if (!replace && !forceApply && !atTop && hasUnseenForumPosts(currentListed, fetchedListed)) {
         setNewPostsAvailable(true);
         return 'ok';
       }
@@ -1784,6 +1787,12 @@ export function ForumLoader({
     void pending();
   };
 
+  const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
+  const composerMaxLength =
+    feed === 'shops' && !isShopNote(draft)
+      ? FORUM_MESSAGE_MAX_LENGTH - shopSuffixLen
+      : FORUM_MESSAGE_MAX_LENGTH;
+
   return (
     <>
       {overlayRequirement !== null ? (
@@ -1797,12 +1806,9 @@ export function ForumLoader({
         />
       ) : null}
       <ForumBoard
-        messages={
-          messages !== null && feed === 'shops'
-            ? messages.filter((row) => isShopNote(row.text))
-            : messages
-        }
+        messages={listedNotes(messages)}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
+        {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
         moderatorAppointedAvailable={moderatorAppointedId !== null}
@@ -1917,7 +1923,9 @@ export function ForumLoader({
         onModeChange={onModeChange}
         nearEndRef={nearEndRef}
         unpaidNewCount={
-          feedMode === 'unpaid' || messages === null ? 0 : unpaidNewCount(messages, unpaidSeenAt)
+          feedMode === 'unpaid' || messages === null
+            ? 0
+            : unpaidNewCount(listedNotes(messages) ?? [], unpaidSeenAt)
         }
         lawsVisible={feed === 'shops' ? false : lawsVisible}
         onDismissLaws={onDismissLaws}
