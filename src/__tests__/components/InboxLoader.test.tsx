@@ -1048,6 +1048,8 @@ describe('conversation thread pages', () => {
       createdAt: '2026-08-28T14:00:00.000Z',
       fromMe: true,
       sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
     };
     const older = {
       ...MESSAGE,

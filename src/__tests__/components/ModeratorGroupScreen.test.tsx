@@ -513,15 +513,17 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('loads a stored photo when hasPhoto is true and photoCount is 0', async () => {
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-legacy',
-        text: '',
-        hasPhoto: true,
-        photoCount: 0,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-legacy',
+          text: '',
+          hasPhoto: true,
+          photoCount: 0,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -538,15 +540,17 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('loads a stored photo blob for a hasPhoto row', async () => {
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -570,15 +574,17 @@ describe('ModeratorGroupScreen', () => {
           resolvePhoto = resolve;
         }),
     );
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -601,15 +607,17 @@ describe('ModeratorGroupScreen', () => {
 
   it('revokes loaded photo blobs and drops drafts when the account is no longer staff', async () => {
     const revoke = vi.fn();
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -639,15 +647,17 @@ describe('ModeratorGroupScreen', () => {
 
   it('revokes photo blobs that are no longer on the thread', async () => {
     const revoke = vi.fn();
-    threadMock.mockResolvedValueOnce([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValueOnce(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -660,7 +670,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    threadMock.mockResolvedValueOnce([MESSAGE]);
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE]));
     act(() => {
       useAuthStore.setState({ session: 'sess-2', account });
     });
@@ -672,23 +682,25 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('skips a still when the photo fetch fails and loads the next', async () => {
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-fail',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-      {
-        ...MESSAGE,
-        id: 'm-ok',
-        name: 'Bob',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-fail',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+        {
+          ...MESSAGE,
+          id: 'm-ok',
+          name: 'Bob',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     photoMock
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
