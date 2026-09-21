@@ -446,4 +446,49 @@ describe('useWalletPhrase', () => {
     });
     expect(push).not.toHaveBeenCalled();
   });
+
+  it('does not surface an error when activate rejects after logout', async () => {
+    vi.mocked(startPasskeyReplace).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      throw new Error('aborted');
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+  });
+
+  it('does not surface an error when showPhrase rejects after logout', async () => {
+    vi.mocked(obtainPrfFirstFromGet).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      throw new Error('aborted');
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+  });
+
+  it('does not surface an error when confirmSaved rejects after logout', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet' },
+    });
+    rememberSessionPhrase(mnemonic);
+    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      throw new Error('aborted');
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.confirmSaved();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
 });
