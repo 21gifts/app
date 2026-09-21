@@ -110,14 +110,14 @@ function chartDayLabel(day: string, locale: string): string {
 /**
  * Signed-in moderation hub of staff tools.
  *
- * Moderators see hub copy, the daily payout-goal widget (from
+ * Moderators see the daily payout-goal widget (from
  * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals, and
- * Moderators tools. The Moderators control goes to `/moderate/group` and
- * shows a staff-room unread count when greater than zero. Other signed-in
- * visitors see a short forbidden message and no tools list. Does not fetch
- * hidden notes, proposals, or the group thread; unread for the Moderators
- * control comes from {@link useUnreadCount}. Renders nothing without a
- * session.
+ * Moderators chat group tools. The Moderators chat group control goes to
+ * `/moderate/group` and shows a staff-room unread count when greater than
+ * zero. Other signed-in visitors see a short forbidden message and no tools
+ * list. Does not fetch hidden notes, proposals, or the group thread; unread
+ * for the Moderators chat group control comes from {@link useUnreadCount}.
+ * Renders nothing without a session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
  */
@@ -164,7 +164,7 @@ export function ModerateScreen(): ReactElement | null {
 
   if (!staff) {
     return (
-      <Card maxWidth="xl">
+      <Card maxWidth="xl" surface={false}>
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('moderate.heading')}
         </h1>
@@ -174,11 +174,10 @@ export function ModerateScreen(): ReactElement | null {
   }
 
   return (
-    <Card maxWidth="xl">
+    <Card maxWidth="xl" surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('moderate.heading')}
       </h1>
-      <p className="text-center text-sm text-app-muted">{t('moderate.hubLead')}</p>
       <PayoutGoalWidget
         t={t}
         locale={locale}
@@ -194,7 +193,6 @@ export function ModerateScreen(): ReactElement | null {
       />
       <ul aria-label={t('moderate.toolsLabel')} className="flex w-full flex-col gap-3">
         <li className="flex w-full flex-col items-center gap-3">
-          <p className="text-center text-sm text-app-muted">{t('moderate.lead')}</p>
           <ButtonLink href="/moderate/hidden" variant="secondary" size="lg">
             {t('moderate.listLabel')}
           </ButtonLink>
@@ -205,7 +203,6 @@ export function ModerateScreen(): ReactElement | null {
           </ButtonLink>
         </li>
         <li className="flex w-full flex-col items-center gap-3">
-          <p className="text-center text-sm text-app-muted">{t('moderate.groupLead')}</p>
           <ButtonLink
             href="/moderate/group"
             variant="secondary"
@@ -312,9 +309,9 @@ function PayoutGoalWidget(props: {
             data-testid="payout-goal-fill"
           />
         </svg>
-        <p className="text-center text-xs text-app-muted">
-          {open ? t('moderate.goal.closeHint') : t('moderate.goal.openHint')}
-        </p>
+        {open ? (
+          <p className="text-center text-xs text-app-muted">{t('moderate.goal.closeHint')}</p>
+        ) : null}
       </button>
       {open ? (
         <div id="moderate-payout-goal-detail" className="flex flex-col gap-3">

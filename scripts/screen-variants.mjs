@@ -1217,14 +1217,14 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'moderate.png',
     visual: 'screen-moderate',
-    needle: 'Tools for moderators.',
+    needle: "getByRole('heading', { name: 'Moderation' })",
   },
   {
     route: '/moderate',
     id: 'group-unread',
     image: 'moderate-group-unread.png',
     visual: 'state-moderate-group-unread',
-    needle: "getByRole('link', { name: 'Moderators, 1 unread' })",
+    needle: "getByRole('link', { name: 'Moderators chat group, 1 unread' })",
   },
   {
     route: '/moderate',

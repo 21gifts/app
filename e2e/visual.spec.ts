@@ -368,7 +368,7 @@ test.beforeEach(async ({ page }, testInfo) => {
 /**
  * Playwright fullPage stitches viewport chunks; sticky chrome is painted
  * into every chunk. Force document flow so each header appears once.
- * The fixed New posts pill is a viewport shot, not unstuck here.
+ * The sticky New posts pill is a viewport shot, not unstuck here.
  *
  * @param page - Page under test.
  */
@@ -1563,6 +1563,11 @@ test.describe('onboarding screens', () => {
       page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
     ).toBeVisible();
     await page.evaluate(() => {
+      const scroller = document.querySelector('main .overflow-y-auto');
+      if (scroller instanceof HTMLElement) {
+        scroller.scrollTop = 900;
+        return;
+      }
       window.scrollTo(0, 900);
     });
     messagesBody = {
@@ -1597,7 +1602,7 @@ test.describe('onboarding screens', () => {
     });
     await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
     await expect(page.getByText('Held unseen note for the New posts pill.')).toHaveCount(0);
-    // Viewport shot: fullPage stitches the fixed New posts pill into a random chunk.
+    // Viewport shot: fullPage stitches the sticky New posts pill into a random chunk.
     await shotScreen(page, 'state-welcome-new-posts', false);
   });
 
@@ -1721,8 +1726,8 @@ test.describe('onboarding screens', () => {
     const group = page.getByRole('group', { name: 'Fiat currency' }).last();
     await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
     await group.scrollIntoViewIfNeeded();
-    // Viewport-only capture after document scroll keeps the Fiat currency row
-    // in frame.
+    // Viewport-only capture after AppShell scroller scroll keeps the Fiat
+    // currency row in frame.
     await shotScreen(page, 'state-profile-fiat', false);
   });
 
@@ -6721,10 +6726,9 @@ test.describe('moderate screens', () => {
     await stubPayoutGoal(page);
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-    await expect(page.getByText('Tools for moderators.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Moderators' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderators chat group' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
   });
@@ -6755,7 +6759,7 @@ test.describe('moderate screens', () => {
       });
     });
     await page.goto('/moderate');
-    await expect(page.getByRole('link', { name: 'Moderators, 1 unread' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-unread');
   });

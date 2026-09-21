@@ -748,5 +748,9 @@ export function InboxScreen({
     );
   }
 
-  return <Card maxWidth="xl">{body}</Card>;
+  return (
+    <Card maxWidth="xl" surface={false}>
+      {body}
+    </Card>
+  );
 }

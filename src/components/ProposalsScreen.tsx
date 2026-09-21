@@ -95,7 +95,7 @@ export function ProposalsScreen(): ReactElement | null {
 
   if (!staff) {
     return (
-      <Card maxWidth="xl">
+      <Card maxWidth="xl" surface={false}>
         {heading}
         <p className="text-center text-sm text-app-muted">{t('moderate.forbidden')}</p>
       </Card>
@@ -214,7 +214,7 @@ export function ProposalsScreen(): ReactElement | null {
   }
 
   return (
-    <Card maxWidth="xl">
+    <Card maxWidth="xl" surface={false}>
       {heading}
       {body}
     </Card>

@@ -10,10 +10,11 @@ import { useAuthStore } from '@/stores/auth-store';
  * The fourth post-login screen: welcome after name, address, and rules agreement.
  *
  * Embeds {@link ForumLoader} (forum list + composer) below the heading.
- * Card is `max-w-xl` to fit the board. Forum heading is omitted on the board
+ * Page column is `max-w-xl` (`Card surface={false}`) so the AppShell frame is
+ * the only page-level `rounded-3xl`. Forum heading is omitted on the board
  * so this welcome title is the only stack header.
  *
- * @returns The welcome card.
+ * @returns The welcome page column.
  */
 export function WelcomeScreen(): ReactElement {
   const { t } = useTranslations();
@@ -21,7 +22,7 @@ export function WelcomeScreen(): ReactElement {
   const name = storedName === null || storedName === undefined ? '' : storedName.trim();
 
   return (
-    <Card maxWidth="xl">
+    <Card maxWidth="xl" surface={false}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 64 64"

@@ -13,32 +13,38 @@ describe('PageChrome', () => {
       </PageChrome>,
     );
     const main = container.querySelector('main');
-    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).toContain('h-[var(--app-height)]');
     expect(main?.className).not.toContain('overflow-hidden');
     expect(main?.className).not.toContain('justify-center');
     expect(screen.getByText('Body')).toBeTruthy();
-    expect(main?.querySelector('.right-5')).toBeNull();
-    expect(main?.querySelector('.left-5')?.childNodes.length ?? 0).toBe(0);
+    const chrome = main?.querySelector('[data-app-chrome]');
+    expect(chrome).toBeTruthy();
+    expect(chrome?.lastElementChild?.className).toContain('empty:hidden');
+    expect(chrome?.lastElementChild?.className).toContain('ml-auto');
+    expect(chrome?.lastElementChild?.childNodes.length).toBe(0);
   });
 
-  it('renders topRight in the absolute slot', () => {
-    renderWithLocale(
+  it('renders topRight in the frame chrome row', () => {
+    const { container } = renderWithLocale(
       <PageChrome topRight={<span data-testid="slot">TR</span>}>
         <p>Body</p>
       </PageChrome>,
     );
-    expect(screen.getByTestId('slot')).toBeTruthy();
+    const chrome = container.querySelector('[data-app-chrome]');
+    expect(chrome?.contains(screen.getByTestId('slot'))).toBe(true);
+    expect(chrome?.lastElementChild?.className).toContain('ml-auto');
   });
 
-  it('renders topLeft in the absolute slot', () => {
+  it('renders topLeft in the frame chrome row', () => {
     const { container } = renderWithLocale(
       <PageChrome topLeft={<span data-testid="brand">21.gifts</span>}>
         <p>Body</p>
       </PageChrome>,
     );
-    expect(screen.getByTestId('brand')).toBeTruthy();
-    expect(container.querySelector('.left-5')?.className).toContain('flex');
-    expect(container.querySelector('.left-5')?.className).toContain('gap-2');
+    const chrome = container.querySelector('[data-app-chrome]');
+    expect(chrome?.contains(screen.getByTestId('brand'))).toBe(true);
+    expect(chrome?.firstElementChild?.className).toContain('flex');
+    expect(chrome?.firstElementChild?.className).toContain('gap-2');
   });
 
   it('appends non-viewport className extras', () => {
@@ -49,7 +55,8 @@ describe('PageChrome', () => {
     );
     const main = container.querySelector('main');
     expect(main?.className).toContain('justify-start');
-    expect(main?.className).toContain('min-h-[var(--app-height)]');
+    expect(main?.className).toContain('h-[var(--app-height)]');
+    expect(main?.className).not.toContain('overflow-hidden');
     expect(main?.className).not.toContain('justify-center');
   });
 
@@ -59,9 +66,9 @@ describe('PageChrome', () => {
         <p>Body</p>
       </PageChrome>,
     );
-    expect(container.querySelector('main')?.querySelector('.left-5')?.childNodes.length ?? 0).toBe(
-      0,
-    );
+    const leftHost = container.querySelector('[data-app-chrome]')?.firstElementChild;
+    expect(leftHost?.className).toContain('empty:hidden');
+    expect(leftHost?.childNodes.length).toBe(0);
   });
 
   it('omits the topRight slot when topRight is null', () => {
@@ -70,7 +77,10 @@ describe('PageChrome', () => {
         <p>Body</p>
       </PageChrome>,
     );
-    expect(container.querySelector('main')?.querySelector('.right-5')).toBeNull();
+    const rightHost = container.querySelector('[data-app-chrome]')?.lastElementChild;
+    expect(rightHost?.className).toContain('empty:hidden');
+    expect(rightHost?.className).toContain('ml-auto');
+    expect(rightHost?.childNodes.length).toBe(0);
   });
 
   it('appends className and treats empty className as absent', () => {

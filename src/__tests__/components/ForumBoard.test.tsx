@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
@@ -4420,6 +4421,37 @@ describe('ForumBoard', () => {
     );
     const root = container.querySelector('.overscroll-y-contain');
     expect(root).toBeTruthy();
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 160 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads pull-to-refresh scrollTop from the AppShell scroller', () => {
+    const onRefresh = vi.fn();
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          onRefresh={onRefresh}
+          {...idleProps}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 0;
+    }
     fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(window, { touches: [{ clientY: 160 }] });
     fireEvent.touchEnd(window);

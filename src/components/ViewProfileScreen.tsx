@@ -42,7 +42,7 @@ export function ViewProfileScreen({
   const profileUrl = origin !== '' ? `${origin}/view/${viewKey}` : '';
 
   return (
-    <Card>
+    <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('profile.title')}
       </h1>

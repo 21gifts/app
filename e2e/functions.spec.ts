@@ -4752,7 +4752,12 @@ test('Function: ForumLoader — scrolled silent refresh shows New posts without 
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    window.scrollTo(0, 900);
+    const scroller = document.querySelector('main .overflow-y-auto');
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 900;
+    } else {
+      window.scrollTo(0, 900);
+    }
   });
   messagesBody = {
     messages: [
@@ -4821,7 +4826,12 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    window.scrollTo(0, 900);
+    const scroller = document.querySelector('main .overflow-y-auto');
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 900;
+    } else {
+      window.scrollTo(0, 900);
+    }
   });
   messagesBody = {
     messages: [
@@ -5576,7 +5586,99 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
-test('Function: AppShell — signed-in notifications Menu sits inside the card', async ({ page }) => {
+test('Function: useAppShellScroller — welcome inner scroller drives New posts', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  const first = Array.from({ length: 12 }, (_, index) => ({
+    id: `m-scroller-${String(index)}`,
+    name: 'Ada',
+    text: `Scroller note ${String(index)} so the welcome list can scroll past the top.`,
+    createdAt: `2026-08-28T12:${String(index).padStart(2, '0')}:00.000Z`,
+    sats: 21,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  }));
+  let messagesBody: unknown = { messages: first };
+  await page.route(/\/messages$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(messagesBody),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(
+    page.getByText('Scroller note 0 so the welcome list can scroll past the top.'),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const scroller = document.querySelector('main .overflow-y-auto');
+    if (scroller instanceof HTMLElement) {
+      scroller.scrollTop = 900;
+    }
+  });
+  const afterScroll = await page.evaluate(() => {
+    const scroller = document.querySelector('main .overflow-y-auto');
+    return {
+      innerTop: scroller instanceof HTMLElement ? scroller.scrollTop : -1,
+      windowY: window.scrollY,
+    };
+  });
+  expect(afterScroll.innerTop).toBeGreaterThanOrEqual(8);
+  expect(afterScroll.windowY).toBe(0);
+  messagesBody = {
+    messages: [
+      {
+        id: 'm-unseen-scroller',
+        name: 'Carol',
+        text: 'Held unseen note for the inner scroller New posts pill.',
+        createdAt: '2026-08-28T13:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+      ...first,
+    ],
+  };
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(page.getByRole('button', { name: 'New posts' })).toBeVisible();
+  await expect(
+    page.getByText('Held unseen note for the inner scroller New posts pill.'),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'New posts' }).click();
+  await expect(
+    page.getByText('Held unseen note for the inner scroller New posts pill.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'New posts' })).toHaveCount(0);
+  const afterTop = await page.evaluate(() => {
+    const scroller = document.querySelector('main .overflow-y-auto');
+    return scroller instanceof HTMLElement ? scroller.scrollTop : -1;
+  });
+  expect(afterTop).toBeLessThan(8);
+});
+
+test('Function: AppShell — signed-in notifications Menu sits in the page-frame header', async ({
+  page,
+}) => {
   await seedAdaSession(page);
   await page.route(/\/forum\/notifications$/, async (route) => {
     await route.fulfill({
@@ -5587,25 +5689,27 @@ test('Function: AppShell — signed-in notifications Menu sits inside the card',
   });
   await page.goto('/notifications');
   await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
-  const menu = page.getByRole('button', { name: 'Menu' });
-  const section = page.locator('section').filter({ has: menu });
-  await expect(section).toBeVisible();
+  const frame = page.locator('main > section');
+  const chrome = frame.locator('[data-app-chrome]');
+  const menu = chrome.getByRole('button', { name: 'Menu' });
+  await expect(chrome).toBeVisible();
+  await expect(menu).toBeVisible();
   const menuBox = await menu.boundingBox();
-  const sectionBox = await section.boundingBox();
+  const frameBox = await frame.boundingBox();
   expect(menuBox).not.toBeNull();
-  expect(sectionBox).not.toBeNull();
+  expect(frameBox).not.toBeNull();
   const menuX = menuBox?.x ?? 0;
   const menuY = menuBox?.y ?? 0;
   const menuRight = menuX + (menuBox?.width ?? 0);
   const menuBottom = menuY + (menuBox?.height ?? 0);
-  const sectionX = sectionBox?.x ?? 0;
-  const sectionY = sectionBox?.y ?? 0;
-  const sectionRight = sectionX + (sectionBox?.width ?? 0);
-  const sectionBottom = sectionY + (sectionBox?.height ?? 0);
-  expect(menuX).toBeGreaterThanOrEqual(sectionX - 1);
-  expect(menuY).toBeGreaterThanOrEqual(sectionY - 1);
-  expect(menuRight).toBeLessThanOrEqual(sectionRight + 1);
-  expect(menuBottom).toBeLessThanOrEqual(sectionBottom + 1);
+  const frameX = frameBox?.x ?? 0;
+  const frameY = frameBox?.y ?? 0;
+  const frameRight = frameX + (frameBox?.width ?? 0);
+  const frameBottom = frameY + (frameBox?.height ?? 0);
+  expect(menuX).toBeGreaterThanOrEqual(frameX - 1);
+  expect(menuY).toBeGreaterThanOrEqual(frameY - 1);
+  expect(menuRight).toBeLessThanOrEqual(frameRight + 1);
+  expect(menuBottom).toBeLessThanOrEqual(frameBottom + 1);
 });
 
 test('Function: AppShellTopLeft — rules setup shows the wordmark', async ({ page }) => {

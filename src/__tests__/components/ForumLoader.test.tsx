@@ -2,6 +2,7 @@ import { deleteMessage } from '@/lib/api';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { ForumLoader } from '@/components/ForumLoader';
 import type {
   Account,
@@ -4908,6 +4909,51 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('button', { name: 'New posts' })).toBeNull();
     expect(scrollTo).toHaveBeenCalled();
     scrollTo.mockRestore();
+  });
+
+  it('holds New posts against the AppShell scroller and scrolls that node to top', async () => {
+    fetchMock.mockResolvedValueOnce([SAMPLE]).mockResolvedValue([FRESH, SAMPLE]);
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumLoader />
+      </AppShell>,
+    );
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.scrollTop = 800;
+    const scrollTo = vi.fn();
+    scroller.scrollTo = scrollTo;
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'New posts' }));
+    await waitFor(() => {
+      expect(screen.getByText('Fresh from refresh')).toBeTruthy();
+    });
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
   it('clears force-apply when New posts is clicked while a refresh is already running', async () => {

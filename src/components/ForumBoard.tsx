@@ -23,6 +23,7 @@ import {
   type MouseEvent,
   type ReactElement,
 } from 'react';
+import { useAppShellScroller } from '@/components/AppShell';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
@@ -515,8 +516,8 @@ function fallbackCopy(text: string): boolean {
  * When unseen notes are held for a scrolled visitor, a labeled New posts pill
  * applies them without placing refresh chrome in the idle board. When an unread
  * moderator-appointed notification exists, a labeled pill in the same visual
- * language marks it read; if both pills show, the moderator pill stays at
- * `top-14` and New posts moves to `top-28`.
+ * language marks it read; pills are sticky in the AppShell scroller under the
+ * frame header (`top-2`, or `top-14` for New posts when both show).
  * Optional `permalinkTargetId` rings the matching nested reply only.
  *
  * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink/truncate state.
@@ -583,6 +584,7 @@ export function ForumBoard({
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const router = useRouter();
+  const scroller = useAppShellScroller();
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -610,7 +612,10 @@ export function ForumBoard({
     let deltaY = 0;
     let armed = false;
 
-    const pageScrollTop = (): number => window.scrollY || document.documentElement.scrollTop || 0;
+    const pageScrollTop = (): number => {
+      if (scroller !== null) return scroller.scrollTop;
+      return window.scrollY || document.documentElement.scrollTop || 0;
+    };
 
     const resetPull = (): void => {
       startY = null;
@@ -689,7 +694,7 @@ export function ForumBoard({
       window.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('touchcancel', onTouchCancel);
     };
-  }, [onRefresh]);
+  }, [onRefresh, scroller]);
 
   useEffect(() => {
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -1397,7 +1402,7 @@ export function ForumBoard({
       className="flex w-full flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
     >
       {moderatorAppointedAvailable ? (
-        <div className="pointer-events-none fixed left-1/2 top-14 z-30 -translate-x-1/2">
+        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
           <Button
             type="button"
             variant="primary"
@@ -1414,8 +1419,8 @@ export function ForumBoard({
         <div
           className={
             moderatorAppointedAvailable
-              ? 'pointer-events-none fixed left-1/2 top-28 z-30 -translate-x-1/2'
-              : 'pointer-events-none fixed left-1/2 top-14 z-30 -translate-x-1/2'
+              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
+              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
           }
         >
           <Button
