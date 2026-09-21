@@ -1650,6 +1650,51 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
+  it('does not pin to the bottom when an older still loads', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const older = { ...MESSAGE, id: 'm-old', text: 'Older', hasPhoto: true, photoCount: 1 };
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [older, newest], photoUrls: {} })} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [older, newest],
+            photoUrls: { 'm-old:0': 'blob:old' },
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [older, newest],
+            photoUrls: { 'm-old:0': 'blob:old', 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
   it('does not scroll to the bottom when the invoice pay sheet closes', () => {
     const scrollTo = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
