@@ -357,7 +357,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts a valid Ask amount as goalSats', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -379,7 +379,7 @@ describe('ForumLoader', () => {
   });
 
   it('returns to Send a post from the Ask pill', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -396,7 +396,7 @@ describe('ForumLoader', () => {
   });
 
   it('omits goalSats when Ask is empty', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -410,7 +410,7 @@ describe('ForumLoader', () => {
   });
 
   it('does not post when Ask is not a whole sat in range', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -428,7 +428,7 @@ describe('ForumLoader', () => {
   });
 
   it('clears the Ask field after a successful post', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -1196,7 +1196,7 @@ describe('ForumLoader', () => {
   });
 
   it('posts a video with a valid Ask amount as goalSats', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
     const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
