@@ -1042,7 +1042,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6312,7 +6312,7 @@ test.describe('shops screens', () => {
 
   test('shops default', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6354,7 +6354,7 @@ test.describe('shops screens', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await held;
       await route.abort();
     });
@@ -6366,7 +6366,7 @@ test.describe('shops screens', () => {
 
   test('shops error', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 503,
         contentType: 'application/json',

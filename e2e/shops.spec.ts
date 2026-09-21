@@ -57,7 +57,7 @@ async function fulfillForumMessages(
   messages: unknown[],
   status = 200,
 ): Promise<void> {
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -113,7 +113,7 @@ test('Function: ShopsPage — shops loading', async ({ page }) => {
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await held;
     await route.abort();
   });
@@ -153,7 +153,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   const posted = new Promise<void>((resolve) => {
     resolvePosted = resolve;
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() === 'POST') {
       const contentType = route.request().headers()['content-type'] ?? '';
       if (contentType.includes('multipart/form-data')) {
