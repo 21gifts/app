@@ -72,6 +72,7 @@ app/
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
 │   │   │   ├── notification-level/route.ts  # POST /me/notification-level
+│   │   │   ├── wallet-backup-seen/route.ts  # POST /me/wallet-backup-seen
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
@@ -144,8 +145,6 @@ app/
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
-│   │   ├── me/wallet-backup-seen/
-│   │   │   └── route.ts         # POST /me/wallet-backup-seen
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── moderate/

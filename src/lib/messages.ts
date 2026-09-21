@@ -368,7 +368,7 @@ const en = {
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
   'wallet.prfUnsupported':
-    'This device cannot create a recovery phrase. Use a browser that supports passkeys with PRF.',
+    'This browser cannot create a recovery phrase. Try another browser or device.',
 
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
@@ -1086,7 +1086,7 @@ const de = {
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
   'wallet.prfUnsupported':
-    'Dieses Gerät kann keinen Wiederherstellungssatz erzeugen. Nutzen Sie einen Browser mit Passkey-PRF.',
+    'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -1811,7 +1811,7 @@ const es = {
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
   'wallet.prfUnsupported':
-    'Este dispositivo no puede crear una frase de recuperación. Usa un navegador con passkeys PRF.',
+    'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
 
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
@@ -2525,7 +2525,7 @@ const fil = {
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
   'wallet.prfUnsupported':
-    'Hindi makagawa ng recovery phrase ang device na ito. Gumamit ng browser na may passkey PRF.',
+    'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',

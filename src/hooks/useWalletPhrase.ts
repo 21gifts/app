@@ -209,6 +209,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (session === null) {
       return;
     }
+    if (visualParam() !== null && mnemonic === WALLET_VISUAL_FIXTURE_MNEMONIC) {
+      return;
+    }
     setStatus('busy');
     setError(null);
     try {
@@ -221,7 +224,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     } catch (err) {
       fail(err);
     }
-  }, [fail, router, session, setAccount]);
+  }, [fail, mnemonic, router, session, setAccount]);
 
   const hidePhrase = useCallback(() => {
     clearSessionPhrase();

@@ -79,6 +79,7 @@ beforeEach(() => {
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyAuthentication).mockReset().mockResolvedValue({ token: 'tok', account });
+  vi.mocked(rememberSessionPhrase).mockClear();
 });
 
 afterEach(cleanup);
@@ -162,6 +163,7 @@ describe('usePasskeyLogin', () => {
       result.current.authenticate();
     });
     expect(useAuthStore.getState().account?.id).toBe('acc_1');
+    expect(rememberSessionPhrase).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

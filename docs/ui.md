@@ -420,6 +420,7 @@ flowchart TB
 | Home                 | `Home`                        | `/welcome`                                                                          |
 | Shops                | `Store`                       | `/shops`                                                                            |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
+| Wallet               | `Wallet`                      | `/wallet` — recovery phrase confirm / activate / reveal                             |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |

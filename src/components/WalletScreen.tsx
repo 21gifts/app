@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, type ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { useWalletPhrase, type UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 
+/** Props for {@link WalletScreenView} — the public {@link UseWalletPhraseResult}. */
 export type WalletScreenViewProps = UseWalletPhraseResult;
 
 /**
- * Presentational recovery-phrase UI. Tokens match ProfileScreen (Card, heading).
+ * Presentational recovery-phrase UI. Tokens match ProfileScreen (`Card surface={false}`).
  *
  * @param props - State from {@link useWalletPhrase}.
  * @returns The card.
@@ -26,21 +27,23 @@ export function WalletScreenView({
   const { t } = useTranslations();
   const busy = status === 'busy';
   const showGrid = (view === 'confirm' || view === 'phrase') && words.length === 12;
+  const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
 
   return (
-    <Card>
+    <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('wallet.title')}
       </h1>
-      {error === 'prfUnsupported' ? (
-        <p className="text-sm text-app-danger">{t('wallet.prfUnsupported')}</p>
-      ) : null}
-      {error === 'timeout' || error === 'generic' ? (
-        <Button variant="secondary" size="lg" onClick={retry} disabled={busy}>
-          {t('login.retry')}
-        </Button>
-      ) : null}
-      {showGrid ? (
+      {hasError ? (
+        <>
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {error === 'prfUnsupported' ? t('wallet.prfUnsupported') : t('login.error')}
+          </p>
+          <Button type="button" onClick={retry} disabled={busy}>
+            {t('login.retry')}
+          </Button>
+        </>
+      ) : showGrid ? (
         <>
           <ol className="grid grid-cols-2 gap-2">
             {words.map((word, index) => (
@@ -104,13 +107,28 @@ export function WalletScreenView({
  */
 export function WalletScreen(): ReactElement {
   const phrase = useWalletPhrase();
-  const { view, words, showPhrase, status } = phrase;
+  const { view, words, showPhrase, status, error, retry } = phrase;
+  const autoRevealRef = useRef(false);
 
   useEffect(() => {
-    if (view === 'confirm' && words.length !== 12 && status === 'idle') {
-      void showPhrase();
+    if (view !== 'confirm' || words.length === 12 || status !== 'idle' || error !== null) {
+      return;
     }
-  }, [view, words.length, status, showPhrase]);
+    /* v8 ignore next 3 -- second effect after auto-reveal on the same mount */
+    if (autoRevealRef.current) {
+      return;
+    }
+    autoRevealRef.current = true;
+    void showPhrase();
+  }, [view, words.length, status, error, showPhrase]);
 
-  return <WalletScreenView {...phrase} />;
+  return (
+    <WalletScreenView
+      {...phrase}
+      retry={() => {
+        autoRevealRef.current = false;
+        retry();
+      }}
+    />
+  );
 }

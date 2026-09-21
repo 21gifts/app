@@ -8,25 +8,32 @@ import {
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const showPhrase = vi.fn();
+const retry = vi.fn();
+const phraseState: UseWalletPhraseResult = {
+  view: 'confirm',
+  status: 'idle',
+  error: null,
+  words: [],
+  activate: vi.fn(),
+  confirmSaved: vi.fn(),
+  showPhrase,
+  hidePhrase: vi.fn(),
+  retry,
+};
 vi.mock('@/hooks/useWalletPhrase', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks/useWalletPhrase')>();
   return {
     ...actual,
-    useWalletPhrase: (): UseWalletPhraseResult => ({
-      view: 'confirm',
-      status: 'idle',
-      error: null,
-      words: [],
-      activate: vi.fn(),
-      confirmSaved: vi.fn(),
-      showPhrase,
-      hidePhrase: vi.fn(),
-      retry: vi.fn(),
-    }),
+    useWalletPhrase: (): UseWalletPhraseResult => phraseState,
   };
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  phraseState.error = null;
+  phraseState.view = 'confirm';
+  phraseState.words = [];
+});
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
@@ -83,6 +90,8 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate recovery phrase' })).toBeNull();
   });
 
   it('renders PRF unsupported copy', () => {
@@ -100,6 +109,8 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByText(/cannot create a recovery phrase/i)).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
   });
 
   it('renders twelve words without confirm on phrase view', () => {
@@ -143,7 +154,19 @@ describe('WalletScreenView', () => {
 describe('WalletScreen', () => {
   it('asks to show the phrase when confirm has no words yet', () => {
     showPhrase.mockClear();
+    phraseState.error = null;
+    const view = renderWithLocale(<WalletScreen />);
+    expect(showPhrase).toHaveBeenCalledTimes(1);
+    view.rerender(<WalletScreen />);
+    expect(showPhrase).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries auto-reveal after Try again', () => {
+    showPhrase.mockClear();
+    retry.mockClear();
+    phraseState.error = 'timeout';
     renderWithLocale(<WalletScreen />);
-    expect(showPhrase).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retry).toHaveBeenCalled();
   });
 });

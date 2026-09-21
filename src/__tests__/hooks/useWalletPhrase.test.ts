@@ -273,6 +273,21 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
+  it('does not post backup-seen for the visual fixture phrase', async () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=confirm';
+    window.history.replaceState({}, '', url.toString());
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet' },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.confirmSaved();
+    });
+    expect(postWalletBackupSeen).not.toHaveBeenCalled();
+  });
+
   it('hidePhrase and retry clear error state', async () => {
     rememberSessionPhrase(mnemonic);
     const { result } = renderHook(() => useWalletPhrase());
