@@ -2484,14 +2484,17 @@ describe('fetchModeratorGroup', () => {
 });
 
 describe('fetchConversation', () => {
-  it('returns messages and encodes the id', async () => {
+  it('returns messages, normalizes a missing cursor, and encodes the id', async () => {
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
       body: { messages: [conversationMessage] },
     });
-    await expect(fetchConversation('sess', 'a/b')).resolves.toEqual([conversationMessage]);
-    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb', {
+    await expect(fetchConversation('sess', 'a/b')).resolves.toEqual({
+      messages: [conversationMessage],
+      nextCursor: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb?limit=20', {
       headers: { Authorization: 'Bearer sess' },
     });
   });
@@ -2507,15 +2510,38 @@ describe('fetchConversation', () => {
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
-      body: { messages: [conversationMessage] },
+      body: { messages: [conversationMessage], nextCursor: 'cur-next' },
     });
     const signal = new AbortController().signal;
     await expect(
       fetchConversation('sess', 'c1', { sinceMessageId: 'gift-1', signal }),
-    ).resolves.toEqual([conversationMessage]);
-    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?sinceMessageId=gift-1', {
+    ).resolves.toEqual({ messages: [conversationMessage], nextCursor: 'cur-next' });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?limit=20&sinceMessageId=gift-1', {
       headers: { Authorization: 'Bearer sess' },
       signal,
+    });
+  });
+
+  it('requests an older page with the cursor after the limit', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [conversationMessage] },
+    });
+    await expect(fetchConversation('sess', 'c1', { cursor: 'cur_old' })).resolves.toEqual({
+      messages: [conversationMessage],
+      nextCursor: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?limit=20&cursor=cur_old', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('ignores empty cursor and sinceMessageId values', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchConversation('sess', 'c1', { cursor: '', sinceMessageId: '' });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?limit=20', {
+      headers: { Authorization: 'Bearer sess' },
     });
   });
 

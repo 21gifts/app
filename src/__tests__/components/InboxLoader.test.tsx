@@ -105,6 +105,15 @@ const MESSAGE: ConversationMessage = {
   photoCount: 0,
 };
 
+type ConversationPage = Awaited<ReturnType<typeof fetchConversation>>;
+
+function conversationPage(
+  messages: ConversationMessage[],
+  nextCursor: string | null = null,
+): ConversationPage {
+  return { messages, nextCursor };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
@@ -192,7 +201,7 @@ describe('InboxLoader', () => {
   it('clears thread state when ?c= changes', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
     searchParams.set('c', 'conv-2');
@@ -203,7 +212,7 @@ describe('InboxLoader', () => {
   it('opens a thread from ?c= and posts a reply', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     postMock.mockResolvedValue({
       id: 'm2',
       name: 'Ada',
@@ -225,17 +234,17 @@ describe('InboxLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
       expect(screen.getByText('Follow up')).toBeTruthy();
+      expect(screen.getByText('You')).toBeTruthy();
+      expect(document.querySelector('[data-from-me="true"]')).toBeTruthy();
     });
-    expect(screen.getByText('You')).toBeTruthy();
-    expect(document.querySelector('[data-from-me="true"]')).toBeTruthy();
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
   it('mints an amount invoice, clears posting before polling, and applies the paid row', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([{ ...THREAD, unread: true, unreadMessageCount: 2 }, OLDER]);
-    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+    let resolvePoll: ((value: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolvePoll = resolve;
@@ -268,7 +277,7 @@ describe('InboxLoader', () => {
     expect(pollCall?.[2]?.sinceMessageId).toBe('gift-1');
     expect(pollCall?.[2]?.signal).toBeInstanceOf(AbortSignal);
     await act(async () => {
-      resolvePoll?.([MESSAGE, gift]);
+      resolvePoll?.(conversationPage([MESSAGE, gift]));
     });
     await waitFor(() => {
       expect(screen.getByText('For you')).toBeTruthy();
@@ -321,7 +330,7 @@ describe('InboxLoader', () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
     threadMock
-      .mockResolvedValueOnce([MESSAGE])
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
       .mockImplementationOnce(() => new Promise(() => undefined));
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
@@ -341,7 +350,7 @@ describe('InboxLoader', () => {
   it('does not mint a second invoice while a mint is in flight', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     invoiceMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
@@ -370,7 +379,9 @@ describe('InboxLoader', () => {
       hasPhoto: false,
       photoCount: 0,
     };
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockResolvedValueOnce([MESSAGE, gift]);
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValueOnce(conversationPage([MESSAGE, gift]));
     invoiceMock.mockResolvedValue({ pr: 'lnbc1n1test', amountSats: 1, messageId: 'missing' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -385,7 +396,7 @@ describe('InboxLoader', () => {
   it('opens a thread when the opened id is not in the conversation list', async () => {
     searchParams.set('c', 'missing');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     await waitFor(() => {
@@ -396,7 +407,7 @@ describe('InboxLoader', () => {
   it('validates empty and too-long drafts', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -411,7 +422,7 @@ describe('InboxLoader', () => {
   it('rejects invalid and unsafe amount drafts', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -436,7 +447,7 @@ describe('InboxLoader', () => {
   ])('maps invoice mint error %s', async (message, expected) => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     invoiceMock.mockRejectedValue(new Error(message));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
@@ -451,13 +462,15 @@ describe('InboxLoader', () => {
   it('aborts the paid-row poll when the pay sheet is cancelled', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce((_session, _id, opts) => {
-      return new Promise((_, reject) => {
-        opts?.signal?.addEventListener('abort', () => {
-          reject(new DOMException('Aborted', 'AbortError'));
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockImplementationOnce((_session, _id, opts) => {
+        return new Promise((_, reject) => {
+          opts?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
         });
       });
-    });
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
@@ -480,7 +493,9 @@ describe('InboxLoader', () => {
   it('shows a request error when the paid-row poll fails', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockRejectedValueOnce(new Error('boom'));
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockRejectedValueOnce(new Error('boom'));
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
@@ -497,7 +512,7 @@ describe('InboxLoader', () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
     threadMock
-      .mockResolvedValueOnce([MESSAGE])
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
       .mockImplementationOnce(() => new Promise(() => undefined));
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     const view = renderWithLocale(<InboxLoader />);
@@ -520,7 +535,7 @@ describe('InboxLoader', () => {
   it('drops a late invoice mint after the open thread changes', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     let resolveMint:
       ((value: { pr: string; amountSats: number; messageId: string }) => void) | undefined;
     invoiceMock.mockImplementation(
@@ -547,8 +562,8 @@ describe('InboxLoader', () => {
   it('drops a late paid-row poll after the open thread changes', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+    let resolvePoll: ((value: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolvePoll = resolve;
@@ -566,19 +581,21 @@ describe('InboxLoader', () => {
     searchParams.set('c', 'conv-2');
     view.rerender(<InboxLoader />);
     await act(async () => {
-      resolvePoll?.([
-        MESSAGE,
-        {
-          id: 'gift-1',
-          name: 'Ada',
-          text: 'late',
-          createdAt: '2026-08-28T14:00:00.000Z',
-          fromMe: true,
-          sats: 21,
-          hasPhoto: false,
-          photoCount: 0,
-        },
-      ]);
+      resolvePoll?.(
+        conversationPage([
+          MESSAGE,
+          {
+            id: 'gift-1',
+            name: 'Ada',
+            text: 'late',
+            createdAt: '2026-08-28T14:00:00.000Z',
+            fromMe: true,
+            sats: 21,
+            hasPhoto: false,
+            photoCount: 0,
+          },
+        ]),
+      );
     });
     expect(screen.queryByText('late')).toBeNull();
   });
@@ -586,7 +603,7 @@ describe('InboxLoader', () => {
   it('shows a post error', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     postMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
@@ -602,7 +619,9 @@ describe('InboxLoader', () => {
   it('retries a failed thread fetch', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce([MESSAGE]);
+    threadMock
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
@@ -616,7 +635,7 @@ describe('InboxLoader', () => {
       if (id === 'conv-2') {
         return new Promise(() => undefined);
       }
-      return Promise.resolve([MESSAGE]);
+      return Promise.resolve(conversationPage([MESSAGE]));
     });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -639,7 +658,7 @@ describe('InboxLoader', () => {
       if (id === 'conv-2') {
         return new Promise(() => undefined);
       }
-      return Promise.resolve([MESSAGE]);
+      return Promise.resolve(conversationPage([MESSAGE]));
     });
     let resolvePost: ((value: ConversationMessage) => void) | undefined;
     postMock.mockImplementation(
@@ -687,7 +706,7 @@ describe('InboxLoader', () => {
       if (id === 'conv-2') {
         return new Promise(() => undefined);
       }
-      return Promise.resolve([MESSAGE]);
+      return Promise.resolve(conversationPage([MESSAGE]));
     });
     let rejectPost: ((reason: Error) => void) | undefined;
     postMock.mockImplementation(
@@ -721,7 +740,7 @@ describe('InboxLoader', () => {
   it('still renders the thread when markConversationRead fails', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([{ ...THREAD, unread: true }]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     markReadMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -734,7 +753,7 @@ describe('InboxLoader', () => {
   it('clears unread on the list row after opening a thread', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([{ ...THREAD, unread: true, unreadMessageCount: 2 }]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     await waitFor(() => {
@@ -756,7 +775,7 @@ describe('InboxLoader', () => {
       { ...THREAD, unread: true },
       { ...OLDER, unread: true },
     ]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('21.gifts')).toBeTruthy();
     searchParams.set('c', 'conv-1');
@@ -770,7 +789,7 @@ describe('InboxLoader', () => {
 
   it('passes remaining inbox unread 0 when only the opened row was unread', async () => {
     listMock.mockResolvedValue([{ ...THREAD, unread: true }, OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('21.gifts')).toBeTruthy();
     searchParams.set('c', 'conv-1');
@@ -784,7 +803,7 @@ describe('InboxLoader', () => {
   it('still renders the thread when refreshUnreadAppBadge rejects', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     refreshMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -830,7 +849,7 @@ describe('InboxLoader', () => {
       });
       searchParams.set('c', 'missing');
       listMock.mockResolvedValue([THREAD]);
-      threadMock.mockResolvedValue([MESSAGE]);
+      threadMock.mockResolvedValue(conversationPage([MESSAGE]));
       renderWithLocale(<InboxLoader />);
       expect(await screen.findByLabelText('Your message')).toBeTruthy();
       expect(groupMock).toHaveBeenCalledWith('sess');
@@ -849,7 +868,7 @@ describe('InboxLoader', () => {
       });
       searchParams.set('c', 'missing');
       listMock.mockResolvedValue([OLDER]);
-      threadMock.mockResolvedValue([MESSAGE]);
+      threadMock.mockResolvedValue(conversationPage([MESSAGE]));
       let resolveGroup!: (value: Conversation) => void;
       groupMock.mockImplementation(
         () =>
@@ -881,7 +900,7 @@ describe('InboxLoader', () => {
       });
       searchParams.set('c', 'missing');
       listMock.mockResolvedValue([THREAD]);
-      threadMock.mockResolvedValue([MESSAGE]);
+      threadMock.mockResolvedValue(conversationPage([MESSAGE]));
       groupMock.mockRejectedValue(new Error('boom'));
       renderWithLocale(<InboxLoader />);
       expect(await screen.findByLabelText('Your message')).toBeTruthy();
@@ -900,7 +919,7 @@ describe('InboxLoader', () => {
       });
       searchParams.set('c', 'conv-mods');
       listMock.mockResolvedValue([THREAD]);
-      threadMock.mockResolvedValue([MESSAGE]);
+      threadMock.mockResolvedValue(conversationPage([MESSAGE]));
       renderWithLocale(<InboxLoader />);
       expect(await screen.findByRole('heading', { name: 'Messages' })).toBeTruthy();
       await waitFor(() => {
@@ -914,7 +933,7 @@ describe('InboxLoader', () => {
   it('shows a fiat suffix on a sats message when gift stats resolve', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     giftStatsMock.mockResolvedValue({
       spendOverTime: [
         {
@@ -937,7 +956,7 @@ describe('InboxLoader', () => {
   it('survives a failing stats fetch', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     giftStatsMock.mockRejectedValueOnce(new Error('stats down'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
@@ -946,5 +965,128 @@ describe('InboxLoader', () => {
       expect(giftStatsMock).toHaveBeenCalled();
     });
     expect(screen.queryByText('$0.02')).toBeNull();
+  });
+});
+
+describe('conversation thread pages', () => {
+  class FakeIntersectionObserver {
+    static instances: FakeIntersectionObserver[] = [];
+    callback: IntersectionObserverCallback;
+    observed: Element[] = [];
+
+    constructor(cb: IntersectionObserverCallback) {
+      this.callback = cb;
+      FakeIntersectionObserver.instances.push(this);
+    }
+
+    observe(el: Element): void {
+      this.observed.push(el);
+    }
+
+    unobserve(): void {}
+
+    disconnect(): void {}
+
+    trigger(isIntersecting = true): void {
+      this.callback(
+        this.observed.map((target) => ({ isIntersecting, target }) as IntersectionObserverEntry),
+        this as unknown as IntersectionObserver,
+      );
+    }
+  }
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('prepends older unique messages from the next cursor page', async () => {
+    const older = {
+      ...MESSAGE,
+      id: 'm-old',
+      text: 'Older message',
+      createdAt: '2026-08-27T12:00:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE], 'cur_2'))
+      .mockResolvedValueOnce(conversationPage([older, MESSAGE]));
+    const { container } = renderWithLocale(<InboxLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger(false);
+    });
+    expect(threadMock).toHaveBeenCalledTimes(1);
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    expect(await screen.findByText('Older message')).toBeTruthy();
+    expect(threadMock).toHaveBeenCalledWith('sess', 'conv-1', { cursor: 'cur_2' });
+    expect(container.querySelectorAll('[data-message-id="m1"]')).toHaveLength(1);
+    const ids = [...container.querySelectorAll('[data-message-id]')].map((node) =>
+      node.getAttribute('data-message-id'),
+    );
+    expect(ids).toEqual(['m-old', 'm1']);
+  });
+
+  it('does not create an observer or fetch a cursor page without a next cursor', async () => {
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
+    expect(threadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start a second cursor fetch while the first is in flight', async () => {
+    const older = { ...MESSAGE, id: 'm-old', text: 'Older message' };
+    let resolvePageTwo: (page: ConversationPage) => void = () => undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE], 'cur_2')).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePageTwo = resolve;
+        }),
+    );
+    renderWithLocale(<InboxLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    expect(threadMock).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      resolvePageTwo(conversationPage([older]));
+    });
+    expect(await screen.findByText('Older message')).toBeTruthy();
+  });
+
+  it('keeps the loaded first page when a cursor fetch rejects', async () => {
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE], 'cur_2'))
+      .mockRejectedValueOnce(new Error('boom'));
+    renderWithLocale(<InboxLoader />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await waitFor(() => {
+      expect(threadMock).toHaveBeenCalledWith('sess', 'conv-1', { cursor: 'cur_2' });
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
 });

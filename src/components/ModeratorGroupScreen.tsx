@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
@@ -44,7 +44,10 @@ function revokeIfBlob(url: string): void {
  * `rateDay` from {@link useLatestRateDay} into {@link InboxScreen}.
  * After a successful group and thread fetch, marks the room read
  * (`markConversationRead`), bumps the badge epoch, and refreshes the
- * home-screen badge with staff-room unread `0`. Other signed-in visitors
+ * home-screen badge with staff-room unread `0`. The newest 20-message page
+ * loads first; an IntersectionObserver near the oldest bubble prepends unique
+ * older pages without returning to the loading card or retriggering the
+ * newest-id bottom pin. Other signed-in visitors
  * and a missing account see forbidden copy and do not fetch. Renders
  * nothing without a session. Back to the moderation hub is the page
  * chrome (no in-card back).
@@ -61,6 +64,10 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [messages, setMessages] = useState<ConversationMessage[] | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [nearStartElement, setNearStartElement] = useState<HTMLLIElement | null>(null);
+  const loadingMoreRef = useRef(false);
+  const paginationGeneration = useRef(0);
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -71,11 +78,18 @@ export function ModeratorGroupScreen(): ReactElement | null {
   photoUrlsRef.current = photoUrls;
   const pickGeneration = useRef(0);
 
+  const nearStartRef = useCallback((node: HTMLLIElement | null): void => {
+    setNearStartElement(node);
+  }, []);
+
   useEffect(() => {
     if (session === null || !staff) {
       return;
     }
     let cancelled = false;
+    paginationGeneration.current += 1;
+    loadingMoreRef.current = false;
+    setNextCursor(null);
     setError(false);
     void (async () => {
       try {
@@ -83,12 +97,13 @@ export function ModeratorGroupScreen(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        const nextMessages = await fetchConversation(session, nextGroup.id);
+        const page = await fetchConversation(session, nextGroup.id);
         if (cancelled) {
           return;
         }
         setGroup({ ...nextGroup, unread: false });
-        setMessages(nextMessages);
+        setMessages(page.messages);
+        setNextCursor(page.nextCursor);
         void markConversationRead(session, nextGroup.id).catch(() => undefined);
         bumpUnreadAppBadgeEpoch();
         void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);
@@ -98,11 +113,14 @@ export function ModeratorGroupScreen(): ReactElement | null {
         }
         setGroup(null);
         setMessages(null);
+        setNextCursor(null);
         setError(true);
       }
     })();
     return () => {
       cancelled = true;
+      paginationGeneration.current += 1;
+      loadingMoreRef.current = false;
     };
   }, [session, staff, attempt]);
 
@@ -212,6 +230,53 @@ export function ModeratorGroupScreen(): ReactElement | null {
       }
     };
   }, []);
+  useEffect(() => {
+    if (session === null || group === null || nearStartElement === null || nextCursor === null) {
+      return;
+    }
+    let cancelled = false;
+    const activeSession = session;
+    const activeId = group.id;
+    const activeCursor = nextCursor;
+    const generation = paginationGeneration.current;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
+        return;
+      }
+      loadingMoreRef.current = true;
+      void (async () => {
+        try {
+          const page = await fetchConversation(activeSession, activeId, {
+            cursor: activeCursor,
+          });
+          /* v8 ignore next 3 -- unmount during cursor fetch */
+          if (cancelled || generation !== paginationGeneration.current) {
+            return;
+          }
+          setMessages((prev) => {
+            /* v8 ignore next -- the sentinel only renders after page one is in state */
+            if (prev === null) return page.messages;
+            const ids = new Set(prev.map((message) => message.id));
+            const older = page.messages.filter((message) => !ids.has(message.id));
+            return [...older, ...prev];
+          });
+          setNextCursor(page.nextCursor);
+        } catch {
+          // Keep the current pages and cursor so a later intersection may retry.
+        } finally {
+          if (!cancelled && generation === paginationGeneration.current) {
+            loadingMoreRef.current = false;
+          }
+        }
+      })();
+    });
+    observer.observe(nearStartElement);
+    return () => {
+      cancelled = true;
+      loadingMoreRef.current = false;
+      observer.disconnect();
+    };
+  }, [group, nearStartElement, nextCursor, session]);
 
   if (session === null) {
     return null;
@@ -344,7 +409,8 @@ export function ModeratorGroupScreen(): ReactElement | null {
                   data: photo.data,
                 })),
               );
-        setMessages([...messages, created]);
+        /* v8 ignore next -- first message in an empty staff-room thread */
+        setMessages((prev) => (prev === null ? [created] : [...prev, created]));
         setDraft('');
         setPhotoDrafts([]);
         if (created.hasPhoto) {
@@ -386,6 +452,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       messagesError={false}
       /* v8 ignore next -- thread retry is unused while messages are loaded */
       onRetryMessages={() => undefined}
+      nearStartRef={nearStartRef}
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);

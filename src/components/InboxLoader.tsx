@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
@@ -89,9 +89,12 @@ function isAbortError(err: unknown): boolean {
  * least moderator, an unlisted `?c=` first resolves {@link fetchModeratorGroup}
  * once per id, with neutral loading instead of the list; a match never
  * opens, other roles and a failed lookup fall through. The composer sends
- * free text
- * directly, or mints an invoice from its amount field and long-polls for the
- * paid gift row. Renders nothing when there is no session.
+ * free text directly, or mints an invoice from its amount field and long-polls
+ * for the paid gift row. Threads load the newest 20-message page first; an
+ * IntersectionObserver near the oldest bubble prepends unique older pages.
+ * Prepending keeps the loaded thread visible and does not toggle its loading
+ * state, so the thread's first-open/newest-id bottom pin does not re-run.
+ * Renders nothing when there is no session.
  * Moderators get the origin filter; members see the full inbound list.
  * After a successful thread load and mark-read, bumps the badge epoch and
  * refreshes the home-screen badge to notifications unread plus remaining
@@ -114,6 +117,10 @@ export function InboxLoader(): ReactElement | null {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState(false);
   const [messagesAttempt, setMessagesAttempt] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [nearStartElement, setNearStartElement] = useState<HTMLLIElement | null>(null);
+  const loadingMoreRef = useRef(false);
+  const paginationGeneration = useRef(0);
   const [draft, setDraft] = useState('');
   const [amountDraft, setAmountDraft] = useState('');
   const [posting, setPosting] = useState(false);
@@ -125,6 +132,10 @@ export function InboxLoader(): ReactElement | null {
   const openIdRef = useRef(openId);
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
   if (openIdRef.current !== openId) {
+    paginationGeneration.current += 1;
+    loadingMoreRef.current = false;
+    setNextCursor(null);
+    setNearStartElement(null);
     setMessages(null);
     setMessagesError(false);
     setMessagesLoading(openId !== null && openId !== '');
@@ -159,6 +170,10 @@ export function InboxLoader(): ReactElement | null {
     listed?.kind !== 'moderator_group' &&
     staffRoomId !== openId &&
     !waitingStaffRoom;
+
+  const nearStartRef = useCallback((node: HTMLLIElement | null): void => {
+    setNearStartElement(node);
+  }, []);
 
   useEffect(() => {
     if (session === null) {
@@ -230,17 +245,21 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     let cancelled = false;
+    paginationGeneration.current += 1;
+    loadingMoreRef.current = false;
+    setNextCursor(null);
     setMessages(null);
     setMessagesLoading(true);
     setMessagesError(false);
     void (async () => {
       try {
-        const next = await fetchConversation(session, openId);
+        const page = await fetchConversation(session, openId);
         /* v8 ignore next 3 -- unmount during fetch */
         if (cancelled) {
           return;
         }
-        setMessages(next);
+        setMessages(page.messages);
+        setNextCursor(page.nextCursor);
         /* v8 ignore next -- a thread only opens after the inbox list loaded */
         const listedRows = conversations ?? [];
         const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
@@ -271,8 +290,69 @@ export function InboxLoader(): ReactElement | null {
     })();
     return () => {
       cancelled = true;
+      paginationGeneration.current += 1;
+      loadingMoreRef.current = false;
     };
   }, [session, openId, messagesAttempt, threadAllowed]);
+
+  useEffect(() => {
+    if (
+      session === null ||
+      openId === null ||
+      openId === '' ||
+      !threadAllowed ||
+      nearStartElement === null ||
+      nextCursor === null
+    ) {
+      return;
+    }
+    let cancelled = false;
+    const activeSession = session;
+    const activeId = openId;
+    const activeCursor = nextCursor;
+    const generation = paginationGeneration.current;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
+        return;
+      }
+      loadingMoreRef.current = true;
+      void (async () => {
+        try {
+          const page = await fetchConversation(activeSession, activeId, {
+            cursor: activeCursor,
+          });
+          /* v8 ignore next 7 -- unmount or thread change during cursor fetch */
+          if (
+            cancelled ||
+            generation !== paginationGeneration.current ||
+            openIdRef.current !== activeId
+          ) {
+            return;
+          }
+          setMessages((prev) => {
+            /* v8 ignore next -- the sentinel only renders after page one is in state */
+            if (prev === null) return page.messages;
+            const ids = new Set(prev.map((message) => message.id));
+            const older = page.messages.filter((message) => !ids.has(message.id));
+            return [...older, ...prev];
+          });
+          setNextCursor(page.nextCursor);
+        } catch {
+          // Keep the current pages and cursor so a later intersection may retry.
+        } finally {
+          if (!cancelled && generation === paginationGeneration.current) {
+            loadingMoreRef.current = false;
+          }
+        }
+      })();
+    });
+    observer.observe(nearStartElement);
+    return () => {
+      cancelled = true;
+      loadingMoreRef.current = false;
+      observer.disconnect();
+    };
+  }, [nearStartElement, nextCursor, openId, session, threadAllowed]);
 
   if (session === null) {
     return null;
@@ -338,19 +418,26 @@ export function InboxLoader(): ReactElement | null {
         payPollRef.current?.abort();
         payPollRef.current = controller;
         try {
-          const next = await fetchConversation(session, conversationId, {
+          const page = await fetchConversation(session, conversationId, {
             sinceMessageId: minted.messageId,
             signal: controller.signal,
           });
           if (controller.signal.aborted || openIdRef.current !== conversationId) {
             return;
           }
-          setMessages(next);
+          setMessages((prev) => {
+            /* v8 ignore next -- a pay poll starts only after the thread loaded */
+            if (prev === null) return page.messages;
+            const freshIds = new Set(page.messages.map((message) => message.id));
+            return [...prev.filter((message) => !freshIds.has(message.id)), ...page.messages];
+          });
           setDraft('');
           setAmountDraft('');
           setInvoice(null);
           setPayWaiting(false);
-          const gift = next.find((message) => message.id === minted.messageId) ?? next.at(-1);
+          const gift =
+            page.messages.find((message) => message.id === minted.messageId) ??
+            page.messages.at(-1);
           if (gift !== undefined) {
             setConversations((prev) => {
               /* v8 ignore next 3 -- poll after the list was cleared */
@@ -471,6 +558,7 @@ export function InboxLoader(): ReactElement | null {
       onRetryMessages={() => {
         setMessagesAttempt((n) => n + 1);
       }}
+      nearStartRef={nearStartRef}
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);

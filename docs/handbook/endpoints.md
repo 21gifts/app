@@ -338,7 +338,7 @@
 
 ## Endpoint: GET /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` (true iff this session is the actor) and `sats`, `hasPhoto` / `photoCount` (client defaults omitted fields to false / 0), and optional `accountId` (sender). For a staff viewer, incoming `name` and optional `accountId` are the actor. Members still see platform identity (`21.gifts`) on official replies. Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id?limit=&cursor=`. The client always sends `limit=20`; optional `cursor` requests the next older page and optional `sinceMessageId` long-polls. Body `{ messages, nextCursor? }` (oldest-first within the page). Each message has required `fromMe` (true iff this session is the actor) and `sats`, `hasPhoto` / `photoCount` (client defaults omitted fields to false / 0), and optional `accountId` (sender). For a staff viewer, incoming `name` and optional `accountId` are the actor. Members still see platform identity (`21.gifts`) on official replies. Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversation` on `/messages?c=` and on `/moderate/group`.
 - **Auth:** Bearer.

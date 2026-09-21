@@ -152,6 +152,8 @@ export interface InboxScreenProps {
   messagesError: boolean;
   /** Retry handler for a failed thread fetch. */
   onRetryMessages: () => void;
+  /** Ref attached near the oldest rendered bubble to prefetch an older page. */
+  nearStartRef?: (node: HTMLLIElement | null) => void;
   /** Composer draft text. */
   draft: string;
   /** Called when the composer value changes. */
@@ -353,7 +355,9 @@ function inboxAuthorProfileButton(
  * waits for that scroller and does not fall back to `window` while the node
  * is missing; `window` is only the no-shell fallback. Leaving a thread
  * scrolls that scroller to the top once so the conversation list is not left
- * at the thread offset.
+ * at the thread offset. A supplied `nearStartRef` is attached to the eighth
+ * grouped bubble from the start, or the first bubble when fewer than eight
+ * render, so loaders can prepend older pages without changing the newest id.
  *
  * @param props - List/thread/composer state from {@link InboxLoader} or
  *   {@link ModeratorGroupScreen}.
@@ -370,6 +374,7 @@ export function InboxScreen({
   messagesLoading,
   messagesError,
   onRetryMessages,
+  nearStartRef,
   draft,
   onDraftChange,
   onPost,
@@ -404,6 +409,7 @@ export function InboxScreen({
   const [showPaymentQr, setShowPaymentQr] = useState(false);
 
   const messagesReady = messages !== null;
+  const groups = messages === null ? [] : groupThreadGifts(messages);
   let lastMessageId = '';
   if (messages !== null && messages.length > 0) {
     const last = messages[messages.length - 1];
@@ -590,11 +596,14 @@ export function InboxScreen({
         ) : null}
         {messages !== null ? (
           <ul aria-label={t('inbox.threadLabel')} className="flex w-full flex-col gap-3">
-            {groupThreadGifts(messages).map(({ message, gifts }) => (
+            {groups.map(({ message, gifts }, index) => (
               <li
                 key={message.id}
                 data-message-id={message.id}
                 data-from-me={message.fromMe ? 'true' : 'false'}
+                {...(nearStartRef !== undefined && index === (groups.length >= 8 ? 7 : 0)
+                  ? { ref: nearStartRef }
+                  : {})}
                 className={
                   message.fromMe
                     ? 'self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg'

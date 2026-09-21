@@ -225,6 +225,30 @@ describe('groupThreadGifts', () => {
 });
 
 describe('InboxScreen', () => {
+  it('attaches nearStartRef to the eighth grouped bubble from the start', () => {
+    const messages = Array.from({ length: 10 }, (_, index) => ({
+      ...MESSAGE,
+      id: `m${index + 1}`,
+      text: `Message ${index + 1}`,
+    }));
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />);
+
+    expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m8"]'));
+  });
+
+  it('attaches nearStartRef to the first grouped bubble when fewer than eight render', () => {
+    const messages = [MESSAGE, { ...MESSAGE, id: 'm2', text: 'Second message' }];
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />);
+
+    expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m1"]'));
+  });
+
   it('shows loading copy', () => {
     renderWithLocale(
       <InboxScreen
