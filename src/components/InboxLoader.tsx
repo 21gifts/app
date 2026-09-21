@@ -108,6 +108,8 @@ function isAbortError(err: unknown): boolean {
  * {@link prepareForumPhoto} (cap 10); photo-only send is allowed. Thread stills
  * load via {@link fetchConversationMessagePhoto} (no fetch without a session).
  * Blob URLs are revoked on unmount, when leaving a thread, and on session loss.
+ * Composer drafts and preparing are dropped
+ * on thread switch (`?c=`) and session loss (`pickGeneration` bump).
  * The gift invoice path stays text/sats only. The list has no attach.
  * Renders nothing when there is no session.
  * Moderators get the origin filter; members see the full inbound list.
@@ -169,6 +171,13 @@ export function InboxLoader(): ReactElement | null {
     pickGeneration.current += 1;
     setPhotoDrafts([]);
     setPreparing(false);
+    const urls = photoUrlsRef.current;
+    for (const url of Object.values(urls)) {
+      revokeIfBlob(url);
+    }
+    if (Object.keys(urls).length > 0) {
+      setPhotoUrls({});
+    }
     payPollRef.current?.abort();
     payPollRef.current = null;
   }
@@ -379,6 +388,22 @@ export function InboxLoader(): ReactElement | null {
   }, [nearStartElement, nextCursor, openId, session, threadAllowed]);
 
   useEffect(() => {
+    if (session === null) {
+      pickGeneration.current += 1;
+      setPreparing(false);
+      setPhotoDrafts([]);
+      setFormError(null);
+      const urls = photoUrlsRef.current;
+      for (const url of Object.values(urls)) {
+        revokeIfBlob(url);
+      }
+      if (Object.keys(urls).length > 0) {
+        setPhotoUrls({});
+      }
+    }
+  }, [session]);
+
+  useEffect(() => {
     if (
       session === null ||
       openId === null ||
@@ -456,13 +481,13 @@ export function InboxLoader(): ReactElement | null {
         }
         const url = URL.createObjectURL(blob);
         /* v8 ignore next 4 -- unmount after createObjectURL */
-        if (cancelled) {
+        if (cancelled || openIdRef.current !== conversationId) {
           URL.revokeObjectURL(url);
           return;
         }
         setPhotoUrls((prev) => {
           /* v8 ignore next 4 -- race if the same id was filled while the fetch was in flight */
-          if (prev[photo.key] !== undefined) {
+          if (cancelled || openIdRef.current !== conversationId || prev[photo.key] !== undefined) {
             URL.revokeObjectURL(url);
             return prev;
           }
@@ -529,7 +554,10 @@ export function InboxLoader(): ReactElement | null {
         setPhotoDrafts(nextPhotos);
         setFormError(nextError);
       } finally {
-        setPreparing(false);
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation === pickGeneration.current) {
+          setPreparing(false);
+        }
       }
     })();
   };
@@ -565,6 +593,8 @@ export function InboxLoader(): ReactElement | null {
     setPosting(true);
     setFormError(null);
     if (sats !== 'empty') {
+      pickGeneration.current += 1;
+      setPhotoDrafts([]);
       void (async () => {
         let minted;
         try {
@@ -617,6 +647,8 @@ export function InboxLoader(): ReactElement | null {
           });
           setDraft('');
           setAmountDraft('');
+          pickGeneration.current += 1;
+          setPhotoDrafts([]);
           setInvoice(null);
           setPayWaiting(false);
           const gift =

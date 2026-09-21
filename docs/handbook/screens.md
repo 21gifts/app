@@ -911,7 +911,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence).
+After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence). Composer with ImagePlus attach visible.
 
 ![21.gifts contact success](images/contact-success.png)
 
@@ -1262,7 +1262,7 @@ List fetch failed. Button **Try again**. Chooser absent.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible with the labeled **Amount** field next to it. Chooser absent.
+Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible with ImagePlus attach, the labeled **Amount** field, and send. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
@@ -1274,25 +1274,25 @@ Member list. One conversation (**Bob**), gift-only last preview **₿21** (empty
 
 ### Variant: thread-gift
 
-Open official thread. fromMe gift-only bubble **send ₿21**. Labeled **Amount** field still visible next to the composer. Chooser absent.
+Open official thread. fromMe gift-only bubble **send ₿21**. Composer with ImagePlus attach and labeled **Amount** field still visible. Chooser absent.
 
 ![21.gifts inbox thread gift](images/messages-thread-gift.png)
 
 ### Variant: thread-text-sats
 
-Open thread. Inbound **Hi** with amount **₿21** under the body. Composer and labeled **Amount** field visible.
+Open thread. Inbound **Hi** with amount **₿21** under the body. Composer with ImagePlus attach and labeled **Amount** field visible.
 
 ![21.gifts inbox thread text sats](images/messages-thread-text-sats.png)
 
 ### Variant: thread-pay-qr
 
-Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button; smartphone has the wallet **Pay** button and no QR. **Waiting for payment…** is acceptable while the pay poll hangs.
+Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button; smartphone has the wallet **Pay** button and no QR. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
 
 ### Variant: thread-quoted-note
 
-Open Direct thread. Incoming bubble text includes a public forum note URL; the nested quoted-note card shows **A Quick Technical Note** and hides the raw `https://21.gifts/messages/<uuid>` URL.
+Open Direct thread. Incoming bubble text includes a public forum note URL; the nested quoted-note card shows **A Quick Technical Note** and hides the raw `https://21.gifts/messages/<uuid>` URL. Composer with ImagePlus attach visible.
 
 ![21.gifts inbox thread quoted note](images/messages-thread-quoted-note.png)
 

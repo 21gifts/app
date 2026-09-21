@@ -1276,24 +1276,28 @@ describe('InboxLoader', () => {
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    act(() => {
-      useAuthStore.setState({ session: null, account });
-    });
-    expect(revoke).toHaveBeenCalledWith('blob:inbox-photo');
-  });
-
-  it('clears drafts on thread switch and drops a hung prepare', async () => {
-    searchParams.set('c', 'conv-1');
-    listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
-    const view = renderWithLocale(<InboxLoader />);
-    expect(await screen.findByLabelText('Your message')).toBeTruthy();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
     });
     expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({ session: null, account });
+    });
+    expect(revoke).toHaveBeenCalledWith('blob:inbox-photo');
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account });
+    });
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+  });
+
+  it('clears drafts on thread switch and drops a hung prepare', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockResolvedValue([MESSAGE]);
     let resolvePrepare:
       | ((value: {
           ok: true;
@@ -1306,10 +1310,16 @@ describe('InboxLoader', () => {
           resolvePrepare = resolve;
         }),
     );
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
     searchParams.set('c', 'conv-2');
     view.rerender(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
-    expect(screen.queryByAltText('Selected photo')).toBeNull();
     await act(async () => {
       resolvePrepare?.({
         ok: true,
@@ -1318,6 +1328,159 @@ describe('InboxLoader', () => {
       await Promise.resolve();
     });
     expect(screen.queryByAltText('Selected photo')).toBeNull();
+    const nextInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(nextInput, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('does not clear preparing of a newer pick when an older prepare finishes', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue([MESSAGE]);
+    let resolveFirst:
+      | ((value: {
+          ok: true;
+          photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+        }) => void)
+      | undefined;
+    let resolveSecond:
+      | ((value: {
+          ok: true;
+          photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+        }) => void)
+      | undefined;
+    prepareMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve;
+          }),
+      );
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      resolveFirst?.({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      await Promise.resolve();
+    });
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      resolveSecond?.({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      await Promise.resolve();
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('mints an amount invoice without attaching selected photos and clears drafts after pay', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
+    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    const gift: ConversationMessage = {
+      id: 'gift-1',
+      name: 'Ada',
+      text: 'For you',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      fromMe: true,
+      sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  For you  ' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    });
+    expect(postMock).not.toHaveBeenCalled();
+    await act(async () => {
+      resolvePoll?.([MESSAGE, gift]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('For you')).toBeTruthy();
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(screen.queryByAltText('Selected photo')).toBeNull();
+    });
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('revokes loaded photo blobs when the open thread id changes', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockImplementation((_session: string, id: string) => {
+      if (id === 'conv-2') {
+        return Promise.resolve([MESSAGE]);
+      }
+      return Promise.resolve([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]);
+    });
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:inbox-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    expect(revoke).toHaveBeenCalledWith('blob:inbox-photo');
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
   });
 
   it('revokes photo blobs that are no longer on the thread', async () => {
