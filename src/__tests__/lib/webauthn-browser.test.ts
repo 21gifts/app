@@ -385,6 +385,20 @@ describe('credentialToJSON', () => {
     expect(credentialToJSON(cred)).toBe(json);
   });
 
+  it('omits prf results from native toJSON', () => {
+    const json = {
+      id: 'x',
+      clientExtensionResults: { prf: { results: { first: new Uint8Array(32) } }, appid: true },
+    };
+    const cred = {
+      toJSON: () => json,
+    } as unknown as PublicKeyCredential;
+    expect(credentialToJSON(cred)).toEqual({
+      id: 'x',
+      clientExtensionResults: { appid: true },
+    });
+  });
+
   it('serialises an attestation response', () => {
     const cred = {
       id: 'cred',

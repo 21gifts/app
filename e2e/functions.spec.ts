@@ -413,6 +413,9 @@ async function confirmNewAccount(page: Page): Promise<void> {
     page.getByRole('heading', { name: 'Do you already have an account?' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
+  await expect(page).toHaveURL(/\/wallet/, { timeout: 10_000 });
+  await page.getByRole('button', { name: 'I saved these words' }).click();
+  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
 }
 
 async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
@@ -465,7 +468,9 @@ async function installFakeWebAuthn(page: Page): Promise<void> {
       id,
       rawId,
       type: 'public-key',
-      getClientExtensionResults: () => ({}),
+      getClientExtensionResults: () => ({
+        prf: { results: { first: new Uint8Array(32).fill(7) } },
+      }),
       response: {
         clientDataJSON: new Uint8Array([123]).buffer,
         attestationObject: new Uint8Array([2]).buffer,
@@ -542,6 +547,10 @@ async function loginHttp(request: APIRequestContext): Promise<string> {
   expect(finish.status()).toBe(200);
   const body = (await finish.json()) as { token: string };
   expect(body.token.length).toBeGreaterThan(8);
+  const seen = await request.post('/me/wallet-backup-seen', {
+    headers: { authorization: `Bearer ${body.token}` },
+  });
+  expect(seen.status()).toBe(200);
   return body.token;
 }
 

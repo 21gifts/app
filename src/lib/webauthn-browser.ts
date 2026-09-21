@@ -267,15 +267,33 @@ function credentialDescriptorsFromJSON(raw: unknown): PublicKeyCredentialDescrip
 }
 
 /**
+ * Drop `prf` from client extension results so finish JSON never carries
+ * PRF bytes.
+ *
+ * @param json - Serialized credential.
+ * @returns The same object without `clientExtensionResults.prf`.
+ */
+function withoutPrfResults(json: Record<string, unknown>): Record<string, unknown> {
+  const ext = json['clientExtensionResults'];
+  if (ext === null || typeof ext !== 'object' || Array.isArray(ext)) {
+    return json;
+  }
+  const next = { ...(ext as Record<string, unknown>) };
+  delete next['prf'];
+  return { ...json, clientExtensionResults: next };
+}
+
+/**
  * Serialise a `PublicKeyCredential` to the JSON the api expects.
+ * Omits PRF output — mnemonic derivation stays in the tab.
  *
  * @param credential - Result of `create` or `get`.
- * @returns JSON matching WebAuthn Level 3 `toJSON()`.
+ * @returns JSON matching WebAuthn Level 3 `toJSON()`, without `prf` results.
  */
 export function credentialToJSON(credential: PublicKeyCredential): Record<string, unknown> {
   const native = credential as PublicKeyCredential & { toJSON?: () => Record<string, unknown> };
   if (typeof native.toJSON === 'function') {
-    return native.toJSON();
+    return withoutPrfResults(native.toJSON());
   }
   const response = credential.response;
   const base: Record<string, unknown> = {
@@ -302,5 +320,5 @@ export function credentialToJSON(credential: PublicKeyCredential): Record<string
           : bytesToBase64Url(new Uint8Array(assertion.userHandle)),
     };
   }
-  return base;
+  return withoutPrfResults(base);
 }

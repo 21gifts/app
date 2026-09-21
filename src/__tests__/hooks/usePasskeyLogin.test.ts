@@ -1,6 +1,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { rememberSessionPhrase } from '@/hooks/useWalletPhrase';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -111,6 +112,9 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
+    expect(rememberSessionPhrase).toHaveBeenCalledWith(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
     expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
     vi.unstubAllGlobals();
   });

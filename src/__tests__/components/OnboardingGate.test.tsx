@@ -103,6 +103,17 @@ describe('OnboardingGate', () => {
     expect(replace).toHaveBeenCalledWith('/setup/name');
   });
 
+  it('lets a complete account open wallet', async () => {
+    useAuthStore.setState({ session: 'tok', account: complete });
+    renderWithLocale(
+      <OnboardingGate screen="wallet">
+        <p>wallet-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('wallet-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it('renders wallet children when setup is wallet', async () => {
     useAuthStore.setState({
       session: 'tok',

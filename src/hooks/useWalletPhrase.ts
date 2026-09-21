@@ -184,6 +184,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, [fail, session, setAccount]);
 
   const showPhrase = useCallback(async () => {
+    if (session === null) {
+      return;
+    }
     setStatus('busy');
     setError(null);
     try {
@@ -200,7 +203,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     } catch (err) {
       fail(err);
     }
-  }, [fail]);
+  }, [fail, session]);
 
   const confirmSaved = useCallback(async () => {
     if (session === null) {

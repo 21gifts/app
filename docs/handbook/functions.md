@@ -2336,10 +2336,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: credentialToJSON
 
-- **Purpose:** Serialise a `PublicKeyCredential` for the api finish body.
+- **Purpose:** Serialise a `PublicKeyCredential` for the api finish body. Drops `clientExtensionResults.prf` so PRF bytes never leave the tab.
 - **Inputs:** Browser credential from create/get.
-- **Returns / side effects:** JSON record. Uses native `toJSON` when present.
-- **Used by:** `usePasskeyLogin`.
+- **Returns / side effects:** JSON record without `prf` results. Uses native `toJSON` when present, then strips `prf`.
+- **Used by:** `usePasskeyLogin`, `useWalletPhrase`.
 
 ## Function: finishPasskeyAuthentication
 

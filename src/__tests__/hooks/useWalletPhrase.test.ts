@@ -146,9 +146,11 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.activate();
       await result.current.confirmSaved();
+      await result.current.showPhrase();
     });
     expect(startPasskeyReplace).not.toHaveBeenCalled();
     expect(postWalletBackupSeen).not.toHaveBeenCalled();
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
   });
 
   it('returns to idle when create yields no credential', async () => {
