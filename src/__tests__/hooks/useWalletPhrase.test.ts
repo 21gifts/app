@@ -448,6 +448,21 @@ describe('useWalletPhrase', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('does not keep a phrase when backup-seen runs after replace then the session ends', async () => {
+    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { ...account, walletBackupSeenAt: 1 };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeyReplace).toHaveBeenCalled();
+    expect(postWalletBackupSeen).toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBeNull();
+    expect(result.current.status).toBe('idle');
+  });
+
   it('does not surface an error when activate rejects after logout', async () => {
     vi.mocked(startPasskeyReplace).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
