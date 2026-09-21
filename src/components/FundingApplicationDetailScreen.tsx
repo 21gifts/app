@@ -261,7 +261,7 @@ export function FundingApplicationDetailScreen({
   }
 
   return (
-    <Card maxWidth="xl">
+    <Card maxWidth="xl" surface={false}>
       {heading}
       {body}
     </Card>
