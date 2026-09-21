@@ -105,12 +105,10 @@ export async function obtainPrfFirst(credential: PublicKeyCredential): Promise<U
       extensions: { prf: { eval: { first: Uint8Array.from(salt) } } },
     },
   })) as PublicKeyCredential | null;
-  /* v8 ignore next 3 -- get() null when the authenticator aborts the fallback */
   if (!assertion) {
     return null;
   }
   const fromGet = readPrfFirst(assertion);
-  /* v8 ignore next 3 -- empty PRF first is treated as missing */
   if (!fromGet || fromGet.byteLength === 0) {
     return null;
   }
@@ -134,12 +132,10 @@ export async function obtainPrfFirstFromGet(): Promise<Uint8Array | null> {
       extensions: { prf: { eval: { first: Uint8Array.from(salt) } } },
     },
   })) as PublicKeyCredential | null;
-  /* v8 ignore next 3 -- get() null when the authenticator aborts */
   if (!assertion) {
     return null;
   }
   const first = readPrfFirst(assertion);
-  /* v8 ignore next 3 -- empty PRF first is treated as missing */
   if (!first || first.byteLength === 0) {
     return null;
   }
