@@ -1228,7 +1228,7 @@
 - **Purpose:** POST `/funding/trial` with `{ accountId }` (staff). Target must be effective pending.
 - **Inputs:** Bearer `sessionToken`, subject `accountId`.
 - **Returns / side effects:** `FundingDecisionResult`. Throws visitor copy `Could not update this member. Please try again.` on any failure.
-- **Used by:** `proxyFundingTrialPost`.
+- **Used by:** none in the staff UI (same-origin `POST /funding/trial` remains).
 
 ## Function: postFundingAdmit
 
