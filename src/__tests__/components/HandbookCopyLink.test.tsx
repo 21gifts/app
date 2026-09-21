@@ -79,6 +79,26 @@ describe('HandbookCopyLink', () => {
     expectIdleIcon(button);
   });
 
+  it('uses app ghost classes when tone is app', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    renderWithLocale(<HandbookCopyLink targetId="login" label="21.gifts login" tone="app" />);
+
+    const button = screen.getByRole('button', { name: 'Copy link to 21.gifts login' });
+    expect(button.className).toContain('hover:bg-app-hover');
+    expect(button.className).not.toContain('hover:bg-paper/10');
+    expect(button.className).not.toContain('text-paper/40');
+    expect(button.className).not.toContain('hover:text-paper');
+    fireEvent.click(button);
+    await waitFor(() => {
+      const svg = button.querySelector('svg');
+      expect(svg?.classList.contains('lucide-check')).toBe(true);
+      expect(svg?.classList.contains('text-app-fg')).toBe(true);
+      expect(svg?.classList.contains('text-app-accent')).toBe(false);
+      expect(svg?.classList.contains('text-accent')).toBe(false);
+    });
+  });
+
   it('keeps the aria-label unchanged while data-copied is true', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });

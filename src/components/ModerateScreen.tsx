@@ -111,12 +111,13 @@ function chartDayLabel(day: string, locale: string): string {
  * Signed-in moderation hub of staff tools.
  *
  * Moderators see the daily payout-goal widget (from
- * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals, and
- * Moderators chat group tools. The Moderators chat group control goes to
- * `/moderate/group` and shows a staff-room unread count when greater than
- * zero. Other signed-in visitors see a short forbidden message and no tools
- * list. Does not fetch hidden notes, proposals, or the group thread; unread
- * for the Moderators chat group control comes from {@link useUnreadCount}.
+ * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals,
+ * Moderators chat group, and Handbook tools. The Moderators chat group
+ * control goes to `/moderate/group` and shows a staff-room unread count
+ * when greater than zero. Handbook goes to `/moderate/handbook`. Other
+ * signed-in visitors see a short forbidden message and no tools list.
+ * Does not fetch hidden notes, proposals, or the group thread; unread for
+ * the Moderators chat group control comes from {@link useUnreadCount}.
  * Renders nothing without a session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
@@ -219,6 +220,11 @@ export function ModerateScreen(): ReactElement | null {
                 {moderationUnreadCount}
               </span>
             ) : null}
+          </ButtonLink>
+        </li>
+        <li className="flex w-full flex-col items-center gap-3">
+          <ButtonLink href="/moderate/handbook" variant="secondary" size="lg">
+            {t('moderate.handbook.heading')}
           </ButtonLink>
         </li>
       </ul>

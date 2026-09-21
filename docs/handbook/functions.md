@@ -45,10 +45,10 @@
 ## Function: HandbookCopyLink
 
 - **Purpose:** Client button beside a handbook heading, chapter, screen heading, or figure-card permalink. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes a check icon for 1.2s (textarea `execCommand` fallback).
-- **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`).
+- **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`). Optional `tone` (`'app' | 'dark'`, default `'dark'`). Copied Check uses `text-accent` when dark and `text-app-fg` when `app`.
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
-- **Used by:** `HandbookPage` (page title), `HandbookMarkdown` (every heading), `HandbookFigure`, and `HandbookSectionHeading`.
+- **Used by:** `HandbookPage` (page title), `HandbookMarkdown` (every heading), `HandbookFigure`, `HandbookSectionHeading`, and `ModerateHandbookScreen`.
 
 ## Function: HandbookMarkdown
 
@@ -608,16 +608,30 @@
 
 ## Function: APP_HEIGHT_BOOTSTRAP_SCRIPT
 
-- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Sets `--app-height` from `visualViewport.height` (fallback `innerHeight`) so first paint matches the visible viewport. Scale guard: skips the write when `visualViewport.scale` is present and not ≈ 1, keeping the last unzoomed height (or the CSS `100dvh` fallback).
+- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Sets `--app-height` to `max(visualViewport.height, innerHeight)` (fallback `innerHeight`) so first paint matches the layout canvas. Bootstrap has no focus detection; first paint is unfocused, so this is the max path — it does not follow `visualViewport.height` alone. Scale guard: skips the write when `visualViewport.scale` is present and not ≈ 1, keeping the last unzoomed height (or the CSS `100dvh` fallback).
 - **Inputs:** None (constant string).
-- **Returns / side effects:** Non-empty IIFE source mentioning `visualViewport` and `--app-height`.
+- **Returns / side effects:** Non-empty IIFE source mentioning `visualViewport`, `Math.max`, and `--app-height`.
 - **Used by:** `RootLayout` `<head>` script.
+
+## Function: AppHeightViewport
+
+- **Purpose:** Minimal visual-viewport fields (`height`, optional `scale`) used to resolve `--app-height` without depending on the DOM `VisualViewport` type in tests.
+- **Inputs:** `height` in CSS pixels; optional `scale` (omit when unknown — do not pass `undefined`).
+- **Returns / side effects:** A structural type only — no runtime value. Callers pass `{ height }` or `{ height, scale }` into `resolveAppHeight`.
+- **Used by:** `resolveAppHeight`; `useAppHeight` (live `window.visualViewport`).
+
+## Function: resolveAppHeight
+
+- **Purpose:** Chooses the pixel value for `--app-height`. When a text field is focused (software keyboard likely open), the result is `visualViewport.height` so the composer stays above the keyboard. When no text field is focused, the result is `max(visualViewport.height, innerHeight)` so a stuck-short visual viewport cannot leave a white gap under the rounded page frame. Pinch-zoom skip: returns `null` (caller must not write) when `scale` is present and not ≈ 1 (`|scale - 1| > 0.01`). Null/undefined visualViewport falls back to `innerHeight`.
+- **Inputs:** `innerHeight` (`window.innerHeight`); `visualViewport` (`window.visualViewport` or a stub; null/undefined allowed); `textFieldFocused` (true when the active element is a text field).
+- **Returns / side effects:** Rounded CSS-pixel height, or `null` to skip the write. No DOM writes of its own.
+- **Used by:** `useAppHeight` (`AppHeightSync`); bootstrap IIFE inlines the unfocused max path.
 
 ## Function: useAppHeight
 
-- **Purpose:** After hydration, keeps the CSS custom property `--app-height` in sync with the visible viewport (`visualViewport.height`, fallback `innerHeight`) so `AppShell` fill/flow layouts track mobile browser chrome and keyboard overlap. Scale guard: does not update `--app-height` when `visualViewport.scale` is present and not ≈ 1, so pinch/auto-zoom keeps the last unzoomed height.
-- **Inputs:** None (reads `window.visualViewport` / `innerHeight` inside a `useEffect`).
-- **Returns / side effects:** `void`. Sets `--app-height` on `document.documentElement` and registers resize/scroll/orientation listeners; cleans them up on unmount.
+- **Purpose:** After hydration, keeps the CSS custom property `--app-height` in sync so `AppShell` fill/flow layouts track the layout canvas. Unfocused: `max(visualViewport.height, innerHeight)` via `resolveAppHeight`. Focused text field: `visualViewport.height` so the keyboard does not cover the composer. Does not follow `visualViewport.height` alone when unfocused. Scale guard: does not update `--app-height` when `visualViewport.scale` is present and not ≈ 1, so pinch/auto-zoom keeps the last unzoomed height.
+- **Inputs:** None (reads `window.visualViewport` / `innerHeight` and whether a text field is focused, inside a `useEffect`).
+- **Returns / side effects:** `void`. Sets `--app-height` on `document.documentElement` and registers window resize/orientationchange, document focusin/focusout, and visualViewport resize/scroll listeners; cleans them up on unmount.
 - **Used by:**
   - **`AppHeightSync`** (same file; root layout mount)
   - **Every hydrated app page** (via that mount)
@@ -642,14 +656,14 @@
   - **Fill and flow app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note, `ProfilePage`, `ViewProfilePage`, `MemberProfilePage`)
   - **`PageChrome`** (still `mode="flow"`; AppShell draws the unified frame — welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
-  - **`useAppShellScroller`** (`ForumBoard` pull-to-refresh, `ForumLoader` atTop / scroll-to-top)
+  - **`useAppShellScroller`** (`ForumBoard` pull-to-refresh, `ForumLoader` atTop / scroll-to-top, `InboxScreen` open-thread pin to bottom / one-shot list reset to top)
 
 ## Function: useAppShellScroller
 
 - **Purpose:** Returns the AppShell inner `overflow-y-auto` scroller element, or `null` outside AppShell.
 - **Inputs:** None (reads AppShell context).
 - **Returns / side effects:** `HTMLElement | null`. No network.
-- **Used by:** `ForumBoard` (pull-to-refresh pageScrollTop), `ForumLoader` (atTop / scroll-to-top), AppShell unit tests.
+- **Used by:** `ForumBoard` (pull-to-refresh pageScrollTop), `ForumLoader` (atTop / scroll-to-top), `InboxScreen` (open-thread pin to bottom / one-shot list reset to top), AppShell unit tests.
 
 ## Function: AppShellHeader
 
@@ -2246,7 +2260,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: InboxScreen
 
-- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field (`showAmount` false hides the field; the staff room is text only). When `showFilter` is true (moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Rows with `kind` `moderator_group` are never listed; the closed staff room lives on `/moderate/group`. Members (`showFilter` false) see inbound rows except `moderator_group` and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus / Moderators chat group). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text. A staff viewer sees another staff reply as an incoming muted card with that person's `name` (profile link when `accountId` is set). `fromMe` / `inbox.you` only when this session is the actor. Optional `rateDay` is the latest gift-day totals. Every thread sats amount (gift-only bubble, text+sats line, and nested gift line) shows a preferred-fiat suffix via `preferredFiatSuffix` when `rateDay` is usable, else ₿-only. A message whose `giftFor` points at another message renders via `groupThreadGifts` as a nested `role="note"` line inside the parent's `<li>` (name, ₿ amount, fiat suffix, time; not shown as its own top-level row) instead of a separate bubble.
+- **Purpose:** Presentational inbox: incoming threads as a conversation list, or one open thread with a 500-character composer and sats amount field (`showAmount` false hides the field; the staff room is text only). When `showFilter` is true (moderator), the list is filtered by the origin control (Direct / Contact / Damus; default Direct). Rows with `kind` `moderator_group` are never listed; the closed staff room lives on `/moderate/group`. Members (`showFilter` false) see inbound rows except `moderator_group` and no control. Each list row and the open-thread header show an origin label from `conversation.kind` (Contact / Direct / Damus / Moderators chat group). Unread inbound rows use `font-semibold` names, `text-app-fg` last text, and `aria-label` `inbox.threadUnread`. Read inbound last text is a muted preview. When `lastFromMe` is true and `lastText` is non-empty, the list preview is `inbox.sentPreview` (`You: {text}`) in a filled chip; gift-only last messages (`lastSats > 0`, empty `lastText`) show the formatted amount. Thread incoming messages are full-width muted note cards; `fromMe` messages render as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only bubbles use `forum.giftReply`; text+sats shows the amount under the body. An open invoice shows the Lightning pay sheet. Open-thread heading is counterpart name + origin caption (no `onBack`, no in-card back). Heading and incoming author names with `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe` stays `inbox.you` text; Damus/missing id stays plain text. A staff viewer sees another staff reply as an incoming muted card with that person's `name` (profile link when `accountId` is set). `fromMe` / `inbox.you` only when this session is the actor. Optional `rateDay` is the latest gift-day totals. Every thread sats amount (gift-only bubble, text+sats line, and nested gift line) shows a preferred-fiat suffix via `preferredFiatSuffix` when `rateDay` is usable, else ₿-only. A message whose `giftFor` points at another message renders via `groupThreadGifts` as a nested `role="note"` line inside the parent's `<li>` (name, ₿ amount, fiat suffix, time; not shown as its own top-level row) instead of a separate bubble. An open thread (`openId` set, messages loaded) scrolls the AppShell scroller to the bottom so the newest (oldest-first) messages and composer are in view; inside AppShell the pin waits for that scroller and does not fall back to `window` while the node is missing (`window` only outside AppShell); the pin runs again when an invoice pay sheet opens; list view does not pin to the bottom; leaving a thread scrolls the list to the top once.
 - **Inputs:** List/thread/composer state from `InboxLoader` or `ModeratorGroupScreen`.
 - **Returns / side effects:** React element. No network.
 - **Used by:** `InboxLoader`, `ModeratorGroupScreen`.
@@ -2435,10 +2449,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`, and a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread itself; unread for the Moderators chat group control comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, and a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread itself; unread for the Moderators chat group control comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for the Moderators chat group count (network for that count; does not write the home-screen badge).
 - **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, or the group thread itself.
 - **Used by:** `ModeratePage`.
+
+## Function: ModerateHandbookPage
+
+- **Purpose:** Next.js page for `/moderate/handbook` (signed-in staff handbook). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateHandbookScreen`. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The handbook screen inside fill AppShell.
+- **Used by:** Route `/moderate/handbook`.
+
+## Function: ModerateHandbookScreen
+
+- **Purpose:** Client staff handbook of how 21.gifts works. Staff (`roleAtLeast(..., 'moderator')`) see TOC **Chapters** and three chapters **21.gifts login** (`#login`), **Verified** (`#verified`), **Official funding program** (`#funding`), each with a permalink and `HandbookCopyLink` `tone="app"`. Non-staff signed-in visitors see the heading plus forbidden copy and no chapters. Renders `null` without a session. In-card icon back to `/moderate`. No fetch. On mount and hashchange, scrolls the matching chapter into view when the hash is `#login`, `#verified`, or `#funding`.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. No network.
+- **Used by:** `ModerateHandbookPage`.
 
 ## Function: HiddenNotesPage
 

@@ -7279,6 +7279,49 @@ test.describe('moderate group screens', () => {
   });
 });
 
+test.describe('moderate handbook screens', () => {
+  // Goldens are regenerated on the build host.
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  test('screen /moderate/handbook', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.goto('/moderate/handbook');
+    await expect(page.getByRole('heading', { name: 'Handbook' })).toBeVisible();
+    await shotScreen(page, 'screen-moderate-handbook');
+  });
+
+  test('moderate handbook forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/handbook');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-handbook-forbidden');
+  });
+});
+
 test.describe('trust-chain screens', () => {
   // Goldens are regenerated on the build host.
   async function seedAda(
