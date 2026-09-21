@@ -306,7 +306,8 @@ function inboxAuthorProfileButton(
  * `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe`
  * stays `inbox.you` text; Damus or a missing id stays plain text.
  * An open thread pins the AppShell scroller (document fallback) to the bottom
- * after messages render.
+ * after messages render. Leaving a thread scrolls that scroller to the top
+ * once so the conversation list is not left at the thread offset.
  *
  * @param props - List/thread/composer state from {@link InboxLoader} or
  *   {@link ModeratorGroupScreen}.
