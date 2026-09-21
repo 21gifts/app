@@ -502,7 +502,7 @@ export function MemberProfileScreen({
             if (current.account !== null) {
               setAccount({ ...current.account, hasPosted: true });
             }
-            if (replyParentId !== null) {
+            if (replyParentId !== null && replyParentId !== next.id) {
               setPosts((prev) => {
                 /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
                 if (prev === null) {

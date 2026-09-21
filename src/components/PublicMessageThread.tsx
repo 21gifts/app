@@ -440,7 +440,7 @@ export function PublicMessageThread(props: {
             if (current.account !== null) {
               setAccount({ ...current.account, hasPosted: true });
             }
-            if (replyParentId !== null) {
+            if (replyParentId !== null && replyParentId !== next.id) {
               setNote((prev) => {
                 /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
                 if (prev.id !== replyParentId) {

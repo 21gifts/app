@@ -1208,7 +1208,7 @@ export function ForumLoader({
             if (expanded !== null && !paidNestedReply) {
               setRepliesAttempt((n) => n + 1);
             }
-            if (replyParentId !== null) {
+            if (replyParentId !== null && replyParentId !== next.id) {
               setMessages((prev) => {
                 /* v8 ignore next 3 -- compose-pay reply poll starts from a listed parent */
                 if (prev === null) {
