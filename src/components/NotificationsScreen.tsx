@@ -12,6 +12,7 @@ const NOTIFICATION_TITLE_KEY = {
   forum_reply: 'notifications.reply',
   zap: 'notifications.zap',
   moderator_appointed: 'notifications.moderatorAppointed',
+  moderator_proposal: 'notifications.moderatorProposal',
 } as const;
 
 /** Props for {@link NotificationsScreen}. */
@@ -30,8 +31,8 @@ export interface NotificationsScreenProps {
 
 /**
  * Presentational signed-in notifications list of living-room posts, replies,
- * payments, and moderator appointment. There is no composer, no thread view,
- * and no filter.
+ * payments, moderator appointment, and moderator proposal. There is no
+ * composer, no thread view, and no filter.
  *
  * @param props - List state from {@link NotificationsLoader}.
  * @returns The notifications page column.
@@ -88,7 +89,9 @@ export function NotificationsScreen({
           {notifications.map((row) => {
             const unread = row.readAt === null;
             const bodyLine =
-              row.type === 'zap' || row.type === 'moderator_appointed'
+              row.type === 'zap' ||
+              row.type === 'moderator_appointed' ||
+              row.type === 'moderator_proposal'
                 ? row.text
                 : row.text !== ''
                   ? row.text

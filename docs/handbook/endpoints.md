@@ -441,6 +441,13 @@
 - **Used by:** `postTrustConfirm` in `MemberTrustActions` and `ProposalsScreen`.
 - **Auth:** Bearer (moderator, not the proposer).
 
+## Endpoint: POST /trust/reject-moderator
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/reject-moderator` with `{ accountId }`.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postTrustReject` in `ProposalsScreen`.
+- **Auth:** Bearer (moderator; the original proposer may reject).
+
 ## Endpoint: POST /trust/appoint-moderator
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/appoint-moderator` with `{ accountId }`.

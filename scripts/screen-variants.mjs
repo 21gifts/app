@@ -1290,6 +1290,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not load notifications. Please try again.',
   },
   {
+    route: '/notifications',
+    id: 'moderator-proposal',
+    image: 'notifications-moderator-proposal.png',
+    visual: 'state-notifications-moderator-proposal',
+    needle: 'Bob proposed a moderator',
+  },
+  {
     route: '/moderate',
     id: 'default',
     image: 'moderate.png',
@@ -1302,6 +1309,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group-unread.png',
     visual: 'state-moderate-group-unread',
     needle: "getByRole('link', { name: 'Moderators chat group, 1 unread' })",
+  },
+  {
+    route: '/moderate',
+    id: 'proposals-unread',
+    image: 'moderate-proposals-unread.png',
+    visual: 'state-moderate-proposals-unread',
+    needle: "getByRole('link', { name: 'Open proposals, 1 unread' })",
   },
   {
     route: '/moderate',
@@ -1420,6 +1434,13 @@ export const SCREEN_VARIANTS = [
     id: 'confirm-error',
     image: 'moderate-proposals-confirm-error.png',
     visual: 'state-moderate-proposals-confirm-error',
+    needle: 'Could not update this member. Please try again.',
+  },
+  {
+    route: '/moderate/proposals',
+    id: 'reject-error',
+    image: 'moderate-proposals-reject-error.png',
+    visual: 'state-moderate-proposals-reject-error',
     needle: 'Could not update this member. Please try again.',
   },
   {

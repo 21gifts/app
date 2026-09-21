@@ -2,7 +2,7 @@ import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
-import type { Account, Conversation } from '@/lib/api-types';
+import type { Account, Conversation, ModeratorProposal } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -10,6 +10,7 @@ vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
   fetchConversations: vi.fn(),
   fetchModeratorGroup: vi.fn(),
+  fetchTrustProposals: vi.fn(),
 }));
 vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
@@ -19,13 +20,19 @@ vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(() => null),
 }));
 
-import { fetchConversations, fetchModeratorGroup, fetchNotifications } from '@/lib/api';
+import {
+  fetchConversations,
+  fetchModeratorGroup,
+  fetchNotifications,
+  fetchTrustProposals,
+} from '@/lib/api';
 import { setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
 import { loadSession } from '@/lib/session-storage';
 
 const fetchMock = vi.mocked(fetchNotifications);
 const conversationsMock = vi.mocked(fetchConversations);
 const moderationMock = vi.mocked(fetchModeratorGroup);
+const proposalsMock = vi.mocked(fetchTrustProposals);
 const setBadgeMock = vi.mocked(setUnreadAppBadge);
 
 const UNREAD_ROW: Conversation = {
@@ -52,6 +59,12 @@ const STAFF_ROOM: Conversation = {
   unread: true,
 };
 
+const PROPOSAL: ModeratorProposal = {
+  subject: { id: 'acc_rose', name: 'Rose', role: 'verified' },
+  proposedBy: { id: 'acc_bob', name: 'Bob' },
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
 const STAFF_ACCOUNT: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
@@ -71,25 +84,31 @@ const STAFF_ACCOUNT: Account = {
 };
 
 function Probe({ refreshKey }: { refreshKey: boolean }): ReactElement {
-  const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(refreshKey);
+  const { unreadCount, inboxUnreadCount, moderationUnreadCount, proposalCount } =
+    useUnreadCount(refreshKey);
   return (
     <>
       <p>count:{unreadCount}</p>
       <p>inbox:{inboxUnreadCount}</p>
       <p>moderation:{moderationUnreadCount}</p>
+      <p>proposals:{proposalCount}</p>
     </>
   );
 }
 
 function NoBadgeProbe(): ReactElement {
-  const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(true, {
-    writeBadge: false,
-  });
+  const { unreadCount, inboxUnreadCount, moderationUnreadCount, proposalCount } = useUnreadCount(
+    true,
+    {
+      writeBadge: false,
+    },
+  );
   return (
     <>
       <p>count:{unreadCount}</p>
       <p>inbox:{inboxUnreadCount}</p>
       <p>moderation:{moderationUnreadCount}</p>
+      <p>proposals:{proposalCount}</p>
     </>
   );
 }
@@ -99,8 +118,10 @@ describe('useUnreadCount', () => {
     fetchMock.mockReset();
     conversationsMock.mockReset();
     moderationMock.mockReset();
+    proposalsMock.mockReset();
     conversationsMock.mockResolvedValue([]);
     moderationMock.mockRejectedValue(new Error('no group'));
+    proposalsMock.mockResolvedValue([]);
     setBadgeMock.mockClear();
     vi.mocked(loadSession).mockReturnValue(null);
     useAuthStore.setState({ session: 'tok', account: null });
@@ -116,9 +137,11 @@ describe('useUnreadCount', () => {
     expect(screen.getByText('count:0')).toBeTruthy();
     expect(screen.getByText('inbox:0')).toBeTruthy();
     expect(screen.getByText('moderation:0')).toBeTruthy();
+    expect(screen.getByText('proposals:0')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(conversationsMock).not.toHaveBeenCalled();
     expect(moderationMock).not.toHaveBeenCalled();
+    expect(proposalsMock).not.toHaveBeenCalled();
     expect(setBadgeMock).toHaveBeenCalledWith(0);
   });
 
@@ -143,6 +166,7 @@ describe('useUnreadCount', () => {
     expect(fetchMock).toHaveBeenCalledWith('tok');
     expect(conversationsMock).toHaveBeenCalledWith('tok');
     expect(moderationMock).not.toHaveBeenCalled();
+    expect(proposalsMock).not.toHaveBeenCalled();
     expect(setBadgeMock).toHaveBeenCalledWith(4);
   });
 
@@ -360,8 +384,10 @@ describe('useUnreadCount', () => {
         expect(screen.getByText('moderation:1')).toBeTruthy();
         expect(screen.getByText('count:0')).toBeTruthy();
         expect(screen.getByText('inbox:0')).toBeTruthy();
+        expect(screen.getByText('proposals:0')).toBeTruthy();
       });
       expect(moderationMock).toHaveBeenCalledWith('tok');
+      expect(proposalsMock).toHaveBeenCalledWith('tok');
       expect(setBadgeMock).toHaveBeenCalledWith(1);
     },
   );
@@ -388,6 +414,7 @@ describe('useUnreadCount', () => {
       expect(screen.getByText('count:4')).toBeTruthy();
       expect(screen.getByText('inbox:1')).toBeTruthy();
       expect(screen.getByText('moderation:1')).toBeTruthy();
+      expect(screen.getByText('proposals:0')).toBeTruthy();
     });
     expect(setBadgeMock).toHaveBeenCalledWith(6);
   });
@@ -416,8 +443,10 @@ describe('useUnreadCount', () => {
       await waitFor(() => {
         expect(screen.getByText('moderation:0')).toBeTruthy();
         expect(screen.getByText('count:0')).toBeTruthy();
+        expect(screen.getByText('proposals:0')).toBeTruthy();
       });
       expect(moderationMock).not.toHaveBeenCalled();
+      expect(proposalsMock).not.toHaveBeenCalled();
       expect(setBadgeMock).toHaveBeenCalledWith(0);
     },
   );
@@ -523,6 +552,125 @@ describe('useUnreadCount', () => {
     expect(setBadgeMock).not.toHaveBeenCalledWith(1);
   });
 
+  it.each(['moderator', 'founder'] as const)(
+    'loads proposalCount from open proposals as %s',
+    async (role) => {
+      useAuthStore.setState({ session: 'tok', account: { ...STAFF_ACCOUNT, role } });
+      fetchMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+      moderationMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
+      proposalsMock.mockResolvedValue([PROPOSAL]);
+      renderWithLocale(<Probe refreshKey={true} />);
+      await waitFor(() => {
+        expect(screen.getByText('proposals:1')).toBeTruthy();
+        expect(screen.getByText('moderation:1')).toBeTruthy();
+        expect(screen.getByText('count:0')).toBeTruthy();
+        expect(screen.getByText('inbox:0')).toBeTruthy();
+      });
+      expect(proposalsMock).toHaveBeenCalledWith('tok');
+      expect(setBadgeMock).toHaveBeenCalledWith(0);
+    },
+  );
+
+  it('adds staff-room unread plus proposalCount on the Menu moderation count', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+    moderationMock.mockResolvedValue(STAFF_ROOM);
+    proposalsMock.mockResolvedValue([
+      PROPOSAL,
+      { ...PROPOSAL, subject: { ...PROPOSAL.subject, id: 'acc_2' } },
+    ]);
+    renderWithLocale(<Probe refreshKey={true} />);
+    await waitFor(() => {
+      expect(screen.getByText('proposals:2')).toBeTruthy();
+      expect(screen.getByText('moderation:3')).toBeTruthy();
+    });
+    expect(setBadgeMock).toHaveBeenCalledWith(1);
+    expect(setBadgeMock).not.toHaveBeenCalledWith(3);
+  });
+
+  it('does not add proposalCount to the home-screen badge sum', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
+    conversationsMock.mockResolvedValue([UNREAD_ROW]);
+    moderationMock.mockResolvedValue(STAFF_ROOM);
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    renderWithLocale(<Probe refreshKey={true} />);
+    await waitFor(() => {
+      expect(screen.getByText('count:4')).toBeTruthy();
+      expect(screen.getByText('inbox:1')).toBeTruthy();
+      expect(screen.getByText('moderation:2')).toBeTruthy();
+      expect(screen.getByText('proposals:1')).toBeTruthy();
+    });
+    expect(setBadgeMock).toHaveBeenCalledWith(6);
+    expect(setBadgeMock).not.toHaveBeenCalledWith(7);
+  });
+
+  it('resolves a failed proposals fetch to proposalCount 0', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
+    conversationsMock.mockResolvedValue([UNREAD_ROW]);
+    moderationMock.mockResolvedValue(STAFF_ROOM);
+    proposalsMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<Probe refreshKey={true} />);
+    await waitFor(() => {
+      expect(screen.getByText('proposals:0')).toBeTruthy();
+      expect(screen.getByText('moderation:1')).toBeTruthy();
+      expect(screen.getByText('count:4')).toBeTruthy();
+    });
+    expect(setBadgeMock).toHaveBeenCalledWith(6);
+    expect(proposalsMock).toHaveBeenCalledWith('tok');
+  });
+
+  it('drops a stale proposals count when the session changes mid-flight', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    let resolveFirst!: (value: ModeratorProposal[]) => void;
+    proposalsMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    proposalsMock.mockResolvedValueOnce([]);
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+    moderationMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
+    renderWithLocale(<Probe refreshKey={true} />);
+    await act(async () => {
+      useAuthStore.setState({ session: 'tok2', account: STAFF_ACCOUNT });
+    });
+    await act(async () => {
+      resolveFirst([PROPOSAL]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('proposals:0')).toBeTruthy();
+    });
+    expect(screen.queryByText('proposals:1')).toBeNull();
+  });
+
+  it('drops a stale proposals rejection when the session changes mid-flight', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    let rejectFirst!: (reason?: unknown) => void;
+    proposalsMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    proposalsMock.mockResolvedValueOnce([PROPOSAL]);
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+    moderationMock.mockResolvedValue({ ...STAFF_ROOM, unread: false });
+    renderWithLocale(<Probe refreshKey={true} />);
+    await act(async () => {
+      useAuthStore.setState({ session: 'tok2', account: STAFF_ACCOUNT });
+    });
+    await act(async () => {
+      rejectFirst(new Error('fail'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('proposals:1')).toBeTruthy();
+      expect(screen.getByText('moderation:1')).toBeTruthy();
+    });
+  });
+
   it('does not write the home-screen badge when writeBadge is false', async () => {
     useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
     fetchMock.mockResolvedValue({ notifications: [], unreadCount: 4 });
@@ -533,6 +681,7 @@ describe('useUnreadCount', () => {
       expect(screen.getByText('moderation:1')).toBeTruthy();
       expect(screen.getByText('count:4')).toBeTruthy();
       expect(screen.getByText('inbox:1')).toBeTruthy();
+      expect(screen.getByText('proposals:0')).toBeTruthy();
     });
     expect(setBadgeMock).not.toHaveBeenCalled();
     await act(async () => {

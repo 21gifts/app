@@ -660,16 +660,17 @@ export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
  * Runtime schema for one notification from `GET /notifications`.
  *
  * `type` is `forum_post` (new living-room post), `forum_reply`, `zap`
- * (payment), or `moderator_appointed` (the session was appointed moderator).
- * Unknown `type` values fail parse. `text` may be empty when a post or reply
- * is photo-only, when a zap has no amount string, or when a moderator
- * appointment has no body. `parentId` / `replyId` are a forum note id except
- * on `moderator_appointed`, where they are the subject account id. `readAt`
- * is `null` until the session marks the row read.
+ * (payment), `moderator_appointed` (the session was appointed moderator), or
+ * `moderator_proposal` (a staff member proposed a moderator). Unknown `type`
+ * values fail parse. `text` may be empty when a post or reply is photo-only,
+ * when a zap has no amount string, or when a moderator appointment or
+ * proposal has no body. `parentId` / `replyId` are a forum note id except on
+ * `moderator_appointed` and `moderator_proposal`, where they are the subject
+ * account id. `readAt` is `null` until the session marks the row read.
  */
 export const notificationSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['forum_post', 'forum_reply', 'zap', 'moderator_appointed']),
+  type: z.enum(['forum_post', 'forum_reply', 'zap', 'moderator_appointed', 'moderator_proposal']),
   parentId: z.string().min(1),
   replyId: z.string().min(1),
   name: z.string(),
@@ -687,7 +688,8 @@ export const notificationListSchema = z.object({
 });
 
 /**
- * One notification from the api (post, reply, zap, or moderator appointment).
+ * One notification from the api (post, reply, zap, moderator appointment, or
+ * moderator proposal).
  */
 export type Notification = z.infer<typeof notificationSchema>;
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
-import { fetchTrustProposals, postTrustConfirm } from '@/lib/api';
+import { fetchTrustProposals, postTrustConfirm, postTrustReject } from '@/lib/api';
 import type { ModeratorProposal } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
@@ -26,11 +26,12 @@ function personLabel(name: string | null, unnamed: string): string {
  * Signed-in staff confirm queue of open moderator proposals.
  *
  * Moderators see one list: Confirm as moderator when they did not
- * propose; waiting copy when `proposedBy.id === account.id`. Other signed-in
- * visitors see a short forbidden message and no list. Fetches
- * {@link fetchTrustProposals} only and confirms with {@link postTrustConfirm}.
- * A failed confirm shows `trustChain.actionFailed`. Renders nothing without a
- * session. In-card back goes to the moderation hub.
+ * propose; waiting copy when `proposedBy.id === account.id`. Reject is on
+ * every open row, including a self-proposal. Other signed-in visitors see a
+ * short forbidden message and no list. Fetches {@link fetchTrustProposals}
+ * and confirms or rejects with {@link postTrustConfirm} /
+ * {@link postTrustReject}. A failed action shows `trustChain.actionFailed`.
+ * Renders nothing without a session. In-card back goes to the moderation hub.
  *
  * @returns The proposals card, forbidden copy, or `null` without a session.
  */
@@ -43,7 +44,9 @@ export function ProposalsScreen(): ReactElement | null {
   const [proposalsError, setProposalsError] = useState(false);
   const [proposalsAttempt, setProposalsAttempt] = useState(0);
   const [confirming, setConfirming] = useState(false);
-  const [confirmFailed, setConfirmFailed] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [actionFailed, setActionFailed] = useState(false);
+  const actionBusy = confirming || rejecting;
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -51,7 +54,7 @@ export function ProposalsScreen(): ReactElement | null {
     }
     let cancelled = false;
     setProposalsError(false);
-    setConfirmFailed(false);
+    setActionFailed(false);
     void (async () => {
       try {
         const nextProposals = await fetchTrustProposals(session);
@@ -104,27 +107,39 @@ export function ProposalsScreen(): ReactElement | null {
 
   const unnamed = t('moderate.unnamed');
 
-  const confirmProposal = (subjectId: string): void => {
-    /* v8 ignore next 3 — the action button is disabled while busy */
-    if (confirming) {
+  const runAction = (kind: 'confirm' | 'reject', subjectId: string): void => {
+    /* v8 ignore next 3 — the action buttons are disabled while busy */
+    if (actionBusy) {
       return;
     }
-    setConfirming(true);
-    setConfirmFailed(false);
+    if (kind === 'confirm') {
+      setConfirming(true);
+    } else {
+      setRejecting(true);
+    }
+    setActionFailed(false);
     void (async () => {
       try {
-        await postTrustConfirm(session, subjectId);
+        if (kind === 'confirm') {
+          await postTrustConfirm(session, subjectId);
+        } else {
+          await postTrustReject(session, subjectId);
+        }
         setProposals((current) => {
-          /* v8 ignore next 3 — confirm is only offered after a loaded list */
+          /* v8 ignore next 3 — actions are only offered after a loaded list */
           if (current === null) {
             return current;
           }
           return current.filter((row) => row.subject.id !== subjectId);
         });
       } catch {
-        setConfirmFailed(true);
+        setActionFailed(true);
       } finally {
-        setConfirming(false);
+        if (kind === 'confirm') {
+          setConfirming(false);
+        } else {
+          setRejecting(false);
+        }
       }
     })();
   };
@@ -153,7 +168,7 @@ export function ProposalsScreen(): ReactElement | null {
     const open = proposals;
     body = (
       <>
-        {confirmFailed ? (
+        {actionFailed ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('trustChain.actionFailed')}
           </p>
@@ -190,19 +205,34 @@ export function ProposalsScreen(): ReactElement | null {
                       <Button
                         type="button"
                         variant="secondary"
-                        disabled={confirming}
+                        disabled={actionBusy}
                         icon={
                           confirming ? (
                             <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                           ) : undefined
                         }
                         onClick={() => {
-                          confirmProposal(row.subject.id);
+                          runAction('confirm', row.subject.id);
                         }}
                       >
                         {t('trustChain.action.confirm')}
                       </Button>
                     )}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={actionBusy}
+                      icon={
+                        rejecting ? (
+                          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                        ) : undefined
+                      }
+                      onClick={() => {
+                        runAction('reject', row.subject.id);
+                      }}
+                    >
+                      {t('trustChain.action.reject')}
+                    </Button>
                   </div>
                 </li>
               );

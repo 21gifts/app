@@ -25,12 +25,14 @@ vi.mock('next/link', () => ({
 vi.mock('@/lib/api', () => ({
   fetchTrustProposals: vi.fn(),
   postTrustConfirm: vi.fn(),
+  postTrustReject: vi.fn(),
 }));
 
-import { fetchTrustProposals, postTrustConfirm } from '@/lib/api';
+import { fetchTrustProposals, postTrustConfirm, postTrustReject } from '@/lib/api';
 
 const proposalsMock = vi.mocked(fetchTrustProposals);
 const confirmMock = vi.mocked(postTrustConfirm);
+const rejectMock = vi.mocked(postTrustReject);
 
 const account: Account = {
   id: 'acc_1',
@@ -60,6 +62,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   proposalsMock.mockResolvedValue([]);
   confirmMock.mockResolvedValue({ id: 'acc_rose', name: 'Rose', role: 'moderator' });
+  rejectMock.mockResolvedValue({ id: 'acc_rose', name: 'Rose', role: 'verified' });
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -143,15 +146,17 @@ describe('ProposalsScreen', () => {
     );
     expect(screen.getByText('Proposed by Bob')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Confirm as moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
     expect(screen.getByText(formatForumTime(PROPOSAL.createdAt, 'en'))).toBeTruthy();
   });
 
-  it('shows waiting copy and no Confirm on a self-proposal', async () => {
+  it('shows waiting copy, Reject, and no Confirm on a self-proposal', async () => {
     proposalsMock.mockResolvedValue([{ ...PROPOSAL, proposedBy: { id: account.id, name: 'Ada' } }]);
     renderWithLocale(<ProposalsScreen />);
     expect(await screen.findByText('Rose')).toBeTruthy();
     expect(screen.getByText('Waiting for another moderator to confirm.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Confirm as moderator' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
   });
 
   it('confirms a proposal and removes the row', async () => {
@@ -184,10 +189,56 @@ describe('ProposalsScreen', () => {
     const button = screen.getByRole('button', {
       name: 'Confirm as moderator',
     }) as HTMLButtonElement;
+    const reject = screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
+    expect(reject.disabled).toBe(true);
     expect(button.querySelector('.animate-spin')).toBeTruthy();
+    expect(reject.querySelector('.animate-spin')).toBeNull();
     fireEvent.click(button);
+    fireEvent.click(reject);
     expect(confirmMock).toHaveBeenCalledTimes(1);
+    expect(rejectMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a proposal and removes the row', async () => {
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    renderWithLocale(<ProposalsScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Reject' }));
+    await waitFor(() => {
+      expect(rejectMock).toHaveBeenCalledWith('sess', 'acc_rose');
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Rose')).toBeNull();
+    });
+    expect(screen.getByText('No open proposals.')).toBeTruthy();
+  });
+
+  it('shows action-failed copy when reject throws', async () => {
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    rejectMock.mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ProposalsScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Reject' }));
+    expect(await screen.findByText('Could not update this member. Please try again.')).toBeTruthy();
+    expect(screen.getByText('Rose')).toBeTruthy();
+  });
+
+  it('disables Confirm and Reject and shows a spinner on Reject while reject is in flight', async () => {
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    rejectMock.mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(<ProposalsScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Reject' }));
+    const confirm = screen.getByRole('button', {
+      name: 'Confirm as moderator',
+    }) as HTMLButtonElement;
+    const reject = screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    expect(reject.disabled).toBe(true);
+    expect(reject.querySelector('.animate-spin')).toBeTruthy();
+    expect(confirm.querySelector('.animate-spin')).toBeNull();
+    fireEvent.click(confirm);
+    fireEvent.click(reject);
+    expect(rejectMock).toHaveBeenCalledTimes(1);
+    expect(confirmMock).not.toHaveBeenCalled();
   });
 
   it('falls back to Unnamed for proposal names', async () => {

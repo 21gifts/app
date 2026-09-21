@@ -7089,6 +7089,35 @@ test.describe('notifications screens', () => {
     await expect(page.getByText('Could not load notifications. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-notifications-error');
   });
+
+  test('notifications moderator-proposal', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n-proposal',
+              type: 'moderator_proposal',
+              parentId: 'acc-rose',
+              replyId: 'acc-rose',
+              name: 'Bob',
+              text: 'Rose',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await page.goto('/notifications');
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
+    await expect(page.getByText('Bob proposed a moderator')).toBeVisible();
+    await shotScreen(page, 'state-notifications-moderator-proposal');
+  });
 });
 
 test.describe('moderate screens', () => {
@@ -7231,6 +7260,29 @@ test.describe('moderate screens', () => {
     await expect(page.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-unread');
+  });
+
+  test('moderate proposals-unread', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await page.route('**/trust/proposals', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          proposals: [
+            {
+              subject: { id: 'acc_rose', name: 'Rose', role: 'verified' },
+              proposedBy: { id: 'acc_bob', name: 'Bob' },
+              createdAt: '2026-08-28T12:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate');
+    await expect(page.getByRole('link', { name: 'Open proposals, 1 unread' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-unread');
   });
 
   test('moderate forbidden', async ({ page }) => {
@@ -7534,6 +7586,22 @@ test.describe('moderate proposals screens', () => {
     await page.getByRole('button', { name: 'Confirm as moderator' }).click();
     await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-moderate-proposals-confirm-error');
+  });
+
+  test('moderate proposals reject-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.route('**/trust/reject-moderator', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/proposals');
+    await page.getByRole('button', { name: 'Reject' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-reject-error');
   });
 
   test('moderate proposals confirming', async ({ page }) => {

@@ -95,6 +95,18 @@ const APPOINTED: Notification = {
 };
 const APPOINTED_TEXT: Notification = { ...APPOINTED, id: 'n9', text: 'You are a moderator' };
 
+const PROPOSAL_ROW: Notification = {
+  id: 'n10',
+  type: 'moderator_proposal',
+  parentId: 'acc-rose',
+  replyId: 'acc-rose',
+  name: 'Bob',
+  text: '',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+const PROPOSAL_TEXT: Notification = { ...PROPOSAL_ROW, id: 'n11', text: 'Rose' };
+
 describe('NotificationsScreen', () => {
   it('shows loading heading and copy', () => {
     renderWithLocale(
@@ -293,5 +305,42 @@ describe('NotificationsScreen', () => {
     expect(row.textContent).toContain('You are a moderator');
     fireEvent.click(row);
     expect(onOpen).toHaveBeenCalledWith(APPOINTED_TEXT);
+  });
+
+  it('lists a moderator proposal by title only when text is empty', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[PROPOSAL_ROW]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /Bob proposed a moderator/ });
+    expect(row.textContent).not.toContain('Photo reaction');
+    expect(row.textContent).not.toContain('Photo');
+    expect(screen.queryByText('Photo reaction')).toBeNull();
+    expect(screen.queryByText('Photo')).toBeNull();
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith(PROPOSAL_ROW);
+  });
+
+  it('lists a moderator proposal body when text is present', () => {
+    const onOpen = vi.fn();
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[PROPOSAL_TEXT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /Bob proposed a moderator/ });
+    expect(row.textContent).toContain('Rose');
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith(PROPOSAL_TEXT);
   });
 });
