@@ -191,6 +191,20 @@ export const SCREEN_VARIANTS = [
     needle: 'Show recovery phrase',
   },
   {
+    route: '/wallet',
+    id: 'error',
+    image: 'wallet-error.png',
+    visual: 'state-wallet-error',
+    needle: 'Something went wrong. Please try again.',
+  },
+  {
+    route: '/wallet',
+    id: 'prf-unsupported',
+    image: 'wallet-prf-unsupported.png',
+    visual: 'state-wallet-prf-unsupported',
+    needle: 'This browser cannot create a recovery phrase. Try another browser or device.',
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',

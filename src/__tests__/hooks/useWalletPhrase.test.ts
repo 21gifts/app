@@ -273,6 +273,23 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
+  it('uses the visual error fixture', () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=error';
+    window.history.replaceState({}, '', url.toString());
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.error).toBe('generic');
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('uses the visual prf-unsupported fixture', () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=prf-unsupported';
+    window.history.replaceState({}, '', url.toString());
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.error).toBe('prfUnsupported');
+  });
+
   it('does not post backup-seen for the visual fixture phrase', async () => {
     const url = new URL(originalHref);
     url.search = '?visual=confirm';

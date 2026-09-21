@@ -200,6 +200,18 @@ Existing member after a saved backup, no phrase in the tab. **Show recovery phra
 
 ![21.gifts wallet reveal](images/wallet-reveal.png)
 
+### Variant: error
+
+Generic WebAuthn failure. Alert **Something went wrong. Please try again.** and labeled **Try again**.
+
+![21.gifts wallet error](images/wallet-error.png)
+
+### Variant: prf-unsupported
+
+PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** and labeled **Try again**.
+
+![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.

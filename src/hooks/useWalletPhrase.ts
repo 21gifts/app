@@ -84,7 +84,16 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   const setAccount = useAuthStore((state) => state.setAccount);
   const router = useRouter();
   const [status, setStatus] = useState<WalletPhraseStatus>('idle');
-  const [error, setError] = useState<WalletPhraseErrorKind | null>(null);
+  const [error, setError] = useState<WalletPhraseErrorKind | null>(() => {
+    const visual = visualParam();
+    if (visual === 'error') {
+      return 'generic';
+    }
+    if (visual === 'prf-unsupported') {
+      return 'prfUnsupported';
+    }
+    return null;
+  });
   const [mnemonic, setMnemonic] = useState<string | null>(
     () => visualMnemonicOverride() ?? peekSessionPhrase(),
   );
