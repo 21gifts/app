@@ -3,48 +3,19 @@
 import { useEffect, type ReactElement } from 'react';
 import { resolveAppHeight } from '@/lib/app-height';
 
-const NON_TEXT_INPUT_TYPES: ReadonlySet<string> = new Set([
-  'button',
-  'checkbox',
-  'color',
-  'file',
-  'hidden',
-  'image',
-  'radio',
-  'range',
-  'reset',
-  'submit',
-]);
-
-function isTextFieldFocused(target: EventTarget | null): boolean {
-  if (target instanceof HTMLTextAreaElement) {
-    return true;
-  }
-  if (target instanceof HTMLInputElement) {
-    return !NON_TEXT_INPUT_TYPES.has(target.type);
-  }
-  if (target instanceof HTMLElement) {
-    return target.isContentEditable;
-  }
-  return false;
-}
-
 /**
  * After hydration: keep `--app-height` in sync with the layout canvas.
- * Unfocused: `max(visualViewport.height, innerHeight)`. Focused text field:
- * `visualViewport.height` (keyboard). Skips updates while
- * `visualViewport.scale` is present and not ≈ 1.
+ * Uses `max(innerHeight, visualViewport.height + offsetTop)` so a short
+ * visual viewport (stuck after keyboard, or keyboard `offsetTop` positive)
+ * cannot leave a white gap below the rounded page frame. Skips updates
+ * while `visualViewport.scale` is present and not ≈ 1.
  *
  * @returns void
  */
 export function useAppHeight(): void {
   useEffect(() => {
     const setAppHeight = (): void => {
-      const next = resolveAppHeight(
-        window.innerHeight,
-        window.visualViewport ?? undefined,
-        isTextFieldFocused(document.activeElement),
-      );
+      const next = resolveAppHeight(window.innerHeight, window.visualViewport ?? undefined);
       if (next === null) {
         return;
       }
