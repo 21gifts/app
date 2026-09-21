@@ -244,9 +244,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         setStatus('error');
         return;
       }
-      const prfFirst = await obtainPrfFirstFromGet(
-        Uint8Array.from(base64UrlToBytes(credentialId)),
-      );
+      const prfFirst = await obtainPrfFirstFromGet(Uint8Array.from(base64UrlToBytes(credentialId)));
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
