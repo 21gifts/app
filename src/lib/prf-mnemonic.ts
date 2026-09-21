@@ -26,6 +26,8 @@ function toUint8Array(data: BufferSource): Uint8Array {
 /**
  * SHA-256 of UTF-8 `21gifts-nostr-v1` — the PRF eval.first salt (same bytes as
  * the API `prfEvalFirstSalt`).
+ *
+ * @returns 32 salt bytes.
  */
 export async function prfEvalFirstSalt(): Promise<Uint8Array> {
   const digest = await crypto.subtle.digest(
@@ -38,6 +40,9 @@ export async function prfEvalFirstSalt(): Promise<Uint8Array> {
 /**
  * Read `prf.results.first` from a WebAuthn credential's client extension results.
  * Returns `undefined` when the authenticator omitted PRF output.
+ *
+ * @param credential - Result of `create` or `get`.
+ * @returns PRF first bytes, or `undefined`.
  */
 export function readPrfFirst(credential: PublicKeyCredential): Uint8Array | undefined {
   const ext = credential.getClientExtensionResults() as {
@@ -55,6 +60,9 @@ export function readPrfFirst(credential: PublicKeyCredential): Uint8Array | unde
  * over PRF eval.first, then BIP-39 English 12-word mnemonic.
  *
  * Never send the mnemonic or PRF bytes to the API. Never write them to disk.
+ *
+ * @param prfFirst - Authenticator `prf.results.first`.
+ * @returns Twelve English BIP-39 words.
  */
 export async function mnemonicFromPrfFirst(prfFirst: BufferSource): Promise<string> {
   const ikm = Uint8Array.from(toUint8Array(prfFirst));
@@ -77,6 +85,9 @@ export async function mnemonicFromPrfFirst(prfFirst: BufferSource): Promise<stri
  * `allowCredentials` of the new credential id and `prf.eval.first` = salt.
  * Returns `null` when the authenticator still has no PRF (caller must abort
  * before finish and throw `wallet.prfUnsupported`).
+ *
+ * @param credential - Result of `navigator.credentials.create`.
+ * @returns PRF first bytes, or `null`.
  */
 export async function obtainPrfFirst(credential: PublicKeyCredential): Promise<Uint8Array | null> {
   const fromCreate = readPrfFirst(credential);
@@ -109,6 +120,8 @@ export async function obtainPrfFirst(credential: PublicKeyCredential): Promise<U
  * Authenticate with PRF eval.first to re-derive the recovery phrase.
  * Does not contact the API. Discoverable credentials are enough; no assertion
  * is forwarded.
+ *
+ * @returns PRF first bytes, or `null`.
  */
 export async function obtainPrfFirstFromGet(): Promise<Uint8Array | null> {
   const salt = await prfEvalFirstSalt();
@@ -135,6 +148,9 @@ export async function obtainPrfFirstFromGet(): Promise<Uint8Array | null> {
 /**
  * Classify a WebAuthn failure: timeout shows Try again (no auto-retry);
  * user cancel returns to idle.
+ *
+ * @param err - Rejection from `create` / `get`.
+ * @returns Discriminant for the wallet UI.
  */
 export function classifyWebAuthnError(err: unknown): 'timeout' | 'cancel' | 'generic' {
   if (err && typeof err === 'object' && 'name' in err) {

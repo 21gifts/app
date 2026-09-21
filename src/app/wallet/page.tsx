@@ -12,7 +12,7 @@ import { WalletScreen } from '@/components/WalletScreen';
  */
 export default function WalletPage(): ReactElement {
   return (
-    <AppShell mode="flow" topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
+    <AppShell mode="fill" topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="wallet">
         <WalletScreen />
       </OnboardingGate>

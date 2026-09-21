@@ -2444,14 +2444,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
 - **Inputs:** None.
 - **Returns / side effects:** 32-byte `Uint8Array`.
-- **Used by:** `obtainPrfFirst`, authenticate PRF eval.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`.
 
 ## Function: readPrfFirst
 
 - **Purpose:** Read `prf.results.first` from a credential.
 - **Inputs:** `PublicKeyCredential`.
 - **Returns / side effects:** Bytes or `undefined`.
-- **Used by:** `obtainPrfFirst`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`.
 
 ## Function: mnemonicFromPrfFirst
 
@@ -2465,7 +2465,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Prefer create() PRF; else get() with allowCredentials and eval.first salt.
 - **Inputs:** The new `PublicKeyCredential`.
 - **Returns / side effects:** Bytes or `null`.
-- **Used by:** Register and replace.
+- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
 
 ## Function: obtainPrfFirstFromGet
 
@@ -2500,7 +2500,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** Clears the module variable.
-- **Used by:** `useWalletPhrase.confirmSaved`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
+- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
 ## Function: useWalletPhrase
 
