@@ -125,7 +125,7 @@ export function ForumAskWizard({
                 onChange={(event) => {
                   onAskDraftChange(event.target.value);
                 }}
-                className="min-w-0 flex-1 bg-transparent text-base text-app-fg outline-none"
+                className="min-w-0 flex-1 bg-transparent text-base text-app-fg"
               />
             </span>
           </label>

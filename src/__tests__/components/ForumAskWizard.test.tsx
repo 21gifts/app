@@ -130,6 +130,7 @@ describe('ForumAskWizard', () => {
         onClearPhoto={onClearPhoto}
       />,
     );
+    expect(screen.queryByText('Add a photo or video')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo or video' }));
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
@@ -144,6 +145,7 @@ describe('ForumAskWizard', () => {
         onRemovePhoto={onRemovePhoto}
       />,
     );
+    expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(onRemovePhoto).toHaveBeenCalledWith(0);
     rerender(
@@ -170,6 +172,7 @@ describe('ForumAskWizard', () => {
         onClearPhoto={onClearPhoto}
       />,
     );
+    expect(screen.queryByText('Remove video')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove video' }));
     expect(onClearPhoto).toHaveBeenCalled();
   });
