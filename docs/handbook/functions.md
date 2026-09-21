@@ -1436,7 +1436,7 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL.
 - **Inputs:** `file` accepted by `isForumPhotoFile`.
 - **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
-- **Used by:** `ForumLoader`, `AboutMeSection`.
+- **Used by:** `ForumLoader`, `AboutMeSection`, `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: parseNumberFormat
 
