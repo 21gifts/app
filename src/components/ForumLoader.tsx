@@ -1323,7 +1323,17 @@ export function ForumLoader({
         setUnpaidSeenAt(iso);
       }
       const askStaysOnActive = typeof created.goalSats === 'number' && created.goalSats > 0;
-      if (feedModeRef.current !== 'all' && !askStaysOnActive) {
+      if (askStaysOnActive && feedModeRef.current === 'popular') {
+        replaceInFlightRef.current = true;
+        paginationGeneration.current += 1;
+        loadingMoreRef.current = false;
+        refreshGeneration.current += 1;
+        nextCursorRef.current = null;
+        setNextCursor(null);
+        setNewPostsAvailable(false);
+        feedModeRef.current = 'active';
+        setFeedMode('active');
+      } else if (feedModeRef.current !== 'all' && !askStaysOnActive) {
         replaceInFlightRef.current = true;
         paginationGeneration.current += 1;
         loadingMoreRef.current = false;
