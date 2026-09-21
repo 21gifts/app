@@ -302,10 +302,13 @@ function inboxAuthorProfileButton(
  * An open `invoice` shows the Wallet of Satoshi / QR pay sheet. The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
- * last-text (read inbound last-text stays muted) plus `aria-label`
- * `inbox.threadUnread`. Heading and incoming author names with a non-empty
- * `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe`
- * stays `inbox.you` text; Damus or a missing id stays plain text.
+ * last-text (read inbound last-text stays muted). When the derived unread
+ * message count is greater than zero, the digits sit right of the name
+ * (`font-semibold tabular-nums lining-nums`) and the list button
+ * `aria-label` is `inbox.threadUnread` with `{name}` and `{count}`; the
+ * word Unread is not visible text. Heading and incoming author names with a
+ * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
+ * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
  * An open thread pins the AppShell scroller to the bottom after messages
  * render, and again when an invoice pay sheet opens. Inside AppShell the pin
  * waits for that scroller and does not fall back to `window` while the node
@@ -807,55 +810,73 @@ export function InboxScreen({
           </p>
         ) : (
           <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
-            {filtered.map((row) => (
-              <li key={row.id}>
-                <button
-                  type="button"
-                  aria-label={row.unread ? t('inbox.threadUnread', { name: row.name }) : undefined}
-                  onClick={() => {
-                    onOpen(row.id);
-                  }}
-                  className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
-                >
-                  <span className="flex w-full items-baseline justify-between gap-2">
-                    <span
-                      className={
-                        row.unread
-                          ? 'text-sm font-semibold text-app-fg'
-                          : 'text-sm font-medium text-app-fg'
-                      }
-                    >
-                      {row.name}
+            {filtered.map((row) => {
+              const unreadMessageCount =
+                row.unreadMessageCount > 0 ? row.unreadMessageCount : row.unread ? 1 : 0;
+              return (
+                <li key={row.id}>
+                  <button
+                    type="button"
+                    {...(unreadMessageCount > 0
+                      ? {
+                          'aria-label': t('inbox.threadUnread', {
+                            name: row.name,
+                            count: String(unreadMessageCount),
+                          }),
+                        }
+                      : {})}
+                    onClick={() => {
+                      onOpen(row.id);
+                    }}
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
+                  >
+                    <span className="flex w-full items-baseline justify-between gap-2">
+                      <span
+                        className={
+                          row.unread
+                            ? 'text-sm font-semibold text-app-fg'
+                            : 'text-sm font-medium text-app-fg'
+                        }
+                      >
+                        {row.name}
+                      </span>
+                      <span className="flex items-baseline gap-2">
+                        {unreadMessageCount > 0 ? (
+                          <span className="font-semibold tabular-nums lining-nums">
+                            {unreadMessageCount}
+                          </span>
+                        ) : null}
+                        <time dateTime={row.lastAt} className="text-xs text-app-subtle">
+                          {formatForumTime(row.lastAt, locale)}
+                        </time>
+                      </span>
                     </span>
-                    <time dateTime={row.lastAt} className="text-xs text-app-subtle">
-                      {formatForumTime(row.lastAt, locale)}
-                    </time>
-                  </span>
-                  <span className="text-xs text-app-subtle">
-                    {t(CONVERSATION_ORIGIN_KEY[row.kind])}
-                  </span>
-                  {row.lastText !== '' ? (
-                    <span
-                      className={
-                        row.lastFromMe
-                          ? listPreviewClass(true)
-                          : row.unread
-                            ? 'line-clamp-2 text-sm text-app-fg'
-                            : listPreviewClass(false)
-                      }
-                    >
-                      {row.lastFromMe
-                        ? t('inbox.sentPreview', { text: row.lastText })
-                        : row.lastText}
+                    <span className="text-xs text-app-subtle">
+                      {t(CONVERSATION_ORIGIN_KEY[row.kind])}
                     </span>
-                  ) : row.lastSats > 0 ? (
-                    <span className={listPreviewClass(row.lastFromMe)}>
-                      {formatBitcoin(row.lastSats, numberFormat)}
-                    </span>
-                  ) : null}
-                </button>
-              </li>
-            ))}
+                    {row.lastText !== '' ? (
+                      <span
+                        className={
+                          row.lastFromMe
+                            ? listPreviewClass(true)
+                            : row.unread
+                              ? 'line-clamp-2 text-sm text-app-fg'
+                              : listPreviewClass(false)
+                        }
+                      >
+                        {row.lastFromMe
+                          ? t('inbox.sentPreview', { text: row.lastText })
+                          : row.lastText}
+                      </span>
+                    ) : row.lastSats > 0 ? (
+                      <span className={listPreviewClass(row.lastFromMe)}>
+                        {formatBitcoin(row.lastSats, numberFormat)}
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </>

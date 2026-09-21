@@ -49,6 +49,7 @@ const UNREAD_CONVERSATION: Conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unreadMessageCount: 0,
   unread: true,
 };
 
@@ -60,6 +61,7 @@ const STAFF_ROOM: Conversation = {
   lastAt: '2026-08-28T15:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unreadMessageCount: 0,
   unread: true,
 };
 

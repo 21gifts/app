@@ -6178,6 +6178,7 @@ test.describe('inbox screens', () => {
               lastFromMe: false,
               lastSats: 0,
               unread: true,
+              unreadMessageCount: 2,
             },
           ],
           unreadCount: 1,
@@ -6185,7 +6186,7 @@ test.describe('inbox screens', () => {
       });
     });
     await page.goto('/messages');
-    await expect(page.getByRole('button', { name: 'Bob, Unread' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Bob, 2 unread' })).toBeVisible();
     await shotScreen(page, 'state-messages-unread');
   });
 

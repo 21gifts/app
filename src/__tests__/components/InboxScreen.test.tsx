@@ -63,6 +63,7 @@ const THREAD: Conversation = {
   lastAt: '2026-08-28T12:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unreadMessageCount: 0,
   unread: false,
 };
 
@@ -74,6 +75,7 @@ const DIRECT: Conversation = {
   lastAt: '2026-08-28T13:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unreadMessageCount: 0,
   unread: false,
 };
 
@@ -85,6 +87,7 @@ const DAMUS: Conversation = {
   lastAt: '2026-08-28T14:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unreadMessageCount: 0,
   unread: false,
 };
 
@@ -96,6 +99,7 @@ const MODERATORS: Conversation = {
   lastAt: '2026-08-28T15:00:00.000Z',
   lastFromMe: false,
   lastSats: 0,
+  unreadMessageCount: 0,
   unread: false,
 };
 
@@ -1188,7 +1192,7 @@ describe('InboxScreen', () => {
   it('styles an unread inbound row with a semibold name and foreground lastText', () => {
     renderWithLocale(
       <InboxScreen
-        conversations={[{ ...THREAD, unread: true }]}
+        conversations={[{ ...THREAD, unread: true, unreadMessageCount: 2 }]}
         error={false}
         loading={false}
         onRetry={() => undefined}
@@ -1206,13 +1210,42 @@ describe('InboxScreen', () => {
         showFilter={false}
       />,
     );
-    const row = screen.getByRole('button', { name: '21.gifts, Unread' });
-    expect(row.getAttribute('aria-label')).toBe('21.gifts, Unread');
+    const row = screen.getByRole('button', { name: '21.gifts, 2 unread' });
+    expect(row.getAttribute('aria-label')).toBe('21.gifts, 2 unread');
     expect(within(row).getByText('21.gifts').className).toContain('font-semibold');
     const lastText = screen.getByText('Hello team', { exact: true });
     expect(lastText.className).toContain('text-app-fg');
     expect(lastText.className).not.toContain('text-app-muted');
-    expect(row.querySelector('.tabular-nums')).toBeNull();
+    const count = row.querySelector('.tabular-nums.lining-nums');
+    expect(count?.textContent).toBe('2');
+    expect(count?.className).toContain('font-semibold');
+    expect(within(row).queryByText('Unread')).toBeNull();
+  });
+
+  it('shows unread count 1 when unread is true and unreadMessageCount is 0', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...THREAD, unread: true, unreadMessageCount: 0 }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+      />,
+    );
+    const row = screen.getByRole('button', { name: '21.gifts, 1 unread' });
+    expect(row.getAttribute('aria-label')).toBe('21.gifts, 1 unread');
+    expect(row.querySelector('.tabular-nums.lining-nums')?.textContent).toBe('1');
     expect(within(row).queryByText('Unread')).toBeNull();
   });
 
@@ -1237,7 +1270,7 @@ describe('InboxScreen', () => {
         showFilter={false}
       />,
     );
-    expect(screen.queryByRole('button', { name: '21.gifts, Unread' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '21.gifts, 1 unread' })).toBeNull();
     const row = screen.getByRole('button', { name: /21\.gifts/ });
     expect(row.getAttribute('aria-label')).toBeNull();
     expect(within(row).getByText('21.gifts').className).toContain('font-medium');

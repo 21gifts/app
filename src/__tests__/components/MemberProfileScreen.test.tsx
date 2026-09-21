@@ -269,6 +269,7 @@ beforeEach(() => {
     lastAt: '2026-01-01T00:00:00.000Z',
     lastFromMe: false,
     lastSats: 0,
+    unreadMessageCount: 0,
     unread: false,
   });
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
@@ -745,6 +746,7 @@ describe('MemberProfileScreen', () => {
         lastAt: '2026-01-01T00:00:00.000Z',
         lastFromMe: false,
         lastSats: 0,
+        unreadMessageCount: 0,
         unread: false,
       });
     });
@@ -2792,6 +2794,7 @@ describe('MemberProfileScreen', () => {
       lastAt: string;
       lastFromMe: boolean;
       lastSats: number;
+      unreadMessageCount: number;
       unread: boolean;
     }) => void;
     vi.mocked(openConversation).mockReturnValue(
@@ -2818,6 +2821,7 @@ describe('MemberProfileScreen', () => {
       lastAt: '2026-01-01T00:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unreadMessageCount: 0,
       unread: false,
     });
     await waitFor(() => {
@@ -2834,6 +2838,7 @@ describe('MemberProfileScreen', () => {
       lastAt: string;
       lastFromMe: boolean;
       lastSats: number;
+      unreadMessageCount: number;
       unread: boolean;
     }) => void;
     vi.mocked(openConversation).mockReturnValue(
@@ -2860,6 +2865,7 @@ describe('MemberProfileScreen', () => {
       lastAt: '2026-01-01T00:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unreadMessageCount: 0,
       unread: false,
     });
     await act(async () => {

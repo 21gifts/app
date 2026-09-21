@@ -1105,7 +1105,7 @@ export const SCREEN_VARIANTS = [
     id: 'unread',
     image: 'messages-unread.png',
     visual: 'state-messages-unread',
-    needle: "getByRole('button', { name: 'Bob, Unread' })",
+    needle: "getByRole('button', { name: 'Bob, 2 unread' })",
   },
   {
     route: '/messages',

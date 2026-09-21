@@ -527,6 +527,9 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * message (0 for text-only). `accountId` is the optional 21.gifts counterpart
  * id on list rows.
  * `unread` is true when the viewer has inbound mail newer than last-read.
+ * `unreadMessageCount` is inbound unread messages (defaults 0 so an older
+ * api that omits it still parses). List envelope `unreadCount` stays unread
+ * thread count.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -539,6 +542,7 @@ export const conversationSchema = z.object({
   /** Optional 21.gifts counterpart id on list rows. */
   accountId: z.string().min(1).optional(),
   unread: z.boolean().default(false),
+  unreadMessageCount: z.number().int().nonnegative().default(0),
 });
 
 /**
