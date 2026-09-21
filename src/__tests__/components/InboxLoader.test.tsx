@@ -1040,6 +1040,43 @@ describe('conversation thread pages', () => {
     expect(ids).toEqual(['m-old', 'm1']);
   });
 
+  it('recovers nextCursor from a pay poll after the first thread fetch failed', async () => {
+    const gift: ConversationMessage = {
+      id: 'gift-1',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      fromMe: true,
+      sats: 21,
+    };
+    const older = {
+      ...MESSAGE,
+      id: 'm-old',
+      text: 'Older message',
+      createdAt: '2026-08-27T12:00:00.000Z',
+    };
+    threadMock
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(conversationPage([gift], 'cur_2'))
+      .mockResolvedValueOnce(conversationPage([older, gift]));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+    });
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    expect(await screen.findByText('Older message')).toBeTruthy();
+    expect(threadMock).toHaveBeenCalledWith('sess', 'conv-1', { cursor: 'cur_2' });
+  });
+
   it('does not create an observer or fetch a cursor page without a next cursor', async () => {
     threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
