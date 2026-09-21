@@ -1029,17 +1029,25 @@ export function ForumLoader({
           const filtered = next.filter((row) => !deletedIds.current.has(row.id));
           setReplies(filtered);
           const hiddenForThread = hiddenReplyCounts.current.get(expandedId);
-          if (hiddenForThread !== undefined && hiddenForThread > 0) {
-            setMessages((prev) => {
-              /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
-              if (prev === null) {
-                return prev;
+          setMessages((prev) => {
+            /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
+            if (prev === null) {
+              return prev;
+            }
+            return prev.map((row) => {
+              if (row.id !== expandedId) {
+                return row;
               }
-              return prev.map((row) =>
-                row.id === expandedId ? { ...row, replyCount: filtered.length } : row,
+              if (hiddenForThread !== undefined && hiddenForThread > 0) {
+                return { ...row, replyCount: filtered.length };
+              }
+              lastServerReplyCount.current.set(
+                expandedId,
+                Math.max(lastServerReplyCount.current.get(expandedId) ?? 0, filtered.length),
               );
+              return { ...row, replyCount: Math.max(row.replyCount, filtered.length) };
             });
-          }
+          });
         }
       } catch {
         if (!cancelled) {
@@ -1215,6 +1223,8 @@ export function ForumLoader({
               setNewPostsAvailable(false);
               feedModeRef.current = 'all';
               setFeedMode('all');
+            } else if (switchToAll) {
+              refreshMessagesRef.current();
             }
             return;
           }

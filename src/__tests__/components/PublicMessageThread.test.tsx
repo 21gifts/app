@@ -668,6 +668,45 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('raises the root reply count after a compose-pay reply confirms', async () => {
+    const paidReply: ForumMessage = {
+      ...root,
+      id: '99999999-9999-4999-8999-999999999999',
+      parentId: MESSAGE_ID,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'thanks',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    expect(screen.getByText('0 reactions')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('thanks')).toBeTruthy();
+      expect(screen.getByText('1 reactions')).toBeTruthy();
+    });
+  });
+
   it('tries an unpaid reply when the public note omits accountId', async () => {
     signIn();
     renderThread({ root: { ...root, accountId: undefined } });

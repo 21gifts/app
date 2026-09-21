@@ -446,7 +446,15 @@ export function PublicMessageThread(props: {
               try {
                 const repliesNext = await fetchReplies(current.session, threadId);
                 if (expandGen.current === gen) {
-                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
+                  const nextList = withSeededHiddenReply(repliesNext, seedReply, root.id, threadId);
+                  setReplies(nextList);
+                  setNote((prev) => {
+                    /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
+                    if (prev.id !== threadId) {
+                      return prev;
+                    }
+                    return { ...prev, replyCount: Math.max(prev.replyCount, nextList.length) };
+                  });
                 }
               } catch {
                 if (expandGen.current === gen) {

@@ -2388,6 +2388,110 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('refreshes All after a compose-pay confirms on All', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    const created: ForumMessage = {
+      ...SAMPLE,
+      id: 'new-paid',
+      text: 'Hello gifts',
+      sats: 0,
+      payable: false,
+    };
+    fetchMock.mockResolvedValue(forumPage([]));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    fetchMock.mockResolvedValue(forumPage([created]));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByText('Hello gifts')).toBeTruthy();
+    });
+  });
+
+  it('raises the parent reply count after a compose-pay reply confirms', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, replyCount: 0 }]));
+    repliesMock.mockResolvedValueOnce([]).mockResolvedValue([
+      {
+        id: 'r-new',
+        accountId: 'acc_1',
+        name: 'Ada',
+        text: 'Hi',
+        createdAt: '2026-08-28T12:45:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        photoCount: 0,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      },
+    ]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    expect(screen.getByText('0 reactions')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi');
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Hi')).toBeTruthy();
+      expect(screen.getByText('1 reactions')).toBeTruthy();
+    });
+  });
+
   it('keeps a compose invoice on the composer when the fee note is listed', async () => {
     useAuthStore.setState({
       session: 'sess',

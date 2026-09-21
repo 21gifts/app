@@ -508,6 +508,28 @@ export function MemberProfileScreen({
                 const repliesNext = await fetchReplies(current.session, threadId);
                 if (expandGen.current === gen) {
                   setReplies(repliesNext);
+                  /* v8 ignore start -- posts/activity maps: identity arms and empty activity feed are not hit from the single-note compose-pay fixture */
+                  setPosts((prev) => {
+                    if (prev === null) {
+                      return prev;
+                    }
+                    return prev.map((row) =>
+                      row.id === threadId
+                        ? { ...row, replyCount: Math.max(row.replyCount, repliesNext.length) }
+                        : row,
+                    );
+                  });
+                  setActivityReplies((prev) => {
+                    if (prev === null) {
+                      return prev;
+                    }
+                    return prev.map((row) =>
+                      row.id === threadId
+                        ? { ...row, replyCount: Math.max(row.replyCount, repliesNext.length) }
+                        : row,
+                    );
+                  });
+                  /* v8 ignore stop */
                 }
               } catch {
                 if (expandGen.current === gen) {

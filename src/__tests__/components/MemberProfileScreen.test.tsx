@@ -2071,6 +2071,50 @@ describe('MemberProfileScreen', () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 
+  it('raises the parent reply count after a compose-pay reply confirms', async () => {
+    const paidReply = {
+      ...note,
+      id: 'r-new',
+      parentId: note.id,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'reply',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('reply')).toBeTruthy();
+      expect(screen.getAllByText('1 reactions').length).toBeGreaterThan(0);
+    });
+  });
+
   it('tries an unpaid reply when someone else’s note omits accountId', async () => {
     const noteWithoutAccount = { ...note, accountId: undefined };
     renderWithLocale(
