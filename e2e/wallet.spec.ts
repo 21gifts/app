@@ -167,6 +167,11 @@ test('Function: clearSessionPhrase — wallet heading is Wallet', async ({ page 
   await expect(page).toHaveURL(/\/(wallet|login)/);
 });
 
+test('Function: resetWalletCeremonyLock — wallet heading is Wallet', async ({ page }) => {
+  await page.goto('/wallet');
+  await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
 test('Function: useWalletPhrase — wallet heading is Wallet', async ({ page }) => {
   await page.goto('/wallet');
   await expect(page).toHaveURL(/\/(wallet|login)/);

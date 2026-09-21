@@ -2502,6 +2502,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Clears the module variable.
 - **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
+## Function: resetWalletCeremonyLock
+
+- **Purpose:** Drop the tab-wide wallet WebAuthn lock so a later ceremony can start.
+- **Inputs:** None.
+- **Returns / side effects:** Sets the module lock to idle. Tests call this between cases; production uses `finally` on activate / showPhrase / confirmSaved.
+- **Used by:** `useWalletPhrase` tests.
+
 ## Function: useWalletPhrase
 
 - **Purpose:** Activate / confirm / show recovery phrase for `/wallet`.
