@@ -636,6 +636,7 @@ describe('SignedInChrome', () => {
       lastFromMe: false,
       lastSats: 0,
       unread: true,
+      unreadMessageCount: 0,
     });
     vi.mocked(fetchTrustProposals).mockResolvedValue([
       {
