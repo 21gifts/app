@@ -385,7 +385,7 @@ export function ForumLoader({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
-  const payHostRef = useRef<'composer' | 'card' | null>(null);
+  const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const rateDay = useLatestRateDay();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
@@ -1131,7 +1131,7 @@ export function ForumLoader({
     setPayInvoice(null);
     setPayWaiting(false);
     setReplyPosting(false);
-    payHostRef.current = null;
+    setPayHost(null);
   };
 
   const startPayPoll = (messageId: string, baselineSats: number): void => {
@@ -1187,6 +1187,7 @@ export function ForumLoader({
             setPayWaiting(false);
             setPayInvoice(null);
             setPayMessageId(null);
+            setPayHost(null);
             setPayDraft('');
             setPayError(null);
             const current = useAuthStore.getState();
@@ -1408,7 +1409,7 @@ export function ForumLoader({
           pr: invoice.pr,
           amountSats: invoice.amountSats,
         });
-        payHostRef.current = 'composer';
+        setPayHost('composer');
         startPayPoll(target.messageId, target.sats);
         pendingPostRef.current = null;
         setDraft('');
@@ -1599,7 +1600,7 @@ export function ForumLoader({
       ((messages !== null &&
         visibleForumMessages(messages, next).some((message) => message.id === payMessageId)) ||
         (replies !== null && replies.some((message) => message.id === payMessageId)));
-    if (payMessageId !== null && !listedParent && payHostRef.current !== 'composer') {
+    if (payMessageId !== null && !listedParent && payHost !== 'composer') {
       clearPaySheet();
     }
     replaceInFlightRef.current = true;
@@ -1761,6 +1762,7 @@ export function ForumLoader({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -1825,7 +1827,7 @@ export function ForumLoader({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
-      payHostRef.current = 'card';
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -2051,6 +2053,7 @@ export function ForumLoader({
         photoUrls={photoUrls}
         videoUrls={videoUrls}
         payMessageId={payMessageId}
+        payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
         payError={payError}
@@ -2059,6 +2062,7 @@ export function ForumLoader({
         onPayOpen={(messageId) => {
           bumpPayPollGeneration();
           setPayMessageId(messageId);
+          setPayHost('card');
           setPayDraft('');
           setPayError(null);
           setPayInvoice(null);

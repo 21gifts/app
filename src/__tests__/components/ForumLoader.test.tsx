@@ -2328,6 +2328,36 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
+  it('keeps a compose invoice on the composer when the fee note is listed', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue([
+      {
+        ...SAMPLE,
+        id: 'fee-note',
+        accountId: 'plat',
+        name: '21.gifts',
+        text: '21.gifts',
+        sats: 1,
+        payable: true,
+      },
+    ]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+  });
+
   it('rejects a basis photo draft instead of invoicing 21.gifts', async () => {
     useAuthStore.setState({
       session: 'sess',

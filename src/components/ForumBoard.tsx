@@ -198,6 +198,13 @@ export interface ForumBoardProps {
   composerMaxLength?: number;
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
+  /**
+   * Where the open invoice is bound. `'composer'` keeps the sheet on the
+   * top-level composer even when the fee note is in the visible list.
+   * `'card'` binds to the matching parent or reply. Omit/`null` infers
+   * from whether `payMessageId` is listed.
+   */
+  payHost?: 'composer' | 'card' | null;
   /** Amount draft for the open pay sheet. */
   payDraft: string;
   /** True while an invoice request is in flight. */
@@ -591,6 +598,7 @@ export function ForumBoard({
   formError,
   composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
   payMessageId,
+  payHost = null,
   payDraft,
   payBusy,
   payError,
@@ -1150,7 +1158,7 @@ export function ForumBoard({
                 ) : null}
               </div>
 
-              {payMessageId === message.id ? (
+              {payMessageId === message.id && payHost !== 'composer' ? (
                 <ForumPaySheet
                   messageId={message.id}
                   payDraft={payDraft}
@@ -1362,7 +1370,7 @@ export function ForumBoard({
                                 />
                               ) : null}
                             </div>
-                            {payMessageId === reply.id ? (
+                            {payMessageId === reply.id && payHost !== 'composer' ? (
                               <ForumPaySheet
                                 messageId={reply.id}
                                 payDraft={payDraft}
@@ -1729,10 +1737,12 @@ export function ForumBoard({
         </form>
       ) : null}
 
-      {payMessageId !== null &&
-      payInvoice !== null &&
-      !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
-      !(replies !== null && replies.some((row) => row.id === payMessageId)) ? (
+      {payInvoice !== null &&
+      (payHost === 'composer' ||
+        (payHost !== 'card' &&
+          payMessageId !== null &&
+          !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
+          !(replies !== null && replies.some((row) => row.id === payMessageId)))) ? (
         <ForumPaySheet
           messageId={payInvoice.messageId}
           payDraft={payDraft}

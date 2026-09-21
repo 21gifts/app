@@ -1795,6 +1795,30 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
+  it('keeps the composer pay sheet when payHost is composer and the fee note is listed', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'fee-note', sats: 1, name: '21.gifts' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payHost="composer"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(document.querySelector('[data-message-id="fee-note"]')).not.toBeNull();
+  });
+
   it('shows the basis-media composer error', () => {
     renderWithLocale(
       <ForumBoard
