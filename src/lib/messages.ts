@@ -1898,8 +1898,8 @@ const es = {
 
   'shops.heading': 'Tiendas',
   'shops.lead':
-    'Añada una tienda igual que un mensaje del salón. Aparece aquí y en el foro con una etiqueta #Shop.',
-  'shops.empty': 'Aún no hay tiendas — añada la primera.',
+    'Añade una tienda igual que un mensaje del salón. Aparece aquí y en el foro con una etiqueta #Shop.',
+  'shops.empty': 'Aún no hay tiendas — añade la primera.',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',

@@ -204,8 +204,8 @@ app/
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + payable-reply pay sheet + expand/replies + copy-link + author profile links
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome forum
-│   │   ├── ShopsScreen.tsx      # Signed-in /shops card (heading + ForumLoader feed=shops)
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome and /shops
+│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
