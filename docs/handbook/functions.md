@@ -2505,21 +2505,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsPage
 
-- **Purpose:** Next.js page for `/notifications` (signed-in notifications for living-room posts, replies, payments, and moderator appointment).
+- **Purpose:** Next.js page for `/notifications` (signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal).
 - **Inputs:** None.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `NotificationsLoader`. Notification HTTP is under `/forum/notifications` (no `route.ts` beside this page).
 - **Used by:** Route `/notifications`.
 
 ## Function: NotificationsLoader
 
-- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, and moderator appointment). After a successful list fetch, `bumpUnreadAppBadgeEpoch` then set the badge to remaining inbox unread plus staff-room unread (`0` or `1`; notifications treated as 0; visiting `/notifications` does not force badge 0 when inbox or staff-room unread remains). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed); any other row goes to `/messages/{parentId}` without waiting.
+- **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, moderator appointment, and moderator proposal). After a successful list fetch, `bumpUnreadAppBadgeEpoch` then set the badge to remaining inbox unread plus staff-room unread (`0` or `1`; notifications treated as 0; visiting `/notifications` does not force badge 0 when inbox or staff-room unread remains). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Opening a `moderator_proposal` row goes to `/moderate/proposals` without `markNotificationRead`. Opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed); any other row goes to `/messages/{parentId}` without waiting.
 - **Inputs:** None (session from the auth store).
 - **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget, then `bumpUnreadAppBadgeEpoch` and sets the home-screen badge to remaining inbox unread plus staff-room unread (`0` or `1`; notifications treated as 0). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Does not clear remaining inbox or staff-room unread on error, cancel, or missing session.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen
 
-- **Purpose:** Presentational notifications list of living-room posts, replies, payments, and moderator appointment (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin`; `moderator_appointed` title uses `notifications.moderatorAppointed` with no `{name}` placeholder; post text or **Photo**, reply text or **Photo reaction**, zap amount as stored, moderator appointment body only when `text` is non-empty — empty `text` omits the body line and does not use `notifications.photoPost` / `photoOnly`; time; unread semibold). `onOpen` receives the row object. No composer, no thread view, and no filter.
+- **Purpose:** Presentational notifications list of living-room posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`; `moderator_appointed` title uses `notifications.moderatorAppointed` with no `{name}` placeholder; post text or **Photo**, reply text or **Photo reaction**, zap amount as stored, moderator appointment or proposal body only when `text` is non-empty — empty `text` omits the body line and does not use `notifications.photoPost` / `photoOnly`; time; unread semibold). `onOpen` receives the row object. No composer, no thread view, and no filter.
 - **Inputs:** List state from `NotificationsLoader` (`notifications`, `error`, `loading`, `onRetry`, `onOpen`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `NotificationsLoader`.
@@ -2639,9 +2639,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ProposalsScreen
 
-- **Purpose:** Client confirm queue of open moderator proposals. Staff (moderator) fetch `fetchTrustProposals` and show subject name, **Proposed by {name}**, time, and **Confirm as moderator** (`postTrustConfirm`) or **Waiting for another moderator to confirm.** when `proposedBy.id === account.id`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. A failed confirm shows `trustChain.actionFailed`.
+- **Purpose:** Client confirm/reject queue of open moderator proposals. Staff (moderator) fetch `fetchTrustProposals` and show subject name, **Proposed by {name}**, time, **Reject** on every open row (`postTrustReject`, including a self-proposal), and **Confirm as moderator** (`postTrustConfirm`) or **Waiting for another moderator to confirm.** when `proposedBy.id === account.id`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. A failed confirm or reject shows `trustChain.actionFailed`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is at least moderator. Confirm posts `POST /trust/confirm-moderator`. While that POST is in flight, Confirm is disabled and shows the Loader2 spinner (same as RulesSetup busy).
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is at least moderator. Confirm posts `POST /trust/confirm-moderator`; reject posts `POST /trust/reject-moderator`. While either POST is in flight, Confirm and Reject are disabled and Loader2 sits on the pressed action.
 - **Used by:** `ProposalsPage`.
 
 ## Function: FundingApplicationsPage

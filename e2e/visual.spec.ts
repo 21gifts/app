@@ -7615,6 +7615,18 @@ test.describe('moderate proposals screens', () => {
     await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-proposals-confirming');
   });
+
+  test('moderate proposals rejecting', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.route('**/trust/reject-moderator', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/proposals');
+    await page.getByRole('button', { name: 'Reject' }).click();
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-proposals-rejecting');
+  });
 });
 
 test.describe('moderate applications screens', () => {

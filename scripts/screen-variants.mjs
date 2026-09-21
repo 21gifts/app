@@ -1451,6 +1451,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled()",
   },
   {
+    route: '/moderate/proposals',
+    id: 'rejecting',
+    image: 'moderate-proposals-rejecting.png',
+    visual: 'state-moderate-proposals-rejecting',
+    needle: "getByRole('button', { name: 'Reject' })).toBeDisabled()",
+  },
+  {
     route: '/moderate/applications',
     id: 'default',
     image: 'moderate-applications.png',

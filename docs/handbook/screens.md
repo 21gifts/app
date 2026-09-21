@@ -1425,6 +1425,12 @@ Staff (moderator) Confirm as moderator POST in flight. Confirm and Reject disabl
 
 ![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
 
+### Variant: rejecting
+
+Staff (moderator) Reject POST in flight. Confirm and Reject disabled; spinner on Reject; proposal row still visible.
+
+![21.gifts open proposals rejecting](images/moderate-proposals-rejecting.png)
+
 ## Screen: /moderate/applications
 
 - **URL:** `/moderate/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/moderate`.
