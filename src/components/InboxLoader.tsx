@@ -425,12 +425,19 @@ export function InboxLoader(): ReactElement | null {
           if (controller.signal.aborted || openIdRef.current !== conversationId) {
             return;
           }
+          let recovered = false;
           setMessages((prev) => {
-            /* v8 ignore next -- a pay poll starts only after the thread loaded */
-            if (prev === null) return page.messages;
+            if (prev === null) {
+              recovered = true;
+              return page.messages;
+            }
             const freshIds = new Set(page.messages.map((message) => message.id));
             return [...prev.filter((message) => !freshIds.has(message.id)), ...page.messages];
           });
+          if (recovered) {
+            setNextCursor(page.nextCursor);
+            setMessagesError(false);
+          }
           setDraft('');
           setAmountDraft('');
           setInvoice(null);
