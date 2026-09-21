@@ -107,6 +107,13 @@ describe('ForumAskWizard', () => {
     expect(onStepChange).toHaveBeenCalledWith(4);
   });
 
+  it('caps the text step at composerMaxLength', () => {
+    renderWithLocale(
+      <ForumAskWizard step={3} onStepChange={() => undefined} {...idle} composerMaxLength={486} />,
+    );
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe('486');
+  });
+
   it('picks files and previews one photo, many photos, and video', () => {
     const onPickFiles = vi.fn();
     const onRemovePhoto = vi.fn();

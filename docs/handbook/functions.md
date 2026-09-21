@@ -883,7 +883,7 @@
 Four-step Ask composer on `/welcome`: amount, photos, text, then a preview card with `ForumGoalBar` at 0 collected versus the ask. The heading and **{step} of 4** share one row (step on the right). The labeled **Post** on step 4 is the only Ask submit.
 
 - **Purpose:** Walk **Ask for money** so a top-level note always has a whole-sat `goalSats` before it is posted.
-- **Inputs:** `step` / `onStepChange`, `askDraft` / `onAskDraftChange`, `draft` / `onDraftChange`, `posting`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `authorName`, `onPost`, optional `rateDay` (preferred-fiat counterpart of the typed ask).
+- **Inputs:** `step` / `onStepChange`, `askDraft` / `onAskDraftChange`, `draft` / `onDraftChange`, `posting`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `authorName`, `onPost`, optional `rateDay` (preferred-fiat counterpart of the typed ask), optional `composerMaxLength` (default 500; shops pass 486).
 - **Returns / side effects:** React tree. Continue on step 1 stays disabled until `parseForumAskAmount` returns a number; a parsed amount shows `formatBitcoin` plus optional fiat. Skip and Continue on step 2 both go to step 3. Step 4 **Post** calls `onPost`. No network.
 - **Used by:** `ForumBoard` when `composeIntent` is `ask`.
 

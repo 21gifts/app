@@ -1605,6 +1605,7 @@ export function ForumBoard({
           authorName={authorName}
           onPost={onPost}
           rateDay={rateDay ?? null}
+          composerMaxLength={composerMaxLength}
         />
       ) : null}
 

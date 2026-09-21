@@ -39,6 +39,7 @@ export function ForumAskWizard({
   authorName,
   onPost,
   rateDay = null,
+  composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
 }: {
   step: ForumAskStep;
   onStepChange: (step: ForumAskStep) => void;
@@ -55,6 +56,7 @@ export function ForumAskWizard({
   authorName: string;
   onPost: () => void;
   rateDay?: FiatRateDay | null;
+  composerMaxLength?: number;
 }): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -272,7 +274,7 @@ export function ForumAskWizard({
             onChange={(event) => {
               onDraftChange(event.target.value);
             }}
-            maxLength={FORUM_MESSAGE_MAX_LENGTH}
+            maxLength={composerMaxLength}
             rows={4}
             disabled={posting}
             className="min-h-11 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
