@@ -296,18 +296,20 @@ describe('InboxLoader', () => {
   it('clears unread on the list row after a paid gift when the thread fetch had failed', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([{ ...THREAD, unread: true, unreadMessageCount: 2 }]);
-    threadMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce([
-      {
-        id: 'gift-1',
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T14:00:00.000Z',
-        fromMe: true,
-        sats: 21,
-        hasPhoto: false,
-        photoCount: 0,
-      },
-    ]);
+    threadMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(
+      conversationPage([
+        {
+          id: 'gift-1',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T14:00:00.000Z',
+          fromMe: true,
+          sats: 21,
+          hasPhoto: false,
+          photoCount: 0,
+        },
+      ]),
+    );
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
