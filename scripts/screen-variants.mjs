@@ -863,6 +863,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Reviewed by a moderator on',
   },
   {
+    route: '/members/[accountId]',
+    id: 'funding-reviewed-open',
+    image: 'members-funding-reviewed-open.png',
+    visual: 'state-members-funding-reviewed-open',
+    needle: 'Reviewed by a moderator',
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',
@@ -952,6 +959,13 @@ export const SCREEN_VARIANTS = [
     image: 'profile-funding-none.png',
     visual: 'state-profile-funding-none',
     needle: 'Apply for the 21 gifts grant',
+  },
+  {
+    route: '/profile',
+    id: 'funding-applying',
+    image: 'profile-funding-applying.png',
+    visual: 'state-profile-funding-applying',
+    needle: "shotScreen(page, 'state-profile-funding-applying')",
   },
   {
     route: '/profile',

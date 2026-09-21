@@ -964,6 +964,12 @@ Member identity card with a **Verified** role pill and a second tag **Reviewed b
 
 ![21.gifts member funding reviewed](images/members-funding-reviewed.png)
 
+### Variant: funding-reviewed-open
+
+Same member card after tapping the reviewed tag. `role="status"` copy **Reviewed by a moderator**.
+
+![21.gifts member funding reviewed open](images/members-funding-reviewed-open.png)
+
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, then `FundingStatusCard` (verification / 21 gifts grant), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
@@ -1059,6 +1065,12 @@ Basis owner. Grant section after the address form. Copy **You are not verified y
 Verified owner with `funding.status` **none**. Copy **You are not admitted to daily 21.gifts grant payouts.** Button **Apply for the 21 gifts grant**. Three conviction titles and an **About** link.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
+
+### Variant: funding-applying
+
+Verified owner with `funding.status` **none** after Apply is in flight. Apply button disabled with a spinner.
+
+![21.gifts profile funding applying](images/profile-funding-applying.png)
 
 ### Variant: funding-apply-error
 

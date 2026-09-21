@@ -3026,6 +3026,50 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-funding-reviewed');
   });
 
+  test('state /members funding-reviewed-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: 'Hello from Carol.',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: /Reviewed by a moderator on/ }).click();
+    await expect(page.getByText('Reviewed by a moderator', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-members-funding-reviewed-open');
+  });
+
   test('state /members translate', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
@@ -4578,6 +4622,17 @@ test.describe('profile funding states', () => {
     await page.goto('/profile');
     await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-none');
+  });
+
+  test('profile funding applying', async ({ page }) => {
+    await seedFundingProfile(page);
+    await page.route(/\/funding\/apply$/, async () => {
+      await new Promise(() => undefined);
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
+    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-funding-applying');
   });
 
   test('profile funding apply-error', async ({ page }) => {
