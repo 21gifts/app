@@ -5198,6 +5198,28 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-text');
   });
 
+  test('welcome keyboard-viewport', async ({ page }) => {
+    await page.addInitScript(() => {
+      const inner = window.innerHeight;
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true,
+        value: {
+          height: Math.round(inner * 0.6),
+          offsetTop: Math.round(inner * 0.15),
+          scale: 1,
+          addEventListener() {},
+          removeEventListener() {},
+        },
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').focus();
+    await shotScreen(page, 'state-welcome-keyboard-viewport');
+  });
+
   test('welcome composer-photo', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);

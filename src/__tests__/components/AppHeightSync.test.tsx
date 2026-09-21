@@ -15,6 +15,7 @@ function stubVisualViewport(
   extras?: { scale?: number; offsetTop?: number },
 ): {
   height: number;
+  offsetTop?: number;
   addEventListener: ReturnType<typeof vi.fn>;
   removeEventListener: ReturnType<typeof vi.fn>;
 } {
@@ -176,6 +177,33 @@ describe('useAppHeight', () => {
     });
 
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('750px');
+  });
+
+  it('keeps innerHeight after focus when the keyboard shortens visualViewport like iPhone Safari', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(852);
+    renderHook(() => {
+      useAppHeight();
+    });
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+
+    const textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.focus();
+    visualViewport.height = 511;
+    visualViewport.offsetTop = 200;
+    const resize = visualViewport.addEventListener.mock.calls.find((call) => call[0] === 'resize');
+    expect(resize).toBeDefined();
+    if (resize === undefined) {
+      throw new Error('missing visualViewport resize listener');
+    }
+    const onResize = resize[1];
+    if (typeof onResize !== 'function') {
+      throw new Error('visualViewport resize listener is not a function');
+    }
+    onResize();
+
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
   });
 
   it('registers document focus listeners and window resize and removes them on unmount', () => {

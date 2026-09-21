@@ -577,6 +577,12 @@ Typed caption **Caption before attaching a photo.** in the composer; no preview 
 
 ![21.gifts welcome composer text](images/welcome-composer-text.png)
 
+### Variant: keyboard-viewport
+
+Signed-in `/welcome` with the composer focused while `visualViewport.height` is 60% of `innerHeight` and `offsetTop` is 15% (iPhone Safari software-keyboard geometry). The rounded AppShell frame still fills `innerHeight`; it does not shrink to the short visual viewport.
+
+![21.gifts welcome keyboard viewport](images/welcome-keyboard-viewport.png)
+
 ### Variant: composer-photo
 
 JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.

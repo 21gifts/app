@@ -25,6 +25,21 @@ describe('resolveAppHeight', () => {
     expect(resolveAppHeight(700, { height: 500, offsetTop: 250 })).toBe(750);
   });
 
+  it('uses innerHeight for the iPhone Safari keyboard geometry (short height plus offsetTop)', () => {
+    expect(resolveAppHeight(852, { height: 511, offsetTop: 200 })).toBe(852);
+  });
+
+  it('bootstrap IIFE writes max(innerHeight, height + offsetTop) for that keyboard geometry', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 852 });
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: { height: 511, offsetTop: 200, scale: 1 },
+    });
+    document.documentElement.style.removeProperty('--app-height');
+    new Function(APP_HEIGHT_BOOTSTRAP_SCRIPT)();
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+  });
+
   it('skips the write when visualViewport is pinch-zoomed', () => {
     expect(resolveAppHeight(800, { height: 480, scale: 2 })).toBeNull();
   });
