@@ -2309,7 +2309,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -2333,17 +2333,19 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
-    fetchMock.mockResolvedValue([
-      {
-        ...SAMPLE,
-        id: 'fee-note',
-        accountId: 'plat',
-        name: '21.gifts',
-        text: '21.gifts',
-        sats: 1,
-        payable: true,
-      },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'fee-note',
+          accountId: 'plat',
+          name: '21.gifts',
+          text: '21.gifts',
+          sats: 1,
+          payable: true,
+        },
+      ]),
+    );
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -2363,7 +2365,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
@@ -4491,7 +4493,7 @@ describe('ForumLoader', () => {
 
   it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -4515,7 +4517,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, role: 'verified', forumLawsDismissed: true, hasPosted: true },
     });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     renderWithLocale(<ForumLoader />);
@@ -4539,7 +4541,7 @@ describe('ForumLoader', () => {
 
   it('refetches the open thread after a compose-pay confirms', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     publicFetchMock.mockResolvedValue({
@@ -4581,7 +4583,7 @@ describe('ForumLoader', () => {
 
   it('opens the overlay when a compose-pay invoice is missing a name', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(<ForumLoader />);
@@ -4600,7 +4602,7 @@ describe('ForumLoader', () => {
 
   it('maps a compose-pay failure onto the reply error', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockRejectedValue(new Error('offline'));
     renderWithLocale(<ForumLoader />);
@@ -4621,7 +4623,7 @@ describe('ForumLoader', () => {
 
   it('maps a compose-pay rate-limit onto the reply error', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(<ForumLoader />);
@@ -4645,7 +4647,7 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, role: 'basis', name: null, missing: [] },
     });
-    fetchMock.mockResolvedValue([FOREIGN]);
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
     invoiceMock.mockRejectedValue(new MissingRequirementsError(['name']));
     vi.mocked(setName).mockResolvedValue({
