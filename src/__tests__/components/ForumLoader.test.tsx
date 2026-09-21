@@ -590,8 +590,12 @@ describe('ForumLoader', () => {
     });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(screen.getByText('Loading…')).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledWith(
+        'sess',
+        expect.objectContaining({ cursor: 'cur_2' }),
+      );
     });
+    expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
     await act(async () => {
       resolvePageTwo(forumPage([shop]));
