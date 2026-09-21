@@ -80,6 +80,8 @@ app/
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
 │   │   │   └── submit/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
+│   │   ├── shops/
+│   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -202,7 +204,8 @@ app/
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + payable-reply pay sheet + expand/replies + copy-link + author profile links
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome forum
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome and /shops
+│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
@@ -246,6 +249,7 @@ app/
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
+│   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos

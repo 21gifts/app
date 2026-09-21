@@ -36,6 +36,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
+import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import {
@@ -284,7 +285,8 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
 }
 
 /**
- * Client loader for the public forum on `/welcome`.
+ * Client loader for the public forum on `/welcome`. Also used on `/shops` with
+ * `feed="shops"` (hashtag filter, no laws hint, compose appends `#21GiftsShop`).
  *
  * Reads the session and account from the auth store, fetches the first page of
  * 20 messages for the current mode with a cancelled-flag pattern matching
@@ -314,9 +316,14 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
  * copy) and does not auto-scroll the newest note. Renders nothing when there
  * is no session.
  *
+ * @param feed - Optional `'living-room'` (default) or `'shops'`.
  * @returns The forum board, or `null` without a session.
  */
-export function ForumLoader(): ReactElement | null {
+export function ForumLoader({
+  feed = 'living-room',
+}: {
+  feed?: 'living-room' | 'shops';
+} = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const router = useRouter();
@@ -439,6 +446,28 @@ export function ForumLoader(): ReactElement | null {
           .sort()
           .join('\0');
 
+  const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
+  const forumPageArgs = (
+    mode: ForumFeedMode,
+    extras: { cursor?: string } = {},
+  ): {
+    mode: ForumFeedMode;
+    limit: number;
+    hashtag?: string;
+    cursor?: string;
+  } => ({
+    mode,
+    limit: FORUM_PAGE_LIMIT,
+    ...(feedHashtag !== undefined ? { hashtag: feedHashtag } : {}),
+    ...(extras.cursor !== undefined ? { cursor: extras.cursor } : {}),
+  });
+
+  const filterListed = (rows: ForumMessage[]): ForumMessage[] =>
+    feed === 'shops' ? rows.filter((row) => isShopNote(row.text)) : rows;
+
+  const listedNotes = (rows: ForumMessage[] | null): ForumMessage[] | null =>
+    rows === null ? null : filterListed(rows);
+
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
    * Stop uses `messagesRef` + merge outside setState (empty GET keeps local unsigned extras).
@@ -457,10 +486,7 @@ export function ForumLoader(): ReactElement | null {
           return;
         }
         try {
-          const next = await fetchMessages(activeSession, {
-            mode: feedModeRef.current,
-            limit: FORUM_PAGE_LIMIT,
-          });
+          const next = await fetchMessages(activeSession, forumPageArgs(feedModeRef.current));
           if (generation !== payablePollGeneration.current) {
             return;
           }
@@ -498,21 +524,15 @@ export function ForumLoader(): ReactElement | null {
     replace = false,
   ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
-      const next = await fetchMessages(activeSession, {
-        mode: activeMode,
-        limit: FORUM_PAGE_LIMIT,
-      });
+      const next = await fetchMessages(activeSession, forumPageArgs(activeMode));
       if (!shouldContinue()) {
         return 'aborted';
       }
       const atTop = shellScrollTop(scroller) < 8;
       const visibleNext = next.messages.filter((message) => !deletedIds.current.has(message.id));
-      if (
-        !replace &&
-        !forceApply &&
-        !atTop &&
-        hasUnseenForumPosts(messagesRef.current, visibleNext)
-      ) {
+      const currentListed = listedNotes(messagesRef.current);
+      const fetchedListed = filterListed(visibleNext);
+      if (!replace && !forceApply && !atTop && hasUnseenForumPosts(currentListed, fetchedListed)) {
         setNewPostsAvailable(true);
         return 'ok';
       }
@@ -676,11 +696,10 @@ export function ForumLoader(): ReactElement | null {
       loadingMoreRef.current = true;
       void (async () => {
         try {
-          const page = await fetchMessages(activeSession, {
-            mode: activeMode,
-            limit: FORUM_PAGE_LIMIT,
-            cursor: activeCursor,
-          });
+          const page = await fetchMessages(
+            activeSession,
+            forumPageArgs(activeMode, { cursor: activeCursor }),
+          );
           if (
             cancelled ||
             generation !== paginationGeneration.current ||
@@ -717,7 +736,7 @@ export function ForumLoader(): ReactElement | null {
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-  }, [feedMode, nearEndElement, nextCursor, session]);
+  }, [feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
@@ -1036,11 +1055,12 @@ export function ForumLoader(): ReactElement | null {
   }, []);
 
   useEffect(() => {
+    if (feed === 'shops') return;
     if (feedMode !== 'unpaid') return;
     const iso = new Date().toISOString();
     saveUnpaidSeenAt(iso);
     setUnpaidSeenAt(iso);
-  }, [feedMode, messages]);
+  }, [feed, feedMode, messages]);
 
   const lawsVisible = account?.forumLawsDismissed !== true;
 
@@ -1289,7 +1309,7 @@ export function ForumLoader(): ReactElement | null {
       return [created, ...prev];
     });
     if (created.sats === 0) {
-      if (feedMode === 'unpaid') {
+      if (feedMode === 'unpaid' && feed !== 'shops') {
         const iso = new Date().toISOString();
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);
@@ -1407,7 +1427,8 @@ export function ForumLoader(): ReactElement | null {
       setFormError('empty');
       return;
     }
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+    const body = feed === 'shops' ? ensureShopHashtag(trimmed) : trimmed;
+    if (body.length > FORUM_MESSAGE_MAX_LENGTH) {
       setFormError('tooLong');
       return;
     }
@@ -1416,7 +1437,7 @@ export function ForumLoader(): ReactElement | null {
       const pendingPhotos = photoDrafts;
       const pendingVideo = videoDraft;
       pendingPostRef.current = () => {
-        startNotePost(trimmed, pendingPhotos, pendingVideo, true);
+        startNotePost(body, pendingPhotos, pendingVideo, true);
         return Promise.resolve();
       };
       return;
@@ -1424,7 +1445,7 @@ export function ForumLoader(): ReactElement | null {
     pickGeneration.current += 1;
     const pendingPhotos = photoDrafts;
     const pendingVideo = videoDraft;
-    startNotePost(trimmed, pendingPhotos, pendingVideo, false);
+    startNotePost(body, pendingPhotos, pendingVideo, false);
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
@@ -1777,6 +1798,13 @@ export function ForumLoader(): ReactElement | null {
     void pending();
   };
 
+  const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
+  const composerMaxLength =
+    feed === 'shops' && !isShopNote(draft)
+      ? FORUM_MESSAGE_MAX_LENGTH - shopSuffixLen
+      : FORUM_MESSAGE_MAX_LENGTH;
+  const listed = listedNotes(messages);
+
   return (
     <>
       {overlayRequirement !== null ? (
@@ -1790,7 +1818,9 @@ export function ForumLoader(): ReactElement | null {
         />
       ) : null}
       <ForumBoard
-        messages={messages}
+        messages={listed}
+        {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
+        {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
         moderatorAppointedAvailable={moderatorAppointedId !== null}
@@ -1905,9 +1935,11 @@ export function ForumLoader(): ReactElement | null {
         onModeChange={onModeChange}
         nearEndRef={nearEndRef}
         unpaidNewCount={
-          feedMode === 'unpaid' || messages === null ? 0 : unpaidNewCount(messages, unpaidSeenAt)
+          feedMode === 'unpaid' || messages === null
+            ? 0
+            : unpaidNewCount(filterListed(messages), unpaidSeenAt)
         }
-        lawsVisible={lawsVisible}
+        lawsVisible={feed === 'shops' ? false : lawsVisible}
         onDismissLaws={onDismissLaws}
         expandedId={expandedId}
         onToggleExpand={onToggleExpand}

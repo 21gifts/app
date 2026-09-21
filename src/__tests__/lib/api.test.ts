@@ -1278,6 +1278,23 @@ describe('fetchMessages', () => {
     });
   });
 
+  it('sends hashtag after mode and before limit', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'active', hashtag: '21GiftsShop' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/forum/messages?mode=active&hashtag=21GiftsShop&limit=20',
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('omits an empty hashtag', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'active', hashtag: '' });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages?mode=active&limit=20', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
   it.each([null, ''])('omits an empty cursor (%s)', async (cursor) => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
     await fetchMessages('sess', { mode: 'all', cursor });

@@ -5447,6 +5447,7 @@ test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ p
   await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/welcome');
+  await expect(page.getByRole('link', { name: 'Shops' })).toHaveAttribute('href', '/shops');
   await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Living room rules' })).toHaveAttribute(
     'href',

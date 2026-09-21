@@ -480,6 +480,26 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Dismiss')).toBeNull();
   });
 
+  it('sets the new-post textarea maxLength from composerMaxLength', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerMaxLength={486}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe('486');
+  });
+
   it('hides the composer and mode control when composerHidden', () => {
     renderWithLocale(
       <ForumBoard
@@ -2362,6 +2382,140 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('founded 21.gifts');
     fireEvent.click(screen.getByRole('button', { name: 'Founder' }));
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows a #Shop pill on a top-level shop note and hides the raw hashtag', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const shopLink = screen.getByRole('link', { name: '#Shop' });
+    expect(shopLink.getAttribute('href')).toBe('/shops');
+    expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    expect(screen.queryByText('#21GiftsShop')).toBeNull();
+  });
+
+  it('does not show a #Shop pill on a living-room note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('link', { name: '#Shop' })).toBeNull();
+  });
+
+  it('does not call onToggleExpand when the #Shop pill is clicked', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('link', { name: '#Shop' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('link', { name: '#Shop' }), { key: 'Enter' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not show a #Shop pill on a reply that contains the shop hashtag', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-shop',
+            parentId: 'm1',
+            name: 'Bob',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('link', { name: '#Shop' })).toBeNull();
+  });
+
+  it('shows shops.empty copy when emptyKey is shops.empty', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        emptyKey="shops.empty"
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+  });
+
+  it('shows forum.empty copy when emptyKey is omitted', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
   });
 
   it('unfurls a quoted public note in a reply and hides the raw URL', async () => {

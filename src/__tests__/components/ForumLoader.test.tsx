@@ -395,6 +395,165 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
   });
 
+  it('feed="shops" lists only #21GiftsShop notes', async () => {
+    fetchMock.mockResolvedValue(
+      forumPage([SAMPLE, { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+    );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    expect(screen.queryByText('Hello from Ada')).toBeNull();
+    expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
+  });
+
+  it('feed="shops" shows shops.empty when no listed note is a shop', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+  });
+
+  it('feed="shops" hides the laws hint even when forumLawsDismissed is false', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    expect(
+      screen.queryByText(
+        '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
+      ),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+  });
+
+  it('feed="shops" appends #21GiftsShop on a top-level post', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+    });
+  });
+
+  it('feed="shops" unpaid chip counts only shop notes', async () => {
+    window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([SAMPLE, { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 }]),
+    );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).toBe(
+      '2026-01-01T00:00:00.000Z',
+    );
+  });
+
+  it('feed="shops" does not duplicate #21GiftsShop when the draft already has it', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'Cafe Luna\n\n#21GiftsShop' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+    });
+  });
+
+  it('feed="shops" first fetch sends hashtag 21GiftsShop', async () => {
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', {
+        mode: 'active',
+        limit: 20,
+        hashtag: '21GiftsShop',
+      });
+    });
+  });
+
+  it('living-room first fetch does not send hashtag', async () => {
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'active', limit: 20 });
+    });
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      'sess',
+      expect.objectContaining({ hashtag: expect.anything() }),
+    );
+  });
+
+  it('feed="shops" shows empty immediately when the API page is empty', async () => {
+    fetchMock.mockResolvedValue(forumPage([], null));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+  });
+
+  it('feed="shops" shows empty immediately when the API page is empty with a next cursor', async () => {
+    fetchMock.mockResolvedValue(forumPage([], 'cur_2'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      'sess',
+      expect.objectContaining({ cursor: expect.anything() }),
+    );
+  });
+
+  it('default living-room post does not append #21GiftsShop', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'm2',
+      text: 'Hello',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
+    });
+  });
+
   it('dismisses the laws hint and persists via dismissForumLaws', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     dismissLawsMock.mockResolvedValue({ ...account, forumLawsDismissed: true });
@@ -6932,6 +7091,37 @@ describe('forum feed pages', () => {
       cursor: 'cur_2',
     });
     expect(container.querySelectorAll('[data-message-id="page-1"]')).toHaveLength(1);
+  });
+
+  it('feed="shops" prefetches a later cursor page with hashtag 21GiftsShop', async () => {
+    const first = paidMessage('shop-1', 'Cafe Luna\n\n#21GiftsShop', '2026-08-28T15:00:00.000Z');
+    const second = paidMessage('shop-2', 'Bakery\n\n#21GiftsShop', '2026-08-28T14:00:00.000Z');
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValue(forumPage([second]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Bakery')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      hashtag: '21GiftsShop',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      cursor: 'cur_2',
+      hashtag: '21GiftsShop',
+    });
   });
 
   it('does not prefetch without a next cursor', async () => {
