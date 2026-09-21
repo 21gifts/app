@@ -352,7 +352,7 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`, `/wallet`, and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile, wallet, and members still require `next === '/welcome'` so a complete account can stay on `/wallet`.
-- **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/trust-chain`.
+- **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`.
 
 ## Function: SignedInChrome
 
