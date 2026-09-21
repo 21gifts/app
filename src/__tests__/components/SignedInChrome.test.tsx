@@ -281,6 +281,7 @@ describe('SignedInChrome', () => {
         lastAt: '2026-08-28T12:00:00.000Z',
         lastFromMe: false,
         lastSats: 0,
+        unreadMessageCount: 0,
         unread: true,
       },
       {
@@ -291,6 +292,7 @@ describe('SignedInChrome', () => {
         lastAt: '2026-08-28T13:00:00.000Z',
         lastFromMe: false,
         lastSats: 0,
+        unreadMessageCount: 0,
         unread: true,
       },
     ]);
@@ -588,6 +590,7 @@ describe('SignedInChrome', () => {
       lastAt: '2026-08-28T15:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      unreadMessageCount: 0,
       unread: true,
     });
     renderWithLocale(<SignedInChrome />);

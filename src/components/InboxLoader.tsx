@@ -249,7 +249,9 @@ export function InboxLoader(): ReactElement | null {
           if (prev === null) {
             return prev;
           }
-          return prev.map((row) => (row.id === openId ? { ...row, unread: false } : row));
+          return prev.map((row) =>
+            row.id === openId ? { ...row, unread: false, unreadMessageCount: 0 } : row,
+          );
         });
         void markConversationRead(session, openId).catch(() => undefined);
         bumpUnreadAppBadgeEpoch();
@@ -363,6 +365,8 @@ export function InboxLoader(): ReactElement | null {
                       lastSats: gift.sats,
                       lastFromMe: gift.fromMe,
                       lastAt: gift.createdAt,
+                      unread: false,
+                      unreadMessageCount: 0,
                     }
                   : row,
               );
@@ -414,6 +418,7 @@ export function InboxLoader(): ReactElement | null {
                   lastAt: created.createdAt,
                   lastFromMe: true,
                   unread: false,
+                  unreadMessageCount: 0,
                 }
               : row,
           );

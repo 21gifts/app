@@ -301,6 +301,7 @@ describe('conversationSchema', () => {
       lastFromMe: false,
       lastSats: 0,
       unread: false,
+      unreadMessageCount: 0,
     };
     expect(conversationSchema.parse(row)).toEqual(row);
     expect(conversationListSchema.parse({ conversations: [row] })).toEqual({
@@ -309,7 +310,7 @@ describe('conversationSchema', () => {
     });
   });
 
-  it('defaults missing unread to false and missing unreadCount to 0', () => {
+  it('defaults missing unread to false and missing unreadCount and unreadMessageCount to 0', () => {
     const row = {
       id: 'c1',
       kind: 'member_member',
@@ -319,9 +320,13 @@ describe('conversationSchema', () => {
       lastFromMe: false,
       lastSats: 0,
     };
-    expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false });
+    expect(conversationSchema.parse(row)).toEqual({
+      ...row,
+      unread: false,
+      unreadMessageCount: 0,
+    });
     expect(conversationListSchema.parse({ conversations: [row] })).toEqual({
-      conversations: [{ ...row, unread: false }],
+      conversations: [{ ...row, unread: false, unreadMessageCount: 0 }],
       unreadCount: 0,
     });
   });
@@ -336,6 +341,7 @@ describe('conversationSchema', () => {
       lastFromMe: false,
       lastSats: 0,
       unread: true,
+      unreadMessageCount: 2,
     };
     expect(conversationSchema.parse(row)).toEqual(row);
     expect(conversationListSchema.parse({ conversations: [row], unreadCount: 1 })).toEqual({
@@ -348,6 +354,22 @@ describe('conversationSchema', () => {
     expect(() => conversationListSchema.parse({ conversations: [], unreadCount: -1 })).toThrow();
   });
 
+  it('rejects a negative unreadMessageCount', () => {
+    expect(() =>
+      conversationSchema.parse({
+        id: 'c1',
+        kind: 'member_member',
+        name: 'Bob',
+        lastText: 'Hi',
+        lastAt: '2026-08-28T12:00:00.000Z',
+        lastFromMe: false,
+        lastSats: 0,
+        unread: true,
+        unreadMessageCount: -1,
+      }),
+    ).toThrow();
+  });
+
   it('accepts lastFromMe true and false', () => {
     const incoming = {
       id: 'c1',
@@ -358,6 +380,7 @@ describe('conversationSchema', () => {
       lastFromMe: false,
       lastSats: 0,
       unread: false,
+      unreadMessageCount: 0,
     };
     const outgoing = { ...incoming, lastFromMe: true };
     expect(conversationSchema.parse(incoming)).toEqual(incoming);
@@ -414,7 +437,7 @@ describe('conversationSchema', () => {
       lastSats: 0,
       accountId: 'acc_1',
     };
-    expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false });
+    expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false, unreadMessageCount: 0 });
   });
 
   it('rejects an empty accountId', () => {
@@ -445,7 +468,7 @@ describe('conversationResponseSchema', () => {
       lastSats: 0,
     };
     expect(conversationResponseSchema.parse({ conversation })).toEqual({
-      conversation: { ...conversation, unread: false },
+      conversation: { ...conversation, unread: false, unreadMessageCount: 0 },
     });
     expect(
       conversationResponseSchema.parse({ conversation: { ...conversation, unread: true } })
