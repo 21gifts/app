@@ -352,7 +352,7 @@
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`, `/wallet`, and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile, wallet, and members still require `next === '/welcome'` so a complete account can stay on `/wallet`.
-- **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`.
+- **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`, `/shops`.
 
 ## Function: SignedInChrome
 
@@ -373,7 +373,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading`, default `profile.back`).
 - **Inputs:** Optional `backHref` and `backLabelKey`; catalog via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. No network.
-- **Used by:** `ProfilePage`, `WalletPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `WalletPage`, `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: MessagesChromeLeft
 
