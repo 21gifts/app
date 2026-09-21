@@ -295,6 +295,8 @@ describe('InboxLoader', () => {
         createdAt: '2026-08-28T14:00:00.000Z',
         fromMe: true,
         sats: 21,
+        hasPhoto: false,
+        photoCount: 0,
       },
     ]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
