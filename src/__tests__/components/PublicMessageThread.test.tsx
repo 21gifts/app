@@ -98,6 +98,14 @@ const payableNested: ForumMessage = {
   text: 'A payable reply',
 };
 
+async function waitForEnabledReplyComposer(): Promise<HTMLElement> {
+  const textarea = await screen.findByPlaceholderText('Write a reaction');
+  await waitFor(() => {
+    expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
+  });
+  return textarea;
+}
+
 function submitComposer(amount?: string): void {
   const form = screen.getByLabelText('Your reaction').closest('form');
   if (form === null) {
@@ -479,7 +487,7 @@ describe('PublicMessageThread', () => {
     });
     signIn();
     renderThread();
-    await screen.findByPlaceholderText('Write a reaction');
+    await waitForEnabledReplyComposer();
     submitComposer();
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
