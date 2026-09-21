@@ -1030,7 +1030,7 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Purpose:** Picks `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; `setup === 'wallet'` → `/wallet`; skips advance `setup` without clearing `missing`). Username and wallet cannot be skipped.
 - **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
-- **Used by:** `OnboardingGate`.
+- **Used by:** `OnboardingGate`, `useWalletPhrase.confirmSaved`.
 
 ## Function: skipSetup
 
