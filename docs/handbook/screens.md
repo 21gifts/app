@@ -351,6 +351,12 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, with the dismissi
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: laws
+
+First visit: the dismissible living-room laws hint box is visible (two laws plus links to **Living room rules** and **Contact**). Idle screenshots after dismiss omit it.
+
+![21.gifts welcome laws](images/welcome-laws.png)
+
 ### Variant: moderation
 
 A moderator sees an icon-only Delete post control in the note footer icon row with copy; confirming wraps to the next line. Other roles do not see it. The server independently checks the live role.

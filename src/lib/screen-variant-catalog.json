@@ -168,6 +168,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:laws",
+    "label": "/welcome laws",
+    "visual": "state-welcome-laws",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:moderation",
     "label": "/welcome moderation",
     "visual": "state-welcome-moderation",

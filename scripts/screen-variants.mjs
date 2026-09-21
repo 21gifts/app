@@ -269,6 +269,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'laws',
+    image: 'welcome-laws.png',
+    visual: 'state-welcome-laws',
+    needle: 'state /welcome laws',
+  },
+  {
+    route: '/welcome',
     id: 'moderation',
     image: 'welcome-moderation.png',
     visual: 'state-welcome-moderation',
