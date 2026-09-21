@@ -7604,6 +7604,23 @@ test.describe('moderate proposals screens', () => {
     await shotScreen(page, 'state-moderate-proposals-reject-error');
   });
 
+  test('moderate proposals reject-error-self', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [{ ...PROPOSAL, proposedBy: { id: E2E_ACCOUNT.id, name: 'Ada' } }]);
+    await page.route('**/trust/reject-moderator', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/moderate/proposals');
+    await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Reject' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-proposals-reject-error-self');
+  });
+
   test('moderate proposals confirming', async ({ page }) => {
     await seedAda(page, 'founder');
     await stubProposals(page, [PROPOSAL]);
@@ -7626,6 +7643,19 @@ test.describe('moderate proposals screens', () => {
     await page.getByRole('button', { name: 'Reject' }).click();
     await expect(page.getByRole('button', { name: 'Reject' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-proposals-rejecting');
+  });
+
+  test('moderate proposals rejecting-self', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubProposals(page, [{ ...PROPOSAL, proposedBy: { id: E2E_ACCOUNT.id, name: 'Ada' } }]);
+    await page.route('**/trust/reject-moderator', async () => {
+      /* hang */
+    });
+    await page.goto('/moderate/proposals');
+    await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Reject' }).click();
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeDisabled();
+    await shotScreen(page, 'state-moderate-proposals-rejecting-self');
   });
 });
 

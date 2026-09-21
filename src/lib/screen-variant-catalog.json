@@ -1176,6 +1176,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/proposals:reject-error-self",
+    "label": "/moderate/proposals reject-error-self",
+    "visual": "state-moderate-proposals-reject-error-self",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/proposals:confirming",
     "label": "/moderate/proposals confirming",
     "visual": "state-moderate-proposals-confirming",
@@ -1185,6 +1191,12 @@
     "id": "/moderate/proposals:rejecting",
     "label": "/moderate/proposals rejecting",
     "visual": "state-moderate-proposals-rejecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/proposals:rejecting-self",
+    "label": "/moderate/proposals rejecting-self",
+    "visual": "state-moderate-proposals-rejecting-self",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

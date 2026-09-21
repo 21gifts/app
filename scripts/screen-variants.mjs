@@ -1445,6 +1445,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/proposals',
+    id: 'reject-error-self',
+    image: 'moderate-proposals-reject-error-self.png',
+    visual: 'state-moderate-proposals-reject-error-self',
+    needle: 'moderate proposals reject-error-self',
+  },
+  {
+    route: '/moderate/proposals',
     id: 'confirming',
     image: 'moderate-proposals-confirming.png',
     visual: 'state-moderate-proposals-confirming',
@@ -1456,6 +1463,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-proposals-rejecting.png',
     visual: 'state-moderate-proposals-rejecting',
     needle: "getByRole('button', { name: 'Reject' })).toBeDisabled()",
+  },
+  {
+    route: '/moderate/proposals',
+    id: 'rejecting-self',
+    image: 'moderate-proposals-rejecting-self.png',
+    visual: 'state-moderate-proposals-rejecting-self',
+    needle: 'moderate proposals rejecting-self',
   },
   {
     route: '/moderate/applications',

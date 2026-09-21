@@ -1415,9 +1415,15 @@ Staff (moderator) Confirm as moderator failed. Copy **Could not update this memb
 
 ### Variant: reject-error
 
-Staff (moderator) Reject failed. Copy **Could not update this member. Please try again.**
+Staff (moderator) Reject failed. Copy **Could not update this member. Please try again.** Confirm still visible (someone else proposed).
 
 ![21.gifts open proposals reject error](images/moderate-proposals-reject-error.png)
+
+### Variant: reject-error-self
+
+Staff (moderator) Reject failed on a row they proposed themselves. Copy **Waiting for another moderator to confirm.** and **Could not update this member. Please try again.** No Confirm button. **Reject** visible.
+
+![21.gifts open proposals reject error self](images/moderate-proposals-reject-error-self.png)
 
 ### Variant: confirming
 
@@ -1430,6 +1436,12 @@ Staff (moderator) Confirm as moderator POST in flight. Confirm and Reject disabl
 Staff (moderator) Reject POST in flight. Confirm and Reject disabled; spinner on Reject; proposal row still visible.
 
 ![21.gifts open proposals rejecting](images/moderate-proposals-rejecting.png)
+
+### Variant: rejecting-self
+
+Staff (moderator) Reject POST in flight on a row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button. Reject disabled with spinner; proposal row still visible.
+
+![21.gifts open proposals rejecting self](images/moderate-proposals-rejecting-self.png)
 
 ## Screen: /moderate/applications
 
