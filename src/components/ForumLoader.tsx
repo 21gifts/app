@@ -446,6 +446,22 @@ export function ForumLoader({
           .sort()
           .join('\0');
 
+  const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
+  const forumPageArgs = (
+    mode: ForumFeedMode,
+    extras: { cursor?: string } = {},
+  ): {
+    mode: ForumFeedMode;
+    limit: number;
+    hashtag?: string;
+    cursor?: string;
+  } => ({
+    mode,
+    limit: FORUM_PAGE_LIMIT,
+    ...(feedHashtag !== undefined ? { hashtag: feedHashtag } : {}),
+    ...(extras.cursor !== undefined ? { cursor: extras.cursor } : {}),
+  });
+
   const filterListed = (rows: ForumMessage[]): ForumMessage[] =>
     feed === 'shops' ? rows.filter((row) => isShopNote(row.text)) : rows;
 
@@ -470,10 +486,7 @@ export function ForumLoader({
           return;
         }
         try {
-          const next = await fetchMessages(activeSession, {
-            mode: feedModeRef.current,
-            limit: FORUM_PAGE_LIMIT,
-          });
+          const next = await fetchMessages(activeSession, forumPageArgs(feedModeRef.current));
           if (generation !== payablePollGeneration.current) {
             return;
           }
@@ -511,10 +524,7 @@ export function ForumLoader({
     replace = false,
   ): Promise<'ok' | 'error' | 'aborted' | 'requirements'> => {
     try {
-      const next = await fetchMessages(activeSession, {
-        mode: activeMode,
-        limit: FORUM_PAGE_LIMIT,
-      });
+      const next = await fetchMessages(activeSession, forumPageArgs(activeMode));
       if (!shouldContinue()) {
         return 'aborted';
       }
@@ -559,10 +569,7 @@ export function ForumLoader({
           ).filter((row) => !deletedIds.current.has(row.id));
           return [...optimistic, ...merged.filter((row) => !optimisticIds.has(row.id))];
         });
-        if (
-          messagesRef.current === null ||
-          (feed === 'shops' && filterListed(messagesRef.current).length === 0)
-        ) {
+        if (messagesRef.current === null) {
           nextCursorRef.current = next.nextCursor;
           setNextCursor(next.nextCursor);
         }
@@ -689,11 +696,10 @@ export function ForumLoader({
       loadingMoreRef.current = true;
       void (async () => {
         try {
-          const page = await fetchMessages(activeSession, {
-            mode: activeMode,
-            limit: FORUM_PAGE_LIMIT,
-            cursor: activeCursor,
-          });
+          const page = await fetchMessages(
+            activeSession,
+            forumPageArgs(activeMode, { cursor: activeCursor }),
+          );
           if (
             cancelled ||
             generation !== paginationGeneration.current ||
@@ -730,66 +736,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-  }, [feedMode, nearEndElement, nextCursor, session]);
-
-  useEffect(() => {
-    if (feed !== 'shops' || session === null || nextCursor === null || messages === null) {
-      return;
-    }
-    /* v8 ignore next 3 -- listed shops skip auto-page; in-flight fetch is guarded */
-    if (filterListed(messages).length > 0 || loadingMoreRef.current) {
-      return;
-    }
-    let cancelled = false;
-    const activeSession = session;
-    const activeMode = feedMode;
-    const activeCursor = nextCursor;
-    const generation = paginationGeneration.current;
-    loadingMoreRef.current = true;
-    void (async () => {
-      try {
-        const page = await fetchMessages(activeSession, {
-          mode: activeMode,
-          limit: FORUM_PAGE_LIMIT,
-          cursor: activeCursor,
-        });
-        if (
-          cancelled ||
-          generation !== paginationGeneration.current ||
-          feedModeRef.current !== activeMode
-        ) {
-          return;
-        }
-        const appended = page.messages.filter((message) => !deletedIds.current.has(message.id));
-        setMessages((prev) =>
-          appendMessages(
-            prev,
-            appended,
-            hiddenReplyCounts.current,
-            lastServerReplyCount.current,
-          ).filter((message) => !deletedIds.current.has(message.id)),
-        );
-        nextCursorRef.current = page.nextCursor;
-        setNextCursor(page.nextCursor);
-        if (appended.some((message) => message.payable === false)) {
-          startPayablePoll(activeSession);
-        }
-      } catch {
-        if (!cancelled && generation === paginationGeneration.current) {
-          nextCursorRef.current = null;
-          setNextCursor(null);
-        }
-      } finally {
-        if (!cancelled && generation === paginationGeneration.current) {
-          loadingMoreRef.current = false;
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-      loadingMoreRef.current = false;
-    };
-  }, [feed, feedMode, messages, nextCursor, session]);
+  }, [feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
@@ -1857,8 +1804,6 @@ export function ForumLoader({
       ? FORUM_MESSAGE_MAX_LENGTH - shopSuffixLen
       : FORUM_MESSAGE_MAX_LENGTH;
   const listed = listedNotes(messages);
-  const shopsAwaitingPages =
-    feed === 'shops' && nextCursor !== null && listed !== null && listed.length === 0;
 
   return (
     <>
@@ -1873,7 +1818,7 @@ export function ForumLoader({
         />
       ) : null}
       <ForumBoard
-        messages={shopsAwaitingPages ? null : listed}
+        messages={listed}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
@@ -1937,7 +1882,7 @@ export function ForumLoader({
             }
           : {})}
         error={error}
-        loading={loading || shopsAwaitingPages}
+        loading={loading}
         refreshing={refreshing}
         onRefresh={onRefresh}
         posting={posting || preparing}

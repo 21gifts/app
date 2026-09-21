@@ -492,148 +492,46 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('feed="shops" fetches later cursor pages when page one has no shop', async () => {
-    fetchMock
-      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
-      .mockResolvedValue(
-        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
-      );
+  it('feed="shops" first fetch sends hashtag 21GiftsShop', async () => {
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(screen.getByText('Cafe Luna')).toBeTruthy();
-    });
-    expect(fetchMock).toHaveBeenCalledWith('sess', {
-      mode: 'active',
-      limit: 20,
-      cursor: 'cur_2',
-    });
-    expect(screen.queryByText('Hello from Ada')).toBeNull();
-  });
-
-  it('feed="shops" shows empty only after the last cursor page has no shop', async () => {
-    fetchMock
-      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
-      .mockResolvedValue(forumPage([SAMPLE]));
-    renderWithLocale(<ForumLoader feed="shops" />);
-    await waitFor(() => {
-      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
-    });
-    expect(fetchMock).toHaveBeenCalledWith('sess', {
-      mode: 'active',
-      limit: 20,
-      cursor: 'cur_2',
+      expect(fetchMock).toHaveBeenCalledWith('sess', {
+        mode: 'active',
+        limit: 20,
+        hashtag: '21GiftsShop',
+      });
     });
   });
 
-  it('feed="shops" retries later pages after a failed cursor fetch then refresh', async () => {
-    fetchMock
-      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
-      .mockRejectedValueOnce(new Error('boom'))
-      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
-      .mockResolvedValue(
-        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
-      );
-    renderWithLocale(<ForumLoader feed="shops" />);
+  it('living-room first fetch does not send hashtag', async () => {
+    renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'active', limit: 20 });
     });
-    Object.defineProperty(document, 'visibilityState', {
-      configurable: true,
-      get: () => 'hidden',
-    });
-    act(() => {
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-    Object.defineProperty(document, 'visibilityState', {
-      configurable: true,
-      get: () => 'visible',
-    });
-    act(() => {
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('Cafe Luna')).toBeTruthy();
-    });
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      'sess',
+      expect.objectContaining({ hashtag: expect.anything() }),
+    );
   });
 
-  it('feed="shops" shows empty when a later cursor page fails', async () => {
-    fetchMock
-      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
-      .mockRejectedValue(new Error('boom'));
+  it('feed="shops" shows empty immediately when the API page is empty', async () => {
+    fetchMock.mockResolvedValue(forumPage([], null));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
   });
 
-  it('feed="shops" stays on loading while a later shop page is in flight', async () => {
-    const shop = {
-      ...SAMPLE,
-      id: 'shop1',
-      text: 'Cafe Luna\n\n#21GiftsShop',
-      sats: 5,
-    };
-    let resolvePageTwo: (page: ReturnType<typeof forumPage>) => void = () => undefined;
-    fetchMock.mockImplementation((_session: string, args?: { cursor?: string | null }) => {
-      if (args?.cursor === 'cur_2') {
-        return new Promise<ReturnType<typeof forumPage>>((resolve) => {
-          resolvePageTwo = resolve;
-        });
-      }
-      return Promise.resolve(forumPage([SAMPLE], 'cur_2'));
-    });
+  it('feed="shops" shows empty immediately when the API page is empty with a next cursor', async () => {
+    fetchMock.mockResolvedValue(forumPage([], 'cur_2'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('sess', expect.objectContaining({ cursor: 'cur_2' }));
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    expect(screen.getByText('Loading…')).toBeTruthy();
-    expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
-    await act(async () => {
-      resolvePageTwo(forumPage([shop]));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('Cafe Luna')).toBeTruthy();
-    });
-  });
-
-  it('feed="shops" starts a payable poll when a later shop page is unsigned', async () => {
-    const unsignedShop = {
-      ...SAMPLE,
-      id: 'shop1',
-      text: 'Cafe Luna\n\n#21GiftsShop',
-      sats: 21,
-      payable: false,
-    };
-    fetchMock
-      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
-      .mockResolvedValueOnce(forumPage([unsignedShop], null))
-      .mockResolvedValue(forumPage([unsignedShop]));
-    renderWithLocale(<ForumLoader feed="shops" />);
-    await waitFor(() => {
-      expect(screen.getByText('Cafe Luna')).toBeTruthy();
-    });
-  });
-
-  it('feed="shops" ignores a later page after unmount', async () => {
-    let resolvePageTwo: (page: ReturnType<typeof forumPage>) => void = () => undefined;
-    fetchMock.mockImplementation((_session: string, args?: { cursor?: string | null }) => {
-      if (args?.cursor === 'cur_2') {
-        return new Promise<ReturnType<typeof forumPage>>((resolve) => {
-          resolvePageTwo = resolve;
-        });
-      }
-      return Promise.resolve(forumPage([SAMPLE], 'cur_2'));
-    });
-    const { unmount } = renderWithLocale(<ForumLoader feed="shops" />);
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('sess', expect.objectContaining({ cursor: 'cur_2' }));
-    });
-    unmount();
-    await act(async () => {
-      resolvePageTwo(
-        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
-      );
-    });
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      'sess',
+      expect.objectContaining({ cursor: expect.anything() }),
+    );
   });
 
   it('default living-room post does not append #21GiftsShop', async () => {
@@ -7193,6 +7091,37 @@ describe('forum feed pages', () => {
       cursor: 'cur_2',
     });
     expect(container.querySelectorAll('[data-message-id="page-1"]')).toHaveLength(1);
+  });
+
+  it('feed="shops" prefetches a later cursor page with hashtag 21GiftsShop', async () => {
+    const first = paidMessage('shop-1', 'Cafe Luna\n\n#21GiftsShop', '2026-08-28T15:00:00.000Z');
+    const second = paidMessage('shop-2', 'Bakery\n\n#21GiftsShop', '2026-08-28T14:00:00.000Z');
+    fetchMock
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValue(forumPage([second]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Bakery')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      hashtag: '21GiftsShop',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      cursor: 'cur_2',
+      hashtag: '21GiftsShop',
+    });
   });
 
   it('does not prefetch without a next cursor', async () => {
