@@ -4560,7 +4560,7 @@ test('Function: ForumAskWizard — welcome loads', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4599,7 +4599,7 @@ test('Function: parseForumAskAmount — welcome loads', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4636,7 +4636,7 @@ test('Function: ForumGoalBar — welcome loads', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4687,7 +4687,7 @@ test('Function: forumGoalPercent — welcome loads', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

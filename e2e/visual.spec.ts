@@ -5183,7 +5183,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome goal-50', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5212,7 +5212,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome goal-100', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5241,7 +5241,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome goal-110', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -5479,7 +5479,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome error-ask', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages$/, async (route) => {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
