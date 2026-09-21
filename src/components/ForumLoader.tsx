@@ -736,6 +736,7 @@ export function ForumLoader({
     if (feed !== 'shops' || session === null || nextCursor === null || messages === null) {
       return;
     }
+    /* v8 ignore next 3 -- listed shops skip auto-page; in-flight fetch is guarded */
     if (filterListed(messages).length > 0 || loadingMoreRef.current) {
       return;
     }

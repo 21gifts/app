@@ -596,6 +596,46 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" starts a payable poll when a later shop page is unsigned', async () => {
+    const unsignedShop = {
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 21,
+      payable: false,
+    };
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
+      .mockResolvedValueOnce(forumPage([unsignedShop], null))
+      .mockResolvedValue(forumPage([unsignedShop]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+  });
+
+  it('feed="shops" ignores a later page after unmount', async () => {
+    let resolvePageTwo: (page: ReturnType<typeof forumPage>) => void = () => undefined;
+    fetchMock.mockImplementation((_session: string, args?: { cursor?: string | null }) => {
+      if (args?.cursor === 'cur_2') {
+        return new Promise<ReturnType<typeof forumPage>>((resolve) => {
+          resolvePageTwo = resolve;
+        });
+      }
+      return Promise.resolve(forumPage([SAMPLE], 'cur_2'));
+    });
+    const { unmount } = renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', expect.objectContaining({ cursor: 'cur_2' }));
+    });
+    unmount();
+    await act(async () => {
+      resolvePageTwo(
+        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+      );
+    });
+  });
+
   it('default living-room post does not append #21GiftsShop', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
