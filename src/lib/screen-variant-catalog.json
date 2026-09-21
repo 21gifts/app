@@ -1104,6 +1104,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-preparing-photo",
+    "label": "/messages thread-preparing-photo",
+    "visual": "state-messages-thread-preparing-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-error-unsupported",
+    "label": "/messages thread-error-unsupported",
+    "visual": "state-messages-thread-error-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-error-too-large",
+    "label": "/messages thread-error-too-large",
+    "visual": "state-messages-thread-error-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-error-too-many",
+    "label": "/messages thread-error-too-many",
+    "visual": "state-messages-thread-error-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",

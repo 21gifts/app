@@ -1314,6 +1314,30 @@ Open Direct thread. Incoming bubble is a still with no text. Image alt **Photo f
 
 ![21.gifts inbox thread photo](images/messages-thread-photo.png)
 
+### Variant: thread-preparing-photo
+
+Open Direct thread. JPEG attach in flight; **Send** disabled; no **Selected photo** yet. Amount field visible.
+
+![21.gifts inbox thread preparing photo](images/messages-thread-preparing-photo.png)
+
+### Variant: thread-error-unsupported
+
+Open Direct thread. Attach a GIF → **Use a JPEG, PNG, or WebP photo**. No **Selected photo**.
+
+![21.gifts inbox thread error unsupported](images/messages-thread-error-unsupported.png)
+
+### Variant: thread-error-too-large
+
+Open Direct thread. Encoded JPEG over 1 MB → **Keep photos under 1 MB**.
+
+![21.gifts inbox thread error too large](images/messages-thread-error-too-large.png)
+
+### Variant: thread-error-too-many
+
+Open Direct thread. Eleven files → **You can add up to 10 photos**.
+
+![21.gifts inbox thread error too many](images/messages-thread-error-too-many.png)
+
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
