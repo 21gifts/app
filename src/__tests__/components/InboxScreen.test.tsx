@@ -1695,6 +1695,46 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
+  it('pins to the bottom when the newest bubble still loads under a nested gift', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const parent = { ...MESSAGE, id: 'm-photo', hasPhoto: true, photoCount: 1 };
+    const gift = {
+      ...MESSAGE,
+      id: 'g1',
+      giftFor: 'm-photo',
+      sats: 21,
+      text: '',
+    };
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [parent, gift], photoUrls: {} })} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [parent, gift],
+            photoUrls: { 'm-photo:0': 'blob:parent' },
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
   it('does not scroll to the bottom when the invoice pay sheet closes', () => {
     const scrollTo = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {

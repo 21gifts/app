@@ -418,9 +418,11 @@ export function InboxScreen({
     /* v8 ignore next -- length > 0, so the last index exists */
     lastMessageId = last === undefined ? '' : last.id;
   }
-  const lastPhotoPrefix = `${lastMessageId}:`;
+  const lastBubble = groups.length > 0 ? groups[groups.length - 1] : undefined;
+  const lastBubbleId = lastBubble === undefined ? '' : lastBubble.message.id;
+  const lastPhotoPrefix = `${lastBubbleId}:`;
   const lastPhotoUrls =
-    lastMessageId === ''
+    lastBubbleId === ''
       ? ''
       : Object.entries(photoUrls)
           .filter(([key]) => key.startsWith(lastPhotoPrefix))
