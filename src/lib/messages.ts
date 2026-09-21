@@ -634,7 +634,7 @@ const en = {
     'It does not mean they are a good person, and it does not mean they are entitled to receive money. It only means this person really exists and has a 21.gifts account.',
   'moderate.handbook.funding.title': 'Official funding program',
   'moderate.handbook.funding.body':
-    'Verified members can apply on their profile with the three convictions. Staff review the queue, then grant a one-day trial or admit. Daily gifts still go out as before until 25 September 2026. From that UTC day, only admitted members (or a same-day trial) receive them.',
+    'Verified members can apply on their profile with the three convictions. Staff review the queue by walking each principle and whether the posts are true, then admit or reject. Daily gifts still go out as before until 25 September 2026. From that UTC day, only admitted members (or a same-day trial) receive them.',
   'moderate.handbook.funding.rulesLead': 'The rules are simple.',
   'moderate.handbook.funding.rulePrinciples': 'Follow the 3 principles of 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Daily Bitcoin payments are mandatory',
@@ -1339,7 +1339,7 @@ const de = {
     'Es bedeutet nicht, dass es ein guter Mensch ist oder dass die Person berechtigt sein soll, Geld zu erhalten. Es bedeutet nur, dass es diesen Menschen wirklich gibt und dass er ein Konto bei 21.gifts hat.',
   'moderate.handbook.funding.title': 'Offizielles Förderprogramm',
   'moderate.handbook.funding.body':
-    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange und gewährt dann einen eintägigen Probezugang oder lässt zu. Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem UTC-Tag erhalten nur noch zugelassene Mitglieder (oder eine Probe für denselben Tag) welche.',
+    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange, indem es jeden Grundsatz und die Wahrheit der Beiträge prüft, und lässt dann zu oder lehnt ab. Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem UTC-Tag erhalten nur noch zugelassene Mitglieder (oder eine Probe für denselben Tag) welche.',
   'moderate.handbook.funding.rulesLead': 'Die Regeln sind einfach.',
   'moderate.handbook.funding.rulePrinciples': 'Die 3 Prinzipien von 21.gifts befolgen',
   'moderate.handbook.funding.ruleDaily': 'Tägliche Bitcoin-Zahlungen sind Pflicht',
@@ -2030,7 +2030,7 @@ const es = {
     'No significa que sea una buena persona ni que tenga derecho a recibir dinero. Solo significa que esa persona existe de verdad y tiene una cuenta en 21.gifts.',
   'moderate.handbook.funding.title': 'Programa oficial de apoyo',
   'moderate.handbook.funding.body':
-    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo revisa la cola y luego otorga un día de prueba o admite. Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día UTC, solo las personas admitidas (o en prueba ese mismo día) los reciben.',
+    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo recorre cada principio y si los mensajes son verdad, luego admite o rechaza. Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día UTC, solo las personas admitidas (o en prueba ese mismo día) los reciben.',
   'moderate.handbook.funding.rulesLead': 'Las reglas son simples.',
   'moderate.handbook.funding.rulePrinciples': 'Seguir los 3 principios de 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Los pagos diarios en Bitcoin son obligatorios',
@@ -2727,7 +2727,7 @@ const fil = {
     'Hindi ito nangangahulugang mabuting tao siya, at hindi ito nangangahulugang karapat-dapat siyang tumanggap ng pera. Ibig sabihin lang nito na totoong umiiral ang taong ito at may account siya sa 21.gifts.',
   'moderate.handbook.funding.title': 'Opisyal na programa ng tulong',
   'moderate.handbook.funding.body':
-    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Sinusuri ng staff ang pila, tapos nagbibigay ng one-day trial o admit. Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa UTC day na iyon, admitted members (o same-day trial) na lang ang tatanggap.',
+    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Nilalakad ng staff ang bawat prinsipyo at kung totoo ang mga post, tapos admit o reject. Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa UTC day na iyon, admitted members (o same-day trial) na lang ang tatanggap.',
   'moderate.handbook.funding.rulesLead': 'Simple lang ang mga patakaran.',
   'moderate.handbook.funding.rulePrinciples': 'Sundin ang 3 prinsipyo ng 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Mandatory ang araw-araw na bayad sa Bitcoin',
