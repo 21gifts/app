@@ -594,7 +594,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
     });
@@ -640,7 +640,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: 'Cafe Luna\n\n#21GiftsShop' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
     });
@@ -702,7 +702,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
     });
@@ -2799,7 +2799,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'New note' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
       expect(screen.getByText('New note')).toBeTruthy();
     });

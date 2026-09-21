@@ -205,9 +205,11 @@ app/
 │   │   ├── RequirementsOverlay.tsx # Add name, username, Wallet of Satoshi address, or agree to rules before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
-│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + text/photo/video icon composer + payable-reply pay sheet + expand/replies + copy-link + author profile links
+│   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
+│   │   ├── ForumAskWizard.tsx   # Ask-for-money steps amount → photos → text → preview Post
+│   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
-│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/requirements-overlay state for /welcome and /shops
+│   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
@@ -252,6 +254,7 @@ app/
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
+│   │   ├── forum-goal.ts        # parseForumAskAmount and forumGoalPercent for top-level Asks
 │   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos

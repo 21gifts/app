@@ -229,7 +229,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   });
   await page.goto('/shops');
   await page.getByLabel('Your message').fill('Cafe Luna');
-  await page.getByRole('button', { name: 'Post' }).click();
+  await page.getByRole('button', { name: /^Post$/ }).click();
   await posted;
   expect(postedText).toContain('#21GiftsShop');
 });
