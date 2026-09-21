@@ -573,22 +573,28 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" stays on loading while a later shop page is in flight', async () => {
+    const shop = {
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 5,
+    };
     let resolvePageTwo: (page: ReturnType<typeof forumPage>) => void = () => undefined;
-    fetchMock.mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2')).mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
+    fetchMock.mockImplementation((_session: string, args?: { cursor?: string | null }) => {
+      if (args?.cursor === 'cur_2') {
+        return new Promise<ReturnType<typeof forumPage>>((resolve) => {
           resolvePageTwo = resolve;
-        }),
-    );
+        });
+      }
+      return Promise.resolve(forumPage([SAMPLE], 'cur_2'));
+    });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('Loading…')).toBeTruthy();
     });
     expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
     await act(async () => {
-      resolvePageTwo(
-        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
-      );
+      resolvePageTwo(forumPage([shop]));
     });
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
