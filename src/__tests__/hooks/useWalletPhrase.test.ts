@@ -341,6 +341,77 @@ describe('useWalletPhrase', () => {
     expect(peekSessionPhrase()).toBeNull();
   });
 
+  it('does not finish replace when the session ends after create', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockImplementation(async () => {
+          useAuthStore.setState({ session: null, account: null });
+          return { id: 'cred', type: 'public-key' };
+        }),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('does not finish replace when the session ends after PRF first', async () => {
+    vi.mocked(obtainPrfFirst).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return new Uint8Array(32).fill(7);
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('does not finish replace when the session ends after PRF mnemonic', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return mnemonic;
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('does not keep a phrase when the session ends after finishPasskeyReplace', async () => {
+    vi.mocked(finishPasskeyReplace).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { ...account, walletRequired: true };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(peekSessionPhrase()).toBeNull();
+    expect(result.current.words).toEqual([]);
+  });
+
+  it('does not keep a phrase when the session ends after mnemonic derivation', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return mnemonic;
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(peekSessionPhrase()).toBeNull();
+    expect(result.current.words).toEqual([]);
+  });
+
   it('does not navigate when the session ends during confirmSaved', async () => {
     useAuthStore.setState({
       session: 'tok',
