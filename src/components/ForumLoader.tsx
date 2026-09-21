@@ -1046,11 +1046,12 @@ export function ForumLoader({
   }, []);
 
   useEffect(() => {
+    if (feed === 'shops') return;
     if (feedMode !== 'unpaid') return;
     const iso = new Date().toISOString();
     saveUnpaidSeenAt(iso);
     setUnpaidSeenAt(iso);
-  }, [feedMode, messages]);
+  }, [feed, feedMode, messages]);
 
   const lawsVisible = account?.forumLawsDismissed !== true;
 
@@ -1299,7 +1300,7 @@ export function ForumLoader({
       return [created, ...prev];
     });
     if (created.sats === 0) {
-      if (feedMode === 'unpaid') {
+      if (feedMode === 'unpaid' && feed !== 'shops') {
         const iso = new Date().toISOString();
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);

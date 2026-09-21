@@ -466,6 +466,10 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
     expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).toBe(
+      '2026-01-01T00:00:00.000Z',
+    );
   });
 
   it('feed="shops" does not duplicate #21GiftsShop when the draft already has it', async () => {

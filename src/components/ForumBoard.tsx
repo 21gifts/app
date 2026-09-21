@@ -933,6 +933,7 @@ export function ForumBoard({
                         href="/shops"
                         className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted no-underline"
                         onClick={stopCardToggle}
+                        onKeyDown={stopCardToggle}
                       >
                         {t('forum.shopTag')}
                       </Link>

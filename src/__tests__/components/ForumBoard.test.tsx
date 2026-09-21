@@ -2445,6 +2445,8 @@ describe('ForumBoard', () => {
     );
     fireEvent.click(screen.getByRole('link', { name: '#Shop' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('link', { name: '#Shop' }), { key: 'Enter' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
   it('does not show a #Shop pill on a reply that contains the shop hashtag', () => {
