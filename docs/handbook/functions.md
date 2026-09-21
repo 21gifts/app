@@ -1207,7 +1207,7 @@
 - **Purpose:** GET `/trust/proposals` (same-origin Bearer proxy of api `GET /trust/proposals`) and parse `moderatorProposalsResponseSchema.proposals`. Next.js forbids a `route.ts` beside `/moderate/proposals`, so the proxy lives at this path.
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Open-proposal array. Throws visitor copy `Could not load moderator proposals. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `ProposalsScreen`.
+- **Used by:** `ProposalsScreen`, `useUnreadCount`.
 
 ## Function: postFundingApply
 
