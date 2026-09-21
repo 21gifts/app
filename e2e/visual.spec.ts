@@ -830,9 +830,7 @@ test.describe('screen baselines', () => {
       });
     });
     await page.goto('/wallet?visual=error');
-    await expect(
-      page.getByText('Something went wrong. Please try again.'),
-    ).toBeVisible();
+    await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-wallet-error');
   });
