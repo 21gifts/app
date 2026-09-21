@@ -5049,6 +5049,7 @@ describe('ForumLoader', () => {
   it('holds New posts against the AppShell scroller and scrolls that node to top', async () => {
     fetchMock
       .mockResolvedValueOnce(forumPage([SAMPLE]))
+      .mockResolvedValueOnce(forumPage([SAMPLE]))
       .mockResolvedValue(forumPage([FRESH, SAMPLE]));
     const { container } = renderWithLocale(
       <AppShell mode="fill">
