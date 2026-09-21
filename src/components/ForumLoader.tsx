@@ -385,6 +385,7 @@ export function ForumLoader({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const payHostRef = useRef<'composer' | 'card' | null>(null);
   const rateDay = useLatestRateDay();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
@@ -1130,6 +1131,7 @@ export function ForumLoader({
     setPayInvoice(null);
     setPayWaiting(false);
     setReplyPosting(false);
+    payHostRef.current = null;
   };
 
   const startPayPoll = (messageId: string, baselineSats: number): void => {
@@ -1406,6 +1408,7 @@ export function ForumLoader({
           pr: invoice.pr,
           amountSats: invoice.amountSats,
         });
+        payHostRef.current = 'composer';
         startPayPoll(target.messageId, target.sats);
         pendingPostRef.current = null;
         setDraft('');
@@ -1591,12 +1594,12 @@ export function ForumLoader({
     if (next === feedMode) {
       return;
     }
-    if (
+    const listedParent =
       payMessageId !== null &&
-      messages !== null &&
-      !visibleForumMessages(messages, next).some((message) => message.id === payMessageId) &&
-      (replies === null || !replies.some((message) => message.id === payMessageId))
-    ) {
+      ((messages !== null &&
+        visibleForumMessages(messages, next).some((message) => message.id === payMessageId)) ||
+        (replies !== null && replies.some((message) => message.id === payMessageId)));
+    if (payMessageId !== null && !listedParent && payHostRef.current !== 'composer') {
       clearPaySheet();
     }
     replaceInFlightRef.current = true;
@@ -1795,6 +1798,11 @@ export function ForumLoader({
     sats: number,
     isRetry: boolean,
   ): Promise<void> => {
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
@@ -1817,6 +1825,7 @@ export function ForumLoader({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      payHostRef.current = 'card';
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;

@@ -1986,6 +1986,23 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(500) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
   it('maps a compose-pay rate-limit onto the reply error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(

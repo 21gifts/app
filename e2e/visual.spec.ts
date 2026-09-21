@@ -6380,7 +6380,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome error-request-photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({

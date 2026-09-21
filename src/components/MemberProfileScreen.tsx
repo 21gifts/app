@@ -622,6 +622,11 @@ export function MemberProfileScreen({
     sats: number,
     isRetry: boolean,
   ): Promise<void> => {
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;

@@ -2324,6 +2324,8 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
   it('rejects a basis photo draft instead of invoicing 21.gifts', async () => {
@@ -2350,6 +2352,7 @@ describe('ForumLoader', () => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toMatch(/verified/i);
     expect(composeTargetMock).not.toHaveBeenCalled();
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -4474,6 +4477,33 @@ describe('ForumLoader', () => {
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    expect(composeTargetMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a 403 compose-pay whose prefix would exceed 500 characters', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'verified', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue([FOREIGN]);
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(500) },
+    });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    });
     expect(composeTargetMock).not.toHaveBeenCalled();
   });
 

@@ -1773,6 +1773,47 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
+  it('shows a composer pay sheet when the fee note is hidden on Active', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'fee-note', sats: 0 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        payMessageId="fee-note"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
+  it('shows the basis-media composer error', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="basisMedia"
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toMatch(/verified/i);
+  });
+
   it('does not duplicate the composer pay sheet when the target is a loaded reply', () => {
     renderWithLocale(
       <ForumBoard

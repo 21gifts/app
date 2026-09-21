@@ -1731,7 +1731,7 @@ export function ForumBoard({
 
       {payMessageId !== null &&
       payInvoice !== null &&
-      !(messages !== null && messages.some((row) => row.id === payMessageId)) &&
+      !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
       !(replies !== null && replies.some((row) => row.id === payMessageId)) ? (
         <ForumPaySheet
           messageId={payInvoice.messageId}
@@ -1774,6 +1774,11 @@ export function ForumBoard({
       {!composerHidden && formError === 'unsupported' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorUnsupported')}
+        </p>
+      ) : null}
+      {!composerHidden && formError === 'basisMedia' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('forum.errorBasisMedia')}
         </p>
       ) : null}
       {!composerHidden && formError === 'tooLarge' ? (

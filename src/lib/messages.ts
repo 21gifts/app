@@ -304,6 +304,7 @@ const en = {
   'forum.removePhoto': 'Remove photo',
   'forum.removeVideo': 'Remove video',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+  'forum.errorBasisMedia': 'Photos and videos need a verified account. Post text first.',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
   'forum.errorTooMany': 'You can add up to 10 photos',
   'forum.askAmountLabel': 'Ask',
@@ -1021,6 +1022,8 @@ const de = {
   'forum.removeVideo': 'Video entfernen',
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
+  'forum.errorBasisMedia':
+    'Fotos und Videos brauchen ein verifiziertes Konto. Schreiben Sie zuerst Text.',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
   'forum.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'forum.askAmountLabel': 'Anfragen',
@@ -1747,6 +1750,8 @@ const es = {
   'forum.removePhoto': 'Quitar foto',
   'forum.removeVideo': 'Quitar vídeo',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
+  'forum.errorBasisMedia':
+    'Las fotos y los vídeos requieren una cuenta verificada. Publica texto primero.',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
   'forum.errorTooMany': 'Puedes añadir hasta 10 fotos',
   'forum.askAmountLabel': 'Pedir',
@@ -2460,6 +2465,8 @@ const fil = {
   'forum.removePhoto': 'Alisin ang litrato',
   'forum.removeVideo': 'Alisin ang bidyo',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
+  'forum.errorBasisMedia':
+    'Kailangan ng verified na account para sa litrato at bidyo. Mag-post muna ng teksto.',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
   'forum.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
   'forum.askAmountLabel': 'Hiling',
