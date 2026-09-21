@@ -378,6 +378,31 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('keeps Active selected after posting an Ask', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({ ...SAMPLE, id: 'm-ask', text: 'Hello', goalSats: 21000 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(screen.getByText('Hello')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
+  });
+
   it('returns to Send a post from the Ask pill', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);

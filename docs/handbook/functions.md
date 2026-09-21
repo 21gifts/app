@@ -880,11 +880,11 @@
 
 ## Function: ForumAskWizard
 
-Four-step Ask composer on `/welcome`: amount, photos, text, then a preview card with `ForumGoalBar` at 0 collected versus the ask. The labeled **Post** on step 4 is the only Ask submit.
+Four-step Ask composer on `/welcome`: amount, photos, text, then a preview card with `ForumGoalBar` at 0 collected versus the ask. The heading and **{step} of 4** share one row (step on the right). The labeled **Post** on step 4 is the only Ask submit.
 
 - **Purpose:** Walk **Ask for money** so a top-level note always has a whole-sat `goalSats` before it is posted.
-- **Inputs:** `step` / `onStepChange`, `askDraft` / `onAskDraftChange`, `draft` / `onDraftChange`, `posting`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `authorName`, `onPost`.
-- **Returns / side effects:** React tree. Continue on step 1 stays disabled until `parseForumAskAmount` returns a number. Skip and Continue on step 2 both go to step 3. Step 4 **Post** calls `onPost`. No network.
+- **Inputs:** `step` / `onStepChange`, `askDraft` / `onAskDraftChange`, `draft` / `onDraftChange`, `posting`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `authorName`, `onPost`, optional `rateDay` (preferred-fiat counterpart of the typed ask).
+- **Returns / side effects:** React tree. Continue on step 1 stays disabled until `parseForumAskAmount` returns a number; a parsed amount shows `formatBitcoin` plus optional fiat. Skip and Continue on step 2 both go to step 3. Step 4 **Post** calls `onPost`. No network.
 - **Used by:** `ForumBoard` when `composeIntent` is `ask`.
 
 ## Function: parseForumAskAmount
@@ -896,11 +896,11 @@ Four-step Ask composer on `/welcome`: amount, photos, text, then a preview card 
 
 ## Function: ForumGoalBar
 
-SVG progress bar for a top-level forum note's collected sats versus an optional whole-sat ask. One SVG: orange fill in user units 0–100; overflow past 100% continues in green (`app-success`) from `x=100` at most another 100 units (visual max 200%). The `{percent}%` label is a sibling, so it stays readable, and is uncapped (110, 250, …). Renders nothing when `goalSats` is missing or `<= 0`. Lengths use SVG `width` / `x` / `viewBox` attributes, not React `style`.
+SVG progress bar for a top-level forum note's collected sats versus an optional whole-sat ask. One SVG: orange fill in user units 0–100; overflow past 100% continues in green (`app-success`) from `x=100` at most another 100 units (visual max 200%). The `{percent}%` label is a sibling, so it stays readable, and is uncapped (110, 250, …). Above the track, `forum.askAmountLabel` plus `formatBitcoin(goalSats)` and optional preferred-fiat name the asked amount (so 110% is not only a bar). Renders nothing when `goalSats` is missing or `<= 0`. Lengths use SVG `width` / `x` / `viewBox` attributes, not React `style`.
 
 - **Purpose:** Show collected-versus-goal progress on a top-level note that has a positive `goalSats`.
-- **Inputs:** `sats` (collected) and `goalSats` (whole-sat goal). Non-positive or non-finite `goalSats` yields `null`.
-- **Returns / side effects:** The bar element, or `null`. Uses `forum.goalPercent` and `forum.goalBarAria`. No network.
+- **Inputs:** `sats` (collected), `goalSats` (whole-sat goal), optional `rateDay` (fiat counterpart of the goal). Non-positive or non-finite `goalSats` yields `null`.
+- **Returns / side effects:** The bar element with `forum.askAmountLabel`, `formatBitcoin(goalSats)`, and optional fiat, or `null`. Uses `forum.goalPercent` and `forum.goalBarAria`. No network.
 - **Used by:** `ForumBoard` (top-level notes only), `PublicMessageLoader`, and `ForumAskWizard` (preview at 0 collected).
 
 ## Function: forumGoalPercent
@@ -1526,7 +1526,7 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 - **Purpose:** Client-side filter and sort of the already-loaded forum thread for the Active / No gifts yet / All / Most popular selector. Does not call the api; ranking is among the messages the loader already holds.
 - **Inputs:** `messages` (newest-first list from the api / loader merge) and `mode` (`active` | `unpaid` | `all` | `popular`).
-- **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps paid notes (`sats > 0`) and unpaid notes whose `role` is at least `moderator`, newest-first. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
+- **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps paid notes (`sats > 0`), unpaid notes whose `role` is at least `moderator`, and top-level asks with a positive `goalSats`, newest-first. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
 - **Used by:** `ForumBoard`, `ForumLoader`.
 
 The No gifts yet mode keeps only loaded messages with exactly zero sats, including notes without a wallet, preserving input order. The board displays them newest first (same as Active/All). Active remains the default.

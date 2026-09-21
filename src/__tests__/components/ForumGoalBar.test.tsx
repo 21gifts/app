@@ -2,6 +2,15 @@ import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { FiatRateDay } from '@/lib/stats-money';
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
 
 afterEach(cleanup);
 
@@ -16,6 +25,8 @@ describe('ForumGoalBar', () => {
 
   it('shows 0% with an empty track and no overflow fill', () => {
     const { container } = renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('0%')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Goal progress 0 percent' })).toBeTruthy();
     expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
@@ -39,8 +50,18 @@ describe('ForumGoalBar', () => {
     expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
   });
 
+  it('shows the asked bitcoin amount and fiat counterpart', () => {
+    renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} rateDay={RATE_DAY} />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText('$21.00')).toBeTruthy();
+    expect(screen.getByText('110%')).toBeTruthy();
+  });
+
   it('shows 110% with overflow fill', () => {
     const { container } = renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('110%')).toBeTruthy();
     const img = screen.getByRole('img', { name: 'Goal progress 110 percent' });
     expect(img.getAttribute('viewBox')).toBe('0 0 110 8');

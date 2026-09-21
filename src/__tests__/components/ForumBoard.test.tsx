@@ -2413,6 +2413,8 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('110%')).toBeTruthy();
   });
 

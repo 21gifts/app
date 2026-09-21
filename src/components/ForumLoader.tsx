@@ -1322,7 +1322,8 @@ export function ForumLoader({
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);
       }
-      if (feedModeRef.current !== 'all') {
+      const askStaysOnActive = typeof created.goalSats === 'number' && created.goalSats > 0;
+      if (feedModeRef.current !== 'all' && !askStaysOnActive) {
         replaceInFlightRef.current = true;
         paginationGeneration.current += 1;
         loadingMoreRef.current = false;

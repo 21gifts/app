@@ -2,11 +2,15 @@
 
 import { ArrowLeft, ImagePlus, Loader2, X } from 'lucide-react';
 import { useRef, type ChangeEvent, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, IconButton } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { parseForumAskAmount } from '@/lib/forum-goal';
+import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 
@@ -34,6 +38,7 @@ export function ForumAskWizard({
   onClearPhoto,
   authorName,
   onPost,
+  rateDay = null,
 }: {
   step: ForumAskStep;
   onStepChange: (step: ForumAskStep) => void;
@@ -49,10 +54,21 @@ export function ForumAskWizard({
   onClearPhoto: () => void;
   authorName: string;
   onPost: () => void;
+  rateDay?: FiatRateDay | null;
 }): ReactElement {
   const { t } = useTranslations();
+  const { fiat } = useFiatPreference();
+  const { numberFormat } = useNumberFormat();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const parsedAsk = parseForumAskAmount(askDraft);
+  const stepTitle =
+    step === 1
+      ? t('forum.askHowMuch')
+      : step === 2
+        ? t('forum.askAddPhotos')
+        : step === 3
+          ? t('forum.askWriteMessage')
+          : t('forum.askPreview');
   const handleFiles = (event: ChangeEvent<HTMLInputElement>): void => {
     const list = event.target.files;
     if (list === null || list.length === 0) {
@@ -78,11 +94,13 @@ export function ForumAskWizard({
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </IconButton>
         ) : null}
-        <p className="text-xs text-app-subtle">{t('forum.askStepOf', { step, total: 4 })}</p>
+        <h2 className="min-w-0 flex-1 text-lg font-semibold text-app-fg">{stepTitle}</h2>
+        <p className="shrink-0 text-xs text-app-subtle">
+          {t('forum.askStepOf', { step, total: 4 })}
+        </p>
       </div>
       {step === 1 ? (
         <>
-          <h2 className="text-lg font-semibold text-app-fg">{t('forum.askHowMuch')}</h2>
           <label
             htmlFor="forum-ask-amount"
             className="flex flex-col gap-1 text-left text-sm text-app-fg"
@@ -109,6 +127,12 @@ export function ForumAskWizard({
               />
             </span>
           </label>
+          {parsedAsk !== null ? (
+            <p className="text-sm tabular-nums lining-nums text-app-muted">
+              <span>{formatBitcoin(parsedAsk, numberFormat)}</span>
+              {preferredFiatSuffix(parsedAsk, rateDay, fiat, numberFormat)}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
@@ -123,7 +147,6 @@ export function ForumAskWizard({
       ) : null}
       {step === 2 ? (
         <>
-          <h2 className="text-lg font-semibold text-app-fg">{t('forum.askAddPhotos')}</h2>
           <div className="flex items-center gap-2">
             <IconButton
               type="button"
@@ -242,7 +265,6 @@ export function ForumAskWizard({
       ) : null}
       {step === 3 ? (
         <>
-          <h2 className="text-lg font-semibold text-app-fg">{t('forum.askWriteMessage')}</h2>
           <textarea
             aria-label={t('forum.composerLabel')}
             placeholder={t('forum.placeholder')}
@@ -269,7 +291,6 @@ export function ForumAskWizard({
       ) : null}
       {step === 4 ? (
         <>
-          <h2 className="text-lg font-semibold text-app-fg">{t('forum.askPreview')}</h2>
           <div className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
             <p className="text-sm font-medium text-app-fg">{authorName}</p>
             {draft.trim() !== '' ? (
@@ -289,7 +310,7 @@ export function ForumAskWizard({
               <img
                 src={photoDrafts[0]!.previewUrl}
                 alt={t('forum.previewAlt')}
-                className="mt-2 max-h-80 w-full rounded-xl object-cover"
+                className="mt-2 max-h-36 w-full rounded-xl object-cover"
               />
             ) : null}
             {photoDrafts.length > 1 ? (
@@ -306,7 +327,9 @@ export function ForumAskWizard({
                 ))}
               </ul>
             ) : null}
-            {parsedAsk !== null ? <ForumGoalBar sats={0} goalSats={parsedAsk} /> : null}
+            {parsedAsk !== null ? (
+              <ForumGoalBar sats={0} goalSats={parsedAsk} rateDay={rateDay} />
+            ) : null}
           </div>
           <Button type="button" variant="primary" size="lg" disabled={posting} onClick={onPost}>
             {posting ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : null}

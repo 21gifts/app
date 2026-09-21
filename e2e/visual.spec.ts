@@ -49,6 +49,50 @@ const FX_ALL = {
   ],
 };
 
+const RATE_DAY_STATS = {
+  totalSats: 100_000_000,
+  totalBtc: '1.00000000',
+  totalUsd: '100000.00',
+  totalChf: '80000.00',
+  totalEur: '90000.00',
+  totalPhp: '5600000.00',
+  giftCount: 1,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-01T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      giftCount: 1,
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '100000.00',
+      cumulativeUsd: '100000.00',
+      chf: '80000.00',
+      eur: '90000.00',
+      php: '5600000.00',
+      cumulativeChf: '80000.00',
+      cumulativeEur: '90000.00',
+      cumulativePhp: '5600000.00',
+    },
+  ],
+  byRecipient: [],
+  byMonth: [],
+  fx: FX_USD,
+};
+
+async function fulfillRateDay(page: Page): Promise<void> {
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(RATE_DAY_STATS),
+    });
+  });
+}
+
 const EMPTY_ACTIVITY = {
   donatedSats: 0,
   receivedSats: 0,
@@ -2145,10 +2189,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByText('$21.00')).toBeVisible();
     await page.getByText('Goal note at one hundred ten percent').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-110');
   });
@@ -3743,6 +3790,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] goal-110', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
     await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
@@ -3764,6 +3812,8 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('110%')).toBeVisible();
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByText('$21.00')).toBeVisible();
     await shotScreen(page, 'state-messages-id-goal-110');
   });
 
@@ -4934,6 +4984,7 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
+    await fulfillRateDay(page);
   }
 
   async function stubPayInvoice(page: Page): Promise<void> {
@@ -5300,6 +5351,8 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'All' }).click();
     await expect(page.getByText('110%')).toBeVisible();
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByText('$21.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-110');
   });
 
@@ -5309,7 +5362,53 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await expect(page.getByText('How much?')).toBeVisible();
+    await page.getByLabel('Ask').fill('1000');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-amount');
+  });
+
+  test('state /welcome ask-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-ask',
+              name: 'Dana',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:30:00.000Z',
+              sats: 0,
+              goalSats: 1000,
+              payable: true,
+              hasPhoto: true,
+              photoCount: 1,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/m-ask\/photo/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync('e2e/fixtures/ask-card.jpg'),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await page.getByText("₿1'000").scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-ask-open');
   });
 
   test('state /welcome ask-photos', async ({ page }) => {
@@ -5340,13 +5439,19 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Ask for money' }).click();
-    await page.getByLabel('Ask').fill('21000');
+    await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Skip' }).click();
-    await page.getByLabel('Your message').fill('Goal note');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+    await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Your message').fill('Need help with a train ticket');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Preview')).toBeVisible();
-    await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await page.getByRole('button', { name: /^Post$/ }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-ask-preview');
   });
 
@@ -5524,7 +5629,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByRole('button', { name: 'Ask for money' }).click();
-    await page.getByLabel('Ask').fill('abc');
+    await page.getByLabel('Ask').fill('0');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-welcome-error-ask');
   });

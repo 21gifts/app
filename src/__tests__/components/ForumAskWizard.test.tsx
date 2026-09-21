@@ -27,9 +27,12 @@ describe('ForumAskWizard', () => {
       <ForumAskWizard step={1} onStepChange={onStepChange} {...idle} />,
     );
     expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('heading', { name: 'How much?' })).toBeTruthy();
+    expect(screen.getByText('1 of 4')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).not.toHaveBeenCalled();
     rerender(<ForumAskWizard step={1} onStepChange={onStepChange} {...idle} askDraft="21000" />);
+    expect(screen.getByText("₿21'000")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(2);
   });

@@ -1061,7 +1061,11 @@ export function ForumBoard({
               {message.parentId === undefined &&
               typeof message.goalSats === 'number' &&
               message.goalSats > 0 ? (
-                <ForumGoalBar sats={message.sats} goalSats={message.goalSats} />
+                <ForumGoalBar
+                  sats={message.sats}
+                  goalSats={message.goalSats}
+                  rateDay={rateDay ?? null}
+                />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">
                 <button
@@ -1600,6 +1604,7 @@ export function ForumBoard({
           onClearPhoto={onClearPhoto}
           authorName={authorName}
           onPost={onPost}
+          rateDay={rateDay ?? null}
         />
       ) : null}
 

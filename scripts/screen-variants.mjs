@@ -388,6 +388,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-open',
+    image: 'welcome-ask-open.png',
+    visual: 'state-welcome-ask-open',
+    needle: 'state /welcome ask-open',
+  },
+  {
+    route: '/welcome',
     id: 'unpaid',
     image: 'welcome-unpaid.png',
     visual: 'state-welcome-unpaid',
