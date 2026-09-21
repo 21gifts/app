@@ -4608,6 +4608,12 @@ test('Function: parseForumAskAmount — welcome loads', async ({ page }) => {
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await expect(page.getByText('How much?')).toBeVisible();
+  await page.getByLabel('Ask').fill('0');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  await page.getByLabel('Ask').fill('1000');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
 });
 
 test('Function: ForumGoalBar — welcome loads', async ({ page }) => {
