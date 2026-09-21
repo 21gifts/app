@@ -42,6 +42,10 @@ export type UseWalletPhraseResult = {
   retry: () => void;
 };
 
+function isCurrentSession(token: string): boolean {
+  return useAuthStore.getState().session === token;
+}
+
 function visualParam(): string | null {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
@@ -124,30 +128,46 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (session === null) {
       return;
     }
+    const token = session;
     setStatus('busy');
     setError(null);
     try {
-      const begin = await startPasskeyReplace(session);
+      const begin = await startPasskeyReplace(token);
+      if (!isCurrentSession(token)) {
+        return;
+      }
       const options = mergePrfExtension(creationOptionsFromJSON(begin.options));
       const credential = (await navigator.credentials.create({
         publicKey: options,
       })) as PublicKeyCredential | null;
+      if (!isCurrentSession(token)) {
+        return;
+      }
       if (!credential) {
         setStatus('idle');
         return;
       }
       const prfFirst = await obtainPrfFirst(credential);
+      if (!isCurrentSession(token)) {
+        return;
+      }
       if (!prfFirst) {
         setError('prfUnsupported');
         setStatus('error');
         return;
       }
       const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+      if (!isCurrentSession(token)) {
+        return;
+      }
       const nextAccount = await finishPasskeyReplace(
-        session,
+        token,
         begin.challengeId,
         credentialToJSON(credential),
       );
+      if (!isCurrentSession(token)) {
+        return;
+      }
       setAccount(nextAccount);
       rememberSessionPhrase(nextMnemonic);
       setMnemonic(nextMnemonic);
@@ -161,16 +181,23 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (session === null) {
       return;
     }
+    const token = session;
     setStatus('busy');
     setError(null);
     try {
       const prfFirst = await obtainPrfFirstFromGet();
+      if (!isCurrentSession(token)) {
+        return;
+      }
       if (!prfFirst) {
         setError('prfUnsupported');
         setStatus('error');
         return;
       }
       const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+      if (!isCurrentSession(token)) {
+        return;
+      }
       rememberSessionPhrase(nextMnemonic);
       setMnemonic(nextMnemonic);
       setStatus('idle');
@@ -186,10 +213,14 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (visualParam() !== null && mnemonic === WALLET_VISUAL_FIXTURE_MNEMONIC) {
       return;
     }
+    const token = session;
     setStatus('busy');
     setError(null);
     try {
-      const nextAccount = await postWalletBackupSeen(session);
+      const nextAccount = await postWalletBackupSeen(token);
+      if (!isCurrentSession(token)) {
+        return;
+      }
       setAccount(nextAccount);
       clearSessionPhrase();
       setMnemonic(null);

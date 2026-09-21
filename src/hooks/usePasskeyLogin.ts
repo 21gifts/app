@@ -262,11 +262,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   );
 
   const authenticate = useCallback((): void => {
+    clearSessionPhrase();
     if (isInAppBrowser()) {
       setStatus('unsupported');
       return;
     }
-    clearSessionPhrase();
     entryKindRef.current = 'authenticate';
     const { runId, controller } = beginRun('authenticate');
     void completeAuthentication(runId, controller).catch((error: unknown) => {
@@ -275,11 +275,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, finishWithError]);
 
   const login = useCallback((): void => {
+    clearSessionPhrase();
     if (isInAppBrowser()) {
       setStatus('unsupported');
       return;
     }
-    clearSessionPhrase();
     entryKindRef.current = 'login';
     const { runId, controller } = beginRun('authenticate');
     void (async () => {

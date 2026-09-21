@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
-import { rememberSessionPhrase } from '@/lib/tab-phrase';
+import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -390,6 +390,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unsupported');
     expect(startPasskeyAuthentication).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
+    expect(clearSessionPhrase).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
@@ -407,6 +408,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unsupported');
     expect(startPasskeyAuthentication).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
+    expect(clearSessionPhrase).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

@@ -314,4 +314,47 @@ describe('useWalletPhrase', () => {
     expect(push).toHaveBeenCalledWith('/setup/name');
     expect(peekSessionPhrase()).toBeNull();
   });
+
+  it('does not keep a phrase when the session ends during showPhrase', async () => {
+    vi.mocked(obtainPrfFirstFromGet).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return new Uint8Array(32).fill(7);
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(peekSessionPhrase()).toBeNull();
+    expect(result.current.words).toEqual([]);
+  });
+
+  it('does not finish replace when the session ends during activate', async () => {
+    vi.mocked(startPasskeyReplace).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { challengeId: 'ch', options: { challenge: 'aa' } };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('does not navigate when the session ends during confirmSaved', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet' },
+    });
+    rememberSessionPhrase(mnemonic);
+    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { ...account, setup: 'name', walletBackupSeenAt: 1 };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.confirmSaved();
+    });
+    expect(push).not.toHaveBeenCalled();
+  });
 });
