@@ -172,8 +172,8 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /wallet
 
 - **URL:** `/wallet` — signed-in recovery phrase.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **I saved these words** (no Skip). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards they can **Show recovery phrase**.
-- **Actions:** Activate a new passkey. Confirm the words were saved (`POST /me/wallet-backup-seen`). Show the phrase. **Try again** after an error (`role="alert"`). Open **Menu**.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **I saved these words** (no Skip). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards they can **Show recovery phrase**.
+- **Actions:** Activate a new passkey. Confirm the words were saved (`POST /me/wallet-backup-seen`). Show the phrase. **Try again** after an error (`role="alert"`). Open **Menu** (Home, Shops, Profile, Wallet, …).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
 
 ### Variant: default

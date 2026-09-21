@@ -343,6 +343,7 @@ describe('useWalletPhrase', () => {
     });
     expect(peekSessionPhrase()).toBeNull();
     expect(result.current.words).toEqual([]);
+    expect(result.current.status).toBe('idle');
   });
 
   it('does not finish replace when the session ends during activate', async () => {

@@ -46,6 +46,19 @@ function isCurrentSession(token: string): boolean {
   return useAuthStore.getState().session === token;
 }
 
+function abandonStaleSession(
+  token: string,
+  setError: (value: WalletPhraseErrorKind | null) => void,
+  setStatus: (value: WalletPhraseStatus) => void,
+): boolean {
+  if (isCurrentSession(token)) {
+    return false;
+  }
+  setError(null);
+  setStatus('idle');
+  return true;
+}
+
 function visualParam(): string | null {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
@@ -142,14 +155,14 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setError(null);
     try {
       const begin = await startPasskeyReplace(token);
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       const options = mergePrfExtension(creationOptionsFromJSON(begin.options));
       const credential = (await navigator.credentials.create({
         publicKey: options,
       })) as PublicKeyCredential | null;
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       if (!credential) {
@@ -157,7 +170,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       const prfFirst = await obtainPrfFirst(credential);
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       if (!prfFirst) {
@@ -166,7 +179,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       const nextAccount = await finishPasskeyReplace(
@@ -174,7 +187,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         begin.challengeId,
         credentialToJSON(credential),
       );
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       setAccount(nextAccount);
@@ -182,6 +195,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       setMnemonic(nextMnemonic);
       setStatus('idle');
     } catch (err) {
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
       fail(err);
     }
   }, [fail, session, setAccount]);
@@ -195,7 +211,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setError(null);
     try {
       const prfFirst = await obtainPrfFirstFromGet();
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       if (!prfFirst) {
@@ -204,13 +220,16 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       rememberSessionPhrase(nextMnemonic);
       setMnemonic(nextMnemonic);
       setStatus('idle');
     } catch (err) {
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
       fail(err);
     }
   }, [fail, session]);
@@ -227,7 +246,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setError(null);
     try {
       const nextAccount = await postWalletBackupSeen(token);
-      if (!isCurrentSession(token)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       setAccount(nextAccount);
@@ -236,6 +255,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       setStatus('idle');
       router.push(nextOnboardingPath(nextAccount));
     } catch (err) {
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
       fail(err);
     }
   }, [fail, mnemonic, router, session, setAccount]);
