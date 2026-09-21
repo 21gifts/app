@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { WalletScreen, WalletScreenView } from '@/components/WalletScreen';
+import { WalletScreen } from '@/components/WalletScreen';
+import { WalletScreenView } from '@/components/WalletScreenView';
 import {
   WALLET_VISUAL_FIXTURE_MNEMONIC,
   type UseWalletPhraseResult,

@@ -43,6 +43,7 @@ export async function prfEvalFirstSalt(): Promise<Uint8Array> {
  *
  * @param credential - Result of `create` or `get`.
  * @returns PRF first bytes, or `undefined`.
+ * @throws TypeError when `prf.results.first` is present but not a BufferSource.
  */
 export function readPrfFirst(credential: PublicKeyCredential): Uint8Array | undefined {
   const ext = credential.getClientExtensionResults() as {

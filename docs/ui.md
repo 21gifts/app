@@ -379,21 +379,21 @@ flowchart TB
 
 ## Layout and chrome
 
-| Measure            | Value                                       | Use                                                                |
-| ------------------ | ------------------------------------------- | ------------------------------------------------------------------ |
-| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                   |
-| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                               |
-| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address     |
-| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                          |
-| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation           |
-| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                           |
-| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                     |
-| Marketing pad      | `px-5`                                      | Header, sections, footer                                           |
-| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                  |
-| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules` |
-| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                |
-| Marketing section  | `py-20`                                     | how / why / project / faq                                          |
-| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                    |
+| Measure            | Value                                       | Use                                                                    |
+| ------------------ | ------------------------------------------- | ---------------------------------------------------------------------- |
+| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                       |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                                   |
+| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, wallet, view, member identity, onboarding name/address |
+| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                              |
+| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation               |
+| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                               |
+| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                         |
+| Marketing pad      | `px-5`                                      | Header, sections, footer                                               |
+| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                      |
+| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`     |
+| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                    |
+| Marketing section  | `py-20`                                     | how / why / project / faq                                              |
+| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                        |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden`. App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
