@@ -990,7 +990,7 @@ Author names with `accountId` open `/members/[accountId]`.
 
 Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. New accounts: 12-word grid + labeled **I saved these words** (no Skip). Existing: labeled **Activate recovery phrase**, then **Show recovery phrase**. Error: `role="alert"` `text-app-danger` + labeled **Try again** (no Activate beside it).
 
-Handbook states: default (activate), phrase, confirm.
+Handbook states: default (activate), phrase, confirm, reveal (Show recovery phrase).
 
 ### `/profile`
 

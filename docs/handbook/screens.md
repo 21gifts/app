@@ -194,6 +194,12 @@ New account must confirm **I saved these words**.
 
 ![21.gifts wallet confirm](images/wallet-confirm.png)
 
+### Variant: reveal
+
+Existing member after a saved backup, no phrase in the tab. **Show recovery phrase**.
+
+![21.gifts wallet reveal](images/wallet-reveal.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.

@@ -184,6 +184,13 @@ export const SCREEN_VARIANTS = [
     needle: 'I saved these words',
   },
   {
+    route: '/wallet',
+    id: 'reveal',
+    image: 'wallet-reveal.png',
+    visual: 'state-wallet-reveal',
+    needle: 'Show recovery phrase',
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',

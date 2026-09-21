@@ -784,6 +784,32 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-confirm');
   });
 
+  test('wallet reveal', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+        }),
+      });
+    });
+    await page.goto('/wallet');
+    await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-reveal');
+  });
+
   test('screen /stats', async ({ page }) => {
     await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {

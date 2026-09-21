@@ -78,6 +78,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:reveal",
+    "label": "/wallet reveal",
+    "visual": "state-wallet-reveal",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",
