@@ -124,6 +124,7 @@ app/
 │   │   │   ├── verify/route.ts             # POST /trust/verify
 │   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
 │   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
+│   │   │   ├── reject-moderator/route.ts   # POST /trust/reject-moderator
 │   │   │   └── appoint-moderator/route.ts  # POST /trust/appoint-moderator
 │   │   ├── funding/
 │   │   │   ├── apply/route.ts                    # POST /funding/apply
@@ -184,7 +185,7 @@ app/
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
-│   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
+│   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm/reject queue
 │   │   ├── FundingApplicationsScreen.tsx # Signed-in /moderate/applications grant queue
 │   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /moderate/applications/:id grant review
 │   │   ├── FundingStatusCard.tsx # Owner profile verification / 21 gifts grant
