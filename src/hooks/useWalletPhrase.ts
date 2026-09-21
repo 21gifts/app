@@ -182,13 +182,19 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      const nextAccount = await finishPasskeyReplace(
+      let nextAccount = await finishPasskeyReplace(
         token,
         begin.challengeId,
         credentialToJSON(credential),
       );
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
+      }
+      if (nextAccount.walletRequired !== true) {
+        nextAccount = await postWalletBackupSeen(token);
+        if (abandonStaleSession(token, setError, setStatus)) {
+          return;
+        }
       }
       setAccount(nextAccount);
       rememberSessionPhrase(nextMnemonic);

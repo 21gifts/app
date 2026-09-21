@@ -82,7 +82,7 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue({
       ...account,
-      walletRequired: true,
+      walletRequired: false,
     });
   vi.mocked(postWalletBackupSeen)
     .mockReset()
@@ -127,6 +127,7 @@ describe('useWalletPhrase', () => {
     });
     expect(startPasskeyReplace).toHaveBeenCalledWith('tok');
     expect(finishPasskeyReplace).toHaveBeenCalled();
+    expect(postWalletBackupSeen).toHaveBeenCalledWith('tok');
     expect(result.current.words).toHaveLength(12);
   });
 

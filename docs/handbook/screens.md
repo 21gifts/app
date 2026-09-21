@@ -276,7 +276,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 ## Screen: /setup/name
 
-- **URL:** `/setup/name` — first screen after login (`account.setup === 'name'`).
+- **URL:** `/setup/name` — when `account.setup === 'name'` (after `/wallet` when that step is required).
 - **What the user sees:** Chrome is the page-frame header (wordmark + Menu inside the rounded sheet). Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
 - **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/username`).
 - **Calls:** `AppShell`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
@@ -312,7 +312,7 @@ Signed in with a name (or a skipped name) and no address. **Your Wallet of Satos
 
 ## Screen: /setup/rules
 
-- **URL:** `/setup/rules` — fourth screen after login, when living-room rules are not yet agreed (`account.setup === 'rules'`). Name may be saved or skipped; username is required and cannot be skipped; address may already be saved or skipped; rules cannot be skipped.
+- **URL:** `/setup/rules` — when living-room rules are not yet agreed (`account.setup === 'rules'`). Wallet, name, username, and address may already be done; username and wallet cannot be skipped; rules cannot be skipped.
 - **What the user sees:** Chrome is the page-frame header (wordmark + Menu inside the rounded sheet; icon-only chapter back after the first chapter). Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact / forum nav, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
 - **Actions:** Read the current chapter and **Continue** to advance; icon-only back after the first chapter. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
 - **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
