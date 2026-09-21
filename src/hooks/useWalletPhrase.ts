@@ -10,11 +10,25 @@ import {
   obtainPrfFirst,
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
-import { creationOptionsFromJSON, credentialToJSON } from '@/lib/webauthn-browser';
+import {
+  base64UrlToBytes,
+  creationOptionsFromJSON,
+  credentialToJSON,
+} from '@/lib/webauthn-browser';
 import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+
+/** One wallet WebAuthn ceremony per tab, including across remounts. */
+let ceremonyInFlight = false;
+
+/**
+ * Drop the module ceremony lock. Tests call this between cases.
+ */
+export function resetWalletCeremonyLock(): void {
+  ceremonyInFlight = false;
+}
 
 /** Fixture words for visual `/wallet:phrase` and `/wallet:confirm` (not live PRF). */
 export const WALLET_VISUAL_FIXTURE_MNEMONIC =
@@ -148,11 +162,12 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, []);
 
   const activate = useCallback(async () => {
-    if (session === null || inFlight.current) {
+    if (session === null || inFlight.current || ceremonyInFlight) {
       return;
     }
     const token = session;
     inFlight.current = true;
+    ceremonyInFlight = true;
     setStatus('busy');
     setError(null);
     try {
@@ -209,19 +224,27 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       fail(err);
     } finally {
       inFlight.current = false;
+      ceremonyInFlight = false;
     }
   }, [fail, session, setAccount]);
 
   const showPhrase = useCallback(async () => {
-    if (session === null || inFlight.current) {
+    if (session === null || inFlight.current || ceremonyInFlight) {
       return;
     }
     const token = session;
     inFlight.current = true;
+    ceremonyInFlight = true;
     setStatus('busy');
     setError(null);
     try {
-      const prfFirst = await obtainPrfFirstFromGet();
+      const credentialId = useAuthStore.getState().account?.passkeyCredentialId;
+      if (credentialId === undefined || credentialId === null || credentialId === '') {
+        setError('generic');
+        setStatus('error');
+        return;
+      }
+      const prfFirst = await obtainPrfFirstFromGet(base64UrlToBytes(credentialId));
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
@@ -244,11 +267,12 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       fail(err);
     } finally {
       inFlight.current = false;
+      ceremonyInFlight = false;
     }
   }, [fail, session]);
 
   const confirmSaved = useCallback(async () => {
-    if (session === null || inFlight.current) {
+    if (session === null || inFlight.current || ceremonyInFlight) {
       return;
     }
     if (visualParam() !== null && mnemonic === WALLET_VISUAL_FIXTURE_MNEMONIC) {
@@ -256,6 +280,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     }
     const token = session;
     inFlight.current = true;
+    ceremonyInFlight = true;
     setStatus('busy');
     setError(null);
     try {
@@ -275,6 +300,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       fail(err);
     } finally {
       inFlight.current = false;
+      ceremonyInFlight = false;
     }
   }, [fail, mnemonic, router, session, setAccount]);
 

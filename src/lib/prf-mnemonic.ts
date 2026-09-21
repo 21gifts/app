@@ -118,17 +118,22 @@ export async function obtainPrfFirst(credential: PublicKeyCredential): Promise<U
 
 /**
  * Authenticate with PRF eval.first to re-derive the recovery phrase.
- * Does not contact the API. Discoverable credentials are enough; no assertion
- * is forwarded.
+ * Does not contact the API. `allowCredentials` is this account's current
+ * passkey so a leftover credential after replace cannot supply the words.
+ * No assertion is forwarded.
  *
+ * @param allowCredentialId - Current credential id bytes (WebAuthn `rawId`).
  * @returns PRF first bytes, or `null`.
  */
-export async function obtainPrfFirstFromGet(): Promise<Uint8Array | null> {
+export async function obtainPrfFirstFromGet(
+  allowCredentialId: BufferSource,
+): Promise<Uint8Array | null> {
   const salt = await prfEvalFirstSalt();
   const assertion = (await navigator.credentials.get({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
       rpId: window.location.hostname,
+      allowCredentials: [{ type: 'public-key', id: allowCredentialId }],
       userVerification: 'required',
       extensions: { prf: { eval: { first: Uint8Array.from(salt) } } },
     },

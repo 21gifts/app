@@ -4,6 +4,7 @@ import {
   clearSessionPhrase,
   peekSessionPhrase,
   rememberSessionPhrase,
+  resetWalletCeremonyLock,
   useWalletPhrase,
 } from '@/hooks/useWalletPhrase';
 import { finishPasskeyReplace, postWalletBackupSeen, startPasskeyReplace } from '@/lib/api';
@@ -38,6 +39,7 @@ vi.mock('@/lib/prf-mnemonic', () => ({
 vi.mock('@/lib/webauthn-browser', () => ({
   creationOptionsFromJSON: vi.fn().mockReturnValue({ challenge: new ArrayBuffer(1) }),
   credentialToJSON: vi.fn().mockReturnValue({ id: 'cred' }),
+  base64UrlToBytes: vi.fn((value: string) => new TextEncoder().encode(value)),
 }));
 
 const push = vi.fn();
@@ -61,6 +63,7 @@ const account = {
   aboutMeHasPhoto: false,
   setup: null as 'wallet' | 'name' | null,
   missing: [] as ('wallet' | 'name' | 'username' | 'lightning-address' | 'rules')[],
+  passkeyCredentialId: 'cred-owner',
 };
 
 const mnemonic =
@@ -70,6 +73,7 @@ const originalHref = window.location.href;
 
 beforeEach(() => {
   clearSessionPhrase();
+  resetWalletCeremonyLock();
   push.mockReset();
   useAuthStore.setState({ session: 'tok', account });
   vi.mocked(startPasskeyReplace)
@@ -167,12 +171,23 @@ describe('useWalletPhrase', () => {
     expect(finishPasskeyReplace).not.toHaveBeenCalled();
   });
 
+  it('showPhrase errors when the account has no passkey credential id', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, passkeyCredentialId: null } });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('generic');
+    expect(result.current.status).toBe('error');
+  });
+
   it('showPhrase derives words from get()', async () => {
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.showPhrase();
     });
-    expect(obtainPrfFirstFromGet).toHaveBeenCalled();
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledWith(new TextEncoder().encode('cred-owner'));
     expect(result.current.words).toHaveLength(12);
   });
 
@@ -470,6 +485,35 @@ describe('useWalletPhrase', () => {
       await second;
     });
     expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start a second ceremony after remount while the first is in flight', async () => {
+    let release: (() => void) | undefined;
+    vi.mocked(startPasskeyReplace).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ challengeId: 'ch', options: { challenge: 'aa' } });
+        }),
+    );
+    const firstHook = renderHook(() => useWalletPhrase());
+    let first: Promise<void> | undefined;
+    await act(async () => {
+      first = firstHook.result.current.activate();
+    });
+    firstHook.unmount();
+    const secondHook = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await secondHook.result.current.activate();
+      await secondHook.result.current.showPhrase();
+      await secondHook.result.current.confirmSaved();
+    });
+    expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(postWalletBackupSeen).not.toHaveBeenCalled();
+    await act(async () => {
+      release?.();
+      await first;
+    });
   });
 
   it('does not keep a phrase when backup-seen runs after replace then the session ends', async () => {

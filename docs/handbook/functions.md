@@ -2469,9 +2469,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: obtainPrfFirstFromGet
 
-- **Purpose:** Discoverable get() with PRF eval.first to re-derive the phrase.
-- **Inputs:** None.
-- **Returns / side effects:** Bytes or `null`. Does not contact the api.
+- **Purpose:** get() with PRF eval.first bound to this account's current credential (`allowCredentials`) to re-derive the phrase.
+- **Inputs:** Current credential id bytes (WebAuthn `rawId`).
+- **Returns / side effects:** Bytes or `null`. Does not contact the api. Does not pick a leftover credential after replace.
 - **Used by:** `useWalletPhrase.showPhrase`.
 
 ## Function: classifyWebAuthnError

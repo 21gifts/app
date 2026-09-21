@@ -67,6 +67,11 @@ export const accountSchema = z.object({
    */
   walletBackupSeenAt: z.number().nullable().optional(),
   /**
+   * Current passkey credential id (base64url). Optional so current develop
+   * api bodies still parse; missing means reveal cannot bind allowCredentials.
+   */
+  passkeyCredentialId: z.string().min(1).nullable().optional(),
+  /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
    * is strictly `false`.

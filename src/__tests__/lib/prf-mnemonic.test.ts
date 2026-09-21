@@ -144,28 +144,31 @@ describe('obtainPrfFirstFromGet', () => {
     vi.stubGlobal('navigator', {
       credentials: { get: vi.fn().mockResolvedValue({ getClientExtensionResults: () => ({}) }) },
     });
-    expect(await obtainPrfFirstFromGet()).toBeNull();
+    expect(await obtainPrfFirstFromGet(new Uint8Array([1]))).toBeNull();
   });
 });
 
 describe('obtainPrfFirstFromGet', () => {
-  it('returns PRF bytes from get()', async () => {
+  const credentialId = new Uint8Array([9, 8]);
+
+  it('returns PRF bytes from get() bound to the current credential', async () => {
     const first = new Uint8Array(32).fill(2);
-    vi.stubGlobal('navigator', {
-      credentials: {
-        get: vi.fn().mockResolvedValue({
-          getClientExtensionResults: () => ({ prf: { results: { first } } }),
-        }),
-      },
+    const get = vi.fn().mockResolvedValue({
+      getClientExtensionResults: () => ({ prf: { results: { first } } }),
     });
-    expect(Array.from((await obtainPrfFirstFromGet())!)).toEqual(Array.from(first));
+    vi.stubGlobal('navigator', {
+      credentials: { get },
+    });
+    expect(Array.from((await obtainPrfFirstFromGet(credentialId))!)).toEqual(Array.from(first));
+    const arg = get.mock.calls[0]?.[0] as CredentialRequestOptions;
+    expect(arg.publicKey?.allowCredentials?.[0]?.id).toBe(credentialId);
   });
 
   it('returns null when get yields no assertion', async () => {
     vi.stubGlobal('navigator', {
       credentials: { get: vi.fn().mockResolvedValue(null) },
     });
-    expect(await obtainPrfFirstFromGet()).toBeNull();
+    expect(await obtainPrfFirstFromGet(credentialId)).toBeNull();
   });
 
   it('returns null when PRF first is empty', async () => {
@@ -176,7 +179,7 @@ describe('obtainPrfFirstFromGet', () => {
         }),
       },
     });
-    expect(await obtainPrfFirstFromGet()).toBeNull();
+    expect(await obtainPrfFirstFromGet(credentialId)).toBeNull();
   });
 });
 
