@@ -1134,7 +1134,7 @@ export function ForumLoader({
     setPayHost(null);
   };
 
-  const startPayPoll = (messageId: string, baselineSats: number): void => {
+  const startPayPoll = (messageId: string, baselineSats: number, switchToAll = false): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -1205,8 +1205,17 @@ export function ForumLoader({
             }
             payMessageIdRef.current = null;
             payWaitingRef.current = false;
-            setFeedMode('all');
-            refreshMessages();
+            if (switchToAll && feedModeRef.current !== 'all') {
+              replaceInFlightRef.current = true;
+              paginationGeneration.current += 1;
+              loadingMoreRef.current = false;
+              refreshGeneration.current += 1;
+              nextCursorRef.current = null;
+              setNextCursor(null);
+              setNewPostsAvailable(false);
+              feedModeRef.current = 'all';
+              setFeedMode('all');
+            }
             return;
           }
         } catch {
@@ -1410,7 +1419,7 @@ export function ForumLoader({
           amountSats: invoice.amountSats,
         });
         setPayHost('composer');
-        startPayPoll(target.messageId, target.sats);
+        startPayPoll(target.messageId, target.sats, true);
         pendingPostRef.current = null;
         setDraft('');
         setPhotoDrafts([]);
@@ -1820,18 +1829,18 @@ export function ForumLoader({
       if (generation !== payPollGeneration.current) {
         return;
       }
-      setPayMessageId(parentId);
+      setPayMessageId(target.messageId);
       setPayError(null);
       setPayInvoice({
-        messageId: parentId,
+        messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
-      setPayHost('card');
+      setPayHost('composer');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
-      startPayPoll(target.messageId, target.sats);
+      startPayPoll(target.messageId, target.sats, true);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
