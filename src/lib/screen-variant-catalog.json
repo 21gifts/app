@@ -306,6 +306,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:keyboard-viewport",
+    "label": "/welcome keyboard-viewport",
+    "visual": "state-welcome-keyboard-viewport",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-photo",
     "label": "/welcome composer-photo",
     "visual": "state-welcome-composer-photo",
