@@ -1104,7 +1104,7 @@ Basis owner. Grant section after the address form. Copy **You are not verified y
 
 ### Variant: funding-none
 
-Verified owner with `funding.status` **none**. Copy **You are not admitted to daily 21.gifts grant payouts.** Grace copy that daily gifts continue until 25 September 2026. Button **Apply for the 21 gifts grant**. Three conviction titles and an **About** link.
+Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and button **Apply for the 21 gifts grant**. No denial sentence and no conviction titles.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
 

@@ -11,35 +11,14 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Convictions titles plus an About link, used as apply conditions.
- *
- * @returns The conditions copy, three titles, and `/about` link.
- */
-function ConvictionsConditions(): ReactElement {
-  const { t } = useTranslations();
-  return (
-    <>
-      <p className="text-center text-sm text-app-muted">{t('funding.conditions')}</p>
-      <ul className="flex w-full flex-col gap-1">
-        <li className="text-center text-sm text-app-fg">{t('about.conv1Title')}</li>
-        <li className="text-center text-sm text-app-fg">{t('about.conv2Title')}</li>
-        <li className="text-center text-sm text-app-fg">{t('about.conv3Title')}</li>
-      </ul>
-      <Link href="/about" className="text-center text-sm text-app-fg underline underline-offset-2">
-        {t('nav.about')}
-      </Link>
-    </>
-  );
-}
-
-/**
  * Owner profile section for verification and the 21 gifts grant.
  *
  * Unverified (`basis`) members see that they are not verified and how in-person
  * verification works (a moderator who personally knows them and has met them
  * in the real world confirms them on the member page). No apply button.
  * Verified and above see funding status from `account.funding` (missing or
- * `null` is treated as `none`): not admitted + apply for `none`/`rejected`,
+ * `null` is treated as `none`): grace copy, About link, and Apply button for
+ * `none`/`rejected` (no denial sentence and no conviction titles),
  * open application, one-day trial, or admitted with a reviewed-by date.
  *
  * @returns The grant section, or `null` without a session or account.
@@ -122,9 +101,13 @@ export function FundingStatusCard(): ReactElement | null {
   } else {
     body = (
       <>
-        <p className="text-center text-sm text-app-muted">{t('funding.notAdmitted')}</p>
         <p className="text-center text-sm text-app-muted">{t('funding.grace')}</p>
-        <ConvictionsConditions />
+        <Link
+          href="/about"
+          className="text-center text-sm text-app-fg underline underline-offset-2"
+        >
+          {t('nav.about')}
+        </Link>
         {applyFailed ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('funding.applyError')}
