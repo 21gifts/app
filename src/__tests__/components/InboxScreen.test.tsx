@@ -1552,6 +1552,38 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
+  it('scrolls the AppShell scroller to the bottom when an invoice pay sheet opens', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps()} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            invoice: { pr: 'lnbc21n1test', amountSats: 21 },
+            payWaiting: true,
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
   it('sets AppShell scroller scrollTop to the bottom when scrollTo is missing', () => {
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
       configurable: true,
