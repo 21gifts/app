@@ -3,7 +3,7 @@
 import { Check, Link2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { IconButton } from '@/components/ui';
+import { IconButton, type IconButtonTone } from '@/components/ui';
 
 const RESET_MS = 1200;
 
@@ -35,17 +35,21 @@ function fallbackCopy(text: string): boolean {
  * Client copy-link control for a handbook heading or chapter. Copies the
  * absolute deep-link (`origin + pathname + #id`) and flashes a check icon.
  *
- * @param props - Target DOM id (without `#`) and human label for the aria name.
+ * @param props - Target DOM id (without `#`), human label for the aria name,
+ *   and optional `tone` (`'app'` | `'dark'`, default `'dark'`).
  * @returns A button next to the heading.
  */
 export function HandbookCopyLink({
   targetId,
   label,
+  tone = 'dark',
 }: {
   /** DOM id of the target (without `#`). */
   targetId: string;
   /** Interpolated into `handbook.copyLink` for aria-label and title. */
   label: string;
+  /** Icon shell. Default `'dark'` (marketing). Staff handbook passes `'app'`. */
+  tone?: IconButtonTone;
 }): ReactElement {
   const { t } = useTranslations();
   const [copied, setCopied] = useState(false);
@@ -108,14 +112,17 @@ export function HandbookCopyLink({
       type="button"
       size="sm"
       variant="ghost"
-      tone="dark"
+      tone={tone}
       onClick={handleClick}
       aria-label={ariaName}
       title={ariaName}
       data-copied={copied ? 'true' : undefined}
     >
       {copied ? (
-        <Check aria-hidden="true" className="h-4 w-4 text-accent" />
+        <Check
+          aria-hidden="true"
+          className={`h-4 w-4 ${tone === 'app' ? 'text-app-accent' : 'text-accent'}`}
+        />
       ) : (
         <Link2 aria-hidden="true" className="h-4 w-4" />
       )}

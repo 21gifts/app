@@ -68,6 +68,10 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
     'href',
     '/moderate/group',
   );
+  await expect(page.getByRole('link', { name: 'Handbook' })).toHaveAttribute(
+    'href',
+    '/moderate/handbook',
+  );
   await expect(page.getByText('Hidden by Ada')).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
@@ -180,6 +184,25 @@ test('Function: HiddenNotesScreen — basis visitors see the forbidden copy', as
   await page.goto('/moderate/hidden');
   await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('list', { name: 'Hidden notes' })).toHaveCount(0);
+});
+
+test('Function: ModerateHandbookPage — staff see the handbook chapters', async ({ page }) => {
+  await seedAdaSession(page, 'founder');
+  await page.goto('/moderate/handbook');
+  await expect(page.getByRole('heading', { name: 'Handbook' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '21.gifts login' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy link to 21.gifts login' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Verified' })).toBeVisible();
+  await expect(page.locator('#verified')).toBeVisible();
+});
+
+test('Function: ModerateHandbookScreen — basis visitors see the forbidden copy', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/moderate/handbook');
+  await expect(page.getByText('This page is for moderators.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '21.gifts login' })).toHaveCount(0);
 });
 
 test('Function: listHiddenMessages — staff list shows a hidden note', async ({ page }) => {

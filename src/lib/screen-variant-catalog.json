@@ -1134,6 +1134,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/handbook:default",
+    "label": "/moderate/handbook default",
+    "visual": "screen-moderate-handbook",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/handbook:forbidden",
+    "label": "/moderate/handbook forbidden",
+    "visual": "state-moderate-handbook-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/404:default",
     "label": "/404 default",
     "visual": "screen-404",
