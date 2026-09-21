@@ -916,7 +916,7 @@
 
 - **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, then `ForumLoader` `feed="shops"`.
 - **Inputs:** Catalog via `useTranslations`.
-- **Returns / side effects:** `Card maxWidth="xl"` wrapping the shops forum. No network of its own.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}` wrapping the shops forum. No network of its own.
 - **Used by:** `ShopsPage`.
 
 ## Function: isShopNote
