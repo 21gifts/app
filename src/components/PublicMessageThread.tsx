@@ -440,6 +440,15 @@ export function PublicMessageThread(props: {
             if (current.account !== null) {
               setAccount({ ...current.account, hasPosted: true });
             }
+            if (replyParentId !== null) {
+              setNote((prev) => {
+                /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
+                if (prev.id !== replyParentId) {
+                  return prev;
+                }
+                return { ...prev, replyCount: prev.replyCount + 1 };
+              });
+            }
             const threadId = expandedIdRef.current;
             /* v8 ignore next -- permalink auto-expand has replies loaded before a poll settles */
             const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
@@ -450,17 +459,7 @@ export function PublicMessageThread(props: {
               try {
                 const repliesNext = await fetchReplies(current.session, threadId);
                 if (expandGen.current === gen) {
-                  const nextList = withSeededHiddenReply(repliesNext, seedReply, root.id, threadId);
-                  setReplies(nextList);
-                  if (replyParentId !== null) {
-                    setNote((prev) => {
-                      /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
-                      if (prev.id !== replyParentId) {
-                        return prev;
-                      }
-                      return { ...prev, replyCount: prev.replyCount + 1 };
-                    });
-                  }
+                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
                 }
               } catch {
                 if (expandGen.current === gen) {

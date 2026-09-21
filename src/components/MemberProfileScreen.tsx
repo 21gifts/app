@@ -502,6 +502,27 @@ export function MemberProfileScreen({
             if (current.account !== null) {
               setAccount({ ...current.account, hasPosted: true });
             }
+            if (replyParentId !== null) {
+              setPosts((prev) => {
+                /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  /* v8 ignore next -- other listed notes keep their counts */
+                  row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                );
+              });
+              setActivityReplies((prev) => {
+                /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                );
+              });
+            }
             const threadId = expandedIdRef.current;
             const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
             if (threadId !== null && current.session !== null && !paidNestedReply) {
@@ -512,27 +533,6 @@ export function MemberProfileScreen({
                 const repliesNext = await fetchReplies(current.session, threadId);
                 if (expandGen.current === gen) {
                   setReplies(repliesNext);
-                  if (replyParentId !== null) {
-                    setPosts((prev) => {
-                      /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
-                      if (prev === null) {
-                        return prev;
-                      }
-                      return prev.map((row) =>
-                        /* v8 ignore next -- other listed notes keep their counts */
-                        row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
-                      );
-                    });
-                    setActivityReplies((prev) => {
-                      /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
-                      if (prev === null) {
-                        return prev;
-                      }
-                      return prev.map((row) =>
-                        row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
-                      );
-                    });
-                  }
                 }
               } catch {
                 if (expandGen.current === gen) {
