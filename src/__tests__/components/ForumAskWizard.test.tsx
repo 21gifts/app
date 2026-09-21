@@ -82,6 +82,7 @@ describe('ForumAskWizard', () => {
       />,
     );
     expect(screen.getByText('0%')).toBeTruthy();
+    expect(screen.getByText('Post')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });
@@ -89,6 +90,7 @@ describe('ForumAskWizard', () => {
   it('goes back from step 2', () => {
     const onStepChange = vi.fn();
     renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
+    expect(screen.queryByText('Back')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onStepChange).toHaveBeenCalledWith(1);
   });
