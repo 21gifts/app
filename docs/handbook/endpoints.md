@@ -417,7 +417,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /trust/proposals` (open moderator proposals for moderators). Lives under `/trust/proposals` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/proposals`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is not a moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
-- **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals`. `ModerateScreen` on `/moderate` does not call this GET. Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
+- **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals` and via `useUnreadCount` (signed-in Menu and `ModerateScreen` Open-proposals count). Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
 - **Auth:** Bearer session; the api requires a moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: POST /trust/verify
