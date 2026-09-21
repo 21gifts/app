@@ -187,7 +187,9 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.showPhrase();
     });
-    expect(obtainPrfFirstFromGet).toHaveBeenCalledWith(new TextEncoder().encode('cred-owner'));
+    expect(Array.from(vi.mocked(obtainPrfFirstFromGet).mock.calls[0]?.[0] ?? [])).toEqual(
+      Array.from(new TextEncoder().encode('cred-owner')),
+    );
     expect(result.current.words).toHaveLength(12);
   });
 

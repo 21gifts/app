@@ -161,7 +161,9 @@ describe('obtainPrfFirstFromGet', () => {
     });
     expect(Array.from((await obtainPrfFirstFromGet(credentialId))!)).toEqual(Array.from(first));
     const arg = get.mock.calls[0]?.[0] as CredentialRequestOptions;
-    expect(arg.publicKey?.allowCredentials?.[0]?.id).toBe(credentialId);
+    expect(Array.from(arg.publicKey?.allowCredentials?.[0]?.id as Uint8Array)).toEqual(
+      Array.from(credentialId),
+    );
   });
 
   it('returns null when get yields no assertion', async () => {
