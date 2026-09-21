@@ -446,10 +446,11 @@ export function ForumLoader({
           .sort()
           .join('\0');
 
-  const listedNotes = (rows: ForumMessage[] | null): ForumMessage[] | null => {
-    if (rows === null) return null;
-    return feed === 'shops' ? rows.filter((row) => isShopNote(row.text)) : rows;
-  };
+  const filterListed = (rows: ForumMessage[]): ForumMessage[] =>
+    feed === 'shops' ? rows.filter((row) => isShopNote(row.text)) : rows;
+
+  const listedNotes = (rows: ForumMessage[] | null): ForumMessage[] | null =>
+    rows === null ? null : filterListed(rows);
 
   /**
    * Polls `GET /messages` until every merged row is payable or attempts run out.
@@ -520,7 +521,7 @@ export function ForumLoader({
       const atTop = shellScrollTop(scroller) < 8;
       const visibleNext = next.messages.filter((message) => !deletedIds.current.has(message.id));
       const currentListed = listedNotes(messagesRef.current);
-      const fetchedListed = listedNotes(visibleNext) ?? visibleNext;
+      const fetchedListed = filterListed(visibleNext);
       if (!replace && !forceApply && !atTop && hasUnseenForumPosts(currentListed, fetchedListed)) {
         setNewPostsAvailable(true);
         return 'ok';
@@ -1925,7 +1926,7 @@ export function ForumLoader({
         unpaidNewCount={
           feedMode === 'unpaid' || messages === null
             ? 0
-            : unpaidNewCount(listedNotes(messages) ?? [], unpaidSeenAt)
+            : unpaidNewCount(filterListed(messages), unpaidSeenAt)
         }
         lawsVisible={feed === 'shops' ? false : lawsVisible}
         onDismissLaws={onDismissLaws}
