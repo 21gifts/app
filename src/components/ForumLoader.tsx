@@ -1029,25 +1029,17 @@ export function ForumLoader({
           const filtered = next.filter((row) => !deletedIds.current.has(row.id));
           setReplies(filtered);
           const hiddenForThread = hiddenReplyCounts.current.get(expandedId);
-          setMessages((prev) => {
-            /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
-            if (prev === null) {
-              return prev;
-            }
-            return prev.map((row) => {
-              if (row.id !== expandedId) {
-                return row;
+          if (hiddenForThread !== undefined && hiddenForThread > 0) {
+            setMessages((prev) => {
+              /* v8 ignore next 3 -- expanded fetchReplies only runs after the list has loaded */
+              if (prev === null) {
+                return prev;
               }
-              if (hiddenForThread !== undefined && hiddenForThread > 0) {
-                return { ...row, replyCount: filtered.length };
-              }
-              lastServerReplyCount.current.set(
-                expandedId,
-                Math.max(lastServerReplyCount.current.get(expandedId) ?? 0, filtered.length),
+              return prev.map((row) =>
+                row.id === expandedId ? { ...row, replyCount: filtered.length } : row,
               );
-              return { ...row, replyCount: Math.max(row.replyCount, filtered.length) };
             });
-          });
+          }
         }
       } catch {
         if (!cancelled) {
@@ -1142,7 +1134,12 @@ export function ForumLoader({
     setPayHost(null);
   };
 
-  const startPayPoll = (messageId: string, baselineSats: number, switchToAll = false): void => {
+  const startPayPoll = (
+    messageId: string,
+    baselineSats: number,
+    switchToAll = false,
+    replyParentId: string | null = null,
+  ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -1210,6 +1207,18 @@ export function ForumLoader({
             const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
             if (expanded !== null && !paidNestedReply) {
               setRepliesAttempt((n) => n + 1);
+            }
+            if (replyParentId !== null) {
+              setMessages((prev) => {
+                /* v8 ignore next 3 -- compose-pay reply poll starts from a listed parent */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  /* v8 ignore next -- other listed notes keep their counts */
+                  row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                );
+              });
             }
             payMessageIdRef.current = null;
             payWaitingRef.current = false;
@@ -1850,7 +1859,7 @@ export function ForumLoader({
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
-      startPayPoll(target.messageId, target.sats, true);
+      startPayPoll(target.messageId, target.sats, true, parentId);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
