@@ -24,6 +24,7 @@ import {
   type ReactElement,
 } from 'react';
 import { useAppShellScroller } from '@/components/AppShell';
+import { ForumAskWizard, type ForumAskStep } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
@@ -62,6 +63,11 @@ import {
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
+
+/** Top-level compose mode: messenger post or Ask wizard. */
+export type ForumComposeIntent = 'post' | 'ask';
+
+export type { ForumAskStep } from '@/components/ForumAskWizard';
 
 /** Client-side composer validation or request failure. */
 export type ForumFormError =
@@ -172,6 +178,16 @@ export interface ForumBoardProps {
   askDraft: string;
   /** Called when the Ask field changes. */
   onAskDraftChange: (value: string) => void;
+  /** Messenger vs Ask wizard. Default `post`. */
+  composeIntent?: ForumComposeIntent;
+  /** Called when the visitor picks Post or Ask. */
+  onComposeIntentChange?: (intent: ForumComposeIntent) => void;
+  /** Ask wizard step. Default 1. */
+  askStep?: ForumAskStep;
+  /** Called when the wizard step changes. */
+  onAskStepChange?: (step: ForumAskStep) => void;
+  /** Display name for the Ask preview card. */
+  authorName?: string;
   /** Called when the composer form is submitted. */
   onPost: () => void;
   /** Retry handler for a failed fetch. */
@@ -523,8 +539,8 @@ function fallbackCopy(text: string): boolean {
  * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
  * is not selected; omitted when `modeSelector` is false or `composerHidden`
  * is true), composer under the mode
- * filters above the newest-first list (new notes only, photo or video
- * attach, optional Ask field on a second row), newest-first list (social
+ * filters above the newest-first list (new notes only; Post/Ask pill;
+ * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
  * feed) or empty/loading/error, per-card expand for oldest-first replies +
  * reply composer (labeled Amount field; gift-only rows use `forum.giftReply`
  * + `formatBitcoin(sats, numberFormat)`, text-plus-gift shows the amount
@@ -546,7 +562,7 @@ function fallbackCopy(text: string): boolean {
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
  *
  * @param props - Messages payload plus loading/error/composer (including
- * `askDraft` / `onAskDraftChange`) /pay/mode/photo/video/laws/thread/permalink/truncate state.
+ * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -565,6 +581,11 @@ export function ForumBoard({
   onDraftChange,
   askDraft,
   onAskDraftChange,
+  composeIntent = 'post',
+  onComposeIntentChange,
+  askStep = 1,
+  onAskStepChange,
+  authorName = '',
   onPost,
   onRetry,
   formError,
@@ -1546,6 +1567,43 @@ export function ForumBoard({
       ) : null}
 
       {!composerHidden ? (
+        <SegmentedControl
+          value={composeIntent}
+          options={[
+            { value: 'post', label: t('forum.composePost') },
+            { value: 'ask', label: t('forum.composeAsk') },
+          ]}
+          onChange={(next) => {
+            onComposeIntentChange?.(next);
+          }}
+          ariaLabel={t('forum.composeIntentLabel')}
+          tone="neutral"
+          className="!grid grid-cols-2 !rounded-2xl"
+        />
+      ) : null}
+
+      {!composerHidden && composeIntent === 'ask' ? (
+        <ForumAskWizard
+          step={askStep}
+          onStepChange={(next) => {
+            onAskStepChange?.(next);
+          }}
+          askDraft={askDraft}
+          onAskDraftChange={onAskDraftChange}
+          draft={draft}
+          onDraftChange={onDraftChange}
+          posting={posting}
+          photoDrafts={photoDrafts}
+          videoDraft={videoDraft}
+          onPickFiles={onPickFiles}
+          onRemovePhoto={onRemovePhoto}
+          onClearPhoto={onClearPhoto}
+          authorName={authorName}
+          onPost={onPost}
+        />
+      ) : null}
+
+      {!composerHidden && composeIntent === 'post' ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <IconButton
@@ -1594,20 +1652,6 @@ export function ForumBoard({
               )}
             </IconButton>
           </div>
-          <Field
-            id="forum-ask-amount"
-            label={t('forum.askAmountLabel')}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            placeholder=""
-            value={askDraft}
-            disabled={posting}
-            onChange={(event) => onAskDraftChange(event.target.value)}
-            className="w-24"
-          />
           {videoDraft !== null ? (
             <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
               <video

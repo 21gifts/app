@@ -6,6 +6,8 @@ import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
 import {
   ForumBoard,
+  type ForumAskStep,
+  type ForumComposeIntent,
   type ForumFormError,
   type ForumReplyFormError,
   type ForumPayError,
@@ -35,7 +37,7 @@ import {
   unpaidNewCount,
   visibleForumMessages,
 } from '@/lib/forum-feed';
-import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
+import { parseForumAskAmount } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
@@ -347,6 +349,8 @@ export function ForumLoader({
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [askDraft, setAskDraft] = useState('');
+  const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
+  const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const photoDraftsRef = useRef(photoDrafts);
   photoDraftsRef.current = photoDrafts;
@@ -1360,6 +1364,8 @@ export function ForumLoader({
     }
     setDraft('');
     setAskDraft('');
+    setComposeIntent('post');
+    setAskStep(1);
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
@@ -1441,15 +1447,11 @@ export function ForumLoader({
       setFormError('tooLong');
       return;
     }
-    const askTrimmed = askDraft.trim();
     let goalSats: number | undefined;
-    if (askTrimmed !== '') {
-      if (!/^\d+$/.test(askTrimmed)) {
-        setFormError('ask');
-        return;
-      }
-      const parsed = Number.parseInt(askTrimmed, 10);
-      if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > FORUM_GOAL_SATS_MAX) {
+    if (composeIntent === 'ask') {
+      const parsed = parseForumAskAmount(askDraft);
+      /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
+      if (parsed === null) {
         setFormError('ask');
         return;
       }
@@ -1920,6 +1922,17 @@ export function ForumLoader({
           setAskDraft(value);
           setFormError(null);
         }}
+        composeIntent={composeIntent}
+        onComposeIntentChange={(intent) => {
+          setComposeIntent(intent);
+          if (intent === 'post') {
+            setAskStep(1);
+          }
+          setFormError(null);
+        }}
+        askStep={askStep}
+        onAskStepChange={setAskStep}
+        authorName={account?.name ?? ''}
         onPost={onPost}
         onRetry={() => {
           setAttempt((n) => n + 1);

@@ -240,6 +240,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-amount",
+    "label": "/welcome ask-amount",
+    "visual": "state-welcome-ask-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-photos",
+    "label": "/welcome ask-photos",
+    "visual": "state-welcome-ask-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-text",
+    "label": "/welcome ask-text",
+    "visual": "state-welcome-ask-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview",
+    "label": "/welcome ask-preview",
+    "visual": "state-welcome-ask-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:unpaid",
     "label": "/welcome unpaid",
     "visual": "state-welcome-unpaid",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { forumGoalPercent } from '@/lib/forum-goal';
+import { forumGoalPercent, parseForumAskAmount } from '@/lib/forum-goal';
 
 describe('forumGoalPercent', () => {
   it('returns 110 for 23100/21000', () => {
@@ -29,5 +29,18 @@ describe('forumGoalPercent', () => {
 
   it('is uncapped at 250 for 52500/21000', () => {
     expect(forumGoalPercent(52500, 21000)).toBe(250);
+  });
+});
+
+describe('parseForumAskAmount', () => {
+  it('parses 21000', () => {
+    expect(parseForumAskAmount('21000')).toBe(21000);
+  });
+
+  it('returns null for empty, non-digits, 0, and over the max', () => {
+    expect(parseForumAskAmount('')).toBeNull();
+    expect(parseForumAskAmount('abc')).toBeNull();
+    expect(parseForumAskAmount('0')).toBeNull();
+    expect(parseForumAskAmount('10000001')).toBeNull();
   });
 });

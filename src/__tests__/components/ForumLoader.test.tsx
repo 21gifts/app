@@ -350,7 +350,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
     });
@@ -363,12 +363,36 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
     fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
     });
+  });
+
+  it('returns to Send a post from the Ask pill', async () => {
+    fetchMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send a post' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your message')).toBeTruthy();
+    });
+    expect(screen.queryByText('How much?')).toBeNull();
   });
 
   it('omits goalSats when Ask is empty', async () => {
@@ -379,7 +403,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
     });
@@ -391,11 +415,14 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
     for (const value of ['abc', '0', '10000001']) {
       fireEvent.change(screen.getByLabelText('Ask'), { target: { value } });
-      fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number to ask for.');
+      expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
       expect(postMock).not.toHaveBeenCalled();
     }
   });
@@ -407,13 +434,21 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
     fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
     });
-    expect((screen.getByLabelText('Ask') as HTMLInputElement).value).toBe('');
+    expect(screen.getByRole('button', { name: 'Send a post' })).toBeTruthy();
+    expect(screen.queryByLabelText('Ask')).toBeNull();
   });
 
   it('shows empty copy when fetch resolves to an empty list', async () => {
@@ -1091,12 +1126,12 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     expect(postMock).not.toHaveBeenCalled();
 
@@ -1114,7 +1149,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: `${'a'.repeat(501)}` },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -1148,7 +1183,7 @@ describe('ForumLoader', () => {
       expect(prepareMock).not.toHaveBeenCalled();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalledWith('sess', {
         text: 'clip',
@@ -1182,14 +1217,21 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalledWith(file);
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
-    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalledWith('sess', {
         text: 'clip',
@@ -1435,7 +1477,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
     const revoke = vi.mocked(URL.revokeObjectURL);
     revoke.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalled();
       expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video');
@@ -1704,7 +1746,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(screen.queryByAltText('Selected photo')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(postMock).not.toHaveBeenCalled();
   });
 
@@ -2156,7 +2198,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: '',
@@ -2194,7 +2236,7 @@ describe('ForumLoader', () => {
       'true',
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Unpaid note' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Unpaid note')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
@@ -2232,7 +2274,7 @@ describe('ForumLoader', () => {
       expect(unpaid.getAttribute('aria-pressed')).toBe('true');
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Unpaid note' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Unpaid note')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
@@ -2291,7 +2333,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'Hello',
@@ -2343,7 +2385,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
     });
@@ -2379,7 +2421,7 @@ describe('ForumLoader', () => {
       expect(prepareVideoMock).toHaveBeenCalled();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video-first');
     });
@@ -2395,7 +2437,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
     const revoke = vi.mocked(URL.revokeObjectURL);
     revoke.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalledTimes(2);
     });
@@ -2433,7 +2475,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
     const revoke = vi.mocked(URL.revokeObjectURL);
     revoke.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalled();
       expect(screen.queryByLabelText('Remove video')).toBeNull();
@@ -2463,7 +2505,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Loading…')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Early' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Early')).toBeTruthy();
     });
@@ -2513,7 +2555,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Loading…')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Early' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Early')).toBeTruthy();
     });
@@ -2556,7 +2598,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Loading…')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Early' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Early')).toBeTruthy();
     });
@@ -2597,7 +2639,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: 'Hello from Ada' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
     });
@@ -2627,7 +2669,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
 
     await waitFor(() => {
       expect(screen.getByText('Hello')).toBeTruthy();
@@ -2667,7 +2709,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'New note' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
 
     await waitFor(() => {
       expect(screen.getByText('New note')).toBeTruthy();
@@ -2739,7 +2781,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
@@ -2754,7 +2796,7 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
@@ -2775,9 +2817,9 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
 
-    const button = screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    const button = screen.getByRole('button', { name: 'Post', exact: true }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.querySelector('.animate-spin')).toBeTruthy();
 
@@ -2799,7 +2841,7 @@ describe('ForumLoader', () => {
     });
 
     await waitFor(() => {
-      expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      expect((screen.getByRole('button', { name: 'Post', exact: true }) as HTMLButtonElement).disabled).toBe(
         false,
       );
     });
@@ -3628,7 +3670,7 @@ describe('ForumLoader', () => {
     expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -3677,7 +3719,7 @@ describe('ForumLoader', () => {
     expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -3764,7 +3806,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -6040,7 +6082,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(screen.getByRole('dialog', { name: 'Add your name' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMock).not.toHaveBeenCalled();
@@ -6064,7 +6106,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMock).not.toHaveBeenCalled();
@@ -6078,7 +6120,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
   });
 
@@ -6090,7 +6132,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(
       await screen.findByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
     ).toBeTruthy();
@@ -6121,7 +6163,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
       target: { value: 'alice@walletofsatoshi.com' },
     });
@@ -6150,7 +6192,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
@@ -6183,7 +6225,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(screen.getByRole('dialog', { name: 'Agree to the living room rules' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
@@ -6211,7 +6253,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
@@ -6370,7 +6412,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
     expect(
       await screen.findByRole('dialog', { name: 'Agree to the living room rules' }),
     ).toBeTruthy();

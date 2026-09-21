@@ -878,6 +878,22 @@
 - **Returns / side effects:** React element. Local scroll index only. No network. Blob `<img>` URLs from the parent.
 - **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
 
+## Function: ForumAskWizard
+
+Four-step Ask composer on `/welcome`: amount, photos, text, then a preview card with `ForumGoalBar` at 0 collected versus the ask. The labeled **Post** on step 4 is the only Ask submit.
+
+- **Purpose:** Walk **Ask for money** so a top-level note always has a whole-sat `goalSats` before it is posted.
+- **Inputs:** `step` / `onStepChange`, `askDraft` / `onAskDraftChange`, `draft` / `onDraftChange`, `posting`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `authorName`, `onPost`.
+- **Returns / side effects:** React tree. Continue on step 1 stays disabled until `parseForumAskAmount` returns a number. Skip and Continue on step 2 both go to step 3. Step 4 **Post** calls `onPost`. No network.
+- **Used by:** `ForumBoard` when `composeIntent` is `ask`.
+
+## Function: parseForumAskAmount
+
+- **Purpose:** Parse the Ask amount draft into a whole-sat goal.
+- **Inputs:** `raw` string.
+- **Returns / side effects:** Integer 1..10_000_000, or `null` when empty, non-digits, 0, or above the max.
+- **Used by:** `ForumAskWizard`, `ForumLoader`.
+
 ## Function: ForumGoalBar
 
 SVG progress bar for a top-level forum note's collected sats versus an optional whole-sat ask. One SVG: orange fill in user units 0–100; overflow past 100% continues in green (`app-success`) from `x=100` at most another 100 units (visual max 200%). The `{percent}%` label is a sibling, so it stays readable, and is uncapped (110, 250, …). Renders nothing when `goalSats` is missing or `<= 0`. Lengths use SVG `width` / `x` / `viewBox` attributes, not React `style`.

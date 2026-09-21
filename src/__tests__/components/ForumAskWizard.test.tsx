@@ -1,0 +1,213 @@
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ForumAskWizard } from '@/components/ForumAskWizard';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+afterEach(cleanup);
+
+const idle = {
+  askDraft: '',
+  onAskDraftChange: (): void => undefined,
+  draft: '',
+  onDraftChange: (): void => undefined,
+  posting: false,
+  photoDrafts: [] as { previewUrl: string; data: string; contentType: 'image/jpeg' }[],
+  videoDraft: null,
+  onPickFiles: (): void => undefined,
+  onRemovePhoto: (): void => undefined,
+  onClearPhoto: (): void => undefined,
+  authorName: 'Ada',
+  onPost: (): void => undefined,
+};
+
+describe('ForumAskWizard', () => {
+  it('keeps Continue disabled until a whole-sat ask is entered', () => {
+    const onStepChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard step={1} onStepChange={onStepChange} {...idle} />,
+    );
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onStepChange).not.toHaveBeenCalled();
+    rerender(<ForumAskWizard step={1} onStepChange={onStepChange} {...idle} askDraft="21000" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onStepChange).toHaveBeenCalledWith(2);
+  });
+
+  it('edits the amount and the message', () => {
+    const onAskDraftChange = vi.fn();
+    const onDraftChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        onAskDraftChange={onAskDraftChange}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    expect(onAskDraftChange).toHaveBeenCalledWith('21');
+    rerender(
+      <ForumAskWizard
+        step={3}
+        onStepChange={() => undefined}
+        {...idle}
+        onDraftChange={onDraftChange}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    expect(onDraftChange).toHaveBeenCalledWith('Hi');
+  });
+
+  it('skips photos to step 3', () => {
+    const onStepChange = vi.fn();
+    renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    expect(onStepChange).toHaveBeenCalledWith(3);
+  });
+
+  it('posts only from the preview', () => {
+    const onPost = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="21000"
+        draft="Hello"
+        onPost={onPost}
+      />,
+    );
+    expect(screen.getByText('0%')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(onPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes back from step 2', () => {
+    const onStepChange = vi.fn();
+    renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onStepChange).toHaveBeenCalledWith(1);
+  });
+
+  it('continues from photos and text', () => {
+    const onStepChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onStepChange).toHaveBeenCalledWith(3);
+    rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onStepChange).toHaveBeenCalledWith(4);
+  });
+
+  it('picks files and previews one photo, many photos, and video', () => {
+    const onPickFiles = vi.fn();
+    const onRemovePhoto = vi.fn();
+    const onClearPhoto = vi.fn();
+    const file = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
+    const photo = { previewUrl: 'blob:one', data: 'abc', contentType: 'image/jpeg' as const };
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={2}
+        onStepChange={() => undefined}
+        {...idle}
+        onPickFiles={onPickFiles}
+        onRemovePhoto={onRemovePhoto}
+        onClearPhoto={onClearPhoto}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a photo or video' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(onPickFiles).toHaveBeenCalledTimes(1);
+    fireEvent.change(input, { target: { files: [] } });
+    rerender(
+      <ForumAskWizard
+        step={2}
+        onStepChange={() => undefined}
+        {...idle}
+        photoDrafts={[photo]}
+        onRemovePhoto={onRemovePhoto}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(onRemovePhoto).toHaveBeenCalledWith(0);
+    rerender(
+      <ForumAskWizard
+        step={2}
+        onStepChange={() => undefined}
+        {...idle}
+        photoDrafts={[photo, { ...photo, previewUrl: 'blob:two' }]}
+        onRemovePhoto={onRemovePhoto}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[1]!);
+    expect(onRemovePhoto).toHaveBeenCalledWith(1);
+    rerender(
+      <ForumAskWizard
+        step={2}
+        onStepChange={() => undefined}
+        {...idle}
+        videoDraft={{
+          file: new File([new Uint8Array([1])], 'c.mp4', { type: 'video/mp4' }),
+          poster: new Blob(),
+          previewUrl: 'blob:video',
+        }}
+        onClearPhoto={onClearPhoto}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove video' }));
+    expect(onClearPhoto).toHaveBeenCalled();
+  });
+
+  it('previews photos on step 4', () => {
+    const photo = { previewUrl: 'blob:one', data: 'abc', contentType: 'image/jpeg' as const };
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="21000"
+        photoDrafts={[photo]}
+      />,
+    );
+    expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="21000"
+        photoDrafts={[photo, { ...photo, previewUrl: 'blob:two' }]}
+      />,
+    );
+    expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="21000"
+        videoDraft={{
+          file: new File([new Uint8Array([1])], 'c.mp4', { type: 'video/mp4' }),
+          poster: new Blob(),
+          previewUrl: 'blob:video',
+        }}
+        posting
+      />,
+    );
+    expect(document.querySelector('video')).toBeTruthy();
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft=""
+        draft="Hello"
+      />,
+    );
+    expect(screen.queryByText('0%')).toBeNull();
+  });
+});

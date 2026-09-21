@@ -422,6 +422,30 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. Full or
 
 ![21.gifts welcome goal 110](images/welcome-goal-110.png)
 
+### Variant: ask-amount
+
+**Ask for money** selected. Step 1 of 4: **How much?** with the ₿ amount field. Continue stays disabled until a whole-sat ask is entered. No Post submit on this step.
+
+![21.gifts welcome ask amount](images/welcome-ask-amount.png)
+
+### Variant: ask-photos
+
+Ask step 2 of 4: **Add photos** with attach, Skip, and Continue.
+
+![21.gifts welcome ask photos](images/welcome-ask-photos.png)
+
+### Variant: ask-text
+
+Ask step 3 of 4: **Write a message** textarea and Continue.
+
+![21.gifts welcome ask text](images/welcome-ask-text.png)
+
+### Variant: ask-preview
+
+Ask step 4 of 4: preview card with `ForumGoalBar` at 0 collected versus the ask, labeled **Post**. This is the only Ask submit.
+
+![21.gifts welcome ask preview](images/welcome-ask-preview.png)
+
 ### Variant: unpaid
 
 Click **No gifts yet** (German: **Noch ohne Geschenk**) — only loaded notes with exactly zero sats appear. Bob is visible; paid Ada and Carol are hidden. This includes notes without a receiving wallet. The four filters use a two-column grid for readable labels on mobile. Active remains the default.
@@ -478,7 +502,7 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: error-ask
 
-Type a non-empty note, put a non-numeric Ask value, click **Post** → **Enter a whole number to ask for.**
+**Ask for money**, type a non-numeric amount: **Continue** stays disabled.
 
 ![21.gifts welcome ask error](images/welcome-error-ask.png)
 
