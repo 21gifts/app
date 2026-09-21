@@ -43,7 +43,7 @@ test('welcome forum shows the two laws and links to rules and contact', async ({
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -115,7 +115,7 @@ test('welcome forum dismiss hides the living-room laws hint', async ({ page }) =
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -161,7 +161,7 @@ test('welcome forum hides laws when already dismissed on the account', async ({ 
       }),
     });
   });
-  await page.route(/\/messages$/, async (route) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
