@@ -379,7 +379,11 @@ export function PublicMessageThread(props: {
     })();
   }, [root.id, session]);
 
-  const startPayPoll = (messageId: string, baselineSats: number): void => {
+  const startPayPoll = (
+    messageId: string,
+    baselineSats: number,
+    replyParentId: string | null = null,
+  ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -448,13 +452,15 @@ export function PublicMessageThread(props: {
                 if (expandGen.current === gen) {
                   const nextList = withSeededHiddenReply(repliesNext, seedReply, root.id, threadId);
                   setReplies(nextList);
-                  setNote((prev) => {
-                    /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
-                    if (prev.id !== threadId) {
-                      return prev;
-                    }
-                    return { ...prev, replyCount: prev.replyCount + 1 };
-                  });
+                  if (replyParentId !== null) {
+                    setNote((prev) => {
+                      /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
+                      if (prev.id !== replyParentId) {
+                        return prev;
+                      }
+                      return { ...prev, replyCount: prev.replyCount + 1 };
+                    });
+                  }
                 }
               } catch {
                 if (expandGen.current === gen) {
@@ -596,7 +602,7 @@ export function PublicMessageThread(props: {
       setReplyAmountDraft('');
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(target.messageId, target.sats);
+      startPayPoll(target.messageId, target.sats, parentId);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
