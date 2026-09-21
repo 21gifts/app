@@ -1164,20 +1164,20 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes or proposals. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s official 21.gifts payouts as a percent of 100; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Moderators also see **Moderators chat group** `ButtonLink` → `/moderate/group`. Hub **Moderators chat group** ButtonLink shows a count when unread (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when the group is unread (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s official 21.gifts payouts as a percent of 100; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, and a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`. Moderators also see **Moderators chat group** `ButtonLink` → `/moderate/group`. Staff also see **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when unread (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when the group is unread (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal widget.
 
 ### Variant: default
 
-Staff (moderator) hub with heading **Moderation**, collapsed payout-goal widget, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, and **Moderators chat group** control → `/moderate/group`.
+Staff (moderator) hub with heading **Moderation**, collapsed payout-goal widget, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, and **Handbook** control → `/moderate/handbook`.
 
 ![21.gifts moderation](images/moderate.png)
 
 ### Variant: group-unread
 
-Staff hub with an unread Moderators chat group. Collapsed payout-goal widget unchanged. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Hidden notes and Open proposals unchanged.
+Staff hub with an unread Moderators chat group. Collapsed payout-goal widget unchanged. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Hidden notes, Open proposals, and Handbook unchanged.
 
 ![21.gifts moderation group unread](images/moderate-group-unread.png)
 
@@ -1351,6 +1351,26 @@ Moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
 Moderator fetch failed. Button **Try again**.
 
 ![21.gifts moderator group error](images/moderate-group-error.png)
+
+## Screen: /moderate/handbook
+
+- **URL:** `/moderate/handbook` — signed-in staff handbook of how 21.gifts works. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Handbook**. Staff (moderator) see TOC **Chapters** and three chapters **21.gifts login** (`#login`), **Verified** (`#verified`), and **Official funding program** (`#funding`). Each chapter heading is a permalink with a copy-link control (`handbook.copyLink`). Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no chapters. No fetch.
+- **Actions:** In-card icon back to the hub `/moderate`. Open a chapter permalink (`#login`, `#verified`, `#funding`) or copy its absolute URL. Back to the forum. Open **Menu**. No fetch.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModerateHandbookPage`, `ModerateHandbookScreen`, `SignedInChrome`, `OnboardingGate`, `HandbookCopyLink`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Chapters only when `roleAtLeast(role, 'moderator')`; others see forbidden copy.
+
+### Variant: default
+
+Staff (moderator) handbook with heading **Handbook**, TOC **Chapters**, and chapters **21.gifts login**, **Verified**, **Official funding program**, each with a copy-link control.
+
+![21.gifts moderation handbook](images/moderate-handbook.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** No chapters.
+
+![21.gifts moderation handbook forbidden](images/moderate-handbook-forbidden.png)
 
 ## Screen: /messages/[id]
 

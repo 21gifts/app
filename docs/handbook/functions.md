@@ -45,10 +45,10 @@
 ## Function: HandbookCopyLink
 
 - **Purpose:** Client button beside a handbook heading, chapter, screen heading, or figure-card permalink. Copies `origin + pathname + #id` to the clipboard, sets `location.hash`, and flashes a check icon for 1.2s (textarea `execCommand` fallback).
-- **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`).
+- **Inputs:** `targetId` (DOM id without `#`) and `label` (interpolated into `handbook.copyLink` via `useTranslations` as `{ label }`). Optional `tone` (`'app' | 'dark'`, default `'dark'`). Copied Check uses `text-accent` when dark and `text-app-fg` when `app`.
 - **Visible UI:** Idle `Link2` icon; copied `Check` icon. No visible "Copy link" or "Copied" text (`title` and `aria-label` keep the accessible name).
 - **Returns / side effects:** A `<button type="button">`. Clipboard write; hash update. No network.
-- **Used by:** `HandbookPage` (page title), `HandbookMarkdown` (every heading), `HandbookFigure`, and `HandbookSectionHeading`.
+- **Used by:** `HandbookPage` (page title), `HandbookMarkdown` (every heading), `HandbookFigure`, `HandbookSectionHeading`, and `ModerateHandbookScreen`.
 
 ## Function: HandbookMarkdown
 
@@ -2449,10 +2449,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`, and a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread itself; unread for the Moderators chat group control comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see the daily payout-goal widget (yesterday versus 100 official 21.gifts payouts; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals`, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, and a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, or the group thread itself; unread for the Moderators chat group control comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for the Moderators chat group count (network for that count; does not write the home-screen badge).
 - **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, or the group thread itself.
 - **Used by:** `ModeratePage`.
+
+## Function: ModerateHandbookPage
+
+- **Purpose:** Next.js page for `/moderate/handbook` (signed-in staff handbook). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateHandbookScreen`. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The handbook screen inside fill AppShell.
+- **Used by:** Route `/moderate/handbook`.
+
+## Function: ModerateHandbookScreen
+
+- **Purpose:** Client staff handbook of how 21.gifts works. Staff (`roleAtLeast(..., 'moderator')`) see TOC **Chapters** and three chapters **21.gifts login** (`#login`), **Verified** (`#verified`), **Official funding program** (`#funding`), each with a permalink and `HandbookCopyLink` `tone="app"`. Non-staff signed-in visitors see the heading plus forbidden copy and no chapters. Renders `null` without a session. In-card icon back to `/moderate`. No fetch. On mount and hashchange, scrolls the matching chapter into view when the hash is `#login`, `#verified`, or `#funding`.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. No network.
+- **Used by:** `ModerateHandbookPage`.
 
 ## Function: HiddenNotesPage
 

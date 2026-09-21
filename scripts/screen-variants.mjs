@@ -1395,6 +1395,20 @@ export const SCREEN_VARIANTS = [
     needle: 'Try again',
   },
   {
+    route: '/moderate/handbook',
+    id: 'default',
+    image: 'moderate-handbook.png',
+    visual: 'screen-moderate-handbook',
+    needle: "getByRole('heading', { name: 'Handbook' })",
+  },
+  {
+    route: '/moderate/handbook',
+    id: 'forbidden',
+    image: 'moderate-handbook-forbidden.png',
+    visual: 'state-moderate-handbook-forbidden',
+    needle: 'This page is for moderators.',
+  },
+  {
     route: '/404',
     id: 'default',
     image: 'not-found.png',

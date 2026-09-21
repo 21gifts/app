@@ -133,7 +133,8 @@ app/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
 │   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
-│   │   │   └── group/page.tsx        # GET /moderate/group — closed staff room
+│   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
+│   │   │   └── handbook/page.tsx     # GET /moderate/handbook — staff handbook
 │   │   ├── trust-chain/
 │   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
 │   │   │   └── trust-chain-loader.tsx
@@ -168,10 +169,11 @@ app/
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
 │   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
+│   │   ├── ModerateHandbookScreen.tsx # Signed-in /moderate/handbook staff chapters
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
 │   │   ├── LocationForm.tsx     # Profile free-text location row (pencil / clear)
 │   │   ├── PushToggle.tsx       # All/Active/Mentions pill plus optional This-device On/Off pill

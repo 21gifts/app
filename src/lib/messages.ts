@@ -606,6 +606,28 @@ const en = {
   'moderate.goal.retry': 'Try again',
   'moderate.goal.widgetLabel': 'Daily payout goal',
 
+  'moderate.handbook.heading': 'Handbook',
+  'moderate.handbook.tocLabel': 'Chapters',
+  'moderate.handbook.login.title': '21.gifts login',
+  'moderate.handbook.login.body':
+    'Anyone may register and take part. Anyone may open an account and post. No permission is required.',
+  'moderate.handbook.verified.title': 'Verified',
+  'moderate.handbook.verified.body1':
+    'Moderators may verify accounts. Verification confirms that this is a real person who has registered only once.',
+  'moderate.handbook.verified.body2':
+    'The moderator must meet the person in person. Verified always means the moderator has met this person in person and confirms they are a real human.',
+  'moderate.handbook.verified.body3':
+    'It does not mean they are a good person, and it does not mean they are entitled to receive money. It only means this person really exists and has a 21.gifts account.',
+  'moderate.handbook.funding.title': 'Official funding program',
+  'moderate.handbook.funding.body':
+    'Verified people can be proposed in the Moderators chat group to take part in the official 21.gifts funding program.',
+  'moderate.handbook.funding.rulesLead': 'The rules are simple.',
+  'moderate.handbook.funding.rulePrinciples': 'Follow the 3 principles of 21.gifts',
+  'moderate.handbook.funding.ruleDaily': 'Daily Bitcoin payments are mandatory',
+  'moderate.handbook.funding.ruleRecord': 'Please keep a record of the daily payments',
+  'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
+  'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
+
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
     'Who met whom in real life, and who appointed the moderators. Click a person to load everyone linked to them. Drag a person to move them.',
@@ -1241,6 +1263,28 @@ const de = {
   'moderate.goal.retry': 'Erneut versuchen',
   'moderate.goal.widgetLabel': 'Tägliches Auszahlungsziel',
 
+  'moderate.handbook.heading': 'Handbuch',
+  'moderate.handbook.tocLabel': 'Kapitel',
+  'moderate.handbook.login.title': '21.gifts-Anmeldung',
+  'moderate.handbook.login.body':
+    'Jeder darf sich registrieren und mitmachen. Jeder darf ein Konto eröffnen und etwas posten. Keine Erlaubnis erforderlich.',
+  'moderate.handbook.verified.title': 'Verifiziert',
+  'moderate.handbook.verified.body1':
+    'Moderatorinnen und Moderatoren dürfen Konten verifizieren. Damit bestätigt eine Moderatorin oder ein Moderator, dass hier ein echter Mensch ist, der sich nur einmal registriert hat.',
+  'moderate.handbook.verified.body2':
+    'Die Moderatorin oder der Moderator muss den Menschen persönlich treffen. Verifiziert bedeutet immer, dass man den Menschen persönlich getroffen hat und bestätigt, dass es ein echter Mensch ist.',
+  'moderate.handbook.verified.body3':
+    'Es bedeutet nicht, dass es ein guter Mensch ist oder dass die Person berechtigt sein soll, Geld zu erhalten. Es bedeutet nur, dass es diesen Menschen wirklich gibt und dass er ein Konto bei 21.gifts hat.',
+  'moderate.handbook.funding.title': 'Offizielles Förderprogramm',
+  'moderate.handbook.funding.body':
+    'Verifizierte Personen können in der Moderatoren Chatgruppe vorgeschlagen werden, um am offiziellen 21.gifts-Förderprogramm teilzunehmen.',
+  'moderate.handbook.funding.rulesLead': 'Die Regeln sind einfach.',
+  'moderate.handbook.funding.rulePrinciples': 'Die 3 Prinzipien von 21.gifts befolgen',
+  'moderate.handbook.funding.ruleDaily': 'Tägliche Bitcoin-Zahlungen sind Pflicht',
+  'moderate.handbook.funding.ruleRecord': 'Bitte führt Buch über die täglichen Zahlungen',
+  'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
+  'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
+
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
     'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat. Klicken Sie auf eine Person, um alle mit ihr verbundenen zu laden. Ziehen Sie eine Person, um sie zu verschieben.',
@@ -1857,6 +1901,28 @@ const es = {
   'moderate.goal.error': 'No se pudieron cargar los pagos. Inténtalo de nuevo.',
   'moderate.goal.retry': 'Intentar de nuevo',
   'moderate.goal.widgetLabel': 'Meta diaria de pagos',
+
+  'moderate.handbook.heading': 'Manual',
+  'moderate.handbook.tocLabel': 'Capítulos',
+  'moderate.handbook.login.title': 'Inicio de sesión en 21.gifts',
+  'moderate.handbook.login.body':
+    'Cualquiera puede registrarse y participar. Cualquiera puede abrir una cuenta y publicar. No se necesita permiso.',
+  'moderate.handbook.verified.title': 'Verificado',
+  'moderate.handbook.verified.body1':
+    'Las personas moderadoras pueden verificar cuentas. La verificación confirma que aquí hay una persona real que se ha registrado solo una vez.',
+  'moderate.handbook.verified.body2':
+    'La persona moderadora debe reunirse con esa persona en persona. Verificado significa siempre que se ha conocido a esa persona en persona y se confirma que es un ser humano real.',
+  'moderate.handbook.verified.body3':
+    'No significa que sea una buena persona ni que tenga derecho a recibir dinero. Solo significa que esa persona existe de verdad y tiene una cuenta en 21.gifts.',
+  'moderate.handbook.funding.title': 'Programa oficial de apoyo',
+  'moderate.handbook.funding.body':
+    'Las personas verificadas pueden proponerse en el chat de moderadores para participar en el programa oficial de apoyo de 21.gifts.',
+  'moderate.handbook.funding.rulesLead': 'Las reglas son simples.',
+  'moderate.handbook.funding.rulePrinciples': 'Seguir los 3 principios de 21.gifts',
+  'moderate.handbook.funding.ruleDaily': 'Los pagos diarios en Bitcoin son obligatorios',
+  'moderate.handbook.funding.ruleRecord': 'Por favor, lleven un registro de los pagos diarios',
+  'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
+  'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2483,6 +2549,28 @@ const fil = {
   'moderate.goal.error': 'Hindi ma-load ang mga bayad. Subukan ulit.',
   'moderate.goal.retry': 'Subukan ulit',
   'moderate.goal.widgetLabel': 'Araw-araw na layunin sa bayad',
+
+  'moderate.handbook.heading': 'Handbook',
+  'moderate.handbook.tocLabel': 'Mga kabanata',
+  'moderate.handbook.login.title': 'Pag-login sa 21.gifts',
+  'moderate.handbook.login.body':
+    'Puwedeng magrehistro at sumali ang kahit sino. Puwedeng magbukas ng account at mag-post ang kahit sino. Hindi kailangan ng permiso.',
+  'moderate.handbook.verified.title': 'Verified',
+  'moderate.handbook.verified.body1':
+    'Puwede at kaya ng mga moderator na i-verify ang mga account. Kinukumpirma ng verification na totoo ang taong ito at isang beses lang siya nagrehistro.',
+  'moderate.handbook.verified.body2':
+    'Dapat makita ng moderator ang tao nang personal. Ang Verified ay palaging nangangahulugang nakilala ang tao nang personal at kinumpirma na siya ay totoong tao.',
+  'moderate.handbook.verified.body3':
+    'Hindi ito nangangahulugang mabuting tao siya, at hindi ito nangangahulugang karapat-dapat siyang tumanggap ng pera. Ibig sabihin lang nito na totoong umiiral ang taong ito at may account siya sa 21.gifts.',
+  'moderate.handbook.funding.title': 'Opisyal na programa ng tulong',
+  'moderate.handbook.funding.body':
+    'Puwedeng i-propose sa chat group ng mga moderator ang mga verified na tao para sumali sa opisyal na programa ng tulong ng 21.gifts.',
+  'moderate.handbook.funding.rulesLead': 'Simple lang ang mga patakaran.',
+  'moderate.handbook.funding.rulePrinciples': 'Sundin ang 3 prinsipyo ng 21.gifts',
+  'moderate.handbook.funding.ruleDaily': 'Mandatory ang araw-araw na bayad sa Bitcoin',
+  'moderate.handbook.funding.ruleRecord': 'Mangyaring magtago ng tala ng araw-araw na bayad',
+  'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
+  'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

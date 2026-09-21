@@ -148,6 +148,7 @@ describe('ModerateScreen', () => {
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Moderation tools' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -159,6 +160,7 @@ describe('ModerateScreen', () => {
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -167,6 +169,7 @@ describe('ModerateScreen', () => {
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -192,6 +195,9 @@ describe('ModerateScreen', () => {
       );
       expect(screen.getByRole('link', { name: 'Moderators chat group' }).getAttribute('href')).toBe(
         '/moderate/group',
+      );
+      expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe(
+        '/moderate/handbook',
       );
       await waitFor(() => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
