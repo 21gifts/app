@@ -729,6 +729,64 @@ export function ForumLoader({
     };
   }, [feedMode, nearEndElement, nextCursor, session]);
 
+  useEffect(() => {
+    if (feed !== 'shops' || session === null || nextCursor === null || messages === null) {
+      return;
+    }
+    if (filterListed(messages).length > 0 || loadingMoreRef.current) {
+      return;
+    }
+    let cancelled = false;
+    const activeSession = session;
+    const activeMode = feedMode;
+    const activeCursor = nextCursor;
+    const generation = paginationGeneration.current;
+    loadingMoreRef.current = true;
+    void (async () => {
+      try {
+        const page = await fetchMessages(activeSession, {
+          mode: activeMode,
+          limit: FORUM_PAGE_LIMIT,
+          cursor: activeCursor,
+        });
+        if (
+          cancelled ||
+          generation !== paginationGeneration.current ||
+          feedModeRef.current !== activeMode
+        ) {
+          return;
+        }
+        const appended = page.messages.filter((message) => !deletedIds.current.has(message.id));
+        setMessages((prev) =>
+          appendMessages(
+            prev,
+            appended,
+            hiddenReplyCounts.current,
+            lastServerReplyCount.current,
+          ).filter((message) => !deletedIds.current.has(message.id)),
+        );
+        nextCursorRef.current = page.nextCursor;
+        setNextCursor(page.nextCursor);
+        if (appended.some((message) => message.payable === false)) {
+          startPayablePoll(activeSession);
+        }
+      } catch {
+        if (!cancelled && generation === paginationGeneration.current) {
+          nextCursorRef.current = null;
+          setNextCursor(null);
+        }
+      } finally {
+        if (!cancelled && generation === paginationGeneration.current) {
+          loadingMoreRef.current = false;
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+      loadingMoreRef.current = false;
+    };
+  }, [feed, feedMode, messages, nextCursor, session]);
+
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
   }, []);
@@ -1794,6 +1852,9 @@ export function ForumLoader({
     feed === 'shops' && !isShopNote(draft)
       ? FORUM_MESSAGE_MAX_LENGTH - shopSuffixLen
       : FORUM_MESSAGE_MAX_LENGTH;
+  const listed = listedNotes(messages);
+  const shopsAwaitingPages =
+    feed === 'shops' && nextCursor !== null && listed !== null && listed.length === 0;
 
   return (
     <>
@@ -1808,7 +1869,7 @@ export function ForumLoader({
         />
       ) : null}
       <ForumBoard
-        messages={listedNotes(messages)}
+        messages={shopsAwaitingPages ? null : listed}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
@@ -1872,7 +1933,7 @@ export function ForumLoader({
             }
           : {})}
         error={error}
-        loading={loading}
+        loading={loading || shopsAwaitingPages}
         refreshing={refreshing}
         onRefresh={onRefresh}
         posting={posting || preparing}

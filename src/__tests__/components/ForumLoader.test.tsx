@@ -498,6 +498,72 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" fetches later cursor pages when page one has no shop', async () => {
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
+      .mockResolvedValue(
+        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+      );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      cursor: 'cur_2',
+    });
+    expect(screen.queryByText('Hello from Ada')).toBeNull();
+  });
+
+  it('feed="shops" shows empty only after the last cursor page has no shop', async () => {
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
+      .mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      cursor: 'cur_2',
+    });
+  });
+
+  it('feed="shops" shows empty when a later cursor page fails', async () => {
+    fetchMock
+      .mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2'))
+      .mockRejectedValue(new Error('boom'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+  });
+
+  it('feed="shops" stays on loading while a later shop page is in flight', async () => {
+    let resolvePageTwo: (page: ReturnType<typeof forumPage>) => void = () => undefined;
+    fetchMock.mockResolvedValueOnce(forumPage([SAMPLE], 'cur_2')).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePageTwo = resolve;
+        }),
+    );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Loading…')).toBeTruthy();
+    });
+    expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
+    await act(async () => {
+      resolvePageTwo(
+        forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+  });
+
   it('default living-room post does not append #21GiftsShop', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({

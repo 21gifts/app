@@ -1038,7 +1038,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/shops`
 
-Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → `ForumLoader feed="shops"` (same ForumBoard as `/welcome`: mode pills, composer, cards). Laws hint absent. Shop cards: `#Shop` pill. Empty `shops.empty`. Loading. Error + Try again.
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → `ForumLoader feed="shops"` (same ForumBoard as `/welcome`: mode pills, composer, cards). Laws hint absent. Shop cards: `#Shop` pill. Empty `shops.empty` only after cursor pages are exhausted. Loading while a later page may still list a shop. Error + Try again.
 
 Handbook states: default, empty, loading, error.
 
