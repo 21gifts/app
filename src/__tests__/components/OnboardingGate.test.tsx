@@ -37,7 +37,9 @@ const account = {
   aboutMe: null,
   aboutMeHasPhoto: false,
   setup: 'name' as const,
-  missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
+  missing: ['name', 'lightning-address', 'rules'] as (
+    'wallet' | 'name' | 'username' | 'lightning-address' | 'rules'
+  )[],
 };
 
 const named = {
@@ -99,6 +101,47 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     expect(replace).toHaveBeenCalledWith('/setup/name');
+  });
+
+  it('renders wallet children when setup is wallet', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="wallet">
+        <p>wallet-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('wallet-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('redirects a name-setup account away from wallet', async () => {
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="wallet">
+        <p>wallet-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/name');
+    });
+  });
+
+  it('sends a wallet-required account from the name screen to /wallet', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="name">
+        <p>name-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/wallet');
+    });
   });
 
   it('sends a logged-out visitor from welcome to login', () => {

@@ -42,7 +42,9 @@ async function installFakeWebAuthn(page: Page, alreadyRegistered = false): Promi
       id,
       rawId,
       type: 'public-key',
-      getClientExtensionResults: () => ({}),
+      getClientExtensionResults: () => ({
+        prf: { results: { first: new Uint8Array(32).fill(7) } },
+      }),
       response: {
         clientDataJSON: new Uint8Array([123]).buffer,
         attestationObject: new Uint8Array([2]).buffer,
@@ -185,6 +187,8 @@ test('login Open a new account creates a passkey after the choice', async ({ pag
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
+  await expect(page).toHaveURL(/\/wallet/, { timeout: 10_000 });
+  await page.getByRole('button', { name: 'I saved these words' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
 });
 

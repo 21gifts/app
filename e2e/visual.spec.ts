@@ -22,9 +22,9 @@ const E2E_ACCOUNT = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   aboutMe: null as string | null,
-  setup: 'name' as 'name' | 'username' | 'lightning-address' | 'rules' | null,
+  setup: 'name' as 'wallet' | 'name' | 'username' | 'lightning-address' | 'rules' | null,
   missing: ['name', 'username', 'lightning-address', 'rules'] as Array<
-    'name' | 'username' | 'lightning-address' | 'rules'
+    'wallet' | 'name' | 'username' | 'lightning-address' | 'rules'
   >,
 };
 
@@ -709,6 +709,79 @@ test.describe('screen baselines', () => {
     await page.goto('/donate');
     await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
+  });
+
+  test('screen /wallet', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet');
+    await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Activate recovery phrase' })).toBeVisible();
+    await shotScreen(page, 'screen-wallet');
+  });
+
+  test('wallet phrase', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=phrase');
+    await expect(page.getByText('abandon')).toBeVisible();
+    await shotScreen(page, 'state-wallet-phrase');
+  });
+
+  test('wallet confirm', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          setup: 'wallet',
+          walletRequired: true,
+          walletBackupSeenAt: null,
+          missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=confirm');
+    await expect(page.getByRole('button', { name: 'I saved these words' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-confirm');
   });
 
   test('screen /stats', async ({ page }) => {

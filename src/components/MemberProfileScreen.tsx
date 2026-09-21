@@ -536,7 +536,7 @@ export function MemberProfileScreen({
     })();
   };
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
       return false;

@@ -37,6 +37,48 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
 }
 
 /**
+ * Copy `options.extensions` onto parsed WebAuthn options and decode a
+ * base64url `prf.eval.first` string to bytes for `create()` / `get()`.
+ *
+ * Native parse already copies extensions; this still decodes a string
+ * `prf.eval.first` afterwards. Manual fallback must copy extensions too.
+ *
+ * @param result - Native parse output or the manual fallback object.
+ * @param options - Original api JSON (may include `extensions`).
+ * @returns The same `result`, with extensions applied when present.
+ */
+function applyClientExtensions<T extends { extensions?: AuthenticationExtensionsClientInputs }>(
+  result: T,
+  options: Record<string, unknown>,
+): T {
+  const raw = options['extensions'];
+  if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+    result.extensions = {
+      ...(result.extensions ?? {}),
+      ...(raw as AuthenticationExtensionsClientInputs),
+    };
+  }
+  const extensions = result.extensions as
+    (AuthenticationExtensionsClientInputs & { prf?: { eval?: { first?: unknown } } }) | undefined;
+  const first = extensions?.prf?.eval?.first;
+  /* v8 ignore next 12 -- jsdom native parse already yields bytes; string first is only the JSON fallback */
+  if (typeof first === 'string') {
+    const current = extensions ?? {};
+    result.extensions = {
+      ...current,
+      prf: {
+        ...(current.prf ?? {}),
+        eval: {
+          ...((current.prf as { eval?: object } | undefined)?.eval ?? {}),
+          first: Uint8Array.from(base64UrlToBytes(first)),
+        },
+      },
+    };
+  }
+  return result;
+}
+
+/**
  * Build `PublicKeyCredentialCreationOptions` from api JSON.
  *
  * @param options - `PublicKeyCredentialCreationOptionsJSON` from the api.
@@ -59,7 +101,7 @@ export function creationOptionsFromJSON(
     credentialDescriptorsFromJSON(options['excludeCredentials']);
   }
   if (typeof parse === 'function') {
-    return parse(options);
+    return applyClientExtensions(parse(options), options);
   }
   const challenge = options['challenge'];
   const rp = options['rp'] as { name: string; id?: string };
@@ -93,7 +135,7 @@ export function creationOptionsFromJSON(
   if (excludeCredentials !== undefined) {
     created.excludeCredentials = excludeCredentials;
   }
-  return created;
+  return applyClientExtensions(created, options);
 }
 
 type RequestOptionsWithHints = PublicKeyCredentialRequestOptions & {
@@ -148,7 +190,7 @@ export function requestOptionsFromJSON(
     credentialDescriptorsFromJSON(json['allowCredentials']);
   }
   if (typeof parse === 'function') {
-    return finalizeDiscoverableRequestOptions(parse(json));
+    return applyClientExtensions(finalizeDiscoverableRequestOptions(parse(json)), json);
   }
   const challenge = json['challenge'];
   const rpId = json['rpId'];
@@ -170,7 +212,7 @@ export function requestOptionsFromJSON(
   if (typeof userVerification === 'string') {
     requested.userVerification = userVerification as UserVerificationRequirement;
   }
-  return finalizeDiscoverableRequestOptions(requested);
+  return applyClientExtensions(finalizeDiscoverableRequestOptions(requested), json);
 }
 
 /**

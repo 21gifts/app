@@ -19,6 +19,40 @@ describe('base64url', () => {
 });
 
 describe('creationOptionsFromJSON', () => {
+  it('decodes prf.eval.first from base64url', () => {
+    vi.stubGlobal('PublicKeyCredential', {
+      parseCreationOptionsFromJSON: undefined,
+    });
+    const first = bytesToBase64Url(new Uint8Array([9, 8, 7]));
+    const options = creationOptionsFromJSON({
+      challenge: bytesToBase64Url(new Uint8Array([1])),
+      rp: { id: 'localhost', name: '21.gifts' },
+      user: {
+        id: bytesToBase64Url(new Uint8Array([1, 2])),
+        name: 'n',
+        displayName: 'd',
+      },
+      extensions: { prf: { eval: { first } } },
+    });
+    const prf = options.extensions as { prf?: { eval?: { first?: Uint8Array } } } | undefined;
+    expect(Array.from(prf?.prf?.eval?.first ?? [])).toEqual([9, 8, 7]);
+    vi.unstubAllGlobals();
+  });
+
+  it('copies extensions.prf onto the creation options', () => {
+    const options = creationOptionsFromJSON({
+      challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),
+      rp: { id: 'localhost', name: '21.gifts' },
+      user: {
+        id: bytesToBase64Url(new Uint8Array([1, 2])),
+        name: 'n',
+        displayName: 'd',
+      },
+      extensions: { prf: {} },
+    });
+    expect(options.extensions).toEqual({ prf: {} });
+  });
+
   it('converts challenge and user id from base64url', () => {
     const options = creationOptionsFromJSON({
       challenge: bytesToBase64Url(new Uint8Array([9, 8, 7])),

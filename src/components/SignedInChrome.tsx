@@ -13,6 +13,7 @@ import {
   Shield,
   Store,
   User,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -197,6 +198,16 @@ export function SignedInChrome(): ReactElement {
               )}
             </span>
           ) : null}
+        </Link>
+        <Link
+          href="/wallet"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('wallet.title')}
         </Link>
         <Link
           href="/rules"

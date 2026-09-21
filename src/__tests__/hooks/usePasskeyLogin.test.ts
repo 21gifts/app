@@ -1,5 +1,6 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { obtainPrfFirst } from '@/lib/prf-mnemonic';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -33,6 +34,23 @@ vi.mock('@/lib/webauthn-browser', () => ({
   credentialToJSON: vi.fn().mockReturnValue({ id: 'cred' }),
 }));
 
+vi.mock('@/lib/prf-mnemonic', () => ({
+  obtainPrfFirst: vi.fn().mockResolvedValue(new Uint8Array(32).fill(7)),
+  mnemonicFromPrfFirst: vi
+    .fn()
+    .mockResolvedValue(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    ),
+}));
+
+vi.mock('@/hooks/useWalletPhrase', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPhrase')>();
+  return {
+    ...actual,
+    rememberSessionPhrase: vi.fn(),
+  };
+});
+
 const account = {
   id: 'acc_1',
   linkingKey: null,
@@ -65,6 +83,22 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('usePasskeyLogin', () => {
+  it('does not finish registration when PRF is missing', async () => {
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    vi.unstubAllGlobals();
+  });
+
   it('registers a passkey and stores the session', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {

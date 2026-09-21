@@ -2397,6 +2397,139 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
+## Function: startPasskeyReplace
+
+- **Purpose:** POST `/auth/passkey/replace/begin` with Bearer.
+- **Inputs:** Session token.
+- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
+- **Used by:** `useWalletPhrase.activate`.
+
+## Function: finishPasskeyReplace
+
+- **Purpose:** POST `/auth/passkey/replace/finish` with Bearer. Does not mint a session.
+- **Inputs:** Session token, challenge id, credential JSON.
+- **Returns / side effects:** Owner `Account` from `{ account }`. Throws on non-2xx.
+- **Used by:** `useWalletPhrase.activate`.
+
+## Function: postWalletBackupSeen
+
+- **Purpose:** POST `/me/wallet-backup-seen` with Bearer.
+- **Inputs:** Session token.
+- **Returns / side effects:** Owner `Account`. Throws on non-2xx.
+- **Used by:** `useWalletPhrase.confirmSaved`.
+
+## Function: proxyAuthPasskeyReplaceBeginPost
+
+- **Purpose:** Proxies POST `/auth/passkey/replace/begin`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/replace/begin`.
+
+## Function: proxyAuthPasskeyReplaceFinishPost
+
+- **Purpose:** Proxies POST `/auth/passkey/replace/finish`.
+- **Inputs:** Incoming `Request` with Bearer and JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/replace/finish`.
+
+## Function: proxyMeWalletBackupSeenPost
+
+- **Purpose:** Proxies POST `/me/wallet-backup-seen`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/wallet-backup-seen`.
+
+## Function: prfEvalFirstSalt
+
+- **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
+- **Inputs:** None.
+- **Returns / side effects:** 32-byte `Uint8Array`.
+- **Used by:** `obtainPrfFirst`, authenticate PRF eval.
+
+## Function: readPrfFirst
+
+- **Purpose:** Read `prf.results.first` from a credential.
+- **Inputs:** `PublicKeyCredential`.
+- **Returns / side effects:** Bytes or `undefined`.
+- **Used by:** `obtainPrfFirst`.
+
+## Function: mnemonicFromPrfFirst
+
+- **Purpose:** HKDF-SHA-256 then BIP-39 English 12 words.
+- **Inputs:** PRF eval.first bytes.
+- **Returns / side effects:** Space-separated mnemonic. Never sent to the api.
+- **Used by:** `useWalletPhrase`, `usePasskeyLogin`.
+
+## Function: obtainPrfFirst
+
+- **Purpose:** Prefer create() PRF; else get() with allowCredentials and eval.first salt.
+- **Inputs:** The new `PublicKeyCredential`.
+- **Returns / side effects:** Bytes or `null`.
+- **Used by:** Register and replace.
+
+## Function: obtainPrfFirstFromGet
+
+- **Purpose:** Discoverable get() with PRF eval.first to re-derive the phrase.
+- **Inputs:** None.
+- **Returns / side effects:** Bytes or `null`. Does not contact the api.
+- **Used by:** `useWalletPhrase.showPhrase`.
+
+## Function: classifyWebAuthnError
+
+- **Purpose:** Map WebAuthn failures to timeout / cancel / generic.
+- **Inputs:** Unknown rejection.
+- **Returns / side effects:** Discriminant string.
+- **Used by:** `useWalletPhrase`.
+
+## Function: rememberSessionPhrase
+
+- **Purpose:** Store 12 words in tab RAM.
+- **Inputs:** Mnemonic string.
+- **Returns / side effects:** Module-level variable. Never localStorage.
+- **Used by:** `usePasskeyLogin`, `useWalletPhrase`.
+
+## Function: peekSessionPhrase
+
+- **Purpose:** Read tab-RAM mnemonic.
+- **Inputs:** None.
+- **Returns / side effects:** String or `null`.
+- **Used by:** `useWalletPhrase`.
+
+## Function: clearSessionPhrase
+
+- **Purpose:** Drop tab-RAM mnemonic.
+- **Inputs:** None.
+- **Returns / side effects:** Clears the module variable.
+- **Used by:** `useWalletPhrase.confirmSaved`.
+
+## Function: useWalletPhrase
+
+- **Purpose:** Activate / confirm / show recovery phrase for `/wallet`.
+- **Inputs:** Auth store session and account.
+- **Returns / side effects:** View, words, actions. Calls replace and backup-seen.
+- **Used by:** `WalletScreen`.
+
+## Function: WalletScreenView
+
+- **Purpose:** Presentational wallet card.
+- **Inputs:** `UseWalletPhraseResult`.
+- **Returns / side effects:** Card with Activate / grid / confirm.
+- **Used by:** `WalletScreen`.
+
+## Function: WalletScreen
+
+- **Purpose:** Signed-in wallet page body.
+- **Inputs:** None.
+- **Returns / side effects:** Calls `useWalletPhrase`.
+- **Used by:** `WalletPage`.
+
+## Function: WalletPage
+
+- **Purpose:** Next.js page for `/wallet`.
+- **Inputs:** None.
+- **Returns / side effects:** AppShell + OnboardingGate + WalletScreen.
+- **Used by:** Route `/wallet`.
+
 ## Function: startPasskeyRegistration
 
 - **Purpose:** POST `/auth/passkey/register/begin` and parse options.

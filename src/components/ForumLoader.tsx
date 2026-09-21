@@ -42,11 +42,7 @@ import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
-import {
-  MissingRequirementsError,
-  nextPostRequirement,
-  type MissingRequirement,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -598,7 +594,7 @@ export function ForumLoader({
     }
   };
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
       return false;

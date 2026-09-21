@@ -163,6 +163,27 @@ export const SCREEN_VARIANTS = [
     needle: 'Open the forum',
   },
   {
+    route: '/wallet',
+    id: 'default',
+    image: 'wallet.png',
+    visual: 'screen-wallet',
+    needle: 'Activate recovery phrase',
+  },
+  {
+    route: '/wallet',
+    id: 'phrase',
+    image: 'wallet-phrase.png',
+    visual: 'state-wallet-phrase',
+    needle: 'abandon',
+  },
+  {
+    route: '/wallet',
+    id: 'confirm',
+    image: 'wallet-confirm.png',
+    visual: 'state-wallet-confirm',
+    needle: 'I saved these words',
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',

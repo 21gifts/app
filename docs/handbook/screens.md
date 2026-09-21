@@ -169,10 +169,35 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 ![21.gifts Trust Chain hop error](images/trust-chain-hop-error.png)
 
+## Screen: /wallet
+
+- **URL:** `/wallet` — signed-in recovery phrase.
+- **What the user sees:** Flow `AppShell` with profile chrome left and **Menu** right. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **I saved these words** (no Skip). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards they can **Show recovery phrase**.
+- **Actions:** Activate a PRF passkey. Confirm the words were saved (`POST /me/wallet-backup-seen`). Show the phrase from PRF. **Try again** after a timeout. Open **Menu**.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
+
+### Variant: default
+
+Existing member, no phrase yet. **Activate recovery phrase**.
+
+![21.gifts wallet activate](images/wallet.png)
+
+### Variant: phrase
+
+12-word grid from a fixture mnemonic (not live PRF).
+
+![21.gifts wallet phrase](images/wallet-phrase.png)
+
+### Variant: confirm
+
+New account must confirm **I saved these words**.
+
+![21.gifts wallet confirm](images/wallet-confirm.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor is sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor is sent to `/wallet` (new passkey accounts), then `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 

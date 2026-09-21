@@ -10,6 +10,8 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { rememberSessionPhrase } from '@/hooks/useWalletPhrase';
+import { mnemonicFromPrfFirst, obtainPrfFirst } from '@/lib/prf-mnemonic';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -155,9 +157,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       guard(runId);
       const begin = await startPasskeyRegistration(viewKey);
       guard(runId);
-      const request: CredentialCreationOptions = {
-        publicKey: creationOptionsFromJSON(begin.options),
+      const publicKey = creationOptionsFromJSON(begin.options);
+      publicKey.extensions = {
+        ...(publicKey.extensions ?? {}),
+        prf: (publicKey.extensions as { prf?: object } | undefined)?.prf ?? {},
       };
+      const request: CredentialCreationOptions = { publicKey };
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
@@ -166,9 +171,17 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       if (credential === null || credential.type !== 'public-key') {
         throw new Error('Passkey creation returned no credential');
       }
+      const publicKeyCredential = credential as PublicKeyCredential;
+      const prfFirst = await obtainPrfFirst(publicKeyCredential);
+      guard(runId);
+      if (prfFirst === null) {
+        throw new Error('wallet.prfUnsupported');
+      }
+      rememberSessionPhrase(await mnemonicFromPrfFirst(Uint8Array.from(prfFirst)));
+      guard(runId);
       const session = await finishPasskeyRegistration(
         begin.challengeId,
-        credentialToJSON(credential as PublicKeyCredential),
+        credentialToJSON(publicKeyCredential),
       );
       guard(runId);
       setAuth(session.token, session.account);

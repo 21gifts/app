@@ -5,6 +5,9 @@ import {
   proxyAuthPasskeyAuthenticateFinishPost,
   proxyAuthPasskeyRegisterBeginPost,
   proxyAuthPasskeyRegisterFinishPost,
+  proxyAuthPasskeyReplaceBeginPost,
+  proxyAuthPasskeyReplaceFinishPost,
+  proxyMeWalletBackupSeenPost,
   proxyLightningAddressGet,
   proxyGiftsGet,
   proxyGiftsStatsGet,
@@ -81,6 +84,31 @@ function stubApi(): ReturnType<typeof vi.fn> {
 }
 
 describe('api proxy wrappers', () => {
+  it('proxyAuthPasskeyReplaceBeginPost hits POST /auth/passkey/replace/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyReplaceBeginPost(
+      new Request('http://localhost/auth/passkey/replace/begin', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/replace/begin');
+  });
+
+  it('proxyAuthPasskeyReplaceFinishPost hits POST /auth/passkey/replace/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyReplaceFinishPost(
+      new Request('http://localhost/auth/passkey/replace/finish', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/replace/finish');
+  });
+
+  it('proxyMeWalletBackupSeenPost hits POST /me/wallet-backup-seen', async () => {
+    const fetchMock = stubApi();
+    await proxyMeWalletBackupSeenPost(
+      new Request('http://localhost/me/wallet-backup-seen', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-backup-seen');
+  });
+
   it('proxyMeGet hits /me', async () => {
     const fetchMock = stubApi();
     await proxyMeGet(new Request('http://localhost/me'));

@@ -18,11 +18,7 @@ import {
   postMessageInvoice,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
-import {
-  MissingRequirementsError,
-  nextPostRequirement,
-  type MissingRequirement,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt } from '@/lib/roles';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -476,7 +472,7 @@ export function PublicMessageThread(props: {
     })();
   };
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
       return false;

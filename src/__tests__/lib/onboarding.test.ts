@@ -26,6 +26,15 @@ const base: Account = {
 };
 
 describe('onboarding', () => {
+  it('maps setup wallet to the wallet screen', () => {
+    const account = {
+      ...base,
+      setup: 'wallet' as const,
+      missing: ['wallet', 'name', 'lightning-address', 'rules'] as Account['missing'],
+    };
+    expect(nextOnboardingPath(account)).toBe('/wallet');
+  });
+
   it('maps setup name to the name screen', () => {
     expect(hasDisplayName(base)).toBe(false);
     expect(nextOnboardingPath(base)).toBe('/setup/name');

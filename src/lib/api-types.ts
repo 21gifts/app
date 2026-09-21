@@ -53,9 +53,19 @@ export const accountSchema = z.object({
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
-  setup: z.enum(['name', 'username', 'lightning-address', 'rules']).nullable(),
+  setup: z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
-  missing: z.array(z.enum(['name', 'username', 'lightning-address', 'rules'])),
+  missing: z.array(z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules'])),
+  /**
+   * True when this account must confirm a recovery phrase. Optional so current
+   * develop api bodies still parse; omitted or false means an existing member.
+   */
+  walletRequired: z.boolean().optional(),
+  /**
+   * Epoch ms of the first recovery-phrase confirmation, or `null` if unseen.
+   * Optional so current develop api bodies still parse.
+   */
+  walletBackupSeenAt: z.number().nullable().optional(),
   /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
@@ -98,9 +108,12 @@ export const accountSchema = z.object({
  * (name-only auto notes from the api are `null`).
  * `aboutMeHasPhoto` is true when the live profile note has a photo (optional
  * on older api bodies; defaults to false).
- * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
- * or `null` when onboarding is complete (including after skips). `missing` lists
- * fields still unset for posting; skipped steps stay listed until filled.
+ * `setup` is the next onboarding screen (`wallet`, `name`, `username`,
+ * `lightning-address`, `rules`) or `null` when onboarding is complete
+ * (including after skips). `missing` lists fields still unset for posting;
+ * skipped steps stay listed until filled. `walletRequired` is true for new
+ * passkey accounts; omitted or false on existing members. `walletBackupSeenAt`
+ * is the epoch ms of the first recovery-phrase confirmation, or `null`.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
