@@ -498,6 +498,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:pay-composer",
+    "label": "/welcome pay-composer",
+    "visual": "state-welcome-pay-composer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:error-too-large-with-text",
     "label": "/welcome error-too-large-with-text",
     "visual": "state-welcome-error-too-large-with-text",

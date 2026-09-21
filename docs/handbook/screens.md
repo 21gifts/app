@@ -817,6 +817,12 @@ Staff (moderator) Open **Menu** with `GET /conversations/moderator-group` stubbe
 
 ![21.gifts welcome menu moderation unread](images/welcome-menu-moderation-unread.png)
 
+### Variant: pay-composer
+
+Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stays on the composer (`payHost` `'composer'`), not on a listed note. Desktop shows the Bitcoin payment QR and **Pay with Wallet of Satoshi**. A smartphone keeps the amount form (no QR). The empty-feed copy stays visible.
+
+![21.gifts welcome pay composer](images/welcome-pay-composer.png)
+
 ### Variant: pay-amount
 
 Payable reply after **Show reactions**, Gift opened, amount filled, not submitted. Amount CTA is **Pay** (`forum.payNow`) on iPhone/iPod and **Continue** (`forum.payContinue`) on desktop. Live equivalent in the preferred fiat (no picker). No error, no payment QR, no wallet **Pay** button yet. The post itself does not show Send Bitcoin.
