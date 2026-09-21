@@ -306,10 +306,12 @@ function inboxAuthorProfileButton(
  * `inbox.threadUnread`. Heading and incoming author names with a non-empty
  * `accountId` are `inbox.authorProfile` buttons to `/members/:id`; `fromMe`
  * stays `inbox.you` text; Damus or a missing id stays plain text.
- * An open thread pins the AppShell scroller (document fallback) to the bottom
- * after messages render, and again when an invoice pay sheet opens. Leaving a
- * thread scrolls that scroller to the top once so the conversation list is not
- * left at the thread offset.
+ * An open thread pins the AppShell scroller to the bottom after messages
+ * render, and again when an invoice pay sheet opens. Inside AppShell the pin
+ * waits for that scroller and does not fall back to `window` while the node
+ * is missing; `window` is only the no-shell fallback. Leaving a thread
+ * scrolls that scroller to the top once so the conversation list is not left
+ * at the thread offset.
  *
  * @param props - List/thread/composer state from {@link InboxLoader} or
  *   {@link ModeratorGroupScreen}.
