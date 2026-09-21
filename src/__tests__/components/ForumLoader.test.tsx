@@ -396,10 +396,12 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" lists only #21GiftsShop notes', async () => {
-    fetchMock.mockResolvedValue([
-      SAMPLE,
-      { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        SAMPLE,
+        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
+      ]),
+    );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
@@ -409,7 +411,7 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" shows shops.empty when no listed note is a shop', async () => {
-    fetchMock.mockResolvedValue([SAMPLE]);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
@@ -417,7 +419,7 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" hides the laws hint even when forumLawsDismissed is false', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
@@ -431,7 +433,7 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" appends #21GiftsShop on a top-level post', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
       ...SAMPLE,
       id: 'shop-new',
@@ -456,10 +458,12 @@ describe('ForumLoader', () => {
       session: 'sess',
       account: { ...account, forumLawsDismissed: true },
     });
-    fetchMock.mockResolvedValue([
-      SAMPLE,
-      { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 },
-    ]);
+    fetchMock.mockResolvedValue(
+      forumPage([
+        SAMPLE,
+        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 },
+      ]),
+    );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
@@ -473,7 +477,7 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" does not duplicate #21GiftsShop when the draft already has it', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
       ...SAMPLE,
       id: 'shop-new',
@@ -495,7 +499,7 @@ describe('ForumLoader', () => {
   });
 
   it('default living-room post does not append #21GiftsShop', async () => {
-    fetchMock.mockResolvedValue([]);
+    fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
       ...SAMPLE,
       id: 'm2',
