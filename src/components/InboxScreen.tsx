@@ -72,6 +72,9 @@ function listPreviewClass(fromMe: boolean): string {
     : 'line-clamp-2 text-sm text-app-muted';
 }
 
+/** Stable empty map so thread pin-to-bottom does not retrigger when callers omit photoUrls. */
+const EMPTY_PHOTO_URLS: Readonly<Record<string, string>> = {};
+
 /**
  * Scrolls the AppShell scroller to the bottom, or the document when none is mounted.
  *
@@ -94,8 +97,6 @@ function shellScrollToBottom(scroller: HTMLElement | null): void {
  *
  * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
  */
-const EMPTY_PHOTO_URLS: Readonly<Record<string, string>> = {};
-
 function shellScrollToTop(scroller: HTMLElement | null): void {
   if (scroller !== null) {
     if (typeof scroller.scrollTo === 'function') {

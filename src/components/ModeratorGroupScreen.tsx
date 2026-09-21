@@ -39,7 +39,9 @@ function revokeIfBlob(url: string): void {
  * JPEG/PNG/WebP stills use {@link prepareForumPhoto} (cap 10); photo-only
  * send is allowed. Send is disabled while a pick is still preparing
  * (`posting || preparing`). Thread stills load via {@link fetchConversationMessagePhoto}.
- * Passes `rateDay` from {@link useLatestRateDay} into {@link InboxScreen}.
+ * Losing staff while mounted bumps `pickGeneration`, clears drafts and
+ * preparing, and revokes blob URLs (same cleanup as unmount). Passes
+ * `rateDay` from {@link useLatestRateDay} into {@link InboxScreen}.
  * After a successful group and thread fetch, marks the room read
  * (`markConversationRead`), bumps the badge epoch, and refreshes the
  * home-screen badge with staff-room unread `0`. Other signed-in visitors
@@ -105,11 +107,46 @@ export function ModeratorGroupScreen(): ReactElement | null {
   }, [session, staff, attempt]);
 
   useEffect(() => {
+    if (session === null || !staff) {
+      pickGeneration.current += 1;
+      setPreparing(false);
+      setPhotoDrafts([]);
+      setFormError(null);
+      const urls = photoUrlsRef.current;
+      for (const url of Object.values(urls)) {
+        revokeIfBlob(url);
+      }
+      if (Object.keys(urls).length > 0) {
+        setPhotoUrls({});
+      }
+    }
+  }, [session, staff]);
+
+  useEffect(() => {
     if (session === null || !staff || messages === null || group === null) {
       return;
     }
     const conversationId = group.id;
     let cancelled = false;
+    const liveKeys = new Set(
+      messages.flatMap((message) => {
+        const count = message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0;
+        return Array.from({ length: count }, (_, index) => `${message.id}:${index}`);
+      }),
+    );
+    const stale = Object.entries(photoUrlsRef.current).filter(([key]) => !liveKeys.has(key));
+    if (stale.length > 0) {
+      for (const [, url] of stale) {
+        revokeIfBlob(url);
+      }
+      setPhotoUrls((prev) => {
+        const next = { ...prev };
+        for (const [key] of stale) {
+          delete next[key];
+        }
+        return next;
+      });
+    }
     const missing = messages.flatMap((message) => {
       const count = message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0;
       return Array.from({ length: count }, (_, index) => ({

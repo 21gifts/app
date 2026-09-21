@@ -590,6 +590,78 @@ describe('ModeratorGroupScreen', () => {
     expect(screen.getByText('This room is for moderators.')).toBeTruthy();
   });
 
+  it('revokes loaded photo blobs and drops drafts when the account is no longer staff', async () => {
+    const revoke = vi.fn();
+    threadMock.mockResolvedValue([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    });
+    expect(screen.getByText('This room is for moderators.')).toBeTruthy();
+    expect(revoke).toHaveBeenCalledWith('blob:group-photo');
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
+  });
+
+  it('revokes photo blobs that are no longer on the thread', async () => {
+    const revoke = vi.fn();
+    threadMock.mockResolvedValueOnce([
+      {
+        ...MESSAGE,
+        id: 'm-pic',
+        text: '',
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:group-photo',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
+    threadMock.mockResolvedValueOnce([MESSAGE]);
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account });
+    });
+    await waitFor(() => {
+      expect(revoke).toHaveBeenCalledWith('blob:group-photo');
+    });
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
   it('skips a still when the photo fetch fails and loads the next', async () => {
     threadMock.mockResolvedValue([
       {
