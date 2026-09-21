@@ -659,7 +659,7 @@ const en = {
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
   'funding.applications.lead':
-    'Review living-room posts against the three convictions. Grant a one-day trial or a final admission.',
+    'Pick a person, then walk each principle and whether the posts are true.',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
@@ -671,6 +671,14 @@ const en = {
   'funding.detail.trial': 'Trial',
   'funding.detail.admit': 'Admit',
   'funding.detail.reject': 'Reject',
+  'funding.review.check1': 'Please check whether the posts match principle 1.',
+  'funding.review.check2': 'Please check whether the posts match principle 2.',
+  'funding.review.check3': 'Please check whether the posts match principle 3.',
+  'funding.review.truth': 'Do these posts, to your knowledge, correspond to the truth?',
+  'funding.review.met': 'Requirement met',
+  'funding.review.unmet': 'Requirement not met',
+  'funding.review.yes': 'Yes',
+  'funding.review.no': 'No',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1362,7 +1370,7 @@ const de = {
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
   'funding.applications.lead':
-    'Prüfen Sie Wohnzimmer-Beiträge an den drei Überzeugungen. Gewähren Sie einen eintägigen Probezugang oder eine endgültige Zulassung.',
+    'Wählen Sie eine Person, dann prüfen Sie jeden Grundsatz und ob die Beiträge der Wahrheit entsprechen.',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
@@ -1376,6 +1384,14 @@ const de = {
   'funding.detail.trial': 'Probe',
   'funding.detail.admit': 'Zulassen',
   'funding.detail.reject': 'Ablehnen',
+  'funding.review.check1': 'Bitte prüfe, ob die Beiträge dem Grundsatz 1 entsprechen.',
+  'funding.review.check2': 'Bitte prüfe, ob die Beiträge dem Grundsatz 2 entsprechen.',
+  'funding.review.check3': 'Bitte prüfe, ob die Beiträge dem Grundsatz 3 entsprechen.',
+  'funding.review.truth': 'Entsprechen diese Beiträge nach deinem Wissen der Wahrheit?',
+  'funding.review.met': 'Anforderung erfüllt',
+  'funding.review.unmet': 'Nicht erfüllt',
+  'funding.review.yes': 'Ja',
+  'funding.review.no': 'Nein',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -2047,7 +2063,7 @@ const es = {
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
   'funding.applications.lead':
-    'Revisa los mensajes del salón frente a las tres convicciones. Concede una prueba de un día o una admisión definitiva.',
+    'Elige a una persona, luego recorre cada principio y si los mensajes son verdad.',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
@@ -2060,6 +2076,14 @@ const es = {
   'funding.detail.trial': 'Prueba',
   'funding.detail.admit': 'Admitir',
   'funding.detail.reject': 'Rechazar',
+  'funding.review.check1': 'Comprueba si los mensajes coinciden con el principio 1.',
+  'funding.review.check2': 'Comprueba si los mensajes coinciden con el principio 2.',
+  'funding.review.check3': 'Comprueba si los mensajes coinciden con el principio 3.',
+  'funding.review.truth': '¿Estos mensajes, según tu conocimiento, corresponden a la verdad?',
+  'funding.review.met': 'Requisito cumplido',
+  'funding.review.unmet': 'No cumplido',
+  'funding.review.yes': 'Sí',
+  'funding.review.no': 'No',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2740,7 +2764,7 @@ const fil = {
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
   'funding.applications.lead':
-    'Suriin ang living-room posts laban sa tatlong paniniwala. Magbigay ng one-day trial o pinal na admission.',
+    'Pumili ng tao, tapos suriin ang bawat prinsipyo at kung totoo ang mga post.',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',
@@ -2752,6 +2776,14 @@ const fil = {
   'funding.detail.trial': 'Trial',
   'funding.detail.admit': 'Admit',
   'funding.detail.reject': 'Reject',
+  'funding.review.check1': 'Suriin kung tumutugma ang mga post sa prinsipyo 1.',
+  'funding.review.check2': 'Suriin kung tumutugma ang mga post sa prinsipyo 2.',
+  'funding.review.check3': 'Suriin kung tumutugma ang mga post sa prinsipyo 3.',
+  'funding.review.truth': 'Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan?',
+  'funding.review.met': 'Natugunan ang kinakailangan',
+  'funding.review.unmet': 'Hindi natugunan',
+  'funding.review.yes': 'Oo',
+  'funding.review.no': 'Hindi',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
