@@ -674,6 +674,8 @@ describe('conversationMessageSchema', () => {
       createdAt: '2026-08-28T12:00:00.000Z',
       fromMe: false,
       sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
       giftFor: 'm0',
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
