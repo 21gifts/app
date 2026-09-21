@@ -2667,7 +2667,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner profile grant section after the Lightning Address form. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): not admitted + **Apply for the 21 gifts grant** plus the three conviction titles and `/about` for `none`/`rejected`; pending; one-day trial; or admitted with **Reviewed by a moderator** and `admittedAt`. Apply posts `postFundingApply` and merges the returned `funding` into the store account.
+- **Purpose:** Owner profile grant section after the Lightning Address form. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): not admitted + grace copy that daily gifts continue until 25 September 2026 + **Apply for the 21 gifts grant** plus the three conviction titles and `/about` for `none`/`rejected`; pending; one-day trial; or admitted with **Reviewed by a moderator** and `admittedAt`. Apply posts `postFundingApply` and merges the returned `funding` into the store account.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session or account. Apply POSTs `/funding/apply`. A failed apply shows `funding.applyError`.
 - **Used by:** `ProfileScreen`.

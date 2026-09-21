@@ -123,6 +123,7 @@ export function FundingStatusCard(): ReactElement | null {
     body = (
       <>
         <p className="text-center text-sm text-app-muted">{t('funding.notAdmitted')}</p>
+        <p className="text-center text-sm text-app-muted">{t('funding.grace')}</p>
         <ConvictionsConditions />
         {applyFailed ? (
           <p role="alert" className="text-center text-sm text-app-danger">
