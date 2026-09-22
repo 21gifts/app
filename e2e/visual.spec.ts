@@ -7965,7 +7965,7 @@ test.describe('welcome forum variants', () => {
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
-    await expect(page.getByText('Stall')).toBeVisible();
+    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
