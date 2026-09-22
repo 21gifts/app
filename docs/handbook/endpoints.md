@@ -473,7 +473,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/trial` with `{ accountId }`. Target must be effective pending.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
-- **Used by:** `postFundingTrial` in `FundingApplicationDetailScreen`.
+- **Used by:** `proxyFundingTrialPost` (API still exposes trial; the staff UI no longer calls it).
 - **Auth:** Bearer (founder or moderator).
 
 ## Endpoint: POST /funding/admit

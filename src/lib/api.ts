@@ -1003,21 +1003,6 @@ async function postFundingAction(
 }
 
 /**
- * Grants a one-day trial (staff). Target must be effective pending.
- *
- * @param sessionToken - Bearer session of a founder or moderator.
- * @param accountId - Subject account id.
- * @returns The updated account snapshot.
- * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
- */
-export async function postFundingTrial(
-  sessionToken: string,
-  accountId: string,
-): Promise<FundingDecisionResult> {
-  return postFundingAction('/funding/trial', sessionToken, accountId);
-}
-
-/**
  * Admits a member to daily grant payouts (staff). Target pending or trial.
  *
  * @param sessionToken - Bearer session of a founder or moderator.

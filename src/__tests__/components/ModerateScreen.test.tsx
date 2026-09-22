@@ -190,9 +190,7 @@ describe('ModerateScreen', () => {
       ).toBeNull();
       expect(screen.queryByText('Closed staff room for moderators.')).toBeNull();
       expect(
-        screen.getByText(
-          'Review living-room posts against the three convictions. Grant a one-day trial or a final admission.',
-        ),
+        screen.getByText('Pick a person, then walk each principle and whether the posts are true.'),
       ).toBeTruthy();
       expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
       expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(

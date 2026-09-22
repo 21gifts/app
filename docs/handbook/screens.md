@@ -1410,7 +1410,7 @@ Staff (moderator) Confirm as moderator POST in flight. Confirm disabled with a s
 ## Screen: /moderate/applications
 
 - **URL:** `/moderate/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/moderate`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Staff rows: applicant name (link `/moderate/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Lead **Pick a person, then walk each principle and whether the posts are true.** Staff rows: applicant name (link `/moderate/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
 - **Actions:** In-card icon back to hub. Open an applicant to `/moderate/applications/{id}`. Staff **Try again** on list error. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationsPage`, `FundingApplicationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplications`.
 - **Auth:** Bearer; list only for founder|moderator.
@@ -1448,14 +1448,14 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 ## Screen: /moderate/applications/[accountId]
 
 - **URL:** `/moderate/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff: applicant name (link `/members/{id}`), applied time, the three convictions as criteria, living-room posts, and status-gated **Trial** / **Admit** / **Reject** (Trial only when `grant.status` is pending; Admit and Reject when pending or trial). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
-- **Actions:** In-card icon back to the queue. Staff Trial / Admit / Reject / Try again. Open Menu. Back to the forum.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingTrial`, `postFundingAdmit`, `postFundingReject`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff walk four steps: principles 1–3 (lead, title, summary, living-room posts, **Requirement met** / **Requirement not met**), then whether the posts are true (**Yes** / **No**). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **Actions:** In-card icon back to the queue. Staff **Requirement met** advances; **Requirement not met** or **No** posts reject; **Yes** on the last step posts admit. Try again. Open Menu. Back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
 
 ### Variant: default
 
-Staff (founder) loaded application for **Rose** with a living-room post and **Trial** / **Admit** / **Reject**.
+Staff (founder) loaded application for **Rose** with a living-room post on principle 1. **Requirement met** / **Requirement not met**.
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
 
@@ -1467,7 +1467,7 @@ Signed-in basis account. Copy **This page is for moderators.** No fetch.
 
 ### Variant: empty
 
-Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** Trial / Admit / Reject still visible.
+Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** Principle 1 and **Requirement met** / **Requirement not met** still visible.
 
 ![21.gifts grant application empty](images/moderate-applications-accountId-empty.png)
 
@@ -1485,21 +1485,33 @@ Staff (founder) detail fetch failed. Copy **Could not load this application. Ple
 
 ### Variant: decide-failed
 
-Staff (founder) Trial POST failed. Copy **Could not update this member. Please try again.**
+Staff (founder) Reject POST failed after **Requirement not met**. Copy **Could not update this member. Please try again.**
 
 ![21.gifts grant application decide failed](images/moderate-applications-accountId-decide-failed.png)
 
 ### Variant: deciding
 
-Staff (founder) Trial POST in flight. Trial disabled with a spinner; application still visible.
+Staff (founder) Reject POST in flight. **Requirement not met** disabled with a spinner; application still visible.
 
 ![21.gifts grant application deciding](images/moderate-applications-accountId-deciding.png)
 
-### Variant: trial
+### Variant: principle-2
 
-Staff (founder) loaded application whose `grant.status` is **trial**. **Admit** and **Reject** visible; **Trial** absent.
+Staff (founder) after **Requirement met** on principle 1. Copy **Please check whether the posts match principle 2.**
 
-![21.gifts grant application trial](images/moderate-applications-accountId-trial.png)
+![21.gifts grant application principle 2](images/moderate-applications-accountId-principle-2.png)
+
+### Variant: principle-3
+
+Staff (founder) after **Requirement met** on principles 1 and 2. Copy **Please check whether the posts match principle 3.**
+
+![21.gifts grant application principle 3](images/moderate-applications-accountId-principle-3.png)
+
+### Variant: truth
+
+Staff (founder) after **Requirement met** on principles 1–3. Copy **Do these posts, to your knowledge, correspond to the truth?** Buttons **Yes** / **No**.
+
+![21.gifts grant application truth](images/moderate-applications-accountId-truth.png)
 
 ## Screen: /moderate/group
 

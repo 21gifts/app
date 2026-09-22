@@ -30,20 +30,13 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchFundingApplication: vi.fn(),
-  postFundingTrial: vi.fn(),
   postFundingAdmit: vi.fn(),
   postFundingReject: vi.fn(),
 }));
 
-import {
-  fetchFundingApplication,
-  postFundingAdmit,
-  postFundingReject,
-  postFundingTrial,
-} from '@/lib/api';
+import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchFundingApplication);
-const trialMock = vi.mocked(postFundingTrial);
 const admitMock = vi.mocked(postFundingAdmit);
 const rejectMock = vi.mocked(postFundingReject);
 
@@ -113,7 +106,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
   fetchMock.mockResolvedValue(DETAIL);
-  trialMock.mockResolvedValue(DECISION);
   admitMock.mockResolvedValue({
     ...DECISION,
     funding: { status: 'admitted', trialUtcDate: null, admittedAt: 1, reviewedByName: 'Ada' },
@@ -166,11 +158,11 @@ describe('FundingApplicationDetailScreen', () => {
       await screen.findByText('Could not load this application. Please try again.'),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('button', { name: 'Trial' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Requirement met' })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('shows posts, convictions, and decision buttons', async () => {
+  it('shows posts, principle 1, and met/unmet buttons', async () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     expect(await screen.findByRole('link', { name: 'Rose' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Rose' }).getAttribute('href')).toBe(
@@ -179,13 +171,12 @@ describe('FundingApplicationDetailScreen', () => {
     expect(
       screen.getAllByText(formatForumTimeFromMs(DETAIL.grant.appliedAt, 'en')).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText('Please check whether the posts match principle 1.')).toBeTruthy();
     expect(screen.getByText('Giving is a duty')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(screen.getByText('Living-room note.')).toBeTruthy();
     expect(screen.getAllByText(formatForumTime(POST.createdAt, 'en')).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Trial' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Admit' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Requirement met' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Requirement not met' })).toBeTruthy();
   });
 
   it('falls back to Unnamed and hides empty post text', async () => {
@@ -210,15 +201,13 @@ describe('FundingApplicationDetailScreen', () => {
     expect(await screen.findByText('No living-room posts.')).toBeTruthy();
   });
 
-  it('hides Trial when the grant is already on trial', async () => {
+  it('still walks the four steps when the grant is already on trial', async () => {
     fetchMock.mockResolvedValue({
       ...DETAIL,
       grant: { ...DETAIL.grant, status: 'trial', trialUtcDate: '2026-09-20' },
     });
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    expect(await screen.findByRole('button', { name: 'Admit' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Trial' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Requirement met' })).toBeTruthy();
   });
 
   it('hides decide buttons when the grant is admitted', async () => {
@@ -232,66 +221,79 @@ describe('FundingApplicationDetailScreen', () => {
     });
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     expect(await screen.findByRole('link', { name: 'Rose' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Trial' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Admit' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Reject' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Requirement met' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
   });
 
-  it('posts Trial and returns to the queue', async () => {
+  it('advances through principles then posts Admit on Yes', async () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Trial' }));
-    await waitFor(() => {
-      expect(trialMock).toHaveBeenCalledWith('sess', 'acc_rose');
-    });
-    expect(push).toHaveBeenCalledWith('/moderate/applications');
-    expect((screen.getByRole('button', { name: 'Trial' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-  });
-
-  it('posts Admit and returns to the queue', async () => {
-    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Admit' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    expect(
+      await screen.findByText('Please check whether the posts match principle 2.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
+    expect(
+      await screen.findByText('Please check whether the posts match principle 3.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
+    expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(admitMock).toHaveBeenCalledWith('sess', 'acc_rose');
     });
     expect(push).toHaveBeenCalledWith('/moderate/applications');
+    expect(rejectMock).not.toHaveBeenCalled();
   });
 
-  it('posts Reject and returns to the queue', async () => {
+  it('posts Reject when No is clicked on the truth step', async () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Reject' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
+    expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
     await waitFor(() => {
       expect(rejectMock).toHaveBeenCalledWith('sess', 'acc_rose');
     });
     expect(push).toHaveBeenCalledWith('/moderate/applications');
+    expect(admitMock).not.toHaveBeenCalled();
+  });
+
+  it('posts Reject when requirement is not met', async () => {
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement not met' }));
+    await waitFor(() => {
+      expect(rejectMock).toHaveBeenCalledWith('sess', 'acc_rose');
+    });
+    expect(push).toHaveBeenCalledWith('/moderate/applications');
+    expect(admitMock).not.toHaveBeenCalled();
   });
 
   it('shows action-failed copy when a decision throws', async () => {
-    trialMock.mockRejectedValue(new Error('boom'));
+    rejectMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Trial' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement not met' }));
     expect(await screen.findByText('Could not update this member. Please try again.')).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
   });
 
   it('disables decision buttons and shows a spinner while a POST is in flight', async () => {
-    trialMock.mockImplementation(() => new Promise(() => undefined));
+    rejectMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Trial' }));
-    const trial = screen.getByRole('button', { name: 'Trial' }) as HTMLButtonElement;
-    const admit = screen.getByRole('button', { name: 'Admit' }) as HTMLButtonElement;
-    const reject = screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement;
-    expect(trial.disabled).toBe(true);
-    expect(admit.disabled).toBe(true);
-    expect(reject.disabled).toBe(true);
-    expect(trial.querySelector('.animate-spin')).toBeTruthy();
-    fireEvent.click(admit);
-    fireEvent.click(reject);
-    fireEvent.click(trial);
-    expect(trialMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(await screen.findByRole('button', { name: 'Requirement not met' }));
+    const unmet = screen.getByRole('button', { name: 'Requirement not met' }) as HTMLButtonElement;
+    const met = screen.getByRole('button', { name: 'Requirement met' }) as HTMLButtonElement;
+    expect(unmet.disabled).toBe(true);
+    expect(met.disabled).toBe(true);
+    expect(unmet.querySelector('.animate-spin')).toBeTruthy();
+    fireEvent.click(met);
+    fireEvent.click(unmet);
+    expect(rejectMock).toHaveBeenCalledTimes(1);
     expect(admitMock).not.toHaveBeenCalled();
-    expect(rejectMock).not.toHaveBeenCalled();
   });
 
   it('ignores a stale resolve after unmount', async () => {

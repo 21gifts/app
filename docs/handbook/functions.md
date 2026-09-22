@@ -1223,13 +1223,6 @@
 - **Returns / side effects:** Account, grant, and living-room posts. Throws visitor copy `Could not load this application. Please try again.` on 401/403/404/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingApplicationDetailScreen`.
 
-## Function: postFundingTrial
-
-- **Purpose:** POST `/funding/trial` with `{ accountId }` (staff). Target must be effective pending.
-- **Inputs:** Bearer `sessionToken`, subject `accountId`.
-- **Returns / side effects:** `FundingDecisionResult`. Throws visitor copy `Could not update this member. Please try again.` on any failure.
-- **Used by:** `FundingApplicationDetailScreen`.
-
 ## Function: postFundingAdmit
 
 - **Purpose:** POST `/funding/admit` with `{ accountId }` (staff). Target pending or trial.
@@ -2646,7 +2639,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplicationsScreen
 
-- **Purpose:** Client queue of open 21 gifts grant applications. Staff (founder or moderator) fetch `fetchFundingApplications` and show applicant name (link `/moderate/applications/{id}`), applied time, empty / Loading… / error+Try again. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`.
+- **Purpose:** Client queue of open 21 gifts grant applications. Staff (founder or moderator) fetch `fetchFundingApplications` and show the lead **Pick a person, then walk each principle and whether the posts are true.**, applicant name (link `/moderate/applications/{id}`), applied time, empty / Loading… / error+Try again. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when the role is founder or moderator.
 - **Used by:** `FundingApplicationsPage`.
@@ -2660,9 +2653,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplicationDetailScreen
 
-- **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and show the applicant, living-room posts, the three convictions as criteria, and status-gated **Trial** / **Admit** / **Reject** (`postFundingTrial` / `postFundingAdmit` / `postFundingReject`): Trial only when `grant.status` is `pending`; Admit and Reject when `pending` or `trial`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate/applications`. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
+- **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and walk four steps: principles 1–3 against living-room posts (no replies) with **Requirement met** / **Requirement not met**, then whether the posts are true with **Yes** / **No**. **Requirement met** advances; **Requirement not met** or **No** posts `postFundingReject`; **Yes** on the last step posts `postFundingAdmit`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate/applications`. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
 - **Inputs:** `accountId`; session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications/:accountId` only when the role is founder or moderator. Trial only when `grant.status` is `pending`; Admit and Reject when `pending` or `trial`; otherwise no decide buttons. Successful Trial / Admit / Reject leaves the buttons disabled and navigates to `/moderate/applications`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications/:accountId` only when the role is founder or moderator. Decide buttons only when `grant.status` is `pending` or `trial`. Successful Admit / Reject leaves the buttons disabled and navigates to `/moderate/applications`.
 - **Used by:** `FundingApplicationDetailPage`.
 
 ## Function: FundingStatusCard
