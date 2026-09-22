@@ -1321,7 +1321,6 @@ describe('ForumBoard', () => {
             payable: false,
             hasPhoto: true,
             photoCount: 1,
-            photoTakenAts: ['2026-09-22T11:40:00+08:00'],
             hasVideo: false,
             videoContentType: null,
             role: 'basis',
@@ -1343,7 +1342,6 @@ describe('ForumBoard', () => {
     );
     expect(document.querySelector('p.whitespace-pre-wrap')).toBeNull();
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
-    expect(screen.getByText('Taken 2026-09-22 11:40:00+08:00')).toBeTruthy();
     expect(screen.getByRole('listitem').getAttribute('data-message-id')).toBe('m-photo');
   });
 
@@ -1360,7 +1358,6 @@ describe('ForumBoard', () => {
             payable: false,
             hasPhoto: true,
             photoCount: 2,
-            photoTakenAts: [null, null],
             hasVideo: false,
             videoContentType: null,
             role: 'basis',

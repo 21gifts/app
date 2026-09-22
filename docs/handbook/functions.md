@@ -876,13 +876,6 @@
 - **Returns / side effects:** `LinkedText` (`<p>` plus optional overlay), or `null` when `text === ''`. Local React expand state only.
 - **Used by:** `ForumQuotedBody` / `QuotedForumNote` (remaining text and nested quoted note bodies when `truncate` is true) and `NoteTranslate` (translated body).
 
-## Function: civilTakenLabel
-
-- **Purpose:** Turn a stored civil capture time into the caption text. Does not parse it as a UTC instant.
-- **Inputs:** A string, or null/undefined.
-- **Returns / side effects:** The string with `T` replaced by a space when it matches `YYYY-MM-DDTHH:MM:SS` plus an optional `±HH:MM` offset; otherwise null. No I/O.
-- **Used by:** `ForumBoard`, `PublicMessageLoader`, `ForumPhotoGallery`.
-
 ## Function: readJpegTakenAt
 
 - **Purpose:** Read a JPEG APP1 Exif capture time before the canvas re-encode strips it. Does not read GPS.
@@ -892,8 +885,8 @@
 
 ## Function: ForumPhotoGallery
 
-- **Purpose:** Horizontal snap gallery for a note with `photoCount > 1`. The visible still's civil capture time is captioned only when `takenAts` has a string at that still's index. Earlier stills are 88% slides (`min-w-[88%] shrink-0 snap-start`, `gap-3`) so the next photo peeks; the last still is `w-full min-w-full` so it can sit flush at snap-start. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots under the scroller (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) jump to a still. Empty `photos` returns `null`. Single still has the chip and no dots.
-- **Inputs:** `photos` (`{ index, url }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`), optional `takenAts` aligned with still index.
+- **Purpose:** Horizontal snap gallery for a note with `photoCount > 1`. Earlier stills are 88% slides (`min-w-[88%] shrink-0 snap-start`, `gap-3`) so the next photo peeks; the last still is `w-full min-w-full` so it can sit flush at snap-start. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots under the scroller (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) jump to a still. Empty `photos` returns `null`. Single still has the chip and no dots. The capture time is stored, not shown.
+- **Inputs:** `photos` (`{ index, url }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`).
 - **Returns / side effects:** React element. Local scroll index only. No network. Blob `<img>` URLs from the parent.
 - **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
 

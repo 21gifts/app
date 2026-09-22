@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
-import { civilTakenLabel, ForumPhotoGallery } from '@/components/ForumPhotoGallery';
+import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
@@ -90,9 +90,6 @@ function PublicThreadCard({
   }, [note.id, photoCount]);
 
   const photoUrl = photoUrls[0];
-  const singleTakenLabel = civilTakenLabel(
-    typeof note.photoTakenAts?.[0] === 'string' ? note.photoTakenAts[0] : note.photoTakenAt,
-  );
   const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
     index,
     url: photoUrls[index],
@@ -132,24 +129,16 @@ function PublicThreadCard({
           }}
         />
       ) : photoCount <= 1 && photoUrl !== undefined ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */}
-          <img
-            src={photoUrl}
-            alt={t('forum.photoAlt', { name: note.name })}
-            className="max-h-80 w-full rounded-xl object-contain"
-          />
-          {singleTakenLabel !== null ? (
-            <p className="mt-1 text-xs text-app-subtle">
-              {t('forum.photoTakenAt', { time: singleTakenLabel })}
-            </p>
-          ) : null}
-        </>
+        /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+        <img
+          src={photoUrl}
+          alt={t('forum.photoAlt', { name: note.name })}
+          className="max-h-80 w-full rounded-xl object-contain"
+        />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
         <ForumPhotoGallery
           photos={loadedPhotoUrls}
           alt={t('forum.photoAlt', { name: note.name })}
-          {...(note.photoTakenAts === undefined ? {} : { takenAts: note.photoTakenAts })}
         />
       ) : null}
       {note.text !== '' ? (

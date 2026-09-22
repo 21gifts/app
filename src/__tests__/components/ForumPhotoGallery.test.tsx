@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { civilTakenLabel, ForumPhotoGallery } from '@/components/ForumPhotoGallery';
+import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const PHOTOS = [
@@ -12,20 +12,6 @@ describe('ForumPhotoGallery', () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
-  });
-
-  it('captions only the visible still and ignores a bad civil string', () => {
-    expect(civilTakenLabel(null)).toBeNull();
-    expect(civilTakenLabel('nope')).toBeNull();
-    expect(civilTakenLabel('2026-09-22T11:40:00')).toBe('2026-09-22 11:40:00');
-    renderWithLocale(
-      <ForumPhotoGallery
-        photos={PHOTOS}
-        alt="Photo from Ada"
-        takenAts={['2026-09-22T11:40:00+08:00', null]}
-      />,
-    );
-    expect(screen.getByText('Taken 2026-09-22 11:40:00+08:00')).toBeTruthy();
   });
 
   it('returns null when there are no stills', () => {

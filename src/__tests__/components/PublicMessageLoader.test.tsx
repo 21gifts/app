@@ -453,19 +453,6 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('shows the civil capture time under a single public photo', async () => {
-    fetchMessage.mockResolvedValue({
-      ...sample,
-      hasPhoto: true,
-      photoCount: 1,
-      text: '',
-      photoTakenAts: ['2026-09-22T11:40:00+08:00'],
-    });
-    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
-    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
-    expect(await screen.findByText('Taken 2026-09-22 11:40:00+08:00')).toBeTruthy();
-  });
-
   it('loads a photo blob URL when hasPhoto is true', async () => {
     fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1, text: '' });
     fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
@@ -512,7 +499,6 @@ describe('PublicMessageLoader', () => {
       ...sample,
       hasPhoto: true,
       photoCount: 2,
-      photoTakenAts: [null, null],
       text: '',
     });
     fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));

@@ -19,13 +19,6 @@ test('Function: readJpegTakenAt — POST /forum/messages without bearer is 401',
   expect(res.status()).toBe(401);
 });
 
-test('Function: civilTakenLabel — GET /public-messages without an id is not the note', async ({
-  request,
-}) => {
-  const res = await request.get('/public-messages/not-a-note');
-  expect(res.status()).toBeLessThan(500);
-});
-
 const FX_USD = {
   quote: 'BTC-USD',
   dayBasis: 'utc',
