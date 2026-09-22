@@ -99,7 +99,7 @@ function appendUnseenMessages(
   if (fresh.length === 0) {
     return prev as ConversationMessage[];
   }
-  return [...prev, ...fresh];
+  return [...prev, ...fresh].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 /**
@@ -565,19 +565,19 @@ export function InboxLoader(): ReactElement | null {
           setConversations((rows) => {
             /* v8 ignore next -- the list is loaded before a thread can poll */
             if (rows === null) return rows;
-            const updated = rows.map((row) =>
-              row.id === openId
-                ? {
-                    ...row,
-                    lastText: last.text,
-                    lastSats: last.sats,
-                    lastFromMe: last.fromMe,
-                    lastAt: last.createdAt,
-                    unread: false,
-                    unreadMessageCount: 0,
-                  }
-                : row,
-            );
+            const updated = rows.map((row) => {
+              if (row.id !== openId) return row;
+              const newerThanList = last.createdAt >= row.lastAt;
+              return {
+                ...row,
+                lastText: newerThanList ? last.text : row.lastText,
+                lastSats: newerThanList ? last.sats : row.lastSats,
+                lastFromMe: newerThanList ? last.fromMe : row.lastFromMe,
+                lastAt: newerThanList ? last.createdAt : row.lastAt,
+                unread: false,
+                unreadMessageCount: 0,
+              };
+            });
             const opened = updated.find((row) => row.id === openId);
             /* v8 ignore next 3 -- a listed thread always has this row */
             if (opened === undefined) {

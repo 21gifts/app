@@ -1847,6 +1847,46 @@ describe('InboxLoader', () => {
     });
     expect(screen.getAllByText('Follow up')).toHaveLength(1);
   });
+
+  it('places an older polled message before a newer local send', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    const sent: ConversationMessage = {
+      id: 'm-sent',
+      name: 'Ada',
+      text: 'Just sent',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    const older: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm-old',
+      text: 'Arrived earlier',
+      createdAt: '2026-08-28T12:30:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, older, sent]));
+    postMock.mockResolvedValue(sent);
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Just sent' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Just sent')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(await screen.findByText('Arrived earlier')).toBeTruthy();
+    const earlier = screen.getByText('Arrived earlier');
+    const sentText = screen.getByText('Just sent');
+    expect(
+      earlier.compareDocumentPosition(sentText) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
 });
 
 describe('conversation thread pages', () => {

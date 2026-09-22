@@ -39,7 +39,7 @@ function appendUnseenMessages(
   if (fresh.length === 0) {
     return prev as ConversationMessage[];
   }
-  return [...prev, ...fresh];
+  return [...prev, ...fresh].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 /**
