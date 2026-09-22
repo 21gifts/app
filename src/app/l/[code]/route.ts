@@ -19,6 +19,9 @@ interface ShortLinkRouteContext {
  * @param _request - Incoming request (unused; lookup is by `code` only).
  * @param context - Dynamic route params (`code`).
  * @returns Does not return; `redirect` or `notFound` throws.
+ * @throws Next.js `notFound` when the code is not eight hex digits, the
+ * lookup fails, or the body is not one message or member.
+ * @throws Next.js `redirect` when the code resolves to a message or member page.
  */
 export async function GET(_request: Request, context: ShortLinkRouteContext): Promise<never> {
   const { code } = await context.params;
