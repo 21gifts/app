@@ -8813,6 +8813,24 @@ test.describe('map screens', () => {
     await shotScreen(page, 'screen-map');
   });
 
+  test('map loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/map');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await shotScreen(page, 'state-map-loading');
+    release();
+  });
+
   test('map empty', async ({ page }) => {
     await seedAda(page);
     await page.route('**/forum/messages/places', async (route) => {

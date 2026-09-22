@@ -44,6 +44,21 @@ test('Function: proxyMessagesPlacesGet — GET /forum/messages/places without be
   expect((await request.get('/maps/key')).status()).toBe(200);
 });
 
+test('Function: MapPage — map loading', async ({ page }) => {
+  await seedSignedIn(page);
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await held;
+    await route.abort();
+  });
+  await page.goto('/map');
+  await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+  release();
+});
+
 test('Function: MapPage — heading is visible', async ({ page }) => {
   await seedSignedIn(page);
   await page.route(/\/forum\/messages\/places$/, async (route) => {

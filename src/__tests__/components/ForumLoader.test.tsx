@@ -424,6 +424,61 @@ describe('ForumLoader', () => {
     delete (window as { google?: unknown }).google;
   });
 
+  it('does not keep a place pin after switching to Ask', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue(SAMPLE);
+    const listeners = new Map<
+      string,
+      (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void
+    >();
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({
+          setCenter: vi.fn(),
+          addListener: (
+            event: string,
+            handler: (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void,
+          ) => {
+            listeners.set(event, handler);
+          },
+        })),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => null,
+          addListener: () => undefined,
+        })),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+    });
+    fetchSpy.mockRestore();
+    delete (window as { google?: unknown }).google;
+  });
+
   it('posts a valid Ask amount as goalSats', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);

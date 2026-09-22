@@ -93,10 +93,10 @@ export function PlaceField(props: {
           setScriptReady(false);
           return;
         }
-        setUnavailable(false);
         setMapsKey(nextKey);
         const googleWindow = window as GoogleWindow;
         if (googleWindow.google?.maps !== undefined) {
+          setUnavailable(false);
           setScriptReady(true);
           return;
         }
@@ -106,6 +106,9 @@ export function PlaceField(props: {
             return;
           }
           if (googleWindow.google?.maps === undefined) {
+            if (existing instanceof HTMLScriptElement) {
+              existing.dataset['gmapsState'] = 'error';
+            }
             setUnavailable(true);
             setScriptReady(false);
             return;
@@ -117,19 +120,37 @@ export function PlaceField(props: {
           if (cancelled) {
             return;
           }
+          if (existing instanceof HTMLScriptElement) {
+            existing.dataset['gmapsState'] = 'error';
+          }
           setUnavailable(true);
           setScriptReady(false);
         };
         if (existing instanceof HTMLScriptElement) {
+          if (existing.dataset['gmapsState'] === 'error') {
+            setUnavailable(true);
+            setScriptReady(false);
+            return;
+          }
+          setUnavailable(false);
           existing.addEventListener('load', onLoad);
           existing.addEventListener('error', onError);
           return;
         }
+        setUnavailable(false);
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(nextKey)}&v=weekly`;
         script.dataset['gmaps'] = 'weekly';
-        script.addEventListener('load', onLoad);
-        script.addEventListener('error', onError);
+        script.addEventListener('load', () => {
+          if (googleWindow.google?.maps === undefined) {
+            script.dataset['gmapsState'] = 'error';
+          }
+          onLoad();
+        });
+        script.addEventListener('error', () => {
+          script.dataset['gmapsState'] = 'error';
+          onError();
+        });
         document.head.appendChild(script);
       } catch {
         if (!cancelled) {

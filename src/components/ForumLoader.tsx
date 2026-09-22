@@ -2247,6 +2247,9 @@ export function ForumLoader({
         composeIntent={composeIntent}
         onComposeIntentChange={(intent) => {
           setComposeIntent(intent);
+          if (intent === 'ask') {
+            setPlaceDraft(null);
+          }
           if (intent === 'post') {
             setAskStep(1);
           }

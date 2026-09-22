@@ -233,6 +233,20 @@ describe('PlaceField', () => {
     expect(await screen.findByLabelText('Place name')).toBeTruthy();
   });
 
+  it('stays unavailable when a failed map script is opened again', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
+    });
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+  });
+
   it('cancels an in-flight key load on close', async () => {
     let started = false;
     let resolveJson: (body: unknown) => void = () => undefined;

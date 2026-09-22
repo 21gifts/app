@@ -2565,6 +2565,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/map',
+    id: 'loading',
+    image: 'map-loading.png',
+    visual: 'state-map-loading',
+    needle: 'map loading',
+  },
+  {
+    route: '/map',
     id: 'error',
     image: 'map-error.png',
     visual: 'state-map-error',

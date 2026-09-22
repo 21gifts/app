@@ -2088,6 +2088,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/map:loading",
+    "label": "/map loading",
+    "visual": "state-map-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/map:error",
     "label": "/map error",
     "visual": "state-map-error",
