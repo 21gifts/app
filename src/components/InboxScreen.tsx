@@ -781,7 +781,7 @@ export function InboxScreen({
                     text={message.text}
                     knownNotes={[]}
                     excludeId={message.id}
-                    rateDay={null}
+                    rateDay={rateDay ?? null}
                     fiat={fiat}
                     truncate={false}
                     className={
