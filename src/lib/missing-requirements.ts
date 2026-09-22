@@ -50,11 +50,12 @@ export function parseMissingRequirements(body: unknown): MissingRequirementsErro
  * Next overlay field to collect before a forum post: rules, then name, then
  * username, then lightning-address.
  *
- * @param missing - Account or 409 missing list.
+ * @param missing - Account or 409 missing list (`wallet` is ignored; it is
+ *   not a posting overlay field).
  * @returns `'rules'`, `'name'`, `'username'`, `'lightning-address'`, or `null` when posting may proceed.
  */
 export function nextPostRequirement(
-  missing: readonly MissingRequirement[],
+  missing: readonly string[],
 ): 'rules' | 'name' | 'username' | 'lightning-address' | null {
   if (missing.includes('rules')) {
     return 'rules';
@@ -79,7 +80,7 @@ export function nextPostRequirement(
  * @returns `'rules'`, `'name'`, `'username'`, or `null` when the send may proceed.
  */
 export function nextContactRequirement(
-  missing: readonly MissingRequirement[],
+  missing: readonly string[],
 ): 'rules' | 'name' | 'username' | null {
   if (missing.includes('rules')) {
     return 'rules';

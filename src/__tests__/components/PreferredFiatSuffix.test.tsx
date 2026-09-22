@@ -38,4 +38,47 @@ describe('preferredFiatSuffix', () => {
     expect(hidden?.textContent).toBe(' · ');
     expect(hidden?.getAttribute('aria-hidden')).toBe('true');
   });
+
+  it('renders the stored USD amount even when the live rate would differ', () => {
+    const { container } = render(
+      <p>
+        {preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountUsd: '5.00' })}
+      </p>,
+    );
+    expect(screen.getByText('$5.00')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(container.querySelector('[aria-hidden="true"]')?.textContent).toBe(' · ');
+  });
+
+  it('renders no fiat when the stored field is null', () => {
+    const { container } = render(
+      <p>{preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountUsd: null })}</p>,
+    );
+    expect(container.textContent).toBe('');
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
+  it('uses the rate day when the stored field for that fiat is omitted', () => {
+    const { container } = render(
+      <p>
+        {preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountChf: '5.00' })}
+      </p>,
+    );
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(container.textContent).not.toContain('5.00');
+  });
+
+  it('maps CHF to amountChf and ignores amountUsd', () => {
+    const { container } = render(
+      <p>
+        {preferredFiatSuffix(21, RATE_DAY, 'CHF', DEFAULT_NUMBER_FORMAT, {
+          amountUsd: '9.00',
+          amountChf: '5.00',
+        })}
+      </p>,
+    );
+    expect(container.textContent).toContain('5.00');
+    expect(container.textContent).not.toContain('9.00');
+    expect(container.textContent).not.toContain('$');
+  });
 });

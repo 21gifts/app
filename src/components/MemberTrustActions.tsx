@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { StaffFunctions } from '@/components/StaffFunctions';
 import { Button } from '@/components/ui';
 import {
   fetchMember,
@@ -125,76 +126,78 @@ export function MemberTrustActions({
       data-testid="state-members-staff-verify"
       className="flex w-full flex-col items-stretch gap-3 border-t border-app-border bg-app-card pt-6"
     >
-      {failed ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('trustChain.actionFailed')}
-        </p>
-      ) : null}
-      {alreadyOnChain ? (
-        <p className="text-center text-sm text-app-fg">
-          <Link
-            href="/trust-chain"
-            className="text-sm font-medium text-app-fg underline underline-offset-2"
-          >
-            {t('trustChain.alreadyOnChain')}
-          </Link>
-        </p>
-      ) : (
-        <>
-          {showVerify ? (
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => {
-                run(() => postTrustVerify(session, profile.id), { role: 'verified' });
-              }}
+      <StaffFunctions>
+        {failed ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('trustChain.actionFailed')}
+          </p>
+        ) : null}
+        {alreadyOnChain ? (
+          <p className="text-center text-sm text-app-fg">
+            <Link
+              href="/trust-chain"
+              className="text-sm font-medium text-app-fg underline underline-offset-2"
             >
-              {t('trustChain.action.verify')}
-            </Button>
-          ) : null}
-          {showPropose ? (
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => {
-                run(() => postTrustPropose(session, profile.id), {
-                  trust: {
-                    ...profile.trust,
-                    proposedBy: { id: account.id, name: account.name },
-                  },
-                });
-              }}
-            >
-              {t('trustChain.action.propose')}
-            </Button>
-          ) : null}
-          {showConfirm ? (
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => {
-                run(() => postTrustConfirm(session, profile.id), { role: 'moderator' });
-              }}
-            >
-              {t('trustChain.action.confirm')}
-            </Button>
-          ) : null}
-          {showWaiting ? (
-            <p className="text-center text-sm text-app-muted">{t('trustChain.waitingConfirm')}</p>
-          ) : null}
-          {showAppoint ? (
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => {
-                run(() => postTrustAppoint(session, profile.id), { role: 'moderator' });
-              }}
-            >
-              {t('trustChain.action.appoint')}
-            </Button>
-          ) : null}
-        </>
-      )}
+              {t('trustChain.alreadyOnChain')}
+            </Link>
+          </p>
+        ) : (
+          <>
+            {showVerify ? (
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  run(() => postTrustVerify(session, profile.id), { role: 'verified' });
+                }}
+              >
+                {t('trustChain.action.verify')}
+              </Button>
+            ) : null}
+            {showPropose ? (
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  run(() => postTrustPropose(session, profile.id), {
+                    trust: {
+                      ...profile.trust,
+                      proposedBy: { id: account.id, name: account.name },
+                    },
+                  });
+                }}
+              >
+                {t('trustChain.action.propose')}
+              </Button>
+            ) : null}
+            {showConfirm ? (
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  run(() => postTrustConfirm(session, profile.id), { role: 'moderator' });
+                }}
+              >
+                {t('trustChain.action.confirm')}
+              </Button>
+            ) : null}
+            {showWaiting ? (
+              <p className="text-center text-sm text-app-muted">{t('trustChain.waitingConfirm')}</p>
+            ) : null}
+            {showAppoint ? (
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  run(() => postTrustAppoint(session, profile.id), { role: 'moderator' });
+                }}
+              >
+                {t('trustChain.action.appoint')}
+              </Button>
+            ) : null}
+          </>
+        )}
+      </StaffFunctions>
     </div>
   );
 }

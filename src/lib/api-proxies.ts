@@ -41,6 +41,26 @@ export async function proxyAuthPasskeyAuthenticateFinishPost(request: Request): 
 }
 
 /**
+ * Proxies POST /auth/passkey/replace/begin to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyReplaceBeginPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/replace/begin');
+}
+
+/**
+ * Proxies POST /auth/passkey/replace/finish to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyReplaceFinishPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/replace/finish');
+}
+
+/**
  * Proxies GET /me to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -118,6 +138,16 @@ export async function proxyMeAboutPhotoGet(request: Request): Promise<Response> 
  */
 export async function proxyMeSetupSkipPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/setup/skip');
+}
+
+/**
+ * Proxies POST /me/wallet-backup-seen to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletBackupSeenPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet-backup-seen');
 }
 
 /**
@@ -405,6 +435,16 @@ export async function proxyMessagesGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /messages/compose-target to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMessagesComposeTargetGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/messages/compose-target');
+}
+
+/**
  * Proxies GET /messages/hidden to the 21.gifts api (app path `/forum/messages/hidden`).
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -465,6 +505,19 @@ export async function proxyPublicMessageGet(
   messageId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}`);
+}
+
+/**
+ * Proxies GET /links/:code to the 21.gifts api (public; no auth).
+ *
+ * App path is `/links/:code`. The visitor redirect lives at `/l/:code`.
+ *
+ * @param request - Incoming App Router request.
+ * @param code - Short-link code from the route.
+ * @returns The upstream response.
+ */
+export async function proxyShortLinkGet(request: Request, code: string): Promise<Response> {
+  return proxyApiRequest(request, `/links/${encodeURIComponent(code)}`);
 }
 
 /**

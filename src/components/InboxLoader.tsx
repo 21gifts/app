@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ReactElement } from 'rea
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
+  CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchConversations,
@@ -89,6 +90,18 @@ function isAbortError(err: unknown): boolean {
   return err instanceof Error && err.name === 'AbortError';
 }
 
+function appendUnseenMessages(
+  prev: readonly ConversationMessage[],
+  page: readonly ConversationMessage[],
+): ConversationMessage[] {
+  const ids = new Set(prev.map((message) => message.id));
+  const fresh = page.filter((message) => !ids.has(message.id));
+  if (fresh.length === 0) {
+    return prev as ConversationMessage[];
+  }
+  return [...prev, ...fresh].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
 /**
  * Client loader for the signed-in inbox on `/messages`.
  *
@@ -116,6 +129,9 @@ function isAbortError(err: unknown): boolean {
  * After a successful thread load and mark-read, bumps the badge epoch and
  * refreshes the home-screen badge to notifications unread plus remaining
  * inbox unread.
+ * While the thread is open and the tab is visible, the newest page is fetched
+ * every CONVERSATION_LIVE_POLL_MS and unseen messages are appended; a hidden
+ * tab does not poll; a failed poll keeps the thread.
  *
  * @returns The inbox screen, or `null` without a session.
  */
@@ -509,6 +525,89 @@ export function InboxLoader(): ReactElement | null {
     };
   }, []);
 
+  const threadLoaded = messages !== null;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  useEffect(() => {
+    if (session === null || openId === null || openId === '' || !threadAllowed || !threadLoaded) {
+      return;
+    }
+    let cancelled = false;
+    let inFlight = false;
+    const pull = (): void => {
+      if (document.visibilityState === 'hidden' || inFlight || cancelled) {
+        return;
+      }
+      inFlight = true;
+      void fetchConversation(session, openId)
+        .then((page) => {
+          if (cancelled || openIdRef.current !== openId) {
+            return;
+          }
+          const prev = messagesRef.current;
+          /* v8 ignore next -- the poll starts only after the thread is loaded */
+          if (prev === null) return;
+          const fresh = page.messages.filter(
+            (message) => !prev.some((row) => row.id === message.id),
+          );
+          setMessages((current) => {
+            /* v8 ignore next -- the poll starts only after the thread is loaded */
+            if (current === null) return current;
+            return appendUnseenMessages(current, page.messages);
+          });
+          if (fresh.length === 0) return;
+          const last = fresh[fresh.length - 1];
+          /* v8 ignore next -- fresh is non-empty when this runs */
+          if (last === undefined) return;
+          /* v8 ignore next -- a thread only polls after the inbox list has loaded */
+          if (conversations === null) return;
+          const remaining = conversations.filter((row) => row.id !== openId && row.unread).length;
+          setConversations((rows) => {
+            /* v8 ignore next -- the list is loaded before a thread can poll */
+            if (rows === null) return rows;
+            const updated = rows.map((row) => {
+              if (row.id !== openId) return row;
+              const newerThanList = last.createdAt >= row.lastAt;
+              return {
+                ...row,
+                lastText: newerThanList ? last.text : row.lastText,
+                lastSats: newerThanList ? last.sats : row.lastSats,
+                lastFromMe: newerThanList ? last.fromMe : row.lastFromMe,
+                lastAt: newerThanList ? last.createdAt : row.lastAt,
+                unread: false,
+                unreadMessageCount: 0,
+              };
+            });
+            const opened = updated.find((row) => row.id === openId);
+            /* v8 ignore next 3 -- a listed thread always has this row */
+            if (opened === undefined) {
+              return updated;
+            }
+            return [opened, ...updated.filter((row) => row.id !== openId)];
+          });
+          void markConversationRead(session, openId).catch(() => undefined);
+          bumpUnreadAppBadgeEpoch();
+          void refreshUnreadAppBadge(session, remaining).catch(() => undefined);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          inFlight = false;
+        });
+    };
+    const intervalId = setInterval(pull, CONVERSATION_LIVE_POLL_MS);
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === 'visible') {
+        pull();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [session, openId, threadAllowed, threadLoaded]);
+
   if (session === null) {
     return null;
   }
@@ -721,8 +820,14 @@ export function InboxLoader(): ReactElement | null {
                 })),
               );
         if (openIdRef.current === conversationId) {
-          /* v8 ignore next -- first message in an empty thread */
-          setMessages((prev) => (prev === null ? [created] : [...prev, created]));
+          setMessages((prev) => {
+            /* v8 ignore next -- first message in an empty thread */
+            if (prev === null) return [created];
+            if (prev.some((message) => message.id === created.id)) {
+              return prev;
+            }
+            return [...prev, created];
+          });
           setDraft('');
           setPhotoDrafts([]);
           if (created.hasPhoto) {

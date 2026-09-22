@@ -18,6 +18,7 @@ import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { Button, Card } from '@/components/ui';
 import {
+  fetchComposeTarget,
   fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
@@ -36,13 +37,10 @@ import {
   type MemberProfile,
 } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
-import {
-  MissingRequirementsError,
-  nextPostRequirement,
-  type MissingRequirement,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
@@ -203,6 +201,7 @@ export function MemberProfileScreen({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -210,6 +209,8 @@ export function MemberProfileScreen({
   expandedIdRef.current = expandedId;
   const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const repliesRef = useRef(replies);
+  repliesRef.current = replies;
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
@@ -220,6 +221,7 @@ export function MemberProfileScreen({
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
   const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
@@ -407,6 +409,7 @@ export function MemberProfileScreen({
     setPayInvoice(null);
     setPayBusy(false);
     setPayWaiting(false);
+    setPayHost(null);
     setReplyPosting(false);
   };
 
@@ -440,7 +443,11 @@ export function MemberProfileScreen({
     };
   }, []);
 
-  const startPayPoll = (messageId: string, baselineSats: number): void => {
+  const startPayPoll = (
+    messageId: string,
+    baselineSats: number,
+    replyParentId: string | null = null,
+  ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -450,6 +457,28 @@ export function MemberProfileScreen({
     const signal = controller.signal;
     setPayWaiting(true);
     void (async () => {
+      const composePay = replyParentId !== null;
+      const countOwn = async (): Promise<number> => {
+        const expected = pendingComposeTextRef.current;
+        const me = useAuthStore.getState().account?.id;
+        const sess = useAuthStore.getState().session;
+        /* v8 ignore next 3 -- compose-pay always sets pending text, session, and parent */
+        if (expected === null || me === undefined || sess === null || replyParentId === null) {
+          return 0;
+        }
+        const replies = await fetchReplies(sess, replyParentId);
+        return replies.filter((row) => row.accountId === me && row.text === expected).length;
+      };
+      let baselineOwn: number | null = null;
+      if (composePay) {
+        try {
+          baselineOwn = await countOwn();
+          /* v8 ignore start -- a failed baseline count is retried after sats rise */
+        } catch {
+          baselineOwn = null;
+        }
+        /* v8 ignore stop */
+      }
       for (;;) {
         try {
           const next = await fetchPublicMessage(messageId, {
@@ -460,65 +489,116 @@ export function MemberProfileScreen({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setPosts((prev) => {
-              /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
-              if (prev === null) {
-                return prev;
+            let ownContent = !composePay;
+            if (composePay) {
+              try {
+                if (baselineOwn !== null) {
+                  ownContent = (await countOwn()) > baselineOwn;
+                }
+                /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+              } catch {
+                ownContent = false;
               }
-              return prev.map((row) =>
-                row.id === next.id
-                  ? {
-                      ...row,
-                      ...next,
-                      replyCount: Math.max(row.replyCount, next.replyCount),
+              /* v8 ignore stop */
+            }
+            if (ownContent) {
+              pendingComposeTextRef.current = null;
+              setPosts((prev) => {
+                /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
+              setActivityReplies((prev) => {
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+              });
+              setReplies((prev) => {
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+              });
+              setPayWaiting(false);
+              setPayInvoice(null);
+              setPayMessageId(null);
+              setPayHost(null);
+              setPayDraft('');
+              setPayError(null);
+              setReplyPosting(false);
+              const current = useAuthStore.getState();
+              if (current.session !== session) {
+                return;
+              }
+              if (current.account !== null) {
+                setAccount({ ...current.account, hasPosted: true });
+              }
+              if (replyParentId !== null && replyParentId !== next.id) {
+                /* v8 ignore start -- compose-pay reply increment is asserted in tests; identity/empty-activity arms are fixture-only */
+                setPosts((prev) => {
+                  /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 2 -- other listed notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
                     }
-                  : row,
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                setActivityReplies((prev) => {
+                  /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 2 -- other listed notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                /* v8 ignore stop */
+              }
+              const threadId = expandedIdRef.current;
+              const paidNestedReply = (repliesRef.current ?? []).some(
+                (row) => row.id === messageId,
               );
-            });
-            setActivityReplies((prev) => {
-              if (prev === null) {
-                return prev;
+              if (threadId !== null && current.session !== null && !paidNestedReply) {
+                const gen = ++expandGen.current;
+                setRepliesLoading(true);
+                setRepliesError(false);
+                try {
+                  const repliesNext = await fetchReplies(current.session, threadId);
+                  if (expandGen.current === gen) {
+                    setReplies(repliesNext);
+                  }
+                } catch {
+                  if (expandGen.current === gen) {
+                    setRepliesError(true);
+                  }
+                } finally {
+                  if (expandGen.current === gen) {
+                    setRepliesLoading(false);
+                  }
+                }
               }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
-            });
-            setReplies((prev) => {
-              if (prev === null) {
-                return prev;
-              }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
-            });
-            setPayWaiting(false);
-            setPayInvoice(null);
-            setPayMessageId(null);
-            setPayDraft('');
-            setPayError(null);
-            const current = useAuthStore.getState();
-            if (current.session !== session) {
               return;
             }
-            if (current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
-            }
-            if (expandedIdRef.current === messageId && current.session !== null) {
-              const gen = ++expandGen.current;
-              setRepliesLoading(true);
-              setRepliesError(false);
-              try {
-                const repliesNext = await fetchReplies(current.session, messageId);
-                if (expandGen.current === gen) {
-                  setReplies(repliesNext);
-                }
-              } catch {
-                if (expandGen.current === gen) {
-                  setRepliesError(true);
-                }
-              } finally {
-                if (expandGen.current === gen) {
-                  setRepliesLoading(false);
-                }
-              }
-            }
-            return;
           }
         } catch {
           // Keep waiting while the sheet is open.
@@ -536,7 +616,7 @@ export function MemberProfileScreen({
     })();
   };
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
       return false;
@@ -603,10 +683,7 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
-        const parentRowNow = posts?.find((message) => message.id === parentId);
-        /* v8 ignore next -- expanded parent is a loaded post */
-        const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
-        await runPaidReply(token, trimmed, parentId, 1, isRetry, parentSatsNow);
+        await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
       if (expandedIdRef.current === parentId) {
@@ -614,6 +691,72 @@ export function MemberProfileScreen({
       }
     } finally {
       setReplyPosting(false);
+    }
+  };
+
+  const runComposePay = async (
+    token: string,
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    let awaitingPay = false;
+    try {
+      const target = await fetchComposeTarget(token);
+      const invoice = await postMessageInvoice(
+        token,
+        target.messageId,
+        sats,
+        `inReplyTo:${parentId}\n${trimmed}`,
+      );
+      /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(target.messageId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setPayHost('composer');
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      pendingComposeTextRef.current = trimmed;
+      startPayPoll(target.messageId, target.sats, parentId);
+      awaitingPay = true;
+    } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the compose invoice failed */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      /* v8 ignore stop */
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      }
+    } finally {
+      if (!awaitingPay) {
+        setReplyPosting(false);
+      }
     }
   };
 
@@ -643,6 +786,7 @@ export function MemberProfileScreen({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -709,8 +853,9 @@ export function MemberProfileScreen({
   const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
+  const memberPath = `/members/${profile.id}`;
   /* v8 ignore next -- SSR first paint: origin empty until client */
-  const profileUrl = origin !== '' ? `${origin}/members/${profile.id}` : '';
+  const profileUrl = origin !== '' ? shortResourceUrl(origin, profile.id, memberPath) : '';
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -741,6 +886,7 @@ export function MemberProfileScreen({
   const handlePayOpen = (messageId: string): void => {
     bumpPayPollGeneration();
     setPayMessageId(messageId);
+    setPayHost('card');
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
@@ -895,7 +1041,9 @@ export function MemberProfileScreen({
     const token = session;
     const parentId = expandedId;
     const parentRow = posts?.find((message) => message.id === parentId);
-    const exempt = isReplyPaymentExempt(account, parentRow?.accountId ?? profile.id);
+    const parentAccountId = parentRow?.accountId;
+    const exempt = isReplyPaymentExempt(account, parentAccountId);
+    const authorUnknown = parentAccountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -913,11 +1061,13 @@ export function MemberProfileScreen({
           baselineSats,
         );
       }
-      if (parsed === 'empty' && exempt) {
-        return runReplyPost(token, trimmed, parentId, isRetry);
+      if (parsed === 'empty') {
+        if (exempt || authorUnknown) {
+          return runReplyPost(token, trimmed, parentId, isRetry);
+        }
+        return runComposePay(token, trimmed, parentId, 1, isRetry);
       }
-      const sats = parsed === 'empty' ? 1 : parsed;
-      return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
@@ -957,6 +1107,7 @@ export function MemberProfileScreen({
     photoUrls,
     rateDay,
     payMessageId,
+    payHost,
     payDraft,
     payBusy,
     payError,

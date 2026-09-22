@@ -53,9 +53,24 @@ export const accountSchema = z.object({
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
-  setup: z.enum(['name', 'username', 'lightning-address', 'rules']).nullable(),
+  setup: z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules']).nullable(),
   /** Fields still missing for posts (may include skipped onboarding steps). */
-  missing: z.array(z.enum(['name', 'username', 'lightning-address', 'rules'])),
+  missing: z.array(z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules'])),
+  /**
+   * True when this account must confirm a recovery phrase. Optional so current
+   * develop api bodies still parse; omitted or false means an existing member.
+   */
+  walletRequired: z.boolean().optional(),
+  /**
+   * Epoch ms of the first recovery-phrase confirmation, or `null` if unseen.
+   * Optional so current develop api bodies still parse.
+   */
+  walletBackupSeenAt: z.number().nullable().optional(),
+  /**
+   * Current passkey credential id (base64url). Optional so current develop
+   * api bodies still parse; missing means reveal cannot bind allowCredentials.
+   */
+  passkeyCredentialId: z.string().min(1).nullable().optional(),
   /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
@@ -98,9 +113,12 @@ export const accountSchema = z.object({
  * (name-only auto notes from the api are `null`).
  * `aboutMeHasPhoto` is true when the live profile note has a photo (optional
  * on older api bodies; defaults to false).
- * `setup` is the next onboarding screen (`name`, `lightning-address`, `rules`)
- * or `null` when onboarding is complete (including after skips). `missing` lists
- * fields still unset for posting; skipped steps stay listed until filled.
+ * `setup` is the next onboarding screen (`wallet`, `name`, `username`,
+ * `lightning-address`, `rules`) or `null` when onboarding is complete
+ * (including after skips). `missing` lists fields still unset for posting;
+ * skipped steps stay listed until filled. `walletRequired` is true for new
+ * passkey accounts; omitted or false on existing members. `walletBackupSeenAt`
+ * is the epoch ms of the first recovery-phrase confirmation, or `null`.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
@@ -416,6 +434,8 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * `goalSats` is the optional whole-sat ask on a top-level note; omitted when
  * the note has no goal; mixed/old payloads without the key still parse.
+ * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
+ * that row's `sats`, optional so an older payload still parses.
  * Gift-only replies may have empty `text` when `sats > 0`.
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
@@ -429,6 +449,10 @@ export const forumMessageSchema = z
     text: z.string(), // may be '' when hasPhoto, hasVideo, or sats > 0
     createdAt: z.string().datetime({ offset: true }),
     sats: z.number().int().nonnegative(),
+    amountUsd: fiatAmountSchema.optional(),
+    amountChf: fiatAmountSchema.optional(),
+    amountEur: fiatAmountSchema.optional(),
+    amountPhp: fiatAmountSchema.optional(),
     goalSats: z.number().int().positive().optional(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
@@ -631,6 +655,8 @@ export type Conversation = z.infer<typeof conversationSchema>;
  * `photoCount` (0–10) flag attached stills. `accountId` is the optional
  * 21.gifts sender id on thread messages. `giftFor` is the optional id of the
  * thread message this row is a paid gift for (moderator-group stipend rows).
+ * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
+ * that row's `sats`, optional so an older payload still parses.
  * For a staff viewer, `name` and optional `accountId` are that actor when the
  * api sends them. Members still see platform identity (`21.gifts`) on official
  * replies.
@@ -642,6 +668,10 @@ export const conversationMessageSchema = z.object({
   createdAt: z.string().datetime({ offset: true }),
   fromMe: z.boolean(),
   sats: z.number().int().nonnegative(),
+  amountUsd: fiatAmountSchema.optional(),
+  amountChf: fiatAmountSchema.optional(),
+  amountEur: fiatAmountSchema.optional(),
+  amountPhp: fiatAmountSchema.optional(),
   hasPhoto: z.boolean().default(false),
   photoCount: z.number().int().min(0).max(10).default(0),
   /** Optional 21.gifts sender id on thread messages. */

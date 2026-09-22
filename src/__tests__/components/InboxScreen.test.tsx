@@ -1446,6 +1446,83 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
   });
 
+  it('shows stored fiat on a nested gift line and aria-label when the live rate differs', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = {
+      ...MESSAGE,
+      id: 'g1',
+      name: 'Bob',
+      text: '',
+      sats: 21,
+      giftFor: 'm1',
+      amountUsd: '5.00',
+    };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={RATE_DAY}
+      />,
+    );
+    const note = screen.getByRole('note');
+    expect(note.textContent).toContain('$5.00');
+    expect(note.textContent).not.toContain('$0.02');
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $5.00`);
+  });
+
+  it('keeps a nested gift ₿-only when stored fiat is null', () => {
+    const parent = { ...MESSAGE, id: 'm1' };
+    const gift = {
+      ...MESSAGE,
+      id: 'g1',
+      name: 'Bob',
+      text: '',
+      sats: 21,
+      giftFor: 'm1',
+      amountUsd: null,
+    };
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[parent, gift]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={RATE_DAY}
+      />,
+    );
+    const note = screen.getByRole('note');
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
+    expect(note.textContent).toContain(formatBitcoin(21));
+    expect(note.textContent).not.toContain('$0.02');
+    expect(note.textContent).not.toContain('$5.00');
+  });
+
   it('includes the fiat suffix on a nested gift line and aria-label', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };

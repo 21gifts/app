@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -27,6 +27,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
+  fetchShortLink: vi.fn(),
 }));
 
 vi.mock('@/lib/note-translate', () => ({
@@ -34,11 +35,12 @@ vi.mock('@/lib/note-translate', () => ({
   translateNote: vi.fn(),
 }));
 
-import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
+import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
+const fetchShort = vi.mocked(fetchShortLink);
 const fetchAvailable = vi.mocked(fetchTranslateAvailable);
 const translate = vi.mocked(translateNote);
 const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
@@ -80,6 +82,8 @@ const parentNote: ForumMessage = {
 beforeEach(() => {
   fetchMessage.mockReset();
   fetchPhoto.mockReset();
+  fetchShort.mockReset();
+  fetchShort.mockResolvedValue(null);
   fetchAvailable.mockReset();
   translate.mockReset();
   fetchMessage.mockResolvedValue(null);
@@ -147,6 +151,30 @@ describe('ForumQuotedBody', () => {
     fireEvent.click(translateButton);
     const body = await screen.findByText('Can anyone lend me a few satoshi this week?');
     expect(body.closest('p')?.className).toContain('text-app-btn-fg');
+  });
+
+  it('shows stored fiat on the nested post when the live rate differs', async () => {
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, amountUsd: '5.00' }]}
+        excludeId={PARENT_ID}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+    });
+    expect(screen.getByText('₿43')).toBeTruthy();
+    expect(screen.getByText('$5.00')).toBeTruthy();
+    expect(screen.queryByText('$0.04')).toBeNull();
   });
 
   it('shows a fiat suffix on the nested post when conversion is available', async () => {
@@ -582,5 +610,206 @@ describe('ForumQuotedBody', () => {
       expect(screen.getByText(/TAILTOKEN/)).toBeTruthy();
     });
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  const SHORT_URL = 'https://21.gifts/l/d8cd22dd';
+  const plainQuoted: ForumMessage = { ...quotedNote, hasPhoto: false, photoCount: 0 };
+
+  it('resolves a short link from known notes and strips it', async () => {
+    fetchShort.mockResolvedValue({ kind: 'message', id: QUOTED_ID.toUpperCase() });
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${SHORT_URL}`}
+        knownNotes={[plainQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Open linked note from Cyrill' })).toBeTruthy();
+    });
+    expect(screen.getByText('just for information:')).toBeTruthy();
+    expect(screen.queryByText(SHORT_URL)).toBeNull();
+    expect(fetchShort).toHaveBeenCalledWith('d8cd22dd');
+    expect(fetchMessage).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('link', { name: 'Open linked note from Cyrill' }).getAttribute('href'),
+    ).toBe(`/messages/${QUOTED_ID}`);
+  });
+
+  it('fetches a short-linked note that is not already known', async () => {
+    fetchShort.mockResolvedValue({ kind: 'message', id: QUOTED_ID });
+    fetchMessage.mockResolvedValue(plainQuoted);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`see ${SHORT_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: SHORT_URL })).toBeNull();
+    });
+    expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
+    expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+  });
+
+  it('leaves a member short link in the text', async () => {
+    const memberUrl = 'https://21.gifts/l/22222222';
+    fetchShort.mockResolvedValue({
+      kind: 'member',
+      id: '22222222-2222-4222-8222-222222222222',
+    });
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`hi ${memberUrl} there`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchShort).toHaveBeenCalledWith('22222222');
+    });
+    expect(screen.getByRole('link', { name: memberUrl })).toBeTruthy();
+    expect(fetchMessage).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
+  });
+
+  it('leaves a short link that does not resolve', async () => {
+    fetchShort.mockResolvedValue(null);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`see ${SHORT_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchShort).toHaveBeenCalledWith('d8cd22dd');
+    });
+    expect(screen.getByRole('link', { name: SHORT_URL })).toBeTruthy();
+    expect(fetchMessage).not.toHaveBeenCalled();
+  });
+
+  it('does not quote a short link to the note that contains it', async () => {
+    fetchShort.mockResolvedValue({ kind: 'message', id: QUOTED_ID });
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`loop ${SHORT_URL}`}
+        knownNotes={[plainQuoted]}
+        excludeId={QUOTED_ID.toUpperCase()}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchShort).toHaveBeenCalledWith('d8cd22dd');
+    });
+    expect(screen.getByRole('link', { name: SHORT_URL })).toBeTruthy();
+    expect(fetchMessage).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
+  });
+
+  it('keeps a short link when the public note fails to load', async () => {
+    fetchShort.mockResolvedValue({ kind: 'message', id: QUOTED_ID });
+    fetchMessage.mockResolvedValue(null);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`see ${SHORT_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
+    });
+    expect(screen.getByRole('link', { name: SHORT_URL })).toBeTruthy();
+    cleanup();
+    fetchMessage.mockRejectedValueOnce(new Error('offline'));
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`again ${SHORT_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: SHORT_URL })).toBeTruthy();
+    });
+  });
+
+  it('shows one card when a short link and a uuid quote name the same note', async () => {
+    fetchShort.mockResolvedValue({ kind: 'message', id: QUOTED_ID });
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`see ${SHORT_URL} and ${QUOTED_URL}`}
+        knownNotes={[plainQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.queryByText(SHORT_URL)).toBeNull();
+      expect(screen.queryByText(QUOTED_URL)).toBeNull();
+    });
+    expect(screen.getAllByRole('link', { name: 'Open linked note from Cyrill' })).toHaveLength(1);
+    expect(fetchMessage).not.toHaveBeenCalled();
+  });
+
+  it('lowercases an uppercase short code before resolving it', async () => {
+    fetchShort.mockResolvedValue({ kind: 'message', id: QUOTED_ID });
+    renderWithLocale(
+      <ForumQuotedBody
+        text="see https://21.gifts/l/D8CD22DD"
+        knownNotes={[plainQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchShort).toHaveBeenCalledWith('d8cd22dd');
+    });
+    expect(fetchShort).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not store a short link resolved after unmount', async () => {
+    let resolveLink: (value: { kind: 'message'; id: string } | null) => void = () => undefined;
+    fetchShort.mockImplementation(
+      () =>
+        new Promise<{ kind: 'message'; id: string } | null>((resolve) => {
+          resolveLink = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(
+      <ForumQuotedBody
+        text={`see ${SHORT_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchShort).toHaveBeenCalledWith('d8cd22dd');
+    });
+    unmount();
+    resolveLink({ kind: 'message', id: QUOTED_ID });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(fetchMessage).not.toHaveBeenCalled();
   });
 });

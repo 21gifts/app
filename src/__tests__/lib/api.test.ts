@@ -39,6 +39,7 @@ import {
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  finishPasskeyReplace,
   isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   WRONG_ACCOUNT_ERROR,
@@ -57,10 +58,12 @@ import {
   postConversationInvoice,
   postConversationMessage,
   postMessage,
+  fetchComposeTarget,
   postMessageInvoice,
   postMessageVideo,
   postNotificationLevel,
   postPushSubscription,
+  postWalletBackupSeen,
   agreeToRules,
   putAboutMe,
   setLightningAddress,
@@ -71,6 +74,7 @@ import {
   resolveLightningAddress,
   startPasskeyAuthentication,
   startPasskeyRegistration,
+  startPasskeyReplace,
   unlinkLightningAddress,
 } from '@/lib/api';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
@@ -1471,6 +1475,40 @@ describe('listHiddenMessages', () => {
     };
     stubFetch({ ok: true, status: 200, body: { messages: [row] } });
     await expect(listHiddenMessages('sess')).resolves.toEqual([row]);
+  });
+});
+
+describe('fetchComposeTarget', () => {
+  it('returns the platform fee note', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messageId: 'fee-note', sats: 0 },
+    });
+    await expect(fetchComposeTarget('sess')).resolves.toEqual({
+      messageId: 'fee-note',
+      sats: 0,
+    });
+  });
+
+  it('throws collapsed copy when the request fails', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Messages are unavailable' } });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Messages are unavailable');
+  });
+
+  it('throws when the error body is empty', async () => {
+    stubFetch({ ok: false, status: 500, body: null });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
+  });
+
+  it('throws when the body is not a fee note', async () => {
+    stubFetch({ ok: true, status: 200, body: { messageId: 1, sats: '0' } });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
+  });
+
+  it('throws when the success body is null', async () => {
+    stubFetch({ ok: true, status: 200, body: null });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
   });
 });
 
@@ -3248,6 +3286,62 @@ describe('finishPasskeyAuthentication', () => {
   });
 });
 
+describe('startPasskeyReplace', () => {
+  it('returns the validated begin payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyReplace('sess')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/replace/begin', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(startPasskeyReplace('sess')).rejects.toThrow(
+      'Failed to start passkey replace: 401',
+    );
+  });
+});
+
+describe('finishPasskeyReplace', () => {
+  it('returns the account from the wrapped body', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { account } });
+    await expect(finishPasskeyReplace('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/replace/finish', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(finishPasskeyReplace('sess', 'ch', {})).rejects.toThrow(
+      'Failed to finish passkey replace: 400',
+    );
+  });
+});
+
+describe('postWalletBackupSeen', () => {
+  it('returns the updated account', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+    await expect(postWalletBackupSeen('sess')).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/me/wallet-backup-seen', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(postWalletBackupSeen('sess')).rejects.toThrow('Could not save wallet backup');
+  });
+});
+
 describe('isWrongAccountError', () => {
   it('is true for WrongAccountError instances', () => {
     expect(isWrongAccountError(new WrongAccountError())).toBe(true);
@@ -3534,6 +3628,33 @@ describe('postFundingApply', () => {
       },
       body: JSON.stringify({}),
     });
+  });
+
+  it('rethrows a 400 About me body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'About me is required' } });
+    await expect(postFundingApply('sess')).rejects.toThrow('About me is required');
+  });
+
+  it('rethrows a 400 About me photo body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'About me photo is required' } });
+    await expect(postFundingApply('sess')).rejects.toThrow('About me photo is required');
+  });
+
+  it('rethrows a 400 Location body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Location is required' } });
+    await expect(postFundingApply('sess')).rejects.toThrow('Location is required');
+  });
+
+  it('throws visitor copy on 400 without an error body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new Error('no json')),
+      }),
+    );
+    await expect(postFundingApply('sess')).rejects.toThrow(loadError);
   });
 
   it('throws visitor copy on 403', async () => {

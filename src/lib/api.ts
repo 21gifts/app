@@ -62,6 +62,7 @@ import {
 } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
+import { shortLinkPath } from '@/lib/short-link';
 
 /**
  * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
@@ -930,8 +931,10 @@ const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The updated {@link OwnerFunding} object.
- * @throws Error with visitor-facing copy on 401/403/409/503, other non-2xx, a
- * network failure, or a body that fails {@link fundingApplyResponseSchema}.
+ * @throws Error with the API string on 400 `About me is required`,
+ * `About me photo is required`, or `Location is required`. Other 401/403/409/503,
+ * other non-2xx, a network failure, or a body that fails
+ * {@link fundingApplyResponseSchema} use visitor-facing copy.
  */
 export async function postFundingApply(sessionToken: string): Promise<OwnerFunding> {
   try {
@@ -944,10 +947,22 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
       body: JSON.stringify({}),
     });
     if (!response.ok) {
+      if (response.status === 400) {
+        const raw = await readApiError(response);
+        throw new Error(raw === null ? FUNDING_APPLY_ERROR : raw);
+      }
       throw new Error(FUNDING_APPLY_ERROR);
     }
     return fundingApplyResponseSchema.parse(await response.json()).funding;
-  } catch {
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message === 'About me is required' ||
+        err.message === 'About me photo is required' ||
+        err.message === 'Location is required')
+    ) {
+      throw err;
+    }
     throw new Error(FUNDING_APPLY_ERROR);
   }
 }
@@ -1338,6 +1353,40 @@ export async function fetchPublicMessage(
 }
 
 /**
+ * Resolves a public short code (`/l/<8 hex>`) to a message or member id.
+ *
+ * Invalid codes, non-OK responses, and unexpected bodies return `null`.
+ * Network and JSON failures return `null` and do not throw.
+ *
+ * @param code - Eight hex characters (case-insensitive).
+ * @returns The kind and lowercased id, or `null`.
+ * @throws Does not throw.
+ */
+export async function fetchShortLink(
+  code: string,
+): Promise<{ kind: 'message' | 'member'; id: string } | null> {
+  if (!/^[0-9a-f]{8}$/i.test(code)) {
+    return null;
+  }
+  try {
+    const response = await fetch(`/links/${encodeURIComponent(code)}`);
+    if (!response.ok) {
+      return null;
+    }
+    const body: unknown = await response.json();
+    const path = shortLinkPath(body);
+    if (path === null) {
+      return null;
+    }
+    const kind = path.startsWith('/messages/') ? 'message' : 'member';
+    const id = path.slice(path.lastIndexOf('/') + 1);
+    return { kind, id };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetches live replies for one public forum note without a session (HTML thread).
  * Items that fail {@link forumMessageSchema} are skipped; none surviving
  * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
@@ -1557,6 +1606,40 @@ export async function postMessageVideo(
 }
 
 /**
+ * Loads the official platform profile note so a basis account can invoice
+ * 1 sat to 21.gifts before posting or replying.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`.
+ * @throws Error with collapsed visitor copy on non-2xx, or when the body is
+ * not `{ messageId, sats }`.
+ */
+export async function fetchComposeTarget(
+  sessionToken: string,
+): Promise<{ messageId: string; sats: number }> {
+  const response = await fetch('/messages/compose-target', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  const body: unknown = await response.json();
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    typeof (body as { messageId?: unknown }).messageId !== 'string' ||
+    typeof (body as { sats?: unknown }).sats !== 'number'
+  ) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return {
+    messageId: (body as { messageId: string }).messageId,
+    sats: (body as { sats: number }).sats,
+  };
+}
+
+/**
  * Requests a BOLT11 invoice to pay a public forum message.
  *
  * Does not increment the message `sats` total — that updates only after the
@@ -1703,6 +1786,8 @@ export async function fetchModeratorGroup(sessionToken: string): Promise<Convers
 
 /** Number of conversation messages requested per page. */
 export const CONVERSATION_PAGE_LIMIT = 20;
+/** How often an open conversation thread asks for newer messages while the tab is visible. */
+export const CONVERSATION_LIVE_POLL_MS = 5_000;
 
 /**
  * Fetches one page of messages in a private thread.
@@ -2263,6 +2348,71 @@ export async function finishPasskeyAuthentication(
     throw new Error(`Failed to finish passkey authentication: ${response.status}`);
   }
   return passkeySessionSchema.parse(await response.json());
+}
+
+/**
+ * Starts a signed-in passkey replace ceremony.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns Challenge id plus WebAuthn creation options JSON.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function startPasskeyReplace(sessionToken: string): Promise<PasskeyBegin> {
+  const response = await fetch('/auth/passkey/replace/begin', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to start passkey replace: ${response.status}`);
+  }
+  return passkeyBeginSchema.parse(await response.json());
+}
+
+/**
+ * Completes passkey replace and returns the owner account. Does not mint a
+ * new session; the existing Bearer stays valid.
+ *
+ * @param sessionToken - Bearer session.
+ * @param challengeId - Id returned by {@link startPasskeyReplace}.
+ * @param credential - Browser attestation JSON.
+ * @returns The owner {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function finishPasskeyReplace(
+  sessionToken: string,
+  challengeId: string,
+  credential: unknown,
+): Promise<Account> {
+  const response = await fetch('/auth/passkey/replace/finish', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ challengeId, credential }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to finish passkey replace: ${response.status}`);
+  }
+  return z.object({ account: accountSchema }).parse(await response.json()).account;
+}
+
+/**
+ * Records that the signed-in member has seen their recovery phrase.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
+ */
+export async function postWalletBackupSeen(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/wallet-backup-seen', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not save wallet backup');
+  }
+  return accountSchema.parse(await response.json());
 }
 
 /**

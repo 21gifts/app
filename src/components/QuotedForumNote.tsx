@@ -7,18 +7,18 @@ import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { fetchPublicMessage, fetchPublicMessagePhoto } from '@/lib/api';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { splitForumMessageQuotes } from '@/lib/forum-quote';
+import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import {
-  formatBitcoin,
-  formatFiatDisplay,
-  satsToFiatAmount,
-  type FiatCode,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+
+type ShortHit = { code: string; messageId: string };
+
+/** Stable empty list so a body with no short codes does not rerender. */
+const NO_SHORT_HITS: ShortHit[] = [];
 
 const ROLE_LABEL_KEYS: Record<'founder' | 'moderator' | 'verified', MessageKey> = {
   founder: 'forum.role.founder',
@@ -80,7 +80,7 @@ function QuotedForumNote({
     };
   }, [note.hasPhoto, note.id]);
 
-  const fiatAmount = rateDay === null ? null : satsToFiatAmount(note.sats, rateDay, fiat);
+  const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
   const roleLabel =
     note.role === 'founder' || note.role === 'moderator' || note.role === 'verified'
       ? t(ROLE_LABEL_KEYS[note.role])
@@ -154,18 +154,13 @@ function QuotedForumNote({
       <Link href={`/messages/${note.id}`} className="block">
         <p
           className={
-            fiatAmount === null
+            fiatSuffix === null
               ? 'text-sm font-medium text-app-fg'
               : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
           }
         >
           {formatBitcoin(note.sats, numberFormat)}
-          {fiatAmount !== null ? (
-            <>
-              <span aria-hidden="true"> · </span>
-              <span>{formatFiatDisplay(fiatAmount, fiat, numberFormat)}</span>
-            </>
-          ) : null}
+          {fiatSuffix}
         </p>
       </Link>
     </div>
@@ -173,7 +168,8 @@ function QuotedForumNote({
 }
 
 /**
- * Remaining body text plus nested posts for resolved `/messages/<uuid>` URLs.
+ * Remaining body text plus nested posts for resolved `/messages/<uuid>` URLs
+ * and for `http(s)://<host>/l/<8 hex>` codes that resolve to a message.
  *
  * @param props - Body text, already-loaded notes, the containing message id,
  *   fiat conversion, optional feed truncation, optional remaining-text
@@ -182,7 +178,9 @@ function QuotedForumNote({
  *   an optional click handler for the nested card.
  * @returns The stripped paragraph, nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
- *   are loaded with `fetchPublicMessage` (catch, never throw).
+ *   are loaded with `fetchPublicMessage` (catch, never throw). Short codes
+ *   load with `fetchShortLink` (null, never throw); only a shown message strips
+ *   that short URL.
  * @throws Does not throw.
  */
 export function ForumQuotedBody({
@@ -204,10 +202,49 @@ export function ForumQuotedBody({
   className?: string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
-  const candidateIds = useMemo(() => {
+  const quoteIds = useMemo(() => {
     const exclude = excludeId.toLowerCase();
     return splitForumMessageQuotes(text).ids.filter((id) => id !== exclude);
   }, [text, excludeId]);
+  const shortKey = useMemo(() => splitShortLinks(text).codes.join(','), [text]);
+  const [shortHits, setShortHits] = useState<ShortHit[]>(NO_SHORT_HITS);
+
+  useEffect(() => {
+    if (shortKey === '') {
+      setShortHits(NO_SHORT_HITS);
+      return;
+    }
+    const codes = shortKey.split(',');
+    const exclude = excludeId.toLowerCase();
+    let cancelled = false;
+    void (async () => {
+      const next: ShortHit[] = [];
+      for (const code of codes) {
+        const link = await fetchShortLink(code);
+        if (link !== null && link.kind === 'message' && link.id.toLowerCase() !== exclude) {
+          next.push({ code, messageId: link.id.toLowerCase() });
+        }
+      }
+      if (!cancelled) {
+        setShortHits(next);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [shortKey, excludeId]);
+
+  const candidateIds = useMemo(() => {
+    const ids = [...quoteIds];
+    const seen = new Set(ids);
+    for (const hit of shortHits) {
+      if (!seen.has(hit.messageId)) {
+        seen.add(hit.messageId);
+        ids.push(hit.messageId);
+      }
+    }
+    return ids;
+  }, [quoteIds, shortHits]);
 
   const [fetchedNotes, setFetchedNotes] = useState<ForumMessage[]>([]);
   const missingKey = candidateIds
@@ -259,7 +296,19 @@ export function ForumQuotedBody({
     () => new Set(resolvedNotes.map((note) => note.id.toLowerCase())),
     [resolvedNotes],
   );
-  const displayText = splitForumMessageQuotes(text, resolvedIdSet).displayText;
+  const resolvedCodeSet = useMemo(() => {
+    const codes = new Set<string>();
+    for (const hit of shortHits) {
+      if (resolvedIdSet.has(hit.messageId)) {
+        codes.add(hit.code);
+      }
+    }
+    return codes;
+  }, [shortHits, resolvedIdSet]);
+  const displayText = splitShortLinks(
+    splitForumMessageQuotes(text, resolvedIdSet).displayText,
+    resolvedCodeSet,
+  ).displayText;
 
   if (text === '' && resolvedNotes.length === 0) {
     return null;

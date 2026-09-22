@@ -78,6 +78,60 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:default",
+    "label": "/wallet default",
+    "visual": "screen-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:phrase",
+    "label": "/wallet phrase",
+    "visual": "state-wallet-phrase",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:setup",
+    "label": "/wallet setup",
+    "visual": "state-wallet-setup",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:confirm",
+    "label": "/wallet confirm",
+    "visual": "state-wallet-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:reveal",
+    "label": "/wallet reveal",
+    "visual": "state-wallet-reveal",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:reveal-open",
+    "label": "/wallet reveal-open",
+    "visual": "state-wallet-reveal-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:error",
+    "label": "/wallet error",
+    "visual": "state-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:timeout",
+    "label": "/wallet timeout",
+    "visual": "state-wallet-timeout",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:prf-unsupported",
+    "label": "/wallet prf-unsupported",
+    "visual": "state-wallet-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",
@@ -276,6 +330,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:filter-open",
+    "label": "/welcome filter-open",
+    "visual": "state-welcome-filter-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:unpaid",
     "label": "/welcome unpaid",
     "visual": "state-welcome-unpaid",
@@ -459,6 +519,12 @@
     "id": "/welcome:error-too-many",
     "label": "/welcome error-too-many",
     "visual": "state-welcome-error-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:pay-composer",
+    "label": "/welcome pay-composer",
+    "visual": "state-welcome-pay-composer",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -744,6 +810,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:staff-verify-open",
+    "label": "/members/[accountId] staff-verify-open",
+    "visual": "state-members-staff-verify-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:funding-reviewed",
     "label": "/members/[accountId] funding-reviewed",
     "visual": "state-members-funding-reviewed",
@@ -834,18 +906,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/profile:funding-applying",
-    "label": "/profile funding-applying",
-    "visual": "state-profile-funding-applying",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-apply-error",
-    "label": "/profile funding-apply-error",
-    "visual": "state-profile-funding-apply-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/profile:funding-pending",
     "label": "/profile funding-pending",
     "visual": "state-profile-funding-pending",
@@ -861,6 +921,108 @@
     "id": "/profile:funding-admitted",
     "label": "/profile funding-admitted",
     "visual": "state-profile-funding-admitted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:default",
+    "label": "/profile/apply default",
+    "visual": "screen-profile-apply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:photo",
+    "label": "/profile/apply photo",
+    "visual": "state-profile-apply-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:location",
+    "label": "/profile/apply location",
+    "visual": "state-profile-apply-location",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:principle-1",
+    "label": "/profile/apply principle-1",
+    "visual": "state-profile-apply-principle-1",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:principle-2",
+    "label": "/profile/apply principle-2",
+    "visual": "state-profile-apply-principle-2",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:principle-3",
+    "label": "/profile/apply principle-3",
+    "visual": "state-profile-apply-principle-3",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:truth",
+    "label": "/profile/apply truth",
+    "visual": "state-profile-apply-truth",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:forbidden",
+    "label": "/profile/apply forbidden",
+    "visual": "state-profile-apply-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:pending",
+    "label": "/profile/apply pending",
+    "visual": "state-profile-apply-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:trial",
+    "label": "/profile/apply trial",
+    "visual": "state-profile-apply-trial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:admitted",
+    "label": "/profile/apply admitted",
+    "visual": "state-profile-apply-admitted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:empty-posts",
+    "label": "/profile/apply empty-posts",
+    "visual": "state-profile-apply-empty-posts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:loading",
+    "label": "/profile/apply loading",
+    "visual": "state-profile-apply-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:error",
+    "label": "/profile/apply error",
+    "visual": "state-profile-apply-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:applying",
+    "label": "/profile/apply applying",
+    "visual": "state-profile-apply-applying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:apply-failed",
+    "label": "/profile/apply apply-failed",
+    "visual": "state-profile-apply-apply-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:unmet",
+    "label": "/profile/apply unmet",
+    "visual": "state-profile-apply-unmet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

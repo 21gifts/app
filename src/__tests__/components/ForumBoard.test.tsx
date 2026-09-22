@@ -451,10 +451,9 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Forum view' })).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
     expect(screen.queryByText('Everyone can read and write.')).toBeNull();
     expect(
       screen.getByText(
@@ -521,6 +520,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
+    expect(screen.queryByRole('combobox', { name: 'Forum view' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
     expect(document.querySelector('form')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
@@ -632,6 +632,8 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'Forum view' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Forum view' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Active$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^No gifts yet$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^All$/ })).toBeNull();
@@ -677,7 +679,7 @@ describe('ForumBoard', () => {
         lawsVisible={false}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
     expect(
       screen.queryByText(
         '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
@@ -703,7 +705,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
@@ -762,7 +764,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe('Could not load messages. Please try again.');
     expect(alert.className).toContain('text-app-danger');
@@ -833,7 +835,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     expect(screen.queryByText('No message has received Bitcoin yet.')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
   });
 
   it('hides a zero-sat SAMPLE on Active and shows MULTILINE', () => {
@@ -1113,9 +1115,11 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Aktiv' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Alle' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Beliebteste' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum-Ansicht' }).textContent).toContain('Aktiv');
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum-Ansicht' }));
+    expect(screen.getByRole('option', { name: 'Aktiv' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Alle' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Beliebteste' })).toBeTruthy();
   });
 
   it('calls onModeChange when All is clicked', () => {
@@ -1136,7 +1140,8 @@ describe('ForumBoard', () => {
         onModeChange={onModeChange}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    fireEvent.click(screen.getByRole('option', { name: 'All' }));
     expect(onModeChange).toHaveBeenCalledWith('all');
   });
 
@@ -1156,7 +1161,10 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toMatch(/\d/);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    expect(screen.getByRole('option', { name: /^No gifts yet$/ })).toBeTruthy();
   });
 
   it('keeps No gifts yet unbadged when unpaidNewCount is 0', () => {
@@ -1176,7 +1184,10 @@ describe('ForumBoard', () => {
         unpaidNewCount={0}
       />,
     );
-    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toMatch(/\d/);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    expect(screen.getByRole('option', { name: /^No gifts yet$/ })).toBeTruthy();
   });
 
   it('omits the unpaid chip when No gifts yet is selected', () => {
@@ -1196,8 +1207,12 @@ describe('ForumBoard', () => {
         unpaidNewCount={3}
       />,
     );
-    const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
-    expect(unpaid).toBeTruthy();
+    const trigger = screen.getByRole('combobox', { name: 'Forum view' });
+    expect(trigger.textContent).toContain('No gifts yet');
+    expect(trigger.textContent).not.toContain('3');
+    fireEvent.click(trigger);
+    const unpaid = screen.getByRole('option', { name: /^No gifts yet$/ });
+    expect(unpaid.getAttribute('aria-selected')).toBe('true');
     expect(unpaid.textContent).not.toContain('3');
   });
 
@@ -1218,9 +1233,12 @@ describe('ForumBoard', () => {
         unpaidNewCount={3}
       />,
     );
-    const unpaid = screen.getByRole('button', { name: 'No gifts yet, 3 new' });
-    expect(unpaid).toBeTruthy();
+    const trigger = screen.getByRole('combobox', { name: 'Forum view' });
+    expect(trigger.textContent).toContain('Active');
+    expect(trigger.textContent).toContain('3');
     expect(screen.getByText('3')).toBeTruthy();
+    fireEvent.click(trigger);
+    expect(screen.getByRole('option', { name: 'No gifts yet, 3 new' })).toBeTruthy();
   });
 
   it('localizes the unpaid new-count chip in German', () => {
@@ -1241,7 +1259,9 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Noch ohne Geschenk, 3 neu' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum-Ansicht' }).textContent).toContain('3');
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum-Ansicht' }));
+    expect(screen.getByRole('option', { name: 'Noch ohne Geschenk, 3 neu' })).toBeTruthy();
   });
 
   it('shows ₿1 for a single sat total', () => {
@@ -1747,6 +1767,99 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a composer pay sheet when the invoice target is not a listed card', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={null}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+        replies={[{ ...SAMPLE, id: 'r1' }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
+  it('shows a composer pay sheet when the fee note is hidden on Active', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'fee-note', sats: 0 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        payMessageId="fee-note"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
+  it('keeps the composer pay sheet when payHost is composer and the fee note is listed', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'fee-note', sats: 1, name: '21.gifts' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payHost="composer"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(document.querySelector('[data-message-id="fee-note"]')).not.toBeNull();
+  });
+
+  it('does not duplicate the composer pay sheet when the target is a loaded reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="r1"
+        payInvoice={{ messageId: 'r1', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+        replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id }]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
   });
 
   it('labels the iPhone amount CTA Pay in English and Bezahlen in German', () => {
@@ -3769,6 +3882,34 @@ describe('ForumBoard', () => {
     });
   });
 
+  it('copies a uuid note as an 8-hex short link', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const noteId = '77e0510d-03a8-4063-8716-75d61178e7f1';
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: noteId }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/77e0510d`);
+    });
+  });
+
   it('labels the copy control of a reply shown as a feed card and copies its own permalink', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -4030,6 +4171,8 @@ describe('ForumBoard', () => {
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(within(replyCard).queryByTestId('staff-functions')).toBeNull();
     expect(copyButton.parentElement?.className).toBe('mt-2');
   });
 
@@ -4169,6 +4312,7 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-no-trash"]') as HTMLElement;
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(within(replyCard).queryByTestId('staff-functions')).toBeNull();
     expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
   });
 
@@ -4464,6 +4608,52 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByText("send ₿21'000")).toBeTruthy();
+  });
+
+  it('shows stored fiat on a gift-only reply when the live rate differs', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        replies={[
+          {
+            id: 'r-gift',
+            name: 'Bob',
+            text: '',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21,
+            amountUsd: '5.00',
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('send ₿21')).toBeTruthy();
+    expect(screen.getByText('$5.00')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('appends preferred fiat on a gift-only reply when conversion exists', () => {
@@ -5389,6 +5579,8 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it('shows Delete reaction on own replies that have no PM', () => {
@@ -5523,6 +5715,8 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: /^React$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
@@ -5582,7 +5776,9 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it('focuses the reply composer when React is clicked on an expanded note', () => {

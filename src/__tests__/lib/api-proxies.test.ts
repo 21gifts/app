@@ -5,6 +5,9 @@ import {
   proxyAuthPasskeyAuthenticateFinishPost,
   proxyAuthPasskeyRegisterBeginPost,
   proxyAuthPasskeyRegisterFinishPost,
+  proxyAuthPasskeyReplaceBeginPost,
+  proxyAuthPasskeyReplaceFinishPost,
+  proxyMeWalletBackupSeenPost,
   proxyLightningAddressGet,
   proxyGiftsGet,
   proxyGiftsStatsGet,
@@ -38,6 +41,7 @@ import {
   proxyNotificationsReadAllPost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
+  proxyMessagesComposeTargetGet,
   proxyMessagesGet,
   proxyMessagesHiddenGet,
   proxyMessagesInvoicePost,
@@ -47,6 +51,7 @@ import {
   proxyMessagesVideoGet,
   proxyForumMessageGet,
   proxyPublicMessageGet,
+  proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
   proxyViewActivityGet,
@@ -81,6 +86,31 @@ function stubApi(): ReturnType<typeof vi.fn> {
 }
 
 describe('api proxy wrappers', () => {
+  it('proxyAuthPasskeyReplaceBeginPost hits POST /auth/passkey/replace/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyReplaceBeginPost(
+      new Request('http://localhost/auth/passkey/replace/begin', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/replace/begin');
+  });
+
+  it('proxyAuthPasskeyReplaceFinishPost hits POST /auth/passkey/replace/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyReplaceFinishPost(
+      new Request('http://localhost/auth/passkey/replace/finish', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/replace/finish');
+  });
+
+  it('proxyMeWalletBackupSeenPost hits POST /me/wallet-backup-seen', async () => {
+    const fetchMock = stubApi();
+    await proxyMeWalletBackupSeenPost(
+      new Request('http://localhost/me/wallet-backup-seen', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-backup-seen');
+  });
+
   it('proxyMeGet hits /me', async () => {
     const fetchMock = stubApi();
     await proxyMeGet(new Request('http://localhost/me'));
@@ -245,6 +275,12 @@ describe('api proxy wrappers', () => {
     expect(url.searchParams.get('day')).toBe('2026-06-01');
   });
 
+  it('proxyMessagesComposeTargetGet hits /messages/compose-target', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesComposeTargetGet(new Request('http://localhost/messages/compose-target'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/compose-target');
+  });
+
   it('proxyMessagesGet hits /messages', async () => {
     const fetchMock = stubApi();
     await proxyMessagesGet(new Request('http://localhost/messages'));
@@ -290,6 +326,16 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyPublicMessageGet(new Request('http://localhost/public-messages/m1'), 'm1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
+  });
+
+  it('proxyShortLinkGet hits /links/:code without a bearer', async () => {
+    const fetchMock = stubApi();
+    await proxyShortLinkGet(new Request('http://localhost/links/d70c4763'), 'd70c4763');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/links/d70c4763');
+    await proxyShortLinkGet(new Request('http://localhost/links/a%20b'), 'a b');
+    const spaced = fetchMock.mock.calls[1]?.[0] as URL;
+    expect(decodeURIComponent(spaced.pathname)).toBe('/links/a b');
+    expect(spaced.href.startsWith('https://api.test/links/')).toBe(true);
   });
 
   it('proxyPublicMessageRepliesGet hits /messages/:id/replies', async () => {

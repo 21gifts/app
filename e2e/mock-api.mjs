@@ -165,6 +165,7 @@ function usernameTaken(username, accountId) {
 /** Refresh `missing` from filled fields. */
 function refreshMissing(account) {
   const missing = [];
+  if (account.walletRequired === true && !account.walletBackupSeenAt) missing.push('wallet');
   if (!hasName(account)) missing.push('name');
   if (!hasUsername(account)) missing.push('username');
   if (!hasLightningAddress(account)) missing.push('lightning-address');
@@ -179,7 +180,17 @@ function refreshMissing(account) {
  */
 function afterFieldWrite(account) {
   refreshMissing(account);
-  if (account.setup === 'name' && hasName(account)) {
+  if (account.setup === 'wallet' && account.walletBackupSeenAt) {
+    account.setup = hasName(account)
+      ? hasUsername(account)
+        ? hasLightningAddress(account)
+          ? hasRules(account)
+            ? null
+            : 'rules'
+          : 'lightning-address'
+        : 'username'
+      : 'name';
+  } else if (account.setup === 'name' && hasName(account)) {
     account.setup = hasUsername(account)
       ? hasLightningAddress(account)
         ? hasRules(account)
@@ -216,8 +227,10 @@ function newAccount(linkingKey) {
     viewKey: hex(randomBytes(32)),
     aboutMe: null,
     aboutMeHasPhoto: false,
-    setup: 'name',
-    missing: ['name', 'username', 'lightning-address', 'rules'],
+    setup: 'wallet',
+    walletRequired: true,
+    walletBackupSeenAt: null,
+    missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
   };
   return account;
 }
@@ -241,6 +254,10 @@ const E2E_MEMBER_PROFILE = {
     text: 'Hello from my profile note.',
     createdAt: '2026-08-01T10:00:00.000Z',
     sats: 21,
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
     payable: true,
     hasPhoto: false,
     hasVideo: false,
@@ -337,6 +354,21 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const shortLinkMatch = pathName.match(/^\/links\/([0-9a-f]{8})$/i);
+  if (method === 'GET' && shortLinkMatch) {
+    const code = shortLinkMatch[1].toLowerCase();
+    if (code === '77e0510d') {
+      json(res, 200, { kind: 'message', id: '77e0510d-03a8-4063-8716-75d61178e7f1' });
+      return;
+    }
+    if (code === 'd70c4763') {
+      json(res, 200, { kind: 'member', id: 'd70c4763-3033-43da-817a-2c7de9938f27' });
+      return;
+    }
+    json(res, 404, { error: 'not_found' });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/v2/translate') {
     let parsed;
     try {
@@ -396,6 +428,28 @@ const server = http.createServer(async (req, res) => {
       'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     });
     res.end();
+    return;
+  }
+
+  const COMPOSE_TARGET = {
+    id: 'compose-fee',
+    name: '21.gifts',
+    text: '',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    role: 'basis',
+  };
+
+  if (method === 'GET' && pathName === '/messages/compose-target') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { messageId: COMPOSE_TARGET.id, sats: COMPOSE_TARGET.sats });
     return;
   }
 
@@ -499,7 +553,9 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    const row = forumMessages.find((message) => message.id === invoiceMatch[1]);
+    const row =
+      forumMessages.find((message) => message.id === invoiceMatch[1]) ??
+      (invoiceMatch[1] === COMPOSE_TARGET.id ? COMPOSE_TARGET : undefined);
     if (row === undefined) {
       json(res, 404, { error: 'Not found' });
       return;
@@ -746,6 +802,10 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
       fromMe: true,
       sats,
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
     };
     thread.messages.push(created);
     thread.lastText = text;
@@ -782,20 +842,31 @@ const server = http.createServer(async (req, res) => {
       const startIndex = Math.max(0, endIndex - limit);
       const page = thread.messages.slice(startIndex, endIndex);
       json(res, 200, {
-        messages: page.map((message) => ({
-          id: message.id,
-          name: message.name,
-          text: message.text,
-          createdAt: message.createdAt,
-          fromMe: message.fromMe === true,
-          sats: Number(message.sats ?? 0),
-          ...(typeof message.giftFor === 'string' && message.giftFor !== ''
-            ? { giftFor: message.giftFor }
-            : {}),
-          ...(message.hasPhoto === true
-            ? { hasPhoto: true, photoCount: Number(message.photoCount ?? 1) }
-            : {}),
-        })),
+        messages: page.map((message) => {
+          const sats = Number(message.sats ?? 0);
+          return {
+            id: message.id,
+            name: message.name,
+            text: message.text,
+            createdAt: message.createdAt,
+            fromMe: message.fromMe === true,
+            sats,
+            ...(sats > 0
+              ? {
+                  amountUsd: null,
+                  amountChf: null,
+                  amountEur: null,
+                  amountPhp: null,
+                }
+              : {}),
+            ...(typeof message.giftFor === 'string' && message.giftFor !== ''
+              ? { giftFor: message.giftFor }
+              : {}),
+            ...(message.hasPhoto === true
+              ? { hasPhoto: true, photoCount: Number(message.photoCount ?? 1) }
+              : {}),
+          };
+        }),
         ...(page.length === limit && startIndex > 0 ? { nextCursor: page[0].id } : {}),
       });
       return;
@@ -986,6 +1057,10 @@ const server = http.createServer(async (req, res) => {
   const publicMessageMatch = pathName.match(/^\/messages\/([^/]+)$/);
   if (method === 'GET' && publicMessageMatch) {
     const id = decodeURIComponent(publicMessageMatch[1]);
+    if (id === COMPOSE_TARGET.id) {
+      json(res, 200, COMPOSE_TARGET);
+      return;
+    }
     const row = forumMessages.find((message) => message.id === id);
     if (row === undefined || row.deletedAt !== undefined) {
       json(res, 404, { error: 'Not found' });
@@ -1637,6 +1712,7 @@ const server = http.createServer(async (req, res) => {
         user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
         authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        extensions: { prf: {} },
       },
     });
     return;
@@ -1715,6 +1791,92 @@ const server = http.createServer(async (req, res) => {
     const token = hex(randomBytes(32));
     byToken.set(token, account);
     json(res, 200, { token, account });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/wallet-backup-seen') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.walletBackupSeenAt == null) {
+      account.walletBackupSeenAt = Date.now();
+    }
+    afterFieldWrite(account);
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/replace/begin') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let currentId;
+    for (const [id, owned] of byPasskeyCredential.entries()) {
+      if (owned === account) {
+        currentId = id;
+        break;
+      }
+    }
+    if (!currentId) {
+      json(res, 400, { error: 'No passkey to replace' });
+      return;
+    }
+    const challengeId = hex(randomBytes(32));
+    const userId = hex(randomBytes(16));
+    byPasskey.set(challengeId, { type: 'replace', account });
+    json(res, 200, {
+      challengeId,
+      options: {
+        challenge: b64url(randomBytes(32)),
+        rp: { id: 'localhost', name: '21.gifts' },
+        user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        excludeCredentials: [{ type: 'public-key', id: currentId }],
+        extensions: { prf: {} },
+      },
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/replace/finish') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
+      return;
+    }
+    const pending = byPasskey.get(parsed?.challengeId);
+    if (!pending || pending.type !== 'replace' || pending.account !== account) {
+      json(res, 400, { error: 'Unknown or expired challenge' });
+      return;
+    }
+    byPasskey.delete(parsed.challengeId);
+    const credId = parsed.credential?.id;
+    if (typeof credId !== 'string' || credId === '') {
+      json(res, 400, { error: 'Invalid passkey' });
+      return;
+    }
+    for (const [id, owned] of byPasskeyCredential.entries()) {
+      if (owned === account) {
+        byPasskeyCredential.delete(id);
+      }
+    }
+    byPasskeyCredential.set(credId, account);
+    json(res, 200, { account });
     return;
   }
 

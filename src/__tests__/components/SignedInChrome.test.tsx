@@ -221,6 +221,7 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Home' }).getAttribute('href')).toBe('/welcome');
     expect(screen.getByRole('link', { name: 'Shops' }).getAttribute('href')).toBe('/shops');
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
+    expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
@@ -550,6 +551,7 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole('link', { name: 'Wallet' }));
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
     expectMenuClosed();
   });

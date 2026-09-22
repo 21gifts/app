@@ -359,6 +359,23 @@ const en = {
   'introduce.cta': 'Write an introduction',
   'introduce.close': 'Close',
 
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'Activate recovery phrase',
+  'wallet.activateHint':
+    'Create a new passkey on this device so 21.gifts can show your 12-word recovery phrase. Your previous passkey will stop working.',
+  'wallet.confirmSaved': 'I saved these words',
+  'wallet.onlyBackup':
+    'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
+  'wallet.showPhrase': 'Show recovery phrase',
+  'wallet.advanced': 'Advanced functions',
+  'wallet.prfUnsupported':
+    'This browser cannot create a recovery phrase. Try another browser or device.',
+  'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
+  'wallet.errorGeneric':
+    'The recovery phrase could not be opened. Check this device and try again.',
+  'wallet.errorHint':
+    'If this keeps happening, try another browser or the device you already used to sign in.',
+
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
   'profile.received': 'Received {amount}',
@@ -665,6 +682,12 @@ const en = {
   'funding.grace':
     'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
+  'funding.apply.heading': 'Apply for the 21 gifts grant',
+  'funding.apply.about': 'First, write a short About me so people can get to know you.',
+  'funding.apply.photo': 'Next, add a photo to your About me.',
+  'funding.apply.location': 'Next, add the place you live.',
+  'funding.apply.unmet': 'When your posts match, you can apply again.',
+  'funding.apply.back': 'Back to profile',
   'funding.pending': 'Your application is open. A moderator will review your posts.',
   'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
   'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
@@ -701,6 +724,7 @@ const en = {
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
+  'staff.functions': 'Moderator functions',
   'trustChain.action.verify': 'Verify',
   'trustChain.action.propose': 'Propose as moderator',
   'trustChain.action.confirm': 'Confirm as moderator',
@@ -1066,6 +1090,24 @@ const de = {
   'introduce.cta': 'Vorstellung schreiben',
   'introduce.close': 'Schließen',
 
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'Wiederherstellungssatz aktivieren',
+  'wallet.activateHint':
+    'Erstellen Sie einen neuen Passkey auf diesem Gerät, damit 21.gifts Ihren 12-Wörter-Wiederherstellungssatz anzeigen kann. Der bisherige Passkey funktioniert danach nicht mehr.',
+  'wallet.confirmSaved': 'Ich habe diese Wörter gespeichert',
+  'wallet.onlyBackup':
+    'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
+  'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
+  'wallet.advanced': 'Erweiterte Funktionen',
+  'wallet.prfUnsupported':
+    'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
+  'wallet.timeout':
+    'Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut.',
+  'wallet.errorGeneric':
+    'Der Wiederherstellungssatz konnte nicht geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
+  'wallet.errorHint':
+    'Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben.',
+
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
   'profile.received': 'Erhalten {amount}',
@@ -1383,6 +1425,13 @@ const de = {
   'funding.grace':
     'Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem Tag erhalten nur noch zugelassene Mitglieder welche. Bewerben Sie sich jetzt, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
+  'funding.apply.heading': 'Für 21 Förderprogramm bewerben',
+  'funding.apply.about':
+    'Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können.',
+  'funding.apply.photo': 'Als Nächstes fügen Sie ein Foto zu Über mich hinzu.',
+  'funding.apply.location': 'Als Nächstes tragen Sie den Ort ein, an dem Sie leben.',
+  'funding.apply.unmet': 'Wenn Ihre Beiträge passen, können Sie sich erneut bewerben.',
+  'funding.apply.back': 'Zurück zum Profil',
   'funding.pending':
     'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
   'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
@@ -1424,6 +1473,7 @@ const de = {
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
   'trustChain.explainFounder':
     'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
+  'staff.functions': 'Moderatorenfunktionen',
   'trustChain.action.verify': 'Verifizieren',
   'trustChain.action.propose': 'Als Moderator vorschlagen',
   'trustChain.action.confirm': 'Als Moderator bestätigen',
@@ -1780,6 +1830,24 @@ const es = {
   'introduce.cta': 'Escribe una presentación',
   'introduce.close': 'Cerrar',
 
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'Activar frase de recuperación',
+  'wallet.activateHint':
+    'Crea una passkey nueva en este dispositivo para que 21.gifts pueda mostrar tu frase de recuperación de 12 palabras. La passkey anterior dejará de funcionar.',
+  'wallet.confirmSaved': 'Guardé estas palabras',
+  'wallet.onlyBackup':
+    'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
+  'wallet.showPhrase': 'Mostrar frase de recuperación',
+  'wallet.advanced': 'Funciones avanzadas',
+  'wallet.prfUnsupported':
+    'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
+  'wallet.timeout':
+    'La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo.',
+  'wallet.errorGeneric':
+    'No se pudo abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
+  'wallet.errorHint':
+    'Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión.',
+
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
   'profile.received': 'Recibido {amount}',
@@ -2087,6 +2155,12 @@ const es = {
   'funding.grace':
     'Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día, solo las personas admitidas los reciben. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
+  'funding.apply.heading': 'Solicitar la beca 21 gifts',
+  'funding.apply.about': 'Primero, escribe un breve Sobre mí para que la gente te conozca.',
+  'funding.apply.photo': 'Después, añade una foto a tu Sobre mí.',
+  'funding.apply.location': 'Después, añade el lugar donde vives.',
+  'funding.apply.unmet': 'Cuando tus mensajes coincidan, puedes solicitar de nuevo.',
+  'funding.apply.back': 'Volver al perfil',
   'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
   'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
   'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
@@ -2125,6 +2199,7 @@ const es = {
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
   'trustChain.explainFounder':
     'Una persona fundadora empezó 21.gifts y es el primer eslabón de la cadena.',
+  'staff.functions': 'Funciones de moderación',
   'trustChain.action.verify': 'Verificar',
   'trustChain.action.propose': 'Proponer como moderador',
   'trustChain.action.confirm': 'Confirmar como moderador',
@@ -2483,6 +2558,23 @@ const fil = {
   'introduce.cta': 'Sumulat ng pagpapakilala',
   'introduce.close': 'Isara',
 
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'I-activate ang recovery phrase',
+  'wallet.activateHint':
+    'Gumawa ng bagong passkey sa device na ito para maipakita ng 21.gifts ang 12-word recovery phrase mo. Hindi na gagana ang dating passkey.',
+  'wallet.confirmSaved': 'Na-save ko ang mga salitang ito',
+  'wallet.onlyBackup':
+    'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
+  'wallet.showPhrase': 'Ipakita ang recovery phrase',
+  'wallet.advanced': 'Mga advanced na function',
+  'wallet.prfUnsupported':
+    'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
+  'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',
+  'wallet.errorGeneric':
+    'Hindi mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
+  'wallet.errorHint':
+    'Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in.',
+
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',
   'profile.received': 'Natanggap {amount}',
@@ -2797,6 +2889,12 @@ const fil = {
   'funding.grace':
     'Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa araw na iyon, admitted members na lang ang tatanggap. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
+  'funding.apply.heading': 'Mag-apply para sa 21 gifts grant',
+  'funding.apply.about': 'Una, magsulat ng maikling About me para makilala ka ng iba.',
+  'funding.apply.photo': 'Sunod, magdagdag ng larawan sa About me.',
+  'funding.apply.location': 'Sunod, ilagay ang lugar kung saan ka nakatira.',
+  'funding.apply.unmet': 'Kapag tumugma na ang iyong mga post, maaari kang mag-apply ulit.',
+  'funding.apply.back': 'Bumalik sa profile',
   'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
   'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
   'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
@@ -2834,6 +2932,7 @@ const fil = {
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
   'trustChain.explainFounder':
     'Isang founder ang nagsimula ng 21.gifts at siya ang unang kawing ng kadena.',
+  'staff.functions': 'Mga tungkulin ng moderator',
   'trustChain.action.verify': 'I-verify',
   'trustChain.action.propose': 'Ipanukala bilang moderator',
   'trustChain.action.confirm': 'Kumpirmahin bilang moderator',

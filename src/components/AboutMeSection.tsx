@@ -47,6 +47,8 @@ export type AboutMeSectionProps = {
    * object = replace with prepared JPEG payload.
    */
   onSave?: (text: string, photo?: AboutMeSavePhoto | null) => Promise<boolean | void>;
+  /** Open the owner editor on mount. Default false. */
+  startEditing?: boolean;
 };
 
 /**
@@ -55,7 +57,8 @@ export type AboutMeSectionProps = {
  * copy-profile-link.
  *
  * @param props - About me value, owner vs public mode, optional display name,
- * optional photo loaders, optional profile URL and save.
+ * optional photo loaders, optional profile URL and save, optional
+ * `startEditing` to open the owner editor on mount.
  * @returns The section, or `null` in public mode when unfilled and there is no copy URL.
  */
 export function AboutMeSection({
@@ -66,6 +69,7 @@ export function AboutMeSection({
   hasPhoto,
   loadPhoto,
   onSave,
+  startEditing = false,
 }: AboutMeSectionProps): ReactElement | null {
   const { t } = useTranslations();
   const textareaId = useId();
@@ -76,7 +80,7 @@ export function AboutMeSection({
   const storedObjectUrlRef = useRef<string | null>(null);
   const photoGeneration = useRef(0);
   const loadGeneration = useRef(0);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

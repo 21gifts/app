@@ -6,11 +6,7 @@ import { ContactScreen } from '@/components/ContactScreen';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { fetchConversations, postContact } from '@/lib/api';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
-import {
-  MissingRequirementsError,
-  nextContactRequirement,
-  type MissingRequirement,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, nextContactRequirement } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -42,7 +38,7 @@ export function ContactLoader(): ReactElement | null {
     return null;
   }
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextContactRequirement(missing);
     if (next === null) {
       return false;

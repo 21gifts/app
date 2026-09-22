@@ -63,6 +63,20 @@
 - **Used by:** `finishPasskeyRegistration`.
 - **Auth:** Public.
 
+## Endpoint: POST /auth/passkey/replace/begin
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/replace/begin`.
+- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Used by:** `startPasskeyReplace`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /auth/passkey/replace/finish
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/replace/finish`.
+- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Used by:** `finishPasskeyReplace`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /gifts
 
 - **Purpose:** Same-origin proxy of api `GET /gifts?day=YYYY-MM-DD` (individual outbound gifts that UTC day).
@@ -134,6 +148,13 @@
 - **Errors:** Upstream 404, or 502 if the api is unreachable.
 - **Used by:** `fetchViewAboutMePhoto`.
 - **Auth:** none.
+
+## Endpoint: POST /me/wallet-backup-seen
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet-backup-seen`. Records that the recovery phrase was shown.
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `postWalletBackupSeen`.
+- **Auth:** Bearer.
 
 ## Endpoint: POST /me/setup/skip
 
@@ -259,6 +280,27 @@
 - **Purpose:** Same-origin public proxy of api GET `/messages/:id/replies` (oldest-first live replies, no Bearer). The HTML public thread is `/messages/[id]`.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchPublicReplies`.
+- **Auth:** Public.
+
+## Endpoint: GET /messages/compose-target
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats }` for the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying.
+- **Errors:** Upstream 401/409/400/503, or 502 if the api is unreachable.
+- **Used by:** `fetchComposeTarget`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /links/[code]
+
+- **Purpose:** Same-origin public proxy of api GET `/links/:code`. JSON body is `{ "kind": "message" | "member", "id": "<uuid>" }`. No Bearer. The HTML redirect visitors open is `/l/[code]`; this path is JSON only.
+- **Errors:** Upstream 400 `{ "error": "invalid_code" }`, 404 `{ "error": "not_found" }`, 409 `{ "error": "ambiguous" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchShortLink`.
+- **Auth:** Public.
+
+## Endpoint: GET /l/[code]
+
+- **Purpose:** Resolve an 8-hex short code (case-insensitive) and redirect to `/messages/<uuid>` or `/members/<uuid>`. The code is the first UUID group, lowercased. Invalid codes do not call the api. There is no page under `/l/` — unknown codes use the existing not-found page.
+- **Errors:** 404 via `notFound()` when the code is not 8 hex, the lookup fails or is not OK, the body is not JSON, or the body is not a message or member UUID. Success is a redirect, not JSON.
+- **Used by:** Shared note, reply, and member profile links copied from the forum and member card.
 - **Auth:** Public.
 
 ## Endpoint: POST /messages/[id]/invoice
@@ -466,9 +508,9 @@
 
 ## Endpoint: POST /funding/apply
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. Effective `none` or `rejected` becomes pending.
-- **Errors:** Upstream 401/403/409/503, or 502 if the api is unreachable.
-- **Used by:** `postFundingApply` via `FundingStatusCard` on `/profile`.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. About me, About me photo, and location are required (400). Effective `none` or `rejected` becomes pending.
+- **Errors:** Upstream 400/401/403/409/503, or 502 if the api is unreachable.
+- **Used by:** `postFundingApply` via `FundingApplyScreen` on `/profile/apply`.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/applications

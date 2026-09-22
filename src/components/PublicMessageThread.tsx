@@ -10,6 +10,7 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
+  fetchComposeTarget,
   fetchGiftStats,
   fetchMessagePhoto,
   fetchPublicMessage,
@@ -18,11 +19,7 @@ import {
   postMessageInvoice,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
-import {
-  MissingRequirementsError,
-  nextPostRequirement,
-  type MissingRequirement,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt } from '@/lib/roles';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -200,6 +197,7 @@ export function PublicMessageThread(props: {
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
   const [expandedId, setExpandedId] = useState<string | null>(root.id);
@@ -207,6 +205,8 @@ export function PublicMessageThread(props: {
   expandedIdRef.current = expandedId;
   const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const repliesRef = useRef(replies);
+  repliesRef.current = replies;
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
@@ -217,6 +217,7 @@ export function PublicMessageThread(props: {
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const pendingComposeTextRef = useRef<string | null>(null);
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
@@ -380,7 +381,11 @@ export function PublicMessageThread(props: {
     })();
   }, [root.id, session]);
 
-  const startPayPoll = (messageId: string, baselineSats: number): void => {
+  const startPayPoll = (
+    messageId: string,
+    baselineSats: number,
+    replyParentId: string | null = null,
+  ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -390,6 +395,28 @@ export function PublicMessageThread(props: {
     const signal = controller.signal;
     setPayWaiting(true);
     void (async () => {
+      const composePay = replyParentId !== null;
+      const countOwn = async (): Promise<number> => {
+        const expected = pendingComposeTextRef.current;
+        const me = useAuthStore.getState().account?.id;
+        const sess = useAuthStore.getState().session;
+        /* v8 ignore next 3 -- compose-pay always sets pending text, session, and parent */
+        if (expected === null || me === undefined || sess === null || replyParentId === null) {
+          return 0;
+        }
+        const replies = await fetchReplies(sess, replyParentId);
+        return replies.filter((row) => row.accountId === me && row.text === expected).length;
+      };
+      let baselineOwn: number | null = null;
+      if (composePay) {
+        try {
+          baselineOwn = await countOwn();
+          /* v8 ignore start -- a failed baseline count is retried after sats rise */
+        } catch {
+          baselineOwn = null;
+        }
+        /* v8 ignore stop */
+      }
       for (;;) {
         try {
           const next = await fetchPublicMessage(messageId, {
@@ -402,61 +429,92 @@ export function PublicMessageThread(props: {
           }
           /* v8 ignore stop */
           if (next !== null && next.sats > baselineSats) {
-            setNote((prev) => {
-              if (prev.id !== next.id) {
-                return prev;
-              }
-              return {
-                ...prev,
-                ...next,
-                replyCount: Math.max(prev.replyCount, next.replyCount),
-              };
-            });
-            setReplies((prev) => {
-              /* v8 ignore next 3 -- poll can finish after the thread failed to load replies */
-              if (prev === null) {
-                return prev;
-              }
-              return prev.map((row) => {
-                if (row.id !== next.id) {
-                  return row;
+            let ownContent = !composePay;
+            if (composePay) {
+              try {
+                if (baselineOwn !== null) {
+                  ownContent = (await countOwn()) > baselineOwn;
                 }
-                return { ...row, ...next };
+                /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+              } catch {
+                ownContent = false;
+              }
+              /* v8 ignore stop */
+            }
+            if (ownContent) {
+              pendingComposeTextRef.current = null;
+              setNote((prev) => {
+                if (prev.id !== next.id) {
+                  return prev;
+                }
+                return {
+                  ...prev,
+                  ...next,
+                  replyCount: Math.max(prev.replyCount, next.replyCount),
+                };
               });
-            });
-            setPayWaiting(false);
-            setPayInvoice(null);
-            setPayMessageId(null);
-            setPayDraft('');
-            setPayError(null);
-            const current = useAuthStore.getState();
-            /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
-            if (current.session !== session) {
+              setReplies((prev) => {
+                /* v8 ignore next 3 -- poll can finish after the thread failed to load replies */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) => {
+                  if (row.id !== next.id) {
+                    return row;
+                  }
+                  return { ...row, ...next };
+                });
+              });
+              setPayWaiting(false);
+              setPayInvoice(null);
+              setPayMessageId(null);
+              setPayHost(null);
+              setPayDraft('');
+              setPayError(null);
+              setReplyPosting(false);
+              const current = useAuthStore.getState();
+              /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
+              if (current.session !== session) {
+                return;
+              }
+              if (current.account !== null) {
+                setAccount({ ...current.account, hasPosted: true });
+              }
+              if (replyParentId !== null && replyParentId !== next.id) {
+                setNote((prev) => {
+                  /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
+                  if (prev.id !== replyParentId) {
+                    return prev;
+                  }
+                  return { ...prev, replyCount: prev.replyCount + 1 };
+                });
+              }
+              const threadId = expandedIdRef.current;
+              /* v8 ignore next -- permalink auto-expand has replies loaded before a poll settles */
+              const paidNestedReply = (repliesRef.current ?? []).some(
+                (row) => row.id === messageId,
+              );
+              if (threadId !== null && current.session !== null && !paidNestedReply) {
+                const gen = ++expandGen.current;
+                setRepliesLoading(true);
+                setRepliesError(false);
+                try {
+                  const repliesNext = await fetchReplies(current.session, threadId);
+                  if (expandGen.current === gen) {
+                    setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
+                  }
+                } catch {
+                  if (expandGen.current === gen) {
+                    setRepliesError(true);
+                  }
+                } finally {
+                  if (expandGen.current === gen) {
+                    setRepliesLoading(false);
+                  }
+                }
+              }
               return;
             }
-            if (current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
-            }
-            if (expandedIdRef.current === messageId && current.session !== null) {
-              const gen = ++expandGen.current;
-              setRepliesLoading(true);
-              setRepliesError(false);
-              try {
-                const repliesNext = await fetchReplies(current.session, messageId);
-                if (expandGen.current === gen) {
-                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, messageId));
-                }
-              } catch {
-                if (expandGen.current === gen) {
-                  setRepliesError(true);
-                }
-              } finally {
-                if (expandGen.current === gen) {
-                  setRepliesLoading(false);
-                }
-              }
-            }
-            return;
           }
         } catch {
           // Keep waiting while the sheet is open.
@@ -476,7 +534,7 @@ export function PublicMessageThread(props: {
     })();
   };
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
       return false;
@@ -537,7 +595,7 @@ export function PublicMessageThread(props: {
         return;
       }
       if (isReplyPaymentError(err)) {
-        await runPaidReply(token, trimmed, parentId, 1, isRetry, note.sats);
+        await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
       if (expandedIdRef.current === parentId) {
@@ -545,6 +603,78 @@ export function PublicMessageThread(props: {
       }
     } finally {
       setReplyPosting(false);
+    }
+  };
+
+  const runComposePay = async (
+    token: string,
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    let awaitingPay = false;
+    try {
+      const target = await fetchComposeTarget(token);
+      const invoice = await postMessageInvoice(
+        token,
+        target.messageId,
+        sats,
+        `inReplyTo:${parentId}\n${trimmed}`,
+      );
+      /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(target.messageId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setPayHost('composer');
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      pendingComposeTextRef.current = trimmed;
+      startPayPoll(target.messageId, target.sats, parentId);
+      awaitingPay = true;
+    } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the compose invoice failed */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      /* v8 ignore stop */
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(
+          err instanceof Error && /1[-–]500 characters/i.test(err.message)
+            ? 'tooLong'
+            : isRateLimitError(err)
+              ? 'rateLimit'
+              : 'request',
+        );
+      }
+    } finally {
+      if (!awaitingPay) {
+        setReplyPosting(false);
+      }
     }
   };
 
@@ -575,6 +705,7 @@ export function PublicMessageThread(props: {
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -631,6 +762,7 @@ export function PublicMessageThread(props: {
   const handlePayOpen = (messageId: string): void => {
     bumpPayPollGeneration();
     setPayMessageId(messageId);
+    setPayHost('card');
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
@@ -731,6 +863,7 @@ export function PublicMessageThread(props: {
     setPayInvoice(null);
     setPayBusy(false);
     setPayWaiting(false);
+    setPayHost(null);
     setReplyPosting(false);
   };
 
@@ -820,11 +953,13 @@ export function PublicMessageThread(props: {
           baselineSats,
         );
       }
-      if (parsed === 'empty' && (exempt || authorUnknown)) {
-        return runReplyPost(token, trimmed, parentId, isRetry);
+      if (parsed === 'empty') {
+        if (exempt || authorUnknown) {
+          return runReplyPost(token, trimmed, parentId, isRetry);
+        }
+        return runComposePay(token, trimmed, parentId, 1, isRetry);
       }
-      const sats = parsed === 'empty' ? 1 : parsed;
-      return runPaidReply(token, trimmed, parentId, sats, isRetry, baselineSats);
+      return runPaidReply(token, trimmed, parentId, parsed, isRetry, baselineSats);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
@@ -902,6 +1037,7 @@ export function PublicMessageThread(props: {
         photoUrls={photoUrls}
         rateDay={rateDay}
         payMessageId={payMessageId}
+        payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
         payError={payError}

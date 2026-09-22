@@ -35,6 +35,7 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
+import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
@@ -48,6 +49,7 @@ import {
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
+import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -198,6 +200,13 @@ export interface ForumBoardProps {
   composerMaxLength?: number;
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
+  /**
+   * Where the open invoice is bound. `'composer'` keeps the sheet on the
+   * top-level composer even when the fee note is in the visible list.
+   * `'card'` binds to the matching parent or reply. Omit/`null` infers
+   * from whether `payMessageId` is listed.
+   */
+  payHost?: 'composer' | 'card' | null;
   /** Amount draft for the open pay sheet. */
   payDraft: string;
   /** True while an invoice request is in flight. */
@@ -217,8 +226,9 @@ export interface ForumBoardProps {
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /**
-   * Latest gift-day totals used to scale sats into CHF/EUR/USD/PHP.
-   * Omit or `null` when stats have not loaded — amounts stay ₿-only.
+   * Latest gift-day totals for unsent previews (pay sheet, unpaid invoice).
+   * Settled ₿ amounts use the fiat stored on the row. Omit or `null` when
+   * stats have not loaded — previews stay ₿-only.
    */
   rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */
@@ -535,10 +545,10 @@ function fallbackCopy(text: string): boolean {
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/No gifts yet/All/Most popular selector (unpaid may show a count
- * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
- * is not selected; omitted when `modeSelector` is false or `composerHidden`
- * is true), composer under the mode
+ * ForumModeSelect (a closed full-width combobox showing the selected label
+ * and a chevron; unpaid count chip on the closed trigger when `unpaidNewCount`
+ * is \> 0 and unpaid is not selected; omitted when `modeSelector` is false or
+ * `composerHidden` is true), composer under the mode
  * filters above the newest-first list (new notes only; Post/Ask pill;
  * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
  * feed) or empty/loading/error, per-card expand for oldest-first replies +
@@ -591,6 +601,7 @@ export function ForumBoard({
   formError,
   composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
   payMessageId,
+  payHost = null,
   payDraft,
   payBusy,
   payError,
@@ -821,7 +832,7 @@ export function ForumBoard({
   };
 
   const copyMessageLink = async (messageId: string): Promise<void> => {
-    const url = `${window.location.origin}/messages/${messageId}`;
+    const url = shortResourceUrl(window.location.origin, messageId, `/messages/${messageId}`);
     try {
       await navigator.clipboard.writeText(url);
       /* v8 ignore next 3 -- copy resolved after unmount */
@@ -1077,7 +1088,7 @@ export function ForumBoard({
                   className="text-xs font-medium tabular-nums lining-nums text-app-muted"
                 >
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
-                  {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
+                  {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                 </button>
                 {message.parentId === undefined && message.deletedAt === undefined ? (
                   <IconButton
@@ -1150,7 +1161,7 @@ export function ForumBoard({
                 ) : null}
               </div>
 
-              {payMessageId === message.id ? (
+              {payMessageId === message.id && payHost !== 'composer' ? (
                 <ForumPaySheet
                   messageId={message.id}
                   payDraft={payDraft}
@@ -1270,7 +1281,13 @@ export function ForumBoard({
                                 {t('forum.giftReply', {
                                   amount: formatBitcoin(reply.sats, numberFormat),
                                 })}
-                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
+                                {preferredFiatSuffix(
+                                  reply.sats,
+                                  rateDay,
+                                  fiat,
+                                  numberFormat,
+                                  reply,
+                                )}
                               </p>
                             ) : null}
                             {reply.text !== '' ? (
@@ -1310,7 +1327,13 @@ export function ForumBoard({
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, numberFormat)}
-                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
+                                {preferredFiatSuffix(
+                                  reply.sats,
+                                  rateDay,
+                                  fiat,
+                                  numberFormat,
+                                  reply,
+                                )}
                               </p>
                             ) : null}
                             <div
@@ -1362,7 +1385,7 @@ export function ForumBoard({
                                 />
                               ) : null}
                             </div>
-                            {payMessageId === reply.id ? (
+                            {payMessageId === reply.id && payHost !== 'composer' ? (
                               <ForumPaySheet
                                 messageId={reply.id}
                                 payDraft={payDraft}
@@ -1549,7 +1572,7 @@ export function ForumBoard({
       ) : null}
 
       {!composerHidden && modeSelector ? (
-        <SegmentedControl
+        <ForumModeSelect
           value={mode}
           options={FORUM_FEED_MODES.map((next) => {
             const label = t(MODE_LABEL_KEY[next]);
@@ -1565,8 +1588,6 @@ export function ForumBoard({
           })}
           onChange={onModeChange}
           ariaLabel={t('forum.modeLabel')}
-          tone="neutral"
-          className="!grid grid-cols-2 !rounded-2xl"
         />
       ) : null}
 
@@ -1727,6 +1748,30 @@ export function ForumBoard({
             </ul>
           ) : null}
         </form>
+      ) : null}
+
+      {payInvoice !== null &&
+      (payHost === 'composer' ||
+        (payHost !== 'card' &&
+          payMessageId !== null &&
+          !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
+          !(replies !== null && replies.some((row) => row.id === payMessageId)))) ? (
+        <ForumPaySheet
+          messageId={payInvoice.messageId}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          payWaiting={payWaiting}
+          onPayDraftChange={onPayDraftChange}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={onPayCancel}
+          rateDay={rateDay}
+          showPaymentQr={showPaymentQr}
+          onInteract={(event) => {
+            event.stopPropagation();
+          }}
+        />
       ) : null}
 
       {!composerHidden && formError === 'empty' ? (

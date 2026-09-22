@@ -2,6 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
+async function chooseForumView(page: Page, name: string): Promise<void> {
+  await page.getByRole('combobox', { name: 'Forum view' }).click();
+  await page.getByRole('option', { name, exact: true }).click();
+}
+
 /**
  * Visual baselines are Linux Chromium (CI and the Playwright Docker image).
  * Behavioral e2e specs still run on macOS; these comparisons do not.
@@ -22,9 +27,9 @@ const E2E_ACCOUNT = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   aboutMe: null as string | null,
-  setup: 'name' as 'name' | 'username' | 'lightning-address' | 'rules' | null,
+  setup: 'name' as 'wallet' | 'name' | 'username' | 'lightning-address' | 'rules' | null,
   missing: ['name', 'username', 'lightning-address', 'rules'] as Array<
-    'name' | 'username' | 'lightning-address' | 'rules'
+    'wallet' | 'name' | 'username' | 'lightning-address' | 'rules'
   >,
 };
 
@@ -711,6 +716,238 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate');
   });
 
+  test('screen /wallet', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet');
+    await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Activate recovery phrase' })).toBeVisible();
+    await shotScreen(page, 'screen-wallet');
+  });
+
+  test('wallet phrase', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=phrase');
+    await expect(page.getByText('abandon')).toBeVisible();
+    await shotScreen(page, 'state-wallet-phrase');
+  });
+
+  test('wallet setup', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          setup: 'wallet',
+          walletRequired: true,
+          walletBackupSeenAt: null,
+          missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=phrase');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-setup');
+  });
+
+  test('wallet confirm', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          setup: 'wallet',
+          walletRequired: true,
+          walletBackupSeenAt: null,
+          missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=confirm');
+    await expect(page.getByRole('button', { name: 'I saved these words' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-confirm');
+  });
+
+  test('wallet reveal', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+        }),
+      });
+    });
+    await page.goto('/wallet');
+    await expect(page.getByText('Advanced functions')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-reveal');
+  });
+
+  test('wallet reveal-open', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+        }),
+      });
+    });
+    await page.goto('/wallet');
+    await page.getByText('Advanced functions').click();
+    await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-reveal-open');
+  });
+
+  test('wallet error', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=error');
+    await expect(
+      page.getByText('The recovery phrase could not be opened. Check this device and try again.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-error');
+  });
+
+  test('wallet timeout', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=timeout');
+    await expect(
+      page.getByText('The device prompt timed out before you finished. Try again.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-timeout');
+  });
+
+  test('wallet prf-unsupported', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet?visual=prf-unsupported');
+    await expect(
+      page.getByText(
+        'This browser cannot create a recovery phrase. Try another browser or device.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-prf-unsupported');
+  });
+
   test('screen /stats', async ({ page }) => {
     await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {
@@ -1086,10 +1323,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await shotScreen(page, 'screen-welcome');
   });
 
@@ -3240,8 +3475,68 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
     await shotScreen(page, 'state-members-staff-verify');
+  });
+
+  test('state /members staff-verify-open', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    const disclosure = page.getByText('Moderator functions');
+    await disclosure.click();
+    const verify = page.getByRole('button', { name: 'Verify' });
+    await expect(verify).toBeVisible();
+    await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
+    await verify.scrollIntoViewIfNeeded();
+    // The member card scrolls inside the page frame. A full-page stitch leaves
+    // Verify below the viewport, so this shot is the viewport after that scroll.
+    await shotScreen(page, 'state-members-staff-verify-open', false);
   });
 
   test('state /members funding-reviewed', async ({ page }) => {
@@ -4910,36 +5205,8 @@ test.describe('profile funding states', () => {
   test('profile funding none', async ({ page }) => {
     await seedFundingProfile(page);
     await page.goto('/profile');
-    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-none');
-  });
-
-  test('profile funding applying', async ({ page }) => {
-    await seedFundingProfile(page);
-    await page.route(/\/funding\/apply$/, async () => {
-      await new Promise(() => undefined);
-    });
-    await page.goto('/profile');
-    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
-    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeDisabled();
-    await shotScreen(page, 'state-profile-funding-applying');
-  });
-
-  test('profile funding apply-error', async ({ page }) => {
-    await seedFundingProfile(page);
-    await page.route(/\/funding\/apply$/, async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Funding is unavailable' }),
-      });
-    });
-    await page.goto('/profile');
-    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
-    await expect(
-      page.getByText('Could not submit your application. Please try again.'),
-    ).toBeVisible();
-    await shotScreen(page, 'state-profile-funding-apply-error');
   });
 
   test('profile funding pending', async ({ page }) => {
@@ -4989,8 +5256,327 @@ test.describe('profile funding states', () => {
   });
 });
 
+test.describe('profile apply screens', () => {
+  const POST = {
+    id: 'msg_1',
+    name: 'Ada',
+    text: 'Living-room note.',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'verified',
+    replyCount: 0,
+  };
+
+  async function seedApply(
+    page: Page,
+    extras: {
+      role?: 'basis' | 'verified';
+      aboutMe?: string | null;
+      aboutMeHasPhoto?: boolean;
+      location?: string | null;
+      funding?: unknown;
+    } = {},
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: extras.role ?? 'verified',
+          name: 'Ada',
+          location: extras.location ?? null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: extras.aboutMe ?? null,
+          aboutMeHasPhoto: extras.aboutMeHasPhoto ?? false,
+          setup: null,
+          missing: [],
+          funding:
+            extras.funding === undefined && extras.role !== 'basis'
+              ? {
+                  status: 'none',
+                  trialUtcDate: null,
+                  admittedAt: null,
+                  reviewedByName: null,
+                }
+              : extras.funding,
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+  }
+
+  async function stubPosts(
+    page: Page,
+    messages: (typeof POST)[] | 'hang' | 'error',
+  ): Promise<void> {
+    await page.route(/\/forum\/members\/[^/]+\/posts/, async (route) => {
+      if (messages === 'hang') {
+        return;
+      }
+      if (messages === 'error') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
+    });
+  }
+
+  test('screen /profile/apply', async ({ page }) => {
+    await seedApply(page);
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-profile-apply');
+  });
+
+  test('profile apply photo', async ({ page }) => {
+    await seedApply(page, { aboutMe: 'I build on Bitcoin' });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-photo');
+  });
+
+  test('profile apply location', async ({ page }) => {
+    await seedApply(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Next, add the place you live.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-location');
+  });
+
+  test('profile apply principle-1', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Please check whether the posts match principle 1.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-principle-1');
+  });
+
+  test('profile apply principle-2', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(page.getByText('Please check whether the posts match principle 2.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-principle-2');
+  });
+
+  test('profile apply principle-3', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(page.getByText('Please check whether the posts match principle 3.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-principle-3');
+  });
+
+  test('profile apply truth', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-truth');
+  });
+
+  test('profile apply forbidden', async ({ page }) => {
+    await seedApply(page, { role: 'basis', funding: null });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('You are not verified yet.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-forbidden');
+  });
+
+  test('profile apply pending', async ({ page }) => {
+    await seedApply(page, {
+      funding: {
+        status: 'pending',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('Your application is open. A moderator will review your posts.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-pending');
+  });
+
+  test('profile apply trial', async ({ page }) => {
+    await seedApply(page, {
+      funding: {
+        status: 'trial',
+        trialUtcDate: '2026-09-20',
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-trial');
+  });
+
+  test('profile apply admitted', async ({ page }) => {
+    await seedApply(page, {
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: 1,
+        reviewedByName: 'Ada',
+      },
+    });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-admitted');
+  });
+
+  test('profile apply empty-posts', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, []);
+    await page.goto('/profile/apply');
+    await expect(page.getByText('No living-room posts.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-empty-posts');
+  });
+
+  test('profile apply loading', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, 'hang');
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Loading…').first()).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-loading');
+  });
+
+  test('profile apply error', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, 'error');
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('Could not load this application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-error');
+  });
+
+  test('profile apply applying', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.route(/\/funding\/apply$/, async () => {
+      /* hang */
+    });
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(page.getByRole('button', { name: 'Yes' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-applying');
+  });
+
+  test('profile apply apply-failed', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.route(/\/funding\/apply$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Could not submit your application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-apply-failed');
+  });
+
+  test('profile apply unmet', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement not met' }).click();
+    await expect(page.getByText('When your posts match, you can apply again.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-unmet');
+  });
+});
+
 test.describe('welcome forum variants', () => {
-  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'verified' | 'moderator' = 'basis',
+    lawsDismissed = true,
+  ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -5010,6 +5596,7 @@ test.describe('welcome forum variants', () => {
           aboutMe: null,
           setup: null,
           missing: [],
+          forumLawsDismissed: lawsDismissed,
         }),
       });
     });
@@ -5102,7 +5689,7 @@ test.describe('welcome forum variants', () => {
     await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -5129,7 +5716,7 @@ test.describe('welcome forum variants', () => {
         });
       });
       await page.goto('/welcome');
-      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await chooseForumView(page, 'No gifts yet');
       await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toBeVisible();
       if (state !== 'moderation') {
         await page.getByRole('button', { name: 'Delete post', exact: true }).click();
@@ -5251,7 +5838,7 @@ test.describe('welcome forum variants', () => {
         });
       });
       await page.goto('/welcome');
-      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await chooseForumView(page, 'No gifts yet');
       await page.getByRole('button', { name: 'Show reactions', exact: true }).click();
       await expect(
         page.getByRole('button', { name: 'Delete reaction', exact: true }),
@@ -5290,7 +5877,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
     await shotScreen(page, 'state-welcome-all');
   });
@@ -5320,7 +5907,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('50%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-50');
   });
@@ -5350,7 +5937,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('100%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-100');
   });
@@ -5380,7 +5967,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
@@ -5433,10 +6020,8 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.00')).toBeVisible();
@@ -5489,15 +6074,28 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-preview');
   });
 
+  test('welcome filter-open', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Forum view' }).click();
+    const list = page.getByRole('listbox', { name: 'Forum view' });
+    await expect(list).toBeVisible();
+    await expect(list.getByRole('option', { name: 'Active', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'No gifts yet', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'All', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'Most popular', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-filter-open');
+  });
+
   test('welcome unpaid', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'No gifts yet', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await chooseForumView(page, 'No gifts yet');
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('No gifts yet');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
     await expect(page.getByText('Thank you both — that helps.')).not.toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).not.toBeVisible();
@@ -5511,11 +6109,10 @@ test.describe('welcome forum variants', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    const forumView = page.getByRole('combobox', { name: 'Forum view' });
+    await expect(forumView).toContainText('Active');
+    await expect(forumView).toContainText('1');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-unpaid-new-count');
   });
 
@@ -5542,7 +6139,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+    await chooseForumView(page, 'No gifts yet');
     await expect(
       page.getByText('Every loaded message has already received Bitcoin.'),
     ).toBeVisible();
@@ -5553,7 +6150,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Most popular' }).click();
+    await chooseForumView(page, 'Most popular');
     const items = page.getByRole('listitem');
     await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
     await expect(items.nth(0)).toContainText('₿21');
@@ -5587,10 +6184,8 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No message has received Bitcoin yet.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
     await shotScreen(page, 'state-welcome-empty-paid');
   });
@@ -5702,7 +6297,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photo');
@@ -5752,14 +6347,14 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photos');
   });
 
   test('welcome photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         const parsed = route.request().postDataJSON() as {
@@ -5859,7 +6454,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
     await expect(page.getByText('Hello with these photos.')).toBeVisible();
     await shotScreen(page, 'state-welcome-photos-and-text');
@@ -5867,10 +6462,31 @@ test.describe('welcome forum variants', () => {
 
   async function emptyForum(page: Page): Promise<void> {
     await page.route(/\/messages(?:\?|$)/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ messages: [] }),
+      });
+    });
+  }
+
+  async function stubComposeInvoice(page: Page): Promise<void> {
+    await page.route('**/messages/compose-target', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messageId: 'compose-fee', sats: 0 }),
+      });
+    });
+    await page.route(/\/messages\/compose-fee\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc1test', amountSats: 1 }),
       });
     });
   }
@@ -6059,7 +6675,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome posting-photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     let release: () => void = () => undefined;
     const held = new Promise<void>((resolve) => {
       release = resolve;
@@ -6134,7 +6750,7 @@ test.describe('welcome forum variants', () => {
       await route.abort();
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-photo-loading');
@@ -6167,6 +6783,24 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with an unsupported photo.');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-unsupported-with-text');
+  });
+
+  test('welcome pay-composer', async ({ page }, testInfo) => {
+    await seedAda(page, 'basis', true);
+    await emptyForum(page);
+    await stubComposeInvoice(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello gifts');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-pay-composer');
   });
 
   test('welcome error-too-large', async ({ page }) => {
@@ -6224,7 +6858,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome error-request-photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
@@ -6391,7 +7025,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -6503,7 +7137,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -6561,7 +7195,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Verified' }).click();
     await expect(
       page.getByText('A moderator has met this person in real life and confirmed they are real.'),

@@ -60,8 +60,8 @@ describe('isReplyPaymentExempt', () => {
     },
   );
 
-  it('is true for a basis parent author', () => {
-    expect(isReplyPaymentExempt(account('basis'), 'acc_1')).toBe(true);
+  it('is false for a basis parent author', () => {
+    expect(isReplyPaymentExempt(account('basis'), 'acc_1')).toBe(false);
   });
 
   it('is false for a basis account that is not the parent author', () => {

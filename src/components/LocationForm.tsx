@@ -27,14 +27,19 @@ function hasLocation(location: string | null | undefined): boolean {
  * not overwritten. Renders nothing when no account — or, defensively, no
  * session token — is present. Empty after trim is a valid save and clears.
  *
+ * @param props - Optional `startEditing` opens the field on mount.
  * @returns The location section, or `null` when there is nothing to show.
  */
-export function LocationForm(): ReactElement | null {
+export function LocationForm({
+  startEditing = false,
+}: {
+  startEditing?: boolean;
+} = {}): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);

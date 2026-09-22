@@ -37,6 +37,48 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
 }
 
 /**
+ * Copy `options.extensions` onto parsed WebAuthn options and decode a
+ * base64url `prf.eval.first` string to bytes for `create()` / `get()`.
+ *
+ * Native parse already copies extensions; this still decodes a string
+ * `prf.eval.first` afterwards. Manual fallback must copy extensions too.
+ *
+ * @param result - Native parse output or the manual fallback object.
+ * @param options - Original api JSON (may include `extensions`).
+ * @returns The same `result`, with extensions applied when present.
+ */
+function applyClientExtensions<T extends { extensions?: AuthenticationExtensionsClientInputs }>(
+  result: T,
+  options: Record<string, unknown>,
+): T {
+  const raw = options['extensions'];
+  if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+    result.extensions = {
+      ...(result.extensions ?? {}),
+      ...(raw as AuthenticationExtensionsClientInputs),
+    };
+  }
+  const extensions = result.extensions as
+    (AuthenticationExtensionsClientInputs & { prf?: { eval?: { first?: unknown } } }) | undefined;
+  const first = extensions?.prf?.eval?.first;
+  /* v8 ignore next 12 -- jsdom native parse already yields bytes; string first is only the JSON fallback */
+  if (typeof first === 'string') {
+    const current = extensions ?? {};
+    result.extensions = {
+      ...current,
+      prf: {
+        ...(current.prf ?? {}),
+        eval: {
+          ...((current.prf as { eval?: object } | undefined)?.eval ?? {}),
+          first: Uint8Array.from(base64UrlToBytes(first)),
+        },
+      },
+    };
+  }
+  return result;
+}
+
+/**
  * Build `PublicKeyCredentialCreationOptions` from api JSON.
  *
  * @param options - `PublicKeyCredentialCreationOptionsJSON` from the api.
@@ -59,7 +101,7 @@ export function creationOptionsFromJSON(
     credentialDescriptorsFromJSON(options['excludeCredentials']);
   }
   if (typeof parse === 'function') {
-    return parse(options);
+    return applyClientExtensions(parse(options), options);
   }
   const challenge = options['challenge'];
   const rp = options['rp'] as { name: string; id?: string };
@@ -93,7 +135,7 @@ export function creationOptionsFromJSON(
   if (excludeCredentials !== undefined) {
     created.excludeCredentials = excludeCredentials;
   }
-  return created;
+  return applyClientExtensions(created, options);
 }
 
 type RequestOptionsWithHints = PublicKeyCredentialRequestOptions & {
@@ -148,7 +190,7 @@ export function requestOptionsFromJSON(
     credentialDescriptorsFromJSON(json['allowCredentials']);
   }
   if (typeof parse === 'function') {
-    return finalizeDiscoverableRequestOptions(parse(json));
+    return applyClientExtensions(finalizeDiscoverableRequestOptions(parse(json)), json);
   }
   const challenge = json['challenge'];
   const rpId = json['rpId'];
@@ -170,7 +212,7 @@ export function requestOptionsFromJSON(
   if (typeof userVerification === 'string') {
     requested.userVerification = userVerification as UserVerificationRequirement;
   }
-  return finalizeDiscoverableRequestOptions(requested);
+  return applyClientExtensions(finalizeDiscoverableRequestOptions(requested), json);
 }
 
 /**
@@ -225,15 +267,33 @@ function credentialDescriptorsFromJSON(raw: unknown): PublicKeyCredentialDescrip
 }
 
 /**
+ * Drop `prf` from client extension results so finish JSON never carries
+ * PRF bytes.
+ *
+ * @param json - Serialized credential.
+ * @returns The same object without `clientExtensionResults.prf`.
+ */
+function withoutPrfResults(json: Record<string, unknown>): Record<string, unknown> {
+  const ext = json['clientExtensionResults'];
+  if (ext === null || typeof ext !== 'object' || Array.isArray(ext)) {
+    return json;
+  }
+  const next = { ...(ext as Record<string, unknown>) };
+  delete next['prf'];
+  return { ...json, clientExtensionResults: next };
+}
+
+/**
  * Serialise a `PublicKeyCredential` to the JSON the api expects.
+ * Omits PRF output — mnemonic derivation stays in the tab.
  *
  * @param credential - Result of `create` or `get`.
- * @returns JSON matching WebAuthn Level 3 `toJSON()`.
+ * @returns JSON matching WebAuthn Level 3 `toJSON()`, without `prf` results.
  */
 export function credentialToJSON(credential: PublicKeyCredential): Record<string, unknown> {
   const native = credential as PublicKeyCredential & { toJSON?: () => Record<string, unknown> };
   if (typeof native.toJSON === 'function') {
-    return native.toJSON();
+    return withoutPrfResults(native.toJSON());
   }
   const response = credential.response;
   const base: Record<string, unknown> = {
@@ -260,5 +320,5 @@ export function credentialToJSON(credential: PublicKeyCredential): Record<string
           : bytesToBase64Url(new Uint8Array(assertion.userHandle)),
     };
   }
-  return base;
+  return withoutPrfResults(base);
 }

@@ -1,11 +1,9 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ReactElement } from 'react';
+import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button } from '@/components/ui';
-import { postFundingApply } from '@/lib/api';
+import { ButtonLink } from '@/components/ui';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -17,9 +15,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * verification works (a moderator who personally knows them and has met them
  * in the real world confirms them on the member page). No apply button.
  * Verified and above see funding status from `account.funding` (missing or
- * `null` is treated as `none`): grace copy, About link, and Apply button for
- * `none`/`rejected` (no denial sentence and no conviction titles),
- * open application, one-day trial, or admitted with a reviewed-by date.
+ * `null` is treated as `none`): grace copy, About link, and Apply link to
+ * `/profile/apply` for `none`/`rejected` (no denial sentence and no conviction
+ * titles), open application, one-day trial, or admitted with a reviewed-by date.
  *
  * @returns The grant section, or `null` without a session or account.
  */
@@ -27,9 +25,6 @@ export function FundingStatusCard(): ReactElement | null {
   const { t, locale } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const setAccount = useAuthStore((state) => state.setAccount);
-  const [applying, setApplying] = useState(false);
-  const [applyFailed, setApplyFailed] = useState(false);
 
   if (session === null || account === null) {
     return null;
@@ -56,29 +51,6 @@ export function FundingStatusCard(): ReactElement | null {
     trialUtcDate: null,
     admittedAt: null,
     reviewedByName: null,
-  };
-
-  const apply = (): void => {
-    /* v8 ignore next 3 — the action button is disabled while busy */
-    if (applying) {
-      return;
-    }
-    setApplying(true);
-    setApplyFailed(false);
-    void (async () => {
-      try {
-        const next = await postFundingApply(session);
-        const current = useAuthStore.getState();
-        if (current.session !== session || current.account === null) {
-          return;
-        }
-        setAccount({ ...current.account, funding: next });
-      } catch {
-        setApplyFailed(true);
-      } finally {
-        setApplying(false);
-      }
-    })();
   };
 
   let body: ReactElement;
@@ -108,22 +80,9 @@ export function FundingStatusCard(): ReactElement | null {
         >
           {t('nav.about')}
         </Link>
-        {applyFailed ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('funding.applyError')}
-          </p>
-        ) : null}
-        <Button
-          type="button"
-          size="lg"
-          disabled={applying}
-          icon={
-            applying ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-          }
-          onClick={apply}
-        >
+        <ButtonLink href="/profile/apply" size="lg">
           {t('funding.apply')}
-        </Button>
+        </ButtonLink>
       </>
     );
   }

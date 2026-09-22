@@ -1,5 +1,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -33,6 +35,22 @@ vi.mock('@/lib/webauthn-browser', () => ({
   credentialToJSON: vi.fn().mockReturnValue({ id: 'cred' }),
 }));
 
+vi.mock('@/lib/prf-mnemonic', () => ({
+  obtainPrfFirst: vi.fn().mockResolvedValue(new Uint8Array(32).fill(7)),
+  mnemonicFromPrfFirst: vi
+    .fn()
+    .mockResolvedValue(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    ),
+  prfEvalFirstSalt: vi.fn().mockResolvedValue(new Uint8Array(32).fill(1)),
+}));
+
+vi.mock('@/lib/tab-phrase', () => ({
+  rememberSessionPhrase: vi.fn(),
+  clearSessionPhrase: vi.fn(),
+  peekSessionPhrase: vi.fn(() => null),
+}));
+
 const account = {
   id: 'acc_1',
   linkingKey: null,
@@ -60,11 +78,28 @@ beforeEach(() => {
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyAuthentication).mockReset().mockResolvedValue({ token: 'tok', account });
+  vi.mocked(rememberSessionPhrase).mockClear();
 });
 
 afterEach(cleanup);
 
 describe('usePasskeyLogin', () => {
+  it('does not finish registration when PRF is missing', async () => {
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    vi.unstubAllGlobals();
+  });
+
   it('registers a passkey and stores the session', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
@@ -77,6 +112,12 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
+    expect(rememberSessionPhrase).toHaveBeenCalledWith(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
+    const createArg = vi.mocked(navigator.credentials.create).mock.calls[0]?.[0] as
+      CredentialCreationOptions | undefined;
+    expect(createArg?.publicKey?.extensions).toHaveProperty('prf.eval.first');
     expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
     vi.unstubAllGlobals();
   });
@@ -124,6 +165,7 @@ describe('usePasskeyLogin', () => {
       result.current.authenticate();
     });
     expect(useAuthStore.getState().account?.id).toBe('acc_1');
+    expect(rememberSessionPhrase).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
@@ -352,6 +394,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unsupported');
     expect(startPasskeyAuthentication).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
+    expect(clearSessionPhrase).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
@@ -369,6 +412,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unsupported');
     expect(startPasskeyAuthentication).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
+    expect(clearSessionPhrase).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

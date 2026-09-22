@@ -31,6 +31,8 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 8. **Do not canonize defects.** Goldens document current pixels; this file is the system. _Implication:_ do not reintroduce double ₿, an empty-chart axis, orange **text** on paper, a QR on smartphone UA, or hard-coded Inter/gray SaaS.
 
+9. **Staff action stacks stay closed.** A stack of labeled moderator or founder actions on a member card is not painted as loose buttons. _Implication:_ one closed disclosure, catalog `staff.functions` ("Moderator functions" / "Moderatorenfunktionen"), the same `details` / `summary` as wallet **Advanced functions** (`wallet.advanced`), not a full-width button. Opening it reveals only the actions that viewer may use on that person. The opened disclosure is its own screenshot state, not only the closed summary. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not add a second disclosure around their own tools. The Menu row **Moderation** stays. The staff inbox origin filter stays. Role pills are identity, not actions.
+
 ## Brand
 
 **Wordmark.** The string `21.gifts` in Outfit, weight 700, tracking `0`. Not an SVG logotype. The drawn asset is only the favicon/app-icon “21”.
@@ -117,12 +119,12 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 
 **(B) App shell** (`app-*`): orange is **gift-money** only — fills and chart paint, never body/kicker **text** on paper (~2.3:1).
 
-| Orange                                                               | Not orange                                                                                                                       |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
-| Charts: received series, ₿ selected in ₿ \| selected fiat            | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
-|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                         |
-|                                                                      | **Rules kickers and ticks** — see (B′)                                                                                           |
+| Orange                                                               | Not orange                                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`)            |
+| Charts: received series, ₿ selected in ₿ \| selected fiat            | Closed forum view is a field (`bg-app-card`), not a selected pill; Post/Ask selected stays `bg-app-btn`; check is `text-app-fg`, not orange |
+|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                                    |
+|                                                                      | **Rules kickers and ticks** — see (B′)                                                                                                      |
 
 **(B′) Living-room house chrome (closed exception, not a third job).** `RulesDocument` paints:
 
@@ -208,7 +210,7 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 | Token          | px      | rem          | Weight | Line-height            | Letter-spacing              | Max measure                                        | Tailwind recipe                                                   | Use                                                                                                                                                                      |
 | -------------- | ------- | ------------ | ------ | ---------------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`). 404 “404” stays `text-5xl` = 48px / 600                                                                            |
-| **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, contact, inbox, notifications, setup. **Not login** (see **card-title**)                             |
+| **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, wallet, contact, inbox, notifications, setup. **Not login** (see **card-title**)                     |
 | **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`, or `login.choiceHeading` on the account-choice state). Keep this smaller step so the card is an action, not a billboard |
 | **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                                                  |
 | **display-sm** | 36 / 48 | 2.25 / 3     | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 22em                                               | `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` | `/about` H1 (reading-width marketing page; not the home 60px display)                                                                                                    |
@@ -379,21 +381,21 @@ flowchart TB
 
 ## Layout and chrome
 
-| Measure            | Value                                       | Use                                                                |
-| ------------------ | ------------------------------------------- | ------------------------------------------------------------------ |
-| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                   |
-| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                               |
-| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, view, member identity, onboarding name/address     |
-| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                          |
-| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation           |
-| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                           |
-| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                     |
-| Marketing pad      | `px-5`                                      | Header, sections, footer                                           |
-| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                  |
-| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules` |
-| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                |
-| Marketing section  | `py-20`                                     | how / why / project / faq                                          |
-| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                    |
+| Measure            | Value                                       | Use                                                                    |
+| ------------------ | ------------------------------------------- | ---------------------------------------------------------------------- |
+| Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                       |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                                   |
+| App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, wallet, view, member identity, onboarding name/address |
+| App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                              |
+| App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation               |
+| Rules document     | `max-w-3xl`                                 | `/rules`, `/setup/rules`                                               |
+| App page pad       | `px-6`                                      | `AppShell` / flow `PageChrome`                                         |
+| Marketing pad      | `px-5`                                      | Header, sections, footer                                               |
+| Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                      |
+| Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`     |
+| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                    |
+| Marketing section  | `py-20`                                     | how / why / project / faq                                              |
+| Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                        |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden`. App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
@@ -406,10 +408,12 @@ flowchart TB
 [                         children                                      ]
 ```
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/members/[accountId]`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/moderate/handbook`, `/trust-chain`, `/contact`, `/shops`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). On `/messages`: `MessagesChromeLeft` (list: back `/welcome`; `?c=` non-empty: back `/messages`, aria All conversations). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                 | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` (optional `backHref` / `backLabelKey`) + `Wordmark href="/welcome"`. |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                       | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/profile/apply`, `/wallet`, `/members/[accountId]`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/moderate/handbook`, `/trust-chain`, `/contact`, `/shops`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). On `/messages`: `MessagesChromeLeft` (list: back `/welcome`; `?c=` non-empty: back `/messages`, aria All conversations). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
+| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                 | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+**`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` (optional `backHref` / `backLabelKey`) + `Wordmark href="/welcome"`.
 
 **`MessagesChromeLeft`.** Client `/messages` chrome over `ProfileChromeLeft`: list uses the default forum back; a non-empty `?c=` uses `backHref="/messages"` and `backLabelKey="inbox.back"` (**All conversations**).
 
@@ -420,6 +424,7 @@ flowchart TB
 | Home                 | `Home`                        | `/welcome`                                                                          |
 | Shops                | `Store`                       | `/shops`                                                                            |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
+| Wallet               | `Wallet`                      | `/wallet` — recovery phrase confirm / activate / reveal                             |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |
@@ -498,7 +503,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ React ]  [ Copy ]  [ N reactions ]
 ```
 
-- Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of `satsToFiatAmount` when the conversion is non-null — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). Otherwise ₿-only, no ` · —`.
+- Amount: ₿ via `formatBitcoin`, then `·` plus `formatFiatDisplay` of the fiat stored when that payment was made — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). A stored string is shown as-is; `null` is ₿-only (no ` · —`); a missing field uses the latest gift-day rate. Unsent previews (pay sheet, unpaid invoice, Ask wizard, goal bar) omit the stored amount and use the latest gift-day rate.
 - React (posts only): `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Reply` 16px, `aria-label={t('forum.react')}` (**React**). Tests locate it with `getByRole('button', { name: /^React$/ })`.
 - Pay (replies only): `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
@@ -518,7 +523,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; a
 | Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                                                                |
 | Labels     | Stats charts: `₿` and the preferred FiatCode (CHF/EUR/USD/PHP). Profile: `₿` and the preferred FiatCode (CHF/EUR/USD/PHP), group `profile.chartScale`. `aria-pressed` on each. Group `role="group"` with catalog name |
 
-Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
+The closed forum view is a field (`bg-app-card`), not a selected pill. Post/Ask selected pill stays `bg-app-btn`. The check is `text-app-fg`, not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
 **Empty profile chart.** If both series empty/all-zero sats: unsigned shows FiatPicker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone; **no SVG / no ₿|fiat scale**. Legend without data is noise.
 
@@ -536,7 +541,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 
 Content translation under a note or reply body is a labeled underline text control (`forum.translate` / show original / show translation), not an `IconButton` in the footer icon row.
 
-**Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`). Member profile **Message** is a labeled `Button` (`profile.message`), not icon-only.
+**Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`). Member profile **Message** is a labeled `Button` (`profile.message`), not icon-only. **Moderator functions** is the same `details` / `summary` as wallet **Advanced functions**, not a `Button`.
 
 **Menu trigger** stays labeled (icon + “Menu”). It is page chrome. Do not convert **Log out**, **Continue**, **Skip**, **Activate**, **Try again**.
 
@@ -712,15 +717,57 @@ export function SegmentedControl<T extends string>(props: {
 
 Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`. Omitted when `badge` is missing or ≤ 0. The option button gets `aria-label` only when `badge` > 0 and `badgeAriaLabel` is non-empty.
 
-| Tone + shell    | Track                                                                                                                                                                                      | Selected                                  | Unselected       | Use                                                                                                                                                                                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs`                                                                                                                  | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                                                                                                                                                      |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`                                                                                                                    | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                                                                                                                                        |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` on the `role="group"` (so Forum `className="!grid grid-cols-2 !rounded-2xl"` still lays out the option buttons). | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications two pills (All / Active / Mentions always; This device On / Off when Push APIs are ready) |
+| Tone + shell    | Track                                                                                                                                                                                                              | Selected                                  | Unselected       | Use                                                                                                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs`                                                                                                                                          | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                                                                                                                             |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`                                                                                                                                            | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                                                                                                               |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` on the `role="group"` (so the forum composer Post/Ask `className="!grid grid-cols-2 !rounded-2xl"` still lays out those option buttons). | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum composer Post/Ask (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications two pills (All / Active / Mentions always; This device On / Off when Push APIs are ready) |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses two default one-row flex pills (All / Active / Mentions always, including while Push APIs are inspected; This device On / Off when Push APIs are ready).
+The forum composer Post/Ask still uses `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). The four forum view filters are `ForumModeSelect`, not this control. Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses two default one-row flex pills (All / Active / Mentions always, including while Push APIs are inspected; This device On / Off when Push APIs are ready).
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
+
+### ForumModeSelect
+
+Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. Shops does not mount it. Post/Ask stays a SegmentedControl.
+
+```tsx
+export function ForumModeSelect<T extends string>(props: {
+  value: T;
+  options: readonly {
+    value: T;
+    label: string;
+    badge?: number;
+    badgeAriaLabel?: string;
+  }[];
+  onChange: (value: T) => void;
+  ariaLabel: string;
+}): ReactElement;
+```
+
+**Trigger** (`type="button"` `role="combobox"` `aria-expanded` `aria-controls="forum-mode-listbox"` `aria-haspopup="listbox"`):
+
+```
+flex w-full min-h-11 items-center justify-between gap-2 rounded-2xl border border-app-border bg-app-card px-4 py-2 text-left text-base text-app-fg
+```
+
+Visible text is the selected label. `ChevronDown` is `h-4 w-4 shrink-0 text-app-muted`, aria-hidden. Not `rounded-full` and not `bg-app-btn` on the whole control.
+
+**Panel** (only while open, `role="listbox"` `id="forum-mode-listbox"`):
+
+```
+absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg
+```
+
+**Option row** (`type="button"` `role="option"` `tabIndex={-1}` `aria-selected`):
+
+```
+flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover
+```
+
+Selected row adds `font-medium` and a lucide Check `h-4 w-4 shrink-0 text-app-fg` (not orange). Pointer hover moves the keyboard highlight, so Enter or Space selects the row under the pointer.
+
+**Chip** (same as SegmentedControl): `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`, `aria-hidden`. Shown on the closed trigger when any option badge is greater than 0 (the unpaid count, even while another mode is selected). Shown on an option only when that option's badge is greater than 0. Omitted when the badge is missing or not positive. Option `aria-label` is `badgeAriaLabel` only when the badge is greater than 0 and `badgeAriaLabel` is a non-empty string.
 
 ### LanguageSwitcher
 
@@ -785,7 +832,7 @@ Inbox thread rows use **Inbox thread bubbles**, not this full-width forum chrome
 
 ### Inbox thread bubbles
 
-Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, expand). Every ₿ amount shown in an inbox/moderator-group thread (gift-only bubble, text+sats line, and the nested gift line below) now carries the same preferred-fiat suffix the forum already shows (` · $X.XX`, ₿-only without a usable rate) via the shared `preferredFiatSuffix` helper.
+Inbox direction is unmistakable without a Sent folder and without orange. Incoming is a full-width muted note card; sent is a content-sized filled `app-btn` bubble on the right. Do not use `bg-app-accent` here: sending a message is not a gift CTA. Inbox does not reuse the forum footer (amount, Gift pay, copy, expand). Every settled ₿ amount shown in an inbox/moderator-group thread (gift-only bubble, text+sats line, and the nested gift line below) carries the preferred-fiat suffix stored when that payment was made (` · $X.XX`; a stored string as-is, `null` is ₿-only, a missing field uses the latest gift-day rate) via the shared `preferredFiatSuffix` helper. Unpaid invoice previews still use the latest gift-day rate.
 
 **Incoming (`fromMe === false`).** Full-width muted note card (same chrome as the forum note card body): `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`. Inner: name `text-sm font-medium text-app-fg`, time `text-xs text-app-subtle`, body through `ForumQuotedBody` (`mt-2 whitespace-pre-wrap text-sm text-app-fg`) so a pasted `/messages/<uuid>` URL unfurls; attached stills `inbox.photoAlt` under the body.
 
@@ -900,7 +947,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity page column `Card` `max-w-sm` `surface={false}` (no nested `rounded-3xl`; the AppShell frame is the page panel): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR.
+**Anatomy.** Identity page column `Card` `max-w-sm` `surface={false}` (no nested `rounded-3xl`; the AppShell frame is the page panel): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) sit inside the closed **Moderator functions** disclosure, not always visible, when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR.
 
 ## Screen recipes
 
@@ -974,23 +1021,35 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
-- `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
+- `ForumModeSelect`: one closed full-width combobox showing the selected label and ChevronDown; open listbox with a check on the selected row; unpaid count chip on the closed trigger when the count is positive and unpaid is not selected; omitted at 0 and when unpaid is selected. Not a pill grid.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only, a missing field uses the latest gift-day rate). Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, username, Wallet of Satoshi address, or rules agreement.
 - `ExternalLinkWarning` (same overlay chrome, no Skip) when a visitor clicks an external http(s) URL in note, About me, or inbox text. Internal 21.gifts URLs navigate in-app with no overlay.
 
 Author names with `accountId` open `/members/[accountId]`.
 
+### `/wallet`
+
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. New accounts: 12-word grid + labeled **Continue** (no Skip). Existing: labeled **Activate recovery phrase**, then **Show recovery phrase** inside **Advanced functions**. Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
+
+Handbook states: default (activate), phrase, setup (Continue), confirm, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
+
 ### `/profile`
 
-Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` `surface={false}` → **h1** Profile → `AccountActivityChart` has no FiatPicker (signed-in); empty = `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `FundingStatusCard` (verification / 21 gifts grant) → `PushToggle` (Notifications heading, first pill All/Active/Mentions plus muted hint, second pill This device On/Off when Push APIs are ready; selected fill `bg-app-btn`; On/Off text so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` `surface={false}` → **h1** Profile → `AccountActivityChart` has no FiatPicker (signed-in); empty = `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → Address overline + mono value + edit/delete → `FundingStatusCard` (verification / 21 gifts grant; Apply is a `ButtonLink` to `/profile/apply`) → `PushToggle` (Notifications heading, first pill All/Active/Mentions plus muted hint, second pill This device On/Off when Push APIs are ready; selected fill `bg-app-btn`; On/Off text so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+
+### `/profile/apply`
+
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → in-card back to `/profile` → **h1** **Apply for the 21 gifts grant**. Missing About me, photo, or location are the next calm steps (not alerts). Then the same four principle/truth questions as staff review. **Yes** applies; unmet/No does not.
+
+Handbook states: default, photo, location, principle-1, principle-2, principle-3, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
 
 ### `/members/[accountId]`
 
-Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity `Card` `surface={false}` (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, optional grant-reviewed tag when `fundingReviewedAt` is a number, activity **Posts** / **Reactions** as labeled `Button sm` toggles, labeled staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR.
-Handbook states: default (About me when set), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (posts feed open, listed note expanded, Amount filled, Post → `RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`, `funding-reviewed`, `funding-reviewed-open`, `translate*` (German post in the posts feed). Overlay-address is reachable from a posts-feed reply; About me is not a replyable forum note.
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity `Card` `surface={false}` (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, optional grant-reviewed tag when `fundingReviewedAt` is a number, activity **Posts** / **Reactions** as labeled `Button sm` toggles, staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` behind the closed **Moderator functions** disclosure when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR.
+Handbook states: default (About me when set), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (posts feed open, listed note expanded, Amount filled, Post → `RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`, `staff-verify-open`, `funding-reviewed`, `funding-reviewed-open`, `translate*` (German post in the posts feed). Overlay-address is reachable from a posts-feed reply; About me is not a replyable forum note.
 
 ### `/notifications`
 
@@ -1049,11 +1108,11 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text and, when the derived unread message count is greater than zero, a `text-sm font-semibold tabular-nums lining-nums` digit count right of the name (accessible name `inbox.threadUnread`); read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer with ImagePlus attach (`IconButton`, JPEG/PNG/WebP, max 10) and icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum-view dropdown; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text and, when the derived unread message count is greater than zero, a `text-sm font-semibold tabular-nums lining-nums` digit count right of the name (accessible name `inbox.threadUnread`); read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer with ImagePlus attach (`IconButton`, JPEG/PNG/WebP, max 10) and icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` when the conversion is non-null (cookie, otherwise locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only, a missing field uses the latest gift-day rate; number format from the cookie, otherwise the locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 
@@ -1107,6 +1166,8 @@ WCAG 2.2 AA.
 
 Four Playwright combos: `desktop-light`, `desktop-dark`, `mobile-light`, `mobile-dark`. Goldens under `e2e/visual.spec.ts-snapshots/`. Filenames `${visual}-${combo}-linux.png`. `maxDiffPixelRatio` 0. Handbook doc pages are not shot.
 
+A control press that changes what is on screen is its own baseline. The shot before the press does not count as the shot after it. Opened disclosures, menus, confirms, cancels, and expanded rows each need all four combos. An idle or closed shot alone is not that state.
+
 Do not regenerate goldens on a developer machine. Regen is CI / Linux Playwright. `screenshot:check`, `handbook:check`, Function e2e.
 
 Marketing light/dark goldens are identical (always ink) — accepted.
@@ -1120,7 +1181,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 3. **Orange is shell-split.** Marketing: primary filled CTA + kickers + stats paint. App: gift-money **fill** only. Never orange text on paper. THE TEST bar is the only decorative orange on `/rules`.
 4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. Signed-in links to `/welcome` except `/setup/*` (span); marketing, login, donate, and view follow it via `HomeWordmark`.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
-6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null, otherwise ₿-only (no ` · —`). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
+6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only with no ` · —`, a missing field uses the latest gift-day rate). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
 7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
 8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.

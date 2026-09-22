@@ -10,10 +10,10 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /** Which post-login screen this gate is wrapping. */
 export type OnboardingScreen =
-  'login' | 'name' | 'username' | 'address' | 'rules' | 'welcome' | 'profile';
+  'login' | 'wallet' | 'name' | 'username' | 'address' | 'rules' | 'welcome' | 'profile';
 
 const PATH: Record<
-  Exclude<OnboardingScreen, 'login' | 'profile'>,
+  Exclude<OnboardingScreen, 'login' | 'profile' | 'wallet'>,
   '/setup/name' | '/setup/username' | '/setup/address' | '/setup/rules' | '/welcome'
 > = {
   name: '/setup/name',
@@ -65,6 +65,13 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
       }
       return;
     }
+    if (screen === 'wallet') {
+      const next = nextOnboardingPath(account);
+      if (next !== '/wallet' && next !== '/welcome') {
+        router.replace(next);
+      }
+      return;
+    }
     const target = nextOnboardingPath(account);
     if (target !== PATH[screen]) {
       router.replace(target);
@@ -80,6 +87,15 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
   if (screen === 'profile') {
     if (account !== null && nextOnboardingPath(account) === '/welcome') {
       return <>{children}</>;
+    }
+    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
+  }
+  if (screen === 'wallet') {
+    if (account !== null) {
+      const next = nextOnboardingPath(account);
+      if (next === '/wallet' || next === '/welcome') {
+        return <>{children}</>;
+      }
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
