@@ -234,6 +234,21 @@ describe('PlaceField', () => {
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
   });
 
+  it('marks a new script that loads without maps and ignores an error after close', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
+    });
+    const script = document.querySelector('script[data-gmaps="weekly"]');
+    script?.dispatchEvent(new Event('load'));
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    script?.dispatchEvent(new Event('error'));
+    await Promise.resolve();
+  });
+
   it('cancels an in-flight key load on close', async () => {
     let started = false;
     let resolveJson: (body: unknown) => void = () => undefined;
