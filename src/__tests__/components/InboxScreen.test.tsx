@@ -1650,7 +1650,112 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
-  it('does not pin to the bottom when an older still loads', () => {
+  it('pins to the bottom when a still finishes decoding while stuck', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [newest],
+            photoUrls: { 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    fireEvent.load(screen.getByAltText('Photo from Ada'));
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('stays stuck when the scroller is within 80px of the bottom', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [newest],
+            photoUrls: { 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+    scroller.scrollTop = 720;
+    scroller.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    fireEvent.load(screen.getByAltText('Photo from Ada'));
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('does not pin when a still finishes decoding after the scroller leaves the bottom', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [newest],
+            photoUrls: { 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.scrollTop = 0;
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+    scroller.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    fireEvent.load(screen.getByAltText('Photo from Ada'));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('pins to the bottom when an older still loads while stuck to the bottom', () => {
     const scrollTo = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
       configurable: true,
@@ -1681,18 +1786,77 @@ describe('InboxScreen', () => {
         />
       </AppShell>,
     );
-    expect(scrollTo).not.toHaveBeenCalled();
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('does not pin to the bottom when an older still loads after the scroller leaves the bottom', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const older = { ...MESSAGE, id: 'm-old', text: 'Older', hasPhoto: true, photoCount: 1 };
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { container, rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [older, newest], photoUrls: {} })} />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.scrollTop = 0;
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+    scroller.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
     rerender(
       <AppShell mode="fill">
         <InboxScreen
           {...inboxScreenProps({
             messages: [older, newest],
-            photoUrls: { 'm-old:0': 'blob:old', 'm1:0': 'blob:new' },
+            photoUrls: { 'm-old:0': 'blob:old' },
           })}
         />
       </AppShell>,
     );
-    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('does not pin to the bottom when an older still loads after the window leaves the bottom', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const older = { ...MESSAGE, id: 'm-old', text: 'Older', hasPhoto: true, photoCount: 1 };
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ messages: [older, newest], photoUrls: {} })} />,
+    );
+    const root = document.documentElement;
+    root.scrollTop = 0;
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 400 });
+    Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 1200 });
+    window.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    rerender(
+      <InboxScreen
+        {...inboxScreenProps({
+          messages: [older, newest],
+          photoUrls: { 'm-old:0': 'blob:old' },
+        })}
+      />,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
+    Reflect.deleteProperty(root, 'clientHeight');
+    Reflect.deleteProperty(root, 'scrollHeight');
   });
 
   it('pins to the bottom when the newest bubble still loads under a nested gift', () => {
@@ -1733,6 +1897,116 @@ describe('InboxScreen', () => {
       </AppShell>,
     );
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('stays at the bottom when older messages prepend while stuck', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const m2 = { ...MESSAGE, id: 'm2', text: 'Second' };
+    const m3 = { ...MESSAGE, id: 'm3', text: 'Third' };
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [m2, m3] })} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [{ ...MESSAGE, text: 'Older' }, m2, m3],
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('keeps the same messages in view when older messages prepend after scrolling up', () => {
+    const scrollTo = vi.fn();
+    let height = 1200;
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return height;
+      },
+    });
+    const m2 = { ...MESSAGE, id: 'm2', text: 'Second' };
+    const m3 = { ...MESSAGE, id: 'm3', text: 'Third' };
+    const { container, rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [m2, m3] })} />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.scrollTop = 100;
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+    scroller.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    height = 2000;
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [{ ...MESSAGE, text: 'Older' }, m2, m3],
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(scroller.scrollTop).toBe(900);
+  });
+
+  it('keeps the same messages in view when older messages prepend after the window leaves the bottom', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    let height = 1200;
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return height;
+      },
+    });
+    const m2 = { ...MESSAGE, id: 'm2', text: 'Second' };
+    const m3 = { ...MESSAGE, id: 'm3', text: 'Third' };
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ messages: [m2, m3] })} />,
+    );
+    const root = document.documentElement;
+    root.scrollTop = 100;
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 400 });
+    window.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    height = 2000;
+    rerender(
+      <InboxScreen
+        {...inboxScreenProps({
+          messages: [{ ...MESSAGE, text: 'Older' }, m2, m3],
+        })}
+      />,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(root.scrollTop).toBe(900);
+    scrollTo.mockRestore();
+    Reflect.deleteProperty(root, 'clientHeight');
   });
 
   it('does not scroll to the bottom when the invoice pay sheet closes', () => {
