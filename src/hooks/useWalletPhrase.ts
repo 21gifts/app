@@ -225,7 +225,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       }
       nextAccount = {
         ...nextAccount,
-        passkeyCredentialId: nextAccount.passkeyCredentialId ?? credential.id,
+        passkeyCredentialId: credential.id,
       };
       setAccount(nextAccount);
       rememberSessionPhrase(nextMnemonic);
