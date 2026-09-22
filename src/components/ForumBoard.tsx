@@ -1049,7 +1049,7 @@ export function ForumBoard({
                       onClick={stopCardToggle}
                     />
                     {singleTakenLabel !== null ? (
-                      <p className="mt-1 text-xs text-app-muted">
+                      <p className="mt-1 text-xs text-app-subtle">
                         {t('forum.photoTakenAt', { time: singleTakenLabel })}
                       </p>
                     ) : null}

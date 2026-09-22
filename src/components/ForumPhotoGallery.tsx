@@ -148,7 +148,7 @@ export function ForumPhotoGallery({
         </div>
       </div>
       {takenLabel !== null ? (
-        <p className="mt-1 text-xs text-app-muted">
+        <p className="mt-1 text-xs text-app-subtle">
           {t('forum.photoTakenAt', { time: takenLabel })}
         </p>
       ) : null}

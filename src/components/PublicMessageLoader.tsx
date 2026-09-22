@@ -140,7 +140,7 @@ function PublicThreadCard({
             className="max-h-80 w-full rounded-xl object-contain"
           />
           {singleTakenLabel !== null ? (
-            <p className="mt-1 text-xs text-app-muted">
+            <p className="mt-1 text-xs text-app-subtle">
               {t('forum.photoTakenAt', { time: singleTakenLabel })}
             </p>
           ) : null}
