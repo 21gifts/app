@@ -234,6 +234,31 @@ describe('PlaceField', () => {
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
   });
 
+  it('marks an existing script that loads without maps and ignores a later load', async () => {
+    const existing = document.createElement('script');
+    existing.dataset['gmaps'] = 'weekly';
+    let loads = 0;
+    const orig = existing.addEventListener.bind(existing);
+    existing.addEventListener = ((type: string, listener: EventListener) => {
+      if (type === 'load') {
+        loads += 1;
+      }
+      orig(type, listener);
+    }) as typeof existing.addEventListener;
+    document.head.appendChild(existing);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(loads).toBeGreaterThan(0);
+    });
+    existing.dispatchEvent(new Event('load'));
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    existing.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+  });
+
   it('marks a new script that loads without maps and ignores an error after close', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
