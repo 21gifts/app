@@ -49,7 +49,7 @@ export function nextOnboardingPath(account: Account): OnboardingPath {
       if (!hasDisplayName(account)) {
         return '/setup/name';
       }
-      if (account.username == null || account.username.trim() === '') {
+      if ((account.username ?? '').trim() === '') {
         return '/setup/username';
       }
       if (!hasLightningAddress(account)) {
