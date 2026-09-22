@@ -41,8 +41,8 @@ interface StickerQr {
 
 function fmt(n: number, digits: number): string {
   const f = 10 ** digits;
-  const r = Math.round(n * f) / f;
-  return Object.is(r, -0) ? '0' : String(r);
+  // String(-0) is "0", so a value rounding to minus zero needs no special case
+  return String(Math.round(n * f) / f);
 }
 
 function stickerQr(value: string): StickerQr {

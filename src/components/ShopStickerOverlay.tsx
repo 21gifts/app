@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
@@ -56,10 +56,25 @@ export function ShopStickerOverlay({
   const [format, setFormat] = useState<ShopStickerFormat>('pdf');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const preview = useMemo(
     () => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildShopStickerSvg(qrValue))}`,
     [qrValue],
   );
+
+  useEffect(() => {
+    // the trigger sits outside the dialog, so focus moves in once on open
+    (dialogRef.current as HTMLDivElement).focus();
+  }, []);
+
+  useEffect(() => {
+    // Escape also closes when focus has left the dialog (e.g. after a click on the preview)
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const download = async (): Promise<void> => {
     setBusy(true);
@@ -75,10 +90,12 @@ export function ShopStickerOverlay({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={t('profile.shopSticker')}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4 outline-none"
       onClick={(event) => {
         event.stopPropagation();
       }}

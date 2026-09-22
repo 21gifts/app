@@ -129,6 +129,29 @@ describe('ShopStickerOverlay', () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it('moves focus into the dialog and closes on Escape pressed anywhere, until unmounted', () => {
+    const onClose = vi.fn();
+    const { unmount } = renderWithLocale(
+      <ShopStickerOverlay qrValue={QR} handle="carol@21.gifts" onClose={onClose} />,
+    );
+    expect(document.activeElement).toBe(screen.getByRole('dialog'));
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    unmount();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps focus on the format choice across re-renders', () => {
+    renderOverlay();
+    const jpg = screen.getByRole('button', { name: 'JPG' });
+    jpg.focus();
+    fireEvent.click(jpg);
+    expect(document.activeElement).toBe(jpg);
+  });
+
   it('stops clicks and keys on the dialog from bubbling', () => {
     const parentClick = vi.fn();
     const parentKey = vi.fn();
