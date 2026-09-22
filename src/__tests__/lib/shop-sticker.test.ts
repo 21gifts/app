@@ -22,6 +22,15 @@ function moduleSize(n: number): string {
   return String(Math.round((SHOP_STICKER_QR_BOX.size / n) * 100) / 100);
 }
 
+/** jsdom's Blob has no text(); FileReader reads it. */
+function readText(blob: Blob): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsText(blob);
+  });
+}
+
 function pdfText(value: string): string {
   return new TextDecoder().decode(buildShopStickerPdf(value));
 }
@@ -165,10 +174,10 @@ describe('shopStickerBlob', () => {
   it('returns the PDF and SVG as typed blobs without a canvas', async () => {
     const pdf = await shopStickerBlob(CAROL, 'pdf');
     expect(pdf.type).toBe('application/pdf');
-    expect((await pdf.text()).startsWith('%PDF-1.4')).toBe(true);
+    expect((await readText(pdf)).startsWith('%PDF-1.4')).toBe(true);
     const svg = await shopStickerBlob(CAROL, 'svg');
     expect(svg.type).toBe('image/svg+xml');
-    expect(await svg.text()).toBe(buildShopStickerSvg(CAROL));
+    expect(await readText(svg)).toBe(buildShopStickerSvg(CAROL));
     expect(toBlob).not.toHaveBeenCalled();
   });
 
