@@ -671,8 +671,6 @@ const en = {
   'funding.reviewedOn': 'Reviewed by a moderator on {date}',
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
-  'funding.applications.lead':
-    'Pick a person, then walk each principle and whether the posts are true.',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
@@ -1392,8 +1390,6 @@ const de = {
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
-  'funding.applications.lead':
-    'Wählen Sie eine Person, dann prüfen Sie jeden Grundsatz und ob die Beiträge der Wahrheit entsprechen.',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
@@ -2095,8 +2091,6 @@ const es = {
   'funding.reviewedOn': 'Revisado por una persona moderadora el {date}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
-  'funding.applications.lead':
-    'Elige a una persona, luego recorre cada principio y si los mensajes son verdad.',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
@@ -2806,8 +2800,6 @@ const fil = {
   'funding.reviewedOn': 'Nireview ng isang moderator noong {date}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
-  'funding.applications.lead':
-    'Pumili ng tao, tapos suriin ang bawat prinsipyo at kung totoo ang mga post.',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',
