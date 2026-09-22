@@ -175,6 +175,7 @@ const idleProps: Pick<
   | 'replyFormError'
   | 'askDraft'
   | 'onAskDraftChange'
+  | 'onPlaceDraftChange'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -207,6 +208,7 @@ const idleProps: Pick<
   replyFormError: null,
   askDraft: '',
   onAskDraftChange: () => undefined,
+  onPlaceDraftChange: () => undefined,
 };
 
 function modeProps(
@@ -538,6 +540,26 @@ describe('ForumBoard', () => {
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     expect(screen.queryByText('Dismiss')).toBeNull();
+  });
+
+  it('omits the place control when the board cannot store a pin', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onPlaceDraftChange={undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByLabelText('Add a place')).toBeNull();
   });
 
   it('sets the new-post textarea maxLength from composerMaxLength', () => {
