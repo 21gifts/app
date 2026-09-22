@@ -427,13 +427,23 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
  */
 export const FORUM_MESSAGE_MAX_LENGTH = 500;
 
+/**
+ * Runtime schema for an optional forum place pin.
+ */
 export const forumPlacePinSchema = z.object({
   lat: z.number().gte(-90).lte(90),
   lng: z.number().gte(-180).lte(180),
   label: z.string().max(80).nullable(),
 });
+
+/**
+ * A confirmed forum place pin (`lat`, `lng`, optional `label`).
+ */
 export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
 
+/**
+ * Runtime schema for `GET /forum/messages/places`.
+ */
 export const forumPlacesResponseSchema = z.object({
   places: z.array(
     forumPlacePinSchema.extend({
@@ -443,6 +453,10 @@ export const forumPlacesResponseSchema = z.object({
     }),
   ),
 });
+
+/**
+ * One live top-level forum pin, including the note id and author name.
+ */
 export type ForumPlaceRow = ForumPlacePin & { id: string; name: string; createdAt: string };
 
 /**
