@@ -153,6 +153,30 @@ describe('ForumQuotedBody', () => {
     expect(body.closest('p')?.className).toContain('text-app-btn-fg');
   });
 
+  it('shows stored fiat on the nested post when the live rate differs', async () => {
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, amountUsd: '5.00' }]}
+        excludeId={PARENT_ID}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+    });
+    expect(screen.getByText('₿43')).toBeTruthy();
+    expect(screen.getByText('$5.00')).toBeTruthy();
+    expect(screen.queryByText('$0.04')).toBeNull();
+  });
+
   it('shows a fiat suffix on the nested post when conversion is available', async () => {
     renderWithLocale(
       <ForumQuotedBody

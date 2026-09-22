@@ -205,7 +205,7 @@ export interface InboxScreenProps {
    * staff room passes false (no gifts).
    */
   showAmount?: boolean;
-  /** Latest gift-day totals for the preferred-fiat suffix, or `null` without a usable rate. */
+  /** Latest gift-day totals for unpaid invoice previews, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
   /**
    * Show the ImagePlus attach control and photo drafts. Default false for
@@ -282,14 +282,36 @@ export function groupThreadGifts(messages: ConversationMessage[]): ThreadGiftGro
   return groups;
 }
 
+const STORED_FIAT_FIELD = {
+  USD: 'amountUsd',
+  CHF: 'amountChf',
+  EUR: 'amountEur',
+  PHP: 'amountPhp',
+} as const;
+
 /** Plain-text ₿ amount plus optional fiat suffix for a nested gift `aria-label`. */
 function giftAmountText(
   sats: number,
   rateDay: FiatRateDay | null,
   fiat: FiatCode,
   numberFormat: NumberFormatStyle,
+  stored?: {
+    amountUsd?: string | null | undefined;
+    amountChf?: string | null | undefined;
+    amountEur?: string | null | undefined;
+    amountPhp?: string | null | undefined;
+  },
 ): string {
   const bitcoin = formatBitcoin(sats, numberFormat);
+  if (stored !== undefined) {
+    const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
+    if (storedAmount === null) {
+      return bitcoin;
+    }
+    if (storedAmount !== undefined) {
+      return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
+    }
+  }
   if (rateDay === null) {
     return bitcoin;
   }
@@ -360,9 +382,10 @@ function inboxAuthorProfileButton(
  * `showAttach` (default false for callers that omit it) adds the forum
  * ImagePlus control, still previews, and photo-only send for any caller
  * that passes true (`/messages` open threads and the staff room);
- * `photoUrls` renders attached stills on bubbles. Optional `rateDay` is the latest gift-day totals; every thread
- * sats amount shows a preferred-fiat suffix via `preferredFiatSuffix` when
- * `rateDay` is usable, else ₿-only. A message whose `giftFor` points at
+ * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
+ * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
+ * when the payment was made (₿-only when that stored field is null). Unsent
+ * invoice previews still use optional `rateDay`. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
  * Wallet of Satoshi / QR pay sheet. The
@@ -779,7 +802,7 @@ export function InboxScreen({
                     {t('forum.giftReply', {
                       amount: formatBitcoin(message.sats, numberFormat),
                     })}
-                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
+                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                   </p>
                 ) : null}
                 {Array.from(
@@ -812,7 +835,7 @@ export function InboxScreen({
                     }
                   >
                     {formatBitcoin(message.sats, numberFormat)}
-                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
+                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                   </p>
                 ) : null}
                 {gifts.map((gift) => (
@@ -821,7 +844,7 @@ export function InboxScreen({
                     role="note"
                     aria-label={t('inbox.giftForLabel', {
                       name: gift.name,
-                      amount: giftAmountText(gift.sats, rateDay, fiat, numberFormat),
+                      amount: giftAmountText(gift.sats, rateDay, fiat, numberFormat, gift),
                     })}
                     data-message-id={gift.id}
                     data-gift-for={message.id}
@@ -842,7 +865,7 @@ export function InboxScreen({
                         {gift.name}
                         {' · '}
                         {formatBitcoin(gift.sats, numberFormat)}
-                        {preferredFiatSuffix(gift.sats, rateDay, fiat, numberFormat)}
+                        {preferredFiatSuffix(gift.sats, rateDay, fiat, numberFormat, gift)}
                       </span>
                       <time
                         dateTime={gift.createdAt}

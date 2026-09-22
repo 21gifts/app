@@ -434,6 +434,8 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * `goalSats` is the optional whole-sat ask on a top-level note; omitted when
  * the note has no goal; mixed/old payloads without the key still parse.
+ * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
+ * that row's `sats`, optional so an older payload still parses.
  * Gift-only replies may have empty `text` when `sats > 0`.
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
@@ -447,6 +449,10 @@ export const forumMessageSchema = z
     text: z.string(), // may be '' when hasPhoto, hasVideo, or sats > 0
     createdAt: z.string().datetime({ offset: true }),
     sats: z.number().int().nonnegative(),
+    amountUsd: fiatAmountSchema.optional(),
+    amountChf: fiatAmountSchema.optional(),
+    amountEur: fiatAmountSchema.optional(),
+    amountPhp: fiatAmountSchema.optional(),
     goalSats: z.number().int().positive().optional(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
@@ -649,6 +655,8 @@ export type Conversation = z.infer<typeof conversationSchema>;
  * `photoCount` (0–10) flag attached stills. `accountId` is the optional
  * 21.gifts sender id on thread messages. `giftFor` is the optional id of the
  * thread message this row is a paid gift for (moderator-group stipend rows).
+ * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
+ * that row's `sats`, optional so an older payload still parses.
  * For a staff viewer, `name` and optional `accountId` are that actor when the
  * api sends them. Members still see platform identity (`21.gifts`) on official
  * replies.
@@ -660,6 +668,10 @@ export const conversationMessageSchema = z.object({
   createdAt: z.string().datetime({ offset: true }),
   fromMe: z.boolean(),
   sats: z.number().int().nonnegative(),
+  amountUsd: fiatAmountSchema.optional(),
+  amountChf: fiatAmountSchema.optional(),
+  amountEur: fiatAmountSchema.optional(),
+  amountPhp: fiatAmountSchema.optional(),
   hasPhoto: z.boolean().default(false),
   photoCount: z.number().int().min(0).max(10).default(0),
   /** Optional 21.gifts sender id on thread messages. */

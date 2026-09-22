@@ -254,6 +254,10 @@ const E2E_MEMBER_PROFILE = {
     text: 'Hello from my profile note.',
     createdAt: '2026-08-01T10:00:00.000Z',
     sats: 21,
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
     payable: true,
     hasPhoto: false,
     hasVideo: false,
@@ -798,6 +802,10 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
       fromMe: true,
       sats,
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
     };
     thread.messages.push(created);
     thread.lastText = text;
@@ -834,20 +842,31 @@ const server = http.createServer(async (req, res) => {
       const startIndex = Math.max(0, endIndex - limit);
       const page = thread.messages.slice(startIndex, endIndex);
       json(res, 200, {
-        messages: page.map((message) => ({
-          id: message.id,
-          name: message.name,
-          text: message.text,
-          createdAt: message.createdAt,
-          fromMe: message.fromMe === true,
-          sats: Number(message.sats ?? 0),
-          ...(typeof message.giftFor === 'string' && message.giftFor !== ''
-            ? { giftFor: message.giftFor }
-            : {}),
-          ...(message.hasPhoto === true
-            ? { hasPhoto: true, photoCount: Number(message.photoCount ?? 1) }
-            : {}),
-        })),
+        messages: page.map((message) => {
+          const sats = Number(message.sats ?? 0);
+          return {
+            id: message.id,
+            name: message.name,
+            text: message.text,
+            createdAt: message.createdAt,
+            fromMe: message.fromMe === true,
+            sats,
+            ...(sats > 0
+              ? {
+                  amountUsd: null,
+                  amountChf: null,
+                  amountEur: null,
+                  amountPhp: null,
+                }
+              : {}),
+            ...(typeof message.giftFor === 'string' && message.giftFor !== ''
+              ? { giftFor: message.giftFor }
+              : {}),
+            ...(message.hasPhoto === true
+              ? { hasPhoto: true, photoCount: Number(message.photoCount ?? 1) }
+              : {}),
+          };
+        }),
         ...(page.length === limit && startIndex > 0 ? { nextCursor: page[0].id } : {}),
       });
       return;

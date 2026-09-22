@@ -742,6 +742,29 @@ describe('conversationMessageSchema', () => {
       }),
     ).toThrow();
   });
+
+  it('keeps stored fiat keys optional, nullable, and two-decimal', () => {
+    const message = {
+      id: 'm1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      fromMe: false,
+      sats: 21,
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    const omitted = conversationMessageSchema.parse(message);
+    expect(omitted.amountUsd).toBeUndefined();
+    expect(omitted.amountChf).toBeUndefined();
+    expect(omitted.amountEur).toBeUndefined();
+    expect(omitted.amountPhp).toBeUndefined();
+    expect(conversationMessageSchema.parse({ ...message, amountUsd: null }).amountUsd).toBeNull();
+    expect(conversationMessageSchema.parse({ ...message, amountUsd: '5.00' }).amountUsd).toBe(
+      '5.00',
+    );
+    expect(() => conversationMessageSchema.parse({ ...message, amountUsd: '5' })).toThrow();
+  });
 });
 
 describe('conversationInvoiceSchema', () => {
@@ -963,6 +986,17 @@ describe('forumMessageSchema', () => {
     expect(() =>
       forumMessageSchema.parse({ ...base, hasVideo: true, videoContentType: 'video/ogg' }),
     ).toThrow();
+  });
+
+  it('keeps stored fiat keys optional, nullable, and two-decimal', () => {
+    const omitted = forumMessageSchema.parse(base);
+    expect(omitted.amountUsd).toBeUndefined();
+    expect(omitted.amountChf).toBeUndefined();
+    expect(omitted.amountEur).toBeUndefined();
+    expect(omitted.amountPhp).toBeUndefined();
+    expect(forumMessageSchema.parse({ ...base, amountUsd: null }).amountUsd).toBeNull();
+    expect(forumMessageSchema.parse({ ...base, amountUsd: '5.00' }).amountUsd).toBe('5.00');
+    expect(() => forumMessageSchema.parse({ ...base, amountUsd: '5' })).toThrow();
   });
 });
 

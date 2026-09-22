@@ -226,8 +226,9 @@ export interface ForumBoardProps {
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /**
-   * Latest gift-day totals used to scale sats into CHF/EUR/USD/PHP.
-   * Omit or `null` when stats have not loaded — amounts stay ₿-only.
+   * Latest gift-day totals for unsent previews (pay sheet, unpaid invoice).
+   * Settled ₿ amounts use the fiat stored on the row. Omit or `null` when
+   * stats have not loaded — previews stay ₿-only.
    */
   rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */
@@ -1087,7 +1088,7 @@ export function ForumBoard({
                   className="text-xs font-medium tabular-nums lining-nums text-app-muted"
                 >
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
-                  {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat)}
+                  {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                 </button>
                 {message.parentId === undefined && message.deletedAt === undefined ? (
                   <IconButton
@@ -1280,7 +1281,13 @@ export function ForumBoard({
                                 {t('forum.giftReply', {
                                   amount: formatBitcoin(reply.sats, numberFormat),
                                 })}
-                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
+                                {preferredFiatSuffix(
+                                  reply.sats,
+                                  rateDay,
+                                  fiat,
+                                  numberFormat,
+                                  reply,
+                                )}
                               </p>
                             ) : null}
                             {reply.text !== '' ? (
@@ -1320,7 +1327,13 @@ export function ForumBoard({
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, numberFormat)}
-                                {preferredFiatSuffix(reply.sats, rateDay, fiat, numberFormat)}
+                                {preferredFiatSuffix(
+                                  reply.sats,
+                                  rateDay,
+                                  fiat,
+                                  numberFormat,
+                                  reply,
+                                )}
                               </p>
                             ) : null}
                             <div

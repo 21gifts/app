@@ -10,6 +10,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
@@ -25,14 +26,7 @@ import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
-import {
-  formatBitcoin,
-  formatFiatDisplay,
-  latestRateDay,
-  satsToFiatAmount,
-  type FiatCode,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { formatBitcoin, latestRateDay, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,6 +94,7 @@ function PublicThreadCard({
     index,
     url: photoUrls[index],
   })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
+  const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
 
   const card = (
     <Card
@@ -169,20 +164,13 @@ function PublicThreadCard({
       ) : null}
       <p
         className={
-          rateDay === null || satsToFiatAmount(note.sats, rateDay, fiat) === null
+          fiatSuffix === null
             ? 'text-sm font-medium text-app-fg'
             : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
         }
       >
         {formatBitcoin(note.sats, numberFormat)}
-        {rateDay !== null && satsToFiatAmount(note.sats, rateDay, fiat) !== null ? (
-          <>
-            <span aria-hidden="true"> · </span>
-            <span>
-              {formatFiatDisplay(satsToFiatAmount(note.sats, rateDay, fiat), fiat, numberFormat)}
-            </span>
-          </>
-        ) : null}
+        {fiatSuffix}
       </p>
       {note.parentId === undefined && typeof note.goalSats === 'number' && note.goalSats > 0 ? (
         <ForumGoalBar sats={note.sats} goalSats={note.goalSats} rateDay={rateDay} />
