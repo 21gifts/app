@@ -1434,6 +1434,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/applications/[accountId]:trial",
+    "label": "/moderate/applications/[accountId] trial",
+    "visual": "state-moderate-applications-accountId-trial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:default",
     "label": "/moderate/group default",
     "visual": "screen-moderate-group",
