@@ -1135,9 +1135,15 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ### Variant: staff-verify
 
-Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened.
+Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
 
 ![21.gifts member staff verify](images/members-staff-verify.png)
+
+### Variant: staff-verify-open
+
+Same moderator and basis member after pressing **Moderator functions**. The disclosure is expanded and **Verify** is visible. The closed shot does not cover this result.
+
+![21.gifts member staff verify open](images/members-staff-verify-open.png)
 
 ### Variant: funding-reviewed
 

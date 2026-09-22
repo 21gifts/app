@@ -1018,6 +1018,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'staff-verify-open',
+    image: 'members-staff-verify-open.png',
+    visual: 'state-members-staff-verify-open',
+    needle: 'state-members-staff-verify-open',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'funding-reviewed',
     image: 'members-funding-reviewed.png',
     visual: 'state-members-funding-reviewed',

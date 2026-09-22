@@ -810,6 +810,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:staff-verify-open",
+    "label": "/members/[accountId] staff-verify-open",
+    "visual": "state-members-staff-verify-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:funding-reviewed",
     "label": "/members/[accountId] funding-reviewed",
     "visual": "state-members-funding-reviewed",
