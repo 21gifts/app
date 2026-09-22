@@ -2646,7 +2646,12 @@ describe('ForumLoader', () => {
     });
     prepareMock.mockResolvedValue({
       ok: true,
-      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'blob:photo',
+        takenAt: '2026-09-22T11:40:00+08:00',
+      },
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -2665,7 +2670,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'with photo',
-        photos: [{ contentType: 'image/jpeg', data: 'abc' }],
+        photos: [
+          {
+            contentType: 'image/jpeg',
+            data: 'abc',
+            takenAt: '2026-09-22T11:40:00+08:00',
+          },
+        ],
       });
     });
     await waitFor(() => {
