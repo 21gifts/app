@@ -1836,48 +1836,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/shops:ask-amount",
-    "label": "/shops ask-amount",
-    "visual": "state-shops-ask-amount",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:ask-daily",
-    "label": "/shops ask-daily",
-    "visual": "state-shops-ask-daily",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:error-ask",
-    "label": "/shops error-ask",
-    "visual": "state-shops-error-ask",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:error-ask-daily",
-    "label": "/shops error-ask-daily",
-    "visual": "state-shops-error-ask-daily",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:ask-photos",
-    "label": "/shops ask-photos",
-    "visual": "state-shops-ask-photos",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:ask-text",
-    "label": "/shops ask-text",
-    "visual": "state-shops-ask-text",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:ask-preview",
-    "label": "/shops ask-preview",
-    "visual": "state-shops-ask-preview",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages/[id]:translate",
     "label": "/messages/[id] translate",
     "visual": "state-messages-id-translate",

@@ -1651,7 +1651,7 @@ export function ForumLoader({
       return;
     }
     let goalSats: number | undefined;
-    if (composeIntent === 'ask') {
+    if (feed !== 'shops' && composeIntent === 'ask') {
       const parsed = parseForumAskAmount(askDraft);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
       if (parsed === null) {
@@ -2119,6 +2119,7 @@ export function ForumLoader({
         messages={listed}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         {...(feed === 'shops' ? { modeSelector: false as const } : {})}
+        {...(feed === 'shops' ? { allowAsk: false as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
