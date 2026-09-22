@@ -16,6 +16,7 @@ import {
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
+import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card } from '@/components/ui';
 import {
   fetchComposeTarget,
@@ -237,6 +238,7 @@ export function MemberProfileScreen({
   const address = giftsLightningAddress(listedProfile.username, host);
   const qr = openCryptoPayQrValue(listedProfile.username, host);
   const [showQr, setShowQr] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
 
   useEffect(() => {
     setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -1268,9 +1270,28 @@ export function MemberProfileScreen({
               <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
             )}
             {showQr && qr !== null ? (
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-3">
                 <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setStickerOpen(true);
+                  }}
+                >
+                  {t('profile.shopSticker')}
+                </Button>
               </div>
+            ) : null}
+            {stickerOpen && qr !== null && address !== null ? (
+              <ShopStickerOverlay
+                qrValue={qr}
+                handle={address}
+                onClose={() => {
+                  setStickerOpen(false);
+                }}
+              />
             ) : null}
           </div>
           <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">

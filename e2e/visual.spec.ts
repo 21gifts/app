@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -477,6 +477,64 @@ async function fulfillPublicThreadReplies(
       body: JSON.stringify({ messages }),
     });
   });
+}
+
+/** Signed-in Ada viewing Carol (username `carol`), for the Shop sticker states. */
+async function seedShopStickerMember(page: Page): Promise<void> {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Carol',
+        location: null,
+        role: 'verified',
+        username: 'carol',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
+}
+
+/** Presses Shop sticker and waits until the preview image has decoded. */
+async function openShopStickerOverlay(page: Page): Promise<Locator> {
+  await page.getByRole('button', { name: 'Shop sticker' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+  const preview = dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+  await expect(preview).toBeVisible();
+  await expect
+    .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+    .toBe(true);
+  return dialog;
 }
 
 const RIANA_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';
@@ -3624,6 +3682,43 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: /Reviewed by a moderator on/ }).click();
     await expect(page.getByText('Reviewed by a moderator', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-members-funding-reviewed-open');
+  });
+
+  test('state /members sticker-open', async ({ page }, testInfo) => {
+    await seedShopStickerMember(page);
+    if (isMobileProject(testInfo)) {
+      // iPhone UA: no payment QR, so no Shop sticker button either
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-members-sticker-open');
+      return;
+    }
+    const dialog = await openShopStickerOverlay(page);
+    await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-members-sticker-open', false);
+  });
+
+  test('state /members sticker-failed', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toBlob = function toBlob(callback: BlobCallback): void {
+        callback(null);
+      };
+    });
+    await seedShopStickerMember(page);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-members-sticker-failed');
+      return;
+    }
+    const dialog = await openShopStickerOverlay(page);
+    await dialog.getByRole('button', { name: 'PNG' }).click();
+    await dialog.getByRole('button', { name: 'Download' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText(
+      'Could not create the file. Please try again.',
+    );
+    await shotScreen(page, 'state-members-sticker-failed', false);
   });
 
   test('state /members translate', async ({ page }) => {

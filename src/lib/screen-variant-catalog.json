@@ -1002,6 +1002,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:sticker-open",
+    "label": "/members/[accountId] sticker-open",
+    "visual": "state-members-sticker-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:sticker-failed",
+    "label": "/members/[accountId] sticker-failed",
+    "visual": "state-members-sticker-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",

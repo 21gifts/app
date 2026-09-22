@@ -1569,6 +1569,13 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** Dialog. Close/`onCancel` does not open the URL. **Open link** calls `onConfirm`. Dialog click and keydown `stopPropagation` so a parent forum card does not toggle.
 - **Used by:** `LinkedText`.
 
+## Function: ShopStickerOverlay
+
+- **Purpose:** Shop-sticker overlay on a member profile. Same overlay chrome as `ExternalLinkWarning` (`role="dialog"`, `bg-app-overlay`, icon-only **Close**) with `Card maxWidth="xl"`: title **Shop sticker**, lead **Print it for a shop window. The QR code pays {handle}.**, a preview `<img>` of `buildShopStickerSvg` (alt **Shop sticker preview for {handle}**), a neutral `SegmentedControl` **File format** PDF | PNG | JPG | SVG (PDF first), and a labeled **Download**.
+- **Inputs:** `qrValue` (the profile's `openCryptoPayQrValue`), `handle` (`giftsLightningAddress`), `onClose`.
+- **Returns / side effects:** Dialog. **Download** disables itself while `shopStickerBlob` runs, then saves the blob through a temporary `<a download>` named by `shopStickerFileName` and revokes the object URL a second later; a failure shows `role="alert"` **Could not create the file. Please try again.** until the next try. Close and Escape call `onClose`. Dialog click and keydown `stopPropagation`.
+- **Used by:** `MemberProfileScreen` — only where the profile shows its QR (username set, not a smartphone UA).
+
 ## Function: visibleForumMessages
 
 - **Purpose:** Client-side filter and sort of the already-loaded forum thread for the Active / No gifts yet / All / Most popular selector. Does not call the api; ranking is among the messages the loader already holds.
@@ -1942,7 +1949,35 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. Does not add a `/pl` page.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopStickerOverlay` (sticker QR payload).
+
+## Function: buildShopStickerSvg
+
+- **Purpose:** Printable shop-window sticker for one member as a standalone SVG document. The fixed artwork (orange band with the Bitcoin mark, **ACCEPTED HERE** / **TINATANGGAP DITO**, the English and Filipino scan text, the sari-sari shop with the 21.gifts sign) comes from `src/lib/shop-sticker-artwork.ts`, which `scripts/build-shop-sticker-artwork.mjs` generates with every glyph converted to an outline. Only three colours: orange `#F99602`, black, white.
+- **Inputs:** `qrValue` — the member's `openCryptoPayQrValue`.
+- **Returns / side effects:** SVG markup, `width="134.4mm"`, `viewBox="0 0 1500 918"`. The QR is error correction H in byte mode, at least version 10 (57 modules; shorter payloads are padded up so the 4-module quiet zone to the band holds), with an odd-sized centre (13 of 57 modules, 15 of 61, …) cleared for the orange Open CryptoPay mark. No I/O.
+- **Used by:** `ShopStickerOverlay` (preview `<img>` data URL), `shopStickerBlob` (SVG, PNG, JPG).
+
+## Function: buildShopStickerPdf
+
+- **Purpose:** The same sticker as a one-page vector PDF for print, without a PDF library: the artwork paths (absolute M, L, C, Z) become PDF path operators, the QR modules become rectangles.
+- **Inputs:** `qrValue` — the member's `openCryptoPayQrValue`.
+- **Returns / side effects:** PDF 1.4 bytes (`Uint8Array`), MediaBox 134.4 × 82.25 mm, no fonts, no images, exact xref offsets. No I/O.
+- **Used by:** `shopStickerBlob` (format `pdf`).
+
+## Function: shopStickerBlob
+
+- **Purpose:** The shop-sticker file in the format the visitor picked.
+- **Inputs:** `qrValue`, `format` — one of `SHOP_STICKER_FORMATS` (`pdf`, `png`, `jpg`, `svg`).
+- **Returns / side effects:** `Promise<Blob>`: `application/pdf` from `buildShopStickerPdf`; `image/svg+xml` from `buildShopStickerSvg`; PNG / JPEG drawn from that SVG on a 3000 × 1836 canvas over white (JPEG quality 0.95). Rejects when the browser cannot load the SVG image, has no 2D canvas, or cannot encode it. The object URL used for the SVG image is always revoked. Nothing is sent to the api.
+- **Used by:** `ShopStickerOverlay` (**Download**).
+
+## Function: shopStickerFileName
+
+- **Purpose:** Download name for a member's sticker.
+- **Inputs:** `handle` (`username@domain` or a bare username), `format`.
+- **Returns / side effects:** `21gifts-shop-sticker-<username>.<format>`; the username is lowercased and reduced to `a-z 0-9 . _ -` (`member` when nothing is left). No I/O.
+- **Used by:** `ShopStickerOverlay`.
 
 ## Function: setLightningAddress
 

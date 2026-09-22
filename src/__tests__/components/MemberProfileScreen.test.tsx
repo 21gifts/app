@@ -350,6 +350,26 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
     expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('opens the shop sticker overlay from under the QR and closes it again', () => {
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Shop sticker' }));
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+    expect(
+      screen.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('offers no shop sticker without a username', () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, username: null }} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
   });
 
   it('loads the About me photo via the public GET when there is no session', async () => {

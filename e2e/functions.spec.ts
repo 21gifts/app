@@ -1,7 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
+import {
+  buildShopStickerPdf,
+  buildShopStickerSvg,
+  type ShopStickerFormat,
+} from '../src/lib/shop-sticker';
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
@@ -4440,6 +4445,101 @@ test('Function: openCryptoPayQrValue — profile QR is the Open CryptoPay URL', 
   );
   expect(openCryptoPayQrValue(null)).toBeNull();
   expect(openCryptoPayQrValue('   ')).toBeNull();
+});
+
+const CAROL_MEMBER = '/members/22222222-2222-4222-8222-222222222222';
+
+async function openShopSticker(page: Page, request: APIRequestContext): Promise<Locator> {
+  await reachWelcome(page, request);
+  await page.goto(CAROL_MEMBER);
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
+  await page.getByRole('button', { name: 'Shop sticker' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function downloadShopSticker(
+  page: Page,
+  dialog: Locator,
+  format: ShopStickerFormat,
+): Promise<{ name: string; bytes: Buffer }> {
+  await dialog.getByRole('button', { name: format.toUpperCase() }).click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    dialog.getByRole('button', { name: 'Download' }).click(),
+  ]);
+  return { name: download.suggestedFilename(), bytes: fs.readFileSync(await download.path()) };
+}
+
+test('Function: ShopStickerOverlay — Shop sticker opens the preview and Escape closes it', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  await expect(
+    dialog.getByText('Print it for a shop window. The QR code pays carol@21.gifts.'),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' }),
+  ).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Shop sticker' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+});
+
+test('Function: buildShopStickerSvg — preview and SVG download are the member sticker', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  const expected = buildShopStickerSvg(openCryptoPayQrValue('carol') as string);
+  const src = await dialog
+    .getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' })
+    .getAttribute('src');
+  expect(decodeURIComponent((src as string).slice((src as string).indexOf(',') + 1))).toBe(
+    expected,
+  );
+  const svg = await downloadShopSticker(page, dialog, 'svg');
+  expect(svg.bytes.toString('utf8')).toBe(expected);
+});
+
+test('Function: buildShopStickerPdf — PDF download is the one-page vector sticker', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  const pdf = await downloadShopSticker(page, dialog, 'pdf');
+  expect(
+    pdf.bytes.equals(Buffer.from(buildShopStickerPdf(openCryptoPayQrValue('carol') as string))),
+  ).toBe(true);
+  expect(pdf.bytes.subarray(0, 8).toString('latin1')).toBe('%PDF-1.4');
+});
+
+test('Function: shopStickerBlob — PNG and JPG downloads are 3000 px images', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  const png = await downloadShopSticker(page, dialog, 'png');
+  expect(png.bytes.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(png.bytes.readUInt32BE(16)).toBe(3000);
+  expect(png.bytes.readUInt32BE(20)).toBe(1836);
+  const jpg = await downloadShopSticker(page, dialog, 'jpg');
+  expect(jpg.bytes.subarray(0, 3).toString('hex')).toBe('ffd8ff');
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+});
+
+test('Function: shopStickerFileName — downloads are named after the username', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  for (const format of ['pdf', 'png', 'jpg', 'svg'] as const) {
+    const file = await downloadShopSticker(page, dialog, format);
+    expect(file.name).toBe(`21gifts-shop-sticker-carol.${format}`);
+  }
 });
 
 test('Function: NameSetup — name screen heading is visible', async ({ page }) => {
