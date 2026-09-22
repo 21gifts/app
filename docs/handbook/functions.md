@@ -2416,7 +2416,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/me/wallet-backup-seen` with Bearer.
 - **Inputs:** Session token.
 - **Returns / side effects:** Owner `Account`. Throws on non-2xx.
-- **Used by:** `useWalletPhrase.confirmSaved`.
+- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.activate`.
 
 ## Function: proxyAuthPasskeyReplaceBeginPost
 
@@ -2444,7 +2444,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
 - **Inputs:** None.
 - **Returns / side effects:** 32-byte `Uint8Array`.
-- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `useWalletPhrase.activate`.
 
 ## Function: readPrfFirst
 
