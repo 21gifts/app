@@ -1922,7 +1922,13 @@ export function ForumLoader({
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(session, parentId, sats, undefined, shownFiatForSats(sats, rateDay))
+          ? await postMessageInvoice(
+              session,
+              parentId,
+              sats,
+              undefined,
+              shownFiatForSats(sats, rateDay),
+            )
           : await postMessageInvoice(
               session,
               parentId,

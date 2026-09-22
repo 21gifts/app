@@ -1680,8 +1680,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   is omitted/`undefined` for that fiat and `rateDay` is `null` or the conversion is unusable.
 - **Inputs:** Whole sats, latest `FiatRateDay` or `null`, visitor `FiatCode`, number-format
   style, optional `stored` `{ amountUsd?, amountChf?, amountEur?, amountPhp? }` (`string | null`).
-  A present string is formatted as-is (`rateDay` ignored). A present `null` or a missing
-  field on a passed `stored` object is ₿-only. Only an omitted `stored` argument uses the live rate.
+  A present string is formatted as-is (`rateDay` ignored). A present `null` is ₿-only. A
+  missing field falls through to the live rate.
 - **Returns / side effects:** `ReactElement | null`. No side effects.
 - **Used by:** `ForumBoard`, `InboxScreen`, `QuotedForumNote`, `PublicMessageLoader`.
 

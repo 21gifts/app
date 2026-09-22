@@ -58,10 +58,12 @@ export function preferredFiatSuffix(
 ): ReactElement | null {
   if (stored !== undefined) {
     const amount = stored[STORED_FIAT_FIELD[fiat]];
-    if (amount === undefined || amount === null) {
+    if (amount === null) {
       return null;
     }
-    return fiatSuffixMarkup(amount, fiat, numberFormat);
+    if (amount !== undefined) {
+      return fiatSuffixMarkup(amount, fiat, numberFormat);
+    }
   }
   if (rateDay === null) {
     return null;

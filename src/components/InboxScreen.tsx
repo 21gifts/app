@@ -305,10 +305,12 @@ function giftAmountText(
   const bitcoin = formatBitcoin(sats, numberFormat);
   if (stored !== undefined) {
     const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
-    if (storedAmount === undefined || storedAmount === null) {
+    if (storedAmount === null) {
       return bitcoin;
     }
-    return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
+    if (storedAmount !== undefined) {
+      return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
+    }
   }
   if (rateDay === null) {
     return bitcoin;

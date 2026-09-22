@@ -693,7 +693,13 @@ export function PublicMessageThread(props: {
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(token, parentId, sats, undefined, shownFiatForSats(sats, rateDay))
+          ? await postMessageInvoice(
+              token,
+              parentId,
+              sats,
+              undefined,
+              shownFiatForSats(sats, rateDay),
+            )
           : await postMessageInvoice(
               token,
               parentId,
