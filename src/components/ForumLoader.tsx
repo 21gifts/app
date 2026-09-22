@@ -1243,6 +1243,12 @@ export function ForumLoader({
                   if (keptCaption !== null && keptCaption !== '') {
                     setDraft(keptCaption);
                   }
+                  setPayWaiting(false);
+                  setPayInvoice(null);
+                  setPayMessageId(null);
+                  setPayHost(null);
+                  setPayDraft('');
+                  setPayError(null);
                   return;
                 }
                 pendingComposePhotosRef.current = [];
@@ -1436,6 +1442,7 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
+    composeFeePaidRef.current = false;
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {

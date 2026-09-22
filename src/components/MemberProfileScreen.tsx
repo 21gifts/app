@@ -200,6 +200,7 @@ export function MemberProfileScreen({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -407,6 +408,7 @@ export function MemberProfileScreen({
     setPayInvoice(null);
     setPayBusy(false);
     setPayWaiting(false);
+    setPayHost(null);
     setReplyPosting(false);
   };
 
@@ -528,6 +530,7 @@ export function MemberProfileScreen({
               setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
+              setPayHost(null);
               setPayDraft('');
               setPayError(null);
               const current = useAuthStore.getState();
@@ -714,13 +717,14 @@ export function MemberProfileScreen({
       if (generation !== payPollGeneration.current) {
         return;
       }
-      setPayMessageId(parentId);
+      setPayMessageId(target.messageId);
       setPayError(null);
       setPayInvoice({
-        messageId: parentId,
+        messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('composer');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -774,6 +778,7 @@ export function MemberProfileScreen({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -872,6 +877,7 @@ export function MemberProfileScreen({
   const handlePayOpen = (messageId: string): void => {
     bumpPayPollGeneration();
     setPayMessageId(messageId);
+    setPayHost('card');
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
@@ -1092,6 +1098,7 @@ export function MemberProfileScreen({
     photoUrls,
     rateDay,
     payMessageId,
+    payHost,
     payDraft,
     payBusy,
     payError,

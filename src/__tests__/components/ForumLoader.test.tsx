@@ -2812,6 +2812,11 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledTimes(2);
     });
     expect(invoiceMock).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'next note' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {

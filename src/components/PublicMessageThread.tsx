@@ -197,6 +197,7 @@ export function PublicMessageThread(props: {
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
   const [expandedId, setExpandedId] = useState<string | null>(root.id);
@@ -465,6 +466,7 @@ export function PublicMessageThread(props: {
               setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
+              setPayHost(null);
               setPayDraft('');
               setPayError(null);
               const current = useAuthStore.getState();
@@ -628,13 +630,14 @@ export function PublicMessageThread(props: {
       if (generation !== payPollGeneration.current) {
         return;
       }
-      setPayMessageId(parentId);
+      setPayMessageId(target.messageId);
       setPayError(null);
       setPayInvoice({
-        messageId: parentId,
+        messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('composer');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -696,6 +699,7 @@ export function PublicMessageThread(props: {
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -752,6 +756,7 @@ export function PublicMessageThread(props: {
   const handlePayOpen = (messageId: string): void => {
     bumpPayPollGeneration();
     setPayMessageId(messageId);
+    setPayHost('card');
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
@@ -852,6 +857,7 @@ export function PublicMessageThread(props: {
     setPayInvoice(null);
     setPayBusy(false);
     setPayWaiting(false);
+    setPayHost(null);
     setReplyPosting(false);
   };
 
@@ -1025,6 +1031,7 @@ export function PublicMessageThread(props: {
         photoUrls={photoUrls}
         rateDay={rateDay}
         payMessageId={payMessageId}
+        payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
         payError={payError}
