@@ -151,10 +151,13 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (visual === 'confirm' || setupWallet) {
       return 'confirm';
     }
+    if (visual === 'phrase') {
+      return 'phrase';
+    }
     if (showingWords && (account?.walletBackupSeenAt ?? null) === null) {
       return 'confirm';
     }
-    if (visual === 'phrase' || showingWords) {
+    if (showingWords) {
       return 'phrase';
     }
     if (account?.walletRequired !== true && (account?.walletBackupSeenAt ?? null) === null) {
