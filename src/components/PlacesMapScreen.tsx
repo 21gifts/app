@@ -171,11 +171,11 @@ export function PlacesMapScreen(): ReactElement {
     body = <p className="text-center text-sm text-app-muted">{t('map.empty')}</p>;
   } else {
     body = (
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full flex-col gap-3">
         <div
           ref={frameRef}
           data-testid="places-map"
-          className="min-h-64 rounded-2xl border border-app-border bg-app-card-muted"
+          className="h-64 w-full rounded-2xl border border-app-border bg-app-card-muted"
         />
         <ul className="flex flex-col gap-2">
           {places.map((place) => {
