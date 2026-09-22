@@ -131,6 +131,8 @@ const IDLE_BOARD = {
   posting: false,
   draft: '',
   onDraftChange: (): void => undefined,
+  askDraft: '',
+  onAskDraftChange: (): void => undefined,
   onPost: (): void => undefined,
   onRetry: (): void => undefined,
   formError: null as ForumFormError,

@@ -24,6 +24,8 @@ import {
   type ReactElement,
 } from 'react';
 import { useAppShellScroller } from '@/components/AppShell';
+import { ForumAskWizard, type ForumAskStep } from '@/components/ForumAskWizard';
+import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
@@ -62,9 +64,22 @@ import {
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
 
+/** Top-level compose mode: messenger post or Ask wizard. */
+export type ForumComposeIntent = 'post' | 'ask';
+
+export type { ForumAskStep } from '@/components/ForumAskWizard';
+
 /** Client-side composer validation or request failure. */
 export type ForumFormError =
-  'empty' | 'tooLong' | 'request' | 'rateLimit' | 'unsupported' | 'tooLarge' | 'tooMany' | null;
+  | 'empty'
+  | 'tooLong'
+  | 'request'
+  | 'rateLimit'
+  | 'unsupported'
+  | 'tooLarge'
+  | 'tooMany'
+  | 'ask'
+  | null;
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount';
@@ -159,6 +174,20 @@ export interface ForumBoardProps {
   draft: string;
   /** Called when the composer value changes. */
   onDraftChange: (value: string) => void;
+  /** Optional whole-sat ask draft for a top-level note. */
+  askDraft: string;
+  /** Called when the Ask field changes. */
+  onAskDraftChange: (value: string) => void;
+  /** Messenger vs Ask wizard. Default `post`. */
+  composeIntent?: ForumComposeIntent;
+  /** Called when the visitor picks Post or Ask. */
+  onComposeIntentChange?: (intent: ForumComposeIntent) => void;
+  /** Ask wizard step. Default 1. */
+  askStep?: ForumAskStep;
+  /** Called when the wizard step changes. */
+  onAskStepChange?: (step: ForumAskStep) => void;
+  /** Display name for the Ask preview card. */
+  authorName?: string;
   /** Called when the composer form is submitted. */
   onPost: () => void;
   /** Retry handler for a failed fetch. */
@@ -510,17 +539,17 @@ function fallbackCopy(text: string): boolean {
  * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
  * is not selected; omitted when `modeSelector` is false or `composerHidden`
  * is true), composer under the mode
- * filters above the newest-first list (new notes only, photo or video
- * attach), newest-first list (social feed) or empty/loading/error, per-card
- * expand for oldest-first replies + reply composer (labeled Amount field;
- * gift-only rows use `forum.giftReply` + `formatBitcoin(sats, numberFormat)`,
- * text-plus-gift shows the amount under the body), copy-link control,
- * React control on posts (`forum.react`, lucide Reply; expands the reply
- * composer; omitted when `deletedAt` is set), payable-reply pay sheet (Gift
- * on nested replies and on top-level cards with `parentId`; never on posts;
- * omitted when `deletedAt` is set), staff Delete omitted when `deletedAt` is
- * set, optional inline
- * photos, and optional inline videos.
+ * filters above the newest-first list (new notes only; Post/Ask pill;
+ * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
+ * feed) or empty/loading/error, per-card expand for oldest-first replies +
+ * reply composer (labeled Amount field; gift-only rows use `forum.giftReply`
+ * + `formatBitcoin(sats, numberFormat)`, text-plus-gift shows the amount
+ * under the body), copy-link control, `ForumGoalBar` on a top-level note
+ * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
+ * expands the reply composer; omitted when `deletedAt` is set), payable-reply
+ * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
+ * never on posts; omitted when `deletedAt` is set), staff Delete omitted
+ * when `deletedAt` is set, optional inline photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
  * When unseen notes are held for a scrolled visitor, a labeled New posts pill
@@ -532,7 +561,8 @@ function fallbackCopy(text: string): boolean {
  * `nearEndRef` attaches to the note about eight rows from the visible end.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
  *
- * @param props - Messages payload plus loading/error/composer/pay/mode/photo/video/laws/thread/permalink/truncate state.
+ * @param props - Messages payload plus loading/error/composer (including
+ * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
  * @returns The forum board element.
  */
 export function ForumBoard({
@@ -549,6 +579,13 @@ export function ForumBoard({
   posting,
   draft,
   onDraftChange,
+  askDraft,
+  onAskDraftChange,
+  composeIntent = 'post',
+  onComposeIntentChange,
+  askStep = 1,
+  onAskStepChange,
+  authorName = '',
   onPost,
   onRetry,
   formError,
@@ -1021,6 +1058,15 @@ export function ForumBoard({
                   </div>
                 ) : null}
               </div>
+              {message.parentId === undefined &&
+              typeof message.goalSats === 'number' &&
+              message.goalSats > 0 ? (
+                <ForumGoalBar
+                  sats={message.sats}
+                  goalSats={message.goalSats}
+                  rateDay={rateDay ?? null}
+                />
+              ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">
                 <button
                   type="button"
@@ -1525,6 +1571,45 @@ export function ForumBoard({
       ) : null}
 
       {!composerHidden ? (
+        <SegmentedControl
+          value={composeIntent}
+          options={[
+            { value: 'post', label: t('forum.composePost') },
+            { value: 'ask', label: t('forum.composeAsk') },
+          ]}
+          onChange={(next) => {
+            onComposeIntentChange?.(next);
+          }}
+          ariaLabel={t('forum.composeIntentLabel')}
+          tone="neutral"
+          className="!grid grid-cols-2 !rounded-2xl"
+        />
+      ) : null}
+
+      {!composerHidden && composeIntent === 'ask' ? (
+        <ForumAskWizard
+          step={askStep}
+          onStepChange={(next) => {
+            onAskStepChange?.(next);
+          }}
+          askDraft={askDraft}
+          onAskDraftChange={onAskDraftChange}
+          draft={draft}
+          onDraftChange={onDraftChange}
+          posting={posting}
+          photoDrafts={photoDrafts}
+          videoDraft={videoDraft}
+          onPickFiles={onPickFiles}
+          onRemovePhoto={onRemovePhoto}
+          onClearPhoto={onClearPhoto}
+          authorName={authorName}
+          onPost={onPost}
+          rateDay={rateDay ?? null}
+          composerMaxLength={composerMaxLength}
+        />
+      ) : null}
+
+      {!composerHidden && composeIntent === 'post' ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <IconButton
@@ -1677,6 +1762,11 @@ export function ForumBoard({
       {!composerHidden && formError === 'tooMany' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooMany')}
+        </p>
+      ) : null}
+      {!composerHidden && formError === 'ask' ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('forum.errorAskAmount')}
         </p>
       ) : null}
 

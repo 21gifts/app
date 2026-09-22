@@ -6,6 +6,8 @@ import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
 import {
   ForumBoard,
+  type ForumAskStep,
+  type ForumComposeIntent,
   type ForumFormError,
   type ForumReplyFormError,
   type ForumPayError,
@@ -35,6 +37,7 @@ import {
   unpaidNewCount,
   visibleForumMessages,
 } from '@/lib/forum-feed';
+import { parseForumAskAmount } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
@@ -345,6 +348,9 @@ export function ForumLoader({
   const [moderatorAppointedId, setModeratorAppointedId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
+  const [askDraft, setAskDraft] = useState('');
+  const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
+  const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const photoDraftsRef = useRef(photoDrafts);
   photoDraftsRef.current = photoDrafts;
@@ -1316,7 +1322,18 @@ export function ForumLoader({
         saveUnpaidSeenAt(iso);
         setUnpaidSeenAt(iso);
       }
-      if (feedModeRef.current !== 'all') {
+      const askStaysOnActive = typeof created.goalSats === 'number' && created.goalSats > 0;
+      if (askStaysOnActive && feedModeRef.current === 'popular') {
+        replaceInFlightRef.current = true;
+        paginationGeneration.current += 1;
+        loadingMoreRef.current = false;
+        refreshGeneration.current += 1;
+        nextCursorRef.current = null;
+        setNextCursor(null);
+        setNewPostsAvailable(false);
+        feedModeRef.current = 'active';
+        setFeedMode('active');
+      } else if (feedModeRef.current !== 'all' && !askStaysOnActive) {
         replaceInFlightRef.current = true;
         paginationGeneration.current += 1;
         loadingMoreRef.current = false;
@@ -1357,6 +1374,9 @@ export function ForumLoader({
       revokeObjectUrlIfPresent(pendingVideo.previewUrl);
     }
     setDraft('');
+    setAskDraft('');
+    setComposeIntent('post');
+    setAskStep(1);
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
@@ -1367,6 +1387,7 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
+    goalSats: number | undefined,
   ): Promise<void> => {
     setPosting(true);
     setFormError(null);
@@ -1377,6 +1398,7 @@ export function ForumLoader({
               text: trimmed,
               video: pendingVideo.file,
               poster: pendingVideo.poster,
+              ...(goalSats !== undefined ? { goalSats } : {}),
             })
           : await postMessage(session, {
               text: trimmed,
@@ -1385,6 +1407,7 @@ export function ForumLoader({
                 : {
                     photos: pendingPhotos.map(({ contentType, data }) => ({ contentType, data })),
                   }),
+              ...(goalSats !== undefined ? { goalSats } : {}),
             });
       applyCreatedNote(created, pendingPhotos, pendingVideo);
       pendingPostRef.current = null;
@@ -1397,7 +1420,7 @@ export function ForumLoader({
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
-            startNotePost(trimmed, pendingPhotos, pendingVideo, true);
+            startNotePost(trimmed, pendingPhotos, pendingVideo, true, goalSats);
             return Promise.resolve();
           };
           return;
@@ -1417,10 +1440,11 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
+    goalSats: number | undefined,
   ): void => {
     if (notePostInFlightRef.current) return;
     notePostInFlightRef.current = true;
-    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry);
+    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry, goalSats);
   };
 
   const onPost = (): void => {
@@ -1434,12 +1458,22 @@ export function ForumLoader({
       setFormError('tooLong');
       return;
     }
+    let goalSats: number | undefined;
+    if (composeIntent === 'ask') {
+      const parsed = parseForumAskAmount(askDraft);
+      /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
+      if (parsed === null) {
+        setFormError('ask');
+        return;
+      }
+      goalSats = parsed;
+    }
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
       const pendingPhotos = photoDrafts;
       const pendingVideo = videoDraft;
       pendingPostRef.current = () => {
-        startNotePost(body, pendingPhotos, pendingVideo, true);
+        startNotePost(body, pendingPhotos, pendingVideo, true, goalSats);
         return Promise.resolve();
       };
       return;
@@ -1447,7 +1481,7 @@ export function ForumLoader({
     pickGeneration.current += 1;
     const pendingPhotos = photoDrafts;
     const pendingVideo = videoDraft;
-    startNotePost(body, pendingPhotos, pendingVideo, false);
+    startNotePost(body, pendingPhotos, pendingVideo, false, goalSats);
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
@@ -1894,6 +1928,22 @@ export function ForumLoader({
           setDraft(value);
           setFormError(null);
         }}
+        askDraft={askDraft}
+        onAskDraftChange={(value) => {
+          setAskDraft(value);
+          setFormError(null);
+        }}
+        composeIntent={composeIntent}
+        onComposeIntentChange={(intent) => {
+          setComposeIntent(intent);
+          if (intent === 'post') {
+            setAskStep(1);
+          }
+          setFormError(null);
+        }}
+        askStep={askStep}
+        onAskStepChange={setAskStep}
+        authorName={account?.name ?? ''}
         onPost={onPost}
         onRetry={() => {
           setAttempt((n) => n + 1);

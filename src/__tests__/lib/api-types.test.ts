@@ -869,6 +869,22 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse(base).deletedBy).toBeUndefined();
   });
 
+  it('omits goalSats when the payload has no key', () => {
+    const parsed = forumMessageSchema.parse(base);
+    expect(parsed.goalSats).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'goalSats')).toBe(false);
+  });
+
+  it('keeps goalSats 21000', () => {
+    expect(forumMessageSchema.parse({ ...base, goalSats: 21000 }).goalSats).toBe(21000);
+  });
+
+  it('rejects goalSats 0, negative, and 1.5', () => {
+    expect(() => forumMessageSchema.parse({ ...base, goalSats: 0 })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, goalSats: -1 })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, goalSats: 1.5 })).toThrow();
+  });
+
   it('accepts an empty text when hasPhoto is true', () => {
     const photoOnly = { ...base, text: '', hasPhoto: true };
     expect(forumMessageSchema.parse(photoOnly)).toEqual({

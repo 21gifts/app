@@ -216,6 +216,33 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
+  it('shows the goal bar on a top-level note past 100%', async () => {
+    fetchMessage.mockResolvedValue({ ...sample, sats: 23100, goalSats: 21000 });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('110%')).toBeTruthy();
+    });
+  });
+
+  it('does not show the goal bar on a reply even when goalSats is set', async () => {
+    fetchMessage.mockResolvedValue({ ...sample, text: 'Parent note' });
+    fetchRepliesPublic.mockResolvedValue([
+      {
+        ...sample,
+        id: '33333333-3333-4333-8333-333333333333',
+        parentId: MESSAGE_ID,
+        sats: 23100,
+        goalSats: 21000,
+        text: 'Reply gift',
+      },
+    ]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Reply gift')).toBeTruthy();
+    });
+    expect(screen.queryByText('110%')).toBeNull();
+  });
+
   it('shows Loading… without fetching while session hydrate is not ready', () => {
     hydrate.mockReturnValue({ ready: false });
     fetchMessage.mockResolvedValue(sample);

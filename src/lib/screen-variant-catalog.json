@@ -168,6 +168,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:laws",
+    "label": "/welcome laws",
+    "visual": "state-welcome-laws",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:moderation",
     "label": "/welcome moderation",
     "visual": "state-welcome-moderation",
@@ -222,6 +228,54 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:goal-50",
+    "label": "/welcome goal-50",
+    "visual": "state-welcome-goal-50",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:goal-100",
+    "label": "/welcome goal-100",
+    "visual": "state-welcome-goal-100",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:goal-110",
+    "label": "/welcome goal-110",
+    "visual": "state-welcome-goal-110",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-amount",
+    "label": "/welcome ask-amount",
+    "visual": "state-welcome-ask-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-photos",
+    "label": "/welcome ask-photos",
+    "visual": "state-welcome-ask-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-text",
+    "label": "/welcome ask-text",
+    "visual": "state-welcome-ask-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview",
+    "label": "/welcome ask-preview",
+    "visual": "state-welcome-ask-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-open",
+    "label": "/welcome ask-open",
+    "visual": "state-welcome-ask-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:unpaid",
     "label": "/welcome unpaid",
     "visual": "state-welcome-unpaid",
@@ -273,6 +327,12 @@
     "id": "/welcome:validation-error",
     "label": "/welcome validation-error",
     "visual": "state-welcome-validation-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:error-ask",
+    "label": "/welcome error-ask",
+    "visual": "state-welcome-error-ask",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -555,6 +615,12 @@
     "id": "/members/[accountId]:posts-open-photo",
     "label": "/members/[accountId] posts-open-photo",
     "visual": "state-members-posts-open-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-goal-110",
+    "label": "/members/[accountId] posts-open-goal-110",
+    "visual": "state-members-posts-open-goal-110",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1395,6 +1461,12 @@
     "id": "/messages/[id]:default",
     "label": "/messages/[id] default",
     "visual": "screen-messages-id",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:goal-110",
+    "label": "/messages/[id] goal-110",
+    "visual": "state-messages-id-goal-110",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
