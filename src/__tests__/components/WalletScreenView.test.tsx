@@ -48,6 +48,24 @@ describe('WalletScreenView', () => {
     expect(confirmSaved).toHaveBeenCalled();
   });
 
+  it('shows a spinner on Continue while busy', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="phrase"
+        status="busy"
+        error={null}
+        words={words}
+        setupWallet
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Continue' }).querySelector('svg')).not.toBeNull();
+  });
+
   it('shows a primary Show recovery phrase during setup without burying it', () => {
     renderWithLocale(
       <WalletScreenView
