@@ -47,7 +47,15 @@ beforeEach(() => {
   });
 });
 
-afterEach(cleanup);
+const originalUserAgent = navigator.userAgent;
+
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  });
+});
 
 describe('ViewProfileScreen', () => {
   it('shows the heading, name, address, chart, and Given legend', () => {
@@ -61,6 +69,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Not set')).toBeTruthy();
     expect(screen.getByText('21.gifts address')).toBeTruthy();
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
   });
@@ -89,6 +98,18 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
   });
 
+  it('hides the Open CryptoPay QR on a smartphone user agent', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    renderWithLocale(
+      <ViewProfileScreen profile={named} viewKey={VIEW_KEY} received={[]} donated={[]} />,
+    );
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
+  });
+
   it('shows view.noGiftsAddress when username is null', () => {
     renderWithLocale(
       <ViewProfileScreen
@@ -99,6 +120,7 @@ describe('ViewProfileScreen', () => {
       />,
     );
     expect(screen.getByText('No 21.gifts address')).toBeTruthy();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
   });
 
   it('shows a set location without edit controls', () => {

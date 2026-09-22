@@ -404,6 +404,7 @@ const en = {
   'profile.about.errorTooLarge': 'Keep photos under 1 MB',
   'profile.copyLink': 'Copy link to this profile',
   'profile.giftsHeading': '21.gifts address',
+  'profile.giftsQr': 'Open CryptoPay QR code',
   'profile.message': 'Message',
 
   'view.unnamed': 'Unnamed',
@@ -1114,6 +1115,7 @@ const de = {
   'profile.about.errorTooLarge': 'Fotos unter 1 MB halten',
   'profile.copyLink': 'Link zu diesem Profil kopieren',
   'profile.giftsHeading': '21.gifts-Adresse',
+  'profile.giftsQr': 'Open-CryptoPay-QR-Code',
   'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
@@ -1830,6 +1832,7 @@ const es = {
   'profile.about.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
   'profile.copyLink': 'Copiar enlace a este perfil',
   'profile.giftsHeading': 'Dirección 21.gifts',
+  'profile.giftsQr': 'Código QR de Open CryptoPay',
   'profile.message': 'Mensaje',
 
   'view.unnamed': 'Sin nombre',
@@ -2535,6 +2538,7 @@ const fil = {
   'profile.about.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
   'profile.copyLink': 'Kopyahin ang link sa profile na ito',
   'profile.giftsHeading': '21.gifts address',
+  'profile.giftsQr': 'QR code ng Open CryptoPay',
   'profile.message': 'Mensahe',
 
   'view.unnamed': 'Walang pangalan',

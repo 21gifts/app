@@ -4,10 +4,12 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { useTranslations } from '@/components/LocaleProvider';
+import { QrCode } from '@/components/QrCode';
 import { Card } from '@/components/ui';
 import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
-import { giftsLightningAddress } from '@/lib/gifts-address';
+import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 /**
  * Public read-only identity card matching signed-in profile chrome without
@@ -31,8 +33,14 @@ export function ViewProfileScreen({
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const address = giftsLightningAddress(profile.username, host);
+  const qr = openCryptoPayQrValue(profile.username, host);
+  const [showQr, setShowQr] = useState(false);
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
+
+  useEffect(() => {
+    setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
+  }, []);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -81,6 +89,11 @@ export function ViewProfileScreen({
         ) : (
           <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
         )}
+        {showQr && qr !== null ? (
+          <div className="flex justify-center">
+            <QrCode value={qr} label={t('profile.giftsQr')} />
+          </div>
+        ) : null}
       </div>
     </Card>
   );

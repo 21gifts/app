@@ -334,8 +334,19 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');
     expect(screen.getByText('Carol')).toBeTruthy();
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+  });
+
+  it('hides the Open CryptoPay QR on a smartphone user agent', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    });
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
   });
 
   it('loads the About me photo via the public GET when there is no session', async () => {
@@ -2966,6 +2977,7 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, username: null }} received={[]} donated={[]} />,
     );
     expect(screen.getByText('No 21.gifts address')).toBeTruthy();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
   });
 
   it('posts a reply when the account snapshot is missing', async () => {
