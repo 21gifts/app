@@ -437,6 +437,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'filter-open',
+    image: 'welcome-filter-open.png',
+    visual: 'state-welcome-filter-open',
+    needle: 'state-welcome-filter-open',
+  },
+  {
+    route: '/welcome',
     id: 'unpaid',
     image: 'welcome-unpaid.png',
     visual: 'state-welcome-unpaid',

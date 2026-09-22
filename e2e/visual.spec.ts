@@ -5648,6 +5648,21 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-preview');
   });
 
+  test('welcome filter-open', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Forum view' }).click();
+    const list = page.getByRole('listbox', { name: 'Forum view' });
+    await expect(list).toBeVisible();
+    await expect(list.getByRole('option', { name: 'Active', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'No gifts yet', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'All', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'Most popular', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-filter-open');
+  });
+
   test('welcome unpaid', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);

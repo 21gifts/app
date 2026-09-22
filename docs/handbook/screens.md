@@ -503,6 +503,12 @@ Active feed (default). Dana's zero-sat **Ask for money** for **₿1'000** (fiat 
 
 ![21.gifts welcome ask open](images/welcome-ask-open.png)
 
+### Variant: filter-open
+
+The forum view dropdown is open on the default Active feed. **Active** is checked. **No gifts yet**, **All**, and **Most popular** are listed under it. The list stays open.
+
+![21.gifts welcome filter open](images/welcome-filter-open.png)
+
 ### Variant: unpaid
 
 Click **No gifts yet** (German: **Noch ohne Geschenk**) — only loaded notes with exactly zero sats appear. Bob is visible; paid Ada and Carol are hidden. This includes notes without a receiving wallet. The four filters are a dropdown; Active is shown closed; open it and choose **No gifts yet**. Active remains the default.
