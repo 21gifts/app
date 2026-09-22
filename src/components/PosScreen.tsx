@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, Card, Field } from '@/components/ui';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
@@ -15,6 +16,7 @@ import {
   type PosState,
 } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { formatBitcoin } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -41,6 +43,7 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
  */
 export function PosScreen(): ReactElement {
   const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
   const account = useAuthStore((state) => state.account);
@@ -224,8 +227,8 @@ export function PosScreen(): ReactElement {
           <p className="text-center text-sm text-app-subtle">
             {t('pos.left', { time: formatLeft(remaining) })}
           </p>
-          <p className="text-center text-2xl font-semibold tabular-nums text-app-fg">
-            {t('pos.sats', { amount: String(charge.amountSats) })}
+          <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+            {formatBitcoin(charge.amountSats, numberFormat)}
           </p>
           <Button
             type="button"
@@ -270,8 +273,8 @@ export function PosScreen(): ReactElement {
           <ul className="flex flex-col gap-1 text-sm text-app-fg">
             {state.history.map((row) => (
               <li key={row.id} className="flex justify-between gap-3">
-                <span className="tabular-nums">
-                  {t('pos.sats', { amount: String(row.amountSats) })}
+                <span className="tabular-nums lining-nums">
+                  {formatBitcoin(row.amountSats, numberFormat)}
                 </span>
                 <span className="text-app-subtle">{t(statusKey(row))}</span>
               </li>

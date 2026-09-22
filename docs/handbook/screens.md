@@ -173,7 +173,7 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 - **URL:** `/wallet` — signed-in recovery phrase.
 - **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **Continue** (no Skip, no **I saved these words**). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards **Show recovery phrase** lives under **Advanced functions**. Optional **I saved these words** is only the `visual=confirm` fixture, not setup.
-- **Actions:** Activate a new passkey. Existing members (`walletRequired` is not true) also `POST /me/wallet-backup-seen` after a successful replace. New accounts (`setup` is wallet) continue (`POST /me/wallet-backup-seen`). Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Profile, Wallet, …).
+- **Actions:** Activate a new passkey. Existing members (`walletRequired` is not true) also `POST /me/wallet-backup-seen` after a successful replace. New accounts (`setup` is wallet) continue (`POST /me/wallet-backup-seen`). Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Point of sale, Profile, Wallet, …).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
 
 ### Variant: default
