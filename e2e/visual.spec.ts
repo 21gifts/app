@@ -2197,6 +2197,60 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-pos');
   });
 
+  test('pos open', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-e2e',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: '2026-09-20T12:00:00.000Z',
+            expiresAt: '2026-09-20T12:05:00.000Z',
+          },
+          history: [
+            {
+              id: 'pos-e2e',
+              amountSats: 21,
+              status: 'pending',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
+    await shotScreen(page, 'state-pos-open');
+  });
+
   test('profile fiat', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

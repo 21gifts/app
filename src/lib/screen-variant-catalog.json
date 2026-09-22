@@ -840,6 +840,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:open",
+    "label": "/pos open",
+    "visual": "state-pos-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:fiat",
     "label": "/profile fiat",
     "visual": "state-profile-fiat",
