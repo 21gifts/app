@@ -3132,14 +3132,16 @@ describe('MemberProfileScreen', () => {
       account: { ...account, role: 'moderator' },
     });
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
-    expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
     expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
+    fireEvent.click(screen.getByText('Moderator functions'));
+    expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
   });
 
   it('does not show Verify for a basis viewer', () => {
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
     expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
     expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it('shows unnamed and no-address copy when fields are null', () => {

@@ -84,22 +84,34 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+function openStaffFunctions(): void {
+  fireEvent.click(screen.getByText('Moderator functions'));
+}
+
+function expectStaffRegionAbsent(): void {
+  expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
+  expect(screen.queryByTestId('staff-functions')).toBeNull();
+}
+
 describe('MemberTrustActions', () => {
   it('returns null for a basis viewer', () => {
     const { container } = renderWithLocale(<MemberTrustActions profile={profile} />);
     expect(container.firstChild).toBeNull();
+    expectStaffRegionAbsent();
   });
 
   it('returns null when the session is missing', () => {
     useAuthStore.setState({ session: null, account: { ...account, role: 'moderator' } });
     const { container } = renderWithLocale(<MemberTrustActions profile={profile} />);
     expect(container.firstChild).toBeNull();
+    expectStaffRegionAbsent();
   });
 
   it('returns null when the account snapshot is missing', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     const { container } = renderWithLocale(<MemberTrustActions profile={profile} />);
     expect(container.firstChild).toBeNull();
+    expectStaffRegionAbsent();
   });
 
   it('returns null for self', () => {
@@ -109,19 +121,22 @@ describe('MemberTrustActions', () => {
     });
     const { container } = renderWithLocale(<MemberTrustActions profile={profile} />);
     expect(container.firstChild).toBeNull();
+    expectStaffRegionAbsent();
   });
 
   it('shows Verify for a moderator viewing a basis member', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     renderWithLocale(<MemberTrustActions profile={profile} />);
+    expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
+    openStaffFunctions();
     expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Appoint as moderator' })).toBeNull();
-    expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
   });
 
   it('shows Verify and Appoint for a founder viewing a basis member', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<MemberTrustActions profile={profile} />);
+    openStaffFunctions();
     expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Appoint as moderator' })).toBeTruthy();
   });
@@ -131,6 +146,7 @@ describe('MemberTrustActions', () => {
     renderWithLocale(
       <MemberTrustActions profile={{ ...profile, role: 'verified', trust: NULL_TRUST }} />,
     );
+    openStaffFunctions();
     expect(screen.getByRole('button', { name: 'Propose as moderator' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Confirm as moderator' })).toBeNull();
   });
@@ -149,6 +165,7 @@ describe('MemberTrustActions', () => {
         }}
       />,
     );
+    openStaffFunctions();
     expect(screen.getByRole('button', { name: 'Confirm as moderator' })).toBeTruthy();
     expect(screen.queryByText('Waiting for another moderator to confirm.')).toBeNull();
   });
@@ -164,6 +181,7 @@ describe('MemberTrustActions', () => {
         }}
       />,
     );
+    openStaffFunctions();
     expect(screen.getByText('Waiting for another moderator to confirm.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Confirm as moderator' })).toBeNull();
   });
@@ -173,6 +191,7 @@ describe('MemberTrustActions', () => {
     renderWithLocale(
       <MemberTrustActions profile={{ ...profile, role: 'verified', trust: NULL_TRUST }} />,
     );
+    openStaffFunctions();
     expect(screen.getByRole('button', { name: 'Propose as moderator' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Appoint as moderator' })).toBeTruthy();
   });
@@ -180,6 +199,7 @@ describe('MemberTrustActions', () => {
   it('links Already on the Trust Chain for a moderator subject', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     renderWithLocale(<MemberTrustActions profile={{ ...profile, role: 'moderator' }} />);
+    openStaffFunctions();
     expect(
       screen.getByRole('link', { name: 'Already on the Trust Chain.' }).getAttribute('href'),
     ).toBe('/trust-chain');
@@ -189,6 +209,7 @@ describe('MemberTrustActions', () => {
   it('links Already on the Trust Chain for a founder subject', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<MemberTrustActions profile={{ ...profile, role: 'founder' }} />);
+    openStaffFunctions();
     expect(screen.getByRole('link', { name: 'Already on the Trust Chain.' })).toBeTruthy();
   });
 
@@ -196,6 +217,7 @@ describe('MemberTrustActions', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     vi.mocked(postTrustVerify).mockRejectedValue(new Error('fail'));
     renderWithLocale(<MemberTrustActions profile={profile} />);
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe(
@@ -216,6 +238,7 @@ describe('MemberTrustActions', () => {
     );
     vi.mocked(fetchMember).mockResolvedValue({ ...profile, role: 'verified' });
     renderWithLocale(<MemberTrustActions profile={profile} />);
+    openStaffFunctions();
     const button = screen.getByRole('button', { name: 'Verify' }) as HTMLButtonElement;
     fireEvent.click(button);
     await waitFor(() => {
@@ -240,6 +263,7 @@ describe('MemberTrustActions', () => {
     vi.mocked(fetchMember).mockResolvedValue(updated);
     const onUpdated = vi.fn();
     renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
     await waitFor(() => {
       expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id);
@@ -259,6 +283,7 @@ describe('MemberTrustActions', () => {
     vi.mocked(fetchMember).mockResolvedValue(null);
     const onUpdated = vi.fn();
     renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
     await waitFor(() => {
       expect(fetchMember).toHaveBeenCalled();
@@ -277,6 +302,7 @@ describe('MemberTrustActions', () => {
     vi.mocked(fetchMember).mockRejectedValue(new Error('gone'));
     const onUpdated = vi.fn();
     renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
     await waitFor(() => {
       expect(fetchMember).toHaveBeenCalledWith('sess', profile.id);
@@ -301,6 +327,7 @@ describe('MemberTrustActions', () => {
         onUpdated={onUpdated}
       />,
     );
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Propose as moderator' }));
     await waitFor(() => {
       expect(onUpdated).toHaveBeenCalledWith(
@@ -336,6 +363,7 @@ describe('MemberTrustActions', () => {
     const { unmount } = renderWithLocale(
       <MemberTrustActions profile={{ ...profile, role: 'verified', trust: NULL_TRUST }} />,
     );
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Propose as moderator' }));
     await waitFor(() => {
       expect(postTrustPropose).toHaveBeenCalledWith('sess', profile.id);
@@ -354,6 +382,7 @@ describe('MemberTrustActions', () => {
         }}
       />,
     );
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm as moderator' }));
     await waitFor(() => {
       expect(postTrustConfirm).toHaveBeenCalledWith('sess', profile.id);
@@ -361,6 +390,7 @@ describe('MemberTrustActions', () => {
     cleanup();
 
     renderWithLocale(<MemberTrustActions profile={profile} />);
+    openStaffFunctions();
     fireEvent.click(screen.getByRole('button', { name: 'Appoint as moderator' }));
     await waitFor(() => {
       expect(postTrustAppoint).toHaveBeenCalledWith('sess', profile.id);

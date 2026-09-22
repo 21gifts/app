@@ -458,6 +458,10 @@ links stay labeled.
 
 Reviewers follow `Review.md` and `docs/ui.md`.
 
+### Staff actions (hard requirement)
+
+A stack of labeled moderator or founder actions on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") uses the same `details` / `summary` as wallet **Advanced functions**, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
+
 ### Payment QR vs deep links (hard requirement)
 
 Desktop computers (MacBook and other non-phone devices) show a Bitcoin
@@ -554,7 +558,16 @@ from the desktop-light baseline. Do not commit PNGs under
 Every **distinct UI state** of every screenshot-gated screen (not
 `HANDBOOK_DOC_ROUTES`) **must** be listed in `scripts/screen-variants.mjs`.
 Omitting a gated state from that list is an undeclared deviation and is
-rejected. `/setup/rules` is one screen with **one state per
+rejected. Pressing a button, or any other control, that changes what is on
+screen is its own distinct UI state. The baseline taken before the press does
+not cover the result. That includes opening a disclosure, a menu, or a list, a
+confirm or cancel step, an expanded row, and any control whose press reveals,
+hides, or replaces visible content. Each of those results needs a handbook
+variant, an e2e needle, a `shotScreen` call, and a Playwright Linux baseline
+for every combo in `BASELINE_COMBOS`, in the same PR. Shipping only the idle
+or closed shot is an undeclared deviation and is rejected.
+
+`/setup/rules` is one screen with **one state per
 living-room rules chapter** (`RULES_CHAPTER_IDS` in `src/lib/rules-chapters.ts`);
 each chapter is a variant. Viewport and theme are combo shots of those
 variants, not a substitute for a missing chapter.

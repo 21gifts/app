@@ -7906,6 +7906,45 @@ test('Function: MemberTrustActions — ordinary members have no verify action', 
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
+});
+
+test('Function: StaffFunctions — moderator actions stay closed until opened', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Ada',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        aboutMe: null,
+        trust: {
+          verifiedBy: null,
+          proposedBy: null,
+          confirmedBy: null,
+          appointedBy: null,
+        },
+      }),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByText('Moderator functions')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
+  await page.getByText('Moderator functions').click();
+  await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+  await seedAdaSession(page);
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
+  await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
 });
 
 test('Function: DeletePostControl — ordinary members have no delete action', async ({ page }) => {

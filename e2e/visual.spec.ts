@@ -3475,8 +3475,68 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
     await shotScreen(page, 'state-members-staff-verify');
+  });
+
+  test('state /members staff-verify-open', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    const disclosure = page.getByText('Moderator functions');
+    await disclosure.click();
+    const verify = page.getByRole('button', { name: 'Verify' });
+    await expect(verify).toBeVisible();
+    await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
+    await verify.scrollIntoViewIfNeeded();
+    // The member card scrolls inside the page frame. A full-page stitch leaves
+    // Verify below the viewport, so this shot is the viewport after that scroll.
+    await shotScreen(page, 'state-members-staff-verify-open', false);
   });
 
   test('state /members funding-reviewed', async ({ page }) => {
