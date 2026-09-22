@@ -475,8 +475,10 @@ export function InboxScreen({
       return;
     }
     const onScroll = (): void => {
+      const node = shellScrollNode(scroller);
       stuckToBottomRef.current = shellDistanceToBottom(scroller) <= STUCK_TO_BOTTOM_PX;
-      threadScrollRef.current.scrollTop = shellScrollNode(scroller).scrollTop;
+      threadScrollRef.current.scrollHeight = node.scrollHeight;
+      threadScrollRef.current.scrollTop = node.scrollTop;
     };
     if (scroller !== null) {
       scroller.addEventListener('scroll', onScroll);
@@ -584,9 +586,13 @@ export function InboxScreen({
   ]);
 
   const pinIfStuck = (): void => {
+    /* v8 ignore next -- onLoad runs after the AppShell scroller ref has committed */
     if (inShell && scroller === null) {
       return;
     }
+    const node = shellScrollNode(scroller);
+    threadScrollRef.current.scrollHeight = node.scrollHeight;
+    threadScrollRef.current.scrollTop = node.scrollTop;
     if (!stuckToBottomRef.current) {
       return;
     }

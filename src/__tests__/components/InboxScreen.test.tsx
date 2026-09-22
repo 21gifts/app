@@ -1679,6 +1679,44 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
+  it('stays stuck when the scroller is within 80px of the bottom', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [newest],
+            photoUrls: { 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+    scroller.scrollTop = 720;
+    scroller.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    fireEvent.load(screen.getByAltText('Photo from Ada'));
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
   it('does not pin when a still finishes decoding after the scroller leaves the bottom', () => {
     const scrollTo = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
