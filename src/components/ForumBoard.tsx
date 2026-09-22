@@ -1359,17 +1359,6 @@ export function ForumBoard({
                                 )}
                               </div>
                             ) : null}
-                            {reply.place !== undefined ? (
-                              <Link
-                                href={`/map?pin=${encodeURIComponent(reply.id)}`}
-                                className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
-                                onClick={stopCardToggle}
-                              >
-                                <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                                {reply.place.label ??
-                                  `${reply.place.lat.toFixed(5)}, ${reply.place.lng.toFixed(5)}`}
-                              </Link>
-                            ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
                                 {formatBitcoin(reply.sats, numberFormat)}
