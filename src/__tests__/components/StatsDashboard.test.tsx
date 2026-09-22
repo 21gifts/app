@@ -174,6 +174,7 @@ describe('StatsDashboard', () => {
     const posts = screen.getByRole('region', { name: 'Posts' });
     expect(posts.textContent).toContain('3');
     expect(posts.textContent).toContain('Notes and replies');
+    expect(posts.querySelectorAll('rect')).toHaveLength(1);
   });
 
   it('shows a posts total without bars when no day has a note', () => {
