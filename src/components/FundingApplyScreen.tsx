@@ -130,7 +130,7 @@ export function FundingApplyScreen(): ReactElement | null {
       <div className="flex w-full justify-start">
         <Link
           href="/profile"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center text-app-muted"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
           aria-label={t('funding.apply.back')}
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />

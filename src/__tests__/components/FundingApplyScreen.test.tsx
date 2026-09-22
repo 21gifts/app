@@ -163,6 +163,9 @@ describe('FundingApplyScreen', () => {
       screen.getByText('First, write a short About me so people can get to know you.'),
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
+    const back = screen.getByRole('link', { name: 'Back to profile' });
+    expect(back.getAttribute('href')).toBe('/profile');
+    expect(screen.queryByText('Back to profile')).toBeNull();
   });
 
   it('advances to the photo step after About me is saved', async () => {
