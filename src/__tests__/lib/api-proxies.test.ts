@@ -51,6 +51,7 @@ import {
   proxyMessagesVideoGet,
   proxyForumMessageGet,
   proxyPublicMessageGet,
+  proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
   proxyViewActivityGet,
@@ -325,6 +326,16 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyPublicMessageGet(new Request('http://localhost/public-messages/m1'), 'm1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
+  });
+
+  it('proxyShortLinkGet hits /links/:code without a bearer', async () => {
+    const fetchMock = stubApi();
+    await proxyShortLinkGet(new Request('http://localhost/links/d70c4763'), 'd70c4763');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/links/d70c4763');
+    await proxyShortLinkGet(new Request('http://localhost/links/a%20b'), 'a b');
+    const spaced = fetchMock.mock.calls[1]?.[0] as URL;
+    expect(decodeURIComponent(spaced.pathname)).toBe('/links/a b');
+    expect(spaced.href.startsWith('https://api.test/links/')).toBe(true);
   });
 
   it('proxyPublicMessageRepliesGet hits /messages/:id/replies', async () => {

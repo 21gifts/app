@@ -289,6 +289,20 @@
 - **Used by:** `fetchComposeTarget`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /links/[code]
+
+- **Purpose:** Same-origin public proxy of api GET `/links/:code`. JSON body is `{ "kind": "message" | "member", "id": "<uuid>" }`. No Bearer. The HTML redirect visitors open is `/l/[code]`; this path is JSON only.
+- **Errors:** Upstream 400 `{ "error": "invalid_code" }`, 404 `{ "error": "not_found" }`, 409 `{ "error": "ambiguous" }`, or 502 if the api is unreachable.
+- **Used by:** `fetchShortLink`.
+- **Auth:** Public.
+
+## Endpoint: GET /l/[code]
+
+- **Purpose:** Resolve an 8-hex short code (case-insensitive) and redirect to `/messages/<uuid>` or `/members/<uuid>`. The code is the first UUID group, lowercased. Invalid codes do not call the api. There is no page under `/l/` — unknown codes use the existing not-found page.
+- **Errors:** 404 via `notFound()` when the code is not 8 hex, the lookup fails or is not OK, the body is not JSON, or the body is not a message or member UUID. Success is a redirect, not JSON.
+- **Used by:** Shared note, reply, and member profile links copied from the forum and member card.
+- **Auth:** Public.
+
 ## Endpoint: POST /messages/[id]/invoice
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).

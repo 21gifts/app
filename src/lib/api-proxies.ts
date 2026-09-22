@@ -508,6 +508,19 @@ export async function proxyPublicMessageGet(
 }
 
 /**
+ * Proxies GET /links/:code to the 21.gifts api (public; no auth).
+ *
+ * App path is `/links/:code`. The visitor redirect lives at `/l/:code`.
+ *
+ * @param request - Incoming App Router request.
+ * @param code - Short-link code from the route.
+ * @returns The upstream response.
+ */
+export async function proxyShortLinkGet(request: Request, code: string): Promise<Response> {
+  return proxyApiRequest(request, `/links/${encodeURIComponent(code)}`);
+}
+
+/**
  * Proxies GET /messages/:id/replies to the 21.gifts api (public; no auth).
  *
  * App path is `/public-messages/:id/replies` so `/messages/:id` can serve HTML.

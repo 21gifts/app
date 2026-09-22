@@ -49,6 +49,7 @@ import {
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
+import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -830,7 +831,7 @@ export function ForumBoard({
   };
 
   const copyMessageLink = async (messageId: string): Promise<void> => {
-    const url = `${window.location.origin}/messages/${messageId}`;
+    const url = shortResourceUrl(window.location.origin, messageId, `/messages/${messageId}`);
     try {
       await navigator.clipboard.writeText(url);
       /* v8 ignore next 3 -- copy resolved after unmount */

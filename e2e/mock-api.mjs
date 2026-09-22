@@ -350,6 +350,21 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const shortLinkMatch = pathName.match(/^\/links\/([0-9a-f]{8})$/i);
+  if (method === 'GET' && shortLinkMatch) {
+    const code = shortLinkMatch[1].toLowerCase();
+    if (code === '77e0510d') {
+      json(res, 200, { kind: 'message', id: '77e0510d-03a8-4063-8716-75d61178e7f1' });
+      return;
+    }
+    if (code === 'd70c4763') {
+      json(res, 200, { kind: 'member', id: 'd70c4763-3033-43da-817a-2c7de9938f27' });
+      return;
+    }
+    json(res, 404, { error: 'not_found' });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/v2/translate') {
     let parsed;
     try {
