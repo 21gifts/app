@@ -1645,7 +1645,7 @@ export async function postMessageVideo(
   if (input.place !== undefined) {
     form.set('placeLat', String(input.place.lat));
     form.set('placeLng', String(input.place.lng));
-    if (input.place.label !== null) {
+    if (typeof input.place.label === 'string') {
       form.set('placeLabel', input.place.label);
     }
   }
