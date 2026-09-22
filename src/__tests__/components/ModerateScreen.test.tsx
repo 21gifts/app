@@ -200,8 +200,10 @@ describe('ModerateScreen', () => {
       ).toBeNull();
       expect(screen.queryByText('Closed staff room for moderators.')).toBeNull();
       expect(
-        screen.getByText('Pick a person, then walk each principle and whether the posts are true.'),
-      ).toBeTruthy();
+        screen.queryByText(
+          'Pick a person, then walk each principle and whether the posts are true.',
+        ),
+      ).toBeNull();
       expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
       expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
         '/moderate/hidden',

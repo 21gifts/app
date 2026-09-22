@@ -218,7 +218,6 @@ export function ModerateScreen(): ReactElement | null {
           </ButtonLink>
         </li>
         <li className="flex w-full flex-col items-center gap-3">
-          <p className="text-center text-sm text-app-muted">{t('funding.applications.lead')}</p>
           <ButtonLink href="/moderate/applications" variant="secondary" size="lg">
             {t('funding.applications.heading')}
           </ButtonLink>
