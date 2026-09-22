@@ -1203,6 +1203,7 @@ export function ForumLoader({
             } else if (composePay) {
               try {
                 if (baselineOwn === null) {
+                  /* v8 ignore next 2 -- baseline is set before the loop unless countOwn threw */
                   baselineOwn = await countOwn();
                   ownContent = false;
                 } else {
