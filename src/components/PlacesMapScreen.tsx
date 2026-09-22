@@ -110,6 +110,7 @@ export function PlacesMapScreen(): ReactElement {
       return;
     }
     const frame = frameRef.current;
+    /* v8 ignore next 3 -- the map node is committed before this effect */
     if (frame === null) {
       return;
     }
@@ -125,15 +126,18 @@ export function PlacesMapScreen(): ReactElement {
           return;
         }
         const focus = places.find((row) => row.id === pinId) ?? places[0];
-        const center =
-          focus === undefined ? { lat: 20, lng: 0 } : { lat: focus.lat, lng: focus.lng };
-        const map = new maps.Map(frame, { center, zoom: focus === undefined ? 2 : 14 });
+        /* v8 ignore next 3 -- noUncheckedIndexedAccess; a non-empty list has a row */
+        if (focus === undefined) {
+          return;
+        }
+        const map = new maps.Map(frame, {
+          center: { lat: focus.lat, lng: focus.lng },
+          zoom: 14,
+        });
         for (const row of places) {
           new maps.Marker({ position: { lat: row.lat, lng: row.lng }, map });
         }
-        if (focus !== undefined) {
-          map.setCenter({ lat: focus.lat, lng: focus.lng });
-        }
+        map.setCenter({ lat: focus.lat, lng: focus.lng });
       } catch {
         /* List stays usable when the script fails. */
       }

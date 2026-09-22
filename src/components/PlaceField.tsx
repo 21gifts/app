@@ -150,8 +150,12 @@ export function PlaceField(props: {
       return;
     }
     const el = mapElRef.current;
+    /* v8 ignore next 3 -- the map node is committed before this effect */
+    if (el === null) {
+      return;
+    }
     const maps = (window as GoogleWindow).google?.maps;
-    if (el === null || maps === undefined) {
+    if (maps === undefined) {
       return;
     }
     const map = new maps.Map(el, { center: START_CENTER, zoom: 2 });
