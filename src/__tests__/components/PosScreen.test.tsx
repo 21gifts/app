@@ -49,6 +49,7 @@ describe('PosScreen', () => {
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('heading', { name: 'Point of sale' })).toBeTruthy();
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+    expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
   });
 
@@ -172,6 +173,115 @@ describe('PosScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: 'nope' }, 500)));
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('alert')).toBeTruthy();
+  });
+
+  it('maps already-open, username, address, and unknown create errors', async () => {
+    const errors = [
+      ['A payment is already open', 'already open'],
+      ['Set a username first', 'username first'],
+      ['Set a Wallet of Satoshi address first', 'Wallet of Satoshi'],
+      ['nope', 'unavailable'],
+    ] as const;
+    for (const [apiError, needle] of errors) {
+      cleanup();
+      useAuthStore.setState({ session: 'tok', account: ACCOUNT });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return jsonResponse({ error: apiError }, 400);
+          }
+          return jsonResponse({ charge: null, history: [] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect((await screen.findByRole('alert')).textContent?.toLowerCase()).toContain(
+        needle.toLowerCase(),
+      );
+    }
+  });
+
+  it('keeps the open charge and shows an error when cancel fails', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          return jsonResponse({ error: 'nope' }, 500);
+        }
+        return jsonResponse({ charge, history: [charge] });
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    expect(screen.getByText('Open')).toBeTruthy();
+  });
+
+  it('refetches once when the open charge is already expired', async () => {
+    const expired = {
+      id: 'old',
+      amountSats: 5,
+      status: 'pending' as const,
+      createdAt: new Date(Date.now() - 120_000).toISOString(),
+      expiresAt: new Date(Date.now() - 1_000).toISOString(),
+    };
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        if (calls === 1) {
+          return jsonResponse({ charge: expired, history: [expired] });
+        }
+        return jsonResponse({
+          charge: null,
+          history: [{ ...expired, status: 'expired' }],
+        });
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(await screen.findByText('Expired')).toBeTruthy();
+    expect(calls).toBe(2);
+  });
+
+  it('does not load the till without a session', async () => {
+    useAuthStore.setState({ session: null, account: ACCOUNT });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    expect(screen.getByRole('heading', { name: 'Point of sale' })).toBeTruthy();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 20);
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('ignores create and cancel after the session disappears', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    const fetchMock = vi.fn(async () => jsonResponse({ charge, history: [charge] }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+    useAuthStore.setState({ session: null, account: ACCOUNT });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('asks for a username when the account has none', async () => {
