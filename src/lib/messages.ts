@@ -724,6 +724,7 @@ const en = {
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
+  'staff.functions': 'Moderator functions',
   'trustChain.action.verify': 'Verify',
   'trustChain.action.propose': 'Propose as moderator',
   'trustChain.action.confirm': 'Confirm as moderator',
@@ -1472,6 +1473,7 @@ const de = {
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
   'trustChain.explainFounder':
     'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
+  'staff.functions': 'Moderatorenfunktionen',
   'trustChain.action.verify': 'Verifizieren',
   'trustChain.action.propose': 'Als Moderator vorschlagen',
   'trustChain.action.confirm': 'Als Moderator bestätigen',
@@ -2197,6 +2199,7 @@ const es = {
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
   'trustChain.explainFounder':
     'Una persona fundadora empezó 21.gifts y es el primer eslabón de la cadena.',
+  'staff.functions': 'Funciones de moderación',
   'trustChain.action.verify': 'Verificar',
   'trustChain.action.propose': 'Proponer como moderador',
   'trustChain.action.confirm': 'Confirmar como moderador',
@@ -2929,6 +2932,7 @@ const fil = {
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
   'trustChain.explainFounder':
     'Isang founder ang nagsimula ng 21.gifts at siya ang unang kawing ng kadena.',
+  'staff.functions': 'Mga tungkulin ng moderator',
   'trustChain.action.verify': 'I-verify',
   'trustChain.action.propose': 'Ipanukala bilang moderator',
   'trustChain.action.confirm': 'Kumpirmahin bilang moderator',

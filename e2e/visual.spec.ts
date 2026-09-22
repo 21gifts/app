@@ -3475,7 +3475,8 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Moderator functions' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
     await shotScreen(page, 'state-members-staff-verify');
   });
 

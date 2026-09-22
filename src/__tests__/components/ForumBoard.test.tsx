@@ -4171,6 +4171,8 @@ describe('ForumBoard', () => {
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(within(replyCard).queryByTestId('staff-functions')).toBeNull();
     expect(copyButton.parentElement?.className).toBe('mt-2');
   });
 
@@ -4310,6 +4312,7 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-no-trash"]') as HTMLElement;
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(within(replyCard).queryByTestId('staff-functions')).toBeNull();
     expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
   });
 
@@ -5576,6 +5579,8 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it('shows Delete reaction on own replies that have no PM', () => {
@@ -5710,6 +5715,8 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: /^React$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
@@ -5769,7 +5776,9 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Delete reply' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete reaction' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it('focuses the reply composer when React is clicked on an expanded note', () => {
