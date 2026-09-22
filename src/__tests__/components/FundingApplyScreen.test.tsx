@@ -285,6 +285,10 @@ describe('FundingApplyScreen', () => {
     expect(await screen.findByText('When your posts match, you can apply again.')).toBeTruthy();
     expect(applyMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Back to profile' }).getAttribute('href')).toBe(
+      '/profile',
+    );
+    expect(screen.queryByText('Back to profile')).toBeNull();
   });
 
   it('shows trial copy when already on trial', () => {

@@ -7,7 +7,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, ButtonLink, Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { fetchMemberPosts, postFundingApply, putAboutMe } from '@/lib/api';
 import type { Account, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
@@ -249,9 +249,6 @@ export function FundingApplyScreen(): ReactElement | null {
       <Card maxWidth="xl" surface={false}>
         {heading}
         <p className="text-center text-sm text-app-muted">{t('funding.apply.unmet')}</p>
-        <ButtonLink href="/profile" variant="secondary" size="lg">
-          {t('funding.apply.back')}
-        </ButtonLink>
       </Card>
     );
   }
