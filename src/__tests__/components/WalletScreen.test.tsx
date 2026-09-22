@@ -35,6 +35,8 @@ afterEach(() => {
   phraseState.error = null;
   phraseState.view = 'confirm';
   phraseState.words = [];
+  phraseState.setupWallet = false;
+  phraseState.status = 'idle';
 });
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
@@ -155,6 +157,26 @@ describe('WalletScreenView', () => {
 });
 
 describe('WalletScreen', () => {
+  it('does not auto-reveal on the activate view', () => {
+    showPhrase.mockClear();
+    phraseState.view = 'activate';
+    phraseState.words = [];
+    phraseState.error = null;
+    phraseState.setupWallet = false;
+    renderWithLocale(<WalletScreen />);
+    expect(showPhrase).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-reveal while busy', () => {
+    showPhrase.mockClear();
+    phraseState.view = 'confirm';
+    phraseState.words = [];
+    phraseState.status = 'busy';
+    phraseState.error = null;
+    renderWithLocale(<WalletScreen />);
+    expect(showPhrase).not.toHaveBeenCalled();
+  });
+
   it('asks to show the phrase when confirm has no words yet', () => {
     showPhrase.mockClear();
     phraseState.error = null;

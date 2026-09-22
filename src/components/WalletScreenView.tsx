@@ -86,7 +86,7 @@ export function WalletScreenView({
             ))}
           </ol>
           <p className="text-sm text-app-muted">{t('wallet.onlyBackup')}</p>
-          {setupWallet ? (
+          {setupWallet && view === 'phrase' ? (
             <Button
               variant="primary"
               size="lg"
