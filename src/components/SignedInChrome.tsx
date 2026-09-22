@@ -12,6 +12,7 @@ import {
   Share2,
   Shield,
   Store,
+  Banknote,
   User,
   Wallet,
 } from 'lucide-react';
@@ -155,6 +156,16 @@ export function SignedInChrome(): ReactElement {
         >
           <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.shops')}
+        </Link>
+        <Link
+          href="/pos"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Banknote aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('pos.nav')}
         </Link>
         <Link
           href="/profile"

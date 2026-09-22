@@ -1349,6 +1349,20 @@ Same overlay after **Download** failed (here PNG with a browser that cannot enco
 
 ![21.gifts member shop sticker failed](images/members-sticker-failed.png)
 
+## Screen: /pos
+
+- **Purpose:** Signed-in point of sale. The member sets one whole-sat amount. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount; the QR on this page is the same Open CryptoPay code as the profile card. Cancel or expiry clears the pin. No paid status, because Wallet of Satoshi settles the invoice. Missing username or lightning address links to `/profile`.
+- **Layout:** `AppShell` fill with profile chrome. Card column: heading, address, desktop QR, amount form or open charge, history.
+- **Actions:** Create payment, Cancel. Menu row `pos.nav`.
+- **Auth:** Bearer session via `OnboardingGate screen="profile"`.
+- **Used by:** Route `/pos`.
+
+### Variant: default
+
+Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Heading **Point of sale**, address `alice@21.gifts`, amount field, **Create payment**. Desktop and iPad also show the Open CryptoPay QR.
+
+![21.gifts point of sale](images/pos.png)
+
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, then `FundingStatusCard` (verification / 21 gifts grant), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.

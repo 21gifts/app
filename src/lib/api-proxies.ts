@@ -71,6 +71,36 @@ export async function proxyMeGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /pos/charge to api `GET /pos`.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyPosGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/pos');
+}
+
+/**
+ * Proxies POST /pos/charge to api `POST /pos`.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyPosPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/pos');
+}
+
+/**
+ * Proxies DELETE /pos/charge to api `DELETE /pos`.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyPosDelete(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/pos');
+}
+
+/**
  * Proxies GET /me/activity to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).

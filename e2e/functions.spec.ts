@@ -5998,6 +5998,91 @@ test('Function: setLocation — signed-in form saves a location', async ({ page,
   await expect(page.getByText('Zug')).toBeVisible();
 });
 
+test('Function: PosPage — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+});
+
+test('Function: PosScreen — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+});
+
+test('Function: fetchPosState — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: createPosCharge — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: cancelPosCharge — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: proxyPosGet — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: proxyPosPost — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: proxyPosDelete — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
 test('Function: ProfileScreen — back to forum is visible', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');

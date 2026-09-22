@@ -13,6 +13,9 @@ import {
   proxyGiftsStatsGet,
   proxyMeActivityGet,
   proxyMeGet,
+  proxyPosDelete,
+  proxyPosGet,
+  proxyPosPost,
   proxyMeForumLawsDismissedPost,
   proxyMeNotificationLevelPost,
   proxyMeLightningAddressDelete,
@@ -109,6 +112,28 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/me/wallet-backup-seen', { method: 'POST' }),
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-backup-seen');
+  });
+
+  it('proxyPosGet hits GET /pos', async () => {
+    const fetchMock = stubApi();
+    await proxyPosGet(new Request('http://localhost/pos/charge'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pos');
+  });
+
+  it('proxyPosPost hits POST /pos', async () => {
+    const fetchMock = stubApi();
+    await proxyPosPost(
+      new Request('http://localhost/pos/charge', { method: 'POST', body: '{"amountSats":21}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pos');
+  });
+
+  it('proxyPosDelete hits DELETE /pos', async () => {
+    const fetchMock = stubApi();
+    await proxyPosDelete(new Request('http://localhost/pos/charge', { method: 'DELETE' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pos');
   });
 
   it('proxyMeGet hits /me', async () => {

@@ -1045,6 +1045,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {
+    route: '/pos',
+    id: 'default',
+    image: 'pos.png',
+    visual: 'screen-pos',
+    needle: "getByRole('heading', { name: 'Point of sale' })",
+  },
+  {
     route: '/profile',
     id: 'fiat',
     image: 'profile-fiat.png',
