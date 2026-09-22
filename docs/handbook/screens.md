@@ -1140,6 +1140,31 @@ Empty copy **No shops yet — add the first one.** Composer still present.
 
 ![21.gifts shops error](images/shops-error.png)
 
+## Screen: /map
+
+- **URL:** `/map` — signed-in map of every forum note that has a pin. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Map**. A list of pins (author, label or coordinates) linking to `/messages/{id}`. The map frame stays empty when no Google key is set. Empty copy **No places yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Open a pin, open Menu including **Map**, back to the forum, try again after an error.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `PlacesMapScreen`.
+
+### Variant: default
+
+Heading **Map** and one pin **Ada · Happyland**.
+
+![21.gifts map](images/map.png)
+
+### Variant: empty
+
+Empty copy **No places yet.**
+
+![21.gifts map empty](images/map-empty.png)
+
+### Variant: error
+
+**Could not load places. Please try again.** and **Try again**.
+
+![21.gifts map error](images/map-error.png)
+
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.

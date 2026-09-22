@@ -2550,6 +2550,27 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not load messages. Please try again.',
   },
   {
+    route: '/map',
+    id: 'default',
+    image: 'map.png',
+    visual: 'screen-map',
+    needle: 'Happyland',
+  },
+  {
+    route: '/map',
+    id: 'empty',
+    image: 'map-empty.png',
+    visual: 'state-map-empty',
+    needle: 'No places yet.',
+  },
+  {
+    route: '/map',
+    id: 'error',
+    image: 'map-error.png',
+    visual: 'state-map-error',
+    needle: 'Could not load places. Please try again.',
+  },
+  {
     route: '/messages/[id]',
     id: 'translate',
     image: 'messages-id-translate.png',

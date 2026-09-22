@@ -47,6 +47,7 @@ import {
   proxyMessagesComposeTargetGet,
   proxyMessagesGet,
   proxyMessagesHiddenGet,
+  proxyMessagesPlacesGet,
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
@@ -316,6 +317,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMessagesHiddenGet(new Request('http://localhost/forum/messages/hidden'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/hidden');
+  });
+
+  it('proxyMessagesPlacesGet hits /messages/places', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPlacesGet(new Request('http://localhost/forum/messages/places'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/places');
   });
 
   it('proxyMessagesPost hits POST /messages', async () => {

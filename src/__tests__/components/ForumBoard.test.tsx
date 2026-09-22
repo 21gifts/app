@@ -475,9 +475,10 @@ describe('ForumBoard', () => {
     expect(button.textContent?.trim()).toBe('');
     expect(screen.getByLabelText('Add a photo or video').textContent?.trim()).toBe('');
     expect(field.nextElementSibling).toBe(button);
-    expect(field.previousElementSibling?.previousElementSibling).toBe(
-      screen.getByLabelText('Add a photo or video'),
-    );
+    const photo = screen.getByLabelText('Add a photo or video');
+    const place = screen.getByLabelText('Add a place');
+    expect(photo.compareDocumentPosition(place) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(place.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     expect(screen.queryByText('Dismiss')).toBeNull();

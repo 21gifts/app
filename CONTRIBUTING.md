@@ -83,6 +83,10 @@ app/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
 │   │   ├── shops/
 │   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
+│   │   ├── map/
+│   │   │   └── page.tsx         # GET /map — signed-in map of forum notes that have a pin
+│   │   ├── maps/
+│   │   │   └── key/route.ts     # GET /maps/key — browser map key or null
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -115,6 +119,7 @@ app/
 │   │   ├── forum/
 │   │   │   ├── messages/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
+│   │   │   │   ├── places/route.ts  # GET /forum/messages/places
 │   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   │   └── members/
 │   │   │       └── [accountId]/
@@ -221,6 +226,8 @@ app/
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
+│   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
+│   │   ├── PlacesMapScreen.tsx  # Signed-in /map body (every note that has a pin)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer

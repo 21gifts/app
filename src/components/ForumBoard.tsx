@@ -8,6 +8,7 @@ import {
   ImagePlus,
   Link2,
   Loader2,
+  MapPin,
   Reply,
   Send,
   X,
@@ -35,13 +36,14 @@ import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
+import { PlaceField } from '@/components/PlaceField';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import {
   FORUM_COMPOSE_EVENT,
@@ -316,6 +318,10 @@ export interface ForumBoardProps {
    * Default true for the feed and profile.
    */
   truncate?: boolean;
+  /** Optional place pin draft for the top-level composer. Default null. */
+  placeDraft?: ForumPlacePin | null;
+  /** Called when the top-level composer pin changes. Default no-op. */
+  onPlaceDraftChange?: (place: ForumPlacePin | null) => void;
 }
 
 /**
@@ -659,6 +665,10 @@ export function ForumBoard({
   onDeleted,
   permalinkTargetId = null,
   truncate = true,
+  placeDraft = null,
+  onPlaceDraftChange = () => {
+    /* default no-op so existing callers compile */
+  },
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -1084,6 +1094,17 @@ export function ForumBoard({
                     )}
                   </div>
                 ) : null}
+                {message.place !== undefined ? (
+                  <Link
+                    href={`/map?pin=${encodeURIComponent(message.id)}`}
+                    className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
+                    onClick={stopCardToggle}
+                  >
+                    <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    {message.place.label ??
+                      `${message.place.lat.toFixed(5)}, ${message.place.lng.toFixed(5)}`}
+                  </Link>
+                ) : null}
               </div>
               {message.parentId === undefined &&
               typeof message.goalSats === 'number' &&
@@ -1339,6 +1360,17 @@ export function ForumBoard({
                                   />
                                 )}
                               </div>
+                            ) : null}
+                            {reply.place !== undefined ? (
+                              <Link
+                                href={`/map?pin=${encodeURIComponent(reply.id)}`}
+                                className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
+                                onClick={stopCardToggle}
+                              >
+                                <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                                {reply.place.label ??
+                                  `${reply.place.lat.toFixed(5)}, ${reply.place.lng.toFixed(5)}`}
+                              </Link>
                             ) : null}
                             {reply.text !== '' && reply.sats > 0 ? (
                               <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
@@ -1663,6 +1695,7 @@ export function ForumBoard({
             >
               <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
             </IconButton>
+            <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
             <input
               ref={fileInputRef}
               type="file"

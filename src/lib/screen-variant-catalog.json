@@ -2076,6 +2076,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/map:default",
+    "label": "/map default",
+    "visual": "screen-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/map:empty",
+    "label": "/map empty",
+    "visual": "state-map-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/map:error",
+    "label": "/map error",
+    "visual": "state-map-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:translate",
     "label": "/messages/[id] translate",
     "visual": "state-messages-id-translate",

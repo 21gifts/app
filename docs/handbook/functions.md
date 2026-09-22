@@ -1009,6 +1009,27 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** React element. No network.
 - **Used by:** `ContactLoader`.
 
+## Function: MapPage
+
+- **Purpose:** Next.js page for `/map`. Flow `AppShell` (`align="start"`) with `ProfileChromeLeft` + `SignedInChrome`, `OnboardingGate` `screen="welcome"`, and `PlacesMapScreen`. No `route.ts` beside the page.
+- **Inputs:** None.
+- **Returns / side effects:** The map screen.
+- **Used by:** Route `/map`.
+
+## Function: PlacesMapScreen
+
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers.
+- **Inputs:** Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. Fetches places and `/maps/key`.
+- **Used by:** `MapPage`.
+
+## Function: PlaceField
+
+- **Purpose:** Optional place control on the top-level forum composer. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin.
+- **Inputs:** `place`, `disabled`, `onChange`.
+- **Returns / side effects:** Attach button, preview, and panel. Fetches `/maps/key` when opened.
+- **Used by:** `ForumBoard` (top-level composer only).
+
 ## Function: ShopsPage
 
 - **Purpose:** Next.js page for `/shops`. Flow `AppShell` (`align="start"`) with `ProfileChromeLeft` + `SignedInChrome`, `OnboardingGate` `screen="welcome"`, and `ShopsScreen`. No `route.ts` beside the page.

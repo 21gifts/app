@@ -8752,6 +8752,92 @@ test.describe('shops screens', () => {
   });
 });
 
+test.describe('map screens', () => {
+  async function seedAda(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/maps\/key$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+  }
+
+  test('map default', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/forum\/messages\/places$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-pin',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/map');
+    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
+    await shotScreen(page, 'screen-map');
+  });
+
+  test('map empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/forum\/messages\/places$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ places: [] }),
+      });
+    });
+    await page.goto('/map');
+    await expect(page.getByText('No places yet.')).toBeVisible();
+    await shotScreen(page, 'state-map-empty');
+  });
+
+  test('map error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/forum\/messages\/places$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/map');
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-map-error');
+  });
+});
+
 test.describe('contact screens', () => {
   async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {
