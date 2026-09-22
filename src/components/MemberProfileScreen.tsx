@@ -43,7 +43,7 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
+import { latestRateDay, shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -717,6 +717,7 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        shownFiatForSats(sats, rateDay),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -774,8 +775,14 @@ export function MemberProfileScreen({
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(token, parentId, sats)
-          : await postMessageInvoice(token, parentId, sats, trimmed);
+          ? await postMessageInvoice(token, parentId, sats, undefined, shownFiatForSats(sats, rateDay))
+          : await postMessageInvoice(
+              token,
+              parentId,
+              sats,
+              trimmed,
+              shownFiatForSats(sats, rateDay),
+            );
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -929,7 +936,13 @@ export function MemberProfileScreen({
       return (async () => {
         let minted: ForumPayInvoice | null = null;
         try {
-          const invoice = await postMessageInvoice(token, messageId, sats);
+          const invoice = await postMessageInvoice(
+            token,
+            messageId,
+            sats,
+            undefined,
+            shownFiatForSats(sats, rateDay),
+          );
           if (generation !== payPollGeneration.current) {
             return null;
           }

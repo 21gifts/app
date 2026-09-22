@@ -15,6 +15,7 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { shownFiatForSats } from '@/lib/stats-money';
 import {
   dismissForumLaws,
   fetchMessagePhoto,
@@ -1556,6 +1557,7 @@ export function ForumLoader({
           target.messageId,
           1,
           postAfterPay ? undefined : trimmed,
+          shownFiatForSats(1, rateDay),
         );
         setPayMessageId(target.messageId);
         setPayError(null);
@@ -1709,7 +1711,13 @@ export function ForumLoader({
       return (async () => {
         let minted: ForumPayInvoice | null = null;
         try {
-          const invoice = await postMessageInvoice(session, messageId, sats);
+          const invoice = await postMessageInvoice(
+            session,
+            messageId,
+            sats,
+            undefined,
+            shownFiatForSats(sats, rateDay),
+          );
           if (generation !== payPollGeneration.current) {
             return null;
           }
@@ -1914,8 +1922,14 @@ export function ForumLoader({
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(session, parentId, sats)
-          : await postMessageInvoice(session, parentId, sats, trimmed);
+          ? await postMessageInvoice(session, parentId, sats, undefined, shownFiatForSats(sats, rateDay))
+          : await postMessageInvoice(
+              session,
+              parentId,
+              sats,
+              trimmed,
+              shownFiatForSats(sats, rateDay),
+            );
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -1980,6 +1994,7 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        shownFiatForSats(sats, rateDay),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {

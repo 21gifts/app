@@ -1657,6 +1657,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount.
 - **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`.
 
+## Function: shownFiatForSats
+
+- **Purpose:** The four fiat amounts shown for a sat amount the visitor is about to pay, using the same gift day as the preview.
+- **Inputs:** Whole `sats` and `rateDay` (`FiatRateDay | null`).
+- **Returns / side effects:** `{ amountUsd, amountChf, amountEur, amountPhp }`, each a two-decimal string or `null`. No I/O.
+- **Used by:** `ForumLoader`, `InboxLoader`, `MemberProfileScreen`, `PublicMessageThread`.
+
 ## Function: satsToFiatAmount
 
 - **Purpose:** Scales whole sats into a two-decimal fiat string using one gift day's totals (`Math.round` on cents).
@@ -1673,8 +1680,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   is omitted/`undefined` for that fiat and `rateDay` is `null` or the conversion is unusable.
 - **Inputs:** Whole sats, latest `FiatRateDay` or `null`, visitor `FiatCode`, number-format
   style, optional `stored` `{ amountUsd?, amountChf?, amountEur?, amountPhp? }` (`string | null`).
-  A present string is formatted as-is (`rateDay` ignored). A present `null` is ₿-only. A
-  missing field falls through to the live rate.
+  A present string is formatted as-is (`rateDay` ignored). A present `null` or a missing
+  field on a passed `stored` object is ₿-only. Only an omitted `stored` argument uses the live rate.
 - **Returns / side effects:** `ReactElement | null`. No side effects.
 - **Used by:** `ForumBoard`, `InboxScreen`, `QuotedForumNote`, `PublicMessageLoader`.
 

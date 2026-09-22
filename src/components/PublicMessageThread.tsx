@@ -21,7 +21,7 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt } from '@/lib/roles';
-import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
+import { latestRateDay, shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -629,6 +629,7 @@ export function PublicMessageThread(props: {
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        shownFiatForSats(sats, rateDay),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -692,8 +693,14 @@ export function PublicMessageThread(props: {
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(token, parentId, sats)
-          : await postMessageInvoice(token, parentId, sats, trimmed);
+          ? await postMessageInvoice(token, parentId, sats, undefined, shownFiatForSats(sats, rateDay))
+          : await postMessageInvoice(
+              token,
+              parentId,
+              sats,
+              trimmed,
+              shownFiatForSats(sats, rateDay),
+            );
       /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
         return;
@@ -804,7 +811,13 @@ export function PublicMessageThread(props: {
       return (async () => {
         let minted: ForumPayInvoice | null = null;
         try {
-          const invoice = await postMessageInvoice(token, messageId, sats);
+          const invoice = await postMessageInvoice(
+            token,
+            messageId,
+            sats,
+            undefined,
+            shownFiatForSats(sats, rateDay),
+          );
           if (generation !== payPollGeneration.current) {
             return null;
           }

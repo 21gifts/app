@@ -1649,6 +1649,7 @@ export async function fetchComposeTarget(
  * @param messageId - Forum message UUID from the public JSON.
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
+ * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
  * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -1659,6 +1660,12 @@ export async function postMessageInvoice(
   messageId: string,
   sats: number,
   text?: string,
+  shown?: {
+    amountUsd: string | null;
+    amountChf: string | null;
+    amountEur: string | null;
+    amountPhp: string | null;
+  },
 ): Promise<MessageInvoice> {
   const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
     method: 'POST',
@@ -1666,7 +1673,11 @@ export async function postMessageInvoice(
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(text === undefined || text === '' ? { sats } : { sats, text }),
+    body: JSON.stringify({
+      sats,
+      ...(text === undefined || text === '' ? {} : { text }),
+      ...(shown === undefined ? {} : shown),
+    }),
   });
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
@@ -1854,6 +1865,7 @@ export async function fetchConversation(
  * @param id - Conversation UUID.
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional comment shown as the gift body.
+ * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
  * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -1864,6 +1876,12 @@ export async function postConversationInvoice(
   id: string,
   sats: number,
   text?: string,
+  shown?: {
+    amountUsd: string | null;
+    amountChf: string | null;
+    amountEur: string | null;
+    amountPhp: string | null;
+  },
 ): Promise<ConversationInvoice> {
   const response = await fetch(`/conversations/${encodeURIComponent(id)}/invoice`, {
     method: 'POST',
@@ -1871,7 +1889,11 @@ export async function postConversationInvoice(
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(text === undefined || text === '' ? { sats } : { sats, text }),
+    body: JSON.stringify({
+      sats,
+      ...(text === undefined || text === '' ? {} : { text }),
+      ...(shown === undefined ? {} : shown),
+    }),
   });
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);

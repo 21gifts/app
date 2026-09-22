@@ -198,6 +198,30 @@ export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | nul
  * @returns Two-decimal string, or `null` when the day or that fiat is missing
  *   or zero (a `"0.00"` gift-day total is not a usable rate).
  */
+/** The four amounts shown next to a sat amount, or null when that currency has no rate. */
+export interface ShownFiat {
+  amountUsd: string | null;
+  amountChf: string | null;
+  amountEur: string | null;
+  amountPhp: string | null;
+}
+
+/**
+ * The fiat the payer sees for these sats, using the same day as the preview.
+ *
+ * @param sats - Whole sats about to be paid.
+ * @param rateDay - Latest gift day, or null when no rate is on screen.
+ * @returns Four strings or nulls. Null is stored as empty, not filled in later.
+ */
+export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): ShownFiat {
+  return {
+    amountUsd: satsToFiatAmount(sats, rateDay, 'USD'),
+    amountChf: satsToFiatAmount(sats, rateDay, 'CHF'),
+    amountEur: satsToFiatAmount(sats, rateDay, 'EUR'),
+    amountPhp: satsToFiatAmount(sats, rateDay, 'PHP'),
+  };
+}
+
 export function satsToFiatAmount(
   sats: number,
   day: FiatRateDay | null,
