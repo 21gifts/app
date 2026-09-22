@@ -3531,6 +3531,23 @@ test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ requ
   expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
 });
 
+test('Function: fetchPostStats — stats page shows notes and replies as posts', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.route('**/messages/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        postCount: 4,
+        postsOverTime: [{ day: '2026-08-01', postCount: 4 }],
+      }),
+    });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('region', { name: 'Posts' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Posts' })).toContainText('4');
+});
+
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');

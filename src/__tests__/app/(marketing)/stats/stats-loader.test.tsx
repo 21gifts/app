@@ -28,15 +28,19 @@ const EMPTY: GiftStats = {
 
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn(),
+  fetchPostStats: vi.fn().mockResolvedValue({ postCount: 0, postsOverTime: [] }),
 }));
 
-import { fetchGiftStats } from '@/lib/api';
+import { fetchGiftStats, fetchPostStats } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchGiftStats);
+const fetchPostsMock = vi.mocked(fetchPostStats);
 
 afterEach(() => {
   cleanup();
   fetchMock.mockReset();
+  fetchPostsMock.mockReset();
+  fetchPostsMock.mockResolvedValue({ postCount: 0, postsOverTime: [] });
 });
 
 describe('StatsLoader', () => {

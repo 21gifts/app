@@ -155,6 +155,40 @@ const EMPTY: GiftStats = {
 };
 
 describe('StatsDashboard', () => {
+  it('shows living notes and replies as one post count', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        posts={{
+          postCount: 3,
+          postsOverTime: [
+            { day: '2026-08-01', postCount: 0 },
+            { day: '2026-08-02', postCount: 3 },
+          ],
+        }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const posts = screen.getByRole('region', { name: 'Posts' });
+    expect(posts.textContent).toContain('3');
+    expect(posts.textContent).toContain('Notes and replies');
+  });
+
+  it('shows a posts total without bars when no day has a note', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        posts={{ postCount: 0, postsOverTime: [] }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Posts' }).textContent).toContain('0');
+  });
+
   it('shows loading copy', () => {
     renderWithLocale(
       <StatsDashboard stats={null} error={null} loading={true} onRetry={() => undefined} />,
