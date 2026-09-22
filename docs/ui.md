@@ -1041,7 +1041,7 @@ Handbook states: default (activate), phrase, setup (Continue), confirm, reveal (
 
 ### `/pos`
 
-Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate screen="profile"`. Card: **h1** `pos.title`, the public `username@21.gifts` row, and on desktop and iPad the same Open CryptoPay QR as the member card (`profileQrLogo` centered). Amount field and **Create payment** when nothing is open. While a charge is open: remaining `m:ss`, the amount in ₿, **Cancel**. History lists recent rows as open, cancelled, or expired. There is no paid state. Missing username or Wallet of Satoshi address links to `/profile`.
+Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate screen="profile"`. `Card` `surface={false}`: **h1** `pos.title`, the public `username@21.gifts` row, and on desktop and iPad the same Open CryptoPay QR as the member card (`profileQrLogo` centered). Amount field and **Create payment** when nothing is open. While a charge is open: remaining `m:ss`, the amount in ₿, **Cancel**. History lists recent rows as open, cancelled, or expired. There is no paid state. Missing username or Wallet of Satoshi address links to `/profile`.
 
 ### `/profile`
 

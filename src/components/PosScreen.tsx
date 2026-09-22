@@ -63,20 +63,27 @@ export function PosScreen(): ReactElement {
     if (session === null) {
       return;
     }
-    let cancelled = false;
+    let alive = true;
+    const mine = generation.current;
     fetchPosState(session)
       .then((next) => {
-        if (!cancelled) {
-          setState(next);
+        if (!alive) {
+          return;
         }
+        whenCurrent(generation, mine, () => {
+          setState(next);
+        });
       })
       .catch(() => {
-        if (!cancelled) {
-          setError(t('pos.error'));
+        if (!alive) {
+          return;
         }
+        whenCurrent(generation, mine, () => {
+          setError(t('pos.error'));
+        });
       });
     return () => {
-      cancelled = true;
+      alive = false;
     };
   }, [session, t]);
 
@@ -101,11 +108,17 @@ export function PosScreen(): ReactElement {
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
 
   useEffect(() => {
-    if (session === null || charge === null || remaining > 0 || refreshed.current === charge.id) {
+    if (
+      session === null ||
+      busy ||
+      charge === null ||
+      remaining > 0 ||
+      refreshed.current === charge.id
+    ) {
       return;
     }
     refreshed.current = charge.id;
-    const mine = ++generation.current;
+    const mine = generation.current;
     fetchPosState(session)
       .then((next) => {
         whenCurrent(generation, mine, () => {
@@ -117,7 +130,7 @@ export function PosScreen(): ReactElement {
           setError(t('pos.error'));
         });
       });
-  }, [charge, remaining, session, t]);
+  }, [busy, charge, remaining, session, t]);
 
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -157,9 +170,7 @@ export function PosScreen(): ReactElement {
         }
       });
     } finally {
-      whenCurrent(generation, mine, () => {
-        setBusy(false);
-      });
+      setBusy(false);
     }
   }
 
@@ -181,14 +192,12 @@ export function PosScreen(): ReactElement {
         setError(t('pos.error'));
       });
     } finally {
-      whenCurrent(generation, mine, () => {
-        setBusy(false);
-      });
+      setBusy(false);
     }
   }
 
   return (
-    <Card className="mx-auto flex w-full max-w-sm flex-col gap-6">
+    <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold text-app-fg">{t('pos.title')}</h1>
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3 border-t border-app-border pt-6">

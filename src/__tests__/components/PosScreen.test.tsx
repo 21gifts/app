@@ -363,6 +363,45 @@ describe('PosScreen', () => {
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
+  it('finishes cancel when the countdown ends while cancel is in flight', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 400).toISOString(),
+    };
+    let releaseDelete: ((value: Response) => void) | undefined;
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        calls += 1;
+        if (calls === 1) {
+          return jsonResponse({ charge, history: [charge] });
+        }
+        if (init?.method === 'DELETE') {
+          return new Promise<Response>((resolve) => {
+            releaseDelete = resolve;
+          });
+        }
+        return jsonResponse({ charge: null, history: [] });
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1_200);
+    });
+    await act(async () => {
+      releaseDelete?.(jsonResponse({ charge: null }));
+      await Promise.resolve();
+    });
+    const create = await screen.findByRole('button', { name: 'Create payment' });
+    expect(create.hasAttribute('disabled')).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+  });
+
   it('does not create a payment after the session disappears', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
     vi.stubGlobal('fetch', fetchMock);
