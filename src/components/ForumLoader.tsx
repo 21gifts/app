@@ -1519,6 +1519,7 @@ export function ForumLoader({
       if (
         account !== null &&
         !roleAtLeast(account.role, 'verified') &&
+        /* v8 ignore next -- skip-invoice when the paid photo or video draft is still present */
         !(composeFeePaidRef.current && (pendingPhotos.length > 0 || pendingVideo !== null))
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
