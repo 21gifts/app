@@ -1022,6 +1022,15 @@ describe('forumMessageSchema place', () => {
     ).toEqual({ lat: 1.2, lng: 3.4, label: 'Harbor' });
   });
 
+  it('accepts a place that omits the label', () => {
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 1.2, lng: 3.4 },
+      }).place,
+    ).toEqual({ lat: 1.2, lng: 3.4 });
+  });
+
   it('accepts a null place label', () => {
     expect(
       forumMessageSchema.parse({

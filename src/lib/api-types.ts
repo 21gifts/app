@@ -433,7 +433,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
 export const forumPlacePinSchema = z.object({
   lat: z.number().gte(-90).lte(90),
   lng: z.number().gte(-180).lte(180),
-  label: z.string().max(80).nullable(),
+  label: z.string().max(80).nullish(),
 });
 
 /**

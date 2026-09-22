@@ -1779,6 +1779,19 @@ describe('postMessage', () => {
     });
   });
 
+  it('omits a place pin on a reply', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', {
+      text: 'Hello from Ada',
+      inReplyTo: 'parent',
+      place: { lat: 1, lng: 2, label: 'Stall' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+      inReplyTo: 'parent',
+    });
+  });
+
   it('includes inReplyTo when provided', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     await postMessage('sess', { text: 'Hello from Ada', inReplyTo: 'parent' });

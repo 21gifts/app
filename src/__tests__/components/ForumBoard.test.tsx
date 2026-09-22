@@ -276,7 +276,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
-  it('links a note and a reply to the map pin', () => {
+  it('links a top-level note to the map and ignores a reply pin', () => {
     renderWithLocale(
       <ForumBoard
         messages={[
@@ -324,12 +324,8 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('link', { name: '1.00000, 2.00000' }).getAttribute('href')).toBe(
       '/map?pin=m-coords',
     );
-    const replyPin = screen.getByRole('link', { name: 'Stall' });
-    expect(replyPin.getAttribute('href')).toBe('/map?pin=r1');
-    fireEvent.click(replyPin);
-    expect(screen.getByRole('link', { name: '5.00000, 6.00000' }).getAttribute('href')).toBe(
-      '/map?pin=r2',
-    );
+    expect(screen.queryByRole('link', { name: 'Stall' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '5.00000, 6.00000' })).toBeNull();
   });
 
   it('keeps a long note full when truncate is off', () => {

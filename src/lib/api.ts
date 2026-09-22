@@ -1576,7 +1576,7 @@ export async function postMessage(
       ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
       ...(inReplyTo !== undefined ? { inReplyTo } : {}),
       ...(goalSats !== undefined ? { goalSats } : {}),
-      ...(input.place !== undefined ? { place: input.place } : {}),
+      ...(inReplyTo === undefined && input.place !== undefined ? { place: input.place } : {}),
     }),
   });
   if (response.status === 400 || response.status === 429) {

@@ -1092,7 +1092,7 @@ export function ForumBoard({
                     )}
                   </div>
                 ) : null}
-                {message.place !== undefined ? (
+                {message.parentId === undefined && message.place !== undefined ? (
                   <Link
                     href={`/map?pin=${encodeURIComponent(message.id)}`}
                     className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
