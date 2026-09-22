@@ -666,9 +666,7 @@ export function ForumBoard({
   permalinkTargetId = null,
   truncate = true,
   placeDraft = null,
-  onPlaceDraftChange = () => {
-    /* default no-op so existing callers compile */
-  },
+  onPlaceDraftChange,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -1695,7 +1693,9 @@ export function ForumBoard({
             >
               <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
             </IconButton>
-            <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
+            {onPlaceDraftChange !== undefined ? (
+              <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
+            ) : null}
             <input
               ref={fileInputRef}
               type="file"
