@@ -2734,7 +2734,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotificationsScreen
 
-- **Purpose:** Presentational notifications list of living-room posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`; `moderator_appointed` title uses `notifications.moderatorAppointed` with no `{name}` placeholder; post text or **Photo**, reply text or **Photo reaction**, zap amount as stored, moderator appointment or proposal body only when `text` is non-empty — empty `text` omits the body line and does not use `notifications.photoPost` / `photoOnly`; time; unread semibold). `onOpen` receives the row object. No composer, no thread view, and no filter.
+- **Purpose:** Presentational notifications list of living-room posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`; `moderator_appointed` title uses `notifications.moderatorAppointed` with no `{name}` placeholder; post text or **Photo**, except a `forum_post` whose `text` equals `name` omits the body (profile-note leftover); reply text or **Photo reaction**, zap amount as stored, moderator appointment or proposal body only when `text` is non-empty — empty `text` omits the body line and does not use `notifications.photoPost` / `photoOnly`; time; unread semibold). `onOpen` receives the row object. No composer, no thread view, and no filter.
 - **Inputs:** List state from `NotificationsLoader` (`notifications`, `error`, `loading`, `onRetry`, `onOpen`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `NotificationsLoader`.
