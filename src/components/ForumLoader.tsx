@@ -2249,6 +2249,7 @@ export function ForumLoader({
           setComposeIntent(intent);
           if (intent === 'ask') {
             setPlaceDraft(null);
+            pendingComposePlaceRef.current = null;
           }
           if (intent === 'post') {
             setAskStep(1);
