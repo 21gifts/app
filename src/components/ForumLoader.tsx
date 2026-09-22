@@ -1204,11 +1204,6 @@ export function ForumLoader({
               try {
                 if (baselineOwn !== null) {
                   ownContent = (await countOwn()) > baselineOwn;
-                } else {
-                  /* v8 ignore start -- countOwn threw before the loop */
-                  baselineOwn = await countOwn();
-                  ownContent = false;
-                  /* v8 ignore stop */
                 }
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
