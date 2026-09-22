@@ -406,6 +406,8 @@ export function ForumLoader({
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
+  const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
+  const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -1140,6 +1142,7 @@ export function ForumLoader({
     baselineSats: number,
     switchToAll = false,
     replyParentId: string | null = null,
+    postAfterPay = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -1187,7 +1190,9 @@ export function ForumLoader({
           }
           if (next !== null && next.sats > baselineSats) {
             let ownContent = !composePay;
-            if (composePay) {
+            if (composePay && postAfterPay) {
+              ownContent = true;
+            } else if (composePay) {
               try {
                 ownContent = (await countOwn()) > baselineOwn;
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
@@ -1197,6 +1202,38 @@ export function ForumLoader({
               /* v8 ignore stop */
             }
             if (ownContent) {
+              if (postAfterPay) {
+                const caption = pendingComposeTextRef.current ?? '';
+                const photos = pendingComposePhotosRef.current;
+                const video = pendingComposeVideoRef.current;
+                try {
+                  const created =
+                    video !== null
+                      ? await postMessageVideo(session, {
+                          text: caption,
+                          video: video.file,
+                          poster: video.poster,
+                        })
+                      : await postMessage(session, {
+                          text: caption,
+                          ...(photos.length === 0
+                            ? {}
+                            : {
+                                photos: photos.map(({ contentType, data }) => ({
+                                  contentType,
+                                  data,
+                                })),
+                              }),
+                        });
+                  applyCreatedNote(created, photos, video);
+                } catch {
+                  setFormError('request');
+                }
+                pendingComposePhotosRef.current = [];
+                pendingComposeVideoRef.current = null;
+                setPhotoDrafts([]);
+                setVideoDraft(null);
+              }
               pendingComposeTextRef.current = null;
               setMessages((prev) => {
                 /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
@@ -1470,8 +1507,14 @@ export function ForumLoader({
     setFormError(null);
     try {
       if (account !== null && !roleAtLeast(account.role, 'verified')) {
+        const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
         const target = await fetchComposeTarget(session);
-        const invoice = await postMessageInvoice(session, target.messageId, 1, trimmed);
+        const invoice = await postMessageInvoice(
+          session,
+          target.messageId,
+          1,
+          hasMedia ? undefined : trimmed,
+        );
         setPayMessageId(target.messageId);
         setPayError(null);
         setPayInvoice({
@@ -1481,11 +1524,15 @@ export function ForumLoader({
         });
         setPayHost('composer');
         pendingComposeTextRef.current = trimmed;
-        startPayPoll(target.messageId, target.sats, true);
+        pendingComposePhotosRef.current = pendingPhotos;
+        pendingComposeVideoRef.current = pendingVideo;
+        startPayPoll(target.messageId, target.sats, true, null, hasMedia);
         pendingPostRef.current = null;
         setDraft('');
-        setPhotoDrafts([]);
-        setVideoDraft(null);
+        if (!hasMedia) {
+          setPhotoDrafts([]);
+          setVideoDraft(null);
+        }
         return;
       }
       const created =

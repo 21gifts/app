@@ -1819,25 +1819,6 @@ describe('ForumBoard', () => {
     expect(document.querySelector('[data-message-id="fee-note"]')).not.toBeNull();
   });
 
-  it('shows the basis-media composer error', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError="basisMedia"
-        {...idleProps}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('alert').textContent).toMatch(/verified/i);
-  });
-
   it('does not duplicate the composer pay sheet when the target is a loaded reply', () => {
     renderWithLocale(
       <ForumBoard

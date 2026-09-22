@@ -2537,7 +2537,7 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
   });
 
-  it('rejects a basis photo draft instead of invoicing 21.gifts', async () => {
+  it('invoices 21.gifts for a basis photo draft', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
@@ -2561,9 +2561,12 @@ describe('ForumLoader', () => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toMatch(/verified/i);
-    expect(composeTargetMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+    });
     expect(postMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {

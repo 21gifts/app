@@ -1786,11 +1786,6 @@ export function ForumBoard({
           {t('forum.errorUnsupported')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'basisMedia' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorBasisMedia')}
-        </p>
-      ) : null}
       {!composerHidden && formError === 'tooLarge' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLarge')}
