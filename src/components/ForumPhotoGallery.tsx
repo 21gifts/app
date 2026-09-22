@@ -57,15 +57,6 @@ function slideStride(scroller: HTMLElement): number {
 }
 
 /**
- * Horizontal snap gallery for a note with more than one still: earlier slides
- * are 88% wide so the next photo peeks; the last slide is full width so it can
- * sit flush at snap-start. A `current/total` chip sits on the visible still,
- * and dots jump to a still.
- *
- * @param props - See {@link ForumPhotoGalleryProps}.
- * @returns The gallery, or `null` when `photos` is empty.
- */
-/**
  * Stored civil capture time with `T` shown as a space.
  *
  * @param value - API `photoTakenAt` string, or null/undefined.
@@ -81,6 +72,15 @@ export function civilTakenLabel(value: string | null | undefined): string | null
   return value.replace('T', ' ');
 }
 
+/**
+ * Horizontal snap gallery for a note with more than one still: earlier slides
+ * are 88% wide so the next photo peeks; the last slide is full width so it can
+ * sit flush at snap-start. A `current/total` chip sits on the visible still,
+ * and dots jump to a still.
+ *
+ * @param props - See {@link ForumPhotoGalleryProps}.
+ * @returns The gallery, or `null` when `photos` is empty.
+ */
 export function ForumPhotoGallery({
   photos,
   alt,
