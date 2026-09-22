@@ -74,6 +74,11 @@ afterEach(() => {
 });
 
 describe('AboutMeSection', () => {
+  it('opens the editor when startEditing is set', () => {
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} startEditing />);
+    expect(screen.getByRole('textbox', { name: 'About me' })).toBeTruthy();
+  });
+
   it('shows the empty prompt and Write button in owner mode when aboutMe is null', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} />);
     expect(screen.getByText('About me')).toBeTruthy();

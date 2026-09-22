@@ -53,6 +53,11 @@ describe('LocationForm', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('opens the field when startEditing is set', () => {
+    renderWithLocale(<LocationForm startEditing />);
+    expect(screen.getByRole('textbox', { name: 'Location' })).toBeTruthy();
+  });
+
   it('shows the heading and muted unset copy with an edit control', () => {
     renderWithLocale(<LocationForm />);
     expect(screen.getByText('Location')).toBeTruthy();

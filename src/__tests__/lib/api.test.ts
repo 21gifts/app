@@ -3630,6 +3630,33 @@ describe('postFundingApply', () => {
     });
   });
 
+  it('rethrows a 400 About me body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'About me is required' } });
+    await expect(postFundingApply('sess')).rejects.toThrow('About me is required');
+  });
+
+  it('rethrows a 400 About me photo body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'About me photo is required' } });
+    await expect(postFundingApply('sess')).rejects.toThrow('About me photo is required');
+  });
+
+  it('rethrows a 400 Location body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Location is required' } });
+    await expect(postFundingApply('sess')).rejects.toThrow('Location is required');
+  });
+
+  it('throws visitor copy on 400 without an error body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new Error('no json')),
+      }),
+    );
+    await expect(postFundingApply('sess')).rejects.toThrow(loadError);
+  });
+
   it('throws visitor copy on 403', async () => {
     stubFetch({ ok: false, status: 403, body: {} });
     await expect(postFundingApply('sess')).rejects.toThrow(loadError);

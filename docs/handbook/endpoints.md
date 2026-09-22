@@ -508,9 +508,9 @@
 
 ## Endpoint: POST /funding/apply
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. Effective `none` or `rejected` becomes pending.
-- **Errors:** Upstream 401/403/409/503, or 502 if the api is unreachable.
-- **Used by:** `postFundingApply` via `FundingStatusCard` on `/profile`.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. About me, About me photo, and location are required (400). Effective `none` or `rejected` becomes pending.
+- **Errors:** Upstream 400/401/403/409/503, or 502 if the api is unreachable.
+- **Used by:** `postFundingApply` via `FundingApplyScreen` on `/profile/apply`.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/applications

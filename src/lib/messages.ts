@@ -682,6 +682,12 @@ const en = {
   'funding.grace':
     'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
+  'funding.apply.heading': 'Apply for the 21 gifts grant',
+  'funding.apply.about': 'First, write a short About me so people can get to know you.',
+  'funding.apply.photo': 'Next, add a photo to your About me.',
+  'funding.apply.location': 'Next, add the place you live.',
+  'funding.apply.unmet': 'When your posts match, you can apply again.',
+  'funding.apply.back': 'Back to profile',
   'funding.pending': 'Your application is open. A moderator will review your posts.',
   'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
   'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
@@ -1418,6 +1424,13 @@ const de = {
   'funding.grace':
     'Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem Tag erhalten nur noch zugelassene Mitglieder welche. Bewerben Sie sich jetzt, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
+  'funding.apply.heading': 'Für 21 Förderprogramm bewerben',
+  'funding.apply.about':
+    'Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können.',
+  'funding.apply.photo': 'Als Nächstes fügen Sie ein Foto zu Über mich hinzu.',
+  'funding.apply.location': 'Als Nächstes tragen Sie den Ort ein, an dem Sie leben.',
+  'funding.apply.unmet': 'Wenn Ihre Beiträge passen, können Sie sich erneut bewerben.',
+  'funding.apply.back': 'Zurück zum Profil',
   'funding.pending':
     'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
   'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
@@ -2140,6 +2153,12 @@ const es = {
   'funding.grace':
     'Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día, solo las personas admitidas los reciben. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
+  'funding.apply.heading': 'Solicitar la beca 21 gifts',
+  'funding.apply.about': 'Primero, escribe un breve Sobre mí para que la gente te conozca.',
+  'funding.apply.photo': 'Después, añade una foto a tu Sobre mí.',
+  'funding.apply.location': 'Después, añade el lugar donde vives.',
+  'funding.apply.unmet': 'Cuando tus mensajes coincidan, puedes solicitar de nuevo.',
+  'funding.apply.back': 'Volver al perfil',
   'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
   'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
   'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
@@ -2867,6 +2886,12 @@ const fil = {
   'funding.grace':
     'Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa araw na iyon, admitted members na lang ang tatanggap. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
+  'funding.apply.heading': 'Mag-apply para sa 21 gifts grant',
+  'funding.apply.about': 'Una, magsulat ng maikling About me para makilala ka ng iba.',
+  'funding.apply.photo': 'Sunod, magdagdag ng larawan sa About me.',
+  'funding.apply.location': 'Sunod, ilagay ang lugar kung saan ka nakatira.',
+  'funding.apply.unmet': 'Kapag tumugma na ang iyong mga post, maaari kang mag-apply ulit.',
+  'funding.apply.back': 'Bumalik sa profile',
   'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
   'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
   'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',

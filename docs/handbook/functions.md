@@ -179,9 +179,9 @@
 ## Function: LocationForm
 
 - **Purpose:** Logged-in profile row to set, edit, or clear a free-text location. Icon-only actions (pencil / check / X / trash). Empty after trim is a valid save and clears. Not an onboarding step and has no Skip.
-- **Inputs:** Reads `useAuthStore`. User input: location string. Visitor-facing copy via `useTranslations` (`location.*`). Request failures use `location.errorRequest`.
+- **Inputs:** Reads `useAuthStore`. Optional `startEditing` opens the field on mount. User input: location string. Visitor-facing copy via `useTranslations` (`location.*`). Request failures use `location.errorRequest`.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/location` on save or clear. Merges only `location` so a concurrent name or address write is not overwritten.
-- **Used by:** `ProfileScreen` on `/profile`.
+- **Used by:** `ProfileScreen` on `/profile`, `FundingApplyScreen` on `/profile/apply`.
 
 ## Function: LightningAddressForm
 
@@ -392,9 +392,9 @@
 ## Function: AboutMeSection
 
 - **Purpose:** Profile-card About me block: heading plus filled text and/or photo, or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`, attach a JPEG/PNG/WebP with ImagePlus (`prepareForumPhoto`, no video), preview, and remove. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`.
-- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets).
+- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `startEditing` to open the owner editor on mount.
 - **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save. Loads a blob URL when `hasPhoto` and `loadPhoto` are set; revokes it on unmount.
-- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`).
+- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), `FundingApplyScreen` on `/profile/apply`.
 
 ## Function: PushToggle
 
@@ -1250,10 +1250,10 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: postFundingApply
 
-- **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403.
+- **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403. 400 `About me is required` / `About me photo is required` / `Location is required` are rethrown; other failures use visitor copy `Could not submit your application. Please try again.`
 - **Inputs:** Bearer `sessionToken`.
-- **Returns / side effects:** Updated `OwnerFunding`. Throws visitor copy `Could not submit your application. Please try again.` on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `FundingStatusCard`.
+- **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `FundingApplyScreen`.
 
 ## Function: fetchFundingApplications
 
@@ -2930,10 +2930,45 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner profile grant section after the Lightning Address form. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): grace copy that daily gifts continue until 25 September 2026, an **About** link to `/about`, and **Apply for the 21 gifts grant** for `none`/`rejected` (no denial sentence and no conviction titles); pending; one-day trial; or admitted with **Reviewed by a moderator** and `admittedAt`. Apply posts `postFundingApply` and merges the returned `funding` into the store account.
+- **Purpose:** Owner profile grant section after the Lightning Address form. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): grace copy that daily gifts continue until 25 September 2026, an **About** link to `/about`, and **Apply for the 21 gifts grant** as a `ButtonLink` to `/profile/apply` for `none`/`rejected` (no denial sentence and no conviction titles); pending; one-day trial; or admitted with **Reviewed by a moderator** and `admittedAt`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session or account. Apply POSTs `/funding/apply`. A failed apply shows `funding.applyError`.
+- **Returns / side effects:** React element or `null` without a session or account. Apply is a link; it does not POST.
 - **Used by:** `ProfileScreen`.
+
+## Function: FundingApplyPage
+
+- **Purpose:** Next.js page for `/profile/apply`. Fill `AppShell` with `ProfileChromeLeft`, `SignedInChrome`, and `OnboardingGate screen="profile"` around `FundingApplyScreen`.
+- **Inputs:** None.
+- **Returns / side effects:** The apply walk inside fill AppShell.
+- **Used by:** Route `/profile/apply`.
+
+## Function: FundingApplyScreen
+
+- **Purpose:** Guided grant apply. Missing About me, photo, or location are the next calm steps (not errors). Then the same four principle/truth questions as staff review against `fetchMemberPosts`. **Yes** on the last step posts `postFundingApply` and goes to `/profile`. **Requirement not met** / **No** does not apply.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session.
+- **Used by:** `FundingApplyPage`.
+
+## Function: aboutMeFilled
+
+- **Purpose:** True when About me is a real bio (not empty or the display-name auto note).
+- **Inputs:** `aboutMe`, `name`.
+- **Returns / side effects:** boolean.
+- **Used by:** `nextFillStep`, `FundingApplyScreen`.
+
+## Function: locationFilled
+
+- **Purpose:** True when location is a non-empty trimmed string.
+- **Inputs:** `location`.
+- **Returns / side effects:** boolean.
+- **Used by:** `nextFillStep`, `FundingApplyScreen`.
+
+## Function: nextFillStep
+
+- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present.
+- **Inputs:** Owner `Account`.
+- **Returns / side effects:** `'about' | 'photo' | 'location' | null`.
+- **Used by:** `FundingApplyScreen`.
 
 ## Function: ModeratorGroupPage
 

@@ -931,8 +931,10 @@ const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The updated {@link OwnerFunding} object.
- * @throws Error with visitor-facing copy on 401/403/409/503, other non-2xx, a
- * network failure, or a body that fails {@link fundingApplyResponseSchema}.
+ * @throws Error with the API string on 400 `About me is required`,
+ * `About me photo is required`, or `Location is required`. Other 401/403/409/503,
+ * other non-2xx, a network failure, or a body that fails
+ * {@link fundingApplyResponseSchema} use visitor-facing copy.
  */
 export async function postFundingApply(sessionToken: string): Promise<OwnerFunding> {
   try {
@@ -945,10 +947,22 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
       body: JSON.stringify({}),
     });
     if (!response.ok) {
+      if (response.status === 400) {
+        const raw = await readApiError(response);
+        throw new Error(raw === null ? FUNDING_APPLY_ERROR : raw);
+      }
       throw new Error(FUNDING_APPLY_ERROR);
     }
     return fundingApplyResponseSchema.parse(await response.json()).funding;
-  } catch {
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message === 'About me is required' ||
+        err.message === 'About me photo is required' ||
+        err.message === 'Location is required')
+    ) {
+      throw err;
+    }
     throw new Error(FUNDING_APPLY_ERROR);
   }
 }

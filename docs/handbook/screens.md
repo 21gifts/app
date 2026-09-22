@@ -1244,21 +1244,9 @@ Basis owner. Grant section after the address form. Copy **You are not verified y
 
 ### Variant: funding-none
 
-Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and button **Apply for the 21 gifts grant**. No denial sentence and no conviction titles.
+Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and link **Apply for the 21 gifts grant** to `/profile/apply`. No denial sentence and no conviction titles.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
-
-### Variant: funding-applying
-
-Verified owner with `funding.status` **none** after Apply is in flight. Apply button disabled with a spinner.
-
-![21.gifts profile funding applying](images/profile-funding-applying.png)
-
-### Variant: funding-apply-error
-
-Verified owner with `funding.status` **none** after Apply fails (`POST /funding/apply` 500). `role="alert"` copy **Could not submit your application. Please try again.** Apply button remains.
-
-![21.gifts profile funding apply error](images/profile-funding-apply-error.png)
 
 ### Variant: funding-pending
 
@@ -1277,6 +1265,115 @@ Verified owner with `funding.status` **trial**. Copy **You are on a one-day tria
 Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Reviewed by a moderator on {date}**.
 
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
+
+## Screen: /profile/apply
+
+- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then the same four principle/truth questions as staff review against the applicant’s living-room posts. Yes submits `POST /funding/apply`. Unmet or No does not submit.
+- **Inputs:** Session account; `GET /forum/members/:id/posts`; `PUT /me/about`; `POST /me/location`; `POST /funding/apply`.
+- **Actions:** Fill About me, add a photo, set location, walk principles 1–3 and truth, apply or go back to `/profile`.
+- **Used by:** Route `/profile/apply` (`FundingApplyPage`).
+
+### Variant: default
+
+Verified none/rejected with empty About me. Copy **First, write a short About me so people can get to know you.** No `role="alert"`.
+
+![21.gifts apply](images/profile-apply.png)
+
+### Variant: photo
+
+About me filled, no photo. Copy **Next, add a photo to your About me.**
+
+![21.gifts apply photo](images/profile-apply-photo.png)
+
+### Variant: location
+
+About me and photo set, location empty. Copy **Next, add the place you live.**
+
+![21.gifts apply location](images/profile-apply-location.png)
+
+### Variant: principle-1
+
+Profile complete. Copy **Please check whether the posts match principle 1.**
+
+![21.gifts apply principle 1](images/profile-apply-principle-1.png)
+
+### Variant: principle-2
+
+After Requirement met on principle 1. Copy **Please check whether the posts match principle 2.**
+
+![21.gifts apply principle 2](images/profile-apply-principle-2.png)
+
+### Variant: principle-3
+
+After Requirement met on principle 2. Copy **Please check whether the posts match principle 3.**
+
+![21.gifts apply principle 3](images/profile-apply-principle-3.png)
+
+### Variant: truth
+
+After Requirement met on principle 3. Copy **Do these posts, to your knowledge, correspond to the truth?**
+
+![21.gifts apply truth](images/profile-apply-truth.png)
+
+### Variant: forbidden
+
+Basis visitor. Copy **You are not verified yet.**
+
+![21.gifts apply forbidden](images/profile-apply-forbidden.png)
+
+### Variant: pending
+
+Already pending. Copy **Your application is open. A moderator will review your posts.**
+
+![21.gifts apply pending](images/profile-apply-pending.png)
+
+### Variant: trial
+
+Already on a one-day trial. Copy **You are on a one-day trial. Review repeats tomorrow.**
+
+![21.gifts apply trial](images/profile-apply-trial.png)
+
+### Variant: admitted
+
+Already admitted. Copy **You are admitted to daily 21.gifts grant payouts.**
+
+![21.gifts apply admitted](images/profile-apply-admitted.png)
+
+### Variant: empty-posts
+
+Profile complete, no living-room posts. Copy **No living-room posts.**
+
+![21.gifts apply empty posts](images/profile-apply-empty-posts.png)
+
+### Variant: loading
+
+Posts fetch hanging. Copy **Loading…**
+
+![21.gifts apply loading](images/profile-apply-loading.png)
+
+### Variant: error
+
+Posts fetch failed. `role="alert"` **Could not load this application. Please try again.**
+
+![21.gifts apply error](images/profile-apply-error.png)
+
+### Variant: applying
+
+Yes in flight. Yes button disabled.
+
+![21.gifts apply applying](images/profile-apply-applying.png)
+
+### Variant: apply-failed
+
+Yes failed. `role="alert"` **Could not submit your application. Please try again.**
+
+![21.gifts apply failed](images/profile-apply-apply-failed.png)
+
+### Variant: unmet
+
+Requirement not met. Copy **When your posts match, you can apply again.** No alert.
+
+![21.gifts apply unmet](images/profile-apply-unmet.png)
 
 ## Screen: /messages
 
