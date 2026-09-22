@@ -461,7 +461,7 @@ describe('ForumLoader', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
-    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
     await waitFor(() => {
       expect(screen.getByText('How much?')).toBeTruthy();

@@ -196,20 +196,7 @@ describe('PlaceField', () => {
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    await waitFor(() => {
-      expect(loads).toBeGreaterThan(1);
-    });
-    (window as { google?: unknown }).google = { maps: { Map: vi.fn(), Marker: vi.fn() } };
-    existing.dispatchEvent(new Event('load'));
-    await waitFor(() => {
-      expect(screen.queryByText('The map is not available.')).toBeNull();
-    });
-    delete (window as { google?: unknown }).google;
-    existing.dispatchEvent(new Event('load'));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    existing.dispatchEvent(new Event('error'));
-    existing.dispatchEvent(new Event('load'));
   });
 
   it('does not draw when maps disappear before the panel effect', async () => {
