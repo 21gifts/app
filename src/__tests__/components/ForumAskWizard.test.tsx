@@ -236,4 +236,48 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.queryByText('0%')).toBeNull();
   });
+
+  it('starts step 1 with a One-time / Daily pill', () => {
+    const onAskCadenceChange = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        onAskCadenceChange={onAskCadenceChange}
+      />,
+    );
+    expect(screen.getByRole('group', { name: 'One-time or daily' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'One-time' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Daily' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
+    expect(onAskCadenceChange).toHaveBeenCalledWith('daily');
+  });
+
+  it('presses Daily when askCadence is daily', () => {
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard step={1} onStepChange={() => undefined} {...idle} />,
+    );
+    rerender(
+      <ForumAskWizard step={1} onStepChange={() => undefined} {...idle} askCadence="daily" />,
+    );
+    expect(screen.getByRole('button', { name: 'Daily' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'One-time' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'One-time' }));
+  });
+
+  it('hides the cadence pill after step 1', () => {
+    const onStepChange = vi.fn();
+    renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
+    expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Daily' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onStepChange).toHaveBeenCalledWith(3);
+  });
 });

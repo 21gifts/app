@@ -590,6 +590,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('How much?')).toBeTruthy();
     expect(screen.getByLabelText('Ask')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
   });
 
   it('hides the Ask field when composerHidden', () => {

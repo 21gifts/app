@@ -5980,6 +5980,14 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Ask for money' }).click();
+    await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     await expect(page.getByText('How much?')).toBeVisible();
     await page.getByLabel('Ask').fill('1000');
     await expect(page.getByText("₿1'000")).toBeVisible();

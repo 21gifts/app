@@ -24,7 +24,11 @@ import {
   type ReactElement,
 } from 'react';
 import { useAppShellScroller } from '@/components/AppShell';
-import { ForumAskWizard, type ForumAskStep } from '@/components/ForumAskWizard';
+import {
+  ForumAskWizard,
+  type ForumAskCadence,
+  type ForumAskStep,
+} from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
@@ -188,6 +192,10 @@ export interface ForumBoardProps {
   askStep?: ForumAskStep;
   /** Called when the wizard step changes. */
   onAskStepChange?: (step: ForumAskStep) => void;
+  /** One-time or daily Ask. Default `once`. */
+  askCadence?: ForumAskCadence;
+  /** Called when the visitor picks One-time or Daily. */
+  onAskCadenceChange?: (value: ForumAskCadence) => void;
   /** Display name for the Ask preview card. */
   authorName?: string;
   /** Called when the composer form is submitted. */
@@ -595,6 +603,8 @@ export function ForumBoard({
   onComposeIntentChange,
   askStep = 1,
   onAskStepChange,
+  askCadence = 'once',
+  onAskCadenceChange = () => undefined,
   authorName = '',
   onPost,
   onRetry,
@@ -1613,6 +1623,8 @@ export function ForumBoard({
           onStepChange={(next) => {
             onAskStepChange?.(next);
           }}
+          askCadence={askCadence}
+          onAskCadenceChange={onAskCadenceChange}
           askDraft={askDraft}
           onAskDraftChange={onAskDraftChange}
           draft={draft}

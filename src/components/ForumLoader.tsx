@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
+import type { ForumAskCadence } from '@/components/ForumAskWizard';
 import {
   ForumBoard,
   type ForumAskStep,
@@ -348,6 +349,7 @@ export function ForumLoader({
   const [askDraft, setAskDraft] = useState('');
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
+  const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const photoDraftsRef = useRef(photoDrafts);
   photoDraftsRef.current = photoDrafts;
@@ -1527,6 +1529,7 @@ export function ForumLoader({
     setAskDraft('');
     setComposeIntent('post');
     setAskStep(1);
+    setAskCadence('once');
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
@@ -2202,6 +2205,8 @@ export function ForumLoader({
         }}
         askStep={askStep}
         onAskStepChange={setAskStep}
+        askCadence={askCadence}
+        onAskCadenceChange={setAskCadence}
         authorName={account?.name ?? ''}
         onPost={onPost}
         onRetry={() => {
