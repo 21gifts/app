@@ -532,6 +532,20 @@ describe('useWalletPhrase', () => {
     expect(result.current.status).toBe('idle');
   });
 
+  it('does not surface backup-seen error after logout during activate', async () => {
+    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      throw new Error('nope');
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
   it('does not keep a phrase when backup-seen runs after replace then the session ends', async () => {
     vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
