@@ -626,7 +626,7 @@ describe('useWalletPhrase', () => {
     });
     expect(peekSessionPhrase()).toBe(mnemonic);
     expect(result.current.words).toHaveLength(12);
-    expect(result.current.view).toBe('confirm');
+    expect(result.current.view).toBe('phrase');
     expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred');
     expect(result.current.error).toBe('generic');
     expect(result.current.status).toBe('idle');
