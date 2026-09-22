@@ -5146,7 +5146,7 @@ test.describe('welcome forum variants', () => {
   async function seedAda(
     page: Page,
     role: 'basis' | 'verified' | 'moderator' = 'basis',
-    lawsDismissed = false,
+    lawsDismissed = true,
   ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
