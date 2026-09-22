@@ -182,6 +182,34 @@ const TRUST_CHAIN_AROUND_MODERATOR = {
   ],
 };
 
+const POSTS_DEFAULT = {
+  postCount: 6,
+  postsOverTime: [
+    { day: '2026-06-01', postCount: 2 },
+    { day: '2026-06-02', postCount: 0 },
+    { day: '2026-07-01', postCount: 4 },
+  ],
+};
+
+/**
+ * Serves the public posts series so `/stats` baselines include that section.
+ *
+ * @param page - Playwright page.
+ * @param body - Stats payload. Defaults to {@link POSTS_DEFAULT}.
+ */
+async function stubPostStats(
+  page: Page,
+  body: { postCount: number; postsOverTime: { day: string; postCount: number }[] } = POSTS_DEFAULT,
+): Promise<void> {
+  await page.route('**/messages/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
 const STATS_DEFAULT = {
   totalSats: 1500,
   totalBtc: '0.00001500',
@@ -684,6 +712,7 @@ test.describe('screen baselines', () => {
   });
 
   test('screen /stats', async ({ page }) => {
+    await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {
       await route.fulfill({
         status: 200,
@@ -8896,6 +8925,7 @@ test.describe('trust-chain screens', () => {
 
 test.describe('stats variant baselines', () => {
   test('stats usd-scale', async ({ page }) => {
+    await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {
       await route.fulfill({
         status: 200,
@@ -8923,6 +8953,7 @@ test.describe('stats variant baselines', () => {
   });
 
   test('stats empty', async ({ page }) => {
+    await stubPostStats(page, { postCount: 0, postsOverTime: [] });
     await page.route('**/gifts/stats', async (route) => {
       await route.fulfill({
         status: 200,

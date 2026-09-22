@@ -2110,6 +2110,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/trust/appoint-moderator`.
 
+## Function: proxyMessagesStatsGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /messages/stats`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/messages/stats`.
+
 ## Function: proxyGiftsStatsGet
 
 - **Purpose:** Same-origin proxy helper for api `GET /gifts/stats` (forwards `recipient` query).
