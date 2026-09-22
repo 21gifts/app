@@ -336,6 +336,44 @@ describe('useWalletPhrase', () => {
     expect(result.current.status).toBe('idle');
   });
 
+  it('keeps the stored credential id when confirmSaved omits it', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', passkeyCredentialId: 'cred-owner' },
+    });
+    rememberSessionPhrase(mnemonic);
+    vi.mocked(postWalletBackupSeen).mockResolvedValueOnce({
+      ...account,
+      setup: 'name',
+      walletBackupSeenAt: 1,
+      passkeyCredentialId: null,
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.confirmSaved();
+    });
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred-owner');
+  });
+
+  it('stores a null credential id when confirmSaved and the session have none', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', passkeyCredentialId: null },
+    });
+    rememberSessionPhrase(mnemonic);
+    vi.mocked(postWalletBackupSeen).mockResolvedValueOnce({
+      ...account,
+      setup: 'name',
+      walletBackupSeenAt: 1,
+      passkeyCredentialId: null,
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.confirmSaved();
+    });
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBeNull();
+  });
+
   it('confirmSaved posts backup-seen and navigates', async () => {
     useAuthStore.setState({
       session: 'tok',
@@ -553,6 +591,20 @@ describe('useWalletPhrase', () => {
       release?.();
       await first;
     });
+  });
+
+  it('keeps the replace credential id when backup-seen omits it', async () => {
+    vi.mocked(postWalletBackupSeen).mockResolvedValueOnce({
+      ...account,
+      setup: 'name',
+      walletBackupSeenAt: 1,
+      passkeyCredentialId: null,
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred');
   });
 
   it('keeps the phrase when backup-seen fails after replace', async () => {

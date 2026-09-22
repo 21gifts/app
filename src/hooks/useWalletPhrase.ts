@@ -250,7 +250,10 @@ export function useWalletPhrase(): UseWalletPhraseResult {
           if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
             return;
           }
-          setAccount(nextAccount);
+          setAccount({
+            ...nextAccount,
+            passkeyCredentialId: credential.id,
+          });
         } catch (err) {
           if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
             return;
@@ -332,7 +335,13 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus, mnemonic)) {
         return;
       }
-      setAccount(nextAccount);
+      setAccount({
+        ...nextAccount,
+        passkeyCredentialId:
+          nextAccount.passkeyCredentialId ??
+          useAuthStore.getState().account?.passkeyCredentialId ??
+          null,
+      });
       clearSessionPhrase();
       setMnemonic(null);
       setStatus('idle');
