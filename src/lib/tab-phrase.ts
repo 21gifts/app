@@ -4,6 +4,7 @@ let sessionMnemonic: string | null = null;
 const PHRASE_EVENT = '21gifts:wallet-phrase';
 
 function notifyPhraseListeners(): void {
+  /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
     return;
   }
