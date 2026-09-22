@@ -151,8 +151,10 @@ export function PlacesMapScreen(): ReactElement {
   let body: ReactElement;
   if (failed) {
     body = (
-      <div className="flex flex-col items-center gap-3" role="alert">
-        <p className="text-center text-sm text-app-danger">{t('map.error')}</p>
+      <div className="flex flex-col items-center gap-3">
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('map.error')}
+        </p>
         <Button
           type="button"
           variant="secondary"
@@ -169,7 +171,7 @@ export function PlacesMapScreen(): ReactElement {
   } else if (places === null) {
     body = <p className="text-center text-sm text-app-muted">{t('map.loading')}</p>;
   } else if (places.length === 0) {
-    body = <p className="text-center text-sm text-app-fg">{t('map.empty')}</p>;
+    body = <p className="text-center text-sm text-app-muted">{t('map.empty')}</p>;
   } else {
     body = (
       <div className="flex flex-col gap-3">
