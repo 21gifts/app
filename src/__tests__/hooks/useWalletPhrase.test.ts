@@ -436,6 +436,42 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toEqual([]);
   });
 
+  it('does not clear another session phrase when activate goes stale before remember', async () => {
+    const otherMnemonic = 'zoo yellow wood wolf window wild wide width wife winter wisdom wish';
+    vi.mocked(finishPasskeyReplace).mockImplementation(async () => {
+      rememberSessionPhrase(otherMnemonic);
+      useAuthStore.setState({
+        session: 'tok-new',
+        account: { ...account, id: 'acc_2' },
+      });
+      return { ...account, walletRequired: true };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(peekSessionPhrase()).toBe(otherMnemonic);
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('does not clear another session phrase when activate goes stale after remember', async () => {
+    const otherMnemonic = 'zoo yellow wood wolf window wild wide width wife winter wisdom wish';
+    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
+      rememberSessionPhrase(otherMnemonic);
+      useAuthStore.setState({
+        session: 'tok-new',
+        account: { ...account, id: 'acc_2' },
+      });
+      return { ...account, walletBackupSeenAt: 1 };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(peekSessionPhrase()).toBe(otherMnemonic);
+    expect(result.current.status).toBe('idle');
+  });
+
   it('does not keep a phrase when the session ends after mnemonic derivation', async () => {
     vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });

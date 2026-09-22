@@ -65,11 +65,17 @@ function abandonStaleSession(
   token: string,
   setError: (value: WalletPhraseErrorKind | null) => void,
   setStatus: (value: WalletPhraseStatus) => void,
+  ownedMnemonic?: string | null,
 ): boolean {
   if (isCurrentSession(token)) {
     return false;
   }
-  clearSessionPhrase();
+  // Logout/login already dropped the previous tab phrase. Clear only when
+  // this ceremony still owns the RAM words so a newer session's mnemonic
+  // survives.
+  if (ownedMnemonic && peekSessionPhrase() === ownedMnemonic) {
+    clearSessionPhrase();
+  }
   setError(null);
   setStatus('idle');
   return true;
@@ -192,6 +198,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     ceremonyInFlight = true;
     setStatus('busy');
     setError(null);
+    let storedMnemonic: string | undefined;
     try {
       const begin = await startPasskeyReplace(token);
       if (abandonStaleSession(token, setError, setStatus)) {
@@ -235,16 +242,17 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       };
       setAccount(nextAccount);
       rememberSessionPhrase(nextMnemonic);
+      storedMnemonic = nextMnemonic;
       setMnemonic(nextMnemonic);
       if (nextAccount.walletRequired !== true) {
         try {
           nextAccount = await postWalletBackupSeen(token);
-          if (abandonStaleSession(token, setError, setStatus)) {
+          if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
             return;
           }
           setAccount(nextAccount);
         } catch (err) {
-          if (abandonStaleSession(token, setError, setStatus)) {
+          if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
             return;
           }
           fail(err);
@@ -254,7 +262,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       }
       setStatus('idle');
     } catch (err) {
-      if (abandonStaleSession(token, setError, setStatus)) {
+      if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
         return;
       }
       fail(err);
@@ -321,7 +329,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setError(null);
     try {
       const nextAccount = await postWalletBackupSeen(token);
-      if (abandonStaleSession(token, setError, setStatus)) {
+      if (abandonStaleSession(token, setError, setStatus, mnemonic)) {
         return;
       }
       setAccount(nextAccount);
@@ -330,7 +338,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       setStatus('idle');
       router.push(nextOnboardingPath(nextAccount));
     } catch (err) {
-      if (abandonStaleSession(token, setError, setStatus)) {
+      if (abandonStaleSession(token, setError, setStatus, mnemonic)) {
         return;
       }
       fail(err);
