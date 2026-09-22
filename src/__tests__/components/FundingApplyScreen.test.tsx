@@ -127,6 +127,7 @@ describe('nextFillStep', () => {
     expect(nextFillStep(complete)).toBeNull();
     expect(locationFilled('Zurich')).toBe(true);
     expect(locationFilled('  ')).toBe(false);
+    expect(locationFilled(null)).toBe(false);
   });
 });
 
@@ -135,6 +136,13 @@ describe('FundingApplyScreen', () => {
     useAuthStore.setState({ session: null, account });
     const { container } = renderWithLocale(<FundingApplyScreen />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it('renders nothing when there is no account', () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    const { container } = renderWithLocale(<FundingApplyScreen />);
+    expect(container.firstChild).toBeNull();
+    expect(postsMock).not.toHaveBeenCalled();
   });
 
   it('shows not-verified copy for basis', () => {
@@ -193,6 +201,18 @@ describe('FundingApplyScreen', () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/setup/rules');
     });
+  });
+
+  it('keeps the About me step when save misses a non-rules requirement', async () => {
+    putAboutMock.mockRejectedValue(new MissingRequirementsError(['name']));
+    renderWithLocale(<FundingApplyScreen />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'About me' }), {
+      target: { value: 'I build on Bitcoin' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    expect(await screen.findByRole('textbox', { name: 'About me' })).toBeTruthy();
+    expect(push).not.toHaveBeenCalledWith('/setup/rules');
+    expect(screen.queryByText('Could not save. Please try again.')).toBeNull();
   });
 
   it('keeps the About me step when save fails', async () => {
@@ -369,5 +389,30 @@ describe('FundingApplyScreen', () => {
       screen.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeTruthy();
     expect(postsMock).not.toHaveBeenCalled();
+  });
+
+  it('walks principles when funding was rejected', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...complete,
+        funding: {
+          status: 'rejected',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(
+      await screen.findByText('Please check whether the posts match principle 1.'),
+    ).toBeTruthy();
+    expect(postsMock).toHaveBeenCalled();
+    expect(
+      screen.queryByText('Your application is open. A moderator will review your posts.'),
+    ).toBeNull();
+    expect(screen.queryByText('You are on a one-day trial. Review repeats tomorrow.')).toBeNull();
+    expect(screen.queryByText('You are admitted to daily 21.gifts grant payouts.')).toBeNull();
   });
 });

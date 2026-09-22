@@ -40,8 +40,8 @@ export function aboutMeFilled(aboutMe: string | null, name: string | null): bool
  * @param location - Account location.
  * @returns Whether location is set.
  */
-export function locationFilled(location: string | null | undefined): boolean {
-  return location !== null && location !== undefined && location.trim() !== '';
+export function locationFilled(location: string | null): boolean {
+  return location !== null && location.trim() !== '';
 }
 
 /**
@@ -190,11 +190,12 @@ export function FundingApplyScreen(): ReactElement | null {
   ): Promise<boolean | void> => {
     try {
       const updated = await putAboutMe(session, text, photo);
-      /* v8 ignore next 8 — session or account gone during save */
+      /* v8 ignore next 3 — session gone during save */
       if (useAuthStore.getState().session !== session) {
         return false;
       }
       const current = useAuthStore.getState().account;
+      /* v8 ignore next 3 — account gone during save */
       if (current === null) {
         return false;
       }
