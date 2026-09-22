@@ -61,9 +61,9 @@ describe('PlacesMapScreen', () => {
     ).toBe('true');
     window.history.replaceState(null, '', '/map');
     view.rerender(<PlacesMapScreen />);
-    expect(screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected')).toBe(
-      'false',
-    );
+    expect(
+      screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected'),
+    ).toBe('false');
   });
 
   it('shows the empty state', async () => {
