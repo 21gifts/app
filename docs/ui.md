@@ -1030,9 +1030,9 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/wallet`
 
-Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. New accounts: 12-word grid + labeled **I saved these words** (no Skip). Existing: labeled **Activate recovery phrase**, then **Show recovery phrase**. Error: `role="alert"` `text-app-danger` + labeled **Try again** (no Activate beside it).
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. New accounts: 12-word grid + labeled **Continue** (no Skip). Existing: labeled **Activate recovery phrase**, then **Show recovery phrase** inside **Advanced functions**. Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
 
-Handbook states: default (activate), phrase, confirm, reveal (Show recovery phrase), error, prf-unsupported.
+Handbook states: default (activate), phrase, setup (Continue), confirm, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
 
 ### `/profile`
 

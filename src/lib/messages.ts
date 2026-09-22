@@ -367,8 +367,14 @@ const en = {
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
+  'wallet.advanced': 'Advanced functions',
   'wallet.prfUnsupported':
     'This browser cannot create a recovery phrase. Try another browser or device.',
+  'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
+  'wallet.errorGeneric':
+    'The recovery phrase could not be opened. Check this device and try again.',
+  'wallet.errorHint':
+    'If this keeps happening, try another browser or the device you already used to sign in.',
 
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
@@ -1085,8 +1091,15 @@ const de = {
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
+  'wallet.advanced': 'Erweiterte Funktionen',
   'wallet.prfUnsupported':
     'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
+  'wallet.timeout':
+    'Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut.',
+  'wallet.errorGeneric':
+    'Der Wiederherstellungssatz konnte nicht geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
+  'wallet.errorHint':
+    'Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben.',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -1810,8 +1823,15 @@ const es = {
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
+  'wallet.advanced': 'Funciones avanzadas',
   'wallet.prfUnsupported':
     'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
+  'wallet.timeout':
+    'La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo.',
+  'wallet.errorGeneric':
+    'No se pudo abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
+  'wallet.errorHint':
+    'Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión.',
 
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
@@ -2524,8 +2544,14 @@ const fil = {
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
+  'wallet.advanced': 'Mga advanced na function',
   'wallet.prfUnsupported':
     'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
+  'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',
+  'wallet.errorGeneric':
+    'Hindi mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
+  'wallet.errorHint':
+    'Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in.',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',

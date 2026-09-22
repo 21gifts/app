@@ -172,8 +172,8 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /wallet
 
 - **URL:** `/wallet` — signed-in recovery phrase.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **I saved these words** (no Skip). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards they can **Show recovery phrase**.
-- **Actions:** Activate a new passkey. Existing members (`walletRequired` is not true) also `POST /me/wallet-backup-seen` after a successful replace. New accounts (`setup` is wallet) confirm the words were saved (`POST /me/wallet-backup-seen`). Show the phrase. **Try again** after an error (`role="alert"`). Open **Menu** (Home, Shops, Profile, Wallet, …).
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **Continue** (no Skip, no **I saved these words**). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards **Show recovery phrase** lives under **Advanced functions**. Optional **I saved these words** is only the `visual=confirm` fixture, not setup.
+- **Actions:** Activate a new passkey. Existing members (`walletRequired` is not true) also `POST /me/wallet-backup-seen` after a successful replace. New accounts (`setup` is wallet) continue (`POST /me/wallet-backup-seen`). Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Profile, Wallet, …).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
 
 ### Variant: default
@@ -188,27 +188,45 @@ Existing member, no phrase yet. **Activate recovery phrase**.
 
 ![21.gifts wallet phrase](images/wallet-phrase.png)
 
+### Variant: setup
+
+New account (`setup` is wallet) with the 12-word grid and **Continue**.
+
+![21.gifts wallet setup](images/wallet-setup.png)
+
 ### Variant: confirm
 
-New account must confirm **I saved these words**.
+Optional **I saved these words** (`visual=confirm`). Not shown during setup.
 
 ![21.gifts wallet confirm](images/wallet-confirm.png)
 
 ### Variant: reveal
 
-Existing member after a saved backup, no phrase in the tab. **Show recovery phrase**.
+Existing member after a saved backup, no phrase in the tab. Closed **Advanced functions** holds **Show recovery phrase**.
 
 ![21.gifts wallet reveal](images/wallet-reveal.png)
 
+### Variant: reveal-open
+
+Existing member after a saved backup, no phrase in the tab. Open **Advanced functions** shows **Show recovery phrase**.
+
+![21.gifts wallet reveal open](images/wallet-reveal-open.png)
+
 ### Variant: error
 
-Generic WebAuthn failure. Alert **Something went wrong. Please try again.** and labeled **Try again**.
+Generic failure. Alert **The recovery phrase could not be opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
 
 ![21.gifts wallet error](images/wallet-error.png)
 
+### Variant: timeout
+
+Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**.
+
+![21.gifts wallet timeout](images/wallet-timeout.png)
+
 ### Variant: prf-unsupported
 
-PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** and labeled **Try again**.
+PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 

@@ -20,6 +20,7 @@ export function WalletScreenView({
   status,
   error,
   words,
+  setupWallet = false,
   activate,
   confirmSaved,
   showPhrase,
@@ -29,6 +30,25 @@ export function WalletScreenView({
   const busy = status === 'busy';
   const showGrid = (view === 'confirm' || view === 'phrase') && words.length === 12;
   const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
+  const errorCopy =
+    error === 'prfUnsupported'
+      ? t('wallet.prfUnsupported')
+      : error === 'timeout'
+        ? t('wallet.timeout')
+        : t('wallet.errorGeneric');
+  const showPhraseButton = (
+    <Button
+      variant={setupWallet ? 'primary' : 'secondary'}
+      size="lg"
+      onClick={() => {
+        void showPhrase();
+      }}
+      disabled={busy}
+      icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+    >
+      {t('wallet.showPhrase')}
+    </Button>
+  );
 
   return (
     <Card surface={false}>
@@ -38,8 +58,9 @@ export function WalletScreenView({
       {hasError ? (
         <>
           <p role="alert" className="text-center text-sm text-app-danger">
-            {error === 'prfUnsupported' ? t('wallet.prfUnsupported') : t('login.error')}
+            {errorCopy}
           </p>
+          <p className="text-center text-sm text-app-muted">{t('wallet.errorHint')}</p>
           <Button
             type="button"
             onClick={retry}
@@ -65,7 +86,21 @@ export function WalletScreenView({
             ))}
           </ol>
           <p className="text-sm text-app-muted">{t('wallet.onlyBackup')}</p>
-          {view === 'confirm' ? (
+          {setupWallet && view === 'phrase' ? (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                void confirmSaved();
+              }}
+              disabled={busy}
+              icon={
+                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+              }
+            >
+              {t('setup.continue')}
+            </Button>
+          ) : view === 'confirm' ? (
             <Button
               variant="primary"
               size="lg"
@@ -98,18 +133,15 @@ export function WalletScreenView({
             {t('wallet.activate')}
           </Button>
         </>
+      ) : setupWallet ? (
+        showPhraseButton
       ) : (
-        <Button
-          variant="secondary"
-          size="lg"
-          onClick={() => {
-            void showPhrase();
-          }}
-          disabled={busy}
-          icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
-        >
-          {t('wallet.showPhrase')}
-        </Button>
+        <details className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2">
+          <summary className="cursor-pointer text-sm text-app-muted">
+            {t('wallet.advanced')}
+          </summary>
+          <div className="mt-3">{showPhraseButton}</div>
+        </details>
       )}
     </Card>
   );

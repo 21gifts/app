@@ -90,6 +90,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:setup",
+    "label": "/wallet setup",
+    "visual": "state-wallet-setup",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:confirm",
     "label": "/wallet confirm",
     "visual": "state-wallet-confirm",
@@ -102,9 +108,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:reveal-open",
+    "label": "/wallet reveal-open",
+    "visual": "state-wallet-reveal-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:error",
     "label": "/wallet error",
     "visual": "state-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:timeout",
+    "label": "/wallet timeout",
+    "visual": "state-wallet-timeout",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

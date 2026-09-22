@@ -50,6 +50,8 @@ export type UseWalletPhraseResult = {
   status: WalletPhraseStatus;
   error: WalletPhraseErrorKind | null;
   words: string[];
+  /** True while onboarding still requires the recovery-phrase step. */
+  setupWallet?: boolean;
   activate: () => Promise<void>;
   confirmSaved: () => Promise<void>;
   showPhrase: () => Promise<void>;
@@ -127,6 +129,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (visual === 'error') {
       return 'generic';
     }
+    if (visual === 'timeout') {
+      return 'timeout';
+    }
     if (visual === 'prf-unsupported') {
       return 'prfUnsupported';
     }
@@ -154,14 +159,14 @@ export function useWalletPhrase(): UseWalletPhraseResult {
 
   const view: WalletPhraseView = useMemo(() => {
     const visual = visualParam();
-    if (visual === 'confirm' || setupWallet) {
+    if (visual === 'confirm') {
       return 'confirm';
     }
     if (visual === 'phrase') {
       return 'phrase';
     }
-    if (showingWords && (account?.walletBackupSeenAt ?? null) === null) {
-      return 'confirm';
+    if (setupWallet) {
+      return showingWords ? 'phrase' : 'reveal';
     }
     if (showingWords) {
       return 'phrase';
@@ -374,6 +379,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     status,
     error,
     words,
+    setupWallet,
     activate,
     confirmSaved,
     showPhrase,

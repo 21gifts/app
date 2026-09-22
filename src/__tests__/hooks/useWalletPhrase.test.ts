@@ -283,6 +283,28 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
+  it('shows phrase, not confirm, during wallet setup', () => {
+    rememberSessionPhrase(mnemonic);
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', walletRequired: true },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.view).toBe('phrase');
+    expect(result.current.setupWallet).toBe(true);
+  });
+
+  it('asks to show the phrase during setup when the tab has no words', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', walletRequired: true },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.view).toBe('reveal');
+    expect(result.current.setupWallet).toBe(true);
+    expect(result.current.words).toEqual([]);
+  });
+
   it('uses the visual confirm fixture', () => {
     const url = new URL(originalHref);
     url.search = '?visual=confirm';
@@ -290,6 +312,14 @@ describe('useWalletPhrase', () => {
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('confirm');
     expect(result.current.words).toHaveLength(12);
+  });
+
+  it('uses the visual timeout fixture', () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=timeout';
+    window.history.replaceState({}, '', url.toString());
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.error).toBe('timeout');
   });
 
   it('uses the visual error fixture', () => {
@@ -615,7 +645,7 @@ describe('useWalletPhrase', () => {
     });
     expect(peekSessionPhrase()).toBe(mnemonic);
     expect(result.current.words).toHaveLength(12);
-    expect(result.current.view).toBe('confirm');
+    expect(result.current.view).toBe('phrase');
     expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred');
     expect(result.current.error).toBe('generic');
     expect(result.current.status).toBe('idle');
