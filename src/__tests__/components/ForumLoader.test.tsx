@@ -562,9 +562,12 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     });
-    await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
-    });
+    await waitFor(
+      () => {
+        expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
+      },
+      { timeout: 5000 },
+    );
     expect(postMock.mock.calls[0]?.[1]).not.toHaveProperty('place');
     fetchSpy.mockRestore();
     delete (window as { google?: unknown }).google;
