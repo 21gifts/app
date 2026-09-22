@@ -88,18 +88,21 @@ export function NotificationsScreen({
         <ul aria-label={t('notifications.listLabel')} className="flex w-full flex-col gap-3">
           {notifications.map((row) => {
             const unread = row.readAt === null;
+            const nameOnlyPost = row.type === 'forum_post' && row.text.trim() === row.name.trim();
             const bodyLine =
               row.type === 'zap' ||
               row.type === 'moderator_appointed' ||
               row.type === 'moderator_proposal'
                 ? row.text
-                : row.text !== ''
-                  ? row.text
-                  : t(
-                      row.type === 'forum_post'
-                        ? 'notifications.photoPost'
-                        : 'notifications.photoOnly',
-                    );
+                : nameOnlyPost
+                  ? ''
+                  : row.text !== ''
+                    ? row.text
+                    : t(
+                        row.type === 'forum_post'
+                          ? 'notifications.photoPost'
+                          : 'notifications.photoOnly',
+                      );
             return (
               <li key={row.id}>
                 <button

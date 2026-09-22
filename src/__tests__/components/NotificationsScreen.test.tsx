@@ -238,6 +238,31 @@ describe('NotificationsScreen', () => {
     expect(onOpen).toHaveBeenCalledWith(POST);
   });
 
+  it('omits the body when a post notification repeats the author name', () => {
+    const onOpen = vi.fn();
+    const nameOnly: Notification = {
+      ...POST,
+      id: 'n-name',
+      name: 'Caren maralas Rundina',
+      text: 'Caren maralas Rundina',
+    };
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[nameOnly]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /Caren maralas Rundina posted/ });
+    expect(screen.getByText('Caren maralas Rundina posted')).toBeTruthy();
+    expect(screen.queryByText('Caren maralas Rundina')).toBeNull();
+    expect(screen.queryByText('Photo')).toBeNull();
+    fireEvent.click(row);
+    expect(onOpen).toHaveBeenCalledWith(nameOnly);
+  });
+
   it('lists a zap with the stored sat amount and opens parentId', () => {
     const onOpen = vi.fn();
     renderWithLocale(
