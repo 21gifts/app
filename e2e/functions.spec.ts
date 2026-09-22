@@ -3546,6 +3546,43 @@ test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ 
   await openPayInvoice(page, request);
 });
 
+test('Function: shownFiatForSats — pay sheet sends the shown amounts', async ({
+  page,
+  request,
+}) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await stubWalletLocationAssign(page);
+  await stubPayableNote(page);
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  const invoice = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await submitPayAmount(page);
+  const body = (await invoice).postDataJSON() as {
+    amountUsd: string | null;
+    amountChf: string | null;
+    amountEur: string | null;
+    amountPhp: string | null;
+  };
+  expect(body).toMatchObject({
+    amountUsd: '0.02',
+    amountChf: '0.02',
+    amountEur: '0.02',
+    amountPhp: '1.11',
+  });
+});
+
 test('Function: proxyMessagesInvoicePost — pay sheet requests an invoice', async ({
   page,
   request,
