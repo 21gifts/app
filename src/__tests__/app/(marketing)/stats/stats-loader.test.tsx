@@ -52,6 +52,16 @@ describe('StatsLoader', () => {
     });
   });
 
+  it('omits posts when that fetch fails and still shows gifts', async () => {
+    fetchMock.mockResolvedValue(EMPTY);
+    fetchPostsMock.mockRejectedValueOnce(new Error('Could not load post stats. Please try again.'));
+    renderWithLocale(<StatsLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('region', { name: 'Posts' })).toBeNull();
+  });
+
   it('shows a fetch error and retries', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
     fetchMock.mockResolvedValueOnce(EMPTY);
