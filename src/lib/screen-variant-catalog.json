@@ -312,9 +312,63 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-empty",
+    "label": "/welcome ask-empty",
+    "visual": "state-welcome-ask-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-empty-daily",
+    "label": "/welcome ask-empty-daily",
+    "visual": "state-welcome-ask-empty-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-photos",
     "label": "/welcome ask-photos",
     "visual": "state-welcome-ask-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-one-photo",
+    "label": "/welcome ask-one-photo",
+    "visual": "state-welcome-ask-one-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-several-photos",
+    "label": "/welcome ask-several-photos",
+    "visual": "state-welcome-ask-several-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-video",
+    "label": "/welcome ask-video",
+    "visual": "state-welcome-ask-video",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preparing",
+    "label": "/welcome ask-preparing",
+    "visual": "state-welcome-ask-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-unsupported",
+    "label": "/welcome ask-unsupported",
+    "visual": "state-welcome-ask-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-too-large",
+    "label": "/welcome ask-too-large",
+    "visual": "state-welcome-ask-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-too-many",
+    "label": "/welcome ask-too-many",
+    "visual": "state-welcome-ask-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -324,9 +378,117 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-text-filled",
+    "label": "/welcome ask-text-filled",
+    "visual": "state-welcome-ask-text-filled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-preview",
     "label": "/welcome ask-preview",
     "visual": "state-welcome-ask-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-daily",
+    "label": "/welcome ask-preview-daily",
+    "visual": "state-welcome-ask-preview-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-text",
+    "label": "/welcome ask-preview-text",
+    "visual": "state-welcome-ask-preview-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-text-daily",
+    "label": "/welcome ask-preview-text-daily",
+    "visual": "state-welcome-ask-preview-text-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-one-photo",
+    "label": "/welcome ask-preview-one-photo",
+    "visual": "state-welcome-ask-preview-one-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-one-photo-daily",
+    "label": "/welcome ask-preview-one-photo-daily",
+    "visual": "state-welcome-ask-preview-one-photo-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-several",
+    "label": "/welcome ask-preview-several",
+    "visual": "state-welcome-ask-preview-several",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-several-daily",
+    "label": "/welcome ask-preview-several-daily",
+    "visual": "state-welcome-ask-preview-several-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-several-text",
+    "label": "/welcome ask-preview-several-text",
+    "visual": "state-welcome-ask-preview-several-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-several-text-daily",
+    "label": "/welcome ask-preview-several-text-daily",
+    "visual": "state-welcome-ask-preview-several-text-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-video",
+    "label": "/welcome ask-preview-video",
+    "visual": "state-welcome-ask-preview-video",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-video-daily",
+    "label": "/welcome ask-preview-video-daily",
+    "visual": "state-welcome-ask-preview-video-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-video-text",
+    "label": "/welcome ask-preview-video-text",
+    "visual": "state-welcome-ask-preview-video-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-video-text-daily",
+    "label": "/welcome ask-preview-video-text-daily",
+    "visual": "state-welcome-ask-preview-video-text-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-posting",
+    "label": "/welcome ask-posting",
+    "visual": "state-welcome-ask-posting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-posting-daily",
+    "label": "/welcome ask-posting-daily",
+    "visual": "state-welcome-ask-posting-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-error-request",
+    "label": "/welcome ask-error-request",
+    "visual": "state-welcome-ask-error-request",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-error-request-daily",
+    "label": "/welcome ask-error-request-daily",
+    "visual": "state-welcome-ask-error-request-daily",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

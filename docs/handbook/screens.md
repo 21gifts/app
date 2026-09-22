@@ -503,11 +503,65 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ![21.gifts welcome ask daily](images/welcome-ask-daily.png)
 
+### Variant: ask-empty
+
+**Ask for money** just opened. Step 1 of 4, **One-time** pressed, amount empty, **Continue** disabled. No bitcoin line yet.
+
+![21.gifts welcome ask empty](images/welcome-ask-empty.png)
+
+### Variant: ask-empty-daily
+
+**Ask for money** just opened. Step 1 of 4, **Daily** pressed, amount empty, **Continue** disabled.
+
+![21.gifts welcome ask empty daily](images/welcome-ask-empty-daily.png)
+
 ### Variant: ask-photos
 
 Ask step 2 of 4: **Add photos** with attach and Continue. Photos are optional.
 
 ![21.gifts welcome ask photos](images/welcome-ask-photos.png)
+
+### Variant: ask-one-photo
+
+Ask step 2 of 4 with one selected photo and **Remove photo**. **Continue** stays enabled.
+
+![21.gifts welcome ask one photo](images/welcome-ask-one-photo.png)
+
+### Variant: ask-several-photos
+
+Ask step 2 of 4 with two selected photos. Each has **Remove photo**.
+
+![21.gifts welcome ask several photos](images/welcome-ask-several-photos.png)
+
+### Variant: ask-video
+
+Ask step 2 of 4 with a selected video and **Remove video**.
+
+![21.gifts welcome ask video](images/welcome-ask-video.png)
+
+### Variant: ask-preparing
+
+Ask step 2 of 4 while the photo is still preparing. No thumbnail yet. **Continue** stays disabled.
+
+![21.gifts welcome ask preparing](images/welcome-ask-preparing.png)
+
+### Variant: ask-unsupported
+
+Ask step 2 of 4 after a file that is not a JPEG, PNG, WebP, MP4, WebM, or MOV. The error sits under the step. No thumbnail.
+
+![21.gifts welcome ask unsupported](images/welcome-ask-unsupported.png)
+
+### Variant: ask-too-large
+
+Ask step 2 of 4 after a photo over 1 MB. The error sits under the step. No thumbnail.
+
+![21.gifts welcome ask too large](images/welcome-ask-too-large.png)
+
+### Variant: ask-too-many
+
+Ask step 2 of 4 after more than 10 photos. The error sits under the step.
+
+![21.gifts welcome ask too many](images/welcome-ask-too-many.png)
 
 ### Variant: ask-text
 
@@ -515,11 +569,119 @@ Ask step 3 of 4: **Write a message** textarea and Continue.
 
 ![21.gifts welcome ask text](images/welcome-ask-text.png)
 
+### Variant: ask-text-filled
+
+Ask step 3 of 4 with **Need help with a train ticket** typed in the message field. **Continue** stays enabled.
+
+![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
+
 ### Variant: ask-preview
 
-Ask step 4 of 4: preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
+Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
+
+### Variant: ask-preview-daily
+
+Ask step 4 of 4 with **Daily** pressed, the same photo, caption, and goal bar as the one-time preview.
+
+![21.gifts welcome ask preview daily](images/welcome-ask-preview-daily.png)
+
+### Variant: ask-preview-text
+
+Ask step 4 of 4, **One-time** pressed, caption only. No photo. **Post** is enabled.
+
+![21.gifts welcome ask preview text](images/welcome-ask-preview-text.png)
+
+### Variant: ask-preview-text-daily
+
+Ask step 4 of 4, **Daily** pressed, caption only.
+
+![21.gifts welcome ask preview text daily](images/welcome-ask-preview-text-daily.png)
+
+### Variant: ask-preview-one-photo
+
+Ask step 4 of 4, **One-time** pressed, one photo and no caption. **Post** is enabled.
+
+![21.gifts welcome ask preview one photo](images/welcome-ask-preview-one-photo.png)
+
+### Variant: ask-preview-one-photo-daily
+
+Ask step 4 of 4, **Daily** pressed, one photo and no caption.
+
+![21.gifts welcome ask preview one photo daily](images/welcome-ask-preview-one-photo-daily.png)
+
+### Variant: ask-preview-several
+
+Ask step 4 of 4, **One-time** pressed, two photos and no caption.
+
+![21.gifts welcome ask preview several](images/welcome-ask-preview-several.png)
+
+### Variant: ask-preview-several-daily
+
+Ask step 4 of 4, **Daily** pressed, two photos and no caption.
+
+![21.gifts welcome ask preview several daily](images/welcome-ask-preview-several-daily.png)
+
+### Variant: ask-preview-several-text
+
+Ask step 4 of 4, **One-time** pressed, two photos and the caption **Need help with a train ticket**.
+
+![21.gifts welcome ask preview several text](images/welcome-ask-preview-several-text.png)
+
+### Variant: ask-preview-several-text-daily
+
+Ask step 4 of 4, **Daily** pressed, two photos and the caption.
+
+![21.gifts welcome ask preview several text daily](images/welcome-ask-preview-several-text-daily.png)
+
+### Variant: ask-preview-video
+
+Ask step 4 of 4, **One-time** pressed, a video and no caption.
+
+![21.gifts welcome ask preview video](images/welcome-ask-preview-video.png)
+
+### Variant: ask-preview-video-daily
+
+Ask step 4 of 4, **Daily** pressed, a video and no caption.
+
+![21.gifts welcome ask preview video daily](images/welcome-ask-preview-video-daily.png)
+
+### Variant: ask-preview-video-text
+
+Ask step 4 of 4, **One-time** pressed, a video and the caption **Need help with a train ticket**.
+
+![21.gifts welcome ask preview video text](images/welcome-ask-preview-video-text.png)
+
+### Variant: ask-preview-video-text-daily
+
+Ask step 4 of 4, **Daily** pressed, a video and the caption.
+
+![21.gifts welcome ask preview video text daily](images/welcome-ask-preview-video-text-daily.png)
+
+### Variant: ask-posting
+
+Ask step 4 of 4, **One-time** pressed, while **Post** is in flight. The button stays disabled.
+
+![21.gifts welcome ask posting](images/welcome-ask-posting.png)
+
+### Variant: ask-posting-daily
+
+Ask step 4 of 4, **Daily** pressed, while **Post** is in flight.
+
+![21.gifts welcome ask posting daily](images/welcome-ask-posting-daily.png)
+
+### Variant: ask-error-request
+
+Ask step 4 of 4, **One-time** pressed, after the post fails. **Could not post your message** sits under the preview.
+
+![21.gifts welcome ask error request](images/welcome-ask-error-request.png)
+
+### Variant: ask-error-request-daily
+
+Ask step 4 of 4, **Daily** pressed, after the post fails.
+
+![21.gifts welcome ask error request daily](images/welcome-ask-error-request-daily.png)
 
 ### Variant: ask-open
 

@@ -272,12 +272,37 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'One-time' }));
   });
 
-  it('hides the cadence pill after step 1', () => {
+  it('hides the cadence pill on the photo and text steps', () => {
     const onStepChange = vi.fn();
-    renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />,
+    );
     expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Daily' })).toBeNull();
+    rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
+    expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(onStepChange).toHaveBeenCalledWith(3);
+    expect(onStepChange).toHaveBeenCalledWith(4);
+  });
+
+  it('shows the cadence pill again on the preview', () => {
+    const onAskCadenceChange = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        draft="Need help"
+        onAskCadenceChange={onAskCadenceChange}
+        askCadence="daily"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Daily' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'One-time' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'One-time' }));
+    expect(onAskCadenceChange).toHaveBeenCalledWith('once');
   });
 });
