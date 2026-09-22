@@ -17,6 +17,10 @@ let clicked: { href: string; download: string }[];
 beforeEach(() => {
   clicked = [];
   vi.useFakeTimers();
+  // jsdom has no object URLs; define them so they can be spied on
+  for (const name of ['createObjectURL', 'revokeObjectURL'] as const) {
+    Object.defineProperty(URL, name, { configurable: true, writable: true, value: () => '' });
+  }
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:sticker');
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
