@@ -543,6 +543,7 @@ describe('ForumBoard', () => {
   });
 
   it('omits the place control when the board cannot store a pin', () => {
+    const { onPlaceDraftChange: _ignored, ...withoutPlace } = idleProps;
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -554,8 +555,7 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        {...idleProps}
-        onPlaceDraftChange={undefined}
+        {...withoutPlace}
         {...modeProps('all')}
       />,
     );
