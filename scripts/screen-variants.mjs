@@ -808,6 +808,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'place',
+    image: 'welcome-place.png',
+    visual: 'state-welcome-place',
+    needle: 'welcome place',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-place',
+    image: 'welcome-composer-place.png',
+    visual: 'state-welcome-composer-place',
+    needle: 'welcome composer-place',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-place-set',
+    image: 'welcome-composer-place-set.png',
+    visual: 'state-welcome-composer-place-set',
+    needle: 'welcome composer-place-set',
+  },
+  {
+    route: '/welcome',
     id: 'composer-photos',
     image: 'welcome-composer-photos.png',
     visual: 'state-welcome-composer-photos',

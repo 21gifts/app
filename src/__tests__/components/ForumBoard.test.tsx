@@ -535,6 +535,7 @@ describe('ForumBoard', () => {
     expect(field.nextElementSibling).toBe(button);
     const photo = screen.getByLabelText('Add a photo or video');
     const place = screen.getByLabelText('Add a place');
+    expect(screen.queryByText('Add a place')).toBeNull();
     expect(photo.compareDocumentPosition(place) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(place.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));

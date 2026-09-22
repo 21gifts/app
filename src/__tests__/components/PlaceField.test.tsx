@@ -29,6 +29,8 @@ describe('PlaceField', () => {
       />,
     );
     expect(screen.getByText('Happyland')).toBeTruthy();
+    expect(screen.queryByText('Add a place')).toBeNull();
+    expect(screen.queryByText('Remove place')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
     expect(onChange).toHaveBeenCalledWith(null);
   });
@@ -47,6 +49,7 @@ describe('PlaceField', () => {
   it('says the map is unavailable when the key request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    expect(screen.queryByText('Add a place')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
   });
