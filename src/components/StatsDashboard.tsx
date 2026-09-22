@@ -68,16 +68,27 @@ function PostsSummary({
         Notes and replies, by UTC day. Hidden notes are not counted.
       </p>
       {posts.postsOverTime.length > 0 ? (
-        <div className="flex h-16 items-end gap-px" aria-hidden="true">
-          {posts.postsOverTime.map((point) => (
-            <div
-              key={point.day}
-              title={`${point.day}: ${point.postCount}`}
-              className="min-w-px flex-1 bg-accent"
-              style={{ height: `${Math.max(2, Math.round((point.postCount / max) * 64))}px` }}
-            />
-          ))}
-        </div>
+        <svg
+          viewBox={`0 0 ${posts.postsOverTime.length} 64`}
+          className="h-16 w-full"
+          aria-hidden="true"
+        >
+          {posts.postsOverTime.map((point, index) => {
+            const bar = Math.max(2, Math.round((point.postCount / max) * 64));
+            return (
+              <rect
+                key={point.day}
+                x={index}
+                y={64 - bar}
+                width={1}
+                height={bar}
+                className="fill-accent"
+              >
+                <title>{`${point.day}: ${point.postCount}`}</title>
+              </rect>
+            );
+          })}
+        </svg>
       ) : null}
     </section>
   );
