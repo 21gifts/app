@@ -59,10 +59,10 @@ test('Function: shortResourceUrl — copy writes an 8-hex short link', async ({ 
 test('Function: shortLinkPath — message and member codes redirect', async ({ request }) => {
   const message = await request.get('/l/77e0510d', { maxRedirects: 0 });
   expect(message.status()).toBe(307);
-  expect(message.headers().location).toContain(`/messages/${NOTE_ID}`);
+  expect(message.headers()['location']).toContain(`/messages/${NOTE_ID}`);
   const member = await request.get('/l/d70c4763', { maxRedirects: 0 });
   expect(member.status()).toBe(307);
-  expect(member.headers().location).toContain(`/members/${MEMBER_ID}`);
+  expect(member.headers()['location']).toContain(`/members/${MEMBER_ID}`);
 });
 
 test('Function: splitShortLinks — a pasted short url becomes a quoted card', async ({ page }) => {
