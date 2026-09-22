@@ -4607,6 +4607,52 @@ describe('ForumBoard', () => {
     expect(screen.getByText("send ₿21'000")).toBeTruthy();
   });
 
+  it('shows stored fiat on a gift-only reply when the live rate differs', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        replies={[
+          {
+            id: 'r-gift',
+            name: 'Bob',
+            text: '',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21,
+            amountUsd: '5.00',
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('send ₿21')).toBeTruthy();
+    expect(screen.getByText('$5.00')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
   it('appends preferred fiat on a gift-only reply when conversion exists', () => {
     renderWithLocale(
       <ForumBoard

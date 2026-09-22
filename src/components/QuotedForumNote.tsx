@@ -7,18 +7,13 @@ import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import {
-  formatBitcoin,
-  formatFiatDisplay,
-  satsToFiatAmount,
-  type FiatCode,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 
 type ShortHit = { code: string; messageId: string };
 
@@ -85,7 +80,7 @@ function QuotedForumNote({
     };
   }, [note.hasPhoto, note.id]);
 
-  const fiatAmount = rateDay === null ? null : satsToFiatAmount(note.sats, rateDay, fiat);
+  const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
   const roleLabel =
     note.role === 'founder' || note.role === 'moderator' || note.role === 'verified'
       ? t(ROLE_LABEL_KEYS[note.role])
@@ -159,18 +154,13 @@ function QuotedForumNote({
       <Link href={`/messages/${note.id}`} className="block">
         <p
           className={
-            fiatAmount === null
+            fiatSuffix === null
               ? 'text-sm font-medium text-app-fg'
               : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
           }
         >
           {formatBitcoin(note.sats, numberFormat)}
-          {fiatAmount !== null ? (
-            <>
-              <span aria-hidden="true"> · </span>
-              <span>{formatFiatDisplay(fiatAmount, fiat, numberFormat)}</span>
-            </>
-          ) : null}
+          {fiatSuffix}
         </p>
       </Link>
     </div>

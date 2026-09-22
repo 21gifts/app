@@ -703,6 +703,36 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
+  it('shows stored fiat next to ₿ when the live rate differs', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-07-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    fetchMessage.mockResolvedValue({ ...sample, amountUsd: '5.00' });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('$5.00')).toBeTruthy();
+    });
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
   it('shows a locale-default fiat equivalent next to ₿', async () => {
     fetchGiftStatsMock.mockResolvedValue({
       ...EMPTY_STATS,
