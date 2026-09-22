@@ -790,7 +790,7 @@ describe('InboxLoader', () => {
     listMock.mockResolvedValue([
       { ...THREAD, unread: true },
       { ...OLDER, unread: true },
-    ]);
+    ]));
     threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('21.gifts')).toBeTruthy();
@@ -986,7 +986,7 @@ describe('InboxLoader', () => {
   it('shows the photo attach control on an open thread and keeps Amount', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByRole('button', { name: 'Add a photo' })).toBeTruthy();
     expect(screen.getByLabelText('Amount')).toBeTruthy();
@@ -1004,7 +1004,7 @@ describe('InboxLoader', () => {
   it('posts a photo-only message after remove and re-pick', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     postMock.mockResolvedValue({
       id: 'm-photo',
       name: 'Ada',
@@ -1044,7 +1044,7 @@ describe('InboxLoader', () => {
   it('sets tooMany when more than 10 stills are chosen', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -1062,7 +1062,7 @@ describe('InboxLoader', () => {
   it('sets tooLarge when prepareForumPhoto returns tooLarge', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
@@ -1078,7 +1078,7 @@ describe('InboxLoader', () => {
   it('sets unsupported when prepareForumPhoto rejects', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     prepareMock.mockRejectedValueOnce(new Error('decode'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
@@ -1094,7 +1094,7 @@ describe('InboxLoader', () => {
   it('disables send while a still is still being prepared', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     let resolvePrepare:
       | ((value: {
           ok: true;
@@ -1131,7 +1131,7 @@ describe('InboxLoader', () => {
   it('loads a stored photo blob for a hasPhoto row', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([
+    threadMock.mockResolvedValue(conversationPage([
       {
         ...MESSAGE,
         id: 'm-pic',
@@ -1139,7 +1139,7 @@ describe('InboxLoader', () => {
         hasPhoto: true,
         photoCount: 1,
       },
-    ]);
+    ]));
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -1158,7 +1158,7 @@ describe('InboxLoader', () => {
   it('loads a stored photo when hasPhoto is true and photoCount is 0', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([
+    threadMock.mockResolvedValue(conversationPage([
       {
         ...MESSAGE,
         id: 'm-legacy',
@@ -1166,7 +1166,7 @@ describe('InboxLoader', () => {
         hasPhoto: true,
         photoCount: 0,
       },
-    ]);
+    ]));
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -1185,7 +1185,7 @@ describe('InboxLoader', () => {
   it('skips a still when the photo fetch fails and loads the next', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([
+    threadMock.mockResolvedValue(conversationPage([
       {
         ...MESSAGE,
         id: 'm-fail',
@@ -1201,7 +1201,7 @@ describe('InboxLoader', () => {
         hasPhoto: true,
         photoCount: 1,
       },
-    ]);
+    ]));
     photoMock
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
@@ -1225,7 +1225,7 @@ describe('InboxLoader', () => {
   it('revokes loaded photo blobs on unmount', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([
+    threadMock.mockResolvedValue(conversationPage([
       {
         ...MESSAGE,
         id: 'm-pic',
@@ -1233,7 +1233,7 @@ describe('InboxLoader', () => {
         hasPhoto: true,
         photoCount: 1,
       },
-    ]);
+    ]));
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
@@ -1254,7 +1254,7 @@ describe('InboxLoader', () => {
   it('revokes photo blobs when the session is lost while mounted', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([
+    threadMock.mockResolvedValue(conversationPage([
       {
         ...MESSAGE,
         id: 'm-pic',
@@ -1262,7 +1262,7 @@ describe('InboxLoader', () => {
         hasPhoto: true,
         photoCount: 1,
       },
-    ]);
+    ]));
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
@@ -1297,7 +1297,7 @@ describe('InboxLoader', () => {
   it('clears drafts on thread switch and drops a hung prepare', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     let resolvePrepare:
       | ((value: {
           ok: true;
@@ -1341,7 +1341,7 @@ describe('InboxLoader', () => {
   it('does not clear preparing of a newer pick when an older prepare finishes', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     let resolveFirst:
       | ((value: {
           ok: true;
@@ -1402,8 +1402,8 @@ describe('InboxLoader', () => {
   it('ignores a pick during the pay sheet and does not leave send disabled after pay', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+    let resolvePoll: ((value: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolvePoll = resolve;
@@ -1436,7 +1436,7 @@ describe('InboxLoader', () => {
     });
     expect(prepareMock).not.toHaveBeenCalled();
     await act(async () => {
-      resolvePoll?.([MESSAGE, gift]);
+      resolvePoll?.(conversationPage([MESSAGE, gift]));
     });
     await waitFor(() => {
       expect(screen.getByText('For you')).toBeTruthy();
@@ -1451,8 +1451,8 @@ describe('InboxLoader', () => {
   it('mints an amount invoice without attaching selected photos and clears drafts after pay', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD, OLDER]);
-    let resolvePoll: ((value: ConversationMessage[]) => void) | undefined;
-    threadMock.mockResolvedValueOnce([MESSAGE]).mockImplementationOnce(
+    let resolvePoll: ((value: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolvePoll = resolve;
@@ -1486,7 +1486,7 @@ describe('InboxLoader', () => {
     });
     expect(postMock).not.toHaveBeenCalled();
     await act(async () => {
-      resolvePoll?.([MESSAGE, gift]);
+      resolvePoll?.(conversationPage([MESSAGE, gift]));
     });
     await waitFor(() => {
       expect(screen.getByText('For you')).toBeTruthy();
@@ -1501,9 +1501,9 @@ describe('InboxLoader', () => {
     listMock.mockResolvedValue([THREAD, OLDER]);
     threadMock.mockImplementation((_session: string, id: string) => {
       if (id === 'conv-2') {
-        return Promise.resolve([MESSAGE]);
+        return Promise.resolve(conversationPage([MESSAGE]));
       }
-      return Promise.resolve([
+      return Promise.resolve(conversationPage([
         {
           ...MESSAGE,
           id: 'm-pic',
@@ -1511,7 +1511,7 @@ describe('InboxLoader', () => {
           hasPhoto: true,
           photoCount: 1,
         },
-      ]);
+      ]));
     });
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
@@ -1535,7 +1535,7 @@ describe('InboxLoader', () => {
   it('revokes photo blobs that are no longer on the thread', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValueOnce([
+    threadMock.mockResolvedValueOnce(conversationPage([
       {
         ...MESSAGE,
         id: 'm-pic',
@@ -1543,7 +1543,7 @@ describe('InboxLoader', () => {
         hasPhoto: true,
         photoCount: 1,
       },
-    ]);
+    ]));
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
@@ -1557,7 +1557,7 @@ describe('InboxLoader', () => {
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    threadMock.mockResolvedValueOnce([MESSAGE]);
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE]));
     act(() => {
       useAuthStore.setState({ session: 'sess-2', account });
     });
@@ -1572,13 +1572,13 @@ describe('InboxLoader', () => {
     useAuthStore.setState({ session: null, account });
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([
+    threadMock.mockResolvedValue(conversationPage([
       {
         ...MESSAGE,
         hasPhoto: true,
         photoCount: 1,
       },
-    ]);
+    ]));
     const { container } = renderWithLocale(<InboxLoader />);
     expect(container.firstChild).toBeNull();
     expect(photoMock).not.toHaveBeenCalled();
@@ -1587,7 +1587,7 @@ describe('InboxLoader', () => {
   it('keeps empty validation and 3-arg text post without photos', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     postMock.mockResolvedValue({
       id: 'm2',
       name: 'Ada',
