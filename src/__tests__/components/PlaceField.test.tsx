@@ -234,22 +234,26 @@ describe('PlaceField', () => {
   });
 
   it('cancels an in-flight key load on close', async () => {
+    let started = false;
     let resolveJson: (body: unknown) => void = () => undefined;
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
         json: () =>
           new Promise((resolve) => {
+            started = true;
             resolveJson = resolve;
           }),
       }),
     );
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    resolveJson({ key: null });
     await waitFor(() => {
-      expect(screen.queryByText('The map is not available.')).toBeNull();
+      expect(started).toBe(true);
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    resolveJson({ key: 'k' });
+    await Promise.resolve();
+    expect(screen.queryByText('The map is not available.')).toBeNull();
   });
 });

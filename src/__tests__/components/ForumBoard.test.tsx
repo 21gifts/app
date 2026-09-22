@@ -274,6 +274,62 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('links a note and a reply to the map pin', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, place: { lat: 14.6, lng: 120.98, label: 'Happyland' } },
+          { ...SAMPLE, id: 'm-coords', text: 'Coords', place: { lat: 1, lng: 2, label: null } },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            parentId: 'm1',
+            name: 'Bob',
+            text: 'Reply',
+            sats: 0,
+            payable: false,
+            place: { lat: 3, lng: 4, label: 'Stall' },
+          },
+          {
+            ...SAMPLE,
+            id: 'r2',
+            parentId: 'm1',
+            name: 'Cara',
+            text: 'Reply two',
+            sats: 0,
+            payable: false,
+            place: { lat: 5, lng: 6, label: null },
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const labeled = screen.getByRole('link', { name: 'Happyland' });
+    expect(labeled.getAttribute('href')).toBe('/map?pin=m1');
+    fireEvent.click(labeled);
+    expect(screen.getByRole('link', { name: '1.00000, 2.00000' }).getAttribute('href')).toBe(
+      '/map?pin=m-coords',
+    );
+    const replyPin = screen.getByRole('link', { name: 'Stall' });
+    expect(replyPin.getAttribute('href')).toBe('/map?pin=r1');
+    fireEvent.click(replyPin);
+    expect(screen.getByRole('link', { name: '5.00000, 6.00000' }).getAttribute('href')).toBe(
+      '/map?pin=r2',
+    );
+  });
+
   it('keeps a long note full when truncate is off', () => {
     const text = `${'a'.repeat(280)} TAILWORD`;
     renderWithLocale(
@@ -1927,7 +1983,6 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payDraft="21"
-
         {...modeProps('all')}
       />,
       'de',

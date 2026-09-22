@@ -115,8 +115,21 @@ describe('PlacesMapScreen', () => {
       expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
     });
     const script = document.querySelector('script[data-google-maps="1"]');
-    view.unmount();
     script?.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+    view.unmount();
+    document.querySelectorAll('script[data-google-maps="1"]').forEach((node) => {
+      node.remove();
+    });
+    const again = renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+    });
+    const pending = document.querySelector('script[data-google-maps="1"]');
+    again.unmount();
+    pending?.dispatchEvent(new Event('load'));
+    await Promise.resolve();
 
     useAuthStore.setState({ session: 'tok-2' });
     let resolvePlaces: (rows: ForumPlaceRow[]) => void = () => undefined;

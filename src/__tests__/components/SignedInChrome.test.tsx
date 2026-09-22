@@ -523,6 +523,16 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
+  it('closes the menu when Map is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    const map = screen.getByRole('link', { name: 'Map' });
+    expect(map.getAttribute('href')).toBe('/map');
+    fireEvent.click(map);
+    expectMenuClosed();
+  });
+
   it('dispatches the forum home event instead of navigating when Home is already current', () => {
     navigation.pathname = '/welcome';
     const listener = vi.fn();
