@@ -243,6 +243,8 @@ export function MemberProfileScreen({
   }, []);
 
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const rateDayRef = useRef(rateDay);
+  rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -717,7 +719,7 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDay),
+        shownFiatForSats(sats, rateDayRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -780,14 +782,14 @@ export function MemberProfileScreen({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDay),
+              shownFiatForSats(sats, rateDayRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDay),
+              shownFiatForSats(sats, rateDayRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -947,7 +949,7 @@ export function MemberProfileScreen({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDay),
+            shownFiatForSats(sats, rateDayRef.current),
           );
           if (generation !== payPollGeneration.current) {
             return null;

@@ -219,6 +219,8 @@ export function PublicMessageThread(props: {
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const rateDayRef = useRef(rateDay);
+  rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -629,7 +631,7 @@ export function PublicMessageThread(props: {
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDay),
+        shownFiatForSats(sats, rateDayRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -698,14 +700,14 @@ export function PublicMessageThread(props: {
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDay),
+              shownFiatForSats(sats, rateDayRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDay),
+              shownFiatForSats(sats, rateDayRef.current),
             );
       /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -822,7 +824,7 @@ export function PublicMessageThread(props: {
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDay),
+            shownFiatForSats(sats, rateDayRef.current),
           );
           if (generation !== payPollGeneration.current) {
             return null;
