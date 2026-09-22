@@ -137,8 +137,12 @@ describe('PlaceField', () => {
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
     vi.stubGlobal('navigator', { geolocation: undefined });
-    renderWithLocale(<PlaceField place={null} disabled={true} onChange={onChange} />);
+    const disabled = renderWithLocale(
+      <PlaceField place={null} disabled={true} onChange={onChange} />,
+    );
     expect(screen.getByRole('button', { name: 'Add a place' }).hasAttribute('disabled')).toBe(true);
+    disabled.unmount();
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await waitFor(() => {
       expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
@@ -168,6 +172,9 @@ describe('PlaceField', () => {
     document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
     view.unmount();
+    document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => {
+      node.remove();
+    });
 
     const existing = document.createElement('script');
     existing.dataset['gmaps'] = 'weekly';
