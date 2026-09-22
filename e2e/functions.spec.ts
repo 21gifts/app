@@ -4,6 +4,8 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
+import { civilTakenLabel } from '../src/components/ForumPhotoGallery';
+import { readJpegTakenAt } from '../src/lib/jpeg-taken-at';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -11,6 +13,15 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 }
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
+
+test('Function: readJpegTakenAt — empty bytes have no capture time', () => {
+  expect(readJpegTakenAt(new Uint8Array())).toBeNull();
+});
+
+test('Function: civilTakenLabel — prints the civil clock and hides a bad value', () => {
+  expect(civilTakenLabel('2026-09-22T11:40:00+08:00')).toBe('2026-09-22 11:40:00+08:00');
+  expect(civilTakenLabel('not-a-time')).toBeNull();
+});
 
 const FX_USD = {
   quote: 'BTC-USD',

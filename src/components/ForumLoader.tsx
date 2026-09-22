@@ -1598,7 +1598,11 @@ export function ForumLoader({
               ...(pendingPhotos.length === 0
                 ? {}
                 : {
-                    photos: pendingPhotos.map(({ contentType, data }) => ({ contentType, data })),
+                    photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
+                      contentType,
+                      data,
+                      ...(takenAt === undefined ? {} : { takenAt }),
+                    })),
                   }),
               ...(goalSats !== undefined ? { goalSats } : {}),
             });

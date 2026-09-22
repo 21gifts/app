@@ -22,6 +22,11 @@ export type ForumPhotoGalleryProps = {
   className?: string;
   /** Stop card expand/collapse when tapping or keying the gallery. */
   onPhotoClick?: (event: { stopPropagation(): void }) => void;
+  /**
+   * Civil capture times aligned with still index. Missing or null slots
+   * draw no caption. Never falls back to another still.
+   */
+  takenAts?: ReadonlyArray<string | null>;
 };
 
 /**
@@ -60,11 +65,28 @@ function slideStride(scroller: HTMLElement): number {
  * @param props - See {@link ForumPhotoGalleryProps}.
  * @returns The gallery, or `null` when `photos` is empty.
  */
+/**
+ * Stored civil capture time with `T` shown as a space.
+ *
+ * @param value - API `photoTakenAt` string, or null/undefined.
+ * @returns Display text, or `null` when the value is missing or not civil time.
+ */
+export function civilTakenLabel(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2})?$/.test(value)) {
+    return null;
+  }
+  return value.replace('T', ' ');
+}
+
 export function ForumPhotoGallery({
   photos,
   alt,
   className,
   onPhotoClick,
+  takenAts,
 }: ForumPhotoGalleryProps): ReactElement | null {
   const { t } = useTranslations();
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +112,8 @@ export function ForumPhotoGallery({
   }
 
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
+  const activeStill = photos[Math.min(active, photos.length - 1)] as ForumPhotoGalleryItem;
+  const takenLabel = civilTakenLabel(takenAts?.[activeStill.index]);
 
   return (
     <div className={`flex flex-col${extra}`} onClick={onPhotoClick} onKeyDown={onPhotoClick}>
@@ -123,6 +147,11 @@ export function ForumPhotoGallery({
           {t('forum.galleryPosition', { current: active + 1, total: photos.length })}
         </div>
       </div>
+      {takenLabel !== null ? (
+        <p className="mt-1 text-xs text-app-muted">
+          {t('forum.photoTakenAt', { time: takenLabel })}
+        </p>
+      ) : null}
       {photos.length > 1 ? (
         <div className="mt-2 flex justify-center gap-5">
           {photos.map((photo, i) => (

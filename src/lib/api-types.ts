@@ -457,6 +457,8 @@ export const forumMessageSchema = z
     payable: z.boolean(),
     hasPhoto: z.boolean(),
     photoCount: z.number().int().min(0).max(10).optional(),
+    photoTakenAts: z.array(z.string().nullable()).max(10).optional(),
+    photoTakenAt: z.string().nullable().optional(),
     hasVideo: z.boolean().optional().default(false),
     videoContentType: z
       .enum(['video/mp4', 'video/webm', 'video/quicktime'])

@@ -1709,6 +1709,28 @@ describe('postMessage', () => {
     });
   });
 
+  it('sends a capture time and drops a blank one', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', {
+      text: 'timed',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'timed',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' },
+      photos: [{ contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' }],
+    });
+    await postMessage('sess', {
+      text: 'blank',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '   ' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[1]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'blank',
+      photo: { contentType: 'image/jpeg', data: 'abc' },
+      photos: [{ contentType: 'image/jpeg', data: 'abc' }],
+    });
+  });
+
   it('includes a photo payload when provided', async () => {
     const withPhoto = { ...forumMessage, text: '', hasPhoto: true };
     const fetchMock = stubFetch({ ok: true, status: 200, body: withPhoto });

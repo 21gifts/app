@@ -1468,6 +1468,12 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
   }
 }
 
+type ForumPostStill = {
+  contentType: string;
+  data: string;
+  takenAt?: string | null;
+};
+
 /**
  * Posts a new public forum message (text and/or up to ten photos), or a reply.
  *
@@ -1486,18 +1492,25 @@ export async function postMessage(
   sessionToken: string,
   input: {
     text: string;
-    photo?: { contentType: string; data: string };
-    photos?: { contentType: string; data: string }[];
+    photo?: ForumPostStill;
+    photos?: ForumPostStill[];
     inReplyTo?: string;
     goalSats?: number;
   },
 ): Promise<ForumMessage> {
-  const stills =
+  const sourceStills =
     input.photos !== undefined
       ? input.photos.slice(0, 10)
       : input.photo !== undefined
         ? [input.photo]
         : [];
+  const stills = sourceStills.map((still) => ({
+    contentType: still.contentType,
+    data: still.data,
+    ...(typeof still.takenAt === 'string' && still.takenAt.trim() !== ''
+      ? { takenAt: still.takenAt }
+      : {}),
+  }));
   const inReplyTo =
     input.inReplyTo !== undefined && input.inReplyTo !== '' ? input.inReplyTo : undefined;
   const goalSats =

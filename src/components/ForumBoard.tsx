@@ -31,7 +31,7 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumNoteText } from '@/components/ForumNoteText';
-import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
+import { civilTakenLabel, ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
@@ -912,6 +912,11 @@ export function ForumBoard({
             url: photoUrls[`${message.id}:${index}`],
           })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
           const photoUrl = photoUrls[`${message.id}:0`];
+          const singleTakenLabel = civilTakenLabel(
+            typeof message.photoTakenAts?.[0] === 'string'
+              ? message.photoTakenAts[0]
+              : message.photoTakenAt,
+          );
           const videoSrc =
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
@@ -1035,19 +1040,29 @@ export function ForumBoard({
                     }}
                   />
                 ) : photoCount <= 1 && photoUrl !== undefined ? (
-                  /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
-                  <img
-                    src={photoUrl}
-                    alt={t('forum.photoAlt', { name: message.name })}
-                    className="mt-2 max-h-80 w-full rounded-xl object-contain"
-                    onClick={stopCardToggle}
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */}
+                    <img
+                      src={photoUrl}
+                      alt={t('forum.photoAlt', { name: message.name })}
+                      className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                      onClick={stopCardToggle}
+                    />
+                    {singleTakenLabel !== null ? (
+                      <p className="mt-1 text-xs text-app-muted">
+                        {t('forum.photoTakenAt', { time: singleTakenLabel })}
+                      </p>
+                    ) : null}
+                  </>
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
                   <ForumPhotoGallery
                     photos={loadedPhotoUrls}
                     alt={t('forum.photoAlt', { name: message.name })}
                     className="mt-2"
                     onPhotoClick={stopCardToggle}
+                    {...(message.photoTakenAts === undefined
+                      ? {}
+                      : { takenAts: message.photoTakenAts })}
                   />
                 ) : null}
                 {displayText !== '' ? (

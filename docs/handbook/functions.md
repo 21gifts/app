@@ -876,10 +876,24 @@
 - **Returns / side effects:** `LinkedText` (`<p>` plus optional overlay), or `null` when `text === ''`. Local React expand state only.
 - **Used by:** `ForumQuotedBody` / `QuotedForumNote` (remaining text and nested quoted note bodies when `truncate` is true) and `NoteTranslate` (translated body).
 
+## Function: civilTakenLabel
+
+- **Purpose:** Turn a stored civil capture time into the caption text. Does not parse it as a UTC instant.
+- **Inputs:** A string, or null/undefined.
+- **Returns / side effects:** The string with `T` replaced by a space when it matches `YYYY-MM-DDTHH:MM:SS` plus an optional `±HH:MM` offset; otherwise null. No I/O.
+- **Used by:** `ForumBoard`, `PublicMessageLoader`, `ForumPhotoGallery`.
+
+## Function: readJpegTakenAt
+
+- **Purpose:** Read a JPEG APP1 Exif capture time before the canvas re-encode strips it. Does not read GPS.
+- **Inputs:** JPEG file bytes.
+- **Returns / side effects:** `YYYY-MM-DDTHH:MM:SS` plus the matching offset when the file has one, or null. Prefers DateTimeOriginal, then DateTimeDigitized, then IFD0 DateTime. No I/O.
+- **Used by:** `prepareForumPhoto`.
+
 ## Function: ForumPhotoGallery
 
-- **Purpose:** Horizontal snap gallery for a note with `photoCount > 1`. Earlier stills are 88% slides (`min-w-[88%] shrink-0 snap-start`, `gap-3`) so the next photo peeks; the last still is `w-full min-w-full` so it can sit flush at snap-start. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots under the scroller (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) jump to a still. Empty `photos` returns `null`. Single still has the chip and no dots.
-- **Inputs:** `photos` (`{ index, url }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`).
+- **Purpose:** Horizontal snap gallery for a note with `photoCount > 1`. The visible still's civil capture time is captioned only when `takenAts` has a string at that still's index. Earlier stills are 88% slides (`min-w-[88%] shrink-0 snap-start`, `gap-3`) so the next photo peeks; the last still is `w-full min-w-full` so it can sit flush at snap-start. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots under the scroller (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) jump to a still. Empty `photos` returns `null`. Single still has the chip and no dots.
+- **Inputs:** `photos` (`{ index, url }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`), optional `takenAts` aligned with still index.
 - **Returns / side effects:** React element. Local scroll index only. No network. Blob `<img>` URLs from the parent.
 - **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
 
@@ -1438,8 +1452,8 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: postMessage
 
-- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo?, goalSats? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`. Optional `goalSats` is a positive int ≤ 10_000_000 on a top-level note; omitted on replies and when unset.
-- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data }` photo, optional `photos` array (max 10), optional `inReplyTo` parent id (thread composer only), and optional `goalSats` (positive int ≤ 10_000_000).
+- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo?, goalSats? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`. A non-blank string `takenAt` on a still is included; a blank or missing time is omitted. Optional `goalSats` is a positive int ≤ 10_000_000 on a top-level note; omitted on replies and when unset.
+- **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data, takenAt? }` photo, optional `photos` array (max 10), optional `inReplyTo` parent id (thread composer only), and optional `goalSats` (positive int ≤ 10_000_000).
 - **Returns / side effects:** `ForumMessage`. Omits `inReplyTo` and `goalSats` from the JSON body when absent; omits `goalSats` on replies even if passed. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 uses the api error string when present; otherwise throws `A reply needs a Bitcoin payment`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
@@ -1459,9 +1473,9 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: prepareForumPhoto
 
-- **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL.
+- **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL. JPEG files also keep `takenAt` from Exif before the canvas encode; PNG and WebP set `takenAt` null.
 - **Inputs:** `file` accepted by `isForumPhotoFile`.
-- **Returns / side effects:** `{ ok: true, photo }` or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
+- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
 - **Used by:** `ForumLoader`, `AboutMeSection`, `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: parseNumberFormat
