@@ -283,7 +283,7 @@ async function stubModeratorGroup(
       body: JSON.stringify({ conversation: GROUP }),
     });
   });
-  await page.route('**/conversations/conv-mod', async (route) => {
+  await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -321,7 +321,7 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
       body: JSON.stringify({ conversation: GROUP }),
     });
   });
-  await page.route('**/conversations/conv-mod', async (route) => {
+  await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -449,7 +449,7 @@ test('opening the unread Moderators room POSTs /conversations/:id/read', async (
       body: JSON.stringify({ conversation: { ...GROUP, unread: true } }),
     });
   });
-  await page.route(/\/conversations\/conv-mod$/, async (route) => {
+  await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -505,7 +505,7 @@ test('Function: fetchConversationMessagePhoto — group thread shows the attache
       body: JSON.stringify({ conversation: GROUP }),
     });
   });
-  await page.route('**/conversations/conv-mod', async (route) => {
+  await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

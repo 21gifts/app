@@ -1643,17 +1643,22 @@ export async function fetchModeratorGroup(sessionToken: string): Promise<Convers
   }
 }
 
+/** Number of conversation messages requested per page. */
+export const CONVERSATION_PAGE_LIMIT = 20;
+
 /**
- * Fetches messages in one private thread (oldest first).
+ * Fetches one page of messages in a private thread.
  *
- * When `sinceMessageId` is a non-empty string, the api long-polls until that
- * id exists (or times out). `AbortError` is rethrown so the inbox pay poll
- * can treat cancel as a non-error.
+ * The first request returns the newest page, ordered oldest-first within that
+ * page. `nextCursor` is present only when the page is full; passing it back as
+ * `cursor` loads the next older page. When `sinceMessageId` is a non-empty
+ * string, the api long-polls until that id exists (or times out). `AbortError`
+ * is rethrown so the inbox pay poll can treat cancel as a non-error.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Conversation UUID.
- * @param opts - Optional `sinceMessageId` query and `AbortSignal` for the fetch.
- * @returns Message list.
+ * @param opts - Optional older-page cursor, `sinceMessageId` query, and fetch signal.
+ * @returns The page's oldest-first messages and its next older-page cursor.
  * @throws Error with visitor-facing copy when the api is unavailable, the
  * thread is missing, or the body fails {@link conversationThreadSchema}.
  * Re-throws `AbortError` when the request was aborted.
@@ -1661,15 +1666,19 @@ export async function fetchModeratorGroup(sessionToken: string): Promise<Convers
 export async function fetchConversation(
   sessionToken: string,
   id: string,
-  opts?: { sinceMessageId?: string; signal?: AbortSignal },
-): Promise<ConversationMessage[]> {
+  opts?: { sinceMessageId?: string; cursor?: string; signal?: AbortSignal },
+): Promise<{ messages: ConversationMessage[]; nextCursor: string | null }> {
   try {
+    const query = new URLSearchParams({ limit: String(CONVERSATION_PAGE_LIMIT) });
+    const cursor = opts?.cursor;
     const sinceMessageId = opts?.sinceMessageId;
-    const path = `/conversations/${encodeURIComponent(id)}`;
-    const url =
-      sinceMessageId !== undefined && sinceMessageId !== ''
-        ? `${path}?sinceMessageId=${encodeURIComponent(sinceMessageId)}`
-        : path;
+    if (cursor !== undefined && cursor !== '') {
+      query.set('cursor', cursor);
+    }
+    if (sinceMessageId !== undefined && sinceMessageId !== '') {
+      query.set('sinceMessageId', sinceMessageId);
+    }
+    const url = `/conversations/${encodeURIComponent(id)}?${query.toString()}`;
     const init: RequestInit = {
       headers: { Authorization: `Bearer ${sessionToken}` },
     };
@@ -1680,7 +1689,8 @@ export async function fetchConversation(
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
     }
-    return conversationThreadSchema.parse(await response.json()).messages;
+    const parsed = conversationThreadSchema.parse(await response.json());
+    return { messages: parsed.messages, nextCursor: parsed.nextCursor ?? null };
   } catch (err) {
     if ((err instanceof Error && err.name === 'AbortError') || opts?.signal?.aborted) {
       throw err instanceof Error && err.name === 'AbortError'

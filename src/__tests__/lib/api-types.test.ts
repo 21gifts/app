@@ -621,7 +621,14 @@ describe('conversationMessageSchema', () => {
       photoCount: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
-    expect(conversationThreadSchema.parse({ messages: [message] }).messages).toHaveLength(1);
+    expect(conversationThreadSchema.parse({ messages: [message] })).toEqual({
+      messages: [message],
+    });
+    expect(conversationThreadSchema.parse({ messages: [message], nextCursor: 'cur' })).toEqual({
+      messages: [message],
+      nextCursor: 'cur',
+    });
+    expect(() => conversationThreadSchema.parse({ messages: [message], nextCursor: '' })).toThrow();
   });
 
   it('accepts fromMe true and false', () => {

@@ -2768,7 +2768,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2838,7 +2838,7 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2895,7 +2895,7 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2971,7 +2971,7 @@ test('Function: MessagesChromeLeft — open thread has one All conversations bac
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -3094,7 +3094,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -6887,7 +6887,7 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

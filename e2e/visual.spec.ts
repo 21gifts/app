@@ -6464,7 +6464,7 @@ test.describe('contact screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6707,7 +6707,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6786,7 +6786,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6839,7 +6839,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6884,7 +6884,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6958,7 +6958,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -7912,7 +7912,7 @@ test.describe('moderate group screens', () => {
       photoCount?: number;
     }>,
   ): Promise<void> {
-    await page.route('**/conversations/conv-mod', async (route) => {
+    await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

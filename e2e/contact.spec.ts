@@ -95,7 +95,7 @@ test('contact success opens the official thread with Hello team', async ({ page 
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

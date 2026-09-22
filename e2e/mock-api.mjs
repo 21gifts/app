@@ -766,8 +766,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (method === 'GET') {
+      const parsedLimit = Number(url.searchParams.get('limit'));
+      const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 20;
+      const cursor = url.searchParams.get('cursor');
+      const cursorIndex =
+        cursor === null
+          ? thread.messages.length
+          : thread.messages.findIndex((message) => message.id === cursor);
+      const endIndex = cursorIndex >= 0 ? cursorIndex : thread.messages.length;
+      const startIndex = Math.max(0, endIndex - limit);
+      const page = thread.messages.slice(startIndex, endIndex);
       json(res, 200, {
-        messages: thread.messages.map((message) => ({
+        messages: page.map((message) => ({
           id: message.id,
           name: message.name,
           text: message.text,
@@ -778,6 +788,7 @@ const server = http.createServer(async (req, res) => {
             ? { giftFor: message.giftFor }
             : {}),
         })),
+        ...(page.length === limit && startIndex > 0 ? { nextCursor: page[0].id } : {}),
       });
       return;
     }
