@@ -559,7 +559,7 @@ Ask step 2 of 4 after a photo over 1 MB. The error sits under the step. No thumb
 
 ### Variant: ask-too-many
 
-Ask step 2 of 4 after more than 10 photos. The error sits under the step.
+Ask step 2 of 4 after more than 10 photos. The first ten thumbnails stay, and **You can add up to 10 photos** sits under them.
 
 ![21.gifts welcome ask too many](images/welcome-ask-too-many.png)
 
