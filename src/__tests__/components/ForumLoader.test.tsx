@@ -2359,7 +2359,7 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    chooseForumMode('Active');
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
@@ -2411,9 +2411,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
     fetchMock
       .mockResolvedValueOnce(forumPage([]))
       .mockResolvedValue(
@@ -2428,7 +2426,7 @@ describe('ForumLoader', () => {
       );
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     });
   });
 
@@ -2464,9 +2462,9 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    chooseForumMode('All');
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     });
     fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([created]));
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
@@ -2521,9 +2519,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Bob')).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
     expect(screen.getByText('0 reactions')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
@@ -2539,9 +2535,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('Hi')).toBeTruthy();
       expect(screen.getByText('1 reactions')).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
   });
 
   it('keeps a compose invoice on the composer when the fee note is listed', async () => {
@@ -2567,7 +2561,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    chooseForumMode('All');
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
@@ -2666,7 +2660,7 @@ describe('ForumLoader', () => {
       });
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
       expect(screen.getByText('with photo')).toBeTruthy();
     });
   });
@@ -2720,9 +2714,7 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-        'true',
-      );
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
     });
   });
 
@@ -4961,7 +4953,7 @@ describe('ForumLoader', () => {
     });
     expect(postMock).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    chooseForumMode('Active');
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
@@ -4974,9 +4966,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
     const replyCard = await clickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
@@ -4986,12 +4976,8 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
     });
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).not.toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toContain('All');
   });
 
   it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
