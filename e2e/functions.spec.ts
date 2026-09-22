@@ -4349,6 +4349,7 @@ test('Function: openCryptoPayQrValue — profile QR is the Open CryptoPay URL', 
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByText('carol@21.gifts')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
   expect(openCryptoPayQrValue('carol')).toBe(
     'https://21.gifts/pl/?lightning=LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9A3KZUN0DS7CX370',
   );
