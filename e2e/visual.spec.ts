@@ -7496,7 +7496,6 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-shops-error');
   });
-
 });
 
 test.describe('contact screens', () => {
