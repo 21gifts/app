@@ -46,8 +46,8 @@ function revokeIfBlob(url: string): void {
  * (`markConversationRead`), bumps the badge epoch, and refreshes the
  * home-screen badge with staff-room unread `0`. The newest 20-message page
  * loads first; an IntersectionObserver near the oldest bubble prepends unique
- * older pages without returning to the loading card or retriggering the
- * newest-id bottom pin. Other signed-in visitors
+ * older pages without returning to the loading card.
+ * {@link InboxScreen} stays pinned while stuck to the bottom. Other signed-in visitors
  * and a missing account see forbidden copy and do not fetch. Renders
  * nothing without a session. Back to the moderation hub is the page
  * chrome (no in-card back).

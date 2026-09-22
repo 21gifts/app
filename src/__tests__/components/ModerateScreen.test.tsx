@@ -200,8 +200,10 @@ describe('ModerateScreen', () => {
       ).toBeNull();
       expect(screen.queryByText('Closed staff room for moderators.')).toBeNull();
       expect(
-        screen.getByText('Pick a person, then walk each principle and whether the posts are true.'),
-      ).toBeTruthy();
+        screen.queryByText(
+          'Pick a person, then walk each principle and whether the posts are true.',
+        ),
+      ).toBeNull();
       expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
       expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
         '/moderate/hidden',
@@ -238,6 +240,9 @@ describe('ModerateScreen', () => {
       expect(screen.getByText('12%')).toBeTruthy();
     });
     expect(screen.getByText('yesterday 12 of 100')).toBeTruthy();
+    expect(screen.getByText('100 payouts a day').parentElement).toBe(
+      screen.getByText('yesterday 12 of 100').parentElement,
+    );
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
     expect(screen.getByText(/Official means 21.gifts itself paid/)).toBeTruthy();
     expect(screen.getByText('36')).toBeTruthy();

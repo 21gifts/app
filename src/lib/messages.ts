@@ -315,7 +315,6 @@ const en = {
   'forum.askWriteMessage': 'Write a message',
   'forum.askPreview': 'Preview',
   'forum.askContinue': 'Continue',
-  'forum.askSkip': 'Skip',
   'forum.askBack': 'Back',
   'forum.askStepOf': '{step} of {total}',
   'forum.errorAskAmount': 'Enter a whole number to ask for.',
@@ -404,6 +403,7 @@ const en = {
   'profile.about.errorTooLarge': 'Keep photos under 1 MB',
   'profile.copyLink': 'Copy link to this profile',
   'profile.giftsHeading': '21.gifts address',
+  'profile.giftsQr': 'Open CryptoPay QR code',
   'profile.message': 'Message',
 
   'view.unnamed': 'Unnamed',
@@ -672,8 +672,6 @@ const en = {
   'funding.reviewedOn': 'Reviewed by a moderator on {date}',
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
-  'funding.applications.lead':
-    'Pick a person, then walk each principle and whether the posts are true.',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
@@ -1023,7 +1021,6 @@ const de = {
   'forum.askWriteMessage': 'Nachricht schreiben',
   'forum.askPreview': 'Vorschau',
   'forum.askContinue': 'Weiter',
-  'forum.askSkip': 'Überspringen',
   'forum.askBack': 'Zurück',
   'forum.askStepOf': '{step} von {total}',
   'forum.errorAskAmount': 'Geben Sie eine ganze Zahl zum Anfragen ein.',
@@ -1114,6 +1111,7 @@ const de = {
   'profile.about.errorTooLarge': 'Fotos unter 1 MB halten',
   'profile.copyLink': 'Link zu diesem Profil kopieren',
   'profile.giftsHeading': '21.gifts-Adresse',
+  'profile.giftsQr': 'Open-CryptoPay-QR-Code',
   'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
@@ -1394,8 +1392,6 @@ const de = {
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
-  'funding.applications.lead':
-    'Wählen Sie eine Person, dann prüfen Sie jeden Grundsatz und ob die Beiträge der Wahrheit entsprechen.',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
@@ -1740,7 +1736,6 @@ const es = {
   'forum.askWriteMessage': 'Escribe un mensaje',
   'forum.askPreview': 'Vista previa',
   'forum.askContinue': 'Continuar',
-  'forum.askSkip': 'Omitir',
   'forum.askBack': 'Atrás',
   'forum.askStepOf': '{step} de {total}',
   'forum.errorAskAmount': 'Introduce un número entero para pedir.',
@@ -1830,6 +1825,7 @@ const es = {
   'profile.about.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
   'profile.copyLink': 'Copiar enlace a este perfil',
   'profile.giftsHeading': 'Dirección 21.gifts',
+  'profile.giftsQr': 'Código QR de Open CryptoPay',
   'profile.message': 'Mensaje',
 
   'view.unnamed': 'Sin nombre',
@@ -2098,8 +2094,6 @@ const es = {
   'funding.reviewedOn': 'Revisado por una persona moderadora el {date}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
-  'funding.applications.lead':
-    'Elige a una persona, luego recorre cada principio y si los mensajes son verdad.',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
@@ -2444,7 +2438,6 @@ const fil = {
   'forum.askWriteMessage': 'Sumulat ng mensahe',
   'forum.askPreview': 'Preview',
   'forum.askContinue': 'Magpatuloy',
-  'forum.askSkip': 'Laktawan',
   'forum.askBack': 'Bumalik',
   'forum.askStepOf': '{step} sa {total}',
   'forum.errorAskAmount': 'Maglagay ng buong numero na hihilingin.',
@@ -2535,6 +2528,7 @@ const fil = {
   'profile.about.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
   'profile.copyLink': 'Kopyahin ang link sa profile na ito',
   'profile.giftsHeading': '21.gifts address',
+  'profile.giftsQr': 'QR code ng Open CryptoPay',
   'profile.message': 'Mensahe',
 
   'view.unnamed': 'Walang pangalan',
@@ -2810,8 +2804,6 @@ const fil = {
   'funding.reviewedOn': 'Nireview ng isang moderator noong {date}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
-  'funding.applications.lead':
-    'Pumili ng tao, tapos suriin ang bawat prinsipyo at kung totoo ang mga post.',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',

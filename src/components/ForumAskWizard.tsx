@@ -241,28 +241,16 @@ export function ForumAskWizard({
               ))}
             </ul>
           ) : null}
-          <div className="flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={posting}
-              onClick={() => {
-                onStepChange(3);
-              }}
-            >
-              {t('forum.askSkip')}
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={posting}
-              onClick={() => {
-                onStepChange(3);
-              }}
-            >
-              {t('forum.askContinue')}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={posting}
+            onClick={() => {
+              onStepChange(3);
+            }}
+          >
+            {t('forum.askContinue')}
+          </Button>
         </>
       ) : null}
       {step === 3 ? (

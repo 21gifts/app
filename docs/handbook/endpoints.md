@@ -70,6 +70,15 @@
 - **Used by:** `fetchGiftDay` on `/stats/[day]`.
 - **Auth:** Public.
 
+## Endpoint: GET /messages/stats
+
+- **Purpose:** Same-origin proxy of api `GET /messages/stats` (living notes and replies counted together, by UTC day).
+- **Auth:** Public.
+- **Inputs:** None.
+- **Outputs:** `{ postCount, postsOverTime }` from the api.
+- **Errors:** Forwards the upstream status.
+- **Used by:** `StatsLoader` on `/stats`.
+
 ## Endpoint: GET /gifts/stats
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).

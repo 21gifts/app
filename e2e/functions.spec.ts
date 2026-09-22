@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { openCryptoPayQrValue } from '../src/lib/gifts-address';
+import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
@@ -3525,10 +3527,33 @@ test('Function: isUtcDay — invalid day is 404', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
 });
 
+test('Function: proxyMessagesStatsGet — GET /messages/stats counts posts', async ({ request }) => {
+  const res = await request.get('/messages/stats');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { postCount: number }).postCount).toBe(6);
+});
+
 test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ request }) => {
   const res = await request.get('/gifts/stats');
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
+});
+
+test('Function: fetchPostStats — stats page shows notes and replies as posts', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await page.route('**/messages/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        postCount: 4,
+        postsOverTime: [{ day: '2026-08-01', postCount: 4 }],
+      }),
+    });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('region', { name: 'Posts' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Posts' })).toContainText('4');
 });
 
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
@@ -4327,6 +4352,38 @@ test('Function: giftsLightningAddress — member card shows username@21.gifts', 
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByText('carol@21.gifts')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+});
+
+test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+  expect(encodeLnurl('https://service.io/?q=3fc3645b439ce8e7')).toBe(
+    'LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9',
+  );
+  expect(encodeLnurl('https://aa')).toBe('LNURL1DP68GURN8GHJ7CTP6U9UJJ');
+});
+
+test('Function: openCryptoPayQrValue — profile QR is the Open CryptoPay URL', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+  expect(openCryptoPayQrValue('carol')).toBe(
+    'https://21.gifts/pl/?lightning=LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9A3KZUN0DS7CX370',
+  );
+  expect(openCryptoPayQrValue('ada', 'dev.21.gifts')).toBe(
+    'https://dev.21.gifts/pl/?lightning=LNURL1DP68GURN8GHJ7ER9WCHRYVFWVA5KVARN9UH8WETVDSKKKMN0WAHZ7MRWW4EXCUP0V9JXZD4X5DN',
+  );
+  expect(openCryptoPayQrValue('ada', 'localhost')).toBe(
+    'https://21.gifts/pl/?lightning=LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ',
+  );
+  expect(openCryptoPayQrValue(null)).toBeNull();
+  expect(openCryptoPayQrValue('   ')).toBeNull();
 });
 
 test('Function: NameSetup — name screen heading is visible', async ({ page }) => {

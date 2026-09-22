@@ -218,7 +218,6 @@ export function ModerateScreen(): ReactElement | null {
           </ButtonLink>
         </li>
         <li className="flex w-full flex-col items-center gap-3">
-          <p className="text-center text-sm text-app-muted">{t('funding.applications.lead')}</p>
           <ButtonLink href="/moderate/applications" variant="secondary" size="lg">
             {t('funding.applications.heading')}
           </ButtonLink>
@@ -308,16 +307,18 @@ function PayoutGoalWidget(props: {
       >
         <div className="flex w-full items-start justify-between gap-3">
           <p className="text-base font-semibold text-app-fg">{t('moderate.goal.title')}</p>
-          <div className="shrink-0 text-right">
-            <p className="text-2xl font-semibold tabular-nums lining-nums text-app-fg">
-              {t('moderate.goal.percent', { percent })}
-            </p>
-            <p className="text-xs text-app-muted">
-              {t('moderate.goal.yesterdayOf', { count, goal: PAYOUT_GOAL })}
-            </p>
-          </div>
+          <p className="shrink-0 text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+            {t('moderate.goal.percent', { percent })}
+          </p>
         </div>
-        <p className="text-sm text-app-muted">{t('moderate.goal.subtitle')}</p>
+        <div className="flex w-full items-baseline justify-between gap-2">
+          <p className="min-w-0 whitespace-nowrap text-xs text-app-muted sm:text-sm">
+            {t('moderate.goal.subtitle')}
+          </p>
+          <p className="shrink-0 whitespace-nowrap text-right text-xs text-app-muted">
+            {t('moderate.goal.yesterdayOf', { count, goal: PAYOUT_GOAL })}
+          </p>
+        </div>
         <svg
           className="h-3 w-full"
           viewBox="0 0 100 12"

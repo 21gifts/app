@@ -109,6 +109,30 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
   window.scrollTo(0, 0);
 }
 
+/** Stay pinned when the scroller is this close to the bottom. */
+const STUCK_TO_BOTTOM_PX = 80;
+
+/**
+ * Overflow node used for pin distance and prepend compensation.
+ *
+ * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
+ * @returns The scroller, or `document.documentElement` when none is mounted.
+ */
+function shellScrollNode(scroller: HTMLElement | null): HTMLElement {
+  return scroller ?? document.documentElement;
+}
+
+/**
+ * Distance in pixels from the current scroll position to the bottom.
+ *
+ * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
+ * @returns Distance to the bottom; within {@link STUCK_TO_BOTTOM_PX} counts as stuck.
+ */
+function shellDistanceToBottom(scroller: HTMLElement | null): number {
+  const node = shellScrollNode(scroller);
+  return node.scrollHeight - node.scrollTop - node.clientHeight;
+}
+
 /** Client-side composer validation or request failure. */
 export type InboxFormError =
   | 'empty'
@@ -351,9 +375,11 @@ function inboxAuthorProfileButton(
  * word Unread is not visible text. Heading and incoming author names with a
  * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
  * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
- * An open thread pins the AppShell scroller to the bottom after messages
- * render, when the newest bubble's stills load, and again when an invoice pay
- * sheet opens. Stills on older prepended pages do not retrigger that pin.
+ * An open thread stays pinned to the AppShell scroller bottom while the
+ * scroller is within 80px of the bottom, including when older pages prepend
+ * and when stills on the loaded page finish decoding (`onLoad`). Scrolling up unsticks; further
+ * prepends keep the same messages in view by compensating scrollTop. A
+ * newest-id change re-sticks. An invoice pay sheet opening pins again.
  * Inside AppShell the pin waits for that scroller and does not fall back to
  * `window` while the node is missing; `window` is only the no-shell fallback.
  * Leaving a thread scrolls that scroller to the top once so the conversation
@@ -404,6 +430,14 @@ export function InboxScreen({
   const inShell = useContext(AppShellContext) !== null;
   const scroller = useAppShellScroller();
   const hadOpenThreadRef = useRef(false);
+  const stuckToBottomRef = useRef(false);
+  const prevLastMessageIdRef = useRef<string | null>(null);
+  const threadScrollRef = useRef({
+    firstMessageId: '',
+    messageCount: 0,
+    scrollHeight: 0,
+    scrollTop: 0,
+  });
   const paySheetWasOpen = useRef(false);
   const payWaitingWasOn = useRef(false);
   const payQrWasOn = useRef(false);
@@ -413,23 +447,17 @@ export function InboxScreen({
 
   const messagesReady = messages !== null;
   const groups = messages === null ? [] : groupThreadGifts(messages);
+  const messageCount = messages === null ? 0 : messages.length;
+  let firstMessageId = '';
   let lastMessageId = '';
   if (messages !== null && messages.length > 0) {
+    const first = messages[0];
     const last = messages[messages.length - 1];
+    /* v8 ignore next -- length > 0, so the first index exists */
+    firstMessageId = first === undefined ? '' : first.id;
     /* v8 ignore next -- length > 0, so the last index exists */
     lastMessageId = last === undefined ? '' : last.id;
   }
-  const lastBubble = groups.length > 0 ? groups[groups.length - 1] : undefined;
-  const lastBubbleId = lastBubble === undefined ? '' : lastBubble.message.id;
-  const lastPhotoPrefix = `${lastBubbleId}:`;
-  const lastPhotoUrls =
-    lastBubbleId === ''
-      ? ''
-      : Object.entries(photoUrls)
-          .filter(([key]) => key.startsWith(lastPhotoPrefix))
-          .map(([key, url]) => `${key}=${url}`)
-          .sort()
-          .join('\0');
 
   useEffect(() => {
     /* v8 ignore next 3 -- SSR has no navigator */
@@ -438,6 +466,32 @@ export function InboxScreen({
     );
   }, []);
 
+  useEffect(() => {
+    if (inShell && scroller === null) {
+      return;
+    }
+    const threadOpen = openId !== null && openId !== '';
+    if (!threadOpen) {
+      return;
+    }
+    const onScroll = (): void => {
+      const node = shellScrollNode(scroller);
+      stuckToBottomRef.current = shellDistanceToBottom(scroller) <= STUCK_TO_BOTTOM_PX;
+      threadScrollRef.current.scrollHeight = node.scrollHeight;
+      threadScrollRef.current.scrollTop = node.scrollTop;
+    };
+    if (scroller !== null) {
+      scroller.addEventListener('scroll', onScroll);
+      return () => {
+        scroller.removeEventListener('scroll', onScroll);
+      };
+    }
+    window.addEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [scroller, inShell, openId]);
+
   useLayoutEffect(() => {
     if (inShell && scroller === null) {
       return;
@@ -445,24 +499,57 @@ export function InboxScreen({
     const threadOpen = openId !== null && openId !== '';
     if (threadOpen) {
       hadOpenThreadRef.current = true;
-      if (messagesReady && messagesLoading === false && messagesError === false) {
+      const lastIdChanged = lastMessageId !== prevLastMessageIdRef.current;
+      const messagesSettled = messagesReady && messagesLoading === false && messagesError === false;
+      if (lastIdChanged) {
+        stuckToBottomRef.current = true;
+        if (messagesSettled) {
+          shellScrollToBottom(scroller);
+        }
+      } else if (stuckToBottomRef.current && messagesSettled) {
         shellScrollToBottom(scroller);
+      } else if (
+        stuckToBottomRef.current === false &&
+        firstMessageId !== threadScrollRef.current.firstMessageId &&
+        messageCount > threadScrollRef.current.messageCount
+      ) {
+        const node = shellScrollNode(scroller);
+        const delta = node.scrollHeight - threadScrollRef.current.scrollHeight;
+        node.scrollTop = threadScrollRef.current.scrollTop + delta;
       }
+      prevLastMessageIdRef.current = lastMessageId;
+      const node = shellScrollNode(scroller);
+      threadScrollRef.current = {
+        firstMessageId,
+        messageCount,
+        scrollHeight: node.scrollHeight,
+        scrollTop: node.scrollTop,
+      };
       return;
     }
     if (hadOpenThreadRef.current) {
       shellScrollToTop(scroller);
       hadOpenThreadRef.current = false;
     }
+    stuckToBottomRef.current = false;
+    prevLastMessageIdRef.current = null;
+    threadScrollRef.current = {
+      firstMessageId: '',
+      messageCount: 0,
+      scrollHeight: 0,
+      scrollTop: 0,
+    };
   }, [
     openId,
     messagesReady,
     messagesLoading,
     messagesError,
     lastMessageId,
+    firstMessageId,
+    messageCount,
+    photoUrls,
     scroller,
     inShell,
-    lastPhotoUrls,
   ]);
 
   useLayoutEffect(() => {
@@ -497,6 +584,20 @@ export function InboxScreen({
     payWaiting,
     showPaymentQr,
   ]);
+
+  const pinIfStuck = (): void => {
+    /* v8 ignore next 3 -- first AppShell paint: scrollerEl state is still null */
+    if (inShell && scroller === null) {
+      return;
+    }
+    const node = shellScrollNode(scroller);
+    threadScrollRef.current.scrollHeight = node.scrollHeight;
+    threadScrollRef.current.scrollTop = node.scrollTop;
+    if (!stuckToBottomRef.current) {
+      return;
+    }
+    shellScrollToBottom(scroller);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -609,7 +710,10 @@ export function InboxScreen({
           </div>
         ) : null}
         {messages !== null ? (
-          <ul aria-label={t('inbox.threadLabel')} className="flex w-full flex-col gap-3">
+          <ul
+            aria-label={t('inbox.threadLabel')}
+            className="flex w-full flex-col gap-3 [overflow-anchor:none]"
+          >
             {groups.map(({ message, gifts }, index) => (
               <li
                 key={message.id}
@@ -694,6 +798,7 @@ export function InboxScreen({
                         src={url}
                         alt={t('inbox.photoAlt', { name: message.name })}
                         className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                        onLoad={pinIfStuck}
                       />
                     );
                   },

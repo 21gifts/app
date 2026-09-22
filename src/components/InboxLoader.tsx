@@ -103,7 +103,7 @@ function isAbortError(err: unknown): boolean {
  * paid gift row. Threads load the newest 20-message page first; an
  * IntersectionObserver near the oldest bubble prepends unique older pages.
  * Prepending keeps the loaded thread visible and does not toggle its loading
- * state, so the thread's first-open/newest-id bottom pin does not re-run.
+ * state; {@link InboxScreen} stays pinned while stuck to the bottom.
  * Open Direct / Contact / Damus threads attach JPEG/PNG/WebP stills via
  * {@link prepareForumPhoto} (cap 10); photo-only send is allowed. Thread stills
  * load via {@link fetchConversationMessagePhoto} (no fetch without a session).

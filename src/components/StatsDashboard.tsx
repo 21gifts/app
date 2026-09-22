@@ -6,7 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import type { GiftStats } from '@/lib/api-types';
+import type { GiftStats, PostStats } from '@/lib/api-types';
 import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
@@ -27,6 +27,11 @@ export interface StatsDashboardProps {
   loading: boolean;
   /** Retry handler for a failed fetch. */
   onRetry: () => void;
+  /**
+   * Living notes and replies, or `null` when that fetch failed.
+   * Omitted in tests that only cover gifts.
+   */
+  posts?: PostStats | null;
 }
 
 type BarScale = 'btc' | 'fiat';
@@ -38,6 +43,59 @@ type FiatAmounts = {
   eur: string | null;
   php: string | null;
 };
+
+/**
+ * Posts total and a daily bar. Notes and replies are already one count.
+ *
+ * @param props - Series and the visitor's number format.
+ * @returns The posts section.
+ */
+function PostsSummary({
+  posts,
+  numberFormat,
+}: {
+  posts: PostStats;
+  numberFormat: NumberFormatStyle;
+}): ReactElement {
+  const max = Math.max(...posts.postsOverTime.map((point) => point.postCount), 1);
+  return (
+    <section aria-label="Posts" className="space-y-3">
+      <h2 className="text-sm font-medium tracking-widest text-accent uppercase">Posts</h2>
+      <p className="text-4xl font-semibold tabular-nums lining-nums">
+        {formatCount(posts.postCount, numberFormat)}
+      </p>
+      <p className="text-sm text-paper/60">
+        Notes and replies, by UTC day. Hidden notes are not counted.
+      </p>
+      {posts.postsOverTime.length > 0 ? (
+        <svg
+          viewBox={`0 0 ${posts.postsOverTime.length} 64`}
+          className="h-16 w-full"
+          aria-hidden="true"
+        >
+          {posts.postsOverTime.map((point, index) => {
+            if (point.postCount === 0) {
+              return null;
+            }
+            const bar = Math.max(2, Math.round((point.postCount / max) * 64));
+            return (
+              <rect
+                key={point.day}
+                x={index}
+                y={64 - bar}
+                width={1}
+                height={bar}
+                className="fill-accent"
+              >
+                <title>{`${point.day}: ${point.postCount}`}</title>
+              </rect>
+            );
+          })}
+        </svg>
+      ) : null}
+    </section>
+  );
+}
 
 /**
  * Picks the selected fiat total from a stats payload.
@@ -585,6 +643,7 @@ export function StatsDashboard({
   error,
   loading,
   onRetry,
+  posts = null,
 }: StatsDashboardProps): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
@@ -619,6 +678,7 @@ export function StatsDashboard({
       {showFiatSwitcher ? (
         <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
       ) : null}
+      {posts !== null ? <PostsSummary posts={posts} numberFormat={numberFormat} /> : null}
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>

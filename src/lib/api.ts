@@ -16,6 +16,7 @@ import {
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
+  postStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
@@ -43,6 +44,7 @@ import {
   type HiddenMessage,
   type GiftDay,
   type GiftStats,
+  type PostStats,
   type AccountActivity,
   type LnAddressResolved,
   type MemberProfile,
@@ -730,6 +732,25 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
     return giftStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches public forum activity. Notes and replies are already one count.
+ *
+ * @returns Living notes plus replies, by UTC day.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link postStatsSchema}.
+ */
+export async function fetchPostStats(): Promise<PostStats> {
+  try {
+    const response = await fetch('/messages/stats');
+    if (!response.ok) {
+      throw new Error('Could not load post stats. Please try again.');
+    }
+    return postStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load post stats. Please try again.');
   }
 }
 

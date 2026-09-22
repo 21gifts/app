@@ -154,7 +154,6 @@ export function FundingApplicationsScreen(): ReactElement | null {
   return (
     <Card maxWidth="xl" surface={false}>
       {heading}
-      <p className="text-center text-sm text-app-muted">{t('funding.applications.lead')}</p>
       {body}
     </Card>
   );

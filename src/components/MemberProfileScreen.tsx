@@ -14,6 +14,7 @@ import {
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
+import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { Button, Card } from '@/components/ui';
 import {
@@ -40,10 +41,12 @@ import {
   nextPostRequirement,
   type MissingRequirement,
 } from '@/lib/missing-requirements';
-import { giftsLightningAddress } from '@/lib/gifts-address';
+import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
+import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -230,6 +233,12 @@ export function MemberProfileScreen({
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const address = giftsLightningAddress(listedProfile.username, host);
+  const qr = openCryptoPayQrValue(listedProfile.username, host);
+  const [showQr, setShowQr] = useState(false);
+
+  useEffect(() => {
+    setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
+  }, []);
 
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -1107,6 +1116,11 @@ export function MemberProfileScreen({
             ) : (
               <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
             )}
+            {showQr && qr !== null ? (
+              <div className="flex justify-center">
+                <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+              </div>
+            ) : null}
           </div>
           <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">
             <Button

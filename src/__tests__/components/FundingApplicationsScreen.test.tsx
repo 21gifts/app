@@ -101,6 +101,9 @@ describe('FundingApplicationsScreen', () => {
     renderWithLocale(<FundingApplicationsScreen />);
     expect(screen.getByRole('heading', { name: 'Open applications' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(
+      screen.queryByText('Pick a person, then walk each principle and whether the posts are true.'),
+    ).toBeNull();
   });
 
   it('shows empty copy', async () => {
@@ -108,6 +111,9 @@ describe('FundingApplicationsScreen', () => {
     renderWithLocale(<FundingApplicationsScreen />);
     expect(await screen.findByText('No open applications.')).toBeTruthy();
     expect(listMock).toHaveBeenCalledWith('sess');
+    expect(
+      screen.queryByText('Pick a person, then walk each principle and whether the posts are true.'),
+    ).toBeNull();
   });
 
   it('shows an error and retries', async () => {
@@ -136,6 +142,9 @@ describe('FundingApplicationsScreen', () => {
       '/moderate/applications/acc_rose',
     );
     expect(screen.getByText(formatForumTimeFromMs(APPLICATION.appliedAt, 'en'))).toBeTruthy();
+    expect(
+      screen.queryByText('Pick a person, then walk each principle and whether the posts are true.'),
+    ).toBeNull();
   });
 
   it('falls back to Unnamed for empty and null names', async () => {
