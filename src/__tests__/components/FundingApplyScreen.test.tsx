@@ -180,6 +180,7 @@ describe('FundingApplyScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
     expect(await screen.findByText('Next, add a photo to your About me.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
   });
 
   it('sends a missing-rules save to setup', async () => {
@@ -330,7 +331,9 @@ describe('FundingApplyScreen', () => {
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
     expect(
-      await screen.findByText('Could not load this application. Please try again.'),
+      await screen.findByRole('alert', {
+        name: 'Could not load this application. Please try again.',
+      }),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(

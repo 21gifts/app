@@ -232,6 +232,7 @@ export function FundingApplyScreen(): ReactElement | null {
           <LocationForm startEditing />
         ) : (
           <AboutMeSection
+            key={fill}
             mode="owner"
             aboutMe={account.aboutMe}
             name={account.name}
@@ -290,7 +291,9 @@ export function FundingApplyScreen(): ReactElement | null {
   if (postsError) {
     body = (
       <>
-        <p className="text-center text-sm text-app-muted">{t('funding.detail.error')}</p>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('funding.detail.error')}
+        </p>
         <Button
           type="button"
           variant="secondary"

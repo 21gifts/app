@@ -1323,7 +1323,7 @@ Posts fetch hanging. Copy **Loading…**
 
 ### Variant: error
 
-Posts fetch failed. Copy **Could not load this application. Please try again.**
+Posts fetch failed. `role="alert"` **Could not load this application. Please try again.**
 
 ![21.gifts apply error](images/profile-apply-error.png)
 
