@@ -1671,9 +1671,7 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('Newer arrival')).toBeTruthy();
     expect(screen.getByText('Older new')).toBeTruthy();
     expect(
-      screen
-        .getByText('Older new')
-        .compareDocumentPosition(screen.getByText('Newer arrival')) &
+      screen.getByText('Older new').compareDocumentPosition(screen.getByText('Newer arrival')) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(screen.getAllByText('Hello')).toHaveLength(1);

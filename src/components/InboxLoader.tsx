@@ -529,13 +529,7 @@ export function InboxLoader(): ReactElement | null {
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   useEffect(() => {
-    if (
-      session === null ||
-      openId === null ||
-      openId === '' ||
-      !threadAllowed ||
-      !threadLoaded
-    ) {
+    if (session === null || openId === null || openId === '' || !threadAllowed || !threadLoaded) {
       return;
     }
     let cancelled = false;
