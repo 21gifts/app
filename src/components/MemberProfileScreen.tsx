@@ -40,6 +40,7 @@ import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
@@ -852,8 +853,9 @@ export function MemberProfileScreen({
   const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
+  const memberPath = `/members/${profile.id}`;
   /* v8 ignore next -- SSR first paint: origin empty until client */
-  const profileUrl = origin !== '' ? `${origin}/members/${profile.id}` : '';
+  const profileUrl = origin !== '' ? shortResourceUrl(origin, profile.id, memberPath) : '';
 
   useEffect(() => {
     setOrigin(window.location.origin);

@@ -62,6 +62,7 @@ import {
 } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
+import { shortLinkPath } from '@/lib/short-link';
 
 /**
  * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
@@ -1334,6 +1335,40 @@ export async function fetchPublicMessage(
     }
     /* Zod / network */
     throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Resolves a public short code (`/l/<8 hex>`) to a message or member id.
+ *
+ * Invalid codes, non-OK responses, and unexpected bodies return `null`.
+ * Network and JSON failures return `null` and do not throw.
+ *
+ * @param code - Eight hex characters (case-insensitive).
+ * @returns The kind and lowercased id, or `null`.
+ * @throws Does not throw.
+ */
+export async function fetchShortLink(
+  code: string,
+): Promise<{ kind: 'message' | 'member'; id: string } | null> {
+  if (!/^[0-9a-f]{8}$/i.test(code)) {
+    return null;
+  }
+  try {
+    const response = await fetch(`/links/${encodeURIComponent(code)}`);
+    if (!response.ok) {
+      return null;
+    }
+    const body: unknown = await response.json();
+    const path = shortLinkPath(body);
+    if (path === null) {
+      return null;
+    }
+    const kind = path.startsWith('/messages/') ? 'message' : 'member';
+    const id = path.slice(path.lastIndexOf('/') + 1);
+    return { kind, id };
+  } catch {
+    return null;
   }
 }
 

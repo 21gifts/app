@@ -704,8 +704,9 @@ describe('MemberProfileScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
     await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/members/${profile.id}`);
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/22222222`);
     });
+    expect(screen.queryByText(`${window.location.origin}/l/22222222`)).toBeNull();
     expect(screen.queryByText(`${window.location.origin}/members/${profile.id}`)).toBeNull();
     expect(screen.queryByText(`/members/${profile.id}`)).toBeNull();
   });

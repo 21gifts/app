@@ -1,5 +1,7 @@
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PREFIX_RE = /https?:\/\/[^\s/]+\/messages\//gi;
+const SHORT_CODE_RE = /^[0-9a-f]{8}$/i;
+const MESSAGE_PREFIX_RE = /https?:\/\/[^\s/]+\/messages\//gi;
+const SHORT_PREFIX_RE = /https?:\/\/[^\s/]+\/l\//gi;
 const HORIZONTAL_WS_RE = /[^\S\n\r]+/g;
 
 function isWhitespace(ch: string): boolean {
@@ -23,19 +25,24 @@ function isProsePunctuation(ch: string): boolean {
   );
 }
 
-type QuoteMatch = { start: number; end: number; id: string };
+type IdMatch = { start: number; end: number; id: string };
 
-function collectQuoteMatches(text: string): QuoteMatch[] {
-  const matches: QuoteMatch[] = [];
-  const prefixRe = new RegExp(PREFIX_RE.source, PREFIX_RE.flags);
+function collectIdMatches(
+  text: string,
+  prefixRe: RegExp,
+  idRe: RegExp,
+  idLength: number,
+): IdMatch[] {
+  const matches: IdMatch[] = [];
+  const scanner = new RegExp(prefixRe.source, prefixRe.flags);
   let prefixMatch: RegExpExecArray | null;
-  while ((prefixMatch = prefixRe.exec(text)) !== null) {
+  while ((prefixMatch = scanner.exec(text)) !== null) {
     const idStart = prefixMatch.index + prefixMatch[0].length;
-    const idSlice = text.slice(idStart, idStart + 36);
-    if (!UUID_RE.test(idSlice)) {
+    const idSlice = text.slice(idStart, idStart + idLength);
+    if (!idRe.test(idSlice)) {
       continue;
     }
-    let end = idStart + 36;
+    let end = idStart + idLength;
     const afterId = text[end];
     if (afterId === '/') {
       const afterSlash = text[end + 1];
@@ -75,7 +82,7 @@ function collectQuoteMatches(text: string): QuoteMatch[] {
   return matches;
 }
 
-function uniqueFirstSeenIds(matches: readonly QuoteMatch[]): string[] {
+function uniqueFirstSeenIds(matches: readonly IdMatch[]): string[] {
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const match of matches) {
@@ -87,7 +94,7 @@ function uniqueFirstSeenIds(matches: readonly QuoteMatch[]): string[] {
   return ids;
 }
 
-function stripMatches(text: string, toStrip: readonly QuoteMatch[]): string {
+function stripMatches(text: string, toStrip: readonly IdMatch[]): string {
   if (toStrip.length === 0) {
     return text;
   }
@@ -119,6 +126,22 @@ function stripMatches(text: string, toStrip: readonly QuoteMatch[]): string {
   return nextLines.join('\n').trim();
 }
 
+function splitTrackedLinks(
+  text: string,
+  prefixRe: RegExp,
+  idRe: RegExp,
+  idLength: number,
+  resolvedIds: ReadonlySet<string> | undefined,
+): { displayText: string; ids: string[] } {
+  const matches = collectIdMatches(text, prefixRe, idRe, idLength);
+  const ids = uniqueFirstSeenIds(matches);
+  const resolved =
+    resolvedIds === undefined ? undefined : new Set([...resolvedIds].map((id) => id.toLowerCase()));
+  const toStrip =
+    resolved === undefined ? matches : matches.filter((match) => resolved.has(match.id));
+  return { displayText: stripMatches(text, toStrip), ids };
+}
+
 /**
  * Parse HTTP(S) `/messages/<uuid>` URLs from a forum body.
  *
@@ -131,11 +154,25 @@ export function splitForumMessageQuotes(
   text: string,
   resolvedIds?: ReadonlySet<string>,
 ): { displayText: string; ids: string[] } {
-  const matches = collectQuoteMatches(text);
-  const ids = uniqueFirstSeenIds(matches);
-  const resolved =
-    resolvedIds === undefined ? undefined : new Set([...resolvedIds].map((id) => id.toLowerCase()));
-  const toStrip =
-    resolved === undefined ? matches : matches.filter((match) => resolved.has(match.id));
-  return { displayText: stripMatches(text, toStrip), ids };
+  return splitTrackedLinks(text, MESSAGE_PREFIX_RE, UUID_RE, 36, resolvedIds);
+}
+
+/**
+ * Parse HTTP(S) `/l/<8 hex>` URLs from a forum body.
+ *
+ * Same host and punctuation rules as {@link splitForumMessageQuotes}. Codes are
+ * lowercased, unique, and first-seen. When `resolvedCodes` is omitted, every
+ * matched short link is stripped. When it is passed, only those codes are
+ * stripped (case-insensitive).
+ *
+ * @param text - Raw note or reply body.
+ * @param resolvedCodes - Codes whose short URLs should leave `displayText`.
+ * @returns Lowercased unique first-seen codes and the remaining display text.
+ */
+export function splitShortLinks(
+  text: string,
+  resolvedCodes?: ReadonlySet<string>,
+): { displayText: string; codes: string[] } {
+  const split = splitTrackedLinks(text, SHORT_PREFIX_RE, SHORT_CODE_RE, 8, resolvedCodes);
+  return { displayText: split.displayText, codes: split.ids };
 }

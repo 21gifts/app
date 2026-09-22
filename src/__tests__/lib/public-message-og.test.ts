@@ -133,7 +133,7 @@ describe('publicMessageOgMetadata', () => {
     expect(meta.description).toBe('Hello from Ada');
     expect(meta.openGraph).toEqual({
       type: 'website',
-      url: `https://21.gifts/messages/${MESSAGE_ID}`,
+      url: 'https://21.gifts/l/11111111',
       siteName: '21.gifts',
       title: 'Ada',
       description: 'Hello from Ada',
@@ -183,7 +183,7 @@ describe('publicMessageOgMetadata', () => {
     const photo = { url: `/messages/${MESSAGE_ID}/photo`, alt: 'Hello from Ada' };
     expect(meta.openGraph).toEqual({
       type: 'website',
-      url: `https://21.gifts/messages/${MESSAGE_ID}`,
+      url: 'https://21.gifts/l/11111111',
       siteName: '21.gifts',
       title: 'Ada',
       description: 'Hello from Ada',
@@ -203,7 +203,7 @@ describe('publicMessageOgMetadata', () => {
     const photo = { url: `/messages/${MESSAGE_ID}/photo`, alt: 'Ada' };
     expect(meta.openGraph).toEqual({
       type: 'website',
-      url: `https://21.gifts/messages/${MESSAGE_ID}`,
+      url: 'https://21.gifts/l/11111111',
       siteName: '21.gifts',
       title: 'Ada',
       description: 'Ada on 21.gifts',
@@ -233,7 +233,7 @@ describe('publicMessageOgMetadata', () => {
     );
     expect(meta.openGraph).toEqual({
       type: 'website',
-      url: `https://21.gifts/messages/${MESSAGE_ID}`,
+      url: 'https://21.gifts/l/11111111',
       siteName: '21.gifts',
       title: 'External author on 21.gifts',
       description: 'A reply from someone outside 21.gifts who sent bitcoin to a post.',
@@ -266,5 +266,12 @@ describe('publicMessageOgMetadata', () => {
     expect(meta.twitter!.description).not.toContain(authorName);
     expect(meta.twitter!.description).not.toContain(noteText);
     expect(meta.twitter!.description).not.toContain(photoRoute);
+  });
+
+  it('keeps the long message url when the id is not a uuid', () => {
+    const meta = publicMessageOgMetadata('not-a-uuid', { ...sample, id: 'not-a-uuid' });
+    expect(meta.openGraph).toMatchObject({ url: 'https://21.gifts/messages/not-a-uuid' });
+    const external = publicMessageOgMetadata('m1', { ...sample, id: 'm1', via: 'nostr' });
+    expect(external.openGraph).toMatchObject({ url: 'https://21.gifts/messages/m1' });
   });
 });

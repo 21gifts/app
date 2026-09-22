@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { forumMessageSchema, type ForumMessage } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
+import { shortResourceUrl } from '@/lib/short-link';
 
 /** Same regex as PublicMessageLoader. Not exported (keep Function count down). */
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -78,7 +79,7 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
       description,
       openGraph: {
         type: 'website',
-        url: `https://21.gifts/messages/${id}`,
+        url: shortResourceUrl('https://21.gifts', id, `/messages/${id}`),
         siteName: '21.gifts',
         title,
         description,
@@ -101,7 +102,7 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
     description,
     openGraph: {
       type: 'website',
-      url: `https://21.gifts/messages/${id}`,
+      url: shortResourceUrl('https://21.gifts', id, `/messages/${id}`),
       siteName: '21.gifts',
       title,
       description,

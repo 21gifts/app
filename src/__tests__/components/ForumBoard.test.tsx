@@ -3882,6 +3882,34 @@ describe('ForumBoard', () => {
     });
   });
 
+  it('copies a uuid note as an 8-hex short link', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const noteId = '77e0510d-03a8-4063-8716-75d61178e7f1';
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: noteId }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this note' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/77e0510d`);
+    });
+  });
+
   it('labels the copy control of a reply shown as a feed card and copies its own permalink', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {

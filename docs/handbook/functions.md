@@ -2,7 +2,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz uses `export function GET`; same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateGet` (availability only; no upstream call). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo` (`id` + `messageId`), `/conversations/[id]/messages/[messageId]/photo/[file]` (`id` + `messageId` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/translate`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/translate` is always 200 `{ available: boolean }`; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16.
@@ -760,7 +760,7 @@
 
 - **Purpose:** Maps a loaded public note (or `null`) to Next.js `Metadata`. Found notes use the author name as title and never the marketing layout description, even when `text` is empty. Photo notes set `og:image` to `/messages/{id}/photo`; others keep `/og.png`. A note with any `via` value (written without a 21.gifts account) gets fully generic metadata instead: title `External author on 21.gifts`, description `A reply from someone outside 21.gifts who sent bitcoin to a post.`, and always the default `/og.png` image — nothing from the note's `name`, `text` or photo reaches a link preview. Both strings are plain English constants, not from the catalog.
 - **Inputs:** Route `id` and `note` (`ForumMessage | null`).
-- **Returns / side effects:** `{}` when `note` is `null`. For a note with a `via` value the generic External title, description and default image described above. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/messages/{id}`, `siteName` 21.gifts), and Twitter `summary_large_image`.
+- **Returns / side effects:** `{}` when `note` is `null`. For a note with a `via` value the generic External title, description and default image described above. Otherwise title, description (trimmed text or `` `${name} on 21.gifts` ``, truncated above 300 code units with `…`), Open Graph (`type: website`, `url` `https://21.gifts/l/` plus the first 8 hex of a UUID id (otherwise `https://21.gifts/messages/{id}`), `siteName` 21.gifts), and Twitter `summary_large_image`.
 - **Used by:** `generateMetadata` on `/messages/[id]`.
 
 ## Function: PublicMessageLoader
@@ -1388,6 +1388,13 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** `ForumMessage`, or `null` on 404 or abort (`AbortError` / already-aborted signal). Throws visitor copy (`Could not load messages. Please try again.`) on other non-ok, network, or zod failures.
 - **Used by:** `PublicMessageLoader`, `ForumLoader`.
 
+## Function: fetchShortLink
+
+- **Purpose:** GET `/links/<code>` without a session. An invalid code, a non-OK response (400, 404, 409, or anything else), and an unexpected body return `null`. Network and JSON failures return `null` and do not throw.
+- **Inputs:** `code` string. Only `^[0-9a-f]{8}$` (case-insensitive) is fetched; other strings return `null` without a request.
+- **Returns / side effects:** `{ kind: 'message' | 'member', id }` with `id` lowercased, or `null`.
+- **Used by:** `ForumQuotedBody`.
+
 ## Function: fetchForumMessage
 
 - **Purpose:** GET `/forum/messages/:id` with a bearer session, parse `forumMessageSchema`, and return one forum note. Staff sessions receive soft-hidden rows (`deletedAt` / `deletedBy`); others get 404.
@@ -1493,6 +1500,20 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** Display string. Delegates to `formatForumTime` after `toISOString`.
 - **Used by:** `FundingStatusCard`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `MemberProfileScreen`.
 
+## Function: shortResourceUrl
+
+- **Purpose:** Build the absolute URL handed to a person for a note, a reply, or a member profile. A UUID becomes `origin` + `/l/` + the first 8 hex characters, lowercased. Any other id keeps `origin` plus the long path (`/messages/<id>` or `/members/<id>`).
+- **Inputs:** `origin` without a trailing slash, resource `id`, and `longPath` used when `id` is not a UUID.
+- **Returns / side effects:** Absolute URL string. No I/O.
+- **Used by:** `copyMessageLink` in `ForumBoard`, the member profile copy control, and `publicMessageOgMetadata`.
+
+## Function: shortLinkPath
+
+- **Purpose:** Map a `GET /links/:code` JSON body to the long app path. `kind: "message"` becomes `/messages/<uuid>` and `kind: "member"` becomes `/members/<uuid>`, with the id lowercased. Anything else, including a non-UUID id, is `null`.
+- **Inputs:** Parsed JSON `body` (`unknown`).
+- **Returns / side effects:** Path string or `null`. No I/O.
+- **Used by:** `fetchShortLink` and the `GET /l/[code]` redirect route.
+
 ## Function: splitForumMessageQuotes
 
 - **Purpose:** Parse HTTP(S) `/messages/<uuid>` URLs from a forum body. Returns lowercased unique first-seen ids and displayText with resolved URLs removed (all URLs when resolvedIds omitted). Does not linkify other URLs.
@@ -1500,9 +1521,16 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** `{ displayText, ids }`. No I/O.
 - **Used by:** `ForumQuotedBody`.
 
+## Function: splitShortLinks
+
+- **Purpose:** Parse HTTP(S) `/l/<8 hex>` URLs from a forum body using the same host and punctuation rules as `splitForumMessageQuotes`. Codes are lowercased, unique, and first-seen. When `resolvedCodes` is omitted, every matched short link is stripped. When it is passed, only those codes are stripped (case-insensitive). `/messages/<uuid>` URLs are left untouched.
+- **Inputs:** `text` string, optional `resolvedCodes` ReadonlySet<string>.
+- **Returns / side effects:** `{ displayText, codes }`. No I/O.
+- **Used by:** `ForumQuotedBody`.
+
 ## Function: ForumQuotedBody
 
-- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs. Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`); caption sits beside that link (`ForumNoteText` when truncate, else `LinkedText`, no nested unfurl); ₿ amount is a second permalink link without that aria-label. NoteTranslate on stripped display text only. Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more, bodies autolinked). Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role) and renders its caption as plain text: `ForumNoteText plain` when truncate, else `LinkedText plain`, followed by `NoteTranslate plain`, so a URL in a quoted external reply is never a link.
+- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`); caption sits beside that link (`ForumNoteText` when truncate, else `LinkedText`, no nested unfurl); ₿ amount is a second permalink link without that aria-label. NoteTranslate on stripped display text only. Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more, bodies autolinked). Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role) and renders its caption as plain text: `ForumNoteText plain` when truncate, else `LinkedText plain`, followed by `NoteTranslate plain`, so a URL in a quoted external reply is never a link.
 - **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional className (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), optional onActivate.
 - **Returns / side effects:** React element or null when text==='' and no resolved quotes. Unknown quote ids load via `fetchPublicMessage` (catch, never throw).
 - **Used by:** `ForumBoard`, `PublicMessageLoader`, `InboxScreen`.
@@ -2276,6 +2304,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/public-messages/[id]`.
+
+## Function: proxyShortLinkGet
+
+- **Purpose:** Public proxy GET `/links/:code` to the 21.gifts api (JSON `{ kind, id }`, no auth). App path is `/links/[code]`. Forwards the code with `encodeURIComponent`. The visitor-facing redirect is `/l/[code]`, not this JSON route.
+- **Inputs:** Incoming `Request`, plus short-link `code` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest` (status and JSON body, or 502 when the api is unreachable).
+- **Used by:** Route GET `/links/[code]`, which `fetchShortLink` calls.
 
 ## Function: proxyPublicMessageRepliesGet
 
