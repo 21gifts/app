@@ -35,6 +35,7 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
+import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
@@ -542,10 +543,10 @@ function fallbackCopy(text: string): boolean {
 
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
- * Active/No gifts yet/All/Most popular selector (unpaid may show a count
- * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
- * is not selected; omitted when `modeSelector` is false or `composerHidden`
- * is true), composer under the mode
+ * ForumModeSelect (a closed full-width combobox showing the selected label
+ * and a chevron; unpaid count chip on the closed trigger when `unpaidNewCount`
+ * is \> 0 and unpaid is not selected; omitted when `modeSelector` is false or
+ * `composerHidden` is true), composer under the mode
  * filters above the newest-first list (new notes only; Post/Ask pill;
  * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
  * feed) or empty/loading/error, per-card expand for oldest-first replies +
@@ -1557,7 +1558,7 @@ export function ForumBoard({
       ) : null}
 
       {!composerHidden && modeSelector ? (
-        <SegmentedControl
+        <ForumModeSelect
           value={mode}
           options={FORUM_FEED_MODES.map((next) => {
             const label = t(MODE_LABEL_KEY[next]);
@@ -1573,8 +1574,6 @@ export function ForumBoard({
           })}
           onChange={onModeChange}
           ariaLabel={t('forum.modeLabel')}
-          tone="neutral"
-          className="!grid grid-cols-2 !rounded-2xl"
         />
       ) : null}
 

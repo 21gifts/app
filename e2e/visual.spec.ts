@@ -2,6 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
+async function chooseForumView(page: Page, name: string): Promise<void> {
+  await page.getByRole('combobox', { name: 'Forum view' }).click();
+  await page.getByRole('option', { name, exact: true }).click();
+}
+
 /**
  * Visual baselines are Linux Chromium (CI and the Playwright Docker image).
  * Behavioral e2e specs still run on macOS; these comparisons do not.
@@ -1239,10 +1244,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await shotScreen(page, 'screen-welcome');
   });
 
@@ -5260,7 +5263,7 @@ test.describe('welcome forum variants', () => {
     await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -5287,7 +5290,7 @@ test.describe('welcome forum variants', () => {
         });
       });
       await page.goto('/welcome');
-      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await chooseForumView(page, 'No gifts yet');
       await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toBeVisible();
       if (state !== 'moderation') {
         await page.getByRole('button', { name: 'Delete post', exact: true }).click();
@@ -5409,7 +5412,7 @@ test.describe('welcome forum variants', () => {
         });
       });
       await page.goto('/welcome');
-      await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+      await chooseForumView(page, 'No gifts yet');
       await page.getByRole('button', { name: 'Show reactions', exact: true }).click();
       await expect(
         page.getByRole('button', { name: 'Delete reaction', exact: true }),
@@ -5448,7 +5451,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
     await shotScreen(page, 'state-welcome-all');
   });
@@ -5478,7 +5481,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('50%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-50');
   });
@@ -5508,7 +5511,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('100%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-100');
   });
@@ -5538,7 +5541,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
@@ -5591,10 +5594,8 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.00')).toBeVisible();
@@ -5647,15 +5648,28 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-preview');
   });
 
+  test('welcome filter-open', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Forum view' }).click();
+    const list = page.getByRole('listbox', { name: 'Forum view' });
+    await expect(list).toBeVisible();
+    await expect(list.getByRole('option', { name: 'Active', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'No gifts yet', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'All', exact: true })).toBeVisible();
+    await expect(list.getByRole('option', { name: 'Most popular', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-filter-open');
+  });
+
   test('welcome unpaid', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'No gifts yet', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await chooseForumView(page, 'No gifts yet');
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('No gifts yet');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
     await expect(page.getByText('Thank you both — that helps.')).not.toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).not.toBeVisible();
@@ -5669,11 +5683,10 @@ test.describe('welcome forum variants', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    const forumView = page.getByRole('combobox', { name: 'Forum view' });
+    await expect(forumView).toContainText('Active');
+    await expect(forumView).toContainText('1');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-unpaid-new-count');
   });
 
@@ -5700,7 +5713,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+    await chooseForumView(page, 'No gifts yet');
     await expect(
       page.getByText('Every loaded message has already received Bitcoin.'),
     ).toBeVisible();
@@ -5711,7 +5724,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Most popular' }).click();
+    await chooseForumView(page, 'Most popular');
     const items = page.getByRole('listitem');
     await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
     await expect(items.nth(0)).toContainText('₿21');
@@ -5745,10 +5758,8 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No message has received Bitcoin yet.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Does anyone have spare sats this week?')).not.toBeVisible();
     await shotScreen(page, 'state-welcome-empty-paid');
   });
@@ -5860,7 +5871,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photo');
@@ -5910,7 +5921,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
     await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photos');
@@ -6017,7 +6028,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
     await expect(page.getByText('Hello with these photos.')).toBeVisible();
     await shotScreen(page, 'state-welcome-photos-and-text');
@@ -6313,7 +6324,7 @@ test.describe('welcome forum variants', () => {
       await route.abort();
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-photo-loading');
@@ -6588,7 +6599,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -6700,7 +6711,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -6758,7 +6769,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Verified' }).click();
     await expect(
       page.getByText('A moderator has met this person in real life and confirmed they are real.'),

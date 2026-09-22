@@ -117,12 +117,12 @@ This is not “Log in is a gift.” Ink pages have one filled accent, and it is 
 
 **(B) App shell** (`app-*`): orange is **gift-money** only — fills and chart paint, never body/kicker **text** on paper (~2.3:1).
 
-| Orange                                                               | Not orange                                                                                                                       |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`) |
-| Charts: received series, ₿ selected in ₿ \| selected fiat            | Forum Active/No gifts yet/All/Most popular selected (`app-btn`)                                                                  |
-|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                         |
-|                                                                      | **Rules kickers and ticks** — see (B′)                                                                                           |
+| Orange                                                               | Not orange                                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/donate` **Open the forum** (`ButtonLink` accent fill + `text-ink`) | Card **Log in**, **Try again**, **Continue**, **I agree**, **Activate**, forum **Post**, contact send, forum **Pay** (`app-btn`)            |
+| Charts: received series, ₿ selected in ₿ \| selected fiat            | Closed forum view is a field (`bg-app-card`), not a selected pill; Post/Ask selected stays `bg-app-btn`; check is `text-app-fg`, not orange |
+|                                                                      | Menu, language, app body links (`text-app-fg underline`)                                                                                    |
+|                                                                      | **Rules kickers and ticks** — see (B′)                                                                                                      |
 
 **(B′) Living-room house chrome (closed exception, not a third job).** `RulesDocument` paints:
 
@@ -521,7 +521,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; a
 | Unselected | Gift app: `text-app-muted`. Gift dark: `text-paper/70`                                                                                                                                                                |
 | Labels     | Stats charts: `₿` and the preferred FiatCode (CHF/EUR/USD/PHP). Profile: `₿` and the preferred FiatCode (CHF/EUR/USD/PHP), group `profile.chartScale`. `aria-pressed` on each. Group `role="group"` with catalog name |
 
-Forum Active/No gifts yet/All/Most popular uses the **same primitive** with `tone="neutral"` so selected is `bg-app-btn` not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
+The closed forum view is a field (`bg-app-card`), not a selected pill. Post/Ask selected pill stays `bg-app-btn`. The check is `text-app-fg`, not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
 **Empty profile chart.** If both series empty/all-zero sats: unsigned shows FiatPicker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone; **no SVG / no ₿|fiat scale**. Legend without data is noise.
 
@@ -715,15 +715,57 @@ export function SegmentedControl<T extends string>(props: {
 
 Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`. Omitted when `badge` is missing or ≤ 0. The option button gets `aria-label` only when `badge` > 0 and `badgeAriaLabel` is non-empty.
 
-| Tone + shell    | Track                                                                                                                                                                                      | Selected                                  | Unselected       | Use                                                                                                                                                                                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs`                                                                                                                  | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                                                                                                                                                      |
-| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`                                                                                                                    | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                                                                                                                                        |
-| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` on the `role="group"` (so Forum `className="!grid grid-cols-2 !rounded-2xl"` still lays out the option buttons). | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum Active / No gifts yet / All / Most popular (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications two pills (All / Active / Mentions always; This device On / Off when Push APIs are ready) |
+| Tone + shell    | Track                                                                                                                                                                                                              | Selected                                  | Unselected       | Use                                                                                                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gift` + `app`  | `inline-flex overflow-hidden rounded-md border border-app-border text-xs`                                                                                                                                          | `bg-app-accent text-app-accent-fg`        | `text-app-muted` | Profile ₿ \| selected FiatCode                                                                                                                                                                                                                                             |
+| `gift` + `dark` | `inline-flex overflow-hidden rounded-md border border-paper/20 text-xs`                                                                                                                                            | `bg-accent text-ink`                      | `text-paper/70`  | Stats ₿ \| selected FiatCode                                                                                                                                                                                                                                               |
+| `neutral`       | `flex w-full rounded-full border border-app-border bg-app-card-muted p-1` on the `role="group"` (so the forum composer Post/Ask `className="!grid grid-cols-2 !rounded-2xl"` still lays out those option buttons). | `bg-app-btn text-app-btn-fg rounded-full` | `text-app-muted` | Forum composer Post/Ask (`className="!grid grid-cols-2 !rounded-2xl"`); staff inbox Direct / Contact / Damus (three pills, one row, no extra `className`); Profile Notifications two pills (All / Active / Mentions always; This device On / Off when Push APIs are ready) |
 
-Forum Active / No gifts yet / All / Most popular ships with `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses two default one-row flex pills (All / Active / Mentions always, including while Push APIs are inspected; This device On / Off when Push APIs are ready).
+The forum composer Post/Ask still uses `className="!grid grid-cols-2 !rounded-2xl"` (two-column grid, not the rounded-full flex pill). The four forum view filters are `ForumModeSelect`, not this control. Staff inbox (moderator) uses the default one-row flex track (three pills, not a 2×2 grid). Members do not mount it. Profile Notifications uses two default one-row flex pills (All / Active / Mentions always, including while Push APIs are inspected; This device On / Off when Push APIs are ready).
 
 Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-pressed`.
+
+### ForumModeSelect
+
+Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. Shops does not mount it. Post/Ask stays a SegmentedControl.
+
+```tsx
+export function ForumModeSelect<T extends string>(props: {
+  value: T;
+  options: readonly {
+    value: T;
+    label: string;
+    badge?: number;
+    badgeAriaLabel?: string;
+  }[];
+  onChange: (value: T) => void;
+  ariaLabel: string;
+}): ReactElement;
+```
+
+**Trigger** (`type="button"` `role="combobox"` `aria-expanded` `aria-controls="forum-mode-listbox"` `aria-haspopup="listbox"`):
+
+```
+flex w-full min-h-11 items-center justify-between gap-2 rounded-2xl border border-app-border bg-app-card px-4 py-2 text-left text-base text-app-fg
+```
+
+Visible text is the selected label. `ChevronDown` is `h-4 w-4 shrink-0 text-app-muted`, aria-hidden. Not `rounded-full` and not `bg-app-btn` on the whole control.
+
+**Panel** (only while open, `role="listbox"` `id="forum-mode-listbox"`):
+
+```
+absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg
+```
+
+**Option row** (`type="button"` `role="option"` `tabIndex={-1}` `aria-selected`):
+
+```
+flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover
+```
+
+Selected row adds `font-medium` and a lucide Check `h-4 w-4 shrink-0 text-app-fg` (not orange). Pointer hover moves the keyboard highlight, so Enter or Space selects the row under the pointer.
+
+**Chip** (same as SegmentedControl): `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`, `aria-hidden`. Shown on the closed trigger when any option badge is greater than 0 (the unpaid count, even while another mode is selected). Shown on an option only when that option's badge is greater than 0. Omitted when the badge is missing or not positive. Option `aria-label` is `badgeAriaLabel` only when the badge is greater than 0 and `badgeAriaLabel` is a non-empty string.
 
 ### LanguageSwitcher
 
@@ -977,7 +1019,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
-- `SegmentedControl tone="neutral"` `className="!grid grid-cols-2 !rounded-2xl"` — two-column: Active / No gifts yet, then All / Most popular. The unpaid segment may show a numeric chip; omitted at 0 and when unpaid is selected.
+- `ForumModeSelect`: one closed full-width combobox showing the selected label and ChevronDown; open listbox with a check on the selected row; unpaid count chip on the closed trigger when the count is positive and unpaid is not selected; omitted at 0 and when unpaid is selected. Not a pill grid.
 - Composer.
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Moderator: icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
@@ -1058,7 +1100,7 @@ App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher.
 
 ### `/messages`
 
-Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum 2×2 grid; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text and, when the derived unread message count is greater than zero, a `text-sm font-semibold tabular-nums lining-nums` digit count right of the name (accessible name `inbox.threadUnread`); read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer with ImagePlus attach (`IconButton`, JPEG/PNG/WebP, max 10) and icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
+Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` `InboxScreen`: **h1** + inbound list with origin captions on rows. The Direct / Contact / Damus filter is founder/moderator only (`SegmentedControl tone="neutral"`, three pills, one row, not the forum-view dropdown; default Direct; selected `bg-app-btn`). Members see every inbound conversation, no chooser. Staff list is that origin only. Unread inbound rows are semibold with `text-app-fg` last text and, when the derived unread message count is greater than zero, a `text-sm font-semibold tabular-nums lining-nums` digit count right of the name (accessible name `inbox.threadUnread`); read inbound last text muted; last outbound text a filled sent chip. Open thread: counterpart name as heading + origin caption + **Inbox thread bubbles** (incoming full-width muted note card, sent filled `app-btn` right) + composer with ImagePlus attach (`IconButton`, JPEG/PNG/WebP, max 10) and icon send (no filter on the open thread; no in-card back). Member empty is `inbox.empty` with no control; staff empty is per-filter catalog copy with the control still visible. Loading / error / open thread hide the control. Open-thread chrome back is **All conversations** → `/messages`; list chrome back goes to welcome.
 
 ### `/messages/[id]` — public note
 

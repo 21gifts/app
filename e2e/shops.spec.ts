@@ -134,6 +134,7 @@ test('Function: isShopNote — shop note is listed', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'No gifts yet', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Most popular', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Forum view' })).toHaveCount(0);
   expect(listUrls.length).toBeGreaterThan(0);
   for (const url of listUrls) {
     expect(url).toContain('mode=all');
