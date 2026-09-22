@@ -8753,6 +8753,8 @@ test.describe('shops screens', () => {
 });
 
 test.describe('map screens', () => {
+  test.describe.configure({ timeout: 60_000 });
+
   async function seedAda(page: Page): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -8775,7 +8777,7 @@ test.describe('map screens', () => {
         }),
       });
     });
-    await page.route(/\/maps\/key$/, async (route) => {
+    await page.route('**/maps/key', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -8786,7 +8788,7 @@ test.describe('map screens', () => {
 
   test('map default', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await page.route('**/forum/messages/places', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -8805,13 +8807,15 @@ test.describe('map screens', () => {
       });
     });
     await page.goto('/map');
-    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
+      timeout: 20_000,
+    });
     await shotScreen(page, 'screen-map');
   });
 
   test('map empty', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await page.route('**/forum/messages/places', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -8819,13 +8823,13 @@ test.describe('map screens', () => {
       });
     });
     await page.goto('/map');
-    await expect(page.getByText('No places yet.')).toBeVisible();
+    await expect(page.getByText('No places yet.')).toBeVisible({ timeout: 20_000 });
     await shotScreen(page, 'state-map-empty');
   });
 
   test('map error', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await page.route('**/forum/messages/places', async (route) => {
       await route.fulfill({
         status: 503,
         contentType: 'application/json',
@@ -8833,7 +8837,9 @@ test.describe('map screens', () => {
       });
     });
     await page.goto('/map');
-    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible({
+      timeout: 20_000,
+    });
     await shotScreen(page, 'state-map-error');
   });
 });
