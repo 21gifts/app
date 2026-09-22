@@ -151,6 +151,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (visual === 'confirm' || setupWallet) {
       return 'confirm';
     }
+    if (showingWords && (account?.walletBackupSeenAt ?? null) === null) {
+      return 'confirm';
+    }
     if (visual === 'phrase' || showingWords) {
       return 'phrase';
     }
