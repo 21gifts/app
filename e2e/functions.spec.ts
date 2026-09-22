@@ -12,11 +12,26 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
-test('Function: readJpegTakenAt — POST /forum/messages without bearer is 401', async ({
+test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
+  page,
   request,
 }) => {
-  const res = await request.post('/forum/messages', { data: { text: 'hi' } });
-  expect(res.status()).toBe(401);
+  await reachWelcomeVerified(page, request);
+  const posted = page.waitForRequest((req) => {
+    if (req.method() !== 'POST') {
+      return false;
+    }
+    return /\/messages\/?$/.test(new URL(req.url()).pathname);
+  });
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/taken-at.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const body = (await posted).postDataJSON() as {
+    photo?: { takenAt?: string };
+    photos?: { takenAt?: string }[];
+  };
+  expect(body.photo?.takenAt).toBe('2020-01-01T00:00:00');
+  expect(body.photos?.[0]?.takenAt).toBe('2020-01-01T00:00:00');
 });
 
 const FX_USD = {
