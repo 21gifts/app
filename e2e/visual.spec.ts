@@ -7400,6 +7400,264 @@ test.describe('inbox screens', () => {
     await expect(page.getByText(QUOTED_NOTE_URL)).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-quoted-note');
   });
+
+  test('messages thread-composer-photo', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Hello',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Hello',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
+      timeout: 10_000,
+    });
+    await shotScreen(page, 'state-messages-thread-composer-photo');
+  });
+
+  test('messages thread-composer-photos', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Hello',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Hello',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    await shotScreen(page, 'state-messages-thread-composer-photos');
+  });
+
+  test('messages thread-photo', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: '',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-photo',
+              name: 'Bob',
+              text: '',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+              hasPhoto: true,
+              photoCount: 1,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/conversations/conv-bob/messages/m-photo/photo', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+      });
+    });
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByAltText('Photo from Bob')).toBeVisible({ timeout: 10_000 });
+    await shotScreen(page, 'state-messages-thread-photo');
+  });
+
+  const TINY_GIF = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64',
+  );
+
+  async function mockBobThread(page: Page): Promise<void> {
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: 'Hello',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Hello',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  async function hangCreateImageBitmap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+  }
+
+  async function stubTooLargeJpeg(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+  }
+
+  test('messages thread-preparing-photo', async ({ page }) => {
+    await seedAda(page);
+    await mockBobThread(page);
+    await hangCreateImageBitmap(page);
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-thread-preparing-photo');
+  });
+
+  test('messages thread-error-unsupported', async ({ page }) => {
+    await seedAda(page);
+    await mockBobThread(page);
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: TINY_GIF,
+    });
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-thread-error-unsupported');
+  });
+
+  test('messages thread-error-too-large', async ({ page }) => {
+    await seedAda(page);
+    await mockBobThread(page);
+    await stubTooLargeJpeg(page);
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-error-too-large');
+  });
+
+  test('messages thread-error-too-many', async ({ page }) => {
+    await seedAda(page);
+    await mockBobThread(page);
+    await page.goto('/messages?c=conv-bob');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
+    await shotScreen(page, 'state-messages-thread-error-too-many');
+  });
 });
 
 test.describe('notifications screens', () => {

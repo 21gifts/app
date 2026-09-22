@@ -345,23 +345,23 @@
 
 ## Endpoint: POST /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed on the Moderators group when at least one photo is present. Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed when at least one photo is present (Moderators group and `/messages` Direct/Contact/Damus). Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationMessage` in the inbox composer and in `ModeratorGroupScreen`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations/[id]/messages/[messageId]/photo
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id/messages/:messageId/photo` (still 0). Staff-room stills are private; 401 without a session.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id/messages/:messageId/photo` (still 0). Conversation stills (inbox Direct/Contact/Damus and the staff room) are private; 401 without a session.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
-- **Used by:** `fetchConversationMessagePhoto` from `ModeratorGroupScreen`.
+- **Used by:** `fetchConversationMessagePhoto` from `InboxLoader` and `ModeratorGroupScreen`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations/[id]/messages/[messageId]/photo/[file]
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id/messages/:messageId/photo/:file`. Filename must match `{1-9}.{jpg|jpeg|png|webp}`; otherwise 404 without calling the api. The proxy always requests `{n}.jpg` from the api.
 - **Errors:** 404 for an unsupported filename; upstream 401/404/503, or 502 if the api is unreachable.
-- **Used by:** `fetchConversationMessagePhoto` for indices 1–9.
+- **Used by:** `fetchConversationMessagePhoto` for indices 1–9 from `InboxLoader` and `ModeratorGroupScreen`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /conversations/[id]/invoice

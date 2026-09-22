@@ -212,7 +212,7 @@ app/
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
-│   │   ├── InboxLoader.tsx      # fetch/open/`?c=` state for `/messages` inbox
+│   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
 │   │   ├── PublicMessageLoader.tsx # public forum note on `/messages/[id]`; signed-in uses PublicMessageThread, unsigned remains read-only
 │   │   ├── PublicMessageThread.tsx # signed-in permalink ForumBoard (composerHidden, auto-expand, copy/Gift-on-payable-reply/reply/delete)

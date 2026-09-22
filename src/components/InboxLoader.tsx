@@ -6,6 +6,7 @@ import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/component
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
   fetchConversation,
+  fetchConversationMessagePhoto,
   fetchConversations,
   fetchModeratorGroup,
   markConversationRead,
@@ -18,8 +19,16 @@ import {
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Revoke a blob URL; data URLs from {@link prepareForumPhoto} are left alone. */
+function revokeIfBlob(url: string): void {
+  if (url.startsWith('blob:')) {
+    URL.revokeObjectURL(url);
+  }
+}
 
 /**
  * Parses the inbox composer amount draft.
@@ -89,11 +98,19 @@ function isAbortError(err: unknown): boolean {
  * least moderator, an unlisted `?c=` first resolves {@link fetchModeratorGroup}
  * once per id, with neutral loading instead of the list; a match never
  * opens, other roles and a failed lookup fall through. The composer sends
- * free text directly, or mints an invoice from its amount field and long-polls
- * for the paid gift row. Threads load the newest 20-message page first; an
+ * free text
+ * directly, or mints an invoice from its amount field and long-polls for the
+ * paid gift row. Threads load the newest 20-message page first; an
  * IntersectionObserver near the oldest bubble prepends unique older pages.
  * Prepending keeps the loaded thread visible and does not toggle its loading
  * state, so the thread's first-open/newest-id bottom pin does not re-run.
+ * Open Direct / Contact / Damus threads attach JPEG/PNG/WebP stills via
+ * {@link prepareForumPhoto} (cap 10); photo-only send is allowed. Thread stills
+ * load via {@link fetchConversationMessagePhoto} (no fetch without a session).
+ * Blob URLs are revoked on unmount, when leaving a thread, and on session loss.
+ * Composer drafts and preparing are dropped
+ * on thread switch (`?c=`) and session loss (`pickGeneration` bump).
+ * The gift invoice path stays text/sats only. The list has no attach.
  * Renders nothing when there is no session.
  * Moderators get the origin filter; members see the full inbound list.
  * After a successful thread load and mark-read, bumps the badge epoch and
@@ -128,6 +145,12 @@ export function InboxLoader(): ReactElement | null {
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrlsRef = useRef(photoUrls);
+  photoUrlsRef.current = photoUrls;
+  const pickGeneration = useRef(0);
   const payPollRef = useRef<AbortController | null>(null);
   const openIdRef = useRef(openId);
   /* v8 ignore start -- render-phase reset when ?c= changes; one frame of the old thread is not allowed */
@@ -145,6 +168,16 @@ export function InboxLoader(): ReactElement | null {
     setInvoice(null);
     setPayWaiting(false);
     setStaffRoomId(null);
+    pickGeneration.current += 1;
+    setPhotoDrafts([]);
+    setPreparing(false);
+    const urls = photoUrlsRef.current;
+    for (const url of Object.values(urls)) {
+      revokeIfBlob(url);
+    }
+    if (Object.keys(urls).length > 0) {
+      setPhotoUrls({});
+    }
     payPollRef.current?.abort();
     payPollRef.current = null;
   }
@@ -170,10 +203,6 @@ export function InboxLoader(): ReactElement | null {
     listed?.kind !== 'moderator_group' &&
     staffRoomId !== openId &&
     !waitingStaffRoom;
-
-  const nearStartRef = useCallback((node: HTMLLIElement | null): void => {
-    setNearStartElement(node);
-  }, []);
 
   useEffect(() => {
     if (session === null) {
@@ -295,6 +324,10 @@ export function InboxLoader(): ReactElement | null {
     };
   }, [session, openId, messagesAttempt, threadAllowed]);
 
+  const nearStartRef = useCallback((node: HTMLLIElement | null): void => {
+    setNearStartElement(node);
+  }, []);
+
   useEffect(() => {
     if (
       session === null ||
@@ -354,21 +387,200 @@ export function InboxLoader(): ReactElement | null {
     };
   }, [nearStartElement, nextCursor, openId, session, threadAllowed]);
 
+  useEffect(() => {
+    if (session === null) {
+      pickGeneration.current += 1;
+      setPreparing(false);
+      setPhotoDrafts([]);
+      setFormError(null);
+      const urls = photoUrlsRef.current;
+      for (const url of Object.values(urls)) {
+        revokeIfBlob(url);
+      }
+      if (Object.keys(urls).length > 0) {
+        setPhotoUrls({});
+      }
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (
+      session === null ||
+      openId === null ||
+      openId === '' ||
+      !threadAllowed ||
+      messages === null
+    ) {
+      if (session === null || openId === null || openId === '' || !threadAllowed) {
+        const urls = photoUrlsRef.current;
+        for (const url of Object.values(urls)) {
+          revokeIfBlob(url);
+        }
+        if (Object.keys(urls).length > 0) {
+          setPhotoUrls({});
+        }
+      }
+      return;
+    }
+    const conversationId = openId;
+    let cancelled = false;
+    const liveKeys = new Set(
+      messages.flatMap((message) => {
+        const count = message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0;
+        return Array.from({ length: count }, (_, index) => `${message.id}:${index}`);
+      }),
+    );
+    const stale = Object.entries(photoUrlsRef.current).filter(([key]) => !liveKeys.has(key));
+    if (stale.length > 0) {
+      for (const [, url] of stale) {
+        revokeIfBlob(url);
+      }
+      setPhotoUrls((prev) => {
+        const next = { ...prev };
+        for (const [key] of stale) {
+          delete next[key];
+        }
+        return next;
+      });
+    }
+    const missing = messages.flatMap((message) => {
+      const count = message.photoCount > 0 ? message.photoCount : message.hasPhoto ? 1 : 0;
+      return Array.from({ length: count }, (_, index) => ({
+        id: message.id,
+        index,
+        key: `${message.id}:${index}`,
+      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
+    });
+    if (missing.length === 0) {
+      return;
+    }
+    void (async () => {
+      for (const photo of missing) {
+        /* v8 ignore next 3 -- skip ids filled while earlier fetches in this loop ran */
+        if (photoUrlsRef.current[photo.key] !== undefined) {
+          continue;
+        }
+        let blob: Blob;
+        try {
+          blob = await fetchConversationMessagePhoto(
+            session,
+            conversationId,
+            photo.id,
+            photo.index,
+          );
+        } catch {
+          /* v8 ignore next 3 -- unmount during a failed fetch */
+          if (cancelled) {
+            return;
+          }
+          continue;
+        }
+        /* v8 ignore next 3 -- unmount after a successful fetch */
+        if (cancelled) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        /* v8 ignore next 4 -- unmount after createObjectURL */
+        if (cancelled || openIdRef.current !== conversationId) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPhotoUrls((prev) => {
+          /* v8 ignore next 4 -- race if the same id was filled while the fetch was in flight */
+          if (cancelled || openIdRef.current !== conversationId || prev[photo.key] !== undefined) {
+            URL.revokeObjectURL(url);
+            return prev;
+          }
+          return { ...prev, [photo.key]: url };
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, messages, openId, threadAllowed]);
+
+  useEffect(() => {
+    return () => {
+      pickGeneration.current += 1;
+      for (const url of Object.values(photoUrlsRef.current)) {
+        revokeIfBlob(url);
+      }
+    };
+  }, []);
+
   if (session === null) {
     return null;
   }
+
+  const onPickFiles = (files: FileList): void => {
+    if (posting || payWaiting || invoice !== null) {
+      return;
+    }
+    const generation = ++pickGeneration.current;
+    const selected = Array.from(files);
+    setPreparing(true);
+    void (async () => {
+      const nextPhotos = photoDrafts.slice(0, 10);
+      let nextError: InboxFormError = null;
+      const remaining = 10 - nextPhotos.length;
+      if (selected.length > remaining) {
+        nextError = 'tooMany';
+      }
+      try {
+        for (const file of selected.slice(0, Math.max(0, remaining))) {
+          try {
+            const result = await prepareForumPhoto(file);
+            /* v8 ignore next 3 -- a newer pick replaced this generation */
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (result.ok) {
+              nextPhotos.push(result.photo);
+            } else if (nextError !== 'tooMany') {
+              nextError = result.error;
+            }
+          } catch {
+            /* v8 ignore next 3 -- a newer pick replaced this generation */
+            if (generation !== pickGeneration.current) {
+              return;
+            }
+            if (nextError !== 'tooMany') {
+              nextError = 'unsupported';
+            }
+          }
+        }
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation !== pickGeneration.current) {
+          return;
+        }
+        setPhotoDrafts(nextPhotos);
+        setFormError(nextError);
+      } finally {
+        /* v8 ignore next 3 -- a newer pick replaced this generation */
+        if (generation === pickGeneration.current) {
+          setPreparing(false);
+        }
+      }
+    })();
+  };
+
+  const onRemovePhoto = (index: number): void => {
+    setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
+    setFormError(null);
+  };
 
   const onPost = (): void => {
     /* v8 ignore next 3 -- composer is hidden until a thread is open */
     if (openId === null || openId === '') {
       return;
     }
-    if (posting || payWaiting || invoice !== null) {
+    if (posting || preparing || payWaiting || invoice !== null) {
       return;
     }
     const trimmed = draft.trim();
     const sats = parseReplySats(amountDraft);
-    if (trimmed === '' && sats === 'empty') {
+    if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
       return;
     }
@@ -384,6 +596,9 @@ export function InboxLoader(): ReactElement | null {
     setPosting(true);
     setFormError(null);
     if (sats !== 'empty') {
+      pickGeneration.current += 1;
+      setPhotoDrafts([]);
+      setPreparing(false);
       void (async () => {
         let minted;
         try {
@@ -436,6 +651,9 @@ export function InboxLoader(): ReactElement | null {
           });
           setDraft('');
           setAmountDraft('');
+          pickGeneration.current += 1;
+          setPhotoDrafts([]);
+          setPreparing(false);
           setInvoice(null);
           setPayWaiting(false);
           const gift =
@@ -486,13 +704,36 @@ export function InboxLoader(): ReactElement | null {
       })();
       return;
     }
+    pickGeneration.current += 1;
+    const pendingPhotos = photoDrafts;
     void (async () => {
       try {
-        const created = await postConversationMessage(session, conversationId, trimmed);
+        const created =
+          pendingPhotos.length === 0
+            ? await postConversationMessage(session, conversationId, trimmed)
+            : await postConversationMessage(
+                session,
+                conversationId,
+                trimmed,
+                pendingPhotos.map((photo) => ({
+                  contentType: photo.contentType,
+                  data: photo.data,
+                })),
+              );
         if (openIdRef.current === conversationId) {
           /* v8 ignore next -- first message in an empty thread */
           setMessages((prev) => (prev === null ? [created] : [...prev, created]));
           setDraft('');
+          setPhotoDrafts([]);
+          if (created.hasPhoto) {
+            setPhotoUrls((prev) => {
+              const next = { ...prev };
+              pendingPhotos.forEach((photo, index) => {
+                next[`${created.id}:${index}`] = photo.previewUrl;
+              });
+              return next;
+            });
+          }
         }
         setConversations((prev) => {
           /* v8 ignore next 3 -- post after the list was cleared */
@@ -551,6 +792,9 @@ export function InboxLoader(): ReactElement | null {
         setFormError(null);
         setInvoice(null);
         setPayWaiting(false);
+        pickGeneration.current += 1;
+        setPhotoDrafts([]);
+        setPreparing(false);
         router.push(`/messages?c=${encodeURIComponent(id)}`);
       }}
       messages={threadId === null ? null : messages}
@@ -573,7 +817,7 @@ export function InboxLoader(): ReactElement | null {
         setFormError(null);
       }}
       onPost={onPost}
-      posting={posting}
+      posting={posting || preparing}
       formError={formError}
       showFilter={showFilter}
       invoice={invoice}
@@ -585,6 +829,11 @@ export function InboxLoader(): ReactElement | null {
       }}
       payWaiting={payWaiting}
       rateDay={rateDay}
+      showAttach={threadId !== null}
+      photoDrafts={photoDrafts}
+      onPickFiles={onPickFiles}
+      onRemovePhoto={onRemovePhoto}
+      photoUrls={photoUrls}
     />
   );
 }

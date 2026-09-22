@@ -911,7 +911,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence).
+After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence). Composer with ImagePlus attach visible.
 
 ![21.gifts contact success](images/contact-success.png)
 
@@ -1207,9 +1207,9 @@ Verified owner with `funding.status` **admitted**. Copy **You are admitted to da
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 500-character composer plus sats amount field (no filter, no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer); prepending older pages does not retrigger that newest-id pin. An open pay sheet is included in that bottom pin. Returning via **All conversations** scrolls the conversation list to the top once. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every sats amount in an open thread also shows the preferred-fiat suffix (or ₿-only without a usable rate). A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row.
-- **Actions:** Open a thread, send a reply, return via **All conversations** (chrome link; the list starts at the top), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
-- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchPublicMessage`, `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 500-character composer plus sats amount field (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer); prepending older pages does not retrigger that newest-id pin. An open pay sheet is included in that bottom pin. Returning via **All conversations** scrolls the conversation list to the top once. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every sats amount in an open thread also shows the preferred-fiat suffix (or ₿-only without a usable rate). A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row.
+- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via **All conversations** (chrome link; the list starts at the top), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
+- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -1262,7 +1262,7 @@ List fetch failed. Button **Try again**. Chooser absent.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible with the labeled **Amount** field next to it. Chooser absent.
+Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible with ImagePlus attach, the labeled **Amount** field, and send. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
@@ -1274,19 +1274,19 @@ Member list. One conversation (**Bob**), gift-only last preview **₿21** (empty
 
 ### Variant: thread-gift
 
-Open official thread. fromMe gift-only bubble **send ₿21**. Labeled **Amount** field still visible next to the composer. Chooser absent.
+Open official thread. fromMe gift-only bubble **send ₿21**. Composer with ImagePlus attach and labeled **Amount** field still visible. Chooser absent.
 
 ![21.gifts inbox thread gift](images/messages-thread-gift.png)
 
 ### Variant: thread-text-sats
 
-Open thread. Inbound **Hi** with amount **₿21** under the body. Composer and labeled **Amount** field visible.
+Open thread. Inbound **Hi** with amount **₿21** under the body. Composer with ImagePlus attach and labeled **Amount** field visible.
 
 ![21.gifts inbox thread text sats](images/messages-thread-text-sats.png)
 
 ### Variant: thread-pay-qr
 
-Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button; smartphone has the wallet **Pay** button and no QR. **Waiting for payment…** is acceptable while the pay poll hangs.
+Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button; smartphone has the wallet **Pay** button and no QR. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
 
@@ -1295,6 +1295,48 @@ Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of S
 Open Direct thread. Incoming bubble text includes a public forum note URL; the nested quoted-note card shows **A Quick Technical Note** and hides the raw `https://21.gifts/messages/<uuid>` URL.
 
 ![21.gifts inbox thread quoted note](images/messages-thread-quoted-note.png)
+
+### Variant: thread-composer-photo
+
+Open Direct thread. One JPEG selected in the composer; **Remove photo** visible; textarea empty. Amount field still visible.
+
+![21.gifts inbox thread composer photo](images/messages-thread-composer-photo.png)
+
+### Variant: thread-composer-photos
+
+Open Direct thread. Two JPEGs selected in the composer; two **Selected photo** thumbs. Amount field still visible.
+
+![21.gifts inbox thread composer photos](images/messages-thread-composer-photos.png)
+
+### Variant: thread-photo
+
+Open Direct thread. Incoming bubble is a still with no text. Image alt **Photo from Bob**. Composer with attach visible.
+
+![21.gifts inbox thread photo](images/messages-thread-photo.png)
+
+### Variant: thread-preparing-photo
+
+Open Direct thread. JPEG attach in flight; **Send** disabled; no **Selected photo** yet. Amount field visible.
+
+![21.gifts inbox thread preparing photo](images/messages-thread-preparing-photo.png)
+
+### Variant: thread-error-unsupported
+
+Open Direct thread. Attach a GIF → **Use a JPEG, PNG, or WebP photo**. No **Selected photo**.
+
+![21.gifts inbox thread error unsupported](images/messages-thread-error-unsupported.png)
+
+### Variant: thread-error-too-large
+
+Open Direct thread. Encoded JPEG over 1 MB → **Keep photos under 1 MB**.
+
+![21.gifts inbox thread error too large](images/messages-thread-error-too-large.png)
+
+### Variant: thread-error-too-many
+
+Open Direct thread. Eleven files → **You can add up to 10 photos**.
+
+![21.gifts inbox thread error too many](images/messages-thread-error-too-many.png)
 
 ## Screen: /notifications
 
