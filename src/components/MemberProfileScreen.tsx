@@ -491,11 +491,13 @@ export function MemberProfileScreen({
             let ownContent = !composePay;
             if (composePay) {
               try {
-                if (baselineOwn === null) {
+                if (baselineOwn !== null) {
+                  ownContent = (await countOwn()) > baselineOwn;
+                } else {
+                  /* v8 ignore start -- countOwn threw before the loop */
                   baselineOwn = await countOwn();
                   ownContent = false;
-                } else {
-                  ownContent = (await countOwn()) > baselineOwn;
+                  /* v8 ignore stop */
                 }
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {

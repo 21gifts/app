@@ -1202,12 +1202,13 @@ export function ForumLoader({
               ownContent = true;
             } else if (composePay) {
               try {
-                if (baselineOwn === null) {
-                  /* v8 ignore next 2 -- baseline is set before the loop unless countOwn threw */
+                if (baselineOwn !== null) {
+                  ownContent = (await countOwn()) > baselineOwn;
+                } else {
+                  /* v8 ignore start -- countOwn threw before the loop */
                   baselineOwn = await countOwn();
                   ownContent = false;
-                } else {
-                  ownContent = (await countOwn()) > baselineOwn;
+                  /* v8 ignore stop */
                 }
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
