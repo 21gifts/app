@@ -680,7 +680,10 @@ describe('PublicMessageThread', () => {
       payable: false,
       replyCount: 0,
     };
-    vi.mocked(fetchReplies).mockResolvedValueOnce([]).mockResolvedValue([paidReply]);
+    vi.mocked(fetchReplies)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([paidReply]);
     vi.mocked(fetchPublicMessage).mockResolvedValue({
       id: 'fee-note',
       name: '21.gifts',

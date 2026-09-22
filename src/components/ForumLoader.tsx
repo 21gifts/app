@@ -1150,6 +1150,32 @@ export function ForumLoader({
     const signal = controller.signal;
     setPayWaiting(true);
     void (async () => {
+      const composePay = switchToAll || replyParentId !== null;
+      const countOwn = async (): Promise<number> => {
+        const expected = pendingComposeTextRef.current;
+        const me = useAuthStore.getState().account?.id;
+        const sess = useAuthStore.getState().session;
+        /* v8 ignore next 3 -- compose-pay always sets pending text and session before polling */
+        if (expected === null || me === undefined || sess === null) {
+          return 0;
+        }
+        if (replyParentId !== null) {
+          const replies = await fetchReplies(sess, replyParentId);
+          return replies.filter((row) => row.accountId === me && row.text === expected).length;
+        }
+        const page = await fetchMessages(sess, forumPageArgs('all'));
+        return page.messages.filter((row) => row.accountId === me && row.text === expected).length;
+      };
+      let baselineOwn = 0;
+      if (composePay) {
+        try {
+          baselineOwn = await countOwn();
+          /* v8 ignore start -- a failed baseline count still waits for a later increase */
+        } catch {
+          baselineOwn = 0;
+        }
+        /* v8 ignore stop */
+      }
       for (;;) {
         try {
           const next = await fetchPublicMessage(messageId, {
@@ -1160,31 +1186,15 @@ export function ForumLoader({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            let ownContent = true;
-            if (switchToAll || replyParentId !== null) {
-              const expected = pendingComposeTextRef.current;
-              const me = useAuthStore.getState().account?.id;
-              const sess = useAuthStore.getState().session;
-              if (expected !== null && me !== undefined && sess !== null) {
+            let ownContent = !composePay;
+            if (composePay) {
+              try {
+                ownContent = (await countOwn()) > baselineOwn;
+                /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+              } catch {
                 ownContent = false;
-                try {
-                  if (replyParentId !== null) {
-                    const replies = await fetchReplies(sess, replyParentId);
-                    ownContent = replies.some(
-                      (row) => row.accountId === me && row.text === expected,
-                    );
-                  } else {
-                    const page = await fetchMessages(sess, forumPageArgs('all'));
-                    ownContent = page.messages.some(
-                      (row) => row.accountId === me && row.text === expected,
-                    );
-                  }
-                  /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
-                } catch {
-                  ownContent = false;
-                }
-                /* v8 ignore stop */
               }
+              /* v8 ignore stop */
             }
             if (ownContent) {
               pendingComposeTextRef.current = null;

@@ -2375,9 +2375,11 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    fetchMock.mockResolvedValue(
-      forumPage([{ ...SAMPLE, id: 'new-paid', text: 'Hello gifts', sats: 0, payable: false }]),
-    );
+    fetchMock
+      .mockResolvedValueOnce(forumPage([]))
+      .mockResolvedValue(
+        forumPage([{ ...SAMPLE, id: 'new-paid', text: 'Hello gifts', sats: 0, payable: false }]),
+      );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
@@ -2427,7 +2429,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
     });
-    fetchMock.mockResolvedValue(forumPage([created]));
+    fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([created]));
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
@@ -2441,23 +2443,26 @@ describe('ForumLoader', () => {
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
     fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, sats: 1, replyCount: 0 }]));
-    repliesMock.mockResolvedValueOnce([]).mockResolvedValue([
-      {
-        id: 'r-new',
-        accountId: 'acc_1',
-        name: 'Ada',
-        text: 'Hi',
-        createdAt: '2026-08-28T12:45:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-      },
-    ]);
+    repliesMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([
+        {
+          id: 'r-new',
+          accountId: 'acc_1',
+          name: 'Ada',
+          text: 'Hi',
+          createdAt: '2026-08-28T12:45:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     publicFetchMock.mockResolvedValue({
       id: 'fee-note',
