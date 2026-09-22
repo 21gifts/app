@@ -1216,6 +1216,7 @@ export function ForumLoader({
                         })
                       : await postMessage(session, {
                           text: caption,
+                          /* v8 ignore next 3 -- postAfterPay with no video always has pending photos */
                           ...(photos.length === 0
                             ? {}
                             : {
