@@ -2569,6 +2569,178 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('POSTs a basis photo after the compose fee confirms', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'photo-paid',
+      text: 'with photo',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'with photo' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+    });
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'with photo',
+        photos: [{ contentType: 'image/jpeg', data: 'abc' }],
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getByText('with photo')).toBeTruthy();
+    });
+  });
+
+  it('POSTs a basis video after the compose fee confirms', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    isVideoMock.mockReturnValue(true);
+    const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:video' },
+    });
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postVideoMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'vid-paid',
+      text: 'clip',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+      hasVideo: true,
+      videoContentType: 'video/mp4',
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(prepareVideoMock).toHaveBeenCalledWith(file);
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+    });
+    await waitFor(() => {
+      expect(postVideoMock).toHaveBeenCalledWith('sess', {
+        text: 'clip',
+        video: file,
+        poster,
+      });
+      expect(postMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it('shows a request error when the paid basis photo POST fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockRejectedValue(new Error('offline'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+  });
+
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
     window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
     useAuthStore.setState({
