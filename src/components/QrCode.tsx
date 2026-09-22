@@ -10,6 +10,8 @@ export interface QrCodeProps {
   value: string;
   /** Accessible name (already translated by the caller). */
   label: string;
+  /** Public URL of a center mark. Omit for a plain QR. */
+  logo?: string;
 }
 
 /**
@@ -23,14 +25,25 @@ export interface QrCodeProps {
  * @param props - See {@link QrCodeProps}.
  * @returns The QR image element.
  */
-export function QrCode({ value, label }: QrCodeProps): ReactElement {
+export function QrCode({ value, label, logo }: QrCodeProps): ReactElement {
   return (
     <div
       role="img"
       aria-label={label}
       className="rounded-2xl border border-app-border bg-app-qr-bg p-4"
     >
-      <QRCodeSVG value={value} size={QR_SIZE} fgColor="#000000" bgColor="#ffffff" />
+      {logo !== undefined && logo !== '' ? (
+        <QRCodeSVG
+          value={value}
+          size={QR_SIZE}
+          fgColor="#000000"
+          bgColor="#ffffff"
+          level="H"
+          imageSettings={{ src: logo, height: 48, width: 48, excavate: true }}
+        />
+      ) : (
+        <QRCodeSVG value={value} size={QR_SIZE} fgColor="#000000" bgColor="#ffffff" />
+      )}
     </div>
   );
 }
