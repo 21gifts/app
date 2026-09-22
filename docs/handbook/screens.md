@@ -438,7 +438,7 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ### Variant: ask-photos
 
-Ask step 2 of 4: **Add photos** with attach, Skip, and Continue.
+Ask step 2 of 4: **Add photos** with attach and Continue. Photos are optional.
 
 ![21.gifts welcome ask photos](images/welcome-ask-photos.png)
 

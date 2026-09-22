@@ -5433,7 +5433,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('21000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Skip' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Write a message', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-text');
   });
