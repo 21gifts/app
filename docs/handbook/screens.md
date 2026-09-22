@@ -583,7 +583,7 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: error-ask
 
-**Ask for money**, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
+**Ask for money**, with **One-time** pressed on the pill above the amount, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
 
 ![21.gifts welcome ask error](images/welcome-error-ask.png)
 
