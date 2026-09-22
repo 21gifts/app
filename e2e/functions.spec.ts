@@ -4332,14 +4332,23 @@ test('Function: giftsLightningAddress — member card shows username@21.gifts', 
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
 });
 
-test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', () => {
+test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
   expect(encodeLnurl('https://service.io/?q=3fc3645b439ce8e7')).toBe(
     'LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9',
   );
   expect(encodeLnurl('https://aa')).toBe('LNURL1DP68GURN8GHJ7CTP6U9UJJ');
 });
 
-test('Function: openCryptoPayQrValue — profile QR is the Open CryptoPay URL', () => {
+test('Function: openCryptoPayQrValue — profile QR is the Open CryptoPay URL', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
   expect(openCryptoPayQrValue('carol')).toBe(
     'https://21.gifts/pl/?lightning=LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9A3KZUN0DS7CX370',
   );

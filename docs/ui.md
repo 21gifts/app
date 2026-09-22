@@ -1057,7 +1057,7 @@ App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitc
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` (page frame); `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). Below: `ViewProfileClaim`.
+Fill `AppShell` (page frame); `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). When a username is set and the browser is not a smartphone, a centered Open CryptoPay QR (`profile.giftsQr`, center mark `profileQrLogo`) sits under the address. Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.
