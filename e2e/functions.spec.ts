@@ -3532,7 +3532,7 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
     (req) =>
       req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
   );
-  await page.getByRole('button', { name: 'Post' }).click();
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
   await compose;
   await invoice;
 });
