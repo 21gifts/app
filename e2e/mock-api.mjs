@@ -24,6 +24,8 @@ const contactMessages = [];
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
+/** @type {Map<string, Buffer>} keyed `${messageId}:${index}` */
+const conversationPhotos = new Map();
 /** @type {Map<string, Buffer>} */
 const aboutMePhotos = new Map();
 
@@ -790,6 +792,9 @@ const server = http.createServer(async (req, res) => {
           ...(typeof message.giftFor === 'string' && message.giftFor !== ''
             ? { giftFor: message.giftFor }
             : {}),
+          ...(message.hasPhoto === true
+            ? { hasPhoto: true, photoCount: Number(message.photoCount ?? 1) }
+            : {}),
         })),
         ...(page.length === limit && startIndex > 0 ? { nextCursor: page[0].id } : {}),
       });
@@ -807,15 +812,30 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Set a name before posting' });
       return;
     }
-    if (typeof parsed?.text !== 'string') {
+    const photoData =
+      typeof parsed?.photo?.data === 'string' && parsed.photo.data.length > 0
+        ? parsed.photo.data
+        : null;
+    const photosList = Array.isArray(parsed?.photos) ? parsed.photos : [];
+    const photosHaveData = photosList.some(
+      (item) =>
+        item !== undefined &&
+        item !== null &&
+        typeof item.data === 'string' &&
+        item.data.length > 0,
+    );
+    const hasPhoto = photoData !== null || (photosList.length > 0 && photosHaveData);
+    const rawText = typeof parsed?.text === 'string' ? parsed.text : hasPhoto ? '' : null;
+    if (rawText === null) {
       json(res, 400, { error: 'Expected a JSON body with a "text" string' });
       return;
     }
-    const text = parsed.text.trim();
-    if (text.length < 1 || text.length > 500) {
+    const text = rawText.trim();
+    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
       json(res, 400, { error: 'Text must be 1–500 characters' });
       return;
     }
+    const photoCount = photosList.length > 0 ? photosList.length : hasPhoto ? 1 : 0;
     const created = {
       id: `cmsg_${hex(randomBytes(8))}`,
       name: senderName,
@@ -823,13 +843,77 @@ const server = http.createServer(async (req, res) => {
       createdAt: new Date().toISOString(),
       fromMe: true,
       sats: 0,
+      hasPhoto,
+      photoCount,
     };
+    if (photosList.length > 0) {
+      photosList.forEach((item, index) => {
+        if (
+          item !== undefined &&
+          item !== null &&
+          typeof item.data === 'string' &&
+          item.data.length > 0
+        ) {
+          conversationPhotos.set(`${created.id}:${index}`, Buffer.from(item.data, 'base64'));
+        }
+      });
+    } else if (photoData !== null) {
+      conversationPhotos.set(`${created.id}:0`, Buffer.from(photoData, 'base64'));
+    }
     thread.messages.push(created);
     thread.lastText = text;
     thread.lastAt = created.createdAt;
     thread.lastFromMe = true;
     thread.lastSats = 0;
     json(res, 200, created);
+    return;
+  }
+
+  const conversationPhotoFileMatch = pathName.match(
+    /^\/conversations\/([^/]+)\/messages\/([^/]+)\/photo\/([1-9])\.jpg$/,
+  );
+  const conversationPhotoMatch = pathName.match(
+    /^\/conversations\/([^/]+)\/messages\/([^/]+)\/photo$/,
+  );
+  if (
+    method === 'GET' &&
+    (conversationPhotoFileMatch !== null || conversationPhotoMatch !== null)
+  ) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const groups =
+      conversationPhotoFileMatch !== null ? conversationPhotoFileMatch : conversationPhotoMatch;
+    const conversationId = decodeURIComponent(groups[1]);
+    const messageId = decodeURIComponent(groups[2]);
+    const index = conversationPhotoFileMatch !== null ? Number(conversationPhotoFileMatch[3]) : 0;
+    const thread = conversations.find(
+      (row) => row.id === conversationId && row.ownerId === account.id,
+    );
+    if (thread === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const tagged = thread.messages.find((message) => message.id === messageId);
+    if (tagged === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const bytes = conversationPhotos.get(`${messageId}:${index}`);
+    if (bytes === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, content-type, user-agent',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    });
+    res.end(bytes);
     return;
   }
 

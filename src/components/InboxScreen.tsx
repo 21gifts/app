@@ -184,8 +184,9 @@ export interface InboxScreenProps {
   /** Latest gift-day totals for the preferred-fiat suffix, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
   /**
-   * Show the ImagePlus attach control and photo drafts. Default false so Direct
-   * / Contact / Damus threads stay text + sats.
+   * Show the ImagePlus attach control and photo drafts. Default false for
+   * callers that omit it; InboxLoader passes true on an open thread; the
+   * staff room still passes true.
    */
   showAttach?: boolean;
   /** Prepared stills for the composer preview. Default empty. */
@@ -195,8 +196,7 @@ export interface InboxScreenProps {
   /** Removes a prepared still by index. */
   onRemovePhoto?: (index: number) => void;
   /**
-   * Blob URLs for thread stills, keyed `${messageId}:${index}`. Default empty
-   * so inbox DMs stay text + sats until a parent wires photos.
+   * Blob URLs for thread stills, keyed `${messageId}:${index}`. Default empty.
    */
   photoUrls?: Record<string, string>;
 }
@@ -333,9 +333,10 @@ function inboxAuthorProfileButton(
  * bubbles use `forum.giftReply`; text+sats show the amount under the body.
  * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
  * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
- * `showAttach` (default false) adds the forum ImagePlus control, still
- * previews, and photo-only send; `photoUrls` renders attached stills on
- * bubbles. Optional `rateDay` is the latest gift-day totals; every thread
+ * `showAttach` (default false for callers that omit it) adds the forum
+ * ImagePlus control, still previews, and photo-only send for any caller
+ * that passes true (`/messages` open threads and the staff room);
+ * `photoUrls` renders attached stills on bubbles. Optional `rateDay` is the latest gift-day totals; every thread
  * sats amount shows a preferred-fiat suffix via `preferredFiatSuffix` when
  * `rateDay` is usable, else ₿-only. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
