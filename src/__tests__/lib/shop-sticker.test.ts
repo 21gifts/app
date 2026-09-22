@@ -1,4 +1,6 @@
+import jsQR from 'jsqr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { openCryptoPayQrValue } from '@/lib/gifts-address';
 import {
   SHOP_STICKER_FORMATS,
   SHOP_STICKER_RASTER_WIDTH,
@@ -70,6 +72,46 @@ describe('buildShopStickerSvg', () => {
     expect(svg).toContain(
       `scale(${Math.round(((0.6222 * 15 * SHOP_STICKER_QR_BOX.size) / 61) * 1000) / 1000})`,
     );
+  });
+});
+
+/**
+ * Rasterises the QR modules of a sticker SVG (4 px per module, 4-module quiet zone, cleared centre left white)
+ * and decodes them.
+ */
+function decodeStickerQr(svg: string): string | null {
+  const modules =
+    /<path d="([^"]+)" fill="#000000" shape-rendering="crispEdges"\/>/.exec(svg)?.[1] ?? '';
+  const runs = [...modules.matchAll(/M([\d.]+) ([\d.]+)h([\d.]+)v([\d.]+)h/g)].map((m) =>
+    m.slice(1).map(Number),
+  );
+  const m = (runs[0] as number[])[3] as number;
+  const n = Math.round(SHOP_STICKER_QR_BOX.size / m);
+  const px = 4;
+  const side = (n + 8) * px;
+  const data = new Uint8ClampedArray(side * side * 4).fill(255);
+  for (const [x, y, w] of runs as [number, number, number, number][]) {
+    const row = Math.round((y - SHOP_STICKER_QR_BOX.y) / m);
+    const col = Math.round((x - SHOP_STICKER_QR_BOX.x) / m);
+    const len = Math.round(w / m);
+    for (let dy = 0; dy < px; dy++) {
+      for (let dx = 0; dx < len * px; dx++) {
+        const at = (((row + 4) * px + dy) * side + (col + 4) * px + dx) * 4;
+        data.fill(0, at, at + 3);
+      }
+    }
+  }
+  return jsQR(data, side, side)?.data ?? null;
+}
+
+describe('sticker QR decodes to the member pay link', () => {
+  it.each([
+    ['a', '21.gifts'],
+    ['carol', '21.gifts'],
+    ['a'.repeat(32), 'dev.21.gifts'],
+  ])('with the centre cleared for %s on %s', (username, host) => {
+    const value = openCryptoPayQrValue(username, host) as string;
+    expect(decodeStickerQr(buildShopStickerSvg(value))).toBe(value);
   });
 });
 

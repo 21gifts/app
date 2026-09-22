@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import jsQR from 'jsqr';
+import { PNG } from 'pngjs';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import {
@@ -4526,6 +4528,11 @@ test('Function: shopStickerBlob — PNG and JPG downloads are 3000 px images', a
   expect(png.bytes.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
   expect(png.bytes.readUInt32BE(16)).toBe(3000);
   expect(png.bytes.readUInt32BE(20)).toBe(1836);
+  // the printed QR, orange mark included, must still scan to Carol's pay link
+  const image = PNG.sync.read(png.bytes);
+  expect(jsQR(new Uint8ClampedArray(image.data), image.width, image.height)?.data).toBe(
+    openCryptoPayQrValue('carol'),
+  );
   const jpg = await downloadShopSticker(page, dialog, 'jpg');
   expect(jpg.bytes.subarray(0, 3).toString('hex')).toBe('ffd8ff');
   await expect(dialog.getByRole('alert')).toHaveCount(0);
