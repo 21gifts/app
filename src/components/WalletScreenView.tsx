@@ -44,7 +44,9 @@ export function WalletScreenView({
             type="button"
             onClick={retry}
             disabled={busy}
-            icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+            icon={
+              busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+            }
           >
             {t('login.retry')}
           </Button>
@@ -71,7 +73,9 @@ export function WalletScreenView({
                 void confirmSaved();
               }}
               disabled={busy}
-              icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+              icon={
+                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+              }
             >
               {t('wallet.confirmSaved')}
             </Button>
@@ -87,7 +91,9 @@ export function WalletScreenView({
               void activate();
             }}
             disabled={busy}
-            icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+            icon={
+              busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+            }
           >
             {t('wallet.activate')}
           </Button>

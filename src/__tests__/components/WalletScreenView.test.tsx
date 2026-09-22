@@ -57,6 +57,8 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Activate recovery phrase' }).querySelector('svg')).not.toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Activate recovery phrase' }).querySelector('svg'),
+    ).not.toBeNull();
   });
 });
