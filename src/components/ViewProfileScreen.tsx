@@ -9,6 +9,7 @@ import { Card } from '@/components/ui';
 import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 /**
@@ -91,7 +92,7 @@ export function ViewProfileScreen({
         )}
         {showQr && qr !== null ? (
           <div className="flex justify-center">
-            <QrCode value={qr} label={t('profile.giftsQr')} />
+            <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
           </div>
         ) : null}
       </div>

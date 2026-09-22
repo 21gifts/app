@@ -1174,10 +1174,10 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: QrCode
 
-- **Purpose:** SVG QR for a string (LNURL or bolt11).
-- **Inputs:** `value` (required) and `label` (required accessible name, already translated).
+- **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
+- **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard` only when the UA is not a smartphone.
+- **Used by:** `ForumBoard` only when the UA is not a smartphone. `MemberProfileScreen` and `ViewProfileScreen`.
 
 ## Function: RootLayout
 

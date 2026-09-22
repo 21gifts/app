@@ -42,6 +42,7 @@ import {
   type MissingRequirement,
 } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
@@ -1117,7 +1118,7 @@ export function MemberProfileScreen({
             )}
             {showQr && qr !== null ? (
               <div className="flex justify-center">
-                <QrCode value={qr} label={t('profile.giftsQr')} />
+                <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
               </div>
             ) : null}
           </div>
