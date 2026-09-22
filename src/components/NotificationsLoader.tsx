@@ -53,17 +53,18 @@ async function setHomeScreenBadgeToRemainingUnread(sessionToken: string): Promis
  * Client loader for the signed-in notifications list on `/notifications`.
  *
  * Reads the session from the auth store and fetches notifications (posts, replies,
- * payments, and moderator appointment). After a successful list fetch, marks all
- * as read fire-and-forget and refreshes the home-screen badge to remaining inbox
- * unread plus staff-room unread (`0` or `1`; notifications are treated as 0;
- * visiting this screen does not force the badge to 0 when inbox or staff-room
- * unread remains). Fetches the staff room only when
+ * payments, moderator appointment, and moderator proposal). After a successful
+ * list fetch, marks all as read fire-and-forget and refreshes the home-screen
+ * badge to remaining inbox unread plus staff-room unread (`0` or `1`;
+ * notifications are treated as 0; visiting this screen does not force the badge
+ * to 0 when inbox or staff-room unread remains). Fetches the staff room only when
  * `roleAtLeast(account?.role, 'moderator')`; below moderator the remaining
  * badge is inbox unread only. Renders nothing when there is no
- * session. There is no composer; opening a `moderator_appointed` row waits for
- * `markNotificationRead` (then still goes to `/welcome` if that POST fails, and
- * skips navigation if the session changed), and any other row goes to the public
- * forum note without waiting.
+ * session. There is no composer; opening a `moderator_proposal` row goes to
+ * `/moderate/proposals` and does not call `markNotificationRead`; opening a
+ * `moderator_appointed` row waits for `markNotificationRead` (then still goes
+ * to `/welcome` if that POST fails, and skips navigation if the session
+ * changed), and any other row goes to the public forum note without waiting.
  *
  * @returns The notifications screen, or `null` without a session.
  */
@@ -130,6 +131,10 @@ export function NotificationsLoader(): ReactElement | null {
         setAttempt((n) => n + 1);
       }}
       onOpen={(row) => {
+        if (row.type === 'moderator_proposal') {
+          router.push('/moderate/proposals');
+          return;
+        }
         const dest = row.type === 'moderator_appointed' ? '/welcome' : '/messages/' + row.parentId;
         if (row.type !== 'moderator_appointed') {
           void markNotificationRead(session, row.id).catch(() => undefined);

@@ -61,13 +61,16 @@ test('Function: ProposalsPage — staff hub Open proposals href /moderate/propos
   await stubProposals(page, [PROPOSAL]);
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open proposals' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Open proposals, 1 unread' })).toHaveAttribute(
     'href',
     '/moderate/proposals',
   );
   await page.getByRole('button', { name: 'Menu' }).click();
   const menu = page.locator('#signed-in-menu');
-  await expect(menu.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
+  await expect(menu.getByRole('link', { name: 'Moderation, 1 unread' })).toHaveAttribute(
+    'href',
+    '/moderate',
+  );
   await expect(menu.getByRole('link', { name: 'Open proposals' })).toHaveCount(0);
   await page.goto('/moderate/proposals');
   await expect(page.getByRole('heading', { name: 'Open proposals' })).toBeVisible();
@@ -84,6 +87,7 @@ test('Function: fetchTrustProposals — staff see Confirm as moderator', async (
   );
   await expect(page.getByText('Proposed by Bob')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
 });
 
 test('Function: ProposalsScreen — waiting copy when proposedBy is self', async ({ page }) => {
@@ -93,6 +97,7 @@ test('Function: ProposalsScreen — waiting copy when proposedBy is self', async
   await expect(page.getByText('Rose')).toBeVisible();
   await expect(page.getByText('Waiting for another moderator to confirm.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
 });
 
 test('Function: ProposalsScreen — basis visitors see the forbidden copy', async ({ page }) => {

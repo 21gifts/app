@@ -840,6 +840,21 @@ export async function postTrustConfirm(
 }
 
 /**
+ * Rejects a pending moderator proposal.
+ *
+ * @param sessionToken - Bearer session of a moderator.
+ * @param accountId - Subject account id.
+ * @returns The updated account snapshot.
+ * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ */
+export async function postTrustReject(
+  sessionToken: string,
+  accountId: string,
+): Promise<TrustActionResult> {
+  return postTrustAction('/trust/reject-moderator', sessionToken, accountId);
+}
+
+/**
  * Appoints a basis or verified member as moderator (founder only).
  *
  * @param sessionToken - Bearer session of a founder.

@@ -105,6 +105,17 @@ const APPOINTED: Notification = {
   readAt: null,
 };
 
+const PROPOSAL_ROW: Notification = {
+  id: 'n-proposal',
+  type: 'moderator_proposal',
+  parentId: 'acc-rose',
+  replyId: 'acc-rose',
+  name: 'Bob',
+  text: 'Rose',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+
 const LIST: NotificationList = { notifications: [ROW], unreadCount: 1 };
 
 beforeEach(() => {
@@ -286,6 +297,15 @@ describe('NotificationsLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /Bob replied/ }));
     expect(markReadMock).toHaveBeenCalledWith('sess', 'n1');
     expect(push).toHaveBeenCalledWith('/messages/parent-1');
+  });
+
+  it('opens a moderator proposal row on /moderate/proposals without mark-read', async () => {
+    listMock.mockResolvedValue({ notifications: [PROPOSAL_ROW], unreadCount: 1 });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByRole('button', { name: /Bob proposed a moderator/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Bob proposed a moderator/ }));
+    expect(push).toHaveBeenCalledWith('/moderate/proposals');
+    expect(markReadMock).not.toHaveBeenCalled();
   });
 
   it('opens a moderator appointment row on /welcome after mark-read resolves', async () => {

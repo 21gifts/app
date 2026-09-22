@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModerateScreen } from '@/components/ModerateScreen';
-import type { Account, Conversation } from '@/lib/api-types';
+import type { Account, Conversation, ModeratorProposal } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -27,6 +27,7 @@ vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
   fetchConversations: vi.fn(),
   fetchModeratorGroup: vi.fn(),
+  fetchTrustProposals: vi.fn(),
 }));
 
 import {
@@ -34,6 +35,7 @@ import {
   fetchGiftStats,
   fetchModeratorGroup,
   fetchNotifications,
+  fetchTrustProposals,
 } from '@/lib/api';
 import type { GiftStats } from '@/lib/api-types';
 
@@ -41,6 +43,7 @@ const fetchMock = vi.mocked(fetchGiftStats);
 const notificationsMock = vi.mocked(fetchNotifications);
 const conversationsMock = vi.mocked(fetchConversations);
 const groupMock = vi.mocked(fetchModeratorGroup);
+const proposalsMock = vi.mocked(fetchTrustProposals);
 
 const EMPTY_STATS: GiftStats = {
   totalSats: 0,
@@ -99,6 +102,12 @@ const GROUP: Conversation = {
   unread: false,
 };
 
+const PROPOSAL: ModeratorProposal = {
+  subject: { id: 'acc_rose', name: 'Rose', role: 'verified' },
+  proposedBy: { id: 'acc_bob', name: 'Bob' },
+  createdAt: '2026-08-28T12:00:00.000Z',
+};
+
 const account: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
@@ -124,6 +133,7 @@ beforeEach(() => {
   notificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
   conversationsMock.mockResolvedValue([]);
   groupMock.mockResolvedValue(GROUP);
+  proposalsMock.mockResolvedValue([]);
   useAuthStore.setState({ session: 'sess', account });
   fetchMock.mockResolvedValue(EMPTY_STATS);
 });
@@ -361,5 +371,39 @@ describe('ModerateScreen', () => {
     const moderators = screen.getByRole('link', { name: 'Moderators chat group, 1 unread' });
     expect(moderators.getAttribute('href')).toBe('/moderate/group');
     expect(moderators.textContent).toContain('1');
+    expect(
+      screen.getByRole('link', { name: 'Open proposals' }).getAttribute('aria-label'),
+    ).toBeNull();
+  });
+
+  it('shows the unread count on Open proposals when there is one proposal', async () => {
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    renderWithLocale(<ModerateScreen />);
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Open proposals, 1 unread' })).toBeTruthy();
+    });
+    const openProposals = screen.getByRole('link', { name: 'Open proposals, 1 unread' });
+    expect(openProposals.getAttribute('href')).toBe('/moderate/proposals');
+    expect(openProposals.textContent).toContain('1');
+    const count = openProposals.querySelector('.tabular-nums');
+    expect(count?.textContent).toBe('1');
+    expect(screen.getByRole('link', { name: 'Moderators chat group' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeNull();
+  });
+
+  it('keeps Moderators chat group count on staff-room unread when there are open proposals', async () => {
+    groupMock.mockResolvedValue({ ...GROUP, unread: true });
+    proposalsMock.mockResolvedValue([PROPOSAL]);
+    renderWithLocale(<ModerateScreen />);
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Open proposals, 1 unread' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeTruthy();
+    });
+  });
+
+  it('omits the Open proposals aria-label when there are no proposals', async () => {
+    renderWithLocale(<ModerateScreen />);
+    const openProposals = await screen.findByRole('link', { name: 'Open proposals' });
+    expect(openProposals.getAttribute('aria-label')).toBeNull();
   });
 });

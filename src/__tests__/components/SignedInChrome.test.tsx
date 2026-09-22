@@ -8,6 +8,7 @@ import {
   fetchConversations,
   fetchModeratorGroup,
   fetchNotifications,
+  fetchTrustProposals,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
@@ -107,6 +108,7 @@ vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn().mockResolvedValue({ notifications: [], unreadCount: 0 }),
   fetchConversations: vi.fn().mockResolvedValue([]),
   fetchModeratorGroup: vi.fn().mockRejectedValue(new Error('no group')),
+  fetchTrustProposals: vi.fn().mockResolvedValue([]),
 }));
 
 const useAccountTotalsActual = (
@@ -150,6 +152,7 @@ beforeEach(() => {
   vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
   vi.mocked(fetchConversations).mockResolvedValue([]);
   vi.mocked(fetchModeratorGroup).mockRejectedValue(new Error('no group'));
+  vi.mocked(fetchTrustProposals).mockResolvedValue([]);
   vi.mocked(resyncPushSubscription).mockResolvedValue(undefined);
   vi.mocked(enablePush).mockResolvedValue(undefined);
   vi.mocked(usePasskeyLogin).mockReturnValue({
@@ -616,6 +619,40 @@ describe('SignedInChrome', () => {
     expect(count?.className.includes('ml-auto')).toBe(true);
     expect(count?.className.includes('font-semibold')).toBe(true);
     expect(count?.className.includes('lining-nums')).toBe(true);
+  });
+
+  it('adds open-proposal count to the Moderation menu unread', async () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+    vi.mocked(fetchModeratorGroup).mockResolvedValue({
+      id: 'conv-mod',
+      kind: 'moderator_group',
+      name: 'Moderators',
+      lastText: 'Hello mods',
+      lastAt: '2026-08-28T15:00:00.000Z',
+      lastFromMe: false,
+      lastSats: 0,
+      unread: true,
+      unreadMessageCount: 0,
+    });
+    vi.mocked(fetchTrustProposals).mockResolvedValue([
+      {
+        subject: { id: 'acc_rose', name: 'Rose', role: 'verified' },
+        proposedBy: { id: 'acc_bob', name: 'Bob' },
+        createdAt: '2026-08-28T12:00:00.000Z',
+      },
+    ]);
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Moderation, 2 unread' })).toBeTruthy();
+    });
+    const moderation = screen.getByRole('link', { name: 'Moderation, 2 unread' });
+    expect(moderation.getAttribute('href')).toBe('/moderate');
+    expect(moderation.querySelector('.tabular-nums')?.textContent).toBe('2');
   });
 
   it.each(['founder', 'moderator'] as const)(

@@ -124,6 +124,7 @@ app/
 │   │   │   ├── verify/route.ts             # POST /trust/verify
 │   │   │   ├── propose-moderator/route.ts  # POST /trust/propose-moderator
 │   │   │   ├── confirm-moderator/route.ts  # POST /trust/confirm-moderator
+│   │   │   ├── reject-moderator/route.ts   # POST /trust/reject-moderator
 │   │   │   └── appoint-moderator/route.ts  # POST /trust/appoint-moderator
 │   │   ├── funding/
 │   │   │   ├── apply/route.ts                    # POST /funding/apply
@@ -143,7 +144,7 @@ app/
 │   │   ├── moderate/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
-│   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm queue
+│   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm/reject queue
 │   │   │   ├── applications/page.tsx # GET /moderate/applications — grant queue
 │   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — grant review
 │   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
@@ -184,7 +185,7 @@ app/
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
-│   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm queue
+│   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm/reject queue
 │   │   ├── FundingApplicationsScreen.tsx # Signed-in /moderate/applications grant queue
 │   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /moderate/applications/:id grant review
 │   │   ├── FundingStatusCard.tsx # Owner profile verification / 21 gifts grant
@@ -292,7 +293,7 @@ app/
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
-│   ├── proposals.spec.ts        # /moderate/proposals staff confirm queue
+│   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /moderate/applications grant queue and review
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile

@@ -112,14 +112,14 @@ function chartDayLabel(day: string, locale: string): string {
  *
  * Moderators see the daily payout-goal widget (from
  * {@link fetchGiftStats}), and labeled Hidden notes, Open proposals, Open
- * applications, Moderators chat group, and Handbook tools. The Moderators
- * chat group control goes to `/moderate/group` and shows a staff-room unread
- * count when greater than zero. Handbook goes to `/moderate/handbook`. Other
- * signed-in visitors see a short forbidden message and no tools list.
- * Does not fetch hidden notes, proposals, applications, or the group thread;
- * unread for the Moderators chat group control comes from
- * {@link useUnreadCount}.
- * Renders nothing without a session.
+ * applications, Moderators chat group, and Handbook tools. The Open proposals
+ * control goes to `/moderate/proposals` and shows `proposalCount` when greater
+ * than zero. The Moderators chat group control goes to `/moderate/group` and
+ * shows a staff-room unread count when greater than zero. Handbook goes to
+ * `/moderate/handbook`. Other signed-in visitors see a short forbidden message
+ * and no tools list. Does not fetch hidden notes, proposals, applications, or
+ * the group thread; unread for Open proposals and Moderators chat group comes
+ * from {@link useUnreadCount}. Renders nothing without a session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
  */
@@ -132,7 +132,8 @@ export function ModerateScreen(): ReactElement | null {
   const [goalError, setGoalError] = useState(false);
   const [goalAttempt, setGoalAttempt] = useState(0);
   const [goalOpen, setGoalOpen] = useState(false);
-  const { moderationUnreadCount } = useUnreadCount(true, { writeBadge: false });
+  const { moderationUnreadCount, proposalCount } = useUnreadCount(true, { writeBadge: false });
+  const groupUnreadCount = moderationUnreadCount - proposalCount;
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -200,8 +201,20 @@ export function ModerateScreen(): ReactElement | null {
           </ButtonLink>
         </li>
         <li className="flex w-full flex-col items-center gap-3">
-          <ButtonLink href="/moderate/proposals" variant="secondary" size="lg">
+          <ButtonLink
+            href="/moderate/proposals"
+            variant="secondary"
+            size="lg"
+            {...(proposalCount > 0
+              ? {
+                  'aria-label': t('moderate.proposals.unread', { count: String(proposalCount) }),
+                }
+              : {})}
+          >
             {t('moderate.proposals.heading')}
+            {proposalCount > 0 ? (
+              <span className="font-semibold tabular-nums lining-nums">{proposalCount}</span>
+            ) : null}
           </ButtonLink>
         </li>
         <li className="flex w-full flex-col items-center gap-3">
@@ -215,17 +228,15 @@ export function ModerateScreen(): ReactElement | null {
             href="/moderate/group"
             variant="secondary"
             size="lg"
-            {...(moderationUnreadCount > 0
+            {...(groupUnreadCount > 0
               ? {
-                  'aria-label': t('moderate.groupUnread', { count: String(moderationUnreadCount) }),
+                  'aria-label': t('moderate.groupUnread', { count: String(groupUnreadCount) }),
                 }
               : {})}
           >
             {t('moderate.groupLabel')}
-            {moderationUnreadCount > 0 ? (
-              <span className="font-semibold tabular-nums lining-nums">
-                {moderationUnreadCount}
-              </span>
+            {groupUnreadCount > 0 ? (
+              <span className="font-semibold tabular-nums lining-nums">{groupUnreadCount}</span>
             ) : null}
           </ButtonLink>
         </li>
