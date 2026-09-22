@@ -2563,7 +2563,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/messages/:id/invoice` with `{ sats }` or `{ sats, text }` when the visitor attached a reply comment. Empty `text` is omitted.
 - **Inputs:** session token, message id, sats, optional text.
 - **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy. 409 `missing_requirements` throws `MissingRequirementsError`.
-- **Used by:** `ForumLoader`, `MemberProfileScreen`.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 
 ## Function: proxyMessagesComposeTargetGet
 
