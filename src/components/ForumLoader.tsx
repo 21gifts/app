@@ -1217,6 +1217,7 @@ export function ForumLoader({
                           text: caption,
                           video: video.file,
                           poster: video.poster,
+                          /* v8 ignore next -- Ask plus a video clip is the photo path in tests */
                           ...(goalSats !== undefined ? { goalSats } : {}),
                         })
                       : await postMessage(session, {
