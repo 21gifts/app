@@ -2375,6 +2375,9 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
+    fetchMock.mockResolvedValue(
+      forumPage([{ ...SAMPLE, id: 'new-paid', text: 'Hello gifts', sats: 0, payable: false }]),
+    );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {

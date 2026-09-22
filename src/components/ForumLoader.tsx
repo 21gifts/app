@@ -405,6 +405,7 @@ export function ForumLoader({
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const pendingComposeTextRef = useRef<string | null>(null);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -1159,83 +1160,114 @@ export function ForumLoader({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setMessages((prev) => {
-              /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
-              if (prev === null) {
-                return prev;
+            let ownContent = true;
+            if (switchToAll || replyParentId !== null) {
+              const expected = pendingComposeTextRef.current;
+              const me = useAuthStore.getState().account?.id;
+              const sess = useAuthStore.getState().session;
+              if (expected !== null && me !== undefined && sess !== null) {
+                ownContent = false;
+                try {
+                  if (replyParentId !== null) {
+                    const replies = await fetchReplies(sess, replyParentId);
+                    ownContent = replies.some(
+                      (row) => row.accountId === me && row.text === expected,
+                    );
+                  } else {
+                    const page = await fetchMessages(sess, forumPageArgs('all'));
+                    ownContent = page.messages.some(
+                      (row) => row.accountId === me && row.text === expected,
+                    );
+                  }
+                  /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+                } catch {
+                  ownContent = false;
+                }
+                /* v8 ignore stop */
               }
-              return prev
-                .map((row) =>
-                  row.id === next.id
-                    ? {
-                        ...row,
-                        ...next,
-                        replyCount: applySessionReplyCount(
-                          next.id,
-                          next.replyCount,
-                          hiddenReplyCounts.current,
-                          lastServerReplyCount.current,
-                          row.replyCount,
-                        ),
-                      }
-                    : row,
-                )
-                .filter((row) => !deletedIds.current.has(row.id));
-            });
-            setReplies((prev) => {
-              /* v8 ignore next 3 -- poll can finish after the thread is collapsed */
-              if (prev === null) {
-                return prev;
-              }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
-            });
-            setPayWaiting(false);
-            setPayInvoice(null);
-            setPayMessageId(null);
-            setPayHost(null);
-            setPayDraft('');
-            setPayError(null);
-            const current = useAuthStore.getState();
-            if (current.session !== session) {
-              return;
             }
-            if (current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
-            }
-            const expanded = expandedIdRef.current;
-            /* v8 ignore next -- replies are loaded whenever an expanded poll settles */
-            const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
-            if (expanded !== null && !paidNestedReply) {
-              setRepliesAttempt((n) => n + 1);
-            }
-            if (replyParentId !== null && replyParentId !== next.id) {
+            if (ownContent) {
+              pendingComposeTextRef.current = null;
               setMessages((prev) => {
-                /* v8 ignore next 3 -- compose-pay reply poll starts from a listed parent */
+                /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
                 if (prev === null) {
                   return prev;
                 }
-                return prev.map((row) =>
-                  /* v8 ignore next -- other listed notes keep their counts */
-                  row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
-                );
+                return prev
+                  .map((row) =>
+                    row.id === next.id
+                      ? {
+                          ...row,
+                          ...next,
+                          replyCount: applySessionReplyCount(
+                            next.id,
+                            next.replyCount,
+                            hiddenReplyCounts.current,
+                            lastServerReplyCount.current,
+                            row.replyCount,
+                          ),
+                        }
+                      : row,
+                  )
+                  .filter((row) => !deletedIds.current.has(row.id));
               });
+              setReplies((prev) => {
+                /* v8 ignore next 3 -- poll can finish after the thread is collapsed */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+              });
+              setPayWaiting(false);
+              setPayInvoice(null);
+              setPayMessageId(null);
+              setPayHost(null);
+              setPayDraft('');
+              setPayError(null);
+              const current = useAuthStore.getState();
+              if (current.session !== session) {
+                return;
+              }
+              if (current.account !== null) {
+                setAccount({ ...current.account, hasPosted: true });
+              }
+              const expanded = expandedIdRef.current;
+              /* v8 ignore next -- replies are loaded whenever an expanded poll settles */
+              const paidNestedReply = (repliesRef.current ?? []).some(
+                (row) => row.id === messageId,
+              );
+              if (expanded !== null && !paidNestedReply) {
+                setRepliesAttempt((n) => n + 1);
+              }
+              if (replyParentId !== null && replyParentId !== next.id) {
+                setMessages((prev) => {
+                  /* v8 ignore next 3 -- compose-pay reply poll starts from a listed parent */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) =>
+                    /* v8 ignore next -- other listed notes keep their counts */
+                    row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                  );
+                });
+              }
+              payMessageIdRef.current = null;
+              payWaitingRef.current = false;
+              if (switchToAll && feedModeRef.current !== 'all') {
+                replaceInFlightRef.current = true;
+                paginationGeneration.current += 1;
+                loadingMoreRef.current = false;
+                refreshGeneration.current += 1;
+                nextCursorRef.current = null;
+                setNextCursor(null);
+                setNewPostsAvailable(false);
+                feedModeRef.current = 'all';
+                setFeedMode('all');
+              } else if (switchToAll) {
+                refreshMessagesRef.current();
+              }
+              return;
             }
-            payMessageIdRef.current = null;
-            payWaitingRef.current = false;
-            if (switchToAll && feedModeRef.current !== 'all') {
-              replaceInFlightRef.current = true;
-              paginationGeneration.current += 1;
-              loadingMoreRef.current = false;
-              refreshGeneration.current += 1;
-              nextCursorRef.current = null;
-              setNextCursor(null);
-              setNewPostsAvailable(false);
-              feedModeRef.current = 'all';
-              setFeedMode('all');
-            } else if (switchToAll) {
-              refreshMessagesRef.current();
-            }
-            return;
           }
         } catch {
           // Keep waiting while the sheet is open; generic retry is the board load path.
@@ -1438,6 +1470,7 @@ export function ForumLoader({
           amountSats: invoice.amountSats,
         });
         setPayHost('composer');
+        pendingComposeTextRef.current = trimmed;
         startPayPoll(target.messageId, target.sats, true);
         pendingPostRef.current = null;
         setDraft('');
@@ -1859,6 +1892,7 @@ export function ForumLoader({
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
+      pendingComposeTextRef.current = trimmed;
       startPayPoll(target.messageId, target.sats, false, parentId);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */

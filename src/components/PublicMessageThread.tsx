@@ -216,6 +216,7 @@ export function PublicMessageThread(props: {
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const pendingComposeTextRef = useRef<string | null>(null);
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
@@ -405,73 +406,95 @@ export function PublicMessageThread(props: {
           }
           /* v8 ignore stop */
           if (next !== null && next.sats > baselineSats) {
-            setNote((prev) => {
-              if (prev.id !== next.id) {
-                return prev;
-              }
-              return {
-                ...prev,
-                ...next,
-                replyCount: Math.max(prev.replyCount, next.replyCount),
-              };
-            });
-            setReplies((prev) => {
-              /* v8 ignore next 3 -- poll can finish after the thread failed to load replies */
-              if (prev === null) {
-                return prev;
-              }
-              return prev.map((row) => {
-                if (row.id !== next.id) {
-                  return row;
+            let ownContent = true;
+            if (replyParentId !== null) {
+              const expected = pendingComposeTextRef.current;
+              const me = useAuthStore.getState().account?.id;
+              const sess = useAuthStore.getState().session;
+              if (expected !== null && me !== undefined && sess !== null) {
+                ownContent = false;
+                try {
+                  const replies = await fetchReplies(sess, replyParentId);
+                  ownContent = replies.some((row) => row.accountId === me && row.text === expected);
+                  /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+                } catch {
+                  ownContent = false;
                 }
-                return { ...row, ...next };
-              });
-            });
-            setPayWaiting(false);
-            setPayInvoice(null);
-            setPayMessageId(null);
-            setPayDraft('');
-            setPayError(null);
-            const current = useAuthStore.getState();
-            /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
-            if (current.session !== session) {
-              return;
+                /* v8 ignore stop */
+              }
             }
-            if (current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
-            }
-            if (replyParentId !== null && replyParentId !== next.id) {
+            if (ownContent) {
+              pendingComposeTextRef.current = null;
               setNote((prev) => {
-                /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
-                if (prev.id !== replyParentId) {
+                if (prev.id !== next.id) {
                   return prev;
                 }
-                return { ...prev, replyCount: prev.replyCount + 1 };
+                return {
+                  ...prev,
+                  ...next,
+                  replyCount: Math.max(prev.replyCount, next.replyCount),
+                };
               });
-            }
-            const threadId = expandedIdRef.current;
-            /* v8 ignore next -- permalink auto-expand has replies loaded before a poll settles */
-            const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
-            if (threadId !== null && current.session !== null && !paidNestedReply) {
-              const gen = ++expandGen.current;
-              setRepliesLoading(true);
-              setRepliesError(false);
-              try {
-                const repliesNext = await fetchReplies(current.session, threadId);
-                if (expandGen.current === gen) {
-                  setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
+              setReplies((prev) => {
+                /* v8 ignore next 3 -- poll can finish after the thread failed to load replies */
+                if (prev === null) {
+                  return prev;
                 }
-              } catch {
-                if (expandGen.current === gen) {
-                  setRepliesError(true);
-                }
-              } finally {
-                if (expandGen.current === gen) {
-                  setRepliesLoading(false);
+                return prev.map((row) => {
+                  if (row.id !== next.id) {
+                    return row;
+                  }
+                  return { ...row, ...next };
+                });
+              });
+              setPayWaiting(false);
+              setPayInvoice(null);
+              setPayMessageId(null);
+              setPayDraft('');
+              setPayError(null);
+              const current = useAuthStore.getState();
+              /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
+              if (current.session !== session) {
+                return;
+              }
+              if (current.account !== null) {
+                setAccount({ ...current.account, hasPosted: true });
+              }
+              if (replyParentId !== null && replyParentId !== next.id) {
+                setNote((prev) => {
+                  /* v8 ignore next 3 -- compose-pay replies target the auto-expanded root */
+                  if (prev.id !== replyParentId) {
+                    return prev;
+                  }
+                  return { ...prev, replyCount: prev.replyCount + 1 };
+                });
+              }
+              const threadId = expandedIdRef.current;
+              /* v8 ignore next -- permalink auto-expand has replies loaded before a poll settles */
+              const paidNestedReply = (repliesRef.current ?? []).some(
+                (row) => row.id === messageId,
+              );
+              if (threadId !== null && current.session !== null && !paidNestedReply) {
+                const gen = ++expandGen.current;
+                setRepliesLoading(true);
+                setRepliesError(false);
+                try {
+                  const repliesNext = await fetchReplies(current.session, threadId);
+                  if (expandGen.current === gen) {
+                    setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
+                  }
+                } catch {
+                  if (expandGen.current === gen) {
+                    setRepliesError(true);
+                  }
+                } finally {
+                  if (expandGen.current === gen) {
+                    setRepliesLoading(false);
+                  }
                 }
               }
+              return;
             }
-            return;
           }
         } catch {
           // Keep waiting while the sheet is open.
@@ -601,6 +624,7 @@ export function PublicMessageThread(props: {
       setReplyAmountDraft('');
       pendingPostRef.current = null;
       setReplyPosting(false);
+      pendingComposeTextRef.current = trimmed;
       startPayPoll(target.messageId, target.sats, parentId);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */

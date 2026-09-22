@@ -219,6 +219,7 @@ export function MemberProfileScreen({
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
   const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
@@ -463,88 +464,110 @@ export function MemberProfileScreen({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setPosts((prev) => {
-              /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
-              if (prev === null) {
-                return prev;
+            let ownContent = true;
+            if (replyParentId !== null) {
+              const expected = pendingComposeTextRef.current;
+              const me = useAuthStore.getState().account?.id;
+              const sess = useAuthStore.getState().session;
+              if (expected !== null && me !== undefined && sess !== null) {
+                ownContent = false;
+                try {
+                  const replies = await fetchReplies(sess, replyParentId);
+                  ownContent = replies.some((row) => row.accountId === me && row.text === expected);
+                  /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+                } catch {
+                  ownContent = false;
+                }
+                /* v8 ignore stop */
               }
-              return prev.map((row) =>
-                row.id === next.id
-                  ? {
-                      ...row,
-                      ...next,
-                      replyCount: Math.max(row.replyCount, next.replyCount),
-                    }
-                  : row,
-              );
-            });
-            setActivityReplies((prev) => {
-              if (prev === null) {
-                return prev;
-              }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
-            });
-            setReplies((prev) => {
-              if (prev === null) {
-                return prev;
-              }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
-            });
-            setPayWaiting(false);
-            setPayInvoice(null);
-            setPayMessageId(null);
-            setPayDraft('');
-            setPayError(null);
-            const current = useAuthStore.getState();
-            if (current.session !== session) {
-              return;
             }
-            if (current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
-            }
-            if (replyParentId !== null && replyParentId !== next.id) {
+            if (ownContent) {
+              pendingComposeTextRef.current = null;
               setPosts((prev) => {
                 /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
                 if (prev === null) {
                   return prev;
                 }
                 return prev.map((row) =>
-                  /* v8 ignore next -- other listed notes keep their counts */
-                  row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
                 );
               });
               setActivityReplies((prev) => {
-                /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
                 if (prev === null) {
                   return prev;
                 }
-                return prev.map((row) =>
-                  row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
-                );
+                return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
               });
-            }
-            const threadId = expandedIdRef.current;
-            const paidNestedReply = (repliesRef.current ?? []).some((row) => row.id === messageId);
-            if (threadId !== null && current.session !== null && !paidNestedReply) {
-              const gen = ++expandGen.current;
-              setRepliesLoading(true);
-              setRepliesError(false);
-              try {
-                const repliesNext = await fetchReplies(current.session, threadId);
-                if (expandGen.current === gen) {
-                  setReplies(repliesNext);
+              setReplies((prev) => {
+                if (prev === null) {
+                  return prev;
                 }
-              } catch {
-                if (expandGen.current === gen) {
-                  setRepliesError(true);
-                }
-              } finally {
-                if (expandGen.current === gen) {
-                  setRepliesLoading(false);
+                return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+              });
+              setPayWaiting(false);
+              setPayInvoice(null);
+              setPayMessageId(null);
+              setPayDraft('');
+              setPayError(null);
+              const current = useAuthStore.getState();
+              if (current.session !== session) {
+                return;
+              }
+              if (current.account !== null) {
+                setAccount({ ...current.account, hasPosted: true });
+              }
+              if (replyParentId !== null && replyParentId !== next.id) {
+                setPosts((prev) => {
+                  /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) =>
+                    /* v8 ignore next -- other listed notes keep their counts */
+                    row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                  );
+                });
+                setActivityReplies((prev) => {
+                  /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) =>
+                    row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                  );
+                });
+              }
+              const threadId = expandedIdRef.current;
+              const paidNestedReply = (repliesRef.current ?? []).some(
+                (row) => row.id === messageId,
+              );
+              if (threadId !== null && current.session !== null && !paidNestedReply) {
+                const gen = ++expandGen.current;
+                setRepliesLoading(true);
+                setRepliesError(false);
+                try {
+                  const repliesNext = await fetchReplies(current.session, threadId);
+                  if (expandGen.current === gen) {
+                    setReplies(repliesNext);
+                  }
+                } catch {
+                  if (expandGen.current === gen) {
+                    setRepliesError(true);
+                  }
+                } finally {
+                  if (expandGen.current === gen) {
+                    setRepliesLoading(false);
+                  }
                 }
               }
+              return;
             }
-            return;
           }
         } catch {
           // Keep waiting while the sheet is open.
@@ -677,6 +700,7 @@ export function MemberProfileScreen({
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
+      pendingComposeTextRef.current = trimmed;
       startPayPoll(target.messageId, target.sats, parentId);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
