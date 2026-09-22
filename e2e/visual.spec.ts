@@ -7901,7 +7901,7 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'All' }).click();
+    await chooseForumView(page, 'All');
     await expect(page.getByRole('link', { name: 'Happyland' })).toBeVisible();
     await shotScreen(page, 'state-welcome-place');
   });
