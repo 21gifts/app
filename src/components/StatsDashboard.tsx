@@ -74,6 +74,9 @@ function PostsSummary({
           aria-hidden="true"
         >
           {posts.postsOverTime.map((point, index) => {
+            if (point.postCount === 0) {
+              return null;
+            }
             const bar = Math.max(2, Math.round((point.postCount / max) * 64));
             return (
               <rect
