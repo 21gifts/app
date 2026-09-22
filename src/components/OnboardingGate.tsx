@@ -33,6 +33,8 @@ interface OnboardingGateProps {
 
 /**
  * Hydrates the session and sends the visitor to the matching onboarding screen.
+ * An unconfirmed recovery phrase does not replace the page the visitor opened.
+ * Login still sends a new account to `/wallet`.
  *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
@@ -60,7 +62,7 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     }
     if (screen === 'profile') {
       const next = nextOnboardingPath(account);
-      if (next !== '/welcome') {
+      if (next !== '/welcome' && next !== '/wallet') {
         router.replace(next);
       }
       return;
@@ -73,7 +75,7 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
       return;
     }
     const target = nextOnboardingPath(account);
-    if (target !== PATH[screen]) {
+    if (target !== PATH[screen] && target !== '/wallet') {
       router.replace(target);
     }
   }, [account, cancel, ready, router, screen]);
@@ -85,8 +87,11 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     return <>{children}</>;
   }
   if (screen === 'profile') {
-    if (account !== null && nextOnboardingPath(account) === '/welcome') {
-      return <>{children}</>;
+    if (account !== null) {
+      const next = nextOnboardingPath(account);
+      if (next === '/welcome' || next === '/wallet') {
+        return <>{children}</>;
+      }
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
@@ -99,8 +104,11 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
-  if (account === null || nextOnboardingPath(account) !== PATH[screen]) {
-    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
+  if (account !== null) {
+    const next = nextOnboardingPath(account);
+    if (next === PATH[screen] || next === '/wallet') {
+      return <>{children}</>;
+    }
   }
-  return <>{children}</>;
+  return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
 }

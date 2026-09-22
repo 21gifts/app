@@ -407,7 +407,7 @@
 
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`, `/wallet`, and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). `screen="wallet"` stays when `next` is `/wallet` or `/welcome`. Profile and members stay only when `next === '/welcome'`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. When `nextOnboardingPath` is `/wallet`, screens other than login render their children and do not `router.replace` to `/wallet`. Login still `router.replace`s to `/wallet`. `screen="wallet"` stays when `next` is `/wallet` or `/welcome`. Profile and members stay when `next` is `/welcome` or `/wallet`. Name, username, address, and rules still redirect when that is the next step. Other `router.replace` targets are `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
 - **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/pos`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`, `/shops`.
 
 ## Function: SignedInChrome
@@ -1095,7 +1095,7 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; `setup === 'wallet'` → `/wallet`; skips advance `setup` without clearing `missing`). Username and wallet cannot be skipped.
+- **Purpose:** Picks `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; `setup === 'wallet'` → `/wallet`; skips advance `setup` without clearing `missing`). The map is unchanged. `OnboardingGate` does not use `/wallet` to replace another page. Username still cannot be skipped.
 - **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
 - **Used by:** `OnboardingGate`, `useWalletPhrase.confirmSaved`.

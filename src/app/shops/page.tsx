@@ -9,8 +9,10 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/shops` — signed-in shop listings (forum notes tagged `#21GiftsShop`).
  *
  * Requires name + address + living-room rules agreement via
- * {@link OnboardingGate} `screen="welcome"`, same as `/welcome`. There is
- * no `route.ts` beside this page (Next.js forbids that).
+ * {@link OnboardingGate} `screen="welcome"`, same as `/welcome`. An
+ * unconfirmed recovery phrase (`account.setup === 'wallet'`) does not
+ * replace this page. There is no `route.ts` beside this page (Next.js
+ * forbids that).
  *
  * @returns The shops screen.
  */

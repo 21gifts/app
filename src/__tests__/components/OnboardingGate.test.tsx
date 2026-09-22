@@ -103,6 +103,19 @@ describe('OnboardingGate', () => {
     expect(replace).toHaveBeenCalledWith('/setup/name');
   });
 
+  it('sends a signed-in visitor from login to /wallet when setup is wallet', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/wallet');
+  });
+
   it('lets a complete account open wallet', async () => {
     useAuthStore.setState({ session: 'tok', account: complete });
     renderWithLocale(
@@ -140,7 +153,7 @@ describe('OnboardingGate', () => {
     });
   });
 
-  it('sends a wallet-required account from the name screen to /wallet', async () => {
+  it('renders name children when setup is wallet', async () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
@@ -150,9 +163,36 @@ describe('OnboardingGate', () => {
         <p>name-ui</p>
       </OnboardingGate>,
     );
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/wallet');
+    expect(await screen.findByText('name-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('renders welcome children when setup is wallet (what /shops does with screen="welcome")', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
     });
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('welcome-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('renders profile children when setup is wallet', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('profile-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('sends a logged-out visitor from welcome to login', () => {
