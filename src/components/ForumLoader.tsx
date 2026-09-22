@@ -408,6 +408,7 @@ export function ForumLoader({
   const pendingComposeTextRef = useRef<string | null>(null);
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
+  const composeFeePaidRef = useRef(false);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -1228,8 +1229,15 @@ export function ForumLoader({
                               }),
                         });
                   applyCreatedNote(created, photos, video);
+                  composeFeePaidRef.current = false;
                 } catch {
                   setFormError('request');
+                  composeFeePaidRef.current = true;
+                  const keptCaption = pendingComposeTextRef.current;
+                  if (keptCaption !== null && keptCaption !== '') {
+                    setDraft(keptCaption);
+                  }
+                  return;
                 }
                 pendingComposePhotosRef.current = [];
                 pendingComposeVideoRef.current = null;
@@ -1508,7 +1516,11 @@ export function ForumLoader({
     setPosting(true);
     setFormError(null);
     try {
-      if (account !== null && !roleAtLeast(account.role, 'verified')) {
+      if (
+        account !== null &&
+        !roleAtLeast(account.role, 'verified') &&
+        !(composeFeePaidRef.current && (pendingPhotos.length > 0 || pendingVideo !== null))
+      ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(

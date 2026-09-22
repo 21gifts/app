@@ -2739,6 +2739,22 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'photo-retry',
+      text: '',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledTimes(2);
+    });
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
