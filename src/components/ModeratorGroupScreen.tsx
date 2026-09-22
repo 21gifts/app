@@ -296,6 +296,8 @@ export function ModeratorGroupScreen(): ReactElement | null {
 
   const groupId = group?.id ?? null;
   const threadLoaded = messages !== null && groupId !== null;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   useEffect(() => {
     if (session === null || !staff || groupId === null || !threadLoaded) {
       return;
@@ -313,18 +315,18 @@ export function ModeratorGroupScreen(): ReactElement | null {
           if (cancelled) {
             return;
           }
-          let appended = false;
-          setMessages((prev) => {
+          const prev = messagesRef.current;
+          /* v8 ignore next -- the poll starts only after the thread is loaded */
+          if (prev === null) return;
+          const fresh = page.messages.filter(
+            (message) => !prev.some((row) => row.id === message.id),
+          );
+          setMessages((current) => {
             /* v8 ignore next -- the poll starts only after the thread is loaded */
-            if (prev === null) return prev;
-            const next = appendUnseenMessages(prev, page.messages);
-            if (next === prev) return prev;
-            appended = true;
-            return next;
+            if (current === null) return current;
+            return appendUnseenMessages(current, page.messages);
           });
-          if (!appended || cancelled) {
-            return;
-          }
+          if (fresh.length === 0) return;
           void markConversationRead(session, activeId).catch(() => undefined);
           bumpUnreadAppBadgeEpoch();
           void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);

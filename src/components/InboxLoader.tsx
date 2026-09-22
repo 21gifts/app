@@ -526,6 +526,8 @@ export function InboxLoader(): ReactElement | null {
   }, []);
 
   const threadLoaded = messages !== null;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   useEffect(() => {
     if (session === null || openId === null || openId === '' || !threadAllowed || !threadLoaded) {
       return;
@@ -542,21 +544,24 @@ export function InboxLoader(): ReactElement | null {
           if (cancelled || openIdRef.current !== openId) {
             return;
           }
-          let lastAppended: ConversationMessage | undefined;
-          setMessages((prev) => {
+          const prev = messagesRef.current;
+          /* v8 ignore next -- the poll starts only after the thread is loaded */
+          if (prev === null) return;
+          const fresh = page.messages.filter(
+            (message) => !prev.some((row) => row.id === message.id),
+          );
+          setMessages((current) => {
             /* v8 ignore next -- the poll starts only after the thread is loaded */
-            if (prev === null) return prev;
-            const next = appendUnseenMessages(prev, page.messages);
-            if (next === prev) return prev;
-            lastAppended = next[next.length - 1];
-            return next;
+            if (current === null) return current;
+            return appendUnseenMessages(current, page.messages);
           });
-          if (lastAppended === undefined || cancelled || openIdRef.current !== openId) {
-            return;
-          }
-          const last = lastAppended;
-          const listedRows = conversations ?? [];
-          const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
+          if (fresh.length === 0) return;
+          const last = fresh[fresh.length - 1];
+          /* v8 ignore next -- fresh is non-empty when this runs */
+          if (last === undefined) return;
+          /* v8 ignore next -- a thread only polls after the inbox list has loaded */
+          if (conversations === null) return;
+          const remaining = conversations.filter((row) => row.id !== openId && row.unread).length;
           setConversations((rows) => {
             /* v8 ignore next -- the list is loaded before a thread can poll */
             if (rows === null) return rows;
