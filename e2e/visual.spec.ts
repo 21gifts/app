@@ -7964,8 +7964,10 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
-    await shotScreen(page, 'state-welcome-composer-place-confirm');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-composer-place-confirm', false);
   });
 
   test('welcome composer-place-set', async ({ page }) => {
