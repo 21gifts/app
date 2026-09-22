@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { Suspense, type ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { PlacesMapScreen } from '@/components/PlacesMapScreen';
@@ -22,7 +22,9 @@ export default function MapPage(): ReactElement {
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">
-        <PlacesMapScreen />
+        <Suspense>
+          <PlacesMapScreen />
+        </Suspense>
       </OnboardingGate>
     </AppShell>
   );

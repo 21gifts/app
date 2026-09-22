@@ -9,6 +9,10 @@ vi.mock('@/lib/api', () => ({
   fetchPlaces: vi.fn(),
 }));
 
+vi.mock('next/navigation', () => ({
+  useSearchParams: (): URLSearchParams => new URLSearchParams(window.location.search),
+}));
+
 import { fetchPlaces } from '@/lib/api';
 
 const fetchPlacesMock = vi.mocked(fetchPlaces);
@@ -49,12 +53,17 @@ describe('PlacesMapScreen', () => {
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([ROW, { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 }]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
-    renderWithLocale(<PlacesMapScreen />);
+    const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ada · 1.00000, 2.00000' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected'),
     ).toBe('true');
+    window.history.replaceState(null, '', '/map');
+    view.rerender(<PlacesMapScreen />);
+    expect(screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected')).toBe(
+      'false',
+    );
   });
 
   it('shows the empty state', async () => {

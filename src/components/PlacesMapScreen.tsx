@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
@@ -64,12 +65,8 @@ export function PlacesMapScreen(): ReactElement {
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [pinId, setPinId] = useState<string | null>(null);
+  const pinId = useSearchParams().get('pin');
   const frameRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    setPinId(new URLSearchParams(window.location.search).get('pin'));
-  }, []);
 
   useEffect(() => {
     if (session === null) {
