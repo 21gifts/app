@@ -26,6 +26,43 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
   });
 
+  it('shows Continue during setup instead of I saved these words', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="phrase"
+        status="idle"
+        error={null}
+        words={words}
+        setupWallet
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'I saved these words' })).toBeNull();
+  });
+
+  it('shows a timeout reason and a hint', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="activate"
+        status="error"
+        error="timeout"
+        words={[]}
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/timed out before you finished/i)).toBeTruthy();
+    expect(screen.getByText(/try another browser/i)).toBeTruthy();
+  });
+
   it('renders twelve words on phrase view', () => {
     renderWithLocale(
       <WalletScreenView
@@ -112,6 +149,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
+    expect(screen.getByText('Advanced functions')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Show recovery phrase' }).querySelector('svg'),
     ).not.toBeNull();

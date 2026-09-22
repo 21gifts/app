@@ -15,6 +15,7 @@ const phraseState: UseWalletPhraseResult = {
   status: 'idle',
   error: null,
   words: [],
+  setupWallet: false,
   activate: vi.fn(),
   confirmSaved: vi.fn(),
   showPhrase,
@@ -72,6 +73,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
+    expect(screen.getByText('Advanced functions')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Show recovery phrase' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show recovery phrase' }));
   });

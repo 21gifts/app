@@ -2511,7 +2511,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletPhrase
 
-- **Purpose:** Activate / confirm / show recovery phrase for `/wallet`.
+- **Purpose:** Activate / show recovery phrase for `/wallet`. Setup uses phrase + Continue, not confirm.
 - **Inputs:** Auth store session and account.
 - **Returns / side effects:** View, words, actions. Calls replace and backup-seen.
 - **Used by:** `WalletScreen`.
@@ -2520,7 +2520,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Presentational wallet card.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with Activate / grid / confirm.
+- **Returns / side effects:** Card with Activate, 12-word grid, setup **Continue**, optional confirm, or **Show recovery phrase** under **Advanced functions**. Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen

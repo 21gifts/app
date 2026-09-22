@@ -188,14 +188,14 @@ export const SCREEN_VARIANTS = [
     id: 'reveal',
     image: 'wallet-reveal.png',
     visual: 'state-wallet-reveal',
-    needle: 'Show recovery phrase',
+    needle: 'Advanced functions',
   },
   {
     route: '/wallet',
     id: 'error',
     image: 'wallet-error.png',
     visual: 'state-wallet-error',
-    needle: 'Something went wrong. Please try again.',
+    needle: 'The recovery phrase could not be opened. Check this device and try again.',
   },
   {
     route: '/wallet',

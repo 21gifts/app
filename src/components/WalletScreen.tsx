@@ -5,17 +5,18 @@ import { WalletScreenView } from '@/components/WalletScreenView';
 import { useWalletPhrase } from '@/hooks/useWalletPhrase';
 
 /**
- * Signed-in wallet screen: recovery phrase confirm / activate / reveal.
+ * Signed-in wallet screen: recovery phrase setup / activate / reveal.
  *
  * @returns The wallet card.
  */
 export function WalletScreen(): ReactElement {
   const phrase = useWalletPhrase();
-  const { view, words, showPhrase, status, error, retry } = phrase;
+  const { view, words, showPhrase, status, error, retry, setupWallet } = phrase;
   const autoRevealRef = useRef(false);
 
   useEffect(() => {
-    if (view !== 'confirm' || words.length === 12 || status !== 'idle' || error !== null) {
+    const needsWords = (view === 'confirm' || setupWallet) && words.length !== 12;
+    if (!needsWords || status !== 'idle' || error !== null) {
       return;
     }
     /* v8 ignore next 3 -- second effect after auto-reveal on the same mount */
@@ -24,7 +25,7 @@ export function WalletScreen(): ReactElement {
     }
     autoRevealRef.current = true;
     void showPhrase();
-  }, [view, words.length, status, error, showPhrase]);
+  }, [view, words.length, status, error, showPhrase, setupWallet]);
 
   return (
     <WalletScreenView

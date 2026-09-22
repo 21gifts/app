@@ -414,7 +414,7 @@ async function confirmNewAccount(page: Page): Promise<void> {
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
   await expect(page).toHaveURL(/\/wallet/, { timeout: 10_000 });
-  await page.getByRole('button', { name: 'I saved these words' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
 }
 
