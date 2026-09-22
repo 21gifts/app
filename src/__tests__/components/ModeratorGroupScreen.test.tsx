@@ -38,6 +38,7 @@ vi.mock('@/lib/api', () => ({
   markConversationRead: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchConversationMessagePhoto: vi.fn(),
+  CONVERSATION_LIVE_POLL_MS: 5_000,
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -133,7 +134,10 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
 
 describe('ModeratorGroupScreen', () => {
   it('renders nothing when there is no session', () => {
@@ -840,5 +844,165 @@ describe('moderator conversation thread pages', () => {
     });
     expect(screen.getByText('Hello mods')).toBeTruthy();
     expect(screen.queryByText('Could not load the staff room. Please try again.')).toBeNull();
+  });
+
+  function setVisibility(state: DocumentVisibilityState): void {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
+
+  it('appends unseen staff-room messages on the visible-tab interval', async () => {
+    const olderNew: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm2',
+      text: 'Older staff',
+      createdAt: '2026-08-28T15:30:00.000Z',
+    };
+    const newer: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm3',
+      text: 'Newer staff',
+      createdAt: '2026-08-28T16:00:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, olderNew, newer]));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledTimes(1);
+    });
+    const callsBefore = threadMock.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(await screen.findByText('Newer staff')).toBeTruthy();
+    expect(
+      screen.getByText('Older staff').compareDocumentPosition(screen.getByText('Newer staff')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(markReadMock).toHaveBeenCalledTimes(2);
+    expect(refreshMock).toHaveBeenCalledWith('sess', undefined, 0);
+    expect(threadMock.mock.calls.length).toBe(callsBefore + 1);
+    expect(threadMock.mock.calls.at(-1)?.[2]).toBeUndefined();
+  });
+
+  it('does not mark the staff room read again when the poll has no new id', async () => {
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(markReadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not poll a hidden staff room and pulls once when it becomes visible', async () => {
+    const newer: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm2',
+      text: 'Back in the room',
+      createdAt: '2026-08-28T16:00:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, newer]));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    try {
+      renderWithLocale(<ModeratorGroupScreen />);
+      expect(await screen.findByText('Hello mods')).toBeTruthy();
+      const callsBefore = threadMock.mock.calls.length;
+      setVisibility('hidden');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await vi.advanceTimersByTimeAsync(5_000);
+      });
+      expect(threadMock.mock.calls.length).toBe(callsBefore);
+      setVisibility('visible');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      expect(await screen.findByText('Back in the room')).toBeTruthy();
+      expect(markReadMock).toHaveBeenCalledTimes(2);
+    } finally {
+      setVisibility('visible');
+    }
+  });
+
+  it('keeps the staff room when a live poll fails', async () => {
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockRejectedValueOnce(new Error('boom'));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.getByText('Hello mods')).toBeTruthy();
+    expect(screen.queryByText('Could not load the staff room. Please try again.')).toBeNull();
+  });
+
+  it('ignores a staff-room poll that resolves after unmount', async () => {
+    let release: ((page: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    const view = renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    view.unmount();
+    await act(async () => {
+      release?.(
+        conversationPage([
+          MESSAGE,
+          { ...MESSAGE, id: 'm-late', text: 'Too late', createdAt: '2026-08-28T16:00:00.000Z' },
+        ]),
+      );
+    });
+    expect(screen.queryByText('Too late')).toBeNull();
+  });
+
+  it('skips a second staff-room pull while one poll is in flight', async () => {
+    let release: ((page: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    const callsBefore = threadMock.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(threadMock.mock.calls.length).toBe(callsBefore + 1);
+    await act(async () => {
+      release?.(
+        conversationPage([
+          MESSAGE,
+          { ...MESSAGE, id: 'm2', text: 'After the wait', createdAt: '2026-08-28T16:00:00.000Z' },
+        ]),
+      );
+    });
+    expect(await screen.findByText('After the wait')).toBeTruthy();
   });
 });

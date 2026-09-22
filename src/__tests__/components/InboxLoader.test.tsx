@@ -29,6 +29,7 @@ vi.mock('@/lib/api', () => ({
   postConversationMessage: vi.fn(),
   fetchConversationMessagePhoto: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  CONVERSATION_LIVE_POLL_MS: 5_000,
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -150,7 +151,10 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
 
 describe('InboxLoader', () => {
   it('renders nothing when there is no session', () => {
@@ -1627,6 +1631,223 @@ describe('InboxLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
     });
     expect(postMock.mock.calls[0]?.length).toBe(3);
+  });
+
+  function setVisibility(state: DocumentVisibilityState): void {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
+
+  it('appends unseen messages on the visible-tab interval', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, { ...OLDER, unread: true }]);
+    const olderNew: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm2',
+      text: 'Older new',
+      createdAt: '2026-08-28T12:30:00.000Z',
+    };
+    const newer: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm3',
+      text: 'Newer arrival',
+      createdAt: '2026-08-28T13:00:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, olderNew, newer]));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledTimes(1);
+    });
+    const callsBefore = threadMock.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(await screen.findByText('Newer arrival')).toBeTruthy();
+    expect(screen.getByText('Older new')).toBeTruthy();
+    expect(
+      screen
+        .getByText('Older new')
+        .compareDocumentPosition(screen.getByText('Newer arrival')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getAllByText('Hello')).toHaveLength(1);
+    expect(markReadMock).toHaveBeenCalledTimes(2);
+    expect(threadMock.mock.calls.length).toBe(callsBefore + 1);
+    expect(threadMock.mock.calls.at(-1)?.[2]).toBeUndefined();
+    expect(refreshMock).toHaveBeenCalledWith('sess', 1);
+  });
+
+  it('does not mark read again when the poll page has no new id', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await waitFor(() => {
+      expect(markReadMock).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(markReadMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Hello')).toBeTruthy();
+  });
+
+  it('does not poll a hidden tab and pulls once when it becomes visible', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    const newer: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm2',
+      text: 'Seen on return',
+      createdAt: '2026-08-28T13:00:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, newer]));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    try {
+      renderWithLocale(<InboxLoader />);
+      expect(await screen.findByText('Hello')).toBeTruthy();
+      const callsBefore = threadMock.mock.calls.length;
+      setVisibility('hidden');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await vi.advanceTimersByTimeAsync(5_000);
+      });
+      expect(threadMock.mock.calls.length).toBe(callsBefore);
+      expect(screen.queryByText('Seen on return')).toBeNull();
+      setVisibility('visible');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      expect(await screen.findByText('Seen on return')).toBeTruthy();
+      expect(threadMock.mock.calls.length).toBe(callsBefore + 1);
+    } finally {
+      setVisibility('visible');
+    }
+  });
+
+  it('keeps the thread when a live poll fails', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockRejectedValueOnce(new Error('boom'));
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+
+  it('ignores a live poll that resolves after unmount', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    let release: ((page: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    view.unmount();
+    await act(async () => {
+      release?.(
+        conversationPage([
+          MESSAGE,
+          {
+            ...MESSAGE,
+            id: 'm-late',
+            text: 'Too late',
+            createdAt: '2026-08-28T13:00:00.000Z',
+          },
+        ]),
+      );
+    });
+    expect(screen.queryByText('Too late')).toBeNull();
+  });
+
+  it('skips a second pull while one live poll is in flight', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    let release: ((page: ConversationPage) => void) | undefined;
+    const newer: ConversationMessage = {
+      ...MESSAGE,
+      id: 'm2',
+      text: 'After the wait',
+      createdAt: '2026-08-28T13:00:00.000Z',
+    };
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    const callsBefore = threadMock.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(threadMock.mock.calls.length).toBe(callsBefore + 1);
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(threadMock.mock.calls.length).toBe(callsBefore + 1);
+    await act(async () => {
+      release?.(conversationPage([MESSAGE, newer]));
+    });
+    expect(await screen.findByText('After the wait')).toBeTruthy();
+  });
+
+  it('does not append a posted id the live poll already showed', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    const created: ConversationMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'Follow up',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, created]));
+    postMock.mockResolvedValue(created);
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(await screen.findByText('Follow up')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', 'Follow up');
+    });
+    expect(screen.getAllByText('Follow up')).toHaveLength(1);
   });
 });
 

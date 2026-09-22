@@ -6,6 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
+  CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchModeratorGroup,
@@ -29,6 +30,18 @@ function revokeIfBlob(url: string): void {
   }
 }
 
+function appendUnseenMessages(
+  prev: readonly ConversationMessage[],
+  page: readonly ConversationMessage[],
+): ConversationMessage[] {
+  const ids = new Set(prev.map((message) => message.id));
+  const fresh = page.filter((message) => !ids.has(message.id));
+  if (fresh.length === 0) {
+    return prev as ConversationMessage[];
+  }
+  return [...prev, ...fresh];
+}
+
 /**
  * Signed-in closed moderator-group thread.
  *
@@ -47,7 +60,10 @@ function revokeIfBlob(url: string): void {
  * home-screen badge with staff-room unread `0`. The newest 20-message page
  * loads first; an IntersectionObserver near the oldest bubble prepends unique
  * older pages without returning to the loading card.
- * {@link InboxScreen} stays pinned while stuck to the bottom. Other signed-in visitors
+ * {@link InboxScreen} stays pinned while stuck to the bottom. While the room
+ * is open and the tab is visible, the newest page is fetched every
+ * {@link CONVERSATION_LIVE_POLL_MS} and unseen messages are appended; a hidden
+ * tab does not poll; a failed poll keeps the thread. Other signed-in visitors
  * and a missing account see forbidden copy and do not fetch. Renders
  * nothing without a session. Back to the moderation hub is the page
  * chrome (no in-card back).
@@ -277,6 +293,58 @@ export function ModeratorGroupScreen(): ReactElement | null {
       observer.disconnect();
     };
   }, [group, nearStartElement, nextCursor, session]);
+
+  const threadLoaded = messages !== null && group !== null;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  useEffect(() => {
+    if (session === null || !staff || group === null || !threadLoaded) {
+      return;
+    }
+    let cancelled = false;
+    let inFlight = false;
+    const activeId = group.id;
+    const pull = (): void => {
+      if (document.visibilityState === 'hidden' || inFlight || cancelled) {
+        return;
+      }
+      inFlight = true;
+      void fetchConversation(session, activeId)
+        .then((page) => {
+          if (cancelled) {
+            return;
+          }
+          const prev = messagesRef.current;
+          /* v8 ignore next -- the poll starts only after the thread is loaded */
+          if (prev === null) return;
+          const next = appendUnseenMessages(prev, page.messages);
+          if (next === prev) {
+            return;
+          }
+          messagesRef.current = next;
+          setMessages(next);
+          void markConversationRead(session, activeId).catch(() => undefined);
+          bumpUnreadAppBadgeEpoch();
+          void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          inFlight = false;
+        });
+    };
+    const intervalId = setInterval(pull, CONVERSATION_LIVE_POLL_MS);
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === 'visible') {
+        pull();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [session, staff, group, threadLoaded]);
 
   if (session === null) {
     return null;

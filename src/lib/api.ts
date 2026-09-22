@@ -1703,6 +1703,8 @@ export async function fetchModeratorGroup(sessionToken: string): Promise<Convers
 
 /** Number of conversation messages requested per page. */
 export const CONVERSATION_PAGE_LIMIT = 20;
+/** How often an open conversation thread asks for newer messages while the tab is visible. */
+export const CONVERSATION_LIVE_POLL_MS = 5_000;
 
 /**
  * Fetches one page of messages in a private thread.
