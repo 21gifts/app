@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PosScreen } from '@/components/PosScreen';
 import { useAuthStore } from '@/stores/auth-store';
@@ -42,10 +42,7 @@ afterEach(() => {
 
 describe('PosScreen', () => {
   it('shows the amount form when nothing is open', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('heading', { name: 'Point of sale' })).toBeTruthy();
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
@@ -75,7 +72,7 @@ describe('PosScreen', () => {
     fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getAllByText('21 sats').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('₿21').length).toBeGreaterThan(0);
     fetchMock.mockImplementation(async () => jsonResponse({ charge: null, history: [] }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => {
@@ -89,7 +86,7 @@ describe('PosScreen', () => {
     renderWithLocale(<PosScreen />);
     fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '1.5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
-    expect((await screen.findByRole('alert')).textContent).toContain('Enter a whole number of sats.');
+    expect((await screen.findByRole('alert')).textContent).toContain('Enter a whole number.');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -113,10 +110,7 @@ describe('PosScreen', () => {
       session: 'tok',
       account: { ...ACCOUNT, lightningAddress: null },
     });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
     expect(
       await screen.findByRole('link', { name: 'Set a Wallet of Satoshi address first.' }),
@@ -159,10 +153,7 @@ describe('PosScreen', () => {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
@@ -279,9 +270,65 @@ describe('PosScreen', () => {
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-    useAuthStore.setState({ session: null, account: ACCOUNT });
+    const before = fetchMock.mock.calls.length;
+    act(() => {
+      useAuthStore.setState({ session: null, account: ACCOUNT });
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls.length).toBe(before);
+  });
+
+  it('updates the countdown while a charge is open', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 65_000).toISOString(),
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge, history: [charge] })));
+    renderWithLocale(<PosScreen />);
+    const first = (await screen.findByText(/\d+:\d+ left/)).textContent;
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1_100);
+    });
+    expect(screen.getByText(/\d+:\d+ left/).textContent).not.toBe(first);
+  });
+
+  it('shows an error when the expiry refresh fails', async () => {
+    const expired = {
+      id: 'old',
+      amountSats: 5,
+      status: 'pending' as const,
+      createdAt: new Date(Date.now() - 120_000).toISOString(),
+      expiresAt: new Date(Date.now() - 1_000).toISOString(),
+    };
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        if (calls === 1) {
+          return jsonResponse({ charge: expired, history: [expired] });
+        }
+        throw new Error('offline');
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    expect((await screen.findByRole('alert')).textContent).toContain('unavailable');
+  });
+
+  it('does not create a payment after the session disappears', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    const before = fetchMock.mock.calls.length;
+    act(() => {
+      useAuthStore.setState({ session: null, account: ACCOUNT });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect(fetchMock.mock.calls.length).toBe(before);
   });
 
   it('asks for a username when the account has none', async () => {
@@ -289,10 +336,7 @@ describe('PosScreen', () => {
       session: 'tok',
       account: { ...ACCOUNT, username: null },
     });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('link', { name: 'Set a username first.' })).toBeTruthy();
   });

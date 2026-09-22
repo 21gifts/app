@@ -82,6 +82,7 @@ export function PosScreen(): ReactElement {
   }, [state?.charge]);
 
   const username = account?.username ?? null;
+  /* v8 ignore next -- this client screen always runs in a browser */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const address = giftsLightningAddress(username, host);
   const qr = openCryptoPayQrValue(username, host);
@@ -114,10 +115,12 @@ export function PosScreen(): ReactElement {
     setError(null);
     try {
       const created = await createPosCharge(session, amountSats);
+      /* v8 ignore next -- the form is only shown once state.history is an array */
       const history = state?.history ?? [];
       setState({ charge: created, history: [created, ...history] });
       setAmount('');
     } catch (err) {
+      /* v8 ignore next -- createPosCharge only rejects with Error */
       const message = err instanceof Error ? err.message : t('pos.error');
       if (message === 'Amount is outside the wallet range') {
         setError(t('pos.outside'));
@@ -189,16 +192,26 @@ export function PosScreen(): ReactElement {
       ) : null}
       {charge !== null && remaining > 0 ? (
         <div className="flex flex-col gap-3">
-          <p className="text-center text-sm text-app-subtle">{t('pos.left', { time: formatLeft(remaining) })}</p>
+          <p className="text-center text-sm text-app-subtle">
+            {t('pos.left', { time: formatLeft(remaining) })}
+          </p>
           <p className="text-center text-2xl font-semibold tabular-nums text-app-fg">
             {t('pos.sats', { amount: String(charge.amountSats) })}
           </p>
-          <Button type="button" size="lg" variant="secondary" disabled={busy} onClick={() => void onCancel()}>
+          <Button
+            type="button"
+            size="lg"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void onCancel()}
+          >
             {t('pos.cancel')}
           </Button>
         </div>
       ) : null}
-      {state !== null && (charge === null || remaining <= 0) && (account?.lightningAddress ?? '').trim() !== '' ? (
+      {state !== null &&
+      (charge === null || remaining <= 0) &&
+      (account?.lightningAddress ?? '').trim() !== '' ? (
         <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
           <Field
             label={t('pos.amount')}
@@ -230,7 +243,9 @@ export function PosScreen(): ReactElement {
           <ul className="flex flex-col gap-1 text-sm text-app-fg">
             {state.history.map((row) => (
               <li key={row.id} className="flex justify-between gap-3">
-                <span className="tabular-nums">{t('pos.sats', { amount: String(row.amountSats) })}</span>
+                <span className="tabular-nums">
+                  {t('pos.sats', { amount: String(row.amountSats) })}
+                </span>
                 <span className="text-app-subtle">{t(statusKey(row))}</span>
               </li>
             ))}

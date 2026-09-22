@@ -46,7 +46,10 @@ export async function fetchPosState(sessionToken: string): Promise<PosState> {
  * @returns The created charge.
  * @throws Error with the API `error` string, or a status fallback.
  */
-export async function createPosCharge(sessionToken: string, amountSats: number): Promise<PosCharge> {
+export async function createPosCharge(
+  sessionToken: string,
+  amountSats: number,
+): Promise<PosCharge> {
   const response = await fetch('/pos/charge', {
     method: 'POST',
     headers: {
@@ -58,10 +61,7 @@ export async function createPosCharge(sessionToken: string, amountSats: number):
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const message =
-      body !== null &&
-      typeof body === 'object' &&
-      'error' in body &&
-      typeof body.error === 'string'
+      body !== null && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
         ? body.error
         : `Failed to create payment: ${response.status}`;
     throw new Error(message);
