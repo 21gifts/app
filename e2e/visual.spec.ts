@@ -3528,9 +3528,15 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: 'Moderator functions' }).click();
-    await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
-    await shotScreen(page, 'state-members-staff-verify-open');
+    const disclosure = page.getByRole('button', { name: 'Moderator functions' });
+    await disclosure.click();
+    const verify = page.getByRole('button', { name: 'Verify' });
+    await expect(verify).toBeVisible();
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+    await verify.scrollIntoViewIfNeeded();
+    // The member card scrolls inside the page frame. A full-page stitch leaves
+    // Verify below the viewport, so this shot is the viewport after that scroll.
+    await shotScreen(page, 'state-members-staff-verify-open', false);
   });
 
   test('state /members funding-reviewed', async ({ page }) => {

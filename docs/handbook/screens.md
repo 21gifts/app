@@ -1141,7 +1141,7 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 
 ### Variant: staff-verify-open
 
-Same moderator and basis member after pressing **Moderator functions**. The disclosure is expanded and **Verify** is visible. The closed shot does not cover this result.
+Same moderator and basis member after pressing **Moderator functions**. The disclosure is expanded and **Verify** is visible. Viewport capture after scrolling **Verify** into view: the member card scrolls inside the page frame, and a full-page stitch leaves **Verify** below the fold. The closed shot does not cover this result.
 
 ![21.gifts member staff verify open](images/members-staff-verify-open.png)
 
