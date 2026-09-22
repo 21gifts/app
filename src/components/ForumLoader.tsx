@@ -1568,7 +1568,7 @@ export function ForumLoader({
         !composeFeePaidRef.current
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
-        const postAfterPay = hasMedia || goalSats !== undefined;
+        const postAfterPay = hasMedia || goalSats !== undefined || pendingPlace !== null;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
