@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { PwaInstall } from '@/components/PwaInstall';
+import { HappylandSection } from '@/components/HappylandSection';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
@@ -76,6 +77,8 @@ export default async function Home(): Promise<ReactElement> {
           </div>
         </div>
       </section>
+
+      <HappylandSection locale={locale} />
 
       <section id="why" className="mx-auto max-w-[1100px] px-5 py-20">
         <h2 className="text-sm font-medium tracking-widest text-accent uppercase">
