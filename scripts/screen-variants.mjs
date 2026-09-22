@@ -1745,13 +1745,6 @@ export const SCREEN_VARIANTS = [
     needle: 'Do these posts, to your knowledge, correspond to the truth?',
   },
   {
-    route: '/moderate/applications/[accountId]',
-    id: 'trial',
-    image: 'moderate-applications-accountId-trial.png',
-    visual: 'state-moderate-applications-accountId-trial',
-    needle: 'You are on a one-day trial. Review repeats tomorrow.',
-  },
-  {
     route: '/moderate/group',
     id: 'default',
     image: 'moderate-group.png',
