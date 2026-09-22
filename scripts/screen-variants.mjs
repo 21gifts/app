@@ -654,6 +654,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-composer',
+    image: 'welcome-pay-composer.png',
+    visual: 'state-welcome-pay-composer',
+    needle: 'Hello gifts',
+  },
+  {
+    route: '/welcome',
     id: 'error-too-large-with-text',
     image: 'welcome-error-too-large-with-text.png',
     visual: 'state-welcome-error-too-large-with-text',

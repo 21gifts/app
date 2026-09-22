@@ -1749,6 +1749,99 @@ describe('ForumBoard', () => {
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a composer pay sheet when the invoice target is not a listed card', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={null}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+        replies={[{ ...SAMPLE, id: 'r1' }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
+  it('shows a composer pay sheet when the fee note is hidden on Active', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'fee-note', sats: 0 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        payMessageId="fee-note"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+  });
+
+  it('keeps the composer pay sheet when payHost is composer and the fee note is listed', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'fee-note', sats: 1, name: '21.gifts' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payHost="composer"
+        payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(document.querySelector('[data-message-id="fee-note"]')).not.toBeNull();
+  });
+
+  it('does not duplicate the composer pay sheet when the target is a loaded reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="r1"
+        payInvoice={{ messageId: 'r1', pr: 'lnbc1', amountSats: 1 }}
+        payWaiting
+        replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id }]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
   it('labels the iPhone amount CTA Pay in English and Bezahlen in German', () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,

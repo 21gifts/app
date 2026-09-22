@@ -5143,7 +5143,11 @@ test.describe('profile funding states', () => {
 });
 
 test.describe('welcome forum variants', () => {
-  async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'verified' | 'moderator' = 'basis',
+    lawsDismissed = true,
+  ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -5163,6 +5167,7 @@ test.describe('welcome forum variants', () => {
           aboutMe: null,
           setup: null,
           missing: [],
+          forumLawsDismissed: lawsDismissed,
         }),
       });
     });
@@ -5912,7 +5917,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         const parsed = route.request().postDataJSON() as {
@@ -6020,10 +6025,31 @@ test.describe('welcome forum variants', () => {
 
   async function emptyForum(page: Page): Promise<void> {
     await page.route(/\/messages(?:\?|$)/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ messages: [] }),
+      });
+    });
+  }
+
+  async function stubComposeInvoice(page: Page): Promise<void> {
+    await page.route('**/messages/compose-target', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messageId: 'compose-fee', sats: 0 }),
+      });
+    });
+    await page.route(/\/messages\/compose-fee\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc1test', amountSats: 1 }),
       });
     });
   }
@@ -6212,7 +6238,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome posting-photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     let release: () => void = () => undefined;
     const held = new Promise<void>((resolve) => {
       release = resolve;
@@ -6322,6 +6348,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-error-unsupported-with-text');
   });
 
+  test('welcome pay-composer', async ({ page }, testInfo) => {
+    await seedAda(page, 'basis', true);
+    await emptyForum(page);
+    await stubComposeInvoice(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello gifts');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-pay-composer');
+  });
+
   test('welcome error-too-large', async ({ page }) => {
     await seedAda(page);
     await stubTooLargeJpeg(page);
@@ -6377,7 +6421,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome error-request-photo-and-text', async ({ page }) => {
-    await seedAda(page);
+    await seedAda(page, 'verified');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({

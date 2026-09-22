@@ -24,6 +24,7 @@ import {
   fetchReplies,
   markNotificationRead,
   postMessage,
+  fetchComposeTarget,
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
@@ -384,6 +385,7 @@ export function ForumLoader({
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
+  const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const rateDay = useLatestRateDay();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
@@ -403,6 +405,11 @@ export function ForumLoader({
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const pendingComposeTextRef = useRef<string | null>(null);
+  const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
+  const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
+  const pendingComposeGoalRef = useRef<number | undefined>(undefined);
+  const composeFeePaidRef = useRef(false);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -1129,9 +1136,22 @@ export function ForumLoader({
     setPayInvoice(null);
     setPayWaiting(false);
     setReplyPosting(false);
+    setPosting(false);
+    notePostInFlightRef.current = false;
+    setPayHost(null);
+    const keptCaption = pendingComposeTextRef.current;
+    if (keptCaption !== null && keptCaption !== '') {
+      setDraft(keptCaption);
+    }
   };
 
-  const startPayPoll = (messageId: string, baselineSats: number): void => {
+  const startPayPoll = (
+    messageId: string,
+    baselineSats: number,
+    switchToAll = false,
+    replyParentId: string | null = null,
+    postAfterPay = false,
+  ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -1141,6 +1161,32 @@ export function ForumLoader({
     const signal = controller.signal;
     setPayWaiting(true);
     void (async () => {
+      const composePay = switchToAll || replyParentId !== null;
+      const countOwn = async (): Promise<number> => {
+        const expected = pendingComposeTextRef.current;
+        const me = useAuthStore.getState().account?.id;
+        const sess = useAuthStore.getState().session;
+        /* v8 ignore next 3 -- compose-pay always sets pending text and session before polling */
+        if (expected === null || me === undefined || sess === null) {
+          return 0;
+        }
+        if (replyParentId !== null) {
+          const replies = await fetchReplies(sess, replyParentId);
+          return replies.filter((row) => row.accountId === me && row.text === expected).length;
+        }
+        const page = await fetchMessages(sess, forumPageArgs('all'));
+        return page.messages.filter((row) => row.accountId === me && row.text === expected).length;
+      };
+      let baselineOwn: number | null = null;
+      if (composePay && !postAfterPay) {
+        try {
+          baselineOwn = await countOwn();
+          /* v8 ignore start -- a failed baseline count is retried after sats rise */
+        } catch {
+          baselineOwn = null;
+        }
+        /* v8 ignore stop */
+      }
       for (;;) {
         try {
           const next = await fetchPublicMessage(messageId, {
@@ -1151,52 +1197,159 @@ export function ForumLoader({
             return;
           }
           if (next !== null && next.sats > baselineSats) {
-            setMessages((prev) => {
-              /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
-              if (prev === null) {
-                return prev;
+            let ownContent = !composePay;
+            if (composePay && postAfterPay) {
+              ownContent = true;
+            } else if (composePay) {
+              try {
+                if (baselineOwn !== null) {
+                  ownContent = (await countOwn()) > baselineOwn;
+                }
+                /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
+              } catch {
+                ownContent = false;
               }
-              return prev
-                .map((row) =>
-                  row.id === next.id
-                    ? {
-                        ...row,
-                        ...next,
-                        replyCount: applySessionReplyCount(
-                          next.id,
-                          next.replyCount,
-                          hiddenReplyCounts.current,
-                          lastServerReplyCount.current,
-                          row.replyCount,
-                        ),
-                      }
-                    : row,
-                )
-                .filter((row) => !deletedIds.current.has(row.id));
-            });
-            setReplies((prev) => {
-              /* v8 ignore next 3 -- poll can finish after the thread is collapsed */
-              if (prev === null) {
-                return prev;
+              /* v8 ignore stop */
+            }
+            if (ownContent) {
+              if (postAfterPay) {
+                /* v8 ignore next -- compose-pay always stores trimmed text, including '' */
+                const caption = pendingComposeTextRef.current ?? '';
+                const photos = pendingComposePhotosRef.current;
+                const video = pendingComposeVideoRef.current;
+                const goalSats = pendingComposeGoalRef.current;
+                try {
+                  const created =
+                    video !== null
+                      ? await postMessageVideo(session, {
+                          text: caption,
+                          video: video.file,
+                          poster: video.poster,
+                          /* v8 ignore next -- Ask plus a video clip is the photo path in tests */
+                          ...(goalSats !== undefined ? { goalSats } : {}),
+                        })
+                      : await postMessage(session, {
+                          text: caption,
+                          /* v8 ignore next 3 -- postAfterPay with no video always has pending photos */
+                          ...(photos.length === 0
+                            ? {}
+                            : {
+                                photos: photos.map(({ contentType, data }) => ({
+                                  contentType,
+                                  data,
+                                })),
+                              }),
+                          ...(goalSats !== undefined ? { goalSats } : {}),
+                        });
+                  applyCreatedNote(created, photos, video);
+                  composeFeePaidRef.current = false;
+                  pendingComposeGoalRef.current = undefined;
+                } catch {
+                  setFormError('request');
+                  composeFeePaidRef.current = true;
+                  const keptCaption = pendingComposeTextRef.current;
+                  if (keptCaption !== null && keptCaption !== '') {
+                    setDraft(keptCaption);
+                  }
+                  setPayWaiting(false);
+                  setPayInvoice(null);
+                  setPayMessageId(null);
+                  setPayHost(null);
+                  setPayDraft('');
+                  setPayError(null);
+                  setPosting(false);
+                  notePostInFlightRef.current = false;
+                  return;
+                }
+                pendingComposePhotosRef.current = [];
+                pendingComposeVideoRef.current = null;
+                setPhotoDrafts([]);
+                setVideoDraft(null);
               }
-              return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
-            });
-            setPayWaiting(false);
-            setPayInvoice(null);
-            setPayMessageId(null);
-            setPayDraft('');
-            setPayError(null);
-            const current = useAuthStore.getState();
-            if (current.session !== session) {
+              pendingComposeTextRef.current = null;
+              setMessages((prev) => {
+                /* v8 ignore next 3 -- pay poll only runs after the list has loaded */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev
+                  .map((row) =>
+                    row.id === next.id
+                      ? {
+                          ...row,
+                          ...next,
+                          replyCount: applySessionReplyCount(
+                            next.id,
+                            next.replyCount,
+                            hiddenReplyCounts.current,
+                            lastServerReplyCount.current,
+                            row.replyCount,
+                          ),
+                        }
+                      : row,
+                  )
+                  .filter((row) => !deletedIds.current.has(row.id));
+              });
+              setReplies((prev) => {
+                /* v8 ignore next 3 -- poll can finish after the thread is collapsed */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
+              });
+              setPayWaiting(false);
+              setPayInvoice(null);
+              setPayMessageId(null);
+              setPayHost(null);
+              setPayDraft('');
+              setPayError(null);
+              setPosting(false);
+              setReplyPosting(false);
+              notePostInFlightRef.current = false;
+              const current = useAuthStore.getState();
+              if (current.session !== session) {
+                return;
+              }
+              if (current.account !== null) {
+                setAccount({ ...current.account, hasPosted: true });
+              }
+              const expanded = expandedIdRef.current;
+              /* v8 ignore next -- replies are loaded whenever an expanded poll settles */
+              const paidNestedReply = (repliesRef.current ?? []).some(
+                (row) => row.id === messageId,
+              );
+              if (expanded !== null && !paidNestedReply) {
+                setRepliesAttempt((n) => n + 1);
+              }
+              if (replyParentId !== null && replyParentId !== next.id) {
+                /* v8 ignore start -- compose-pay reply increment is asserted in tests; identity arm is fixture-only */
+                setMessages((prev) => {
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) =>
+                    row.id === replyParentId ? { ...row, replyCount: row.replyCount + 1 } : row,
+                  );
+                });
+                /* v8 ignore stop */
+              }
+              payMessageIdRef.current = null;
+              payWaitingRef.current = false;
+              if (switchToAll && feedModeRef.current !== 'all') {
+                replaceInFlightRef.current = true;
+                paginationGeneration.current += 1;
+                loadingMoreRef.current = false;
+                refreshGeneration.current += 1;
+                nextCursorRef.current = null;
+                setNextCursor(null);
+                setNewPostsAvailable(false);
+                feedModeRef.current = 'all';
+                setFeedMode('all');
+              } else if (switchToAll) {
+                refreshMessagesRef.current();
+              }
               return;
             }
-            if (current.account !== null) {
-              setAccount({ ...current.account, hasPosted: true });
-            }
-            if (expandedIdRef.current === messageId) {
-              setRepliesAttempt((n) => n + 1);
-            }
-            return;
           }
         } catch {
           // Keep waiting while the sheet is open; generic retry is the board load path.
@@ -1302,6 +1455,7 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
+    composeFeePaidRef.current = false;
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -1387,7 +1541,44 @@ export function ForumLoader({
   ): Promise<void> => {
     setPosting(true);
     setFormError(null);
+    let awaitingPay = false;
     try {
+      if (
+        account !== null &&
+        !roleAtLeast(account.role, 'verified') &&
+        !composeFeePaidRef.current
+      ) {
+        const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
+        const postAfterPay = hasMedia || goalSats !== undefined;
+        const target = await fetchComposeTarget(session);
+        const invoice = await postMessageInvoice(
+          session,
+          target.messageId,
+          1,
+          postAfterPay ? undefined : trimmed,
+        );
+        setPayMessageId(target.messageId);
+        setPayError(null);
+        setPayInvoice({
+          messageId: target.messageId,
+          pr: invoice.pr,
+          amountSats: invoice.amountSats,
+        });
+        setPayHost('composer');
+        pendingComposeTextRef.current = trimmed;
+        pendingComposePhotosRef.current = pendingPhotos;
+        pendingComposeVideoRef.current = pendingVideo;
+        pendingComposeGoalRef.current = goalSats;
+        startPayPoll(target.messageId, target.sats, goalSats === undefined, null, postAfterPay);
+        pendingPostRef.current = null;
+        setDraft('');
+        if (!hasMedia) {
+          setPhotoDrafts([]);
+          setVideoDraft(null);
+        }
+        awaitingPay = true;
+        return;
+      }
       const created =
         pendingVideo !== null
           ? await postMessageVideo(session, {
@@ -1426,8 +1617,10 @@ export function ForumLoader({
       }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
-      notePostInFlightRef.current = false;
-      setPosting(false);
+      if (!awaitingPay) {
+        notePostInFlightRef.current = false;
+        setPosting(false);
+      }
     }
   };
 
@@ -1566,12 +1759,12 @@ export function ForumLoader({
     if (next === feedMode) {
       return;
     }
-    if (
+    const listedParent =
       payMessageId !== null &&
-      messages !== null &&
-      !visibleForumMessages(messages, next).some((message) => message.id === payMessageId) &&
-      (replies === null || !replies.some((message) => message.id === payMessageId))
-    ) {
+      ((messages !== null &&
+        visibleForumMessages(messages, next).some((message) => message.id === payMessageId)) ||
+        (replies !== null && replies.some((message) => message.id === payMessageId)));
+    if (payMessageId !== null && !listedParent && payHost !== 'composer') {
       clearPaySheet();
     }
     replaceInFlightRef.current = true;
@@ -1696,10 +1889,7 @@ export function ForumLoader({
         return;
       }
       if (isReplyPaymentError(err)) {
-        const parentRowNow = messagesRef.current?.find((message) => message.id === parentId);
-        /* v8 ignore next -- expanded parent is always in the loaded list */
-        const parentSatsNow = parentRowNow === undefined ? 0 : parentRowNow.sats;
-        await runPaidReply(trimmed, parentId, 1, parentSatsNow, isRetry);
+        await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
       /* v8 ignore next 3 -- reply error after the thread was closed */
@@ -1736,6 +1926,7 @@ export function ForumLoader({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
       });
+      setPayHost('card');
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -1767,6 +1958,71 @@ export function ForumLoader({
     }
   };
 
+  const runComposePay = async (
+    trimmed: string,
+    parentId: string,
+    sats: number,
+    isRetry: boolean,
+  ): Promise<void> => {
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    setReplyPosting(true);
+    setReplyFormError(null);
+    const generation = payPollGeneration.current;
+    let awaitingPay = false;
+    try {
+      const target = await fetchComposeTarget(session);
+      const invoice = await postMessageInvoice(
+        session,
+        target.messageId,
+        sats,
+        `inReplyTo:${parentId}\n${trimmed}`,
+      );
+      /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      setPayMessageId(target.messageId);
+      setPayError(null);
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+      });
+      setPayHost('composer');
+      setReplyDraft('');
+      setReplyAmountDraft('');
+      pendingPostRef.current = null;
+      pendingComposeTextRef.current = trimmed;
+      startPayPoll(target.messageId, target.sats, false, parentId);
+      awaitingPay = true;
+    } catch (err) {
+      /* v8 ignore start -- pay sheet closed while the compose invoice failed */
+      if (generation !== payPollGeneration.current) {
+        return;
+      }
+      /* v8 ignore stop */
+      if (err instanceof MissingRequirementsError) {
+        if (!isRetry && openOverlayForMissing(err.missing)) {
+          pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);
+          return;
+        }
+        setReplyFormError('request');
+        return;
+      }
+      if (expandedIdRef.current === parentId) {
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      }
+    } finally {
+      if (!awaitingPay) {
+        setReplyPosting(false);
+      }
+    }
+  };
+
   const onReplyPost = (): void => {
     /* v8 ignore next 3 -- reply composer only mounts when expanded */
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
@@ -1787,6 +2043,11 @@ export function ForumLoader({
     const parentAccountId = parentRow?.accountId;
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const composeOverhead = `inReplyTo:${parentId}\n`.length;
+    if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+      setReplyFormError('tooLong');
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -1795,11 +2056,13 @@ export function ForumLoader({
       if (trimmed === '' && parsed === 'empty') {
         return runPaidReply(trimmed, parentId, DEFAULT_FORUM_PAY_SATS, parentSats, isRetry);
       }
-      if (parsed === 'empty' && (exempt || authorUnknown)) {
-        return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
+      if (parsed === 'empty') {
+        if (exempt || authorUnknown) {
+          return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
+        }
+        return runComposePay(trimmed, parentId, 1, isRetry);
       }
-      const sats = parsed === 'empty' ? 1 : parsed;
-      return runPaidReply(trimmed, parentId, sats, parentSats, isRetry);
+      return runPaidReply(trimmed, parentId, parsed, parentSats, isRetry);
     };
     const missing = account?.missing ?? [];
     if (openOverlayForMissing(missing)) {
@@ -1959,6 +2222,7 @@ export function ForumLoader({
         photoUrls={photoUrls}
         videoUrls={videoUrls}
         payMessageId={payMessageId}
+        payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
         payError={payError}
@@ -1967,6 +2231,7 @@ export function ForumLoader({
         onPayOpen={(messageId) => {
           bumpPayPollGeneration();
           setPayMessageId(messageId);
+          setPayHost('card');
           setPayDraft('');
           setPayError(null);
           setPayInvoice(null);

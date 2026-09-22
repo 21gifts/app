@@ -412,6 +412,28 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const COMPOSE_TARGET = {
+    id: 'compose-fee',
+    name: '21.gifts',
+    text: '',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    role: 'basis',
+  };
+
+  if (method === 'GET' && pathName === '/messages/compose-target') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { messageId: COMPOSE_TARGET.id, sats: COMPOSE_TARGET.sats });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/messages') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -512,7 +534,9 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    const row = forumMessages.find((message) => message.id === invoiceMatch[1]);
+    const row =
+      forumMessages.find((message) => message.id === invoiceMatch[1]) ??
+      (invoiceMatch[1] === COMPOSE_TARGET.id ? COMPOSE_TARGET : undefined);
     if (row === undefined) {
       json(res, 404, { error: 'Not found' });
       return;
@@ -999,6 +1023,10 @@ const server = http.createServer(async (req, res) => {
   const publicMessageMatch = pathName.match(/^\/messages\/([^/]+)$/);
   if (method === 'GET' && publicMessageMatch) {
     const id = decodeURIComponent(publicMessageMatch[1]);
+    if (id === COMPOSE_TARGET.id) {
+      json(res, 200, COMPOSE_TARGET);
+      return;
+    }
     const row = forumMessages.find((message) => message.id === id);
     if (row === undefined || row.deletedAt !== undefined) {
       json(res, 404, { error: 'Not found' });

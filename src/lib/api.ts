@@ -1557,6 +1557,40 @@ export async function postMessageVideo(
 }
 
 /**
+ * Loads the official platform profile note so a basis account can invoice
+ * 1 sat to 21.gifts before posting or replying.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`.
+ * @throws Error with collapsed visitor copy on non-2xx, or when the body is
+ * not `{ messageId, sats }`.
+ */
+export async function fetchComposeTarget(
+  sessionToken: string,
+): Promise<{ messageId: string; sats: number }> {
+  const response = await fetch('/messages/compose-target', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  const body: unknown = await response.json();
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    typeof (body as { messageId?: unknown }).messageId !== 'string' ||
+    typeof (body as { sats?: unknown }).sats !== 'number'
+  ) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return {
+    messageId: (body as { messageId: string }).messageId,
+    sats: (body as { sats: number }).sats,
+  };
+}
+
+/**
  * Requests a BOLT11 invoice to pay a public forum message.
  *
  * Does not increment the message `sats` total — that updates only after the

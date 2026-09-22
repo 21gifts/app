@@ -58,6 +58,7 @@ import {
   postConversationInvoice,
   postConversationMessage,
   postMessage,
+  fetchComposeTarget,
   postMessageInvoice,
   postMessageVideo,
   postNotificationLevel,
@@ -1474,6 +1475,40 @@ describe('listHiddenMessages', () => {
     };
     stubFetch({ ok: true, status: 200, body: { messages: [row] } });
     await expect(listHiddenMessages('sess')).resolves.toEqual([row]);
+  });
+});
+
+describe('fetchComposeTarget', () => {
+  it('returns the platform fee note', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messageId: 'fee-note', sats: 0 },
+    });
+    await expect(fetchComposeTarget('sess')).resolves.toEqual({
+      messageId: 'fee-note',
+      sats: 0,
+    });
+  });
+
+  it('throws collapsed copy when the request fails', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Messages are unavailable' } });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Messages are unavailable');
+  });
+
+  it('throws when the error body is empty', async () => {
+    stubFetch({ ok: false, status: 500, body: null });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
+  });
+
+  it('throws when the body is not a fee note', async () => {
+    stubFetch({ ok: true, status: 200, body: { messageId: 1, sats: '0' } });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
+  });
+
+  it('throws when the success body is null', async () => {
+    stubFetch({ ok: true, status: 200, body: null });
+    await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
   });
 });
 

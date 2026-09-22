@@ -190,35 +190,31 @@ test('menu Shops opens /shops', async ({ page }) => {
 
 test('Function: ensureShopHashtag — compose appends the tag', async ({ page }) => {
   await seedSignedIn(page);
-  let postedText = '';
-  let resolvePosted: () => void = () => undefined;
-  const posted = new Promise<void>((resolve) => {
-    resolvePosted = resolve;
+  const invoiced = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await page.route(/\/messages\/compose-target$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messageId: 'm-platform-profile', sats: 0 }),
+    });
+  });
+  await page.route(/\/messages\/[^/]+\/invoice$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc1test', amountSats: 1 }),
+    });
   });
   await page.route(/\/messages(?:\?|$)/, async (route) => {
-    if (route.request().method() === 'POST') {
-      const contentType = route.request().headers()['content-type'] ?? '';
-      if (contentType.includes('multipart/form-data')) {
-        postedText = route.request().postData() ?? '';
-      } else {
-        const parsed = route.request().postDataJSON() as { text?: string };
-        postedText = typeof parsed.text === 'string' ? parsed.text : '';
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'm-shop-new',
-          name: 'Ada',
-          text: 'Cafe Luna\n\n#21GiftsShop',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 0,
-          payable: true,
-          hasPhoto: false,
-          role: 'basis',
-        }),
-      });
-      resolvePosted();
+    if (route.request().method() !== 'GET') {
+      await route.continue();
       return;
     }
     await route.fulfill({
@@ -229,7 +225,8 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   });
   await page.goto('/shops');
   await page.getByLabel('Your message').fill('Cafe Luna');
-  await page.getByRole('button', { name: /^Post$/ }).click();
-  await posted;
-  expect(postedText).toContain('#21GiftsShop');
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const invoiceReq = await invoiced;
+  const parsed = invoiceReq.postDataJSON() as { text?: string };
+  expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');
 });

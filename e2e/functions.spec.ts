@@ -866,11 +866,7 @@ test('Function: postMessage — posting from the composer shows the row', async 
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await agreeToLivingRoomRules(page);
+  await reachWelcomeVerified(page, request);
   const body = `Hello from Ada ${Date.now()}`;
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -900,6 +896,22 @@ async function reachWelcome(page: Page, request: APIRequestContext): Promise<voi
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+}
+
+async function reachWelcomeVerified(page: Page, request: APIRequestContext): Promise<void> {
+  await reachWelcome(page, request);
+  await page.route(/\/me$/, async (route) => {
+    const res = await route.fetch();
+    const body = (await res.json()) as Record<string, unknown>;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...body, role: 'verified' }),
+    });
+  });
+  await page.reload();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
 }
@@ -951,7 +963,7 @@ test('Function: prepareForumPhoto — attaching a jpeg shows a preview then post
   page,
   request,
 }) => {
-  await reachWelcome(page, request);
+  await reachWelcomeVerified(page, request);
   await attachTinyJpeg(page);
   await postAndExpectPhotoRow(page);
 });
@@ -960,14 +972,14 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
   page,
   request,
 }) => {
-  await reachWelcome(page, request);
+  await reachWelcomeVerified(page, request);
   await attachTinyJpeg(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
   await postAndExpectPhotoRow(page);
 });
 
 test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
-  await reachWelcome(page, request);
+  await reachWelcomeVerified(page, request);
   const caption = `Caption ${Date.now()}`;
   await page.getByLabel('Your message').fill(caption);
   await attachTinyJpeg(page);
@@ -3493,6 +3505,36 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await page.getByRole('button', { name: 'All' }).click();
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
+});
+
+test('Endpoint: GET /messages/compose-target — without a session is 401', async ({ request }) => {
+  const res = await request.get('/messages/compose-target');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyMessagesComposeTargetGet — GET /messages/compose-target without a session is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/messages/compose-target');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.getByLabel('Your message').fill('Hello gifts');
+  const compose = page.waitForRequest(
+    (req) => req.method() === 'GET' && new URL(req.url()).pathname === '/messages/compose-target',
+  );
+  const invoice = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await compose;
+  await invoice;
 });
 
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
@@ -7418,7 +7460,7 @@ test('Function: prepareForumVideo — attaching an mp4 shows a preview', async (
 test('Function: postMessageVideo — posting a prepared clip sends multipart video', async ({
   page,
 }) => {
-  await seedAdaSession(page);
+  await seedAdaSession(page, 'verified');
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
