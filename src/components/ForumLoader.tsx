@@ -408,6 +408,7 @@ export function ForumLoader({
   const pendingComposeTextRef = useRef<string | null>(null);
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
+  const pendingComposeGoalRef = useRef<number | undefined>(undefined);
   const composeFeePaidRef = useRef(false);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
@@ -1208,6 +1209,7 @@ export function ForumLoader({
                 const caption = pendingComposeTextRef.current ?? '';
                 const photos = pendingComposePhotosRef.current;
                 const video = pendingComposeVideoRef.current;
+                const goalSats = pendingComposeGoalRef.current;
                 try {
                   const created =
                     video !== null
@@ -1215,6 +1217,7 @@ export function ForumLoader({
                           text: caption,
                           video: video.file,
                           poster: video.poster,
+                          ...(goalSats !== undefined ? { goalSats } : {}),
                         })
                       : await postMessage(session, {
                           text: caption,
@@ -1227,9 +1230,11 @@ export function ForumLoader({
                                   data,
                                 })),
                               }),
+                          ...(goalSats !== undefined ? { goalSats } : {}),
                         });
                   applyCreatedNote(created, photos, video);
                   composeFeePaidRef.current = false;
+                  pendingComposeGoalRef.current = undefined;
                 } catch {
                   setFormError('request');
                   composeFeePaidRef.current = true;
@@ -1519,16 +1524,16 @@ export function ForumLoader({
       if (
         account !== null &&
         !roleAtLeast(account.role, 'verified') &&
-        /* v8 ignore next -- skip-invoice when the paid photo or video draft is still present */
-        !(composeFeePaidRef.current && (pendingPhotos.length > 0 || pendingVideo !== null))
+        !composeFeePaidRef.current
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
+        const postAfterPay = hasMedia || goalSats !== undefined;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
           target.messageId,
           1,
-          hasMedia ? undefined : trimmed,
+          postAfterPay ? undefined : trimmed,
         );
         setPayMessageId(target.messageId);
         setPayError(null);
@@ -1541,7 +1546,8 @@ export function ForumLoader({
         pendingComposeTextRef.current = trimmed;
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
-        startPayPoll(target.messageId, target.sats, true, null, hasMedia);
+        pendingComposeGoalRef.current = goalSats;
+        startPayPoll(target.messageId, target.sats, true, null, postAfterPay);
         pendingPostRef.current = null;
         setDraft('');
         if (!hasMedia) {
