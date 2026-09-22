@@ -562,6 +562,8 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByText('Hello from Ada')).toBeNull();
     expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
+    expect(screen.getByLabelText('Your message')).toBeTruthy();
   });
 
   it('feed="shops" shows shops.empty when no listed note is a shop', async () => {

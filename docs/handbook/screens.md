@@ -493,9 +493,27 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ### Variant: ask-amount
 
-**Ask for money** selected. Step 1 of 4: **How much?** with **1000** typed so **₿1'000** and the preferred-fiat counterpart (**$1.00**) show under the field. Continue is enabled. No Post submit on this step.
+**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed so **₿1'000** and the preferred-fiat counterpart (**$1.00**) show under the field. Continue is enabled. No Post submit on this step.
 
 ![21.gifts welcome ask amount](images/welcome-ask-amount.png)
+
+### Variant: ask-daily
+
+**Ask for money** selected. Step 1 of 4 with **Daily** pressed on the pill above the amount and **1000** typed so **₿1'000** and **$1.00** show. Continue is enabled.
+
+![21.gifts welcome ask daily](images/welcome-ask-daily.png)
+
+### Variant: ask-empty
+
+**Ask for money** just opened. Step 1 of 4, **One-time** pressed, amount empty, **Continue** disabled. No bitcoin line yet.
+
+![21.gifts welcome ask empty](images/welcome-ask-empty.png)
+
+### Variant: ask-empty-daily
+
+**Ask for money** just opened. Step 1 of 4, **Daily** pressed, amount empty, **Continue** disabled.
+
+![21.gifts welcome ask empty daily](images/welcome-ask-empty-daily.png)
 
 ### Variant: ask-photos
 
@@ -503,17 +521,167 @@ Ask step 2 of 4: **Add photos** with attach and Continue. Photos are optional.
 
 ![21.gifts welcome ask photos](images/welcome-ask-photos.png)
 
+### Variant: ask-one-photo
+
+Ask step 2 of 4 with one selected photo and **Remove photo**. **Continue** stays enabled.
+
+![21.gifts welcome ask one photo](images/welcome-ask-one-photo.png)
+
+### Variant: ask-several-photos
+
+Ask step 2 of 4 with two selected photos. Each has **Remove photo**.
+
+![21.gifts welcome ask several photos](images/welcome-ask-several-photos.png)
+
+### Variant: ask-video
+
+Ask step 2 of 4 with a selected video and **Remove video**.
+
+![21.gifts welcome ask video](images/welcome-ask-video.png)
+
+### Variant: ask-preparing
+
+Ask step 2 of 4 while the photo is still preparing. No thumbnail yet. **Continue** stays disabled.
+
+![21.gifts welcome ask preparing](images/welcome-ask-preparing.png)
+
+### Variant: ask-unsupported
+
+Ask step 2 of 4 after a file that is not a JPEG, PNG, WebP, MP4, WebM, or MOV. The error sits under the step. No thumbnail.
+
+![21.gifts welcome ask unsupported](images/welcome-ask-unsupported.png)
+
+### Variant: ask-too-large
+
+Ask step 2 of 4 after a photo over 1 MB. The error sits under the step. No thumbnail.
+
+![21.gifts welcome ask too large](images/welcome-ask-too-large.png)
+
+### Variant: ask-too-many
+
+Ask step 2 of 4 after more than 10 photos. The first ten thumbnails stay, and **You can add up to 10 photos** sits under them.
+
+![21.gifts welcome ask too many](images/welcome-ask-too-many.png)
+
 ### Variant: ask-text
 
 Ask step 3 of 4: **Write a message** textarea and Continue.
 
 ![21.gifts welcome ask text](images/welcome-ask-text.png)
 
+### Variant: ask-text-filled
+
+Ask step 3 of 4 with **Need help with a train ticket** typed in the message field. **Continue** stays enabled.
+
+![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
+
 ### Variant: ask-preview
 
-Ask step 4 of 4: preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
+Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
+
+### Variant: ask-preview-daily
+
+Ask step 4 of 4 with **Daily** pressed, the same photo, caption, and goal bar as the one-time preview.
+
+![21.gifts welcome ask preview daily](images/welcome-ask-preview-daily.png)
+
+### Variant: ask-preview-text
+
+Ask step 4 of 4, **One-time** pressed, caption only. No photo. **Post** is enabled.
+
+![21.gifts welcome ask preview text](images/welcome-ask-preview-text.png)
+
+### Variant: ask-preview-text-daily
+
+Ask step 4 of 4, **Daily** pressed, caption only.
+
+![21.gifts welcome ask preview text daily](images/welcome-ask-preview-text-daily.png)
+
+### Variant: ask-preview-one-photo
+
+Ask step 4 of 4, **One-time** pressed, one photo and no caption. **Post** is enabled.
+
+![21.gifts welcome ask preview one photo](images/welcome-ask-preview-one-photo.png)
+
+### Variant: ask-preview-one-photo-daily
+
+Ask step 4 of 4, **Daily** pressed, one photo and no caption.
+
+![21.gifts welcome ask preview one photo daily](images/welcome-ask-preview-one-photo-daily.png)
+
+### Variant: ask-preview-several
+
+Ask step 4 of 4, **One-time** pressed, two photos and no caption.
+
+![21.gifts welcome ask preview several](images/welcome-ask-preview-several.png)
+
+### Variant: ask-preview-several-daily
+
+Ask step 4 of 4, **Daily** pressed, two photos and no caption.
+
+![21.gifts welcome ask preview several daily](images/welcome-ask-preview-several-daily.png)
+
+### Variant: ask-preview-several-text
+
+Ask step 4 of 4, **One-time** pressed, two photos and the caption **Need help with a train ticket**.
+
+![21.gifts welcome ask preview several text](images/welcome-ask-preview-several-text.png)
+
+### Variant: ask-preview-several-text-daily
+
+Ask step 4 of 4, **Daily** pressed, two photos and the caption.
+
+![21.gifts welcome ask preview several text daily](images/welcome-ask-preview-several-text-daily.png)
+
+### Variant: ask-preview-video
+
+Ask step 4 of 4, **One-time** pressed, a video and no caption.
+
+![21.gifts welcome ask preview video](images/welcome-ask-preview-video.png)
+
+### Variant: ask-preview-video-daily
+
+Ask step 4 of 4, **Daily** pressed, a video and no caption.
+
+![21.gifts welcome ask preview video daily](images/welcome-ask-preview-video-daily.png)
+
+### Variant: ask-preview-video-text
+
+Ask step 4 of 4, **One-time** pressed, a video and the caption **Need help with a train ticket**.
+
+![21.gifts welcome ask preview video text](images/welcome-ask-preview-video-text.png)
+
+### Variant: ask-preview-video-text-daily
+
+Ask step 4 of 4, **Daily** pressed, a video and the caption.
+
+![21.gifts welcome ask preview video text daily](images/welcome-ask-preview-video-text-daily.png)
+
+### Variant: ask-posting
+
+Ask step 4 of 4, **One-time** pressed, while **Post** is in flight. The button stays disabled.
+
+![21.gifts welcome ask posting](images/welcome-ask-posting.png)
+
+### Variant: ask-posting-daily
+
+Ask step 4 of 4, **Daily** pressed, while **Post** is in flight.
+
+![21.gifts welcome ask posting daily](images/welcome-ask-posting-daily.png)
+
+### Variant: ask-error-request
+
+Ask step 4 of 4, **One-time** pressed, after the post fails. **Could not post your message** sits under the preview.
+
+![21.gifts welcome ask error request](images/welcome-ask-error-request.png)
+
+### Variant: ask-error-request-daily
+
+Ask step 4 of 4, **Daily** pressed, after the post fails.
+
+![21.gifts welcome ask error request daily](images/welcome-ask-error-request-daily.png)
 
 ### Variant: ask-open
 
@@ -583,9 +751,15 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: error-ask
 
-**Ask for money**, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
+**Ask for money**, with **One-time** pressed on the pill above the amount, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
 
 ![21.gifts welcome ask error](images/welcome-error-ask.png)
+
+### Variant: error-ask-daily
+
+**Ask for money**, with **Daily** pressed on the pill above the amount, type **0**: **Continue** stays disabled.
+
+![21.gifts welcome ask daily error](images/welcome-error-ask-daily.png)
 
 ### Variant: expanded
 
@@ -913,9 +1087,9 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead (**Send a post** / **Ask for money**, photo/video). The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Post a shop (text and/or photo or video), expand a note, open Menu including **Shops**, back to the forum.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`, `ForumAskWizard`.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead as a shop post only (attach, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Post a shop (text and/or photo or video). Expand a note, open Menu including **Shops**, back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`.
 
 ### Variant: default
 

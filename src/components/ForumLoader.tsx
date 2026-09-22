@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
+import type { ForumAskCadence } from '@/components/ForumAskWizard';
 import {
   ForumBoard,
   type ForumAskStep,
@@ -348,6 +349,7 @@ export function ForumLoader({
   const [askDraft, setAskDraft] = useState('');
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
+  const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const photoDraftsRef = useRef(photoDrafts);
   photoDraftsRef.current = photoDrafts;
@@ -1212,6 +1214,9 @@ export function ForumLoader({
               /* v8 ignore stop */
             }
             if (ownContent) {
+              if (postAfterPay || switchToAll) {
+                setAskCadence('once');
+              }
               if (postAfterPay) {
                 /* v8 ignore next -- compose-pay always stores trimmed text, including '' */
                 const caption = pendingComposeTextRef.current ?? '';
@@ -1527,6 +1532,7 @@ export function ForumLoader({
     setAskDraft('');
     setComposeIntent('post');
     setAskStep(1);
+    setAskCadence('once');
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
@@ -1648,7 +1654,7 @@ export function ForumLoader({
       return;
     }
     let goalSats: number | undefined;
-    if (composeIntent === 'ask') {
+    if (feed !== 'shops' && composeIntent === 'ask') {
       const parsed = parseForumAskAmount(askDraft);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
       if (parsed === null) {
@@ -2116,6 +2122,7 @@ export function ForumLoader({
         messages={listed}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         {...(feed === 'shops' ? { modeSelector: false as const } : {})}
+        {...(feed === 'shops' ? { allowAsk: false as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}
@@ -2202,6 +2209,8 @@ export function ForumLoader({
         }}
         askStep={askStep}
         onAskStepChange={setAskStep}
+        askCadence={askCadence}
+        onAskCadenceChange={setAskCadence}
         authorName={account?.name ?? ''}
         onPost={onPost}
         onRetry={() => {

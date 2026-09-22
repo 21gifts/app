@@ -24,7 +24,11 @@ import {
   type ReactElement,
 } from 'react';
 import { useAppShellScroller } from '@/components/AppShell';
-import { ForumAskWizard, type ForumAskStep } from '@/components/ForumAskWizard';
+import {
+  ForumAskWizard,
+  type ForumAskCadence,
+  type ForumAskStep,
+} from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
@@ -184,10 +188,19 @@ export interface ForumBoardProps {
   composeIntent?: ForumComposeIntent;
   /** Called when the visitor picks Post or Ask. */
   onComposeIntentChange?: (intent: ForumComposeIntent) => void;
+  /**
+   * When false, the composer is a shop post only: no Post/Ask pill and no
+   * Ask wizard. Default true.
+   */
+  allowAsk?: boolean;
   /** Ask wizard step. Default 1. */
   askStep?: ForumAskStep;
   /** Called when the wizard step changes. */
   onAskStepChange?: (step: ForumAskStep) => void;
+  /** One-time or daily Ask. Default `once`. */
+  askCadence?: ForumAskCadence;
+  /** Called when the visitor picks One-time or Daily. */
+  onAskCadenceChange?: (value: ForumAskCadence) => void;
   /** Display name for the Ask preview card. */
   authorName?: string;
   /** Called when the composer form is submitted. */
@@ -593,8 +606,11 @@ export function ForumBoard({
   onAskDraftChange,
   composeIntent = 'post',
   onComposeIntentChange,
+  allowAsk = true,
   askStep = 1,
   onAskStepChange,
+  askCadence = 'once',
+  onAskCadenceChange = () => undefined,
   authorName = '',
   onPost,
   onRetry,
@@ -1591,7 +1607,7 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden ? (
+      {!composerHidden && allowAsk ? (
         <SegmentedControl
           value={composeIntent}
           options={[
@@ -1607,12 +1623,14 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden && composeIntent === 'ask' ? (
+      {!composerHidden && allowAsk && composeIntent === 'ask' ? (
         <ForumAskWizard
           step={askStep}
           onStepChange={(next) => {
             onAskStepChange?.(next);
           }}
+          askCadence={askCadence}
+          onAskCadenceChange={onAskCadenceChange}
           askDraft={askDraft}
           onAskDraftChange={onAskDraftChange}
           draft={draft}
@@ -1630,7 +1648,7 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden && composeIntent === 'post' ? (
+      {!composerHidden && (!allowAsk || composeIntent === 'post') ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <IconButton
