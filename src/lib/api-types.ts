@@ -397,6 +397,8 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
+ * `goalSats` is the optional whole-sat ask on a top-level note; omitted when
+ * the note has no goal; mixed/old payloads without the key still parse.
  * Gift-only replies may have empty `text` when `sats > 0`.
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
@@ -410,6 +412,7 @@ export const forumMessageSchema = z
     text: z.string(), // may be '' when hasPhoto, hasVideo, or sats > 0
     createdAt: z.string().datetime({ offset: true }),
     sats: z.number().int().nonnegative(),
+    goalSats: z.number().int().positive().optional(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
     photoCount: z.number().int().min(0).max(10).optional(),
@@ -459,6 +462,8 @@ export const forumListSchema = z.object({
  * deleter row is missing.
  * `via` is any non-empty string marking a row written without a 21.gifts
  * account (today the api sends `'nostr'`); only an empty string fails the parse.
+ * `goalSats` is the optional whole-sat ask; omitted when the note has no goal;
+ * mixed/old payloads without the key still parse.
  */
 export const hiddenMessageSchema = z.object({
   id: z.string().min(1),
@@ -466,6 +471,7 @@ export const hiddenMessageSchema = z.object({
   text: z.string(),
   createdAt: z.string().datetime({ offset: true }),
   sats: z.number().int().nonnegative(),
+  goalSats: z.number().int().positive().optional(),
   hasPhoto: z.boolean(),
   hasVideo: z.boolean().optional().default(false),
   videoContentType: z

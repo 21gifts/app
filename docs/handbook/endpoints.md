@@ -226,7 +226,7 @@
 
 ## Endpoint: POST /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo).
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo). Optional JSON or multipart `goalSats` (positive int, top-level notes only) is the whole-sat ask; omitted on replies and when unset.
 - **Errors:** Upstream 401/400/403/429, or 502 if the api is unreachable. 403 is an unpaid-reply rejection (`A reply needs a Bitcoin payment`, or the api error string).
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.

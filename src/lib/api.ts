@@ -58,6 +58,7 @@ import {
   type TrustChain,
   type ViewProfile,
 } from '@/lib/api-types';
+import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 
 /**
@@ -1401,8 +1402,10 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
  * Posts a new public forum message (text and/or up to ten photos), or a reply.
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param input - Trimmed text, optional legacy `photo`, optional `photos`, and
- * optional `inReplyTo` parent id (thread composer only; omit for top-level notes).
+ * @param input - Trimmed text, optional legacy `photo`, optional `photos`,
+ * optional `inReplyTo` parent id (thread composer only; omit for top-level
+ * notes), and optional `goalSats` (positive int on a top-level note; omitted
+ * on replies and when unset).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
@@ -1416,6 +1419,7 @@ export async function postMessage(
     photo?: { contentType: string; data: string };
     photos?: { contentType: string; data: string }[];
     inReplyTo?: string;
+    goalSats?: number;
   },
 ): Promise<ForumMessage> {
   const stills =
@@ -1424,6 +1428,16 @@ export async function postMessage(
       : input.photo !== undefined
         ? [input.photo]
         : [];
+  const inReplyTo =
+    input.inReplyTo !== undefined && input.inReplyTo !== '' ? input.inReplyTo : undefined;
+  const goalSats =
+    inReplyTo === undefined &&
+    input.goalSats !== undefined &&
+    Number.isSafeInteger(input.goalSats) &&
+    input.goalSats >= 1 &&
+    input.goalSats <= FORUM_GOAL_SATS_MAX
+      ? input.goalSats
+      : undefined;
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
@@ -1433,9 +1447,8 @@ export async function postMessage(
     body: JSON.stringify({
       text: input.text,
       ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
-      ...(input.inReplyTo !== undefined && input.inReplyTo !== ''
-        ? { inReplyTo: input.inReplyTo }
-        : {}),
+      ...(inReplyTo !== undefined ? { inReplyTo } : {}),
+      ...(goalSats !== undefined ? { goalSats } : {}),
     }),
   });
   if (response.status === 400 || response.status === 429) {
@@ -1469,7 +1482,8 @@ export async function postMessage(
  * Posts a forum message with a video file (multipart) and optional poster.
  *
  * @param sessionToken - Bearer session.
- * @param input - Text, video file, optional JPEG poster.
+ * @param input - Text, video file, optional JPEG poster, optional `goalSats`
+ * (positive int; omitted from the form when unset).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
@@ -1477,13 +1491,21 @@ export async function postMessage(
  */
 export async function postMessageVideo(
   sessionToken: string,
-  input: { text: string; video: File; poster?: Blob },
+  input: { text: string; video: File; poster?: Blob; goalSats?: number },
 ): Promise<ForumMessage> {
   const form = new FormData();
   form.set('text', input.text);
   form.set('video', input.video);
   if (input.poster !== undefined) {
     form.set('poster', input.poster, 'poster.jpg');
+  }
+  if (
+    input.goalSats !== undefined &&
+    Number.isSafeInteger(input.goalSats) &&
+    input.goalSats >= 1 &&
+    input.goalSats <= FORUM_GOAL_SATS_MAX
+  ) {
+    form.set('goalSats', String(input.goalSats));
   }
   const response = await fetch('/forum/messages', {
     method: 'POST',

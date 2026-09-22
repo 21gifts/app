@@ -173,6 +173,8 @@ const idleProps: Pick<
   | 'onReplyPost'
   | 'replyPosting'
   | 'replyFormError'
+  | 'askDraft'
+  | 'onAskDraftChange'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -203,6 +205,8 @@ const idleProps: Pick<
   onReplyPost: () => undefined,
   replyPosting: false,
   replyFormError: null,
+  askDraft: '',
+  onAskDraftChange: () => undefined,
 };
 
 function modeProps(
@@ -467,7 +471,7 @@ describe('ForumBoard', () => {
     expect(screen.getByLabelText('Your message')).toBeTruthy();
     expect(screen.getByPlaceholderText('Write a message')).toBeTruthy();
     const field = screen.getByLabelText('Your message');
-    const button = screen.getByRole('button', { name: 'Post' });
+    const button = screen.getByRole('button', { name: /^Post$/ });
     expect(button).toBeTruthy();
     expect(button.textContent?.trim()).toBe('');
     expect(screen.getByLabelText('Add a photo or video').textContent?.trim()).toBe('');
@@ -519,6 +523,93 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
     expect(document.querySelector('form')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
+  });
+
+  it('shows the Post/Ask pill when the composer is visible', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send a post' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ask for money' })).toBeTruthy();
+    expect(screen.queryByText('How much?')).toBeNull();
+  });
+
+  it('opens the Ask wizard from the pill', () => {
+    const onComposeIntentChange = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composeIntent="post"
+        onComposeIntentChange={onComposeIntentChange}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    expect(onComposeIntentChange).toHaveBeenCalledWith('ask');
+  });
+
+  it('shows How much? when composeIntent is ask', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composeIntent="ask"
+        askStep={1}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('How much?')).toBeTruthy();
+    expect(screen.getByLabelText('Ask')).toBeTruthy();
+  });
+
+  it('hides the Ask field when composerHidden', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composerHidden
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByLabelText('Ask')).toBeNull();
   });
 
   it('omits the mode selector and lists a zero-sat basis note when modeSelector is false', () => {
@@ -2287,6 +2378,65 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
   });
 
+  it('shows formError ask alert', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="ask"
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number to ask for.');
+  });
+
+  it('renders ForumGoalBar 110% on a top-level note with a goal', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, sats: 23100, goalSats: 21000 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText('110%')).toBeTruthy();
+  });
+
+  it('does not render ForumGoalBar on a reply with goalSats', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'm1', sats: 23100, goalSats: 21000 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText('110%')).toBeNull();
+  });
+
   it('disables submit and shows a spinner while posting', () => {
     renderWithLocale(
       <ForumBoard
@@ -2303,7 +2453,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    const button = screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    const button = screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.querySelector('.animate-spin')).toBeTruthy();
   });
@@ -2328,7 +2478,7 @@ describe('ForumBoard', () => {
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     expect(onDraftChange).toHaveBeenCalledWith('Hi');
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });
 

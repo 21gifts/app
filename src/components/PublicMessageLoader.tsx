@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -183,6 +184,9 @@ function PublicThreadCard({
           </>
         ) : null}
       </p>
+      {note.parentId === undefined && typeof note.goalSats === 'number' && note.goalSats > 0 ? (
+        <ForumGoalBar sats={note.sats} goalSats={note.goalSats} rateDay={rateDay} />
+      ) : null}
     </Card>
   );
 

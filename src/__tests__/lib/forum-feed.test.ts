@@ -201,6 +201,11 @@ describe('forum-feed', () => {
     expect(visibleForumMessages([ADA, UNPAID_VERIFIED, BOB], 'active')).toEqual([ADA]);
   });
 
+  it('active keeps a zero-sat ask with a positive goalSats', () => {
+    const ask = { ...BOB, id: 'm-ask', goalSats: 1000 };
+    expect(visibleForumMessages([ADA, ask, BOB], 'active')).toEqual([ADA, ask]);
+  });
+
   it('popular drops unpaid moderator notes', () => {
     expect(
       visibleForumMessages([ADA, UNPAID_FOUNDER, CAROL, UNPAID_MODERATOR, BOB], 'popular'),
