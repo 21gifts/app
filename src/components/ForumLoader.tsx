@@ -1203,6 +1203,7 @@ export function ForumLoader({
             }
             if (ownContent) {
               if (postAfterPay) {
+                /* v8 ignore next -- compose-pay always stores trimmed text, including '' */
                 const caption = pendingComposeTextRef.current ?? '';
                 const photos = pendingComposePhotosRef.current;
                 const video = pendingComposeVideoRef.current;
