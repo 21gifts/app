@@ -36,8 +36,9 @@ function fiatSuffixMarkup(
 }
 
 /**
- * Preferred-fiat suffix next to a ₿ amount, or `null` when the stored amount
- * or live conversion is missing (₿-only).
+ * Preferred-fiat suffix next to a ₿ amount. A stored string is shown as-is.
+ * A present `null` is ₿-only. A missing field uses the live rate and is
+ * ₿-only only when that conversion is unusable.
  *
  * @param sats - Whole sats.
  * @param rateDay - Latest gift-day totals, or `null`. Used when `stored` is
