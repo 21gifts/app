@@ -28,15 +28,19 @@ const EMPTY: GiftStats = {
 
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn(),
+  fetchPostStats: vi.fn().mockResolvedValue({ postCount: 0, postsOverTime: [] }),
 }));
 
-import { fetchGiftStats } from '@/lib/api';
+import { fetchGiftStats, fetchPostStats } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchGiftStats);
+const fetchPostsMock = vi.mocked(fetchPostStats);
 
 afterEach(() => {
   cleanup();
   fetchMock.mockReset();
+  fetchPostsMock.mockReset();
+  fetchPostsMock.mockResolvedValue({ postCount: 0, postsOverTime: [] });
 });
 
 describe('StatsLoader', () => {
@@ -46,6 +50,16 @@ describe('StatsLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
     });
+  });
+
+  it('omits posts when that fetch fails and still shows gifts', async () => {
+    fetchMock.mockResolvedValue(EMPTY);
+    fetchPostsMock.mockRejectedValueOnce(new Error('Could not load post stats. Please try again.'));
+    renderWithLocale(<StatsLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('region', { name: 'Posts' })).toBeNull();
   });
 
   it('shows a fetch error and retries', async () => {

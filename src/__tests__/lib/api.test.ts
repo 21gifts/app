@@ -12,6 +12,7 @@ import {
   fetchAccountActivity,
   fetchGiftDay,
   fetchGiftStats,
+  fetchPostStats,
   fetchAboutMePhoto,
   fetchMe,
   fetchMember,
@@ -1041,6 +1042,31 @@ describe('fetchGiftStats', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+});
+
+describe('fetchPostStats', () => {
+  const stats = {
+    postCount: 3,
+    postsOverTime: [
+      { day: '2026-08-01', postCount: 2 },
+      { day: '2026-08-02', postCount: 1 },
+    ],
+  };
+
+  it('returns the validated series', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchPostStats()).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/stats');
+  });
+
+  it('throws visitor copy on a non-ok response, a failed fetch, and a bad body', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Post stats are unavailable' } });
+    await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
+    stubFetch({ ok: true, status: 200, body: { postCount: -1 } });
+    await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
   });
 });
 

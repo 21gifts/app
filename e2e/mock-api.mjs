@@ -971,6 +971,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/messages/stats') {
+    json(res, 200, {
+      postCount: 6,
+      postsOverTime: [
+        { day: '2026-06-01', postCount: 2 },
+        { day: '2026-06-02', postCount: 0 },
+        { day: '2026-07-01', postCount: 4 },
+      ],
+    });
+    return;
+  }
+
   const publicMessageMatch = pathName.match(/^\/messages\/([^/]+)$/);
   if (method === 'GET' && publicMessageMatch) {
     const id = decodeURIComponent(publicMessageMatch[1]);

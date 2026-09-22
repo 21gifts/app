@@ -271,6 +271,23 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * Runtime schema for `GET /messages/stats`.
+ * `postCount` counts living notes and replies together.
+ */
+export const postStatsSchema = z.object({
+  postCount: z.number().int().nonnegative(),
+  postsOverTime: z.array(
+    z.object({
+      day: z.string(),
+      postCount: z.number().int().nonnegative(),
+    }),
+  ),
+});
+
+/** Living forum notes and replies, by UTC day. */
+export type PostStats = z.infer<typeof postStatsSchema>;
+
+/**
  * FX on account activity. `quotes` is optional so payloads from an api that
  * has not yet shipped gift-stats fiat currencies still parse.
  */

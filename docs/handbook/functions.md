@@ -1326,6 +1326,13 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** POST then re-fetch member; `data-testid="state-members-staff-verify"` when shown.
 - **Used by:** `MemberProfileScreen`.
 
+## Function: fetchPostStats
+
+- **Purpose:** GET `/messages/stats` and parse the public post totals. Notes and replies are one count.
+- **Inputs:** None.
+- **Returns / side effects:** `PostStats`. Throws visitor copy when the api is down or the body is invalid.
+- **Used by:** `StatsLoader`.
+
 ## Function: fetchGiftStats
 
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
@@ -2102,6 +2109,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` (JSON `{ accountId }`).
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/trust/appoint-moderator`.
+
+## Function: proxyMessagesStatsGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /messages/stats`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/messages/stats`.
 
 ## Function: proxyGiftsStatsGet
 
