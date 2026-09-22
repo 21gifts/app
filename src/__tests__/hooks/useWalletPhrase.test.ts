@@ -294,6 +294,17 @@ describe('useWalletPhrase', () => {
     expect(result.current.setupWallet).toBe(true);
   });
 
+  it('asks to show the phrase during setup when the tab has no words', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', walletRequired: true },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.view).toBe('reveal');
+    expect(result.current.setupWallet).toBe(true);
+    expect(result.current.words).toEqual([]);
+  });
+
   it('uses the visual confirm fixture', () => {
     const url = new URL(originalHref);
     url.search = '?visual=confirm';
