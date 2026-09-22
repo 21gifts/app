@@ -187,8 +187,6 @@ test('login Open a new account creates a passkey after the choice', async ({ pag
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/wallet/, { timeout: 10_000 });
-  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
 });
 

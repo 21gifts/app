@@ -33,8 +33,8 @@ interface OnboardingGateProps {
 
 /**
  * Hydrates the session and sends the visitor to the matching onboarding screen.
- * An unconfirmed recovery phrase does not replace the page the visitor opened.
- * Login still sends a new account to `/wallet`.
+ * An unconfirmed recovery phrase is not a route: {@link nextOnboardingPath}
+ * never returns `/wallet` for that step.
  *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
@@ -62,20 +62,20 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     }
     if (screen === 'profile') {
       const next = nextOnboardingPath(account);
-      if (next !== '/welcome' && next !== '/wallet') {
+      if (next !== '/welcome') {
         router.replace(next);
       }
       return;
     }
     if (screen === 'wallet') {
       const next = nextOnboardingPath(account);
-      if (next !== '/wallet' && next !== '/welcome') {
+      if (next !== '/welcome' && account.setup !== 'wallet') {
         router.replace(next);
       }
       return;
     }
     const target = nextOnboardingPath(account);
-    if (target !== PATH[screen] && target !== '/wallet') {
+    if (target !== PATH[screen]) {
       router.replace(target);
     }
   }, [account, cancel, ready, router, screen]);
@@ -87,28 +87,22 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     return <>{children}</>;
   }
   if (screen === 'profile') {
-    if (account !== null) {
-      const next = nextOnboardingPath(account);
-      if (next === '/welcome' || next === '/wallet') {
-        return <>{children}</>;
-      }
+    if (account !== null && nextOnboardingPath(account) === '/welcome') {
+      return <>{children}</>;
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
   if (screen === 'wallet') {
     if (account !== null) {
       const next = nextOnboardingPath(account);
-      if (next === '/wallet' || next === '/welcome') {
+      if (next === '/welcome' || account.setup === 'wallet') {
         return <>{children}</>;
       }
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
-  if (account !== null) {
-    const next = nextOnboardingPath(account);
-    if (next === PATH[screen] || next === '/wallet') {
-      return <>{children}</>;
-    }
+  if (account !== null && nextOnboardingPath(account) === PATH[screen]) {
+    return <>{children}</>;
   }
   return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
 }

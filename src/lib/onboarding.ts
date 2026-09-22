@@ -35,7 +35,10 @@ export function hasAgreedToRules(account: Account): boolean {
 }
 
 /**
- * Next path after login from `account.setup` only (1:1 map; no second table).
+ * Next path after login from `account.setup`.
+ *
+ * `'wallet'` is not a route: the path comes from name, username, lightning
+ * address, and rules. Other `setup` values stay a 1:1 map.
  *
  * @param account - Signed-in account.
  * @returns The screen the visitor should see.
@@ -43,7 +46,19 @@ export function hasAgreedToRules(account: Account): boolean {
 export function nextOnboardingPath(account: Account): OnboardingPath {
   switch (account.setup) {
     case 'wallet':
-      return '/wallet';
+      if (!hasDisplayName(account)) {
+        return '/setup/name';
+      }
+      if (account.username == null || account.username.trim() === '') {
+        return '/setup/username';
+      }
+      if (!hasLightningAddress(account)) {
+        return '/setup/address';
+      }
+      if (!hasAgreedToRules(account)) {
+        return '/setup/rules';
+      }
+      return '/welcome';
     case 'name':
       return '/setup/name';
     case 'username':
