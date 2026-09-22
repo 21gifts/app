@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import type { Account, OwnerFunding } from '@/lib/api-types';
@@ -21,14 +21,6 @@ vi.mock('next/link', () => ({
     </a>
   ),
 }));
-
-vi.mock('@/lib/api', () => ({
-  postFundingApply: vi.fn(),
-}));
-
-import { postFundingApply } from '@/lib/api';
-
-const applyMock = vi.mocked(postFundingApply);
 
 const account: Account = {
   id: 'acc_1',
@@ -62,8 +54,6 @@ const pending: OwnerFunding = {
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  applyMock.mockResolvedValue(pending);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -95,8 +85,7 @@ describe('FundingStatusCard', () => {
         'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
       ),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-    expect(applyMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
   it('shows apply for none status with About link', () => {
@@ -116,13 +105,15 @@ describe('FundingStatusCard', () => {
       ),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
-    expect(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
+    ).toBe('/profile/apply');
   });
 
   it('treats missing funding as none for verified accounts', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, funding: undefined } });
     renderWithLocale(<FundingStatusCard />);
-    expect(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
   });
 
   it('shows apply for rejected status', () => {
@@ -143,7 +134,7 @@ describe('FundingStatusCard', () => {
         'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
   });
 
   it('shows pending copy and no apply button', () => {
@@ -155,7 +146,7 @@ describe('FundingStatusCard', () => {
     expect(
       screen.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
   it('shows trial copy', () => {
@@ -173,7 +164,7 @@ describe('FundingStatusCard', () => {
     });
     renderWithLocale(<FundingStatusCard />);
     expect(screen.getByText('You are on a one-day trial. Review repeats tomorrow.')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
   it('shows admitted copy with reviewed date', () => {
@@ -212,78 +203,5 @@ describe('FundingStatusCard', () => {
     });
     renderWithLocale(<FundingStatusCard />);
     expect(screen.getByText('Reviewed by a moderator')).toBeTruthy();
-  });
-
-  it('applies and stores the returned funding object', async () => {
-    renderWithLocale(<FundingStatusCard />);
-    fireEvent.click(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' }));
-    await waitFor(() => {
-      expect(applyMock).toHaveBeenCalledWith('sess');
-    });
-    await waitFor(() => {
-      expect(useAuthStore.getState().account?.funding).toEqual(pending);
-    });
-    expect(
-      screen.getByText('Your application is open. A moderator will review your posts.'),
-    ).toBeTruthy();
-  });
-
-  it('shows apply-error copy when apply throws', async () => {
-    applyMock.mockRejectedValue(new Error('boom'));
-    renderWithLocale(<FundingStatusCard />);
-    fireEvent.click(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' }));
-    expect(
-      await screen.findByText('Could not submit your application. Please try again.'),
-    ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
-  });
-
-  it('disables Apply and shows a spinner while apply is in flight', async () => {
-    applyMock.mockImplementation(() => new Promise(() => undefined));
-    renderWithLocale(<FundingStatusCard />);
-    fireEvent.click(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' }));
-    const button = screen.getByRole('button', {
-      name: 'Apply for the 21 gifts grant',
-    }) as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
-    expect(button.querySelector('.animate-spin')).toBeTruthy();
-    fireEvent.click(button);
-    expect(applyMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not write funding when the session changes during apply', async () => {
-    let resolveApply: ((value: OwnerFunding) => void) | undefined;
-    applyMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveApply = resolve;
-        }),
-    );
-    renderWithLocale(<FundingStatusCard />);
-    fireEvent.click(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' }));
-    useAuthStore.setState({ session: 'other', account });
-    await act(async () => {
-      resolveApply?.(pending);
-      await Promise.resolve();
-    });
-    expect(useAuthStore.getState().account?.funding?.status).toBe('none');
-  });
-
-  it('does not write funding when the account vanishes during apply', async () => {
-    let resolveApply: ((value: OwnerFunding) => void) | undefined;
-    applyMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveApply = resolve;
-        }),
-    );
-    renderWithLocale(<FundingStatusCard />);
-    fireEvent.click(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' }));
-    useAuthStore.setState({ session: 'sess', account: null });
-    await act(async () => {
-      resolveApply?.(pending);
-      await Promise.resolve();
-    });
-    expect(useAuthStore.getState().account).toBeNull();
   });
 });

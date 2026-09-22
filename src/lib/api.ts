@@ -944,10 +944,22 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
       body: JSON.stringify({}),
     });
     if (!response.ok) {
+      if (response.status === 400) {
+        const raw = await readApiError(response);
+        throw new Error(raw === null ? FUNDING_APPLY_ERROR : raw);
+      }
       throw new Error(FUNDING_APPLY_ERROR);
     }
     return fundingApplyResponseSchema.parse(await response.json()).funding;
-  } catch {
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message === 'About me is required' ||
+        err.message === 'About me photo is required' ||
+        err.message === 'Location is required')
+    ) {
+      throw err;
+    }
     throw new Error(FUNDING_APPLY_ERROR);
   }
 }

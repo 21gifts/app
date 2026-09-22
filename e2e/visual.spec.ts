@@ -5063,36 +5063,8 @@ test.describe('profile funding states', () => {
   test('profile funding none', async ({ page }) => {
     await seedFundingProfile(page);
     await page.goto('/profile');
-    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-none');
-  });
-
-  test('profile funding applying', async ({ page }) => {
-    await seedFundingProfile(page);
-    await page.route(/\/funding\/apply$/, async () => {
-      await new Promise(() => undefined);
-    });
-    await page.goto('/profile');
-    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
-    await expect(page.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeDisabled();
-    await shotScreen(page, 'state-profile-funding-applying');
-  });
-
-  test('profile funding apply-error', async ({ page }) => {
-    await seedFundingProfile(page);
-    await page.route(/\/funding\/apply$/, async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Funding is unavailable' }),
-      });
-    });
-    await page.goto('/profile');
-    await page.getByRole('button', { name: 'Apply for the 21 gifts grant' }).click();
-    await expect(
-      page.getByText('Could not submit your application. Please try again.'),
-    ).toBeVisible();
-    await shotScreen(page, 'state-profile-funding-apply-error');
   });
 
   test('profile funding pending', async ({ page }) => {
@@ -5139,6 +5111,291 @@ test.describe('profile funding states', () => {
     await page.goto('/profile');
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
+  });
+});
+
+test.describe('profile apply screens', () => {
+  const POST = {
+    id: 'msg_1',
+    name: 'Ada',
+    text: 'Living-room note.',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'verified',
+    replyCount: 0,
+  };
+
+  async function seedApply(
+    page: Page,
+    extras: {
+      role?: 'basis' | 'verified';
+      aboutMe?: string | null;
+      aboutMeHasPhoto?: boolean;
+      location?: string | null;
+      funding?: unknown;
+    } = {},
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: extras.role ?? 'verified',
+          name: 'Ada',
+          location: extras.location ?? null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: extras.aboutMe ?? null,
+          aboutMeHasPhoto: extras.aboutMeHasPhoto ?? false,
+          setup: null,
+          missing: [],
+          funding:
+            extras.funding === undefined && extras.role !== 'basis'
+              ? {
+                  status: 'none',
+                  trialUtcDate: null,
+                  admittedAt: null,
+                  reviewedByName: null,
+                }
+              : extras.funding,
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+  }
+
+  async function stubPosts(
+    page: Page,
+    messages: (typeof POST)[] | 'hang' | 'error',
+  ): Promise<void> {
+    await page.route(/\/forum\/members\/[^/]+\/posts/, async (route) => {
+      if (messages === 'hang') {
+        return;
+      }
+      if (messages === 'error') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
+    });
+  }
+
+  test('screen /profile/apply', async ({ page }) => {
+    await seedApply(page);
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-profile-apply');
+  });
+
+  test('profile apply photo', async ({ page }) => {
+    await seedApply(page, { aboutMe: 'I build on Bitcoin' });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-photo');
+  });
+
+  test('profile apply location', async ({ page }) => {
+    await seedApply(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Next, add the place you live.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-location');
+  });
+
+  test('profile apply principle-1', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Please check whether the posts match principle 1.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-principle-1');
+  });
+
+  test('profile apply principle-2', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(page.getByText('Please check whether the posts match principle 2.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-principle-2');
+  });
+
+  test('profile apply principle-3', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(page.getByText('Please check whether the posts match principle 3.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-principle-3');
+  });
+
+  test('profile apply truth', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-truth');
+  });
+
+  test('profile apply forbidden', async ({ page }) => {
+    await seedApply(page, { role: 'basis', funding: null });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('You are not verified yet.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-forbidden');
+  });
+
+  test('profile apply pending', async ({ page }) => {
+    await seedApply(page, {
+      funding: {
+        status: 'pending',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('Your application is open. A moderator will review your posts.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-pending');
+  });
+
+  test('profile apply empty-posts', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, []);
+    await page.goto('/profile/apply');
+    await expect(page.getByText('No living-room posts.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-empty-posts');
+  });
+
+  test('profile apply loading', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, 'hang');
+    await page.goto('/profile/apply');
+    await expect(page.getByText('Loading…').first()).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-loading');
+  });
+
+  test('profile apply error', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, 'error');
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('Could not load this application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-error');
+  });
+
+  test('profile apply applying', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.route(/\/funding\/apply$/, async () => {
+      /* hang */
+    });
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(page.getByRole('button', { name: 'Yes' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-applying');
+  });
+
+  test('profile apply apply-failed', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.route(/\/funding\/apply$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Could not submit your application. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-apply-failed');
+  });
+
+  test('profile apply unmet', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Requirement not met' }).click();
+    await expect(page.getByText('When your posts match, you can apply again.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-unmet');
   });
 });
 

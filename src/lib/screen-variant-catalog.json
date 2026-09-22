@@ -870,18 +870,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/profile:funding-applying",
-    "label": "/profile funding-applying",
-    "visual": "state-profile-funding-applying",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:funding-apply-error",
-    "label": "/profile funding-apply-error",
-    "visual": "state-profile-funding-apply-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/profile:funding-pending",
     "label": "/profile funding-pending",
     "visual": "state-profile-funding-pending",
@@ -897,6 +885,96 @@
     "id": "/profile:funding-admitted",
     "label": "/profile funding-admitted",
     "visual": "state-profile-funding-admitted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:default",
+    "label": "/profile/apply default",
+    "visual": "screen-profile-apply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:photo",
+    "label": "/profile/apply photo",
+    "visual": "state-profile-apply-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:location",
+    "label": "/profile/apply location",
+    "visual": "state-profile-apply-location",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:principle-1",
+    "label": "/profile/apply principle-1",
+    "visual": "state-profile-apply-principle-1",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:principle-2",
+    "label": "/profile/apply principle-2",
+    "visual": "state-profile-apply-principle-2",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:principle-3",
+    "label": "/profile/apply principle-3",
+    "visual": "state-profile-apply-principle-3",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:truth",
+    "label": "/profile/apply truth",
+    "visual": "state-profile-apply-truth",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:forbidden",
+    "label": "/profile/apply forbidden",
+    "visual": "state-profile-apply-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:pending",
+    "label": "/profile/apply pending",
+    "visual": "state-profile-apply-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:empty-posts",
+    "label": "/profile/apply empty-posts",
+    "visual": "state-profile-apply-empty-posts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:loading",
+    "label": "/profile/apply loading",
+    "visual": "state-profile-apply-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:error",
+    "label": "/profile/apply error",
+    "visual": "state-profile-apply-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:applying",
+    "label": "/profile/apply applying",
+    "visual": "state-profile-apply-applying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:apply-failed",
+    "label": "/profile/apply apply-failed",
+    "visual": "state-profile-apply-apply-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile/apply:unmet",
+    "label": "/profile/apply unmet",
+    "visual": "state-profile-apply-unmet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

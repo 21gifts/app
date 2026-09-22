@@ -1244,10 +1244,10 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: postFundingApply
 
-- **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403.
+- **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403. 400 `About me is required` / `About me photo is required` / `Location is required` are rethrown; other failures use visitor copy `Could not submit your application. Please try again.`
 - **Inputs:** Bearer `sessionToken`.
-- **Returns / side effects:** Updated `OwnerFunding`. Throws visitor copy `Could not submit your application. Please try again.` on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `FundingStatusCard`.
+- **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `FundingApplyScreen`.
 
 ## Function: fetchFundingApplications
 
@@ -2875,10 +2875,45 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner profile grant section after the Lightning Address form. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): grace copy that daily gifts continue until 25 September 2026, an **About** link to `/about`, and **Apply for the 21 gifts grant** for `none`/`rejected` (no denial sentence and no conviction titles); pending; one-day trial; or admitted with **Reviewed by a moderator** and `admittedAt`. Apply posts `postFundingApply` and merges the returned `funding` into the store account.
+- **Purpose:** Owner profile grant section after the Lightning Address form. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): grace copy that daily gifts continue until 25 September 2026, an **About** link to `/about`, and **Apply for the 21 gifts grant** as a `ButtonLink` to `/profile/apply` for `none`/`rejected` (no denial sentence and no conviction titles); pending; one-day trial; or admitted with **Reviewed by a moderator** and `admittedAt`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session or account. Apply POSTs `/funding/apply`. A failed apply shows `funding.applyError`.
+- **Returns / side effects:** React element or `null` without a session or account. Apply is a link; it does not POST.
 - **Used by:** `ProfileScreen`.
+
+## Function: FundingApplyPage
+
+- **Purpose:** Next.js page for `/profile/apply`. Fill `AppShell` with `ProfileChromeLeft`, `SignedInChrome`, and `OnboardingGate screen="profile"` around `FundingApplyScreen`.
+- **Inputs:** None.
+- **Returns / side effects:** The apply walk inside fill AppShell.
+- **Used by:** Route `/profile/apply`.
+
+## Function: FundingApplyScreen
+
+- **Purpose:** Guided grant apply. Missing About me, photo, or location are the next calm steps (not errors). Then the same four principle/truth questions as staff review against `fetchMemberPosts`. **Yes** on the last step posts `postFundingApply` and goes to `/profile`. **Requirement not met** / **No** does not apply.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session.
+- **Used by:** `FundingApplyPage`.
+
+## Function: aboutMeFilled
+
+- **Purpose:** True when About me is a real bio (not empty or the display-name auto note).
+- **Inputs:** `aboutMe`, `name`.
+- **Returns / side effects:** boolean.
+- **Used by:** `nextFillStep`, `FundingApplyScreen`.
+
+## Function: locationFilled
+
+- **Purpose:** True when location is a non-empty trimmed string.
+- **Inputs:** `location`.
+- **Returns / side effects:** boolean.
+- **Used by:** `nextFillStep`, `FundingApplyScreen`.
+
+## Function: nextFillStep
+
+- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present.
+- **Inputs:** Owner `Account`.
+- **Returns / side effects:** `'about' | 'photo' | 'location' | null`.
+- **Used by:** `FundingApplyScreen`.
 
 ## Function: ModeratorGroupPage
 

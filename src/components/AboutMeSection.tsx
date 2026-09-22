@@ -47,6 +47,8 @@ export type AboutMeSectionProps = {
    * object = replace with prepared JPEG payload.
    */
   onSave?: (text: string, photo?: AboutMeSavePhoto | null) => Promise<boolean | void>;
+  /** Open the owner editor on mount. Default false. */
+  startEditing?: boolean;
 };
 
 /**
@@ -66,6 +68,7 @@ export function AboutMeSection({
   hasPhoto,
   loadPhoto,
   onSave,
+  startEditing = false,
 }: AboutMeSectionProps): ReactElement | null {
   const { t } = useTranslations();
   const textareaId = useId();
@@ -76,7 +79,7 @@ export function AboutMeSection({
   const storedObjectUrlRef = useRef<string | null>(null);
   const photoGeneration = useRef(0);
   const loadGeneration = useRef(0);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
