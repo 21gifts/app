@@ -1136,7 +1136,13 @@ export function ForumLoader({
     setPayInvoice(null);
     setPayWaiting(false);
     setReplyPosting(false);
+    setPosting(false);
+    notePostInFlightRef.current = false;
     setPayHost(null);
+    const keptCaption = pendingComposeTextRef.current;
+    if (keptCaption !== null && keptCaption !== '') {
+      setDraft(keptCaption);
+    }
   };
 
   const startPayPoll = (
@@ -1171,13 +1177,13 @@ export function ForumLoader({
         const page = await fetchMessages(sess, forumPageArgs('all'));
         return page.messages.filter((row) => row.accountId === me && row.text === expected).length;
       };
-      let baselineOwn = 0;
-      if (composePay) {
+      let baselineOwn: number | null = null;
+      if (composePay && !postAfterPay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count still waits for a later increase */
+          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
-          baselineOwn = 0;
+          baselineOwn = null;
         }
         /* v8 ignore stop */
       }
@@ -1196,7 +1202,12 @@ export function ForumLoader({
               ownContent = true;
             } else if (composePay) {
               try {
-                ownContent = (await countOwn()) > baselineOwn;
+                if (baselineOwn === null) {
+                  baselineOwn = await countOwn();
+                  ownContent = false;
+                } else {
+                  ownContent = (await countOwn()) > baselineOwn;
+                }
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -1249,6 +1260,8 @@ export function ForumLoader({
                   setPayHost(null);
                   setPayDraft('');
                   setPayError(null);
+                  setPosting(false);
+                  notePostInFlightRef.current = false;
                   return;
                 }
                 pendingComposePhotosRef.current = [];
@@ -1293,6 +1306,9 @@ export function ForumLoader({
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
+              setPosting(false);
+              setReplyPosting(false);
+              notePostInFlightRef.current = false;
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -1528,6 +1544,7 @@ export function ForumLoader({
   ): Promise<void> => {
     setPosting(true);
     setFormError(null);
+    let awaitingPay = false;
     try {
       if (
         account !== null &&
@@ -1562,6 +1579,7 @@ export function ForumLoader({
           setPhotoDrafts([]);
           setVideoDraft(null);
         }
+        awaitingPay = true;
         return;
       }
       const created =
@@ -1602,8 +1620,10 @@ export function ForumLoader({
       }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
-      notePostInFlightRef.current = false;
-      setPosting(false);
+      if (!awaitingPay) {
+        notePostInFlightRef.current = false;
+        setPosting(false);
+      }
     }
   };
 
@@ -1955,6 +1975,7 @@ export function ForumLoader({
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
+    let awaitingPay = false;
     try {
       const target = await fetchComposeTarget(session);
       const invoice = await postMessageInvoice(
@@ -1980,6 +2001,7 @@ export function ForumLoader({
       pendingPostRef.current = null;
       pendingComposeTextRef.current = trimmed;
       startPayPoll(target.messageId, target.sats, false, parentId);
+      awaitingPay = true;
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
@@ -1998,7 +2020,9 @@ export function ForumLoader({
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
-      setReplyPosting(false);
+      if (!awaitingPay) {
+        setReplyPosting(false);
+      }
     }
   };
 

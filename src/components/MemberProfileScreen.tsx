@@ -468,13 +468,13 @@ export function MemberProfileScreen({
         const replies = await fetchReplies(sess, replyParentId);
         return replies.filter((row) => row.accountId === me && row.text === expected).length;
       };
-      let baselineOwn = 0;
+      let baselineOwn: number | null = null;
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count still waits for a later increase */
+          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
-          baselineOwn = 0;
+          baselineOwn = null;
         }
         /* v8 ignore stop */
       }
@@ -491,7 +491,12 @@ export function MemberProfileScreen({
             let ownContent = !composePay;
             if (composePay) {
               try {
-                ownContent = (await countOwn()) > baselineOwn;
+                if (baselineOwn === null) {
+                  baselineOwn = await countOwn();
+                  ownContent = false;
+                } else {
+                  ownContent = (await countOwn()) > baselineOwn;
+                }
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -533,6 +538,7 @@ export function MemberProfileScreen({
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
+              setReplyPosting(false);
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -705,6 +711,7 @@ export function MemberProfileScreen({
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
+    let awaitingPay = false;
     try {
       const target = await fetchComposeTarget(token);
       const invoice = await postMessageInvoice(
@@ -730,6 +737,7 @@ export function MemberProfileScreen({
       pendingPostRef.current = null;
       pendingComposeTextRef.current = trimmed;
       startPayPoll(target.messageId, target.sats, parentId);
+      awaitingPay = true;
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
@@ -748,7 +756,9 @@ export function MemberProfileScreen({
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
-      setReplyPosting(false);
+      if (!awaitingPay) {
+        setReplyPosting(false);
+      }
     }
   };
 

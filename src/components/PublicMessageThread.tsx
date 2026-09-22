@@ -407,13 +407,13 @@ export function PublicMessageThread(props: {
         const replies = await fetchReplies(sess, replyParentId);
         return replies.filter((row) => row.accountId === me && row.text === expected).length;
       };
-      let baselineOwn = 0;
+      let baselineOwn: number | null = null;
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count still waits for a later increase */
+          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
-          baselineOwn = 0;
+          baselineOwn = null;
         }
         /* v8 ignore stop */
       }
@@ -432,7 +432,12 @@ export function PublicMessageThread(props: {
             let ownContent = !composePay;
             if (composePay) {
               try {
-                ownContent = (await countOwn()) > baselineOwn;
+                if (baselineOwn === null) {
+                  baselineOwn = await countOwn();
+                  ownContent = false;
+                } else {
+                  ownContent = (await countOwn()) > baselineOwn;
+                }
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -469,6 +474,7 @@ export function PublicMessageThread(props: {
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
+              setReplyPosting(false);
               const current = useAuthStore.getState();
               /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
               if (current.session !== session) {
@@ -618,6 +624,7 @@ export function PublicMessageThread(props: {
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
+    let awaitingPay = false;
     try {
       const target = await fetchComposeTarget(token);
       const invoice = await postMessageInvoice(
@@ -641,9 +648,9 @@ export function PublicMessageThread(props: {
       setReplyDraft('');
       setReplyAmountDraft('');
       pendingPostRef.current = null;
-      setReplyPosting(false);
       pendingComposeTextRef.current = trimmed;
       startPayPoll(target.messageId, target.sats, parentId);
+      awaitingPay = true;
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the compose invoice failed */
       if (generation !== payPollGeneration.current) {
@@ -668,7 +675,9 @@ export function PublicMessageThread(props: {
         );
       }
     } finally {
-      setReplyPosting(false);
+      if (!awaitingPay) {
+        setReplyPosting(false);
+      }
     }
   };
 
