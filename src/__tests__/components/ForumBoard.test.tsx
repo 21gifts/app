@@ -543,7 +543,8 @@ describe('ForumBoard', () => {
   });
 
   it('omits the place control when the board cannot store a pin', () => {
-    const { onPlaceDraftChange: _ignored, ...withoutPlace } = idleProps;
+    const { onPlaceDraftChange, ...withoutPlace } = idleProps;
+    expect(onPlaceDraftChange).toBeTypeOf('function');
     renderWithLocale(
       <ForumBoard
         messages={[]}
