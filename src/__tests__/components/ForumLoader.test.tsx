@@ -2732,6 +2732,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'with photo' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalled();
@@ -2740,6 +2741,7 @@ describe('ForumLoader', () => {
       expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
     expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('with photo');
     expect(invoiceMock).toHaveBeenCalledTimes(1);
     postMock.mockResolvedValue({
       ...SAMPLE,
