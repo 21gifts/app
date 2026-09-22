@@ -519,6 +519,19 @@ describe('useWalletPhrase', () => {
     });
   });
 
+  it('keeps the phrase when backup-seen fails after replace', async () => {
+    vi.mocked(postWalletBackupSeen).mockRejectedValueOnce(new Error('nope'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(peekSessionPhrase()).toBe(mnemonic);
+    expect(result.current.words).toHaveLength(12);
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred');
+    expect(result.current.error).toBe('generic');
+    expect(result.current.status).toBe('idle');
+  });
+
   it('does not keep a phrase when backup-seen runs after replace then the session ends', async () => {
     vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });

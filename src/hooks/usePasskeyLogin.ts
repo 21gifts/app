@@ -188,7 +188,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       );
       guard(runId);
       rememberSessionPhrase(mnemonic);
-      setAuth(session.token, session.account);
+      setAuth(session.token, {
+        ...session.account,
+        passkeyCredentialId: session.account.passkeyCredentialId ?? publicKeyCredential.id,
+      });
       choiceOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');

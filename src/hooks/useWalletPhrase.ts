@@ -69,6 +69,7 @@ function abandonStaleSession(
   if (isCurrentSession(token)) {
     return false;
   }
+  clearSessionPhrase();
   setError(null);
   setStatus('idle');
   return true;
@@ -134,6 +135,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       setMnemonic(visualMnemonicOverride() ?? peekSessionPhrase());
     };
     window.addEventListener('21gifts:wallet-phrase', sync);
+    sync();
     return () => {
       window.removeEventListener('21gifts:wallet-phrase', sync);
     };
@@ -221,15 +223,29 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      if (nextAccount.walletRequired !== true) {
-        nextAccount = await postWalletBackupSeen(token);
-        if (abandonStaleSession(token, setError, setStatus)) {
-          return;
-        }
-      }
+      nextAccount = {
+        ...nextAccount,
+        passkeyCredentialId: nextAccount.passkeyCredentialId ?? credential.id,
+      };
       setAccount(nextAccount);
       rememberSessionPhrase(nextMnemonic);
       setMnemonic(nextMnemonic);
+      if (nextAccount.walletRequired !== true) {
+        try {
+          nextAccount = await postWalletBackupSeen(token);
+          if (abandonStaleSession(token, setError, setStatus)) {
+            return;
+          }
+          setAccount(nextAccount);
+        } catch (err) {
+          if (abandonStaleSession(token, setError, setStatus)) {
+            return;
+          }
+          fail(err);
+          setStatus('idle');
+          return;
+        }
+      }
       setStatus('idle');
     } catch (err) {
       if (abandonStaleSession(token, setError, setStatus)) {
