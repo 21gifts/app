@@ -316,6 +316,51 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect((await screen.findByRole('alert')).textContent).toContain('unavailable');
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
+  });
+
+  it('drops a late expiry refresh after cancel starts', async () => {
+    const expired = {
+      id: 'old',
+      amountSats: 5,
+      status: 'pending' as const,
+      createdAt: new Date(Date.now() - 120_000).toISOString(),
+      expiresAt: new Date(Date.now() - 1_000).toISOString(),
+    };
+    let releaseRefresh: ((value: Response) => void) | undefined;
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        calls += 1;
+        if (calls === 1) {
+          return jsonResponse({ charge: expired, history: [expired] });
+        }
+        if (init?.method === 'DELETE') {
+          return jsonResponse({ charge: null });
+        }
+        if (releaseRefresh === undefined) {
+          return new Promise<Response>((resolve) => {
+            releaseRefresh = resolve;
+          });
+        }
+        return jsonResponse({
+          charge: null,
+          history: [{ ...expired, status: 'expired' }],
+        });
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByText('0:00 left')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    await act(async () => {
+      releaseRefresh?.(jsonResponse({ charge: expired, history: [expired] }));
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
   it('does not create a payment after the session disappears', async () => {

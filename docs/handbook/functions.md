@@ -9,7 +9,7 @@
 
 ## Function: PosScreen
 
-- **Purpose:** Signed-in till. Loads `GET /pos/charge`, shows the public address and desktop Open CryptoPay QR, and either an amount form or the open charge with a countdown and Cancel. History lists recent rows. No paid status.
+- **Purpose:** Signed-in till. Loads `GET /pos/charge`, shows the public address and desktop Open CryptoPay QR, and either an amount form or the open charge (countdown, including 0:00, amount, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status.
 - **Inputs:** None. Reads the auth store session and account.
 - **Returns / side effects:** React element. Calls `fetchPosState`, `createPosCharge`, and `cancelPosCharge`.
 - **Used by:** `/pos`.

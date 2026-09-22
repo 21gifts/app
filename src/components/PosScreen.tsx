@@ -26,6 +26,13 @@ function formatLeft(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+/** Apply `apply` only while `mine` is still the latest till request. */
+function whenCurrent(latest: { readonly current: number }, mine: number, apply: () => void): void {
+  if (latest.current === mine) {
+    apply();
+  }
+}
+
 /**
  * Signed-in till: set one sat amount, then the existing Open CryptoPay QR
  * accepts only that amount until it is cancelled or the five minutes end.
@@ -35,6 +42,7 @@ function formatLeft(ms: number): string {
 export function PosScreen(): ReactElement {
   const { t } = useTranslations();
   const refreshed = useRef<string | null>(null);
+  const generation = useRef(0);
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const [state, setState] = useState<PosState | null>(null);
@@ -94,10 +102,17 @@ export function PosScreen(): ReactElement {
       return;
     }
     refreshed.current = charge.id;
+    const mine = ++generation.current;
     fetchPosState(session)
-      .then(setState)
+      .then((next) => {
+        whenCurrent(generation, mine, () => {
+          setState(next);
+        });
+      })
       .catch(() => {
-        setError(t('pos.error'));
+        whenCurrent(generation, mine, () => {
+          setError(t('pos.error'));
+        });
       });
   }, [charge, remaining, session, t]);
 
@@ -111,30 +126,37 @@ export function PosScreen(): ReactElement {
       setError(t('pos.badAmount'));
       return;
     }
+    const mine = ++generation.current;
     setBusy(true);
     setError(null);
     try {
       const created = await createPosCharge(session, amountSats);
-      /* v8 ignore next -- the form is only shown once state.history is an array */
-      const history = state?.history ?? [];
-      setState({ charge: created, history: [created, ...history] });
-      setAmount('');
+      whenCurrent(generation, mine, () => {
+        /* v8 ignore next -- the form is only shown once state.history is an array */
+        const history = state?.history ?? [];
+        setState({ charge: created, history: [created, ...history] });
+        setAmount('');
+      });
     } catch (err) {
-      /* v8 ignore next -- createPosCharge only rejects with Error */
-      const message = err instanceof Error ? err.message : t('pos.error');
-      if (message === 'Amount is outside the wallet range') {
-        setError(t('pos.outside'));
-      } else if (message === 'A payment is already open') {
-        setError(t('pos.already'));
-      } else if (message === 'Set a username first') {
-        setError(t('pos.needUsername'));
-      } else if (message === 'Set a Wallet of Satoshi address first') {
-        setError(t('pos.needAddress'));
-      } else {
-        setError(t('pos.error'));
-      }
+      whenCurrent(generation, mine, () => {
+        /* v8 ignore next -- createPosCharge only rejects with Error */
+        const message = err instanceof Error ? err.message : t('pos.error');
+        if (message === 'Amount is outside the wallet range') {
+          setError(t('pos.outside'));
+        } else if (message === 'A payment is already open') {
+          setError(t('pos.already'));
+        } else if (message === 'Set a username first') {
+          setError(t('pos.needUsername'));
+        } else if (message === 'Set a Wallet of Satoshi address first') {
+          setError(t('pos.needAddress'));
+        } else {
+          setError(t('pos.error'));
+        }
+      });
     } finally {
-      setBusy(false);
+      whenCurrent(generation, mine, () => {
+        setBusy(false);
+      });
     }
   }
 
@@ -142,16 +164,23 @@ export function PosScreen(): ReactElement {
     if (session === null) {
       return;
     }
+    const mine = ++generation.current;
     setBusy(true);
     setError(null);
     try {
       await cancelPosCharge(session);
       const next = await fetchPosState(session);
-      setState(next);
+      whenCurrent(generation, mine, () => {
+        setState(next);
+      });
     } catch {
-      setError(t('pos.error'));
+      whenCurrent(generation, mine, () => {
+        setError(t('pos.error'));
+      });
     } finally {
-      setBusy(false);
+      whenCurrent(generation, mine, () => {
+        setBusy(false);
+      });
     }
   }
 
@@ -190,7 +219,7 @@ export function PosScreen(): ReactElement {
       {state === null && error === null ? (
         <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-app-subtle" />
       ) : null}
-      {charge !== null && remaining > 0 ? (
+      {charge !== null ? (
         <div className="flex flex-col gap-3">
           <p className="text-center text-sm text-app-subtle">
             {t('pos.left', { time: formatLeft(remaining) })}
@@ -209,9 +238,7 @@ export function PosScreen(): ReactElement {
           </Button>
         </div>
       ) : null}
-      {state !== null &&
-      (charge === null || remaining <= 0) &&
-      (account?.lightningAddress ?? '').trim() !== '' ? (
+      {state !== null && charge === null && (account?.lightningAddress ?? '').trim() !== '' ? (
         <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
           <Field
             label={t('pos.amount')}
@@ -220,7 +247,7 @@ export function PosScreen(): ReactElement {
             inputMode="numeric"
             min={1}
             step={1}
-            placeholder="0"
+            placeholder={t('pos.amountPlaceholder')}
             value={amount}
             onChange={(event) => {
               setAmount(event.target.value);
