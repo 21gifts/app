@@ -634,7 +634,7 @@ const en = {
     'It does not mean they are a good person, and it does not mean they are entitled to receive money. It only means this person really exists and has a 21.gifts account.',
   'moderate.handbook.funding.title': 'Official funding program',
   'moderate.handbook.funding.body':
-    'Verified members can apply on their profile with the three convictions. Staff review the queue, then grant a one-day trial or admit. Daily gifts still go out as before until 25 September 2026. From that UTC day, only admitted members (or a same-day trial) receive them.',
+    'Verified members can apply on their profile with the three convictions. Staff review the queue by walking each principle and whether the posts are true, then admit or reject. Daily gifts still go out as before until 25 September 2026. From that UTC day, only admitted members (or a same-day trial) receive them.',
   'moderate.handbook.funding.rulesLead': 'The rules are simple.',
   'moderate.handbook.funding.rulePrinciples': 'Follow the 3 principles of 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Daily Bitcoin payments are mandatory',
@@ -645,12 +645,9 @@ const en = {
   'funding.notVerified': 'You are not verified yet.',
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
-  'funding.notAdmitted': 'You are not admitted to daily 21.gifts grant payouts.',
   'funding.grace':
     'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
-  'funding.conditions':
-    'Daily grants go to people whose living-room posts reflect the three convictions.',
   'funding.pending': 'Your application is open. A moderator will review your posts.',
   'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
   'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
@@ -659,18 +656,22 @@ const en = {
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
   'funding.applications.lead':
-    'Review living-room posts against the three convictions. Grant a one-day trial or a final admission.',
+    'Pick a person, then walk each principle and whether the posts are true.',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
   'funding.detail.heading': 'Grant application',
-  'funding.detail.criteria': 'Review against the three convictions',
   'funding.detail.postsLabel': 'Living-room posts',
   'funding.detail.emptyPosts': 'No living-room posts.',
   'funding.detail.error': 'Could not load this application. Please try again.',
-  'funding.detail.trial': 'Trial',
-  'funding.detail.admit': 'Admit',
-  'funding.detail.reject': 'Reject',
+  'funding.review.check1': 'Please check whether the posts match principle 1.',
+  'funding.review.check2': 'Please check whether the posts match principle 2.',
+  'funding.review.check3': 'Please check whether the posts match principle 3.',
+  'funding.review.truth': 'Do these posts, to your knowledge, correspond to the truth?',
+  'funding.review.met': 'Requirement met',
+  'funding.review.unmet': 'Requirement not met',
+  'funding.review.yes': 'Yes',
+  'funding.review.no': 'No',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
@@ -1335,7 +1336,7 @@ const de = {
     'Es bedeutet nicht, dass es ein guter Mensch ist oder dass die Person berechtigt sein soll, Geld zu erhalten. Es bedeutet nur, dass es diesen Menschen wirklich gibt und dass er ein Konto bei 21.gifts hat.',
   'moderate.handbook.funding.title': 'Offizielles Förderprogramm',
   'moderate.handbook.funding.body':
-    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange und gewährt dann einen eintägigen Probezugang oder lässt zu. Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem UTC-Tag erhalten nur noch zugelassene Mitglieder (oder eine Probe für denselben Tag) welche.',
+    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange, indem es jeden Grundsatz und die Wahrheit der Beiträge prüft, und lässt dann zu oder lehnt ab. Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem UTC-Tag erhalten nur noch zugelassene Mitglieder (oder eine Probe für denselben Tag) welche.',
   'moderate.handbook.funding.rulesLead': 'Die Regeln sind einfach.',
   'moderate.handbook.funding.rulePrinciples': 'Die 3 Prinzipien von 21.gifts befolgen',
   'moderate.handbook.funding.ruleDaily': 'Tägliche Bitcoin-Zahlungen sind Pflicht',
@@ -1346,12 +1347,9 @@ const de = {
   'funding.notVerified': 'Sie sind noch nicht verifiziert.',
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
-  'funding.notAdmitted': 'Sie sind nicht zum täglichen 21.gifts-Förderprogramm zugelassen.',
   'funding.grace':
     'Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem Tag erhalten nur noch zugelassene Mitglieder welche. Bewerben Sie sich jetzt, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
-  'funding.conditions':
-    'Tägliche Förderungen gehen an Menschen, deren Wohnzimmer-Beiträge die drei Überzeugungen widerspiegeln.',
   'funding.pending':
     'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
   'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
@@ -1362,20 +1360,24 @@ const de = {
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
   'funding.applications.lead':
-    'Prüfen Sie Wohnzimmer-Beiträge an den drei Überzeugungen. Gewähren Sie einen eintägigen Probezugang oder eine endgültige Zulassung.',
+    'Wählen Sie eine Person, dann prüfen Sie jeden Grundsatz und ob die Beiträge der Wahrheit entsprechen.',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
     'Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'funding.detail.heading': 'Förderbewerbung',
-  'funding.detail.criteria': 'Prüfung an den drei Überzeugungen',
   'funding.detail.postsLabel': 'Wohnzimmer-Beiträge',
   'funding.detail.emptyPosts': 'Keine Wohnzimmer-Beiträge.',
   'funding.detail.error':
     'Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
-  'funding.detail.trial': 'Probe',
-  'funding.detail.admit': 'Zulassen',
-  'funding.detail.reject': 'Ablehnen',
+  'funding.review.check1': 'Bitte prüfen Sie, ob die Beiträge dem Grundsatz 1 entsprechen.',
+  'funding.review.check2': 'Bitte prüfen Sie, ob die Beiträge dem Grundsatz 2 entsprechen.',
+  'funding.review.check3': 'Bitte prüfen Sie, ob die Beiträge dem Grundsatz 3 entsprechen.',
+  'funding.review.truth': 'Entsprechen diese Beiträge nach Ihrem Wissen der Wahrheit?',
+  'funding.review.met': 'Anforderung erfüllt',
+  'funding.review.unmet': 'Nicht erfüllt',
+  'funding.review.yes': 'Ja',
+  'funding.review.no': 'Nein',
 
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
@@ -2022,7 +2024,7 @@ const es = {
     'No significa que sea una buena persona ni que tenga derecho a recibir dinero. Solo significa que esa persona existe de verdad y tiene una cuenta en 21.gifts.',
   'moderate.handbook.funding.title': 'Programa oficial de apoyo',
   'moderate.handbook.funding.body':
-    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo revisa la cola y luego otorga un día de prueba o admite. Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día UTC, solo las personas admitidas (o en prueba ese mismo día) los reciben.',
+    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo recorre cada principio y si los mensajes son verdad, luego admite o rechaza. Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día UTC, solo las personas admitidas (o en prueba ese mismo día) los reciben.',
   'moderate.handbook.funding.rulesLead': 'Las reglas son simples.',
   'moderate.handbook.funding.rulePrinciples': 'Seguir los 3 principios de 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Los pagos diarios en Bitcoin son obligatorios',
@@ -2033,12 +2035,9 @@ const es = {
   'funding.notVerified': 'Aún no estás verificada o verificado.',
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
-  'funding.notAdmitted': 'No estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
   'funding.grace':
     'Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día, solo las personas admitidas los reciben. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
-  'funding.conditions':
-    'Las becas diarias van a personas cuyos mensajes del salón reflejan las tres convicciones.',
   'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
   'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
   'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
@@ -2047,19 +2046,23 @@ const es = {
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
   'funding.applications.lead':
-    'Revisa los mensajes del salón frente a las tres convicciones. Concede una prueba de un día o una admisión definitiva.',
+    'Elige a una persona, luego recorre cada principio y si los mensajes son verdad.',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
     'No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo.',
   'funding.detail.heading': 'Solicitud de beca',
-  'funding.detail.criteria': 'Revisión frente a las tres convicciones',
   'funding.detail.postsLabel': 'Mensajes del salón',
   'funding.detail.emptyPosts': 'No hay mensajes del salón.',
   'funding.detail.error': 'No se pudo cargar esta solicitud. Inténtalo de nuevo.',
-  'funding.detail.trial': 'Prueba',
-  'funding.detail.admit': 'Admitir',
-  'funding.detail.reject': 'Rechazar',
+  'funding.review.check1': 'Comprueba si los mensajes coinciden con el principio 1.',
+  'funding.review.check2': 'Comprueba si los mensajes coinciden con el principio 2.',
+  'funding.review.check3': 'Comprueba si los mensajes coinciden con el principio 3.',
+  'funding.review.truth': '¿Estos mensajes, según tu conocimiento, corresponden a la verdad?',
+  'funding.review.met': 'Requisito cumplido',
+  'funding.review.unmet': 'No cumplido',
+  'funding.review.yes': 'Sí',
+  'funding.review.no': 'No',
 
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
@@ -2715,7 +2718,7 @@ const fil = {
     'Hindi ito nangangahulugang mabuting tao siya, at hindi ito nangangahulugang karapat-dapat siyang tumanggap ng pera. Ibig sabihin lang nito na totoong umiiral ang taong ito at may account siya sa 21.gifts.',
   'moderate.handbook.funding.title': 'Opisyal na programa ng tulong',
   'moderate.handbook.funding.body':
-    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Sinusuri ng staff ang pila, tapos nagbibigay ng one-day trial o admit. Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa UTC day na iyon, admitted members (o same-day trial) na lang ang tatanggap.',
+    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Nilalakad ng staff ang bawat prinsipyo at kung totoo ang mga post, tapos admit o reject. Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa UTC day na iyon, admitted members (o same-day trial) na lang ang tatanggap.',
   'moderate.handbook.funding.rulesLead': 'Simple lang ang mga patakaran.',
   'moderate.handbook.funding.rulePrinciples': 'Sundin ang 3 prinsipyo ng 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Mandatory ang araw-araw na bayad sa Bitcoin',
@@ -2726,12 +2729,9 @@ const fil = {
   'funding.notVerified': 'Hindi ka pa nabe-verify.',
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
-  'funding.notAdmitted': 'Hindi ka admitted sa araw-araw na 21.gifts grant payouts.',
   'funding.grace':
     'Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa araw na iyon, admitted members na lang ang tatanggap. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
-  'funding.conditions':
-    'Ang araw-araw na grant ay para sa mga taong ang living-room posts ay sumasalamin sa tatlong paniniwala.',
   'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
   'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
   'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
@@ -2740,18 +2740,22 @@ const fil = {
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
   'funding.applications.lead':
-    'Suriin ang living-room posts laban sa tatlong paniniwala. Magbigay ng one-day trial o pinal na admission.',
+    'Pumili ng tao, tapos suriin ang bawat prinsipyo at kung totoo ang mga post.',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',
   'funding.detail.heading': 'Grant application',
-  'funding.detail.criteria': 'Suriin laban sa tatlong paniniwala',
   'funding.detail.postsLabel': 'Mga living-room post',
   'funding.detail.emptyPosts': 'Walang living-room posts.',
   'funding.detail.error': 'Hindi ma-load ang aplikasyong ito. Subukan ulit.',
-  'funding.detail.trial': 'Trial',
-  'funding.detail.admit': 'Admit',
-  'funding.detail.reject': 'Reject',
+  'funding.review.check1': 'Suriin kung tumutugma ang mga post sa prinsipyo 1.',
+  'funding.review.check2': 'Suriin kung tumutugma ang mga post sa prinsipyo 2.',
+  'funding.review.check3': 'Suriin kung tumutugma ang mga post sa prinsipyo 3.',
+  'funding.review.truth': 'Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan?',
+  'funding.review.met': 'Natugunan ang kinakailangan',
+  'funding.review.unmet': 'Hindi natugunan',
+  'funding.review.yes': 'Oo',
+  'funding.review.no': 'Hindi',
 
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':

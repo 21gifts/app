@@ -25,7 +25,6 @@ import {
   postFundingAdmit,
   postFundingApply,
   postFundingReject,
-  postFundingTrial,
   fetchMessagePhoto,
   fetchMessages,
   fetchForumMessage,
@@ -2484,14 +2483,17 @@ describe('fetchModeratorGroup', () => {
 });
 
 describe('fetchConversation', () => {
-  it('returns messages and encodes the id', async () => {
+  it('returns messages, normalizes a missing cursor, and encodes the id', async () => {
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
       body: { messages: [conversationMessage] },
     });
-    await expect(fetchConversation('sess', 'a/b')).resolves.toEqual([conversationMessage]);
-    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb', {
+    await expect(fetchConversation('sess', 'a/b')).resolves.toEqual({
+      messages: [conversationMessage],
+      nextCursor: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/a%2Fb?limit=20', {
       headers: { Authorization: 'Bearer sess' },
     });
   });
@@ -2507,15 +2509,38 @@ describe('fetchConversation', () => {
     const fetchMock = stubFetch({
       ok: true,
       status: 200,
-      body: { messages: [conversationMessage] },
+      body: { messages: [conversationMessage], nextCursor: 'cur-next' },
     });
     const signal = new AbortController().signal;
     await expect(
       fetchConversation('sess', 'c1', { sinceMessageId: 'gift-1', signal }),
-    ).resolves.toEqual([conversationMessage]);
-    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?sinceMessageId=gift-1', {
+    ).resolves.toEqual({ messages: [conversationMessage], nextCursor: 'cur-next' });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?limit=20&sinceMessageId=gift-1', {
       headers: { Authorization: 'Bearer sess' },
       signal,
+    });
+  });
+
+  it('requests an older page with the cursor after the limit', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [conversationMessage] },
+    });
+    await expect(fetchConversation('sess', 'c1', { cursor: 'cur_old' })).resolves.toEqual({
+      messages: [conversationMessage],
+      nextCursor: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?limit=20&cursor=cur_old', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('ignores empty cursor and sinceMessageId values', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchConversation('sess', 'c1', { cursor: '', sinceMessageId: '' });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/c1?limit=20', {
+      headers: { Authorization: 'Bearer sess' },
     });
   });
 
@@ -3490,47 +3515,6 @@ describe('fetchFundingApplication', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { account: {} } });
     await expect(fetchFundingApplication('sess', 'acc_1')).rejects.toThrow(loadError);
-  });
-});
-
-describe('postFundingTrial', () => {
-  const result = {
-    id: 'acc_1',
-    name: 'Carol',
-    role: 'verified' as const,
-    funding: {
-      status: 'trial' as const,
-      trialUtcDate: '2026-09-20',
-      admittedAt: null,
-      reviewedByName: 'Ada',
-    },
-  };
-
-  it('posts Bearer JSON { accountId } to /funding/trial', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
-    await expect(postFundingTrial('sess', 'acc_1')).resolves.toEqual(result);
-    expect(fetchMock).toHaveBeenCalledWith('/funding/trial', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer sess',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ accountId: 'acc_1' }),
-    });
-  });
-
-  it('throws visitor copy on a non-ok response', async () => {
-    stubFetch({ ok: false, status: 409, body: {} });
-    await expect(postFundingTrial('sess', 'acc_1')).rejects.toThrow(
-      'Could not update this member. Please try again.',
-    );
-  });
-
-  it('throws visitor copy when fetch itself fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    await expect(postFundingTrial('sess', 'acc_1')).rejects.toThrow(
-      'Could not update this member. Please try again.',
-    );
   });
 });
 

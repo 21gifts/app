@@ -335,7 +335,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === 'POST' && pathName === '/translate') {
+  if (method === 'POST' && pathName === '/v2/translate') {
     let parsed;
     try {
       parsed = JSON.parse(rawBody);
@@ -343,18 +343,21 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Invalid body' });
       return;
     }
-    const q = parsed?.q;
-    if (typeof q !== 'string') {
+    const text = parsed?.text;
+    if (!Array.isArray(text) || text.length === 0 || typeof text[0] !== 'string') {
       json(res, 400, { error: 'Invalid body' });
       return;
     }
+    const q = text[0];
     if (q.includes('Kann mir jemand')) {
       json(res, 200, {
-        translatedText: 'Can anyone lend me a few satoshi this week?',
+        translations: [{ text: 'Can anyone lend me a few satoshi this week?' }],
       });
       return;
     }
-    json(res, 200, { translatedText: '[' + (parsed.target || 'en') + '] ' + q });
+    json(res, 200, {
+      translations: [{ text: '[' + (parsed.target_lang || 'EN') + '] ' + q }],
+    });
     return;
   }
 
@@ -766,8 +769,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (method === 'GET') {
+      const parsedLimit = Number(url.searchParams.get('limit'));
+      const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 20;
+      const cursor = url.searchParams.get('cursor');
+      const cursorIndex =
+        cursor === null
+          ? thread.messages.length
+          : thread.messages.findIndex((message) => message.id === cursor);
+      const endIndex = cursorIndex >= 0 ? cursorIndex : thread.messages.length;
+      const startIndex = Math.max(0, endIndex - limit);
+      const page = thread.messages.slice(startIndex, endIndex);
       json(res, 200, {
-        messages: thread.messages.map((message) => ({
+        messages: page.map((message) => ({
           id: message.id,
           name: message.name,
           text: message.text,
@@ -778,6 +791,7 @@ const server = http.createServer(async (req, res) => {
             ? { giftFor: message.giftFor }
             : {}),
         })),
+        ...(page.length === limit && startIndex > 0 ? { nextCursor: page[0].id } : {}),
       });
       return;
     }

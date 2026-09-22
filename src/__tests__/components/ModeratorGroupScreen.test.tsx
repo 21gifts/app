@@ -106,12 +106,21 @@ const MESSAGE: ConversationMessage = {
   photoCount: 0,
 };
 
+type ConversationPage = Awaited<ReturnType<typeof fetchConversation>>;
+
+function conversationPage(
+  messages: ConversationMessage[],
+  nextCursor: string | null = null,
+): ConversationPage {
+  return { messages, nextCursor };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockClear();
   push.mockReset();
   groupMock.mockResolvedValue(GROUP);
-  threadMock.mockResolvedValue([MESSAGE]);
+  threadMock.mockResolvedValue(conversationPage([MESSAGE]));
   markReadMock.mockResolvedValue(undefined);
   refreshMock.mockResolvedValue(undefined);
   giftStatsMock.mockReset();
@@ -169,7 +178,7 @@ describe('ModeratorGroupScreen', () => {
             resolveGroup = resolve;
           }),
       );
-      threadMock.mockResolvedValue([MESSAGE]);
+      threadMock.mockResolvedValue(conversationPage([MESSAGE]));
       renderWithLocale(<ModeratorGroupScreen />);
       expect(screen.getByRole('heading', { name: 'Moderators chat group' })).toBeTruthy();
       expect(screen.getByText('Loading…')).toBeTruthy();
@@ -194,7 +203,7 @@ describe('ModeratorGroupScreen', () => {
 
   it('shows an error and retries', async () => {
     groupMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(GROUP);
-    threadMock.mockResolvedValue([MESSAGE]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<ModeratorGroupScreen />);
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not load the staff room. Please try again.');
@@ -243,7 +252,7 @@ describe('ModeratorGroupScreen', () => {
 
   it('ignores a stale thread resolve after unmount', async () => {
     groupMock.mockResolvedValue(GROUP);
-    let resolveThread: ((value: ConversationMessage[]) => void) | undefined;
+    let resolveThread: ((value: ConversationPage) => void) | undefined;
     threadMock.mockImplementation(
       () =>
         new Promise((resolve) => {
@@ -256,7 +265,7 @@ describe('ModeratorGroupScreen', () => {
     });
     view.unmount();
     await act(async () => {
-      resolveThread?.([MESSAGE]);
+      resolveThread?.(conversationPage([MESSAGE]));
       await Promise.resolve();
     });
     expect(screen.queryByText('Hello mods')).toBeNull();
@@ -365,7 +374,7 @@ describe('ModeratorGroupScreen', () => {
         },
       ],
     } as never);
-    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     await waitFor(() => {
@@ -376,7 +385,7 @@ describe('ModeratorGroupScreen', () => {
 
   it('survives a failing stats fetch', async () => {
     giftStatsMock.mockRejectedValueOnce(new Error('stats down'));
-    threadMock.mockResolvedValue([{ ...MESSAGE, sats: 21 }]);
+    threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();
@@ -504,15 +513,17 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('loads a stored photo when hasPhoto is true and photoCount is 0', async () => {
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-legacy',
-        text: '',
-        hasPhoto: true,
-        photoCount: 0,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-legacy',
+          text: '',
+          hasPhoto: true,
+          photoCount: 0,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -529,15 +540,17 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('loads a stored photo blob for a hasPhoto row', async () => {
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -561,15 +574,17 @@ describe('ModeratorGroupScreen', () => {
           resolvePhoto = resolve;
         }),
     );
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -592,15 +607,17 @@ describe('ModeratorGroupScreen', () => {
 
   it('revokes loaded photo blobs and drops drafts when the account is no longer staff', async () => {
     const revoke = vi.fn();
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -630,15 +647,17 @@ describe('ModeratorGroupScreen', () => {
 
   it('revokes photo blobs that are no longer on the thread', async () => {
     const revoke = vi.fn();
-    threadMock.mockResolvedValueOnce([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValueOnce(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -651,7 +670,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    threadMock.mockResolvedValueOnce([MESSAGE]);
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE]));
     act(() => {
       useAuthStore.setState({ session: 'sess-2', account });
     });
@@ -663,23 +682,25 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('skips a still when the photo fetch fails and loads the next', async () => {
-    threadMock.mockResolvedValue([
-      {
-        ...MESSAGE,
-        id: 'm-fail',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-      {
-        ...MESSAGE,
-        id: 'm-ok',
-        name: 'Bob',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]);
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-fail',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+        {
+          ...MESSAGE,
+          id: 'm-ok',
+          name: 'Bob',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     photoMock
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
@@ -698,5 +719,126 @@ describe('ModeratorGroupScreen', () => {
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
     expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-fail', 0);
     expect(photoMock).toHaveBeenCalledWith('sess', 'conv-mod', 'm-ok', 0);
+  });
+});
+
+describe('moderator conversation thread pages', () => {
+  class FakeIntersectionObserver {
+    static instances: FakeIntersectionObserver[] = [];
+    callback: IntersectionObserverCallback;
+    observed: Element[] = [];
+
+    constructor(cb: IntersectionObserverCallback) {
+      this.callback = cb;
+      FakeIntersectionObserver.instances.push(this);
+    }
+
+    observe(el: Element): void {
+      this.observed.push(el);
+    }
+
+    unobserve(): void {}
+
+    disconnect(): void {}
+
+    trigger(isIntersecting = true): void {
+      this.callback(
+        this.observed.map((target) => ({ isIntersecting, target }) as IntersectionObserverEntry),
+        this as unknown as IntersectionObserver,
+      );
+    }
+  }
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('prepends older unique messages from the next cursor page', async () => {
+    const older = {
+      ...MESSAGE,
+      id: 'm-old',
+      text: 'Older message',
+      createdAt: '2026-08-27T15:00:00.000Z',
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE], 'cur_2'))
+      .mockResolvedValueOnce(conversationPage([older, MESSAGE]));
+    const { container } = renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger(false);
+    });
+    expect(threadMock).toHaveBeenCalledTimes(1);
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    expect(await screen.findByText('Older message')).toBeTruthy();
+    expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id, { cursor: 'cur_2' });
+    expect(container.querySelectorAll('[data-message-id="m1"]')).toHaveLength(1);
+    const ids = [...container.querySelectorAll('[data-message-id]')].map((node) =>
+      node.getAttribute('data-message-id'),
+    );
+    expect(ids).toEqual(['m-old', 'm1']);
+  });
+
+  it('does not create an observer or fetch a cursor page without a next cursor', async () => {
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
+    expect(threadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start a second cursor fetch while the first is in flight', async () => {
+    const older = { ...MESSAGE, id: 'm-old', text: 'Older message' };
+    let resolvePageTwo: (page: ConversationPage) => void = () => undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE], 'cur_2')).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePageTwo = resolve;
+        }),
+    );
+    renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    expect(threadMock).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      resolvePageTwo(conversationPage([older]));
+    });
+    expect(await screen.findByText('Older message')).toBeTruthy();
+  });
+
+  it('keeps the loaded first page when a cursor fetch rejects', async () => {
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE], 'cur_2'))
+      .mockRejectedValueOnce(new Error('boom'));
+    renderWithLocale(<ModeratorGroupScreen />);
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await waitFor(() => {
+      expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id, { cursor: 'cur_2' });
+    });
+    expect(screen.getByText('Hello mods')).toBeTruthy();
+    expect(screen.queryByText('Could not load the staff room. Please try again.')).toBeNull();
   });
 });

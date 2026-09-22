@@ -781,13 +781,13 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** Then the same forum board as `/welcome` (Active / No gifts yet / All / Most popular, composer with photo/video, note cards) listing top-level notes from `GET /messages?hashtag=21GiftsShop` (app proxy `/forum/messages`). The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Post a shop (text and/or photo or video), switch the forum view, expand a note, open Menu including **Shops**, back to the forum.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Post a shop (text and/or photo or video), expand a note, open Menu including **Shops**, back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`.
 
 ### Variant: default
 
-Heading **Shops**, lead, composer, one shop note **Cafe Luna** with a `#Shop` pill. Laws hint absent. Raw `#21GiftsShop` is not visible.
+Heading **Shops**, lead, composer (mode selector absent), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
 
 ![21.gifts shops](images/shops.png)
 
@@ -1104,7 +1104,7 @@ Basis owner. Grant section after the address form. Copy **You are not verified y
 
 ### Variant: funding-none
 
-Verified owner with `funding.status` **none**. Copy **You are not admitted to daily 21.gifts grant payouts.** Grace copy that daily gifts continue until 25 September 2026. Button **Apply for the 21 gifts grant**. Three conviction titles and an **About** link.
+Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and button **Apply for the 21 gifts grant**. No denial sentence and no conviction titles.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
 
@@ -1141,7 +1141,7 @@ Verified owner with `funding.status` **admitted**. Copy **You are admitted to da
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for oldest-first messages and a 500-character composer plus sats amount field (no filter, no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The open thread starts scrolled to the bottom (newest + composer). An open pay sheet is included in that bottom pin. Returning via **All conversations** scrolls the conversation list to the top once. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every sats amount in an open thread also shows the preferred-fiat suffix (or ₿-only without a usable rate). A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 500-character composer plus sats amount field (no filter, no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer); prepending older pages does not retrigger that newest-id pin. An open pay sheet is included in that bottom pin. Returning via **All conversations** scrolls the conversation list to the top once. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every sats amount in an open thread also shows the preferred-fiat suffix (or ₿-only without a usable rate). A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row.
 - **Actions:** Open a thread, send a reply, return via **All conversations** (chrome link; the list starts at the top), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
 - **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchPublicMessage`, `postConversationMessage`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -1410,7 +1410,7 @@ Staff (moderator) Confirm as moderator POST in flight. Confirm disabled with a s
 ## Screen: /moderate/applications
 
 - **URL:** `/moderate/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/moderate`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Staff rows: applicant name (link `/moderate/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Lead **Pick a person, then walk each principle and whether the posts are true.** Staff rows: applicant name (link `/moderate/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
 - **Actions:** In-card icon back to hub. Open an applicant to `/moderate/applications/{id}`. Staff **Try again** on list error. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationsPage`, `FundingApplicationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplications`.
 - **Auth:** Bearer; list only for founder|moderator.
@@ -1448,14 +1448,14 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 ## Screen: /moderate/applications/[accountId]
 
 - **URL:** `/moderate/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff: applicant name (link `/members/{id}`), applied time, the three convictions as criteria, living-room posts, and status-gated **Trial** / **Admit** / **Reject** (Trial only when `grant.status` is pending; Admit and Reject when pending or trial). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
-- **Actions:** In-card icon back to the queue. Staff Trial / Admit / Reject / Try again. Open Menu. Back to the forum.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingTrial`, `postFundingAdmit`, `postFundingReject`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff walk four steps: principles 1–3 (lead, title, summary, living-room posts, **Requirement met** / **Requirement not met**), then whether the posts are true (**Yes** / **No**). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **Actions:** In-card icon back to the queue. Staff **Requirement met** advances; **Requirement not met** or **No** posts reject; **Yes** on the last step posts admit. Try again. Open Menu. Back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
 
 ### Variant: default
 
-Staff (founder) loaded application for **Rose** with a living-room post and **Trial** / **Admit** / **Reject**.
+Staff (founder) loaded application for **Rose** with a living-room post on principle 1. **Requirement met** / **Requirement not met**.
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
 
@@ -1467,7 +1467,7 @@ Signed-in basis account. Copy **This page is for moderators.** No fetch.
 
 ### Variant: empty
 
-Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** Trial / Admit / Reject still visible.
+Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** Principle 1 and **Requirement met** / **Requirement not met** still visible.
 
 ![21.gifts grant application empty](images/moderate-applications-accountId-empty.png)
 
@@ -1485,28 +1485,40 @@ Staff (founder) detail fetch failed. Copy **Could not load this application. Ple
 
 ### Variant: decide-failed
 
-Staff (founder) Trial POST failed. Copy **Could not update this member. Please try again.**
+Staff (founder) Reject POST failed after **Requirement not met**. Copy **Could not update this member. Please try again.**
 
 ![21.gifts grant application decide failed](images/moderate-applications-accountId-decide-failed.png)
 
 ### Variant: deciding
 
-Staff (founder) Trial POST in flight. Trial disabled with a spinner; application still visible.
+Staff (founder) Reject POST in flight. **Requirement not met** disabled with a spinner; application still visible.
 
 ![21.gifts grant application deciding](images/moderate-applications-accountId-deciding.png)
 
-### Variant: trial
+### Variant: principle-2
 
-Staff (founder) loaded application whose `grant.status` is **trial**. **Admit** and **Reject** visible; **Trial** absent.
+Staff (founder) after **Requirement met** on principle 1. Copy **Please check whether the posts match principle 2.**
 
-![21.gifts grant application trial](images/moderate-applications-accountId-trial.png)
+![21.gifts grant application principle 2](images/moderate-applications-accountId-principle-2.png)
+
+### Variant: principle-3
+
+Staff (founder) after **Requirement met** on principles 1 and 2. Copy **Please check whether the posts match principle 3.**
+
+![21.gifts grant application principle 3](images/moderate-applications-accountId-principle-3.png)
+
+### Variant: truth
+
+Staff (founder) after **Requirement met** on principles 1–3. Copy **Do these posts, to your knowledge, correspond to the truth?** Buttons **Yes** / **No**.
+
+![21.gifts grant application truth](images/moderate-applications-accountId-truth.png)
 
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators chat group**. Moderators fetch the singleton group then the thread and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators chat group** (never the api row name); the composer has **Add a photo** (JPEG/PNG/WebP, up to 10) and no **Amount** field (no gifts). A pasted `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card. The loaded staff-room thread starts scrolled to the bottom (newest + composer). After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Other signed-in visitors see heading **Moderators chat group** plus **This room is for moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages. A thread message that another message's `giftFor` points at shows that gift attached under it as a compact `role="note"` line (name, ₿ amount, preferred-fiat suffix, time) instead of as its own bubble. Every sats amount in the thread (gift-only, text+sats, and the nested line) shows the same preferred-fiat suffix the forum already shows, or ₿-only without a usable rate.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators chat group**. Moderators fetch the singleton group then the newest 20-message page and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators chat group** (never the api row name); the composer has **Add a photo** (JPEG/PNG/WebP, up to 10) and no **Amount** field (no gifts). A pasted `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card. The loaded staff-room thread starts scrolled to the bottom (newest + composer). Older pages prepend near the oldest bubble and do not retrigger that newest-id pin. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Other signed-in visitors see heading **Moderators chat group** plus **This room is for moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages. A thread message that another message's `giftFor` points at shows that gift attached under it as a compact `role="note"` line (name, ₿ amount, preferred-fiat suffix, time) instead of as its own bubble. Every sats amount in the thread (gift-only, text+sats, and the nested line) shows the same preferred-fiat suffix the forum already shows, or ₿-only without a usable rate.
 - **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Moderators attach photos, send a reply (text and/or photos), and **Try again** on fetch error. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, `fetchConversation`, `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `markConversationRead`, `refreshUnreadAppBadge`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, the newest 20-message page via `fetchConversation`, `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch.
 
 ### Variant: default

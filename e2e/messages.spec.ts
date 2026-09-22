@@ -331,7 +331,7 @@ test('inbox thread shows Hello team', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -467,7 +467,7 @@ test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) 
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -547,7 +547,7 @@ test('inbox gift-only bubble shows send ₿21', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -626,7 +626,7 @@ test('inbox inbound text+sats shows Hi and ₿21', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -698,7 +698,7 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
       }),
     });
   });
-  await page.route(/\/conversations\/conv-21$/, async (route) => {
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

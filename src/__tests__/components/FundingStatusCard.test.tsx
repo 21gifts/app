@@ -99,17 +99,22 @@ describe('FundingStatusCard', () => {
     expect(applyMock).not.toHaveBeenCalled();
   });
 
-  it('shows apply for none status with convictions and About link', () => {
+  it('shows apply for none status with About link', () => {
     renderWithLocale(<FundingStatusCard />);
-    expect(screen.getByText('You are not admitted to daily 21.gifts grant payouts.')).toBeTruthy();
+    expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();
+    expect(
+      screen.queryByText(
+        'Daily grants go to people whose living-room posts reflect the three convictions.',
+      ),
+    ).toBeNull();
+    expect(screen.queryByText('Giving is a duty')).toBeNull();
+    expect(screen.queryByText('Direct, with no middleman')).toBeNull();
+    expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
     expect(
       screen.getByText(
         'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('Giving is a duty')).toBeTruthy();
-    expect(screen.getByText('Direct, with no middleman')).toBeTruthy();
-    expect(screen.getByText('Bitcoin is the most effective money')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
   });
@@ -129,7 +134,15 @@ describe('FundingStatusCard', () => {
       },
     });
     renderWithLocale(<FundingStatusCard />);
-    expect(screen.getByText('You are not admitted to daily 21.gifts grant payouts.')).toBeTruthy();
+    expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();
+    expect(screen.queryByText('Giving is a duty')).toBeNull();
+    expect(screen.queryByText('Direct, with no middleman')).toBeNull();
+    expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
+    expect(
+      screen.getByText(
+        'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
   });
 

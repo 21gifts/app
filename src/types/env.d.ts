@@ -31,14 +31,14 @@ declare global {
        */
       APP_VERSION?: string;
       /**
-       * Optional same-origin translation proxy upstream base URL. Missing, empty,
-       * or non-http(s) values disable translation (`available: false` / POST 503).
+       * Full DeepL API v2 POST URL, used as-is (example: `https://api.deepl.com/v2/translate`).
+       * Missing, empty, or non-http(s) values disable translation.
        * Tests assign it.
        */
       TRANSLATE_URL?: string;
       /**
-       * Optional LibreTranslate-compatible API key, sent only when `TRANSLATE_URL`
-       * is set. Tests assign it.
+       * Required DeepL auth key. Missing or blank after trim disables translation
+       * even when the URL is set. Tests assign it.
        */
       TRANSLATE_API_KEY?: string;
       /** Set by CI systems (GitHub Actions sets `"true"`); read by `playwright.config.ts`. */

@@ -6464,7 +6464,7 @@ test.describe('contact screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6707,7 +6707,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6786,7 +6786,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6839,7 +6839,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6884,7 +6884,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -6958,7 +6958,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-21$/, async (route) => {
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -7706,27 +7706,59 @@ test.describe('moderate applications screens', () => {
     await page.goto('/moderate/applications/acc_rose');
     await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
     await expect(page.getByText('Living-room note.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Trial' })).toBeVisible();
+    await expect(page.getByText('Please check whether the posts match principle 1.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Requirement met' })).toBeVisible();
     await shotScreen(page, 'screen-moderate-applications-accountId');
   });
 
-  test('moderate applications accountId trial', async ({ page }) => {
+  test('moderate applications accountId principle-2', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          ...DETAIL,
-          grant: { ...DETAIL.grant, status: 'trial', trialUtcDate: '2026-09-20' },
-        }),
+        body: JSON.stringify(DETAIL),
       });
     });
     await page.goto('/moderate/applications/acc_rose');
-    await expect(page.getByRole('button', { name: 'Admit' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Trial' })).toHaveCount(0);
-    await shotScreen(page, 'state-moderate-applications-accountId-trial');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(page.getByText('Please check whether the posts match principle 2.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-principle-2');
+  });
+
+  test('moderate applications accountId principle-3', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(page.getByText('Please check whether the posts match principle 3.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-principle-3');
+  });
+
+  test('moderate applications accountId truth', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-truth');
   });
 
   test('moderate applications accountId forbidden', async ({ page }) => {
@@ -7786,7 +7818,7 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify(DETAIL),
       });
     });
-    await page.route('**/funding/trial', async (route) => {
+    await page.route('**/funding/reject', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -7794,7 +7826,7 @@ test.describe('moderate applications screens', () => {
       });
     });
     await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Trial' }).click();
+    await page.getByRole('button', { name: 'Requirement not met' }).click();
     await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-accountId-decide-failed');
   });
@@ -7808,12 +7840,12 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify(DETAIL),
       });
     });
-    await page.route('**/funding/trial', async () => {
+    await page.route('**/funding/reject', async () => {
       /* hang */
     });
     await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Trial' }).click();
-    await expect(page.getByRole('button', { name: 'Trial' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Requirement not met' }).click();
+    await expect(page.getByRole('button', { name: 'Requirement not met' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-applications-accountId-deciding');
   });
 });
@@ -7880,7 +7912,7 @@ test.describe('moderate group screens', () => {
       photoCount?: number;
     }>,
   ): Promise<void> {
-    await page.route('**/conversations/conv-mod', async (route) => {
+    await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

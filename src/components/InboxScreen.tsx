@@ -72,7 +72,7 @@ function listPreviewClass(fromMe: boolean): string {
     : 'line-clamp-2 text-sm text-app-muted';
 }
 
-/** Stable empty map so thread pin-to-bottom does not retrigger when callers omit photoUrls. */
+/** Stable empty map so omitted photoUrls do not invent a new object each render. */
 const EMPTY_PHOTO_URLS: Readonly<Record<string, string>> = {};
 
 /**
@@ -152,6 +152,8 @@ export interface InboxScreenProps {
   messagesError: boolean;
   /** Retry handler for a failed thread fetch. */
   onRetryMessages: () => void;
+  /** Ref attached near the oldest rendered bubble to prefetch an older page. */
+  nearStartRef?: (node: HTMLLIElement | null) => void;
   /** Composer draft text. */
   draft: string;
   /** Called when the composer value changes. */
@@ -349,11 +351,15 @@ function inboxAuthorProfileButton(
  * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
  * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
  * An open thread pins the AppShell scroller to the bottom after messages
- * render, and again when an invoice pay sheet opens. Inside AppShell the pin
- * waits for that scroller and does not fall back to `window` while the node
- * is missing; `window` is only the no-shell fallback. Leaving a thread
- * scrolls that scroller to the top once so the conversation list is not left
- * at the thread offset.
+ * render, when the newest bubble's stills load, and again when an invoice pay
+ * sheet opens. Stills on older prepended pages do not retrigger that pin.
+ * Inside AppShell the pin waits for that scroller and does not fall back to
+ * `window` while the node is missing; `window` is only the no-shell fallback.
+ * Leaving a thread scrolls that scroller to the top once so the conversation
+ * list is not left at the thread offset. A supplied `nearStartRef` is attached
+ * to the eighth grouped bubble from the start, or the first bubble when fewer
+ * than eight render, so loaders can prepend older pages without changing the
+ * newest id.
  *
  * @param props - List/thread/composer state from {@link InboxLoader} or
  *   {@link ModeratorGroupScreen}.
@@ -370,6 +376,7 @@ export function InboxScreen({
   messagesLoading,
   messagesError,
   onRetryMessages,
+  nearStartRef,
   draft,
   onDraftChange,
   onPost,
@@ -404,12 +411,24 @@ export function InboxScreen({
   const [showPaymentQr, setShowPaymentQr] = useState(false);
 
   const messagesReady = messages !== null;
+  const groups = messages === null ? [] : groupThreadGifts(messages);
   let lastMessageId = '';
   if (messages !== null && messages.length > 0) {
     const last = messages[messages.length - 1];
     /* v8 ignore next -- length > 0, so the last index exists */
     lastMessageId = last === undefined ? '' : last.id;
   }
+  const lastBubble = groups.length > 0 ? groups[groups.length - 1] : undefined;
+  const lastBubbleId = lastBubble === undefined ? '' : lastBubble.message.id;
+  const lastPhotoPrefix = `${lastBubbleId}:`;
+  const lastPhotoUrls =
+    lastBubbleId === ''
+      ? ''
+      : Object.entries(photoUrls)
+          .filter(([key]) => key.startsWith(lastPhotoPrefix))
+          .map(([key, url]) => `${key}=${url}`)
+          .sort()
+          .join('\0');
 
   useEffect(() => {
     /* v8 ignore next 3 -- SSR has no navigator */
@@ -442,7 +461,7 @@ export function InboxScreen({
     lastMessageId,
     scroller,
     inShell,
-    photoUrls,
+    lastPhotoUrls,
   ]);
 
   useLayoutEffect(() => {
@@ -590,11 +609,14 @@ export function InboxScreen({
         ) : null}
         {messages !== null ? (
           <ul aria-label={t('inbox.threadLabel')} className="flex w-full flex-col gap-3">
-            {groupThreadGifts(messages).map(({ message, gifts }) => (
+            {groups.map(({ message, gifts }, index) => (
               <li
                 key={message.id}
                 data-message-id={message.id}
                 data-from-me={message.fromMe ? 'true' : 'false'}
+                {...(nearStartRef !== undefined && index === (groups.length >= 8 ? 7 : 0)
+                  ? { ref: nearStartRef }
+                  : {})}
                 className={
                   message.fromMe
                     ? 'self-end w-fit max-w-[85%] rounded-2xl rounded-br-md bg-app-btn px-4 py-3 text-app-btn-fg'

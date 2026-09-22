@@ -93,11 +93,53 @@ test('Function: ShopsScreen — lead is visible', async ({ page }) => {
 });
 
 test('Function: isShopNote — shop note is listed', async ({ page }) => {
-  await seedShopList(page);
+  await seedSignedIn(page);
+  const listUrls: string[] = [];
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    listUrls.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          SHOP_NOTE,
+          {
+            id: 'm-shop-quiet',
+            name: 'Ada',
+            text: 'Quiet stall\n\n#21GiftsShop',
+            createdAt: '2026-08-28T11:30:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+          LIVING_ROOM_NOTE,
+        ],
+      }),
+    });
+  });
   await page.goto('/shops');
+  await expect(page.getByText('Quiet stall')).toBeVisible();
   await expect(page.getByText('Cafe Luna')).toBeVisible();
-  await expect(page.getByRole('link', { name: '#Shop' })).toHaveAttribute('href', '/shops');
+  const shopLinks = page.getByRole('link', { name: '#Shop' });
+  await expect(shopLinks).toHaveCount(2);
+  await expect(shopLinks.nth(0)).toHaveAttribute('href', '/shops');
+  await expect(shopLinks.nth(1)).toHaveAttribute('href', '/shops');
   await expect(page.getByText('Hello from Ada')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Active', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'No gifts yet', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Most popular', exact: true })).toHaveCount(0);
+  expect(listUrls.length).toBeGreaterThan(0);
+  for (const url of listUrls) {
+    expect(url).toContain('mode=all');
+    expect(url).toContain('hashtag=21GiftsShop');
+    expect(url).not.toContain('mode=active');
+  }
 });
 
 test('Function: stripShopHashtag — raw hashtag is hidden', async ({ page }) => {

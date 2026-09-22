@@ -338,7 +338,7 @@
 
 ## Endpoint: GET /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id` (oldest-first messages). Each message has required `fromMe` (true iff this session is the actor) and `sats`, `hasPhoto` / `photoCount` (client defaults omitted fields to false / 0), and optional `accountId` (sender). For a staff viewer, incoming `name` and optional `accountId` are the actor. Members still see platform identity (`21.gifts`) on official replies. Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
+- **Purpose:** Same-origin Bearer proxy of api GET `/conversations/:id?limit=&cursor=`. The client always sends `limit=20`; optional `cursor` requests the next older page and optional `sinceMessageId` long-polls. Body `{ messages, nextCursor? }` (oldest-first within the page). Each message has required `fromMe` (true iff this session is the actor) and `sats`, `hasPhoto` / `photoCount` (client defaults omitted fields to false / 0), and optional `accountId` (sender). For a staff viewer, incoming `name` and optional `accountId` are the actor. Members still see platform identity (`21.gifts`) on official replies. Optional query `sinceMessageId` is forwarded for gift pay-sheet polling.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchConversation` on `/messages?c=` and on `/moderate/group`.
 - **Auth:** Bearer.
@@ -473,7 +473,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/trial` with `{ accountId }`. Target must be effective pending.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
-- **Used by:** `postFundingTrial` in `FundingApplicationDetailScreen`.
+- **Used by:** `proxyFundingTrialPost` (API still exposes trial; the staff UI no longer calls it).
 - **Auth:** Bearer (founder or moderator).
 
 ## Endpoint: POST /funding/admit
@@ -506,14 +506,14 @@
 
 ## Endpoint: GET /translate
 
-- **Purpose:** `{ available: boolean }` from `TRANSLATE_URL` (no upstream call). Always 200.
-- **Errors:** none (invalid URL treated as unavailable).
+- **Purpose:** `{ available: boolean }` is true only when `TRANSLATE_URL` is a valid http(s) URL and `TRANSLATE_API_KEY` is non-blank after trim. No upstream call. Always 200.
+- **Errors:** none (missing, blank, or invalid URL; missing or blank key — all treated as unavailable).
 - **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
 - **Auth:** Public.
 
 ## Endpoint: POST /translate
 
-- **Purpose:** `{ text, target }` → LibreTranslate-compatible upstream; returns `{ translatedText }`. `fil` maps to `tl`. Max 500 chars. 15s timeout. Does not forward Authorization.
+- **Purpose:** `{ text, target }` → DeepL API v2 (`text` array, `target_lang`; `fil`→`TL`; `en`/`de`/`es`→`EN`/`DE`/`ES`). Server POSTs `TRANSLATE_URL` as-is with `authorization: DeepL-Auth-Key …`. Returns `{ translatedText }`. Max 500 chars. 15s timeout. Does not forward incoming Authorization. Does not send `source_lang`.
 - **Errors:** 400 invalid body, 503 not configured, 502 upstream.
 - **Used by:** `translateNote` from `NoteTranslate`.
 - **Auth:** Public.

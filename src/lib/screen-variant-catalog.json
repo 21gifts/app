@@ -1236,9 +1236,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/moderate/applications/[accountId]:trial",
-    "label": "/moderate/applications/[accountId] trial",
-    "visual": "state-moderate-applications-accountId-trial",
+    "id": "/moderate/applications/[accountId]:principle-2",
+    "label": "/moderate/applications/[accountId] principle-2",
+    "visual": "state-moderate-applications-accountId-principle-2",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:principle-3",
+    "label": "/moderate/applications/[accountId] principle-3",
+    "visual": "state-moderate-applications-accountId-principle-3",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/applications/[accountId]:truth",
+    "label": "/moderate/applications/[accountId] truth",
+    "visual": "state-moderate-applications-accountId-truth",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -632,6 +632,7 @@ export const conversationMessageSchema = z.object({
  */
 export const conversationThreadSchema = z.object({
   messages: z.array(conversationMessageSchema),
+  nextCursor: z.string().min(1).optional(),
 });
 
 /**

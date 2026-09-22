@@ -225,6 +225,30 @@ describe('groupThreadGifts', () => {
 });
 
 describe('InboxScreen', () => {
+  it('attaches nearStartRef to the eighth grouped bubble from the start', () => {
+    const messages = Array.from({ length: 10 }, (_, index) => ({
+      ...MESSAGE,
+      id: `m${index + 1}`,
+      text: `Message ${index + 1}`,
+    }));
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />);
+
+    expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m8"]'));
+  });
+
+  it('attaches nearStartRef to the first grouped bubble when fewer than eight render', () => {
+    const messages = [MESSAGE, { ...MESSAGE, id: 'm2', text: 'Second message' }];
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />);
+
+    expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m1"]'));
+  });
+
   it('shows loading copy', () => {
     renderWithLocale(
       <InboxScreen
@@ -1619,6 +1643,91 @@ describe('InboxScreen', () => {
           {...inboxScreenProps({
             invoice: { pr: 'lnbc21n1test', amountSats: 21 },
             payWaiting: true,
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('does not pin to the bottom when an older still loads', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const older = { ...MESSAGE, id: 'm-old', text: 'Older', hasPhoto: true, photoCount: 1 };
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [older, newest], photoUrls: {} })} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [older, newest],
+            photoUrls: { 'm-old:0': 'blob:old' },
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).not.toHaveBeenCalled();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [older, newest],
+            photoUrls: { 'm-old:0': 'blob:old', 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('pins to the bottom when the newest bubble still loads under a nested gift', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const parent = { ...MESSAGE, id: 'm-photo', hasPhoto: true, photoCount: 1 };
+    const gift = {
+      ...MESSAGE,
+      id: 'g1',
+      giftFor: 'm-photo',
+      sats: 21,
+      text: '',
+    };
+    const { rerender } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen {...inboxScreenProps({ messages: [parent, gift], photoUrls: {} })} />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    rerender(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [parent, gift],
+            photoUrls: { 'm-photo:0': 'blob:parent' },
           })}
         />
       </AppShell>,

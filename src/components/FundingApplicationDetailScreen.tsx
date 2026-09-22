@@ -6,12 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
-import {
-  fetchFundingApplication,
-  postFundingAdmit,
-  postFundingReject,
-  postFundingTrial,
-} from '@/lib/api';
+import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
 import type { FundingApplicationDetail } from '@/lib/api-types';
 import { formatForumTime, formatForumTimeFromMs } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
@@ -28,16 +23,17 @@ function personLabel(name: string | null, unnamed: string): string {
   return name !== null && name !== '' ? name : unnamed;
 }
 
+type ReviewStep = 1 | 2 | 3 | 4;
+
 /**
  * Signed-in staff review of one 21 gifts grant application.
  *
- * Founders and moderators see the applicant, living-room posts, the three
- * convictions as criteria, and status-gated Trial / Admit / Reject (Trial only
- * when `grant.status` is `pending`; Admit and Reject when `pending` or
- * `trial`). Other signed-in visitors see a short forbidden message and no
- * fetch. Renders nothing without a session. In-card back goes to the
- * open-applications queue. A failed decision shows `trustChain.actionFailed`.
- * A successful decision leaves the buttons disabled until unmount.
+ * Founders and moderators walk four steps: principles 1–3 against living-room
+ * posts (no replies), then whether the posts are true to the reviewer's
+ * knowledge. **Requirement met** advances; **Requirement not met** or **No**
+ * posts reject. **Yes** on the last step posts admit. Other signed-in
+ * visitors see forbidden copy and no fetch. Renders nothing without a
+ * session. In-card back goes to the open-applications queue.
  *
  * @param props - Dynamic route `accountId`.
  * @returns The detail card, forbidden copy, or `null` without a session.
@@ -55,6 +51,7 @@ export function FundingApplicationDetailScreen({
   const [detail, setDetail] = useState<FundingApplicationDetail | null>(null);
   const [detailError, setDetailError] = useState(false);
   const [detailAttempt, setDetailAttempt] = useState(0);
+  const [step, setStep] = useState<ReviewStep>(1);
   const [deciding, setDeciding] = useState(false);
   const [decideFailed, setDecideFailed] = useState(false);
 
@@ -65,6 +62,7 @@ export function FundingApplicationDetailScreen({
     let cancelled = false;
     setDetailError(false);
     setDecideFailed(false);
+    setStep(1);
     void (async () => {
       try {
         const next = await fetchFundingApplication(session, accountId);
@@ -115,15 +113,14 @@ export function FundingApplicationDetailScreen({
     );
   }
 
-  const decide = (kind: 'trial' | 'admit' | 'reject'): void => {
+  const finish = (kind: 'admit' | 'reject'): void => {
     /* v8 ignore next 3 — the action buttons are disabled while busy */
     if (deciding) {
       return;
     }
     setDeciding(true);
     setDecideFailed(false);
-    const run =
-      kind === 'trial' ? postFundingTrial : kind === 'admit' ? postFundingAdmit : postFundingReject;
+    const run = kind === 'admit' ? postFundingAdmit : postFundingReject;
     void (async () => {
       try {
         await run(session, accountId);
@@ -133,6 +130,18 @@ export function FundingApplicationDetailScreen({
         setDeciding(false);
       }
     })();
+  };
+
+  const onMet = (): void => {
+    if (step === 4) {
+      finish('admit');
+      return;
+    }
+    setStep((step + 1) as ReviewStep);
+  };
+
+  const onUnmet = (): void => {
+    finish('reject');
   };
 
   let body: ReactElement;
@@ -158,6 +167,8 @@ export function FundingApplicationDetailScreen({
   } else {
     const unnamed = t('moderate.unnamed');
     const name = personLabel(detail.account.name, unnamed);
+    const principle = step === 4 ? null : step;
+    const open = detail.grant.status === 'pending' || detail.grant.status === 'trial';
     body = (
       <>
         <p className="text-center text-sm font-medium text-app-fg">
@@ -168,18 +179,27 @@ export function FundingApplicationDetailScreen({
         <p className="text-center text-xs text-app-subtle">
           {formatForumTimeFromMs(detail.grant.appliedAt, locale)}
         </p>
-        <p className="text-center text-sm text-app-muted">{t('funding.detail.criteria')}</p>
-        <ul className="flex w-full flex-col gap-1">
-          <li className="text-center text-sm text-app-fg">{t('about.conv1Title')}</li>
-          <li className="text-center text-sm text-app-fg">{t('about.conv2Title')}</li>
-          <li className="text-center text-sm text-app-fg">{t('about.conv3Title')}</li>
-        </ul>
-        <Link
-          href="/about"
-          className="text-center text-sm text-app-fg underline underline-offset-2"
-        >
-          {t('nav.about')}
-        </Link>
+        {principle === 1 ? (
+          <>
+            <p className="text-center text-sm text-app-muted">{t('funding.review.check1')}</p>
+            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv1Title')}</p>
+            <p className="text-center text-sm text-app-muted">{t('about.conv1Body')}</p>
+          </>
+        ) : principle === 2 ? (
+          <>
+            <p className="text-center text-sm text-app-muted">{t('funding.review.check2')}</p>
+            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv2Title')}</p>
+            <p className="text-center text-sm text-app-muted">{t('about.conv2Body')}</p>
+          </>
+        ) : principle === 3 ? (
+          <>
+            <p className="text-center text-sm text-app-muted">{t('funding.review.check3')}</p>
+            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv3Title')}</p>
+            <p className="text-center text-sm text-app-muted">{t('about.conv3Body')}</p>
+          </>
+        ) : (
+          <p className="text-center text-sm text-app-muted">{t('funding.review.truth')}</p>
+        )}
         {detail.messages.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>
         ) : (
@@ -206,25 +226,8 @@ export function FundingApplicationDetailScreen({
             {t('trustChain.actionFailed')}
           </p>
         ) : null}
-        {detail.grant.status === 'pending' || detail.grant.status === 'trial' ? (
+        {open ? (
           <div className="flex w-full flex-col items-stretch gap-3">
-            {detail.grant.status === 'pending' ? (
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={deciding}
-                icon={
-                  deciding ? (
-                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                  ) : undefined
-                }
-                onClick={() => {
-                  decide('trial');
-                }}
-              >
-                {t('funding.detail.trial')}
-              </Button>
-            ) : null}
             <Button
               type="button"
               disabled={deciding}
@@ -233,11 +236,9 @@ export function FundingApplicationDetailScreen({
                   <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : undefined
               }
-              onClick={() => {
-                decide('admit');
-              }}
+              onClick={onMet}
             >
-              {t('funding.detail.admit')}
+              {step === 4 ? t('funding.review.yes') : t('funding.review.met')}
             </Button>
             <Button
               type="button"
@@ -248,11 +249,9 @@ export function FundingApplicationDetailScreen({
                   <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : undefined
               }
-              onClick={() => {
-                decide('reject');
-              }}
+              onClick={onUnmet}
             >
-              {t('funding.detail.reject')}
+              {step === 4 ? t('funding.review.no') : t('funding.review.unmet')}
             </Button>
           </div>
         ) : null}

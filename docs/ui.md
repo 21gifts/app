@@ -1009,9 +1009,9 @@ Handbook states: default, forbidden, empty, loading, error.
 
 ### `/moderate/applications/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → in-card icon back to `/moderate/applications` → **h1** **Grant application**. Staff: applicant, convictions as criteria, living-room posts, status-gated **Trial** / **Admit** / **Reject** (Trial only when pending; Admit and Reject when pending or trial). Failed decision uses `trustChain.actionFailed`. Non-staff: heading + forbidden copy.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → in-card icon back to `/moderate/applications` → **h1** **Grant application**. Staff: four-step review (principles 1–3 then truth) with living-room posts; **Requirement met** advances, **Requirement not met** / **No** reject, last-step **Yes** admits. Failed decision uses `trustChain.actionFailed`. Non-staff: heading + forbidden copy.
 
-Handbook states: default, forbidden, empty, loading, error, decide-failed, deciding, trial.
+Handbook states: default, forbidden, empty, loading, error, decide-failed, deciding, principle-2, principle-3, truth.
 
 ### `/moderate/hidden`
 
@@ -1036,7 +1036,7 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/shops`
 
-Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → `ForumLoader feed="shops"` (same ForumBoard as `/welcome`: mode pills, composer, cards). Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop`. Empty `shops.empty` immediately when that page is empty. Error + Try again.
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → composer under the lead. There is no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again.
 
 Handbook states: default, empty, loading, error.
 
