@@ -7916,6 +7916,58 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-place');
   });
 
+  test('welcome composer-place-confirm', async ({ page }) => {
+    await page.addInitScript(() => {
+      class MapShim {
+        private readonly el: HTMLElement;
+
+        constructor(el: HTMLElement) {
+          this.el = el;
+        }
+
+        setCenter(): void {}
+
+        addListener(
+          event: string,
+          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+        ): void {
+          if (event !== 'click') {
+            return;
+          }
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+      class MarkerShim {
+        setPosition(): void {}
+        getPosition(): null {
+          return null;
+        }
+        addListener(): void {}
+      }
+      (window as unknown as { google?: unknown }).google = {
+        maps: { Map: MapShim, Marker: MarkerShim },
+      };
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: 'e2e' }),
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-place-confirm');
+  });
+
   test('welcome composer-place-set', async ({ page }) => {
     await page.addInitScript(() => {
       class MapShim {

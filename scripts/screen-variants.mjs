@@ -822,6 +822,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-place-confirm',
+    image: 'welcome-composer-place-confirm.png',
+    visual: 'state-welcome-composer-place-confirm',
+    needle: 'welcome composer-place-confirm',
+  },
+  {
+    route: '/welcome',
     id: 'composer-place-set',
     image: 'welcome-composer-place-set.png',
     visual: 'state-welcome-composer-place-set',

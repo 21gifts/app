@@ -926,6 +926,12 @@ One unpaid note on **All** with a place. The card shows a MapPin link **Happylan
 
 ![21.gifts welcome composer place](images/welcome-composer-place.png)
 
+### Variant: composer-place-confirm
+
+**Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
+
+![21.gifts welcome composer place confirm](images/welcome-composer-place-confirm.png)
+
 ### Variant: composer-place-set
 
 A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed.
