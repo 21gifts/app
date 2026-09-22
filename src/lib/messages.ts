@@ -645,12 +645,9 @@ const en = {
   'funding.notVerified': 'You are not verified yet.',
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
-  'funding.notAdmitted': 'You are not admitted to daily 21.gifts grant payouts.',
   'funding.grace':
     'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
-  'funding.conditions':
-    'Daily grants go to people whose living-room posts reflect the three convictions.',
   'funding.pending': 'Your application is open. A moderator will review your posts.',
   'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
   'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
@@ -1350,12 +1347,9 @@ const de = {
   'funding.notVerified': 'Sie sind noch nicht verifiziert.',
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
-  'funding.notAdmitted': 'Sie sind nicht zum täglichen 21.gifts-Förderprogramm zugelassen.',
   'funding.grace':
     'Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem Tag erhalten nur noch zugelassene Mitglieder welche. Bewerben Sie sich jetzt, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
-  'funding.conditions':
-    'Tägliche Förderungen gehen an Menschen, deren Wohnzimmer-Beiträge die drei Überzeugungen widerspiegeln.',
   'funding.pending':
     'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
   'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
@@ -2041,12 +2035,9 @@ const es = {
   'funding.notVerified': 'Aún no estás verificada o verificado.',
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
-  'funding.notAdmitted': 'No estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
   'funding.grace':
     'Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día, solo las personas admitidas los reciben. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
-  'funding.conditions':
-    'Las becas diarias van a personas cuyos mensajes del salón reflejan las tres convicciones.',
   'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
   'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
   'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
@@ -2738,12 +2729,9 @@ const fil = {
   'funding.notVerified': 'Hindi ka pa nabe-verify.',
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
-  'funding.notAdmitted': 'Hindi ka admitted sa araw-araw na 21.gifts grant payouts.',
   'funding.grace':
     'Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa araw na iyon, admitted members na lang ang tatanggap. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
-  'funding.conditions':
-    'Ang araw-araw na grant ay para sa mga taong ang living-room posts ay sumasalamin sa tatlong paniniwala.',
   'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
   'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
   'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
