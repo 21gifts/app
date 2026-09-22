@@ -2680,6 +2680,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
     });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
   });
 
   it('POSTs a basis video after the compose fee confirms', async () => {

@@ -1548,7 +1548,7 @@ export function ForumLoader({
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
         pendingComposeGoalRef.current = goalSats;
-        startPayPoll(target.messageId, target.sats, true, null, postAfterPay);
+        startPayPoll(target.messageId, target.sats, goalSats === undefined, null, postAfterPay);
         pendingPostRef.current = null;
         setDraft('');
         if (!hasMedia) {
