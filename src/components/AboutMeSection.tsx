@@ -57,7 +57,8 @@ export type AboutMeSectionProps = {
  * copy-profile-link.
  *
  * @param props - About me value, owner vs public mode, optional display name,
- * optional photo loaders, optional profile URL and save.
+ * optional photo loaders, optional profile URL and save, optional
+ * `startEditing` to open the owner editor on mount.
  * @returns The section, or `null` in public mode when unfilled and there is no copy URL.
  */
 export function AboutMeSection({

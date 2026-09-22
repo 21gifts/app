@@ -1297,6 +1297,18 @@ Already pending. Copy **Your application is open. A moderator will review your p
 
 ![21.gifts apply pending](images/profile-apply-pending.png)
 
+### Variant: trial
+
+Already on a one-day trial. Copy **You are on a one-day trial. Review repeats tomorrow.**
+
+![21.gifts apply trial](images/profile-apply-trial.png)
+
+### Variant: admitted
+
+Already admitted. Copy **You are admitted to daily 21.gifts grant payouts.**
+
+![21.gifts apply admitted](images/profile-apply-admitted.png)
+
 ### Variant: empty-posts
 
 Profile complete, no living-room posts. Copy **No living-room posts.**

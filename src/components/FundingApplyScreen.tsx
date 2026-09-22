@@ -347,7 +347,7 @@ export function FundingApplyScreen(): ReactElement | null {
                   </span>
                   {row.text !== '' ? (
                     <span className="text-sm text-app-muted">{row.text}</span>
-                  ) : /* v8 ignore next */ null}
+                  ) : null}
                 </div>
               </li>
             ))}

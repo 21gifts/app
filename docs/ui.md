@@ -1000,7 +1000,7 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → in-card back to `/profile` → **h1** **Apply for the 21 gifts grant**. Missing About me, photo, or location are the next calm steps (not alerts). Then the same four principle/truth questions as staff review. **Yes** applies; unmet/No does not.
 
-Handbook states: default, photo, location, principle-1, principle-2, principle-3, truth, forbidden, pending, empty-posts, loading, error, applying, apply-failed, unmet.
+Handbook states: default, photo, location, principle-1, principle-2, principle-3, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
 
 ### `/members/[accountId]`
 

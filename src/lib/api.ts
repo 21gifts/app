@@ -930,8 +930,10 @@ const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The updated {@link OwnerFunding} object.
- * @throws Error with visitor-facing copy on 401/403/409/503, other non-2xx, a
- * network failure, or a body that fails {@link fundingApplyResponseSchema}.
+ * @throws Error with the API string on 400 `About me is required`,
+ * `About me photo is required`, or `Location is required`. Other 401/403/409/503,
+ * other non-2xx, a network failure, or a body that fails
+ * {@link fundingApplyResponseSchema} use visitor-facing copy.
  */
 export async function postFundingApply(sessionToken: string): Promise<OwnerFunding> {
   try {

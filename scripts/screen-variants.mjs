@@ -1172,6 +1172,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile/apply',
+    id: 'trial',
+    image: 'profile-apply-trial.png',
+    visual: 'state-profile-apply-trial',
+    needle: 'You are on a one-day trial. Review repeats tomorrow.',
+  },
+  {
+    route: '/profile/apply',
+    id: 'admitted',
+    image: 'profile-apply-admitted.png',
+    visual: 'state-profile-apply-admitted',
+    needle: 'You are admitted to daily 21.gifts grant payouts.',
+  },
+  {
+    route: '/profile/apply',
     id: 'empty-posts',
     image: 'profile-apply-empty-posts.png',
     visual: 'state-profile-apply-empty-posts',

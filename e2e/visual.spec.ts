@@ -5303,6 +5303,36 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-pending');
   });
 
+  test('profile apply trial', async ({ page }) => {
+    await seedApply(page, {
+      funding: {
+        status: 'trial',
+        trialUtcDate: '2026-09-20',
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    });
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-trial');
+  });
+
+  test('profile apply admitted', async ({ page }) => {
+    await seedApply(page, {
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: 1,
+        reviewedByName: 'Ada',
+      },
+    });
+    await page.goto('/profile/apply');
+    await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-admitted');
+  });
+
   test('profile apply empty-posts', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
