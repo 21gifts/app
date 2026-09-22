@@ -790,7 +790,7 @@ describe('InboxLoader', () => {
     listMock.mockResolvedValue([
       { ...THREAD, unread: true },
       { ...OLDER, unread: true },
-    ]));
+    ]);
     threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('21.gifts')).toBeTruthy();
