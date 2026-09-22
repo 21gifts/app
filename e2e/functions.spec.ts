@@ -5,6 +5,11 @@ import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
+async function chooseForumView(page: Page, name: string): Promise<void> {
+  await page.getByRole('combobox', { name: 'Forum view' }).click();
+  await page.getByRole('option', { name, exact: true }).click();
+}
+
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
 const FX_USD = {
@@ -310,7 +315,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -769,7 +774,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
     });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await expect(page.getByAltText('Photo from Ada')).toBeVisible();
 });
 
@@ -1018,7 +1023,7 @@ test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ 
     await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await expect(page.getByText('1/2')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toBeVisible();
 });
@@ -3459,7 +3464,7 @@ test('Function: ForumBoard — welcome forum is the pay surface', async ({ page,
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await expect(page.getByRole('button', { name: 'React', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
@@ -3502,7 +3507,7 @@ test('Function: ForumLoader — welcome forum is the pay surface', async ({ page
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
 });
@@ -3823,7 +3828,7 @@ test('Function: satsToFiatAmount — forum note shows a USD equivalent next to �
     });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
   await expect(page.getByText('$0.02')).toBeVisible();
 });
@@ -3900,7 +3905,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
     });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -5439,15 +5444,15 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
   await expect(page.getByText('Founder unpaid note for Active.')).toBeVisible();
   await expect(page.getByText('Moderator unpaid note for Active.')).toBeVisible();
 
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
 
-  await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+  await chooseForumView(page, 'No gifts yet');
   await expect(page.getByText('Does anyone have spare sats this week?')).toBeVisible();
   await expect(page.getByText('Thank you both — that helps.')).not.toBeVisible();
   await expect(page.getByText('I can send a small gift tomorrow.')).not.toBeVisible();
 
-  await page.getByRole('button', { name: 'Most popular' }).click();
+  await chooseForumView(page, 'Most popular');
   const items = page.getByRole('listitem');
   await expect(items.nth(0)).toContainText('I can send a small gift tomorrow.');
   await expect(items.nth(0)).toContainText('₿21');
@@ -5528,7 +5533,21 @@ test('Function: unpaidNewCount — No gifts yet shows unpaid notes newer than la
 }) => {
   await seedWelcomeWithUnpaidCount(page);
   await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await expect(view).toContainText('Active');
+  await expect(view).toContainText('1');
+  await expect(page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true })).toHaveCount(
+    0,
+  );
+  await view.click();
+  await expect(
+    page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true }).click();
+  await expect(view).toContainText('No gifts yet');
+  await expect(page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test('Function: loadUnpaidSeenAt — stored last visit restores the unpaid count', async ({
@@ -5536,7 +5555,19 @@ test('Function: loadUnpaidSeenAt — stored last visit restores the unpaid count
 }) => {
   await seedWelcomeWithUnpaidCount(page);
   await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeVisible();
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await expect(view).toContainText('Active');
+  await expect(view).toContainText('1');
+  await view.click();
+  await expect(
+    page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true }),
+  ).toBeVisible();
+  await view.click();
+  await expect(view).toContainText('Active');
+  await expect(view).toContainText('1');
+  await expect(page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test('Function: saveUnpaidSeenAt — opening No gifts yet clears the unpaid count', async ({
@@ -5544,11 +5575,18 @@ test('Function: saveUnpaidSeenAt — opening No gifts yet clears the unpaid coun
 }) => {
   await seedWelcomeWithUnpaidCount(page);
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'No gifts yet, 1 new' }).click();
-  const unpaid = page.getByRole('button', { name: 'No gifts yet', exact: true });
-  await expect(unpaid).toBeVisible();
-  await expect(unpaid).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: 'No gifts yet, 1 new' })).toHaveCount(0);
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await expect(view).toContainText('Active');
+  await expect(view).toContainText('1');
+  await view.click();
+  await expect(
+    page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true }).click();
+  await expect(view).toContainText('No gifts yet');
+  await expect(page.getByRole('option', { name: 'No gifts yet, 1 new', exact: true })).toHaveCount(
+    0,
+  );
 });
 
 test('Function: OnboardingGate — login sends a new account to the name screen', async ({
@@ -5852,8 +5890,35 @@ test('Function: SegmentedControl — welcome shows Active / All / Most popular',
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByRole('group', { name: 'Forum view' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Compose' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a post' })).toBeVisible();
+});
+
+test('Function: ForumModeSelect — welcome forum view is a dropdown', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await expect(view).toBeVisible();
+  await expect(view).toContainText('Active');
+  await expect(page.getByRole('option', { name: 'Active', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: 'No gifts yet', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: 'All', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: 'Most popular', exact: true })).toHaveCount(0);
+  await view.click();
+  await expect(page.getByRole('option', { name: 'Active', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'No gifts yet', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'All', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Most popular', exact: true })).toBeVisible();
+  await page.getByRole('option', { name: 'Most popular', exact: true }).click();
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(view).toContainText('Most popular');
 });
 
 test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
@@ -5878,7 +5943,7 @@ test('Function: Field — pay amount uses Field', async ({ page }) => {
   await seedAdaSession(page);
   await stubPayableNote(page);
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -6638,7 +6703,7 @@ test('Function: fetchReplies — expanding a welcome note loads replies', async 
     });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
 });
@@ -6701,7 +6766,7 @@ test('Function: isReplyPaymentExempt — a founder posts a reaction without an i
     await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await page.getByPlaceholder('Write a reaction').fill('Thank you');
   await page.getByRole('button', { name: 'Post', exact: true }).last().click();
@@ -7436,7 +7501,7 @@ test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ pa
     });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await expect(page.locator('li[data-message-id="m-vid"] video')).toHaveAttribute(
     'src',
     '/messages/m-vid/video.mp4',
@@ -7578,7 +7643,7 @@ test('Function: deleteMessage — moderator cancels then deletes a post', async 
     await route.fulfill({ status: 204 });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+  await chooseForumView(page, 'No gifts yet');
   await page.getByRole('button', { name: 'Delete post', exact: true }).click();
   await page.getByRole('button', { name: 'Cancel deletion' }).click();
   expect(deletes).toBe(0);
@@ -7847,7 +7912,7 @@ test('Function: DeletePostControl — ordinary members have no delete action', a
   await seedAdaSession(page);
   await stubPayableNote(page);
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete post', exact: true })).toHaveCount(0);
@@ -7905,7 +7970,7 @@ test('Function: DeletePostControl — ordinary members have no reply delete acti
     });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'All' }).click();
+  await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByText('A reply')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Delete reaction', exact: true })).toHaveCount(0);
@@ -7969,7 +8034,7 @@ test('Function: DeletePostControl — moderator deletes a reply', async ({ page 
     await route.fulfill({ status: 204 });
   });
   await page.goto('/welcome');
-  await page.getByRole('button', { name: 'No gifts yet', exact: true }).click();
+  await chooseForumView(page, 'No gifts yet');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
   await page.getByRole('button', { name: 'Cancel deletion' }).click();

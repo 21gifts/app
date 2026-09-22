@@ -451,10 +451,9 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Forum view' })).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
     expect(screen.queryByText('Everyone can read and write.')).toBeNull();
     expect(
       screen.getByText(
@@ -521,6 +520,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
+    expect(screen.queryByRole('combobox', { name: 'Forum view' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
     expect(document.querySelector('form')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
@@ -632,6 +632,8 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
     expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'Forum view' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Forum view' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Active$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^No gifts yet$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^All$/ })).toBeNull();
@@ -677,7 +679,7 @@ describe('ForumBoard', () => {
         lawsVisible={false}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
     expect(
       screen.queryByText(
         '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
@@ -703,7 +705,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
@@ -762,7 +764,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe('Could not load messages. Please try again.');
     expect(alert.className).toContain('text-app-danger');
@@ -833,7 +835,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     expect(screen.queryByText('No message has received Bitcoin yet.')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
   });
 
   it('hides a zero-sat SAMPLE on Active and shows MULTILINE', () => {
@@ -1113,9 +1115,11 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Aktiv' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Alle' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Beliebteste' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum-Ansicht' }).textContent).toContain('Aktiv');
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum-Ansicht' }));
+    expect(screen.getByRole('option', { name: 'Aktiv' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Alle' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Beliebteste' })).toBeTruthy();
   });
 
   it('calls onModeChange when All is clicked', () => {
@@ -1136,7 +1140,8 @@ describe('ForumBoard', () => {
         onModeChange={onModeChange}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    fireEvent.click(screen.getByRole('option', { name: 'All' }));
     expect(onModeChange).toHaveBeenCalledWith('all');
   });
 
@@ -1156,7 +1161,10 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toMatch(/\d/);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    expect(screen.getByRole('option', { name: /^No gifts yet$/ })).toBeTruthy();
   });
 
   it('keeps No gifts yet unbadged when unpaidNewCount is 0', () => {
@@ -1176,7 +1184,10 @@ describe('ForumBoard', () => {
         unpaidNewCount={0}
       />,
     );
-    expect(screen.getByRole('button', { name: /^No gifts yet$/ })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toMatch(/\d/);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    expect(screen.getByRole('option', { name: /^No gifts yet$/ })).toBeTruthy();
   });
 
   it('omits the unpaid chip when No gifts yet is selected', () => {
@@ -1196,8 +1207,12 @@ describe('ForumBoard', () => {
         unpaidNewCount={3}
       />,
     );
-    const unpaid = screen.getByRole('button', { name: /^No gifts yet$/ });
-    expect(unpaid).toBeTruthy();
+    const trigger = screen.getByRole('combobox', { name: 'Forum view' });
+    expect(trigger.textContent).toContain('No gifts yet');
+    expect(trigger.textContent).not.toContain('3');
+    fireEvent.click(trigger);
+    const unpaid = screen.getByRole('option', { name: /^No gifts yet$/ });
+    expect(unpaid.getAttribute('aria-selected')).toBe('true');
     expect(unpaid.textContent).not.toContain('3');
   });
 
@@ -1218,9 +1233,12 @@ describe('ForumBoard', () => {
         unpaidNewCount={3}
       />,
     );
-    const unpaid = screen.getByRole('button', { name: 'No gifts yet, 3 new' });
-    expect(unpaid).toBeTruthy();
+    const trigger = screen.getByRole('combobox', { name: 'Forum view' });
+    expect(trigger.textContent).toContain('Active');
+    expect(trigger.textContent).toContain('3');
     expect(screen.getByText('3')).toBeTruthy();
+    fireEvent.click(trigger);
+    expect(screen.getByRole('option', { name: 'No gifts yet, 3 new' })).toBeTruthy();
   });
 
   it('localizes the unpaid new-count chip in German', () => {
@@ -1241,7 +1259,9 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Noch ohne Geschenk, 3 neu' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum-Ansicht' }).textContent).toContain('3');
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum-Ansicht' }));
+    expect(screen.getByRole('option', { name: 'Noch ohne Geschenk, 3 neu' })).toBeTruthy();
   });
 
   it('shows ₿1 for a single sat total', () => {
