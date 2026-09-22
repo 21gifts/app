@@ -1131,15 +1131,17 @@ describe('InboxLoader', () => {
   it('loads a stored photo blob for a hasPhoto row', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue(conversationPage([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]));
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -1158,15 +1160,17 @@ describe('InboxLoader', () => {
   it('loads a stored photo when hasPhoto is true and photoCount is 0', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue(conversationPage([
-      {
-        ...MESSAGE,
-        id: 'm-legacy',
-        text: '',
-        hasPhoto: true,
-        photoCount: 0,
-      },
-    ]));
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-legacy',
+          text: '',
+          hasPhoto: true,
+          photoCount: 0,
+        },
+      ]),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       writable: true,
@@ -1185,23 +1189,25 @@ describe('InboxLoader', () => {
   it('skips a still when the photo fetch fails and loads the next', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue(conversationPage([
-      {
-        ...MESSAGE,
-        id: 'm-fail',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-      {
-        ...MESSAGE,
-        id: 'm-ok',
-        name: 'Bob',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]));
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-fail',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+        {
+          ...MESSAGE,
+          id: 'm-ok',
+          name: 'Bob',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     photoMock
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
@@ -1225,15 +1231,17 @@ describe('InboxLoader', () => {
   it('revokes loaded photo blobs on unmount', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue(conversationPage([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]));
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
@@ -1254,15 +1262,17 @@ describe('InboxLoader', () => {
   it('revokes photo blobs when the session is lost while mounted', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue(conversationPage([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]));
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
@@ -1503,15 +1513,17 @@ describe('InboxLoader', () => {
       if (id === 'conv-2') {
         return Promise.resolve(conversationPage([MESSAGE]));
       }
-      return Promise.resolve(conversationPage([
-        {
-          ...MESSAGE,
-          id: 'm-pic',
-          text: '',
-          hasPhoto: true,
-          photoCount: 1,
-        },
-      ]));
+      return Promise.resolve(
+        conversationPage([
+          {
+            ...MESSAGE,
+            id: 'm-pic',
+            text: '',
+            hasPhoto: true,
+            photoCount: 1,
+          },
+        ]),
+      );
     });
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
@@ -1535,15 +1547,17 @@ describe('InboxLoader', () => {
   it('revokes photo blobs that are no longer on the thread', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValueOnce(conversationPage([
-      {
-        ...MESSAGE,
-        id: 'm-pic',
-        text: '',
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]));
+    threadMock.mockResolvedValueOnce(
+      conversationPage([
+        {
+          ...MESSAGE,
+          id: 'm-pic',
+          text: '',
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
@@ -1572,13 +1586,15 @@ describe('InboxLoader', () => {
     useAuthStore.setState({ session: null, account });
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
-    threadMock.mockResolvedValue(conversationPage([
-      {
-        ...MESSAGE,
-        hasPhoto: true,
-        photoCount: 1,
-      },
-    ]));
+    threadMock.mockResolvedValue(
+      conversationPage([
+        {
+          ...MESSAGE,
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
     const { container } = renderWithLocale(<InboxLoader />);
     expect(container.firstChild).toBeNull();
     expect(photoMock).not.toHaveBeenCalled();

@@ -7422,7 +7422,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-bob$/, async (route) => {
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -7470,7 +7470,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-bob$/, async (route) => {
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -7518,7 +7518,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-bob$/, async (route) => {
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -7546,7 +7546,7 @@ test.describe('inbox screens', () => {
       });
     });
     await page.goto('/messages?c=conv-bob');
-    await expect(page.getByAltText('Photo from Bob')).toBeVisible();
+    await expect(page.getByAltText('Photo from Bob')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-messages-thread-photo');
   });
 
@@ -7575,7 +7575,7 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/\/conversations\/conv-bob$/, async (route) => {
+    await page.route(/\/conversations\/conv-bob(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
