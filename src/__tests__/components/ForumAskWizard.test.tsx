@@ -62,10 +62,11 @@ describe('ForumAskWizard', () => {
     expect(onDraftChange).toHaveBeenCalledWith('Hi');
   });
 
-  it('skips photos to step 3', () => {
+  it('continues from photos to step 3 without a photo', () => {
     const onStepChange = vi.fn();
     renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(3);
   });
 
