@@ -1369,6 +1369,36 @@ Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, a
 
 ![21.gifts point of sale open](images/pos-open.png)
 
+### Variant: loading
+
+The till request has not returned. Heading **Point of sale**, the address, and the spinner. No amount form yet.
+
+![21.gifts point of sale loading](images/pos-loading.png)
+
+### Variant: error
+
+The till request failed. Alert **Point of sale is unavailable.**
+
+![21.gifts point of sale error](images/pos-error.png)
+
+### Variant: bad-amount
+
+**Create payment** with `1.5`. Alert **Enter a whole number.** The form stays.
+
+![21.gifts point of sale bad amount](images/pos-bad-amount.png)
+
+### Variant: history
+
+No open charge. History shows a cancelled row and an expired row. The amount form is back.
+
+![21.gifts point of sale history](images/pos-history.png)
+
+### Variant: need-address
+
+Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi address first.** No amount form.
+
+![21.gifts point of sale need address](images/pos-need-address.png)
+
 ## Screen: /profile
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name, location (Ort), and Wallet of Satoshi address, then `FundingStatusCard` (verification / 21 gifts grant), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.

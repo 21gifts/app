@@ -846,6 +846,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:loading",
+    "label": "/pos loading",
+    "visual": "state-pos-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:error",
+    "label": "/pos error",
+    "visual": "state-pos-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:bad-amount",
+    "label": "/pos bad-amount",
+    "visual": "state-pos-bad-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:history",
+    "label": "/pos history",
+    "visual": "state-pos-history",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:need-address",
+    "label": "/pos need-address",
+    "visual": "state-pos-need-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:fiat",
     "label": "/profile fiat",
     "visual": "state-profile-fiat",

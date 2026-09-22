@@ -1207,7 +1207,7 @@ const de = {
   'pos.error': 'Die Kasse ist gerade nicht erreichbar.',
   'pos.outside': 'Der Betrag liegt außerhalb der Wallet.',
   'pos.already': 'Es ist schon eine Zahlung offen.',
-  'pos.badAmount': 'Gib einen ganzen Satoshi-Betrag ein.',
+  'pos.badAmount': 'Gib eine ganze Zahl ein.',
   'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
