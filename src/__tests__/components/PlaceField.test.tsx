@@ -170,7 +170,7 @@ describe('PlaceField', () => {
     view.unmount();
 
     const existing = document.createElement('script');
-    existing.dataset.gmaps = 'weekly';
+    existing.dataset['gmaps'] = 'weekly';
     let loads = 0;
     const orig = existing.addEventListener.bind(existing);
     existing.addEventListener = ((type: string, listener: EventListener) => {

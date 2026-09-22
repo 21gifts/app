@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlacesMapScreen } from '@/components/PlacesMapScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { ForumPlaceRow } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({
@@ -118,9 +119,9 @@ describe('PlacesMapScreen', () => {
     script?.dispatchEvent(new Event('load'));
 
     useAuthStore.setState({ session: 'tok-2' });
-    let resolvePlaces: (rows: unknown) => void = () => undefined;
+    let resolvePlaces: (rows: ForumPlaceRow[]) => void = () => undefined;
     fetchPlacesMock.mockReturnValue(
-      new Promise((resolve) => {
+      new Promise<ForumPlaceRow[]>((resolve) => {
         resolvePlaces = resolve;
       }),
     );
