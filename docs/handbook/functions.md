@@ -2611,8 +2611,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: postMessageInvoice
 
-- **Purpose:** POST `/messages/:id/invoice` with `{ sats }` or `{ sats, text }` when the visitor attached a reply comment. Empty `text` is omitted.
-- **Inputs:** session token, message id, sats, optional text.
+- **Purpose:** POST `/messages/:id/invoice` with `{ sats }`, `{ sats, text }` when the visitor attached a reply comment, and `amountUsd`, `amountChf`, `amountEur`, `amountPhp` when a preview rate is on screen. Empty `text` is omitted. A missing preview omits those four fields.
+- **Inputs:** session token, message id, sats, optional text, optional shown amounts (each a two-decimal string or null).
 - **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy. 409 `missing_requirements` throws `MissingRequirementsError`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 
@@ -2701,8 +2701,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: postConversationInvoice
 
-- **Purpose:** POST `/conversations/:id/invoice` with `{ sats }` or `{ sats, text }`.
-- **Inputs:** Session token, conversation id, sats, optional text.
+- **Purpose:** POST `/conversations/:id/invoice` with `{ sats }`, `{ sats, text }`, and `amountUsd`, `amountChf`, `amountEur`, `amountPhp` when a preview rate is on screen. Empty `text` is omitted. A missing preview omits those four fields.
+- **Inputs:** Session token, conversation id, sats, optional text, optional shown amounts (each a two-decimal string or null).
 - **Returns / side effects:** `{ pr, amountSats, messageId }`, or throws api/visitor copy.
 - **Used by:** `InboxLoader`.
 

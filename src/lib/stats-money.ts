@@ -189,15 +189,6 @@ export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | nul
   return null;
 }
 
-/**
- * Scales whole sats into a two-decimal fiat amount using one gift day's totals.
- *
- * @param sats - Whole sats to convert (may be 0).
- * @param day - Gift day with `sats > 0`, or `null`.
- * @param code - Selected fiat.
- * @returns Two-decimal string, or `null` when the day or that fiat is missing
- *   or zero (a `"0.00"` gift-day total is not a usable rate).
- */
 /** The four amounts shown next to a sat amount, or null when that currency has no rate. */
 export interface ShownFiat {
   amountUsd: string | null;
@@ -222,6 +213,15 @@ export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): Sho
   };
 }
 
+/**
+ * Scales whole sats into a two-decimal fiat amount using one gift day's totals.
+ *
+ * @param sats - Whole sats to convert (may be 0).
+ * @param day - Gift day with `sats > 0`, or `null`.
+ * @param code - Selected fiat.
+ * @returns Two-decimal string, or `null` when the day or that fiat is missing
+ *   or zero (a `"0.00"` gift-day total is not a usable rate).
+ */
 export function satsToFiatAmount(
   sats: number,
   day: FiatRateDay | null,
