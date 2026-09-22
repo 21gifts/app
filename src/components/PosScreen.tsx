@@ -198,7 +198,9 @@ export function PosScreen(): ReactElement {
 
   return (
     <Card surface={false}>
-      <h1 className="text-center text-2xl font-semibold text-app-fg">{t('pos.title')}</h1>
+      <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+        {t('pos.title')}
+      </h1>
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3 border-t border-app-border pt-6">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
