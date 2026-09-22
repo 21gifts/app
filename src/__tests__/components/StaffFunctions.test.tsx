@@ -13,9 +13,8 @@ describe('StaffFunctions', () => {
       </StaffFunctions>,
     );
     expect(screen.queryByRole('button', { name: 'Inner action' })).toBeNull();
-    const trigger = screen.getByRole('button', { name: 'Moderator functions' });
-    expect(trigger).toBeTruthy();
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByText('Moderator functions')).toBeTruthy();
+    expect(screen.getByTestId('staff-functions').hasAttribute('open')).toBe(false);
   });
 
   it('toggles children, stays open when a child is clicked, and closes on a second trigger click', () => {
@@ -24,15 +23,15 @@ describe('StaffFunctions', () => {
         <button type="button">Inner action</button>
       </StaffFunctions>,
     );
-    const trigger = screen.getByRole('button', { name: 'Moderator functions' });
+    const trigger = screen.getByText('Moderator functions');
     fireEvent.click(trigger);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByTestId('staff-functions').hasAttribute('open')).toBe(true);
     expect(screen.getByRole('button', { name: 'Inner action' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Inner action' }));
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByTestId('staff-functions').hasAttribute('open')).toBe(true);
     expect(screen.getByRole('button', { name: 'Inner action' })).toBeTruthy();
     fireEvent.click(trigger);
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByTestId('staff-functions').hasAttribute('open')).toBe(false);
     expect(screen.queryByRole('button', { name: 'Inner action' })).toBeNull();
   });
 
@@ -59,7 +58,7 @@ describe('StaffFunctions', () => {
       </StaffFunctions>,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Moderatorenfunktionen' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
+    expect(screen.getByText('Moderatorenfunktionen')).toBeTruthy();
+    expect(screen.queryByText('Moderator functions')).toBeNull();
   });
 });

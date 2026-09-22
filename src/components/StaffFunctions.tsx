@@ -1,43 +1,39 @@
 'use client';
 
-import { useId, useState, type ReactElement, type ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button } from '@/components/ui';
 
 /**
- * Closed disclosure for moderator and founder actions on a member-facing surface.
+ * Closed disclosure for moderator and founder actions on a member card.
+ * Same `details` / `summary` as wallet Advanced functions.
  *
  * @param props - Children that mount only while the disclosure is open.
- * @returns The closed trigger, and the children while open.
+ * @returns The closed summary, and the children while open.
  */
 export function StaffFunctions({ children }: { children: ReactNode }): ReactElement {
   const { t } = useTranslations();
   const [open, setOpen] = useState(false);
-  const panelId = useId();
 
   return (
-    <div
+    <details
       data-testid="staff-functions"
-      className="flex w-full flex-col items-stretch gap-3"
+      open={open}
+      className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2"
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <Button
-        variant="secondary"
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => {
+      <summary
+        className="cursor-pointer text-sm text-app-muted"
+        onClick={(event) => {
+          event.preventDefault();
           setOpen((current) => !current);
         }}
       >
         {t('staff.functions')}
-      </Button>
+      </summary>
       {open ? (
-        <div id={panelId} className="flex w-full flex-col items-stretch gap-3">
-          {children}
-        </div>
+        <div className="mt-3 flex w-full flex-col items-stretch gap-3">{children}</div>
       ) : null}
-    </div>
+    </details>
   );
 }

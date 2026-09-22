@@ -3133,7 +3133,7 @@ describe('MemberProfileScreen', () => {
     });
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
     expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Moderator functions' }));
+    fireEvent.click(screen.getByText('Moderator functions'));
     expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
   });
 

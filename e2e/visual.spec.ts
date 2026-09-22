@@ -3475,7 +3475,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Moderator functions' })).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
     await shotScreen(page, 'state-members-staff-verify');
   });
@@ -3528,11 +3528,11 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    const disclosure = page.getByRole('button', { name: 'Moderator functions' });
+    const disclosure = page.getByText('Moderator functions');
     await disclosure.click();
     const verify = page.getByRole('button', { name: 'Verify' });
     await expect(verify).toBeVisible();
-    await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
     await verify.scrollIntoViewIfNeeded();
     // The member card scrolls inside the page frame. A full-page stitch leaves
     // Verify below the viewport, so this shot is the viewport after that scroll.

@@ -1326,9 +1326,9 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: StaffFunctions
 
-- **Purpose:** Closed disclosure for moderator and founder actions on a member card. The trigger is `staff.functions`. Children mount only while it is open.
+- **Purpose:** Closed disclosure for moderator and founder actions on a member card. The summary is `staff.functions`. Same `details` / `summary` as wallet **Advanced functions**. Children mount only while it is open.
 - **Inputs:** `children`.
-- **Returns / side effects:** `data-testid="staff-functions"`. Trigger `aria-expanded`. Clicking the trigger toggles. Clicks do not propagate.
+- **Returns / side effects:** `data-testid="staff-functions"`. `open` while expanded. Clicking the summary toggles. Clicks do not propagate.
 - **Used by:** `MemberTrustActions`.
 
 ## Function: MemberTrustActions

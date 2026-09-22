@@ -7906,7 +7906,7 @@ test('Function: MemberTrustActions — ordinary members have no verify action', 
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Moderator functions' })).toHaveCount(0);
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
 });
 
 test('Function: StaffFunctions — moderator actions stay closed until opened', async ({ page }) => {
@@ -7937,13 +7937,13 @@ test('Function: StaffFunctions — moderator actions stay closed until opened', 
     });
   });
   await page.goto(`/members/${memberId}`);
-  await expect(page.getByRole('button', { name: 'Moderator functions' })).toBeVisible();
+  await expect(page.getByText('Moderator functions')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Moderator functions' }).click();
+  await page.getByText('Moderator functions').click();
   await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
   await seedAdaSession(page);
   await page.goto(`/members/${memberId}`);
-  await expect(page.getByRole('button', { name: 'Moderator functions' })).toHaveCount(0);
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
   await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
 });
 

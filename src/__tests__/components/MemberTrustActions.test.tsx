@@ -85,7 +85,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 function openStaffFunctions(): void {
-  fireEvent.click(screen.getByRole('button', { name: 'Moderator functions' }));
+  fireEvent.click(screen.getByText('Moderator functions'));
 }
 
 function expectStaffRegionAbsent(): void {

@@ -1135,7 +1135,7 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ### Variant: staff-verify
 
-Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
+Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, the same `details` / `summary` as wallet **Advanced functions** (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
 
 ![21.gifts member staff verify](images/members-staff-verify.png)
 
