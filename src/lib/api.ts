@@ -266,7 +266,7 @@ export async function setLocation(sessionToken: string, location: string): Promi
 export async function putAboutMe(
   sessionToken: string,
   text: string,
-  photo?: { contentType: string; data: string } | null,
+  photo?: { contentType: string; data: string; takenAt?: string | null } | null,
 ): Promise<Account> {
   const response = await fetch('/me/about', {
     method: 'PUT',
@@ -276,7 +276,20 @@ export async function putAboutMe(
     },
     body: JSON.stringify({
       text,
-      ...(photo === undefined ? {} : { photo }),
+      ...(photo === undefined
+        ? {}
+        : {
+            photo:
+              photo === null
+                ? null
+                : {
+                    contentType: photo.contentType,
+                    data: photo.data,
+                    ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+                      ? { takenAt: photo.takenAt }
+                      : {}),
+                  },
+          }),
     }),
   });
   if (response.status === 409) {
@@ -1933,9 +1946,18 @@ export async function postConversationMessage(
   sessionToken: string,
   id: string,
   text: string,
-  photos?: { contentType: string; data: string }[],
+  photos?: { contentType: string; data: string; takenAt?: string | null }[],
 ): Promise<ConversationMessage> {
-  const stills = photos !== undefined && photos.length > 0 ? photos.slice(0, 10) : [];
+  const stills =
+    photos !== undefined && photos.length > 0
+      ? photos.slice(0, 10).map((still) => ({
+          contentType: still.contentType,
+          data: still.data,
+          ...(typeof still.takenAt === 'string' && still.takenAt !== ''
+            ? { takenAt: still.takenAt }
+            : {}),
+        }))
+      : [];
   const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
     method: 'POST',
     headers: {

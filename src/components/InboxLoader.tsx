@@ -817,6 +817,9 @@ export function InboxLoader(): ReactElement | null {
                 pendingPhotos.map((photo) => ({
                   contentType: photo.contentType,
                   data: photo.data,
+                  ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+                    ? { takenAt: photo.takenAt }
+                    : {}),
                 })),
               );
         if (openIdRef.current === conversationId) {
