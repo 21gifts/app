@@ -61,4 +61,59 @@ describe('WalletScreenView', () => {
       screen.getByRole('button', { name: 'Activate recovery phrase' }).querySelector('svg'),
     ).not.toBeNull();
   });
+
+  it('shows a spinner on retry while busy', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="activate"
+        status="busy"
+        error="generic"
+        words={[]}
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Try again' }).querySelector('svg')).not.toBeNull();
+  });
+
+  it('shows a spinner on confirm while busy', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="confirm"
+        status="busy"
+        error={null}
+        words={words}
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'I saved these words' }).querySelector('svg'),
+    ).not.toBeNull();
+  });
+
+  it('shows a spinner on reveal while busy', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="busy"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Show recovery phrase' }).querySelector('svg'),
+    ).not.toBeNull();
+  });
 });
