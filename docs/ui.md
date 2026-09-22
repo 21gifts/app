@@ -763,7 +763,7 @@ absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-car
 flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover
 ```
 
-Selected row adds `font-medium` and a lucide Check `h-4 w-4 shrink-0 text-app-fg` (not orange).
+Selected row adds `font-medium` and a lucide Check `h-4 w-4 shrink-0 text-app-fg` (not orange). Pointer hover moves the keyboard highlight, so Enter or Space selects the row under the pointer.
 
 **Chip** (same as SegmentedControl): `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`, `aria-hidden`. Shown on the closed trigger when any option badge is greater than 0 (the unpaid count, even while another mode is selected). Shown on an option only when that option's badge is greater than 0. Omitted when the badge is missing or not positive. Option `aria-label` is `badgeAriaLabel` only when the badge is greater than 0 and `badgeAriaLabel` is a non-empty string.
 

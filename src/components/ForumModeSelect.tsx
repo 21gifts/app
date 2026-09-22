@@ -265,6 +265,9 @@ export function ForumModeSelect<T extends string>(props: {
                 onClick={() => {
                   selectOption(opt.value);
                 }}
+                onMouseEnter={() => {
+                  setHighlight(opt.value);
+                }}
               >
                 <span
                   className="flex h-4 w-4 shrink-0 items-center justify-center"

@@ -168,6 +168,19 @@ describe('ForumModeSelect', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
+  it('hovering an option moves the highlight so Enter selects that row', () => {
+    const onChange = vi.fn();
+    renderSelect({ onChange, value: 'active' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
+    const listbox = screen.getByRole('listbox');
+    fireEvent.mouseEnter(screen.getByRole('option', { name: 'Most popular' }));
+    expect(listbox.getAttribute('aria-activedescendant')).toBe('forum-mode-option-popular');
+    fireEvent.keyDown(listbox, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('popular');
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
   it('ArrowDown on the closed trigger opens and highlights the current value', () => {
     renderSelect({ value: 'all' });
     const trigger = screen.getByRole('combobox', { name: 'Forum view' });

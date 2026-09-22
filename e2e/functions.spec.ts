@@ -5880,7 +5880,7 @@ test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', asy
   await expect(page).toHaveURL(/\/welcome/);
 });
 
-test('Function: SegmentedControl — welcome shows Active / All / Most popular', async ({ page }) => {
+test('Function: SegmentedControl — welcome composer shows Send a post', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
