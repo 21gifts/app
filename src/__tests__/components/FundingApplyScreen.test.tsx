@@ -330,11 +330,8 @@ describe('FundingApplyScreen', () => {
     postsMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce([post]);
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
-    expect(
-      await screen.findByRole('alert', {
-        name: 'Could not load this application. Please try again.',
-      }),
-    ).toBeTruthy();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not load this application. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(
       await screen.findByText('Please check whether the posts match principle 1.'),
