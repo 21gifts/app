@@ -82,6 +82,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);
   expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(200);
   expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(400);
+  expect((await request.post('/auth/passkey/replace/begin')).status()).toBe(401);
+  expect((await request.post('/auth/passkey/replace/finish')).status()).toBe(401);
+  expect((await request.post('/me/wallet-backup-seen')).status()).toBe(401);
   expect((await request.get('/view-key/[viewKey]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/view-key/[viewKey]/about/photo')).status()).toBeGreaterThanOrEqual(
     400,

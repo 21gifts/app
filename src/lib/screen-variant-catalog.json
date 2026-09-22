@@ -78,6 +78,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:default",
+    "label": "/wallet default",
+    "visual": "screen-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:phrase",
+    "label": "/wallet phrase",
+    "visual": "state-wallet-phrase",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:confirm",
+    "label": "/wallet confirm",
+    "visual": "state-wallet-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:reveal",
+    "label": "/wallet reveal",
+    "visual": "state-wallet-reveal",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:error",
+    "label": "/wallet error",
+    "visual": "state-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:prf-unsupported",
+    "label": "/wallet prf-unsupported",
+    "visual": "state-wallet-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",

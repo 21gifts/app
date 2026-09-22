@@ -359,6 +359,17 @@ const en = {
   'introduce.cta': 'Write an introduction',
   'introduce.close': 'Close',
 
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'Activate recovery phrase',
+  'wallet.activateHint':
+    'Create a new passkey on this device so 21.gifts can show your 12-word recovery phrase. Your previous passkey will stop working.',
+  'wallet.confirmSaved': 'I saved these words',
+  'wallet.onlyBackup':
+    'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
+  'wallet.showPhrase': 'Show recovery phrase',
+  'wallet.prfUnsupported':
+    'This browser cannot create a recovery phrase. Try another browser or device.',
+
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
   'profile.received': 'Received {amount}',
@@ -1065,6 +1076,17 @@ const de = {
     'Schreib einen kurzen Beitrag im Forum, damit die anderen dich kennen. Geschenke gehen nur an Mitglieder, die sich vorgestellt haben.',
   'introduce.cta': 'Vorstellung schreiben',
   'introduce.close': 'Schließen',
+
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'Wiederherstellungssatz aktivieren',
+  'wallet.activateHint':
+    'Erstellen Sie einen neuen Passkey auf diesem Gerät, damit 21.gifts Ihren 12-Wörter-Wiederherstellungssatz anzeigen kann. Der bisherige Passkey funktioniert danach nicht mehr.',
+  'wallet.confirmSaved': 'Ich habe diese Wörter gespeichert',
+  'wallet.onlyBackup':
+    'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
+  'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
+  'wallet.prfUnsupported':
+    'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -1780,6 +1802,17 @@ const es = {
   'introduce.cta': 'Escribe una presentación',
   'introduce.close': 'Cerrar',
 
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'Activar frase de recuperación',
+  'wallet.activateHint':
+    'Crea una passkey nueva en este dispositivo para que 21.gifts pueda mostrar tu frase de recuperación de 12 palabras. La passkey anterior dejará de funcionar.',
+  'wallet.confirmSaved': 'Guardé estas palabras',
+  'wallet.onlyBackup':
+    'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
+  'wallet.showPhrase': 'Mostrar frase de recuperación',
+  'wallet.prfUnsupported':
+    'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
+
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
   'profile.received': 'Recibido {amount}',
@@ -2482,6 +2515,17 @@ const fil = {
     'Magsulat ng maikling post sa forum para makilala ka ng iba. Ang mga regalo ay ipinapadala lang sa mga miyembrong nagpakilala na.',
   'introduce.cta': 'Sumulat ng pagpapakilala',
   'introduce.close': 'Isara',
+
+  'wallet.title': 'Wallet',
+  'wallet.activate': 'I-activate ang recovery phrase',
+  'wallet.activateHint':
+    'Gumawa ng bagong passkey sa device na ito para maipakita ng 21.gifts ang 12-word recovery phrase mo. Hindi na gagana ang dating passkey.',
+  'wallet.confirmSaved': 'Na-save ko ang mga salitang ito',
+  'wallet.onlyBackup':
+    'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
+  'wallet.showPhrase': 'Ipakita ang recovery phrase',
+  'wallet.prfUnsupported':
+    'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',

@@ -13,6 +13,7 @@ import {
   Shield,
   Store,
   User,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -34,7 +35,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Shops, Profile with same-line given/received amounts only when that
- * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
+ * side is non-zero, Wallet, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
  * notifications with an
@@ -197,6 +198,16 @@ export function SignedInChrome(): ReactElement {
               )}
             </span>
           ) : null}
+        </Link>
+        <Link
+          href="/wallet"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('wallet.title')}
         </Link>
         <Link
           href="/rules"

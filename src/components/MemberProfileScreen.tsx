@@ -36,11 +36,7 @@ import {
   type MemberProfile,
 } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
-import {
-  MissingRequirementsError,
-  nextPostRequirement,
-  type MissingRequirement,
-} from '@/lib/missing-requirements';
+import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
@@ -536,7 +532,7 @@ export function MemberProfileScreen({
     })();
   };
 
-  const openOverlayForMissing = (missing: readonly MissingRequirement[]): boolean => {
+  const openOverlayForMissing = (missing: readonly string[]): boolean => {
     const next = nextPostRequirement(missing);
     if (next === null) {
       return false;

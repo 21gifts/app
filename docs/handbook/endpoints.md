@@ -63,6 +63,20 @@
 - **Used by:** `finishPasskeyRegistration`.
 - **Auth:** Public.
 
+## Endpoint: POST /auth/passkey/replace/begin
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/replace/begin`.
+- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Used by:** `startPasskeyReplace`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /auth/passkey/replace/finish
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/replace/finish`.
+- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Used by:** `finishPasskeyReplace`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /gifts
 
 - **Purpose:** Same-origin proxy of api `GET /gifts?day=YYYY-MM-DD` (individual outbound gifts that UTC day).
@@ -134,6 +148,13 @@
 - **Errors:** Upstream 404, or 502 if the api is unreachable.
 - **Used by:** `fetchViewAboutMePhoto`.
 - **Auth:** none.
+
+## Endpoint: POST /me/wallet-backup-seen
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet-backup-seen`. Records that the recovery phrase was shown.
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `postWalletBackupSeen`.
+- **Auth:** Bearer.
 
 ## Endpoint: POST /me/setup/skip
 

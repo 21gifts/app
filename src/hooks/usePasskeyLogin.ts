@@ -10,6 +10,8 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import { mnemonicFromPrfFirst, obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -155,9 +157,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       guard(runId);
       const begin = await startPasskeyRegistration(viewKey);
       guard(runId);
-      const request: CredentialCreationOptions = {
-        publicKey: creationOptionsFromJSON(begin.options),
+      const publicKey = creationOptionsFromJSON(begin.options);
+      const salt = await prfEvalFirstSalt();
+      const first = new Uint8Array(salt.byteLength);
+      first.set(salt);
+      publicKey.extensions = {
+        ...(publicKey.extensions ?? {}),
+        prf: { eval: { first } },
       };
+      const request: CredentialCreationOptions = { publicKey };
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
@@ -166,12 +174,24 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       if (credential === null || credential.type !== 'public-key') {
         throw new Error('Passkey creation returned no credential');
       }
+      const publicKeyCredential = credential as PublicKeyCredential;
+      const prfFirst = await obtainPrfFirst(publicKeyCredential);
+      guard(runId);
+      if (prfFirst === null) {
+        throw new Error('wallet.prfUnsupported');
+      }
+      const mnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+      guard(runId);
       const session = await finishPasskeyRegistration(
         begin.challengeId,
-        credentialToJSON(credential as PublicKeyCredential),
+        credentialToJSON(publicKeyCredential),
       );
       guard(runId);
-      setAuth(session.token, session.account);
+      rememberSessionPhrase(mnemonic);
+      setAuth(session.token, {
+        ...session.account,
+        passkeyCredentialId: session.account.passkeyCredentialId ?? publicKeyCredential.id,
+      });
       choiceOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');
@@ -248,6 +268,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   );
 
   const authenticate = useCallback((): void => {
+    clearSessionPhrase();
     if (isInAppBrowser()) {
       setStatus('unsupported');
       return;
@@ -260,6 +281,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [beginRun, completeAuthentication, finishWithError]);
 
   const login = useCallback((): void => {
+    clearSessionPhrase();
     if (isInAppBrowser()) {
       setStatus('unsupported');
       return;

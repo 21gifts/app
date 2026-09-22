@@ -72,6 +72,7 @@ app/
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
 │   │   │   ├── notification-level/route.ts  # POST /me/notification-level
+│   │   │   ├── wallet-backup-seen/route.ts  # POST /me/wallet-backup-seen
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
@@ -139,6 +140,11 @@ app/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional this-device On/Off pill
+│   │   ├── wallet/
+│   │   │   └── page.tsx         # GET /wallet — recovery phrase confirm / activate / reveal
+│   │   ├── auth/passkey/replace/
+│   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
+│   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── moderate/
@@ -181,6 +187,8 @@ app/
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
+│   │   ├── WalletScreen.tsx     # Recovery-phrase confirm / activate / reveal
+│   │   ├── WalletScreenView.tsx # Presentational wallet card
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)
@@ -232,6 +240,13 @@ app/
 │   │       ├── SegmentedControl.tsx # Mutually exclusive option group
 │   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
+│   ├── hooks/
+│   │   ├── useAccountTotals.ts  # Profile given/received totals
+│   │   ├── useHydrateSession.ts # Restore session from cookie
+│   │   ├── useLatestRateDay.ts  # Latest fiat rate day
+│   │   ├── usePasskeyLogin.ts   # Register / authenticate / claim
+│   │   ├── useUnreadCount.ts    # Menu badge unread
+│   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -241,6 +256,8 @@ app/
 │   │   ├── request-fiat.ts      # Cookie fiat for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
+│   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
+│   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids
@@ -292,6 +309,7 @@ app/
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
+│   ├── wallet.spec.ts           # /wallet recovery-phrase Function titles
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next

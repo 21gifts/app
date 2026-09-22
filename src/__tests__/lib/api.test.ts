@@ -39,6 +39,7 @@ import {
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  finishPasskeyReplace,
   isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   WRONG_ACCOUNT_ERROR,
@@ -61,6 +62,7 @@ import {
   postMessageVideo,
   postNotificationLevel,
   postPushSubscription,
+  postWalletBackupSeen,
   agreeToRules,
   putAboutMe,
   setLightningAddress,
@@ -71,6 +73,7 @@ import {
   resolveLightningAddress,
   startPasskeyAuthentication,
   startPasskeyRegistration,
+  startPasskeyReplace,
   unlinkLightningAddress,
 } from '@/lib/api';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
@@ -3245,6 +3248,62 @@ describe('finishPasskeyAuthentication', () => {
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toThrow(
       'Failed to finish passkey authentication: 403',
     );
+  });
+});
+
+describe('startPasskeyReplace', () => {
+  it('returns the validated begin payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyReplace('sess')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/replace/begin', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(startPasskeyReplace('sess')).rejects.toThrow(
+      'Failed to start passkey replace: 401',
+    );
+  });
+});
+
+describe('finishPasskeyReplace', () => {
+  it('returns the account from the wrapped body', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { account } });
+    await expect(finishPasskeyReplace('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/replace/finish', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(finishPasskeyReplace('sess', 'ch', {})).rejects.toThrow(
+      'Failed to finish passkey replace: 400',
+    );
+  });
+});
+
+describe('postWalletBackupSeen', () => {
+  it('returns the updated account', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+    await expect(postWalletBackupSeen('sess')).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/me/wallet-backup-seen', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(postWalletBackupSeen('sess')).rejects.toThrow('Could not save wallet backup');
   });
 });
 

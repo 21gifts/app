@@ -32,6 +32,7 @@
     "screenshot:check": "node scripts/check-screenshots.mjs"
   },
   "dependencies": {
+    "@scure/bip39": "^1.6.0",
     "lucide-react": "^0.469.0",
     "next": "^15.3.0",
     "qrcode.react": "^4.2.0",

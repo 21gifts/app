@@ -165,6 +165,7 @@ function usernameTaken(username, accountId) {
 /** Refresh `missing` from filled fields. */
 function refreshMissing(account) {
   const missing = [];
+  if (account.walletRequired === true && !account.walletBackupSeenAt) missing.push('wallet');
   if (!hasName(account)) missing.push('name');
   if (!hasUsername(account)) missing.push('username');
   if (!hasLightningAddress(account)) missing.push('lightning-address');
@@ -179,7 +180,17 @@ function refreshMissing(account) {
  */
 function afterFieldWrite(account) {
   refreshMissing(account);
-  if (account.setup === 'name' && hasName(account)) {
+  if (account.setup === 'wallet' && account.walletBackupSeenAt) {
+    account.setup = hasName(account)
+      ? hasUsername(account)
+        ? hasLightningAddress(account)
+          ? hasRules(account)
+            ? null
+            : 'rules'
+          : 'lightning-address'
+        : 'username'
+      : 'name';
+  } else if (account.setup === 'name' && hasName(account)) {
     account.setup = hasUsername(account)
       ? hasLightningAddress(account)
         ? hasRules(account)
@@ -216,8 +227,10 @@ function newAccount(linkingKey) {
     viewKey: hex(randomBytes(32)),
     aboutMe: null,
     aboutMeHasPhoto: false,
-    setup: 'name',
-    missing: ['name', 'username', 'lightning-address', 'rules'],
+    setup: 'wallet',
+    walletRequired: true,
+    walletBackupSeenAt: null,
+    missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
   };
   return account;
 }
@@ -1637,6 +1650,7 @@ const server = http.createServer(async (req, res) => {
         user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
         authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        extensions: { prf: {} },
       },
     });
     return;
@@ -1715,6 +1729,92 @@ const server = http.createServer(async (req, res) => {
     const token = hex(randomBytes(32));
     byToken.set(token, account);
     json(res, 200, { token, account });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/wallet-backup-seen') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.walletBackupSeenAt == null) {
+      account.walletBackupSeenAt = Date.now();
+    }
+    afterFieldWrite(account);
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/replace/begin') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let currentId;
+    for (const [id, owned] of byPasskeyCredential.entries()) {
+      if (owned === account) {
+        currentId = id;
+        break;
+      }
+    }
+    if (!currentId) {
+      json(res, 400, { error: 'No passkey to replace' });
+      return;
+    }
+    const challengeId = hex(randomBytes(32));
+    const userId = hex(randomBytes(16));
+    byPasskey.set(challengeId, { type: 'replace', account });
+    json(res, 200, {
+      challengeId,
+      options: {
+        challenge: b64url(randomBytes(32)),
+        rp: { id: 'localhost', name: '21.gifts' },
+        user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        excludeCredentials: [{ type: 'public-key', id: currentId }],
+        extensions: { prf: {} },
+      },
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/replace/finish') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
+      return;
+    }
+    const pending = byPasskey.get(parsed?.challengeId);
+    if (!pending || pending.type !== 'replace' || pending.account !== account) {
+      json(res, 400, { error: 'Unknown or expired challenge' });
+      return;
+    }
+    byPasskey.delete(parsed.challengeId);
+    const credId = parsed.credential?.id;
+    if (typeof credId !== 'string' || credId === '') {
+      json(res, 400, { error: 'Invalid passkey' });
+      return;
+    }
+    for (const [id, owned] of byPasskeyCredential.entries()) {
+      if (owned === account) {
+        byPasskeyCredential.delete(id);
+      }
+    }
+    byPasskeyCredential.set(credId, account);
+    json(res, 200, { account });
     return;
   }
 

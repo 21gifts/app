@@ -257,7 +257,7 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
@@ -307,7 +307,7 @@
 
 ## Function: NameSetup
 
-- **Purpose:** First post-login screen: display name form.
+- **Purpose:** Display-name form when `account.setup === 'name'` (after wallet when that step is required).
 - **Inputs:** None besides `NameForm` store reads.
 - **Returns / side effects:** Heading **Your name** at the top and `NameForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/name`.
@@ -349,17 +349,17 @@
 
 ## Function: OnboardingGate
 
-- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile` and `/members/[accountId]`).
-- **Inputs:** `screen` (`login` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). Profile and members still require `next === '/welcome'`.
-- **Used by:** Screens `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/shops`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`.
+- **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`, `/wallet`, and `/members/[accountId]`).
+- **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). `screen="wallet"` stays when `next` is `/wallet` or `/welcome`. Profile and members stay only when `next === '/welcome'`.
+- **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`, `/shops`.
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)` (default write-badge: writes the home-screen badge), `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel is an in-tree `absolute` sibling of the Menu button (not a body portal). `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ShopsPage`, `ProfilePage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel is an in-tree `absolute` sibling of the Menu button (not a body portal). `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Wallet** (`/wallet`, lucide `Wallet`, `wallet.title`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ShopsPage`, `ProfilePage`, `WalletPage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -373,7 +373,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading`, default `profile.back`).
 - **Inputs:** Optional `backHref` and `backLabelKey`; catalog via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. No network.
-- **Used by:** `ProfilePage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `ShopsPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `WalletPage`, `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: MessagesChromeLeft
 
@@ -653,7 +653,7 @@
 - **Inputs:** `children`, required `mode` (`fill` | `flow`; both values render the same frame), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`).
 - **Returns / side effects:** A `<main>` layout with a rounded page frame, chrome row, header/footer portals, and inner scroller. `useAppShellScroller` reads that scroller from context. No network.
 - **Used by:**
-  - **Fill and flow app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note, `ProfilePage`, `ViewProfilePage`, `MemberProfilePage`)
+  - **Fill and flow app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note, `ProfilePage`, `WalletPage`, `ShopsPage`, `ViewProfilePage`, `MemberProfilePage`)
   - **`PageChrome`** (still `mode="flow"`; AppShell draws the unified frame — welcome and public rules)
   - **`AppShellHeader` / `AppShellFooter` / `AppShellTopLeft`** slot registrars
   - **`useAppShellScroller`** (`ForumBoard` pull-to-refresh, `ForumLoader` atTop / scroll-to-top, `InboxScreen` open-thread pin to bottom / one-shot list reset to top)
@@ -1027,10 +1027,10 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; skips advance `setup` without clearing `missing`). Username cannot be skipped.
+- **Purpose:** Picks `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; `setup === 'wallet'` → `/wallet`; skips advance `setup` without clearing `missing`). Username and wallet cannot be skipped.
 - **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
-- **Used by:** `OnboardingGate`.
+- **Used by:** `OnboardingGate`, `useWalletPhrase.confirmSaved`.
 
 ## Function: skipSetup
 
@@ -2014,10 +2014,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/auth/passkey/{register,authenticate}/{begin,finish}` re-export the four passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/auth/passkey/{register,authenticate,replace}/{begin,finish}` re-export the six passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslatePost`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText }` or 400/502/503 JSON (DeepL API v2, not the 21.gifts api).
-- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), passkey begin/finish, forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
+- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), passkey begin/finish (register, authenticate, and replace), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
 
 ## Function: PUT
 
@@ -2329,17 +2329,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: creationOptionsFromJSON
 
-- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present.
-- **Inputs:** Record from `POST /auth/passkey/register/begin`.
+- **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present and client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
+- **Inputs:** Record from `POST /auth/passkey/register/begin` or `POST /auth/passkey/replace/begin`.
 - **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
-- **Used by:** `usePasskeyLogin.register`.
+- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
 
 ## Function: credentialToJSON
 
-- **Purpose:** Serialise a `PublicKeyCredential` for the api finish body.
+- **Purpose:** Serialise a `PublicKeyCredential` for the api finish body. Drops `clientExtensionResults.prf` so PRF bytes never leave the tab.
 - **Inputs:** Browser credential from create/get.
-- **Returns / side effects:** JSON record. Uses native `toJSON` when present.
-- **Used by:** `usePasskeyLogin`.
+- **Returns / side effects:** JSON record without `prf` results. Uses native `toJSON` when present, then strips `prf`.
+- **Used by:** `usePasskeyLogin`, `useWalletPhrase`.
 
 ## Function: finishPasskeyAuthentication
 
@@ -2385,7 +2385,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: requestOptionsFromJSON
 
-- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`.
+- **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`. Copies client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
 - **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
 - **Used by:** `usePasskeyLogin.authenticate`.
@@ -2397,6 +2397,146 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
+## Function: startPasskeyReplace
+
+- **Purpose:** POST `/auth/passkey/replace/begin` with Bearer.
+- **Inputs:** Session token.
+- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx.
+- **Used by:** `useWalletPhrase.activate`.
+
+## Function: finishPasskeyReplace
+
+- **Purpose:** POST `/auth/passkey/replace/finish` with Bearer. Does not mint a session.
+- **Inputs:** Session token, challenge id, credential JSON.
+- **Returns / side effects:** Owner `Account` from `{ account }`. Throws on non-2xx.
+- **Used by:** `useWalletPhrase.activate`.
+
+## Function: postWalletBackupSeen
+
+- **Purpose:** POST `/me/wallet-backup-seen` with Bearer.
+- **Inputs:** Session token.
+- **Returns / side effects:** Owner `Account`. Throws on non-2xx.
+- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.activate`.
+
+## Function: proxyAuthPasskeyReplaceBeginPost
+
+- **Purpose:** Proxies POST `/auth/passkey/replace/begin`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/replace/begin`.
+
+## Function: proxyAuthPasskeyReplaceFinishPost
+
+- **Purpose:** Proxies POST `/auth/passkey/replace/finish`.
+- **Inputs:** Incoming `Request` with Bearer and JSON body.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/replace/finish`.
+
+## Function: proxyMeWalletBackupSeenPost
+
+- **Purpose:** Proxies POST `/me/wallet-backup-seen`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/wallet-backup-seen`.
+
+## Function: prfEvalFirstSalt
+
+- **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
+- **Inputs:** None.
+- **Returns / side effects:** 32-byte `Uint8Array`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+
+## Function: readPrfFirst
+
+- **Purpose:** Read `prf.results.first` from a credential.
+- **Inputs:** `PublicKeyCredential`.
+- **Returns / side effects:** Bytes or `undefined`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`.
+
+## Function: mnemonicFromPrfFirst
+
+- **Purpose:** HKDF-SHA-256 then BIP-39 English 12 words.
+- **Inputs:** PRF eval.first bytes.
+- **Returns / side effects:** Space-separated mnemonic. Never sent to the api.
+- **Used by:** `useWalletPhrase`, `usePasskeyLogin`.
+
+## Function: obtainPrfFirst
+
+- **Purpose:** Prefer create() PRF; else get() with allowCredentials and eval.first salt.
+- **Inputs:** The new `PublicKeyCredential`.
+- **Returns / side effects:** Bytes or `null`.
+- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+
+## Function: obtainPrfFirstFromGet
+
+- **Purpose:** get() with PRF eval.first bound to this account's current credential (`allowCredentials`) to re-derive the phrase.
+- **Inputs:** Current credential id bytes (WebAuthn `rawId`).
+- **Returns / side effects:** Bytes or `null`. Does not contact the api. Does not pick a leftover credential after replace.
+- **Used by:** `useWalletPhrase.showPhrase`.
+
+## Function: classifyWebAuthnError
+
+- **Purpose:** Map WebAuthn failures to timeout / cancel / generic.
+- **Inputs:** Unknown rejection.
+- **Returns / side effects:** Discriminant string.
+- **Used by:** `useWalletPhrase`.
+
+## Function: rememberSessionPhrase
+
+- **Purpose:** Store 12 words in tab RAM.
+- **Inputs:** Mnemonic string.
+- **Returns / side effects:** Module-level variable. Never localStorage.
+- **Used by:** `usePasskeyLogin`, `useWalletPhrase`. Implemented in `tab-phrase`.
+
+## Function: peekSessionPhrase
+
+- **Purpose:** Read tab-RAM mnemonic.
+- **Inputs:** None.
+- **Returns / side effects:** String or `null`.
+- **Used by:** `useWalletPhrase`. Implemented in `tab-phrase`.
+
+## Function: clearSessionPhrase
+
+- **Purpose:** Drop tab-RAM mnemonic.
+- **Inputs:** None.
+- **Returns / side effects:** Clears the module variable.
+- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
+
+## Function: resetWalletCeremonyLock
+
+- **Purpose:** Drop the tab-wide wallet WebAuthn lock so a later ceremony can start.
+- **Inputs:** None.
+- **Returns / side effects:** Sets the module lock to idle. Tests call this between cases; production uses `finally` on activate / showPhrase / confirmSaved.
+- **Used by:** `useWalletPhrase` tests.
+
+## Function: useWalletPhrase
+
+- **Purpose:** Activate / confirm / show recovery phrase for `/wallet`.
+- **Inputs:** Auth store session and account.
+- **Returns / side effects:** View, words, actions. Calls replace and backup-seen.
+- **Used by:** `WalletScreen`.
+
+## Function: WalletScreenView
+
+- **Purpose:** Presentational wallet card.
+- **Inputs:** `UseWalletPhraseResult`.
+- **Returns / side effects:** Card with Activate / grid / confirm.
+- **Used by:** `WalletScreen`.
+
+## Function: WalletScreen
+
+- **Purpose:** Signed-in wallet page body.
+- **Inputs:** None.
+- **Returns / side effects:** Calls `useWalletPhrase`.
+- **Used by:** `WalletPage`.
+
+## Function: WalletPage
+
+- **Purpose:** Next.js page for `/wallet`.
+- **Inputs:** None.
+- **Returns / side effects:** AppShell + OnboardingGate + WalletScreen.
+- **Used by:** Route `/wallet`.
+
 ## Function: startPasskeyRegistration
 
 - **Purpose:** POST `/auth/passkey/register/begin` and parse options.
@@ -2406,7 +2546,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) starts create. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration.
+- **Purpose:** Client hook for passkey login. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) starts create. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. After a successful register finish it stores the 12-word phrase in tab RAM via `rememberSessionPhrase` (never `localStorage` or the api). `login` / `authenticate` call `clearSessionPhrase`.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
 - **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported | choice`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. After a choice button, `retry` repeats that ceremony. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.

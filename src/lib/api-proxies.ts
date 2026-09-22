@@ -41,6 +41,26 @@ export async function proxyAuthPasskeyAuthenticateFinishPost(request: Request): 
 }
 
 /**
+ * Proxies POST /auth/passkey/replace/begin to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyReplaceBeginPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/replace/begin');
+}
+
+/**
+ * Proxies POST /auth/passkey/replace/finish to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyReplaceFinishPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/replace/finish');
+}
+
+/**
  * Proxies GET /me to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -118,6 +138,16 @@ export async function proxyMeAboutPhotoGet(request: Request): Promise<Response> 
  */
 export async function proxyMeSetupSkipPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/setup/skip');
+}
+
+/**
+ * Proxies POST /me/wallet-backup-seen to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletBackupSeenPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet-backup-seen');
 }
 
 /**

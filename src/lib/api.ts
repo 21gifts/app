@@ -2266,6 +2266,71 @@ export async function finishPasskeyAuthentication(
 }
 
 /**
+ * Starts a signed-in passkey replace ceremony.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns Challenge id plus WebAuthn creation options JSON.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function startPasskeyReplace(sessionToken: string): Promise<PasskeyBegin> {
+  const response = await fetch('/auth/passkey/replace/begin', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to start passkey replace: ${response.status}`);
+  }
+  return passkeyBeginSchema.parse(await response.json());
+}
+
+/**
+ * Completes passkey replace and returns the owner account. Does not mint a
+ * new session; the existing Bearer stays valid.
+ *
+ * @param sessionToken - Bearer session.
+ * @param challengeId - Id returned by {@link startPasskeyReplace}.
+ * @param credential - Browser attestation JSON.
+ * @returns The owner {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails validation.
+ */
+export async function finishPasskeyReplace(
+  sessionToken: string,
+  challengeId: string,
+  credential: unknown,
+): Promise<Account> {
+  const response = await fetch('/auth/passkey/replace/finish', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ challengeId, credential }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to finish passkey replace: ${response.status}`);
+  }
+  return z.object({ account: accountSchema }).parse(await response.json()).account;
+}
+
+/**
+ * Records that the signed-in member has seen their recovery phrase.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
+ */
+export async function postWalletBackupSeen(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/wallet-backup-seen', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not save wallet backup');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Deletes a forum post and its replies using a moderator session.
  *
  * @param sessionToken - Bearer session.
