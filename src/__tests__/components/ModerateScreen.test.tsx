@@ -240,6 +240,9 @@ describe('ModerateScreen', () => {
       expect(screen.getByText('12%')).toBeTruthy();
     });
     expect(screen.getByText('yesterday 12 of 100')).toBeTruthy();
+    expect(screen.getByText('100 payouts a day').parentElement).toBe(
+      screen.getByText('yesterday 12 of 100').parentElement,
+    );
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
     expect(screen.getByText(/Official means 21.gifts itself paid/)).toBeTruthy();
     expect(screen.getByText('36')).toBeTruthy();
