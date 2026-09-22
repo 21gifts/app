@@ -5995,6 +5995,27 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-amount');
   });
 
+  test('state /welcome ask-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    await page.getByLabel('Ask').fill('1000');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-daily');
+  });
+
   test('state /welcome ask-open', async ({ page }) => {
     await seedAda(page);
     await fulfillRateDay(page);
@@ -6269,6 +6290,28 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Ask').fill('0');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-welcome-error-ask');
+  });
+
+  test('welcome error-ask-daily', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByLabel('Ask').fill('0');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-error-ask-daily');
   });
 
   test('welcome photo', async ({ page }) => {
@@ -7452,6 +7495,118 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-shops-error');
+  });
+
+  async function emptyShops(page: Page): Promise<void> {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+  }
+
+  test('state /shops ask-amount', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByLabel('Ask').fill('1000');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await shotScreen(page, 'state-shops-ask-amount');
+  });
+
+  test('state /shops ask-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByLabel('Ask').fill('1000');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await shotScreen(page, 'state-shops-ask-daily');
+  });
+
+  test('state /shops error-ask', async ({ page }) => {
+    await seedAda(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('0');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-error-ask');
+  });
+
+  test('state /shops error-ask-daily', async ({ page }) => {
+    await seedAda(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByLabel('Ask').fill('0');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-error-ask-daily');
+  });
+
+  test('state /shops ask-photos', async ({ page }) => {
+    await seedAda(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('21000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Add photos')).toBeVisible();
+    await shotScreen(page, 'state-shops-ask-photos');
+  });
+
+  test('state /shops ask-text', async ({ page }) => {
+    await seedAda(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('21000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Write a message', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-shops-ask-text');
+  });
+
+  test('state /shops ask-preview', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyShops(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('1000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+    await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Your message').fill('Need help with a train ticket');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Preview')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await page.getByRole('button', { name: /^Post$/ }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-ask-preview');
   });
 });
 

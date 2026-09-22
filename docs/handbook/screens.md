@@ -497,6 +497,12 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ![21.gifts welcome ask amount](images/welcome-ask-amount.png)
 
+### Variant: ask-daily
+
+**Ask for money** selected. Step 1 of 4 with **Daily** pressed on the pill above the amount and **1000** typed so **₿1'000** and **$1.00** show. Continue is enabled.
+
+![21.gifts welcome ask daily](images/welcome-ask-daily.png)
+
 ### Variant: ask-photos
 
 Ask step 2 of 4: **Add photos** with attach and Continue. Photos are optional.
@@ -586,6 +592,12 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 **Ask for money**, with **One-time** pressed on the pill above the amount, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
 
 ![21.gifts welcome ask error](images/welcome-error-ask.png)
+
+### Variant: error-ask-daily
+
+**Ask for money**, with **Daily** pressed on the pill above the amount, type **0**: **Continue** stays disabled.
+
+![21.gifts welcome ask daily error](images/welcome-error-ask-daily.png)
 
 ### Variant: expanded
 
@@ -914,7 +926,7 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
 - **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead (**Send a post** / **Ask for money**, photo/video). The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Post a shop (text and/or photo or video), expand a note, open Menu including **Shops**, back to the forum.
+- **Actions:** Post a shop (text and/or photo or video). **Ask for money** walks amount (One-time or Daily), photos, text, and preview, the same steps as the living room. Expand a note, open Menu including **Shops**, back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`, `ForumAskWizard`.
 
 ### Variant: default
@@ -940,6 +952,48 @@ Empty copy **No shops yet — add the first one.** Composer still present.
 **Could not load messages. Please try again.** and **Try again**.
 
 ![21.gifts shops error](images/shops-error.png)
+
+### Variant: ask-amount
+
+**Ask for money** on an empty shop list. Step 1 of 4: **One-time** pressed, **1000** typed, **₿1'000** and **$1.00**, Continue enabled. Empty copy **No shops yet — add the first one.**
+
+![21.gifts shops ask amount](images/shops-ask-amount.png)
+
+### Variant: ask-daily
+
+Same step with **Daily** pressed, **1000** typed, **₿1'000** and **$1.00**, Continue enabled.
+
+![21.gifts shops ask daily](images/shops-ask-daily.png)
+
+### Variant: error-ask
+
+**Ask for money**, **One-time** pressed, **0** typed. **Continue** stays disabled.
+
+![21.gifts shops ask error](images/shops-error-ask.png)
+
+### Variant: error-ask-daily
+
+**Ask for money**, **Daily** pressed, **0** typed. **Continue** stays disabled.
+
+![21.gifts shops ask daily error](images/shops-error-ask-daily.png)
+
+### Variant: ask-photos
+
+Ask step 2 of 4: **Add photos**, attach, and Continue. Photos are optional.
+
+![21.gifts shops ask photos](images/shops-ask-photos.png)
+
+### Variant: ask-text
+
+Ask step 3 of 4: **Write a message** and Continue.
+
+![21.gifts shops ask text](images/shops-ask-text.png)
+
+### Variant: ask-preview
+
+Ask step 4 of 4: preview with photo, caption, `ForumGoalBar` at 0 versus **₿1'000** (**$1.00**), and labeled **Post**.
+
+![21.gifts shops ask preview](images/shops-ask-preview.png)
 
 ## Screen: /rules
 
