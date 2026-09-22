@@ -440,6 +440,16 @@ describe('PublicMessageThread', () => {
         `inReplyTo:${MESSAGE_ID}\nthanks`,
       );
     });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    const parentCard = document.querySelector(`[data-message-id="${MESSAGE_ID}"]`);
+    expect(parentCard).not.toBeNull();
+    expect(
+      within(parentCard as HTMLElement).queryByRole('button', {
+        name: 'Pay with Wallet of Satoshi',
+      }),
+    ).toBeNull();
   });
 
   it('marks replies as failed when the post-pay refetch throws', async () => {

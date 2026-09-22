@@ -2069,6 +2069,16 @@ describe('MemberProfileScreen', () => {
       );
     });
     expect(postMessage).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    });
+    const parentCard = document.querySelector(`[data-message-id="${note.id}"]`);
+    expect(parentCard).not.toBeNull();
+    expect(
+      within(parentCard as HTMLElement).queryByRole('button', {
+        name: 'Pay with Wallet of Satoshi',
+      }),
+    ).toBeNull();
   });
 
   it('raises the parent reply count after a compose-pay reply confirms', async () => {
