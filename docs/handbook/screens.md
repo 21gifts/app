@@ -188,6 +188,12 @@ Existing member, no phrase yet. **Activate recovery phrase**.
 
 ![21.gifts wallet phrase](images/wallet-phrase.png)
 
+### Variant: setup
+
+New account (`setup` is wallet) with the 12-word grid and **Continue**.
+
+![21.gifts wallet setup](images/wallet-setup.png)
+
 ### Variant: confirm
 
 Optional **I saved these words** (`visual=confirm`). Not shown during setup.
@@ -206,9 +212,15 @@ Generic failure. Alert **The recovery phrase could not be opened. Check this dev
 
 ![21.gifts wallet error](images/wallet-error.png)
 
+### Variant: timeout
+
+Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**.
+
+![21.gifts wallet timeout](images/wallet-timeout.png)
+
 ### Variant: prf-unsupported
 
-PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** and labeled **Try again**.
+PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 

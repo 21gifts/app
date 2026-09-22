@@ -178,6 +178,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'setup',
+    image: 'wallet-setup.png',
+    visual: 'state-wallet-setup',
+    needle: 'Continue',
+  },
+  {
+    route: '/wallet',
     id: 'confirm',
     image: 'wallet-confirm.png',
     visual: 'state-wallet-confirm',
@@ -196,6 +203,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-error.png',
     visual: 'state-wallet-error',
     needle: 'The recovery phrase could not be opened. Check this device and try again.',
+  },
+  {
+    route: '/wallet',
+    id: 'timeout',
+    image: 'wallet-timeout.png',
+    visual: 'state-wallet-timeout',
+    needle: 'The device prompt timed out before you finished. Try again.',
   },
   {
     route: '/wallet',

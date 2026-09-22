@@ -129,6 +129,9 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (visual === 'error') {
       return 'generic';
     }
+    if (visual === 'timeout') {
+      return 'timeout';
+    }
     if (visual === 'prf-unsupported') {
       return 'prfUnsupported';
     }

@@ -314,6 +314,14 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
+  it('uses the visual timeout fixture', () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=timeout';
+    window.history.replaceState({}, '', url.toString());
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.error).toBe('timeout');
+  });
+
   it('uses the visual error fixture', () => {
     const url = new URL(originalHref);
     url.search = '?visual=error';
