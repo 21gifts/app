@@ -1662,6 +1662,7 @@ const server = http.createServer(async (req, res) => {
     (pathName === '/trust/verify' ||
       pathName === '/trust/propose-moderator' ||
       pathName === '/trust/confirm-moderator' ||
+      pathName === '/trust/reject-moderator' ||
       pathName === '/trust/appoint-moderator')
   ) {
     if (bearer(req) === null) {

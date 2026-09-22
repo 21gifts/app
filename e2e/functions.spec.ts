@@ -7479,6 +7479,12 @@ test('Function: proxyTrustConfirmModeratorPost — unauthenticated confirm is 40
   expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);
 });
 
+test('Function: proxyTrustRejectModeratorPost — unauthenticated reject is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/trust/reject-moderator')).status()).toBe(401);
+});
+
 test('Function: proxyTrustAppointModeratorPost — unauthenticated appoint is 401', async ({
   request,
 }) => {
@@ -7498,6 +7504,12 @@ test('Function: postTrustPropose — unauthenticated propose is 401', async ({ r
 test('Function: postTrustConfirm — unauthenticated confirm is 401', async ({ request }) => {
   expect(
     (await request.post('/trust/confirm-moderator', { data: { accountId: 'x' } })).status(),
+  ).toBe(401);
+});
+
+test('Function: postTrustReject — unauthenticated reject is 401', async ({ request }) => {
+  expect(
+    (await request.post('/trust/reject-moderator', { data: { accountId: 'x' } })).status(),
   ).toBe(401);
 });
 

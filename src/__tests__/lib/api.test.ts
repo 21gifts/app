@@ -51,6 +51,7 @@ import {
   postTrustAppoint,
   postTrustConfirm,
   postTrustPropose,
+  postTrustReject,
   postTrustVerify,
   postConversationInvoice,
   postConversationMessage,
@@ -3344,6 +3345,30 @@ describe('postTrustConfirm', () => {
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 409, body: {} });
     await expect(postTrustConfirm('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+});
+
+describe('postTrustReject', () => {
+  const result = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
+
+  it('posts Bearer JSON { accountId } to /trust/reject-moderator', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(postTrustReject('sess', 'acc_1')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/trust/reject-moderator', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ accountId: 'acc_1' }),
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(postTrustReject('sess', 'acc_1')).rejects.toThrow(
       'Could not update this member. Please try again.',
     );
   });

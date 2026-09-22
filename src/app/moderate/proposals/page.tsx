@@ -6,9 +6,9 @@ import { ProposalsScreen } from '@/components/ProposalsScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/moderate/proposals` — signed-in staff confirm queue.
+ * `/moderate/proposals` — signed-in staff confirm/reject queue.
  *
- * `/moderate` is the hub; this page is the confirm queue. Requires name +
+ * `/moderate` is the hub; this page is the confirm/reject queue. Requires name +
  * address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`, same as `/moderate`. There is no `route.ts` beside this
  * page (Next.js forbids that); proposal HTTP lives under `/trust/proposals`.

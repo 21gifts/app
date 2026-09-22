@@ -40,8 +40,9 @@ export function unreadAppBadgeEpoch(): number {
  * throw into the UI.
  *
  * @param count - Unread in-app notification count plus inbox unread
- * conversations plus staff-room unread (`0` or `1`). Values greater than 0
- * set the badge; zero clears it.
+ * conversations plus staff-room unread (`0` or `1`). Open-proposal count is
+ * not included: proposal rows already sit in notification unread. Values
+ * greater than 0 set the badge; zero clears it.
  */
 export function setUnreadAppBadge(count: number): void {
   const nav = navigator as AppBadgeNavigator;
@@ -54,7 +55,7 @@ export function setUnreadAppBadge(count: number): void {
 
 /**
  * Refresh the home-screen badge to notification unread plus inbox unread plus
- * staff-room unread (`0` or `1`).
+ * staff-room unread (`0` or `1`). Does not fetch or add open-proposal count.
  *
  * Fetches `GET /forum/notifications` and, unless `inboxUnreadOverride` is
  * passed, `GET /conversations`. Unless `moderationUnreadOverride` is passed,

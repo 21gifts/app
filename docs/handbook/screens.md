@@ -1232,9 +1232,9 @@ Open Direct thread. Incoming bubble text includes a public forum note URL; the n
 
 ## Screen: /notifications
 
-- **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, and moderator appointment. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, and moderator appointment (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
-- **Actions:** Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click any other row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **Actions:** Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click any other row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** for **Home**, **Shops**, Profile, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchNotifications`, `fetchConversations`, `fetchModeratorGroup`, `markNotificationRead`, `markAllNotificationsRead`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
@@ -1262,12 +1262,18 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ![21.gifts notifications error](images/notifications-error.png)
 
+### Variant: moderator-proposal
+
+Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator**).
+
+![21.gifts notifications moderator proposal](images/notifications-moderator-proposal.png)
+
 ## Screen: /moderate
 
-- **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, or applications. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s official 21.gifts payouts as a percent of 100; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals`, a labeled **Open applications** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/applications` with grant-review lead, **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when unread (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when the group is unread (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Open **Open applications** to `/moderate/applications`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals or applications.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`.
+- **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, or applications. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s official 21.gifts payouts as a percent of 100; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), a labeled **Open applications** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/applications` with grant-review lead, **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Open **Open applications** to `/moderate/applications`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals or applications itself (Open proposals count comes from `useUnreadCount`).
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `useUnreadCount`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal widget.
 
 ### Variant: default
@@ -1281,6 +1287,12 @@ Staff (moderator) hub with heading **Moderation**, collapsed payout-goal widget,
 Staff hub with an unread Moderators chat group. Collapsed payout-goal widget unchanged. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Hidden notes, Open proposals, Open applications, and Handbook unchanged.
 
 ![21.gifts moderation group unread](images/moderate-group-unread.png)
+
+### Variant: proposals-unread
+
+Staff hub with one open proposal. Collapsed payout-goal widget unchanged. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Hidden notes and Moderators chat group unchanged.
+
+![21.gifts moderation proposals unread](images/moderate-proposals-unread.png)
 
 ### Variant: forbidden
 
@@ -1353,15 +1365,15 @@ Staff (moderator) list fetch failed. Button **Try again**.
 
 ## Screen: /moderate/proposals
 
-- **URL:** `/moderate/proposals` — signed-in staff confirm queue. Same onboarding gate as `/moderate`. JSON is `/trust/proposals`. Hub is `/moderate`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open proposals**. Staff rows: subject name (link `/members/{id}`), **Proposed by {name}**, time, **Confirm as moderator** or **Waiting for another moderator to confirm.** Empty / Loading… / error+Try again. Failed confirm: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only (no Open proposals row).
-- **Actions:** In-card icon back to hub. Staff confirm / Try again. Open Menu. Back to the forum.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ProposalsPage`, `ProposalsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchTrustProposals`, `postTrustConfirm`.
+- **URL:** `/moderate/proposals` — signed-in staff confirm/reject queue. Same onboarding gate as `/moderate`. JSON is `/trust/proposals`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open proposals**. Staff rows: subject name (link `/members/{id}`), **Proposed by {name}**, time, **Reject** on every open row, **Confirm as moderator** only when not self-proposed, or **Waiting for another moderator to confirm.** plus **Reject** when self-proposed. Empty / Loading… / error+Try again. Failed confirm or reject: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only (no Open proposals row).
+- **Actions:** In-card icon back to hub. Staff confirm, reject, or Try again. Busy disables Confirm and Reject. Open Menu. Back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ProposalsPage`, `ProposalsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchTrustProposals`, `postTrustConfirm`, `postTrustReject`.
 - **Auth:** Bearer; list only when `roleAtLeast(role, 'moderator')`.
 
 ### Variant: default
 
-Staff (moderator) loaded queue with at least one open proposal (subject **Rose**, **Proposed by Bob**, **Confirm as moderator**).
+Staff (moderator) loaded queue with at least one open proposal (subject **Rose**, **Proposed by Bob**, **Confirm as moderator**, **Reject**).
 
 ![21.gifts open proposals](images/moderate-proposals.png)
 
@@ -1391,7 +1403,7 @@ Staff (moderator) list fetch failed. Copy **Could not load open proposals. Pleas
 
 ### Variant: waiting-confirm
 
-Staff (moderator) row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button.
+Staff (moderator) row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button. **Reject** visible.
 
 ![21.gifts open proposals waiting confirm](images/moderate-proposals-waiting-confirm.png)
 
@@ -1401,11 +1413,35 @@ Staff (moderator) Confirm as moderator failed. Copy **Could not update this memb
 
 ![21.gifts open proposals confirm error](images/moderate-proposals-confirm-error.png)
 
+### Variant: reject-error
+
+Staff (moderator) Reject failed. Copy **Could not update this member. Please try again.** Confirm still visible (someone else proposed).
+
+![21.gifts open proposals reject error](images/moderate-proposals-reject-error.png)
+
+### Variant: reject-error-self
+
+Staff (moderator) Reject failed on a row they proposed themselves. Copy **Waiting for another moderator to confirm.** and **Could not update this member. Please try again.** No Confirm button. **Reject** visible.
+
+![21.gifts open proposals reject error self](images/moderate-proposals-reject-error-self.png)
+
 ### Variant: confirming
 
-Staff (moderator) Confirm as moderator POST in flight. Confirm disabled with a spinner; proposal row still visible.
+Staff (moderator) Confirm as moderator POST in flight. Confirm and Reject disabled; spinner on Confirm; proposal row still visible.
 
 ![21.gifts open proposals confirming](images/moderate-proposals-confirming.png)
+
+### Variant: rejecting
+
+Staff (moderator) Reject POST in flight. Confirm and Reject disabled; spinner on Reject; proposal row still visible.
+
+![21.gifts open proposals rejecting](images/moderate-proposals-rejecting.png)
+
+### Variant: rejecting-self
+
+Staff (moderator) Reject POST in flight on a row they proposed themselves. Copy **Waiting for another moderator to confirm.** No Confirm button. Reject disabled with spinner; proposal row still visible.
+
+![21.gifts open proposals rejecting self](images/moderate-proposals-rejecting-self.png)
 
 ## Screen: /moderate/applications
 

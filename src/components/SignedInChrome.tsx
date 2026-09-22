@@ -36,7 +36,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * rows (Home, Shops, Profile with same-line given/received amounts only when that
  * side is non-zero, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
- * with a staff-room unread count when greater than zero, notifications with an
+ * with a count (staff-room unread plus open proposals) when greater than zero,
+ * notifications with an
  * unread count when greater than zero, messages with an inbox unread count
  * when greater than zero, contact, optional PWA install,
  * and log out). The Menu ends with a quiet

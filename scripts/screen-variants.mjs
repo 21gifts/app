@@ -1290,6 +1290,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not load notifications. Please try again.',
   },
   {
+    route: '/notifications',
+    id: 'moderator-proposal',
+    image: 'notifications-moderator-proposal.png',
+    visual: 'state-notifications-moderator-proposal',
+    needle: 'Bob proposed a moderator',
+  },
+  {
     route: '/moderate',
     id: 'default',
     image: 'moderate.png',
@@ -1302,6 +1309,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group-unread.png',
     visual: 'state-moderate-group-unread',
     needle: "getByRole('link', { name: 'Moderators chat group, 1 unread' })",
+  },
+  {
+    route: '/moderate',
+    id: 'proposals-unread',
+    image: 'moderate-proposals-unread.png',
+    visual: 'state-moderate-proposals-unread',
+    needle: "getByRole('link', { name: 'Open proposals, 1 unread' })",
   },
   {
     route: '/moderate',
@@ -1424,10 +1438,38 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/proposals',
+    id: 'reject-error',
+    image: 'moderate-proposals-reject-error.png',
+    visual: 'state-moderate-proposals-reject-error',
+    needle: 'Could not update this member. Please try again.',
+  },
+  {
+    route: '/moderate/proposals',
+    id: 'reject-error-self',
+    image: 'moderate-proposals-reject-error-self.png',
+    visual: 'state-moderate-proposals-reject-error-self',
+    needle: 'moderate proposals reject-error-self',
+  },
+  {
+    route: '/moderate/proposals',
     id: 'confirming',
     image: 'moderate-proposals-confirming.png',
     visual: 'state-moderate-proposals-confirming',
     needle: "getByRole('button', { name: 'Confirm as moderator' })).toBeDisabled()",
+  },
+  {
+    route: '/moderate/proposals',
+    id: 'rejecting',
+    image: 'moderate-proposals-rejecting.png',
+    visual: 'state-moderate-proposals-rejecting',
+    needle: "getByRole('button', { name: 'Reject' })).toBeDisabled()",
+  },
+  {
+    route: '/moderate/proposals',
+    id: 'rejecting-self',
+    image: 'moderate-proposals-rejecting-self.png',
+    visual: 'state-moderate-proposals-rejecting-self',
+    needle: 'moderate proposals rejecting-self',
   },
   {
     route: '/moderate/applications',

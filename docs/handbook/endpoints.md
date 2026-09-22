@@ -380,7 +380,7 @@
 
 ## Endpoint: GET /forum/notifications
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, and moderator appointment for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
+- **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, moderator appointment, and moderator proposal for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `fetchNotifications` via `NotificationsLoader` on `/notifications`, via `useUnreadCount` in `SignedInChrome`, via `ForumLoader` on `/welcome`, and via `refreshUnreadAppBadge` (from `InboxLoader` after mark-read).
 - **Auth:** Bearer.
@@ -417,7 +417,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /trust/proposals` (open moderator proposals for moderators). Lives under `/trust/proposals` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/proposals`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is not a moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
-- **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals`. `ModerateScreen` on `/moderate` does not call this GET. Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
+- **Used by:** `fetchTrustProposals` via `ProposalsScreen` on `/moderate/proposals` and via `useUnreadCount` (signed-in Menu and `ModerateScreen` Open-proposals count). Confirm uses existing `POST /trust/confirm-moderator` (`postTrustConfirm`), not appoint.
 - **Auth:** Bearer session; the api requires a moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: POST /trust/verify
@@ -440,6 +440,13 @@
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `postTrustConfirm` in `MemberTrustActions` and `ProposalsScreen`.
 - **Auth:** Bearer (moderator, not the proposer).
+
+## Endpoint: POST /trust/reject-moderator
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/reject-moderator` with `{ accountId }`.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Used by:** `postTrustReject` in `ProposalsScreen`.
+- **Auth:** Bearer (moderator; the original proposer may reject).
 
 ## Endpoint: POST /trust/appoint-moderator
 

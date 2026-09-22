@@ -791,6 +791,16 @@ describe('notificationSchema', () => {
     expect(notificationSchema.parse(row)).toEqual(row);
   });
 
+  it('accepts moderator_proposal', () => {
+    const row = {
+      ...base,
+      type: 'moderator_proposal' as const,
+      parentId: 'acc_1',
+      replyId: 'acc_1',
+    };
+    expect(notificationSchema.parse(row)).toEqual(row);
+  });
+
   it('rejects an unknown type', () => {
     expect(() => notificationSchema.parse({ ...base, type: 'other' })).toThrow();
   });

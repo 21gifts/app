@@ -54,6 +54,7 @@ import {
   proxyTrustChainGet,
   proxyTrustConfirmModeratorPost,
   proxyTrustProposeModeratorPost,
+  proxyTrustRejectModeratorPost,
   proxyTrustProposalsGet,
   proxyTrustVerifyPost,
   proxyFundingAdmitPost,
@@ -611,6 +612,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/confirm-moderator');
+  });
+
+  it('proxyTrustRejectModeratorPost hits POST /trust/reject-moderator', async () => {
+    const fetchMock = stubApi();
+    await proxyTrustRejectModeratorPost(
+      new Request('http://localhost/trust/reject-moderator', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/trust/reject-moderator');
   });
 
   it('proxyTrustAppointModeratorPost hits POST /trust/appoint-moderator', async () => {

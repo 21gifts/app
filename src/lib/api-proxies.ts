@@ -291,6 +291,16 @@ export async function proxyTrustConfirmModeratorPost(request: Request): Promise<
 }
 
 /**
+ * Proxies POST /trust/reject-moderator to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * @returns The upstream response.
+ */
+export async function proxyTrustRejectModeratorPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/trust/reject-moderator');
+}
+
+/**
  * Proxies POST /trust/appoint-moderator to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).

@@ -67,6 +67,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/trust/verify')).status()).toBe(401);
   expect((await request.post('/trust/propose-moderator')).status()).toBe(401);
   expect((await request.post('/trust/confirm-moderator')).status()).toBe(401);
+  expect((await request.post('/trust/reject-moderator')).status()).toBe(401);
   expect((await request.post('/trust/appoint-moderator')).status()).toBe(401);
   expect((await request.post('/funding/apply')).status()).toBe(401);
   expect((await request.get('/funding/applications')).status()).toBe(401);
