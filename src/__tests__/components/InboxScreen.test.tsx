@@ -1650,6 +1650,73 @@ describe('InboxScreen', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 1200);
   });
 
+  it('pins to the bottom when a still finishes decoding while stuck', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [newest],
+            photoUrls: { 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    scrollTo.mockClear();
+    fireEvent.load(screen.getByAltText('Photo from Ada'));
+    expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+  });
+
+  it('does not pin when a still finishes decoding after the scroller leaves the bottom', () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    const newest = { ...MESSAGE, hasPhoto: true, photoCount: 1 };
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxScreen
+          {...inboxScreenProps({
+            messages: [newest],
+            photoUrls: { 'm1:0': 'blob:new' },
+          })}
+        />
+      </AppShell>,
+    );
+    const scroller = container.querySelector('.overflow-y-auto');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.scrollTop = 0;
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+    scroller.dispatchEvent(new Event('scroll'));
+    scrollTo.mockClear();
+    fireEvent.load(screen.getByAltText('Photo from Ada'));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
   it('pins to the bottom when an older still loads while stuck to the bottom', () => {
     const scrollTo = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'scrollTo', {

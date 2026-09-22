@@ -377,7 +377,7 @@ function inboxAuthorProfileButton(
  * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
  * An open thread stays pinned to the AppShell scroller bottom while the
  * scroller is within 80px of the bottom, including when older pages prepend
- * and when stills on the loaded page finish. Scrolling up unsticks; further
+ * and when stills on the loaded page finish decoding (`onLoad`). Scrolling up unsticks; further
  * prepends keep the same messages in view by compensating scrollTop. A
  * newest-id change re-sticks. An invoice pay sheet opening pins again.
  * Inside AppShell the pin waits for that scroller and does not fall back to
@@ -583,6 +583,16 @@ export function InboxScreen({
     showPaymentQr,
   ]);
 
+  const pinIfStuck = (): void => {
+    if (inShell && scroller === null) {
+      return;
+    }
+    if (!stuckToBottomRef.current) {
+      return;
+    }
+    shellScrollToBottom(scroller);
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     onPost();
@@ -782,6 +792,7 @@ export function InboxScreen({
                         src={url}
                         alt={t('inbox.photoAlt', { name: message.name })}
                         className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                        onLoad={pinIfStuck}
                       />
                     );
                   },
