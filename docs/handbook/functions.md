@@ -1023,6 +1023,20 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. Fetches places and `/maps/key`.
 - **Used by:** `MapPage`.
 
+## Function: fetchPlaces
+
+- **Purpose:** Load every live top-level forum pin for the signed-in session.
+- **Inputs:** `sessionToken` bearer.
+- **Returns / side effects:** `ForumPlaceRow[]` from `GET /forum/messages/places`. Throws the visitor-facing load error on a non-2xx status, a network failure, or a body that fails the schema.
+- **Used by:** `PlacesMapScreen`.
+
+## Function: proxyMessagesPlacesGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /messages/places`.
+- **Inputs:** Incoming request.
+- **Returns / side effects:** The upstream response. No session of its own.
+- **Used by:** `GET /forum/messages/places`.
+
 ## Function: PlaceField
 
 - **Purpose:** Optional place control on the top-level forum composer. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin.

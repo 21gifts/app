@@ -37,6 +37,13 @@ async function seedSignedIn(page: Page): Promise<void> {
   });
 }
 
+test('Function: proxyMessagesPlacesGet — GET /forum/messages/places without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/messages/places')).status()).toBe(401);
+  expect((await request.get('/maps/key')).status()).toBe(200);
+});
+
 test('Function: MapPage — heading is visible', async ({ page }) => {
   await seedSignedIn(page);
   await page.route(/\/forum\/messages\/places$/, async (route) => {
@@ -48,6 +55,30 @@ test('Function: MapPage — heading is visible', async ({ page }) => {
   });
   await page.goto('/map');
   await expect(page.getByRole('heading', { name: 'Map' })).toBeVisible();
+});
+
+test('Function: fetchPlaces — the map lists a pin', async ({ page }) => {
+  await seedSignedIn(page);
+  await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        places: [
+          {
+            id: 'm-pin',
+            name: 'Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/map');
+  await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
 });
 
 test('Function: PlacesMapScreen — lists a pin', async ({ page }) => {

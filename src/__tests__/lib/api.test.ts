@@ -1342,13 +1342,8 @@ describe('fetchPlaces', () => {
   });
 
   it('rejects when fetch rejects', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockRejectedValue(new Error('offline')),
-    );
-    await expect(fetchPlaces('tok')).rejects.toThrow(
-      'Could not load places. Please try again.',
-    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(fetchPlaces('tok')).rejects.toThrow('Could not load places. Please try again.');
     vi.unstubAllGlobals();
   });
 });

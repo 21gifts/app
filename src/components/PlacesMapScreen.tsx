@@ -78,10 +78,7 @@ export function PlacesMapScreen(): ReactElement {
     let cancelled = false;
     const run = async (): Promise<void> => {
       try {
-        const [rows, keyResponse] = await Promise.all([
-          fetchPlaces(session),
-          fetch('/maps/key'),
-        ]);
+        const [rows, keyResponse] = await Promise.all([fetchPlaces(session), fetch('/maps/key')]);
         const keyBody: unknown = await keyResponse.json();
         if (cancelled) {
           return;
@@ -179,8 +176,7 @@ export function PlacesMapScreen(): ReactElement {
         />
         <ul className="flex flex-col gap-2">
           {places.map((place) => {
-            const label =
-              place.label ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
+            const label = place.label ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
             const selected = place.id === pinId;
             return (
               <li key={place.id}>
