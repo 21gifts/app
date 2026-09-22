@@ -1214,6 +1214,7 @@ export function ForumLoader({
               /* v8 ignore stop */
             }
             if (ownContent) {
+              setAskCadence('once');
               if (postAfterPay) {
                 /* v8 ignore next -- compose-pay always stores trimmed text, including '' */
                 const caption = pendingComposeTextRef.current ?? '';
