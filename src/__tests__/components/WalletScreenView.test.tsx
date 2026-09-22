@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
@@ -27,6 +27,7 @@ describe('WalletScreenView', () => {
   });
 
   it('shows Continue during setup instead of I saved these words', () => {
+    const confirmSaved = vi.fn();
     renderWithLocale(
       <WalletScreenView
         view="phrase"
@@ -35,7 +36,7 @@ describe('WalletScreenView', () => {
         words={words}
         setupWallet
         activate={vi.fn()}
-        confirmSaved={vi.fn()}
+        confirmSaved={confirmSaved}
         showPhrase={vi.fn()}
         hidePhrase={vi.fn()}
         retry={vi.fn()}
@@ -43,6 +44,27 @@ describe('WalletScreenView', () => {
     );
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'I saved these words' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(confirmSaved).toHaveBeenCalled();
+  });
+
+  it('shows a primary Show recovery phrase during setup without burying it', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        setupWallet
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Show recovery phrase' })).toBeTruthy();
+    expect(screen.queryByText('Advanced functions')).toBeNull();
   });
 
   it('shows a timeout reason and a hint', () => {
