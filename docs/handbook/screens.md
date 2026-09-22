@@ -1337,6 +1337,12 @@ Desktop member card after pressing **Shop sticker** under the Open CryptoPay QR:
 
 ![21.gifts member shop sticker open](images/members-sticker-open.png)
 
+### Variant: sticker-busy
+
+Same overlay while **Download** is making the file (here PNG, whose canvas encode is still running): **Download** is disabled until `shopStickerBlob` settles; the preview, the format choice and **Close** stay usable. Mobile combos show the member card without the button, as above.
+
+![21.gifts member shop sticker busy](images/members-sticker-busy.png)
+
 ### Variant: sticker-failed
 
 Same overlay after **Download** failed (here PNG with a browser that cannot encode the canvas): `role="alert"` **Could not create the file. Please try again.** above **Download**; the next try clears it. Mobile combos show the member card without the button, as above.

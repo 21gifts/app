@@ -1249,6 +1249,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'sticker-busy',
+    image: 'members-sticker-busy.png',
+    visual: 'state-members-sticker-busy',
+    needle: 'state-members-sticker-busy',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'sticker-failed',
     image: 'members-sticker-failed.png',
     visual: 'state-members-sticker-failed',

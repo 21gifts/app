@@ -3700,6 +3700,24 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-sticker-open', false);
   });
 
+  test('state /members sticker-busy', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      // the PNG encode never finishes, so Download stays disabled
+      HTMLCanvasElement.prototype.toBlob = function toBlob(): void {};
+    });
+    await seedShopStickerMember(page);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-members-sticker-busy');
+      return;
+    }
+    const dialog = await openShopStickerOverlay(page);
+    await dialog.getByRole('button', { name: 'PNG' }).click();
+    await dialog.getByRole('button', { name: 'Download' }).click();
+    await expect(dialog.getByRole('button', { name: 'Download' })).toBeDisabled();
+    await shotScreen(page, 'state-members-sticker-busy', false);
+  });
+
   test('state /members sticker-failed', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       HTMLCanvasElement.prototype.toBlob = function toBlob(callback: BlobCallback): void {

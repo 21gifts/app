@@ -148,6 +148,34 @@ describe('ShopStickerOverlay', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('gives focus back to the element that opened it', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const { unmount } = renderWithLocale(
+      <ShopStickerOverlay qrValue={QR} handle="carol@21.gifts" onClose={vi.fn()} />,
+    );
+    expect(document.activeElement).toBe(screen.getByRole('dialog'));
+    unmount();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
+  it('leaves Escape from inside the dialog to the dialog, even when the document listener sees it', () => {
+    const add = vi.spyOn(document, 'addEventListener');
+    const onClose = renderOverlay();
+    const listener = add.mock.calls.find(([type]) => type === 'keydown')?.[1] as (
+      event: KeyboardEvent,
+    ) => void;
+    listener({
+      key: 'Escape',
+      target: screen.getByRole('button', { name: 'Download' }),
+    } as unknown as KeyboardEvent);
+    expect(onClose).not.toHaveBeenCalled();
+    listener({ key: 'Escape', target: document.body } as unknown as KeyboardEvent);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps focus on the format choice across re-renders', () => {
     renderOverlay();
     const jpg = screen.getByRole('button', { name: 'JPG' });

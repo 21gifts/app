@@ -63,14 +63,18 @@ export function ShopStickerOverlay({
   );
 
   useEffect(() => {
-    // the trigger sits outside the dialog, so focus moves in once on open
+    // the trigger sits outside the dialog, so focus moves in once on open and goes back to it on close
+    const opener = document.activeElement as HTMLElement;
     (dialogRef.current as HTMLDivElement).focus();
+    return () => opener.focus();
   }, []);
 
   useEffect(() => {
-    // Escape also closes when focus has left the dialog (e.g. after a click on the preview)
+    // Escape from outside the dialog (e.g. after a click on the preview). Keys inside it are handled by the
+    // dialog's onKeyDown; with the app root on document both listeners see the same event, so skip those here.
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose();
+      const dialog = dialogRef.current as HTMLDivElement;
+      if (event.key === 'Escape' && !dialog.contains(event.target as Node)) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);

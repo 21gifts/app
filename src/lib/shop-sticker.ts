@@ -15,7 +15,7 @@ export const SHOP_STICKER_FORMATS = ['pdf', 'png', 'jpg', 'svg'] as const;
 /** One of {@link SHOP_STICKER_FORMATS}. */
 export type ShopStickerFormat = (typeof SHOP_STICKER_FORMATS)[number];
 
-/** Printed sticker width in millimetres (one cell of the 2 × 6 A3 sticker sheet). */
+/** Printed sticker width in millimetres; the height follows the 1500 × 918 artwork (82.25 mm). */
 export const SHOP_STICKER_WIDTH_MM = 134.4;
 
 /** Pixel width of PNG and JPG downloads (about 570 dpi at {@link SHOP_STICKER_WIDTH_MM}). */
