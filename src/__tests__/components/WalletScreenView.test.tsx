@@ -175,6 +175,26 @@ describe('WalletScreenView', () => {
     ).not.toBeNull();
   });
 
+  it('opens Advanced functions to Show recovery phrase', () => {
+    const showPhrase = vi.fn();
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={showPhrase}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByText('Advanced functions'));
+    fireEvent.click(screen.getByRole('button', { name: 'Show recovery phrase' }));
+    expect(showPhrase).toHaveBeenCalled();
+  });
+
   it('shows a spinner on reveal while busy', () => {
     renderWithLocale(
       <WalletScreenView

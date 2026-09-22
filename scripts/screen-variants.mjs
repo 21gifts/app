@@ -199,6 +199,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'reveal-open',
+    image: 'wallet-reveal-open.png',
+    visual: 'state-wallet-reveal-open',
+    needle: 'Show recovery phrase',
+  },
+  {
+    route: '/wallet',
     id: 'error',
     image: 'wallet-error.png',
     visual: 'state-wallet-error',

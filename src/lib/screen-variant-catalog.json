@@ -108,6 +108,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:reveal-open",
+    "label": "/wallet reveal-open",
+    "visual": "state-wallet-reveal-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:error",
     "label": "/wallet error",
     "visual": "state-wallet-error",

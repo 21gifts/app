@@ -206,6 +206,12 @@ Existing member after a saved backup, no phrase in the tab. Closed **Advanced fu
 
 ![21.gifts wallet reveal](images/wallet-reveal.png)
 
+### Variant: reveal-open
+
+Existing member after a saved backup, no phrase in the tab. Open **Advanced functions** shows **Show recovery phrase**.
+
+![21.gifts wallet reveal open](images/wallet-reveal-open.png)
+
 ### Variant: error
 
 Generic failure. Alert **The recovery phrase could not be opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.

@@ -2520,7 +2520,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Presentational wallet card.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with Activate, 12-word grid, setup **Continue**, optional confirm, or **Show recovery phrase** under **Advanced functions**. Error shows a reason, a hint, and **Try again**.
+- **Returns / side effects:** Card with Activate, 12-word grid, setup **Continue**, optional confirm, or **Show recovery phrase** under closed **Advanced functions** (open shows the button). Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen
