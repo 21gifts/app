@@ -526,8 +526,6 @@ export function InboxLoader(): ReactElement | null {
   }, []);
 
   const threadLoaded = messages !== null;
-  const messagesRef = useRef(messages);
-  messagesRef.current = messages;
   useEffect(() => {
     if (session === null || openId === null || openId === '' || !threadAllowed || !threadLoaded) {
       return;
@@ -544,18 +542,19 @@ export function InboxLoader(): ReactElement | null {
           if (cancelled || openIdRef.current !== openId) {
             return;
           }
-          const prev = messagesRef.current;
-          /* v8 ignore next -- the poll starts only after the thread is loaded */
-          if (prev === null) return;
-          const next = appendUnseenMessages(prev, page.messages);
-          if (next === prev || openIdRef.current !== openId) {
+          let lastAppended: ConversationMessage | undefined;
+          setMessages((prev) => {
+            /* v8 ignore next -- the poll starts only after the thread is loaded */
+            if (prev === null) return prev;
+            const next = appendUnseenMessages(prev, page.messages);
+            if (next === prev) return prev;
+            lastAppended = next[next.length - 1];
+            return next;
+          });
+          if (lastAppended === undefined || cancelled || openIdRef.current !== openId) {
             return;
           }
-          messagesRef.current = next;
-          setMessages(next);
-          const last = next[next.length - 1];
-          /* v8 ignore next -- a non-empty append always has a last row */
-          if (last === undefined) return;
+          const last = lastAppended;
           const listedRows = conversations ?? [];
           const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
           setConversations((rows) => {

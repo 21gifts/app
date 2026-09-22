@@ -1005,4 +1005,34 @@ describe('moderator conversation thread pages', () => {
     });
     expect(await screen.findByText('After the wait')).toBeTruthy();
   });
+
+  it('does not append a posted id the staff-room poll already showed', async () => {
+    const created: ConversationMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'Follow up',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockResolvedValue(conversationPage([MESSAGE, created]));
+    postMock.mockResolvedValue(created);
+    vi.useFakeTimers({ toFake: ['setInterval'] });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByText('Hello mods')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(await screen.findByText('Follow up')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    expect(screen.getAllByText('Follow up')).toHaveLength(1);
+  });
 });

@@ -294,16 +294,15 @@ export function ModeratorGroupScreen(): ReactElement | null {
     };
   }, [group, nearStartElement, nextCursor, session]);
 
-  const threadLoaded = messages !== null && group !== null;
-  const messagesRef = useRef(messages);
-  messagesRef.current = messages;
+  const groupId = group?.id ?? null;
+  const threadLoaded = messages !== null && groupId !== null;
   useEffect(() => {
-    if (session === null || !staff || group === null || !threadLoaded) {
+    if (session === null || !staff || groupId === null || !threadLoaded) {
       return;
     }
     let cancelled = false;
     let inFlight = false;
-    const activeId = group.id;
+    const activeId = groupId;
     const pull = (): void => {
       if (document.visibilityState === 'hidden' || inFlight || cancelled) {
         return;
@@ -314,15 +313,18 @@ export function ModeratorGroupScreen(): ReactElement | null {
           if (cancelled) {
             return;
           }
-          const prev = messagesRef.current;
-          /* v8 ignore next -- the poll starts only after the thread is loaded */
-          if (prev === null) return;
-          const next = appendUnseenMessages(prev, page.messages);
-          if (next === prev) {
+          let appended = false;
+          setMessages((prev) => {
+            /* v8 ignore next -- the poll starts only after the thread is loaded */
+            if (prev === null) return prev;
+            const next = appendUnseenMessages(prev, page.messages);
+            if (next === prev) return prev;
+            appended = true;
+            return next;
+          });
+          if (!appended || cancelled) {
             return;
           }
-          messagesRef.current = next;
-          setMessages(next);
           void markConversationRead(session, activeId).catch(() => undefined);
           bumpUnreadAppBadgeEpoch();
           void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);
@@ -344,7 +346,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [session, staff, group, threadLoaded]);
+  }, [session, staff, groupId, threadLoaded]);
 
   if (session === null) {
     return null;
@@ -480,6 +482,9 @@ export function ModeratorGroupScreen(): ReactElement | null {
         setMessages((prev) => {
           /* v8 ignore next -- first message in an empty staff-room thread */
           if (prev === null) return [created];
+          if (prev.some((message) => message.id === created.id)) {
+            return prev;
+          }
           return [...prev, created];
         });
         setDraft('');
