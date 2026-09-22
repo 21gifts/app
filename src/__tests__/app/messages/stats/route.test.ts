@@ -12,7 +12,9 @@ describe('GET /messages/stats', () => {
     process.env.NEXT_PUBLIC_API_URL = 'https://api.test';
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(new Response('{"postCount":0,"postsOverTime":[]}', { status: 200 })),
+      vi
+        .fn()
+        .mockResolvedValue(new Response('{"postCount":0,"postsOverTime":[]}', { status: 200 })),
     );
     const response = await GET(new Request('http://localhost/messages/stats'));
     expect(response.status).toBe(200);

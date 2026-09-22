@@ -3525,9 +3525,7 @@ test('Function: isUtcDay — invalid day is 404', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
 });
 
-test('Function: proxyMessagesStatsGet — GET /messages/stats counts posts', async ({
-  request,
-}) => {
+test('Function: proxyMessagesStatsGet — GET /messages/stats counts posts', async ({ request }) => {
   const res = await request.get('/messages/stats');
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { postCount: number }).postCount).toBe(6);
