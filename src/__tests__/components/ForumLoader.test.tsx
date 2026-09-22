@@ -449,22 +449,25 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('feed="shops" unpaid chip counts only shop notes', async () => {
+  it('feed="shops" shows a zero-sat basis shop note immediately', async () => {
     window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, forumLawsDismissed: true },
     });
     fetchMock.mockResolvedValue(
-      forumPage([SAMPLE, { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 0 }]),
+      forumPage([SAMPLE, { ...SAMPLE, id: 'shop1', text: 'Quiet stall\n\n#21GiftsShop', sats: 0 }]),
     );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
+      expect(screen.getByText('Quiet stall')).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
-    expect(screen.getByRole('button', { name: 'No gifts yet, 1 new' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'No gifts yet, 1 new' }));
+    expect(screen.queryByText('Hello from Ada')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Active$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^No gifts yet$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^All$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Most popular$/ })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Forum view' })).toBeNull();
     expect(window.localStorage.getItem('21gifts.forum-unpaid-seen')).toBe(
       '2026-01-01T00:00:00.000Z',
     );
@@ -496,7 +499,7 @@ describe('ForumLoader', () => {
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('sess', {
-        mode: 'active',
+        mode: 'all',
         limit: 20,
         hashtag: '21GiftsShop',
       });
@@ -7112,12 +7115,12 @@ describe('forum feed pages', () => {
       expect(screen.getByText('Bakery')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('sess', {
-      mode: 'active',
+      mode: 'all',
       limit: 20,
       hashtag: '21GiftsShop',
     });
     expect(fetchMock).toHaveBeenCalledWith('sess', {
-      mode: 'active',
+      mode: 'all',
       limit: 20,
       cursor: 'cur_2',
       hashtag: '21GiftsShop',

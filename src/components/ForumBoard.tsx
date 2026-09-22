@@ -196,6 +196,8 @@ export interface ForumBoardProps {
   mode: ForumFeedMode;
   /** Called when the visitor picks another mode. */
   onModeChange: (mode: ForumFeedMode) => void;
+  /** When false, omit the Active / No gifts yet / All / Most popular control and show every loaded row (same as mode all). Default true. */
+  modeSelector?: boolean;
   /** Optional ref attached near the end of the visible feed for loader pagination. */
   nearEndRef?: (node: HTMLLIElement | null) => void;
   /**
@@ -506,7 +508,8 @@ function fallbackCopy(text: string): boolean {
  * Presentational public forum: optional dismissible living-room laws hint,
  * Active/No gifts yet/All/Most popular selector (unpaid may show a count
  * chip of unseen zero-sat notes when `unpaidNewCount` is \> 0 and that mode
- * is not selected), composer under the mode
+ * is not selected; omitted when `modeSelector` is false or `composerHidden`
+ * is true), composer under the mode
  * filters above the newest-first list (new notes only, photo or video
  * attach), newest-first list (social feed) or empty/loading/error, per-card
  * expand for oldest-first replies + reply composer (labeled Amount field;
@@ -563,6 +566,7 @@ export function ForumBoard({
   rateDay = null,
   mode,
   onModeChange,
+  modeSelector = true,
   nearEndRef,
   unpaidNewCount = 0,
   lawsVisible,
@@ -813,7 +817,8 @@ export function ForumBoard({
     </div>
   );
 
-  const visible = messages === null ? null : visibleForumMessages(messages, mode);
+  const listMode = modeSelector ? mode : 'all';
+  const visible = messages === null ? null : visibleForumMessages(messages, listMode);
 
   let middle: ReactElement;
   if (loading && messages === null) {
@@ -1497,7 +1502,7 @@ export function ForumBoard({
         </div>
       ) : null}
 
-      {!composerHidden ? (
+      {!composerHidden && modeSelector ? (
         <SegmentedControl
           value={mode}
           options={FORUM_FEED_MODES.map((next) => {

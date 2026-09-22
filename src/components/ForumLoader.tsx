@@ -363,7 +363,9 @@ export function ForumLoader({
   const notePostInFlightRef = useRef(false);
   const [preparing, setPreparing] = useState(false);
   const [formError, setFormError] = useState<ForumFormError>(null);
-  const [feedMode, setFeedMode] = useState<ForumFeedMode>(DEFAULT_FORUM_FEED_MODE);
+  const [feedMode, setFeedMode] = useState<ForumFeedMode>(
+    feed === 'shops' ? 'all' : DEFAULT_FORUM_FEED_MODE,
+  );
   const feedModeRef = useRef(feedMode);
   feedModeRef.current = feedMode;
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -1820,6 +1822,7 @@ export function ForumLoader({
       <ForumBoard
         messages={listed}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
+        {...(feed === 'shops' ? { modeSelector: false as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
         newPostsAvailable={newPostsAvailable}
         onShowNewPosts={showNewPosts}

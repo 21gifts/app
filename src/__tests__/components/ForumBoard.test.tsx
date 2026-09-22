@@ -521,6 +521,32 @@ describe('ForumBoard', () => {
     expect(document.querySelector('form')).toBeNull();
   });
 
+  it('omits the mode selector and lists a zero-sat basis note when modeSelector is false', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+        modeSelector={false}
+      />,
+    );
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
+    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Active$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^No gifts yet$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^All$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Most popular$/ })).toBeNull();
+  });
+
   it('calls onDismissLaws when the Dismiss button is clicked', () => {
     const onDismissLaws = vi.fn();
     renderWithLocale(
