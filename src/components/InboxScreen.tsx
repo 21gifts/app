@@ -436,6 +436,7 @@ export function InboxScreen({
     firstMessageId: '',
     messageCount: 0,
     scrollHeight: 0,
+    scrollTop: 0,
   });
   const paySheetWasOpen = useRef(false);
   const payWaitingWasOn = useRef(false);
@@ -475,6 +476,7 @@ export function InboxScreen({
     }
     const onScroll = (): void => {
       stuckToBottomRef.current = shellDistanceToBottom(scroller) <= STUCK_TO_BOTTOM_PX;
+      threadScrollRef.current.scrollTop = shellScrollNode(scroller).scrollTop;
     };
     if (scroller !== null) {
       scroller.addEventListener('scroll', onScroll);
@@ -510,13 +512,16 @@ export function InboxScreen({
         messageCount > threadScrollRef.current.messageCount
       ) {
         const node = shellScrollNode(scroller);
-        node.scrollTop += node.scrollHeight - threadScrollRef.current.scrollHeight;
+        const delta = node.scrollHeight - threadScrollRef.current.scrollHeight;
+        node.scrollTop = threadScrollRef.current.scrollTop + delta;
       }
       prevLastMessageIdRef.current = lastMessageId;
+      const node = shellScrollNode(scroller);
       threadScrollRef.current = {
         firstMessageId,
         messageCount,
-        scrollHeight: shellScrollNode(scroller).scrollHeight,
+        scrollHeight: node.scrollHeight,
+        scrollTop: node.scrollTop,
       };
       return;
     }
@@ -526,7 +531,12 @@ export function InboxScreen({
     }
     stuckToBottomRef.current = false;
     prevLastMessageIdRef.current = null;
-    threadScrollRef.current = { firstMessageId: '', messageCount: 0, scrollHeight: 0 };
+    threadScrollRef.current = {
+      firstMessageId: '',
+      messageCount: 0,
+      scrollHeight: 0,
+      scrollTop: 0,
+    };
   }, [
     openId,
     messagesReady,
@@ -684,7 +694,10 @@ export function InboxScreen({
           </div>
         ) : null}
         {messages !== null ? (
-          <ul aria-label={t('inbox.threadLabel')} className="flex w-full flex-col gap-3">
+          <ul
+            aria-label={t('inbox.threadLabel')}
+            className="flex w-full flex-col gap-3 [overflow-anchor:none]"
+          >
             {groups.map(({ message, gifts }, index) => (
               <li
                 key={message.id}
