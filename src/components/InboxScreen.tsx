@@ -586,7 +586,7 @@ export function InboxScreen({
   ]);
 
   const pinIfStuck = (): void => {
-    /* v8 ignore next -- onLoad runs after the AppShell scroller ref has committed */
+    /* v8 ignore next 3 -- first AppShell paint: scrollerEl state is still null */
     if (inShell && scroller === null) {
       return;
     }
