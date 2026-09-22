@@ -506,14 +506,14 @@
 
 ## Endpoint: GET /translate
 
-- **Purpose:** `{ available: boolean }` from `TRANSLATE_URL` (no upstream call). Always 200.
-- **Errors:** none (invalid URL treated as unavailable).
+- **Purpose:** `{ available: boolean }` is true only when `TRANSLATE_URL` is a valid http(s) URL and `TRANSLATE_API_KEY` is non-blank after trim. No upstream call. Always 200.
+- **Errors:** none (missing, blank, or invalid URL; missing or blank key — all treated as unavailable).
 - **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
 - **Auth:** Public.
 
 ## Endpoint: POST /translate
 
-- **Purpose:** `{ text, target }` → LibreTranslate-compatible upstream; returns `{ translatedText }`. `fil` maps to `tl`. Max 500 chars. 15s timeout. Does not forward Authorization.
+- **Purpose:** `{ text, target }` → DeepL API v2 (`text` array, `target_lang`; `fil`→`TL`; `en`/`de`/`es`→`EN`/`DE`/`ES`). Server POSTs `TRANSLATE_URL` as-is with `authorization: DeepL-Auth-Key …`. Returns `{ translatedText }`. Max 500 chars. 15s timeout. Does not forward incoming Authorization. Does not send `source_lang`.
 - **Errors:** 400 invalid body, 503 not configured, 502 upstream.
 - **Used by:** `translateNote` from `NoteTranslate`.
 - **Auth:** Public.

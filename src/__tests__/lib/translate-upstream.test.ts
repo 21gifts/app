@@ -43,40 +43,56 @@ describe('getTranslateUpstream', () => {
       } else {
         process.env.TRANSLATE_URL = value;
       }
+      process.env.TRANSLATE_API_KEY = 'secret-key';
       expect(getTranslateUpstream()).toBeNull();
     },
   );
 
-  it('accepts HTTP and appends the translate path', () => {
-    process.env.TRANSLATE_URL = 'http://127.0.0.1:3001';
-    expect(getTranslateUpstream()).toEqual({
-      url: new URL('http://127.0.0.1:3001/translate'),
-      apiKey: null,
-    });
-  });
-
-  it('accepts HTTPS, preserves a base path, and treats an empty key as absent', () => {
-    process.env.TRANSLATE_URL = 'https://translate.test/api/';
-    process.env.TRANSLATE_API_KEY = '';
-    expect(getTranslateUpstream()).toEqual({
-      url: new URL('https://translate.test/api/translate'),
-      apiKey: null,
-    });
-  });
-
-  it('returns a configured API key', () => {
-    process.env.TRANSLATE_URL = 'https://translate.test/api';
+  it('uses an HTTPS DeepL URL as-is and requires a key', () => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
     process.env.TRANSLATE_API_KEY = 'secret-key';
     expect(getTranslateUpstream()).toEqual({
-      url: new URL('https://translate.test/api/translate'),
+      url: new URL('https://api.deepl.com/v2/translate'),
+      apiKey: 'secret-key',
+    });
+  });
+
+  it('uses an HTTP URL as-is', () => {
+    process.env.TRANSLATE_URL = 'http://127.0.0.1:3001/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
+    expect(getTranslateUpstream()).toEqual({
+      url: new URL('http://127.0.0.1:3001/v2/translate'),
+      apiKey: 'secret-key',
+    });
+  });
+
+  it.each([undefined, '', '   '])(
+    'returns null when the API key is missing or blank (%j)',
+    (value) => {
+      process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+      if (value === undefined) {
+        delete process.env.TRANSLATE_API_KEY;
+      } else {
+        process.env.TRANSLATE_API_KEY = value;
+      }
+      expect(getTranslateUpstream()).toBeNull();
+    },
+  );
+
+  it('trims surrounding whitespace from the API key', () => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = '  secret-key  ';
+    expect(getTranslateUpstream()).toEqual({
+      url: new URL('https://api.deepl.com/v2/translate'),
       apiKey: 'secret-key',
     });
   });
 });
 
 describe('proxyTranslateGet', () => {
-  it('reports false without contacting an upstream when configuration is absent', async () => {
+  it('reports false without contacting an upstream when the URL is absent', async () => {
     delete process.env.TRANSLATE_URL;
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const response = proxyTranslateGet();
@@ -85,8 +101,20 @@ describe('proxyTranslateGet', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('reports true without contacting an upstream when configuration is valid', async () => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+  it('reports false without contacting an upstream when the API key is absent', async () => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    delete process.env.TRANSLATE_API_KEY;
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const response = proxyTranslateGet();
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ available: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('reports true without contacting an upstream when URL and key are set', async () => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const response = proxyTranslateGet();
@@ -97,8 +125,19 @@ describe('proxyTranslateGet', () => {
 });
 
 describe('proxyTranslatePost', () => {
-  it('returns 503 when translation is not configured', async () => {
+  it('returns 503 when the URL is not configured', async () => {
     delete process.env.TRANSLATE_URL;
+    process.env.TRANSLATE_API_KEY = 'secret-key';
+    const response = await proxyTranslatePost(
+      requestWith({ text: 'Hallo zusammen', target: 'en' }),
+    );
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({ error: 'Translate is not configured' });
+  });
+
+  it('returns 503 when the API key is missing even if the URL is set', async () => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    delete process.env.TRANSLATE_API_KEY;
     const response = await proxyTranslatePost(
       requestWith({ text: 'Hallo zusammen', target: 'en' }),
     );
@@ -112,7 +151,8 @@ describe('proxyTranslatePost', () => {
     ['overlong text', { text: 'x'.repeat(501), target: 'en' }],
     ['bad target', { text: 'Hallo zusammen', target: 'fr' }],
   ])('returns 400 for %s', async (_label, body) => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const response = await proxyTranslatePost(requestWith(body));
@@ -121,12 +161,13 @@ describe('proxyTranslatePost', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('accepts exactly 500 characters and forwards only content-type', async () => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+  it('accepts exactly 500 characters and forwards DeepL headers and body only', async () => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
-        new Response(JSON.stringify({ translatedText: 'translated' }), { status: 200 }),
+        new Response(JSON.stringify({ translations: [{ text: 'translated' }] }), { status: 200 }),
       );
     vi.stubGlobal('fetch', fetchMock);
     const text = 'x'.repeat(500);
@@ -138,25 +179,25 @@ describe('proxyTranslatePost', () => {
     );
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ translatedText: 'translated' });
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(url.toString()).toBe('https://translate.test/translate');
+    expect(url.toString()).toBe('https://api.deepl.com/v2/translate');
     expect(init.method).toBe('POST');
     expect([...new Headers(init.headers).entries()]).toEqual([
+      ['authorization', 'DeepL-Auth-Key secret-key'],
       ['content-type', 'application/json'],
     ]);
     expect(JSON.parse(String(init.body))).toEqual({
-      q: text,
-      source: 'auto',
-      target: 'en',
-      format: 'text',
+      text: [text],
+      target_lang: 'EN',
     });
   });
 
-  it('maps fil to tl and includes a configured API key', async () => {
-    process.env.TRANSLATE_URL = 'http://127.0.0.1:3001';
+  it('maps fil to TL and does not send source_lang', async () => {
+    process.env.TRANSLATE_URL = 'http://127.0.0.1:3001/v2/translate';
     process.env.TRANSLATE_API_KEY = 'upstream-key';
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ translatedText: 'May ekstrang sats ba kayo?' }), {
+      new Response(JSON.stringify({ translations: [{ text: 'May ekstrang sats ba kayo?' }] }), {
         status: 200,
       }),
     );
@@ -168,18 +209,41 @@ describe('proxyTranslatePost', () => {
     await expect(response.json()).resolves.toEqual({
       translatedText: 'May ekstrang sats ba kayo?',
     });
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.toString()).toBe('http://127.0.0.1:3001/v2/translate');
+    expect([...new Headers(init.headers).entries()]).toEqual([
+      ['authorization', 'DeepL-Auth-Key upstream-key'],
+      ['content-type', 'application/json'],
+    ]);
+    expect(JSON.parse(String(init.body))).toEqual({
+      text: ['Does anyone have spare sats this week?'],
+      target_lang: 'TL',
+    });
+  });
+
+  it.each([
+    ['de', 'DE'],
+    ['es', 'ES'],
+  ])('maps %s to target_lang %s', async (target, targetLang) => {
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ translations: [{ text: 'ok' }] }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    await proxyTranslatePost(requestWith({ text: 'Hallo zusammen', target }));
     const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({
-      q: 'Does anyone have spare sats this week?',
-      source: 'auto',
-      target: 'tl',
-      format: 'text',
-      api_key: 'upstream-key',
+      text: ['Hallo zusammen'],
+      target_lang: targetLang,
     });
   });
 
   it('returns 502 when the upstream network request rejects', async () => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const response = await proxyTranslatePost(
       requestWith({ text: 'Hallo zusammen', target: 'en' }),
@@ -189,7 +253,8 @@ describe('proxyTranslatePost', () => {
   });
 
   it('aborts an upstream request after the timeout and returns 502', async () => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     vi.useFakeTimers();
     vi.stubGlobal(
       'fetch',
@@ -209,7 +274,8 @@ describe('proxyTranslatePost', () => {
   });
 
   it('maps a non-success upstream response to 502 without leaking its body', async () => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(new Response('private upstream detail', { status: 429 })),
@@ -222,7 +288,8 @@ describe('proxyTranslatePost', () => {
   });
 
   it('maps invalid upstream JSON to 502', async () => {
-    process.env.TRANSLATE_URL = 'https://translate.test';
+    process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+    process.env.TRANSLATE_API_KEY = 'secret-key';
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not json', { status: 200 })));
     const response = await proxyTranslatePost(
       requestWith({ text: 'Hallo zusammen', target: 'en' }),
@@ -231,10 +298,11 @@ describe('proxyTranslatePost', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Translate upstream failed' });
   });
 
-  it.each([{}, { translatedText: '' }])(
-    'maps missing or empty translatedText payload %j to 502',
+  it.each([{}, { translations: [] }, { translations: [{ text: '' }] }])(
+    'maps missing or empty translated text payload %j to 502',
     async (body) => {
-      process.env.TRANSLATE_URL = 'https://translate.test';
+      process.env.TRANSLATE_URL = 'https://api.deepl.com/v2/translate';
+      process.env.TRANSLATE_API_KEY = 'secret-key';
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),

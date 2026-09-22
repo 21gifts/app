@@ -335,7 +335,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === 'POST' && pathName === '/translate') {
+  if (method === 'POST' && pathName === '/v2/translate') {
     let parsed;
     try {
       parsed = JSON.parse(rawBody);
@@ -343,18 +343,21 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Invalid body' });
       return;
     }
-    const q = parsed?.q;
-    if (typeof q !== 'string') {
+    const text = parsed?.text;
+    if (!Array.isArray(text) || text.length === 0 || typeof text[0] !== 'string') {
       json(res, 400, { error: 'Invalid body' });
       return;
     }
+    const q = text[0];
     if (q.includes('Kann mir jemand')) {
       json(res, 200, {
-        translatedText: 'Can anyone lend me a few satoshi this week?',
+        translations: [{ text: 'Can anyone lend me a few satoshi this week?' }],
       });
       return;
     }
-    json(res, 200, { translatedText: '[' + (parsed.target || 'en') + '] ' + q });
+    json(res, 200, {
+      translations: [{ text: '[' + (parsed.target_lang || 'EN') + '] ' + q }],
+    });
     return;
   }
 
