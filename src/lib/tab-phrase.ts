@@ -1,6 +1,15 @@
 /** In-tab recovery phrase. Never written to localStorage or sent to the API. */
 let sessionMnemonic: string | null = null;
 
+const PHRASE_EVENT = '21gifts:wallet-phrase';
+
+function notifyPhraseListeners(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new Event(PHRASE_EVENT));
+}
+
 /**
  * Store a derived recovery phrase in tab memory so `/wallet` can show it
  * after register or replace without persisting it.
@@ -9,6 +18,7 @@ let sessionMnemonic: string | null = null;
  */
 export function rememberSessionPhrase(mnemonic: string): void {
   sessionMnemonic = mnemonic;
+  notifyPhraseListeners();
 }
 
 /**
@@ -25,4 +35,5 @@ export function peekSessionPhrase(): string | null {
  */
 export function clearSessionPhrase(): void {
   sessionMnemonic = null;
+  notifyPhraseListeners();
 }

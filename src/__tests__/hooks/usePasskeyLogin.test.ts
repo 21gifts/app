@@ -42,6 +42,7 @@ vi.mock('@/lib/prf-mnemonic', () => ({
     .mockResolvedValue(
       'abandon ability able about above absent absorb abstract absurd abuse access accident',
     ),
+  prfEvalFirstSalt: vi.fn().mockResolvedValue(new Uint8Array(32).fill(1)),
 }));
 
 vi.mock('@/lib/tab-phrase', () => ({
@@ -114,6 +115,10 @@ describe('usePasskeyLogin', () => {
     expect(rememberSessionPhrase).toHaveBeenCalledWith(
       'abandon ability able about above absent absorb abstract absurd abuse access accident',
     );
+    const createArg = vi.mocked(navigator.credentials.create).mock.calls[0]?.[0] as
+      | CredentialCreationOptions
+      | undefined;
+    expect(createArg?.publicKey?.extensions).toHaveProperty('prf.eval.first');
     expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
     vi.unstubAllGlobals();
   });

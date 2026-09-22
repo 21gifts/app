@@ -34,6 +34,7 @@ vi.mock('@/lib/prf-mnemonic', () => ({
   obtainPrfFirst: vi.fn(),
   obtainPrfFirstFromGet: vi.fn(),
   mnemonicFromPrfFirst: vi.fn(),
+  prfEvalFirstSalt: vi.fn().mockResolvedValue(new Uint8Array(32).fill(1)),
 }));
 
 vi.mock('@/lib/webauthn-browser', () => ({

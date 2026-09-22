@@ -42,4 +42,21 @@ describe('WalletScreenView', () => {
     );
     expect(screen.getByText('abandon')).toBeTruthy();
   });
+
+  it('shows a spinner on the activate button while busy', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="activate"
+        status="busy"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        confirmSaved={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Activate recovery phrase' }).querySelector('svg')).not.toBeNull();
+  });
 });

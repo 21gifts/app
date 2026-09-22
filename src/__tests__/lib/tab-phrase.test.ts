@@ -8,4 +8,16 @@ describe('tab-phrase', () => {
     clearSessionPhrase();
     expect(peekSessionPhrase()).toBeNull();
   });
+
+  it('notifies listeners when the phrase is remembered or cleared', () => {
+    const seen: string[] = [];
+    const onPhrase = (): void => {
+      seen.push(peekSessionPhrase() ?? 'null');
+    };
+    window.addEventListener('21gifts:wallet-phrase', onPhrase);
+    rememberSessionPhrase('one two');
+    clearSessionPhrase();
+    window.removeEventListener('21gifts:wallet-phrase', onPhrase);
+    expect(seen).toEqual(['one two', 'null']);
+  });
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { finishPasskeyReplace, postWalletBackupSeen, startPasskeyReplace } from '@/lib/api';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import {
@@ -9,6 +9,7 @@ import {
   mnemonicFromPrfFirst,
   obtainPrfFirst,
   obtainPrfFirstFromGet,
+  prfEvalFirstSalt,
 } from '@/lib/prf-mnemonic';
 import {
   base64UrlToBytes,
@@ -89,12 +90,15 @@ function visualMnemonicOverride(): string | null {
   return null;
 }
 
-function mergePrfExtension(
+async function mergePrfExtension(
   options: PublicKeyCredentialCreationOptions,
-): PublicKeyCredentialCreationOptions {
+): Promise<PublicKeyCredentialCreationOptions> {
+  const salt = await prfEvalFirstSalt();
+  const first = new Uint8Array(salt.byteLength);
+  first.set(salt);
   const extensions = {
     ...(options.extensions ?? {}),
-    prf: (options.extensions as { prf?: object } | undefined)?.prf ?? {},
+    prf: { eval: { first } },
   };
   return { ...options, extensions };
 }
@@ -124,6 +128,16 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   const [mnemonic, setMnemonic] = useState<string | null>(
     () => visualMnemonicOverride() ?? peekSessionPhrase(),
   );
+
+  useEffect(() => {
+    const sync = (): void => {
+      setMnemonic(visualMnemonicOverride() ?? peekSessionPhrase());
+    };
+    window.addEventListener('21gifts:wallet-phrase', sync);
+    return () => {
+      window.removeEventListener('21gifts:wallet-phrase', sync);
+    };
+  }, []);
 
   const setupWallet = account?.setup === 'wallet';
   const words = useMemo(() => (mnemonic ? mnemonic.split(/\s+/).filter(Boolean) : []), [mnemonic]);
@@ -175,7 +189,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      const options = mergePrfExtension(creationOptionsFromJSON(begin.options));
+      const options = await mergePrfExtension(creationOptionsFromJSON(begin.options));
       const credential = (await navigator.credentials.create({
         publicKey: options,
       })) as PublicKeyCredential | null;

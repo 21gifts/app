@@ -11,7 +11,7 @@ import {
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
-import { mnemonicFromPrfFirst, obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { mnemonicFromPrfFirst, obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -158,9 +158,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       const begin = await startPasskeyRegistration(viewKey);
       guard(runId);
       const publicKey = creationOptionsFromJSON(begin.options);
+      const salt = await prfEvalFirstSalt();
+      const first = new Uint8Array(salt.byteLength);
+      first.set(salt);
       publicKey.extensions = {
         ...(publicKey.extensions ?? {}),
-        prf: (publicKey.extensions as { prf?: object } | undefined)?.prf ?? {},
+        prf: { eval: { first } },
       };
       const request: CredentialCreationOptions = { publicKey };
       if (!isIosWebAuthnHost()) {
