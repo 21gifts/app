@@ -178,20 +178,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
-    id: 'setup',
-    image: 'wallet-setup.png',
-    visual: 'state-wallet-setup',
-    needle: 'Continue',
-  },
-  {
-    route: '/wallet',
-    id: 'confirm',
-    image: 'wallet-confirm.png',
-    visual: 'state-wallet-confirm',
-    needle: 'I saved these words',
-  },
-  {
-    route: '/wallet',
     id: 'reveal',
     image: 'wallet-reveal.png',
     visual: 'state-wallet-reveal',

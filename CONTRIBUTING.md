@@ -142,7 +142,7 @@ app/
 │   │   ├── profile/
 │   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional this-device On/Off pill
 │   │   ├── wallet/
-│   │   │   └── page.tsx         # GET /wallet — recovery phrase confirm / activate / reveal
+│   │   │   └── page.tsx         # GET /wallet — Activate, or Show recovery phrase
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
@@ -189,7 +189,7 @@ app/
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
-│   │   ├── WalletScreen.tsx     # Recovery-phrase confirm / activate / reveal
+│   │   ├── WalletScreen.tsx     # Activate, or Show recovery phrase
 │   │   ├── WalletScreenView.tsx # Presentational wallet card
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body

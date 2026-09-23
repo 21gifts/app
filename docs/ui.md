@@ -425,7 +425,7 @@ flowchart TB
 | Shops                | `Store`                       | `/shops`                                                                            |
 | Point of sale        | `Banknote`                    | `/pos`                                                                              |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
-| Wallet               | `Wallet`                      | `/wallet` — recovery phrase confirm / activate / reveal                             |
+| Wallet               | `Wallet`                      | `/wallet` — Activate, or Show recovery phrase under Advanced functions              |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |
@@ -1035,9 +1035,9 @@ Author names with `accountId` open `/members/[accountId]`.
 
 ### `/wallet`
 
-Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. New accounts: 12-word grid + labeled **Continue** (no Skip). Existing: labeled **Activate recovery phrase**, then **Show recovery phrase** inside **Advanced functions**. Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. An account that cannot show a phrase yet: labeled **Activate recovery phrase**. After Activate, and for an account that already can: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
 
-Handbook states: default (activate), phrase, setup (Continue), confirm, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
+Handbook states: default (activate), phrase, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
 
 ### `/pos`
 

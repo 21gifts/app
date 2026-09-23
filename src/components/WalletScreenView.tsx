@@ -20,15 +20,13 @@ export function WalletScreenView({
   status,
   error,
   words,
-  setupWallet = false,
   activate,
-  confirmSaved,
   showPhrase,
   retry,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
   const busy = status === 'busy';
-  const showGrid = (view === 'confirm' || view === 'phrase') && words.length === 12;
+  const showGrid = view === 'phrase' && words.length === 12;
   const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
   const errorCopy =
     error === 'prfUnsupported'
@@ -38,7 +36,7 @@ export function WalletScreenView({
         : t('wallet.errorGeneric');
   const showPhraseButton = (
     <Button
-      variant={setupWallet ? 'primary' : 'secondary'}
+      variant="secondary"
       size="lg"
       onClick={() => {
         void showPhrase();
@@ -86,35 +84,6 @@ export function WalletScreenView({
             ))}
           </ol>
           <p className="text-sm text-app-muted">{t('wallet.onlyBackup')}</p>
-          {setupWallet && view === 'phrase' ? (
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => {
-                void confirmSaved();
-              }}
-              disabled={busy}
-              icon={
-                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-              }
-            >
-              {t('setup.continue')}
-            </Button>
-          ) : view === 'confirm' ? (
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => {
-                void confirmSaved();
-              }}
-              disabled={busy}
-              icon={
-                busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-              }
-            >
-              {t('wallet.confirmSaved')}
-            </Button>
-          ) : null}
         </>
       ) : view === 'activate' ? (
         <>
@@ -133,8 +102,6 @@ export function WalletScreenView({
             {t('wallet.activate')}
           </Button>
         </>
-      ) : setupWallet ? (
-        showPhraseButton
       ) : (
         <details className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2">
           <summary className="cursor-pointer text-sm text-app-muted">

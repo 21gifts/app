@@ -401,7 +401,6 @@ const en = {
   'wallet.activate': 'Activate recovery phrase',
   'wallet.activateHint':
     'Create a new passkey on this device so 21.gifts can show your 12-word recovery phrase. Your previous passkey will stop working.',
-  'wallet.confirmSaved': 'I saved these words',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
@@ -1198,7 +1197,6 @@ const de = {
   'wallet.activate': 'Wiederherstellungssatz aktivieren',
   'wallet.activateHint':
     'Erstellen Sie einen neuen Passkey auf diesem Gerät, damit 21.gifts Ihren 12-Wörter-Wiederherstellungssatz anzeigen kann. Der bisherige Passkey funktioniert danach nicht mehr.',
-  'wallet.confirmSaved': 'Ich habe diese Wörter gespeichert',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
@@ -2003,7 +2001,6 @@ const es = {
   'wallet.activate': 'Activar frase de recuperación',
   'wallet.activateHint':
     'Crea una passkey nueva en este dispositivo para que 21.gifts pueda mostrar tu frase de recuperación de 12 palabras. La passkey anterior dejará de funcionar.',
-  'wallet.confirmSaved': 'Guardé estas palabras',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
@@ -2802,7 +2799,6 @@ const fil = {
   'wallet.activate': 'I-activate ang recovery phrase',
   'wallet.activateHint':
     'Gumawa ng bagong passkey sa device na ito para maipakita ng 21.gifts ang 12-word recovery phrase mo. Hindi na gagana ang dating passkey.',
-  'wallet.confirmSaved': 'Na-save ko ang mga salitang ito',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',

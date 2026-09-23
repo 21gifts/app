@@ -33,6 +33,8 @@ interface OnboardingGateProps {
 
 /**
  * Hydrates the session and sends the visitor to the matching onboarding screen.
+ * The recovery phrase is not a setup step: {@link nextOnboardingPath} never
+ * returns `/wallet`.
  *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
@@ -67,7 +69,7 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     }
     if (screen === 'wallet') {
       const next = nextOnboardingPath(account);
-      if (next !== '/wallet' && next !== '/welcome') {
+      if (next !== '/welcome' && account.setup !== 'wallet') {
         router.replace(next);
       }
       return;
@@ -93,14 +95,14 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
   if (screen === 'wallet') {
     if (account !== null) {
       const next = nextOnboardingPath(account);
-      if (next === '/wallet' || next === '/welcome') {
+      if (next === '/welcome' || account.setup === 'wallet') {
         return <>{children}</>;
       }
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
-  if (account === null || nextOnboardingPath(account) !== PATH[screen]) {
-    return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
+  if (account !== null && nextOnboardingPath(account) === PATH[screen]) {
+    return <>{children}</>;
   }
-  return <>{children}</>;
+  return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
 }

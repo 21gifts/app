@@ -26,13 +26,60 @@ const base: Account = {
 };
 
 describe('onboarding', () => {
-  it('maps setup wallet to the wallet screen', () => {
+  it('maps setup wallet to the name screen when name is missing', () => {
     const account = {
       ...base,
       setup: 'wallet' as const,
       missing: ['wallet', 'name', 'lightning-address', 'rules'] as Account['missing'],
     };
-    expect(nextOnboardingPath(account)).toBe('/wallet');
+    expect(nextOnboardingPath(account)).toBe('/setup/name');
+  });
+
+  it('maps setup wallet to the username screen when the name is set', () => {
+    const account = {
+      ...base,
+      name: 'Ada',
+      setup: 'wallet' as const,
+      missing: ['username', 'lightning-address', 'rules'] as Account['missing'],
+    };
+    expect(nextOnboardingPath(account)).toBe('/setup/username');
+    expect(nextOnboardingPath({ ...account, username: '  ' })).toBe('/setup/username');
+  });
+
+  it('maps setup wallet to the address screen when the username is set', () => {
+    const account = {
+      ...base,
+      name: 'Ada',
+      username: 'ada',
+      setup: 'wallet' as const,
+      missing: ['lightning-address', 'rules'] as Account['missing'],
+    };
+    expect(nextOnboardingPath(account)).toBe('/setup/address');
+  });
+
+  it('maps setup wallet to the rules screen when the address is set', () => {
+    const account = {
+      ...base,
+      name: 'Ada',
+      username: 'ada',
+      lightningAddress: 'ada@walletofsatoshi.com',
+      setup: 'wallet' as const,
+      missing: ['rules'] as Account['missing'],
+    };
+    expect(nextOnboardingPath(account)).toBe('/setup/rules');
+  });
+
+  it('maps setup wallet to welcome when name, username, address, and rules are set', () => {
+    const account = {
+      ...base,
+      name: 'Ada',
+      username: 'ada',
+      lightningAddress: 'alice@walletofsatoshi.com',
+      rulesAgreedAt: 1,
+      setup: 'wallet' as const,
+      missing: ['wallet'] as Account['missing'],
+    };
+    expect(nextOnboardingPath(account)).toBe('/welcome');
   });
 
   it('maps setup name to the name screen', () => {

@@ -313,7 +313,7 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
@@ -363,7 +363,7 @@
 
 ## Function: NameSetup
 
-- **Purpose:** Display-name form when `account.setup === 'name'` (after wallet when that step is required).
+- **Purpose:** Display-name form when `account.setup === 'name'`.
 - **Inputs:** None besides `NameForm` store reads.
 - **Returns / side effects:** Heading **Your name** at the top and `NameForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/name`.
@@ -407,7 +407,7 @@
 
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`, `/wallet`, and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). `screen="wallet"` stays when `next` is `/wallet` or `/welcome`. Profile and members stay only when `next === '/welcome'`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. Follows `nextOnboardingPath`. The recovery phrase is not a setup step and does not replace the opened page; `nextOnboardingPath` never returns `/wallet`. `/wallet` itself stays on screen when `setup` is `'wallet'` or the next step is `/welcome`. Profile and members stay only when the next step is `/welcome`. Name, username, address, and rules still redirect when that is the next step. Other `router.replace` targets are `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
 - **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/pos`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`, `/shops`.
 
 ## Function: SignedInChrome
@@ -1095,10 +1095,10 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; `setup === 'wallet'` → `/wallet`; skips advance `setup` without clearing `missing`). Username and wallet cannot be skipped.
+- **Purpose:** Picks `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup`. `setup === 'wallet'` maps to name, username, lightning-address, rules, or `/welcome` from the other fields; it does not map to `/wallet`. Other values stay a 1:1 map (skips advance `setup` without clearing `missing`). Username still cannot be skipped.
 - **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
-- **Used by:** `OnboardingGate`, `useWalletPhrase.confirmSaved`.
+- **Used by:** `OnboardingGate`.
 
 ## Function: skipSetup
 
@@ -2572,7 +2572,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/me/wallet-backup-seen` with Bearer.
 - **Inputs:** Session token.
 - **Returns / side effects:** Owner `Account`. Throws on non-2xx.
-- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.activate`.
+- **Used by:** `useWalletPhrase.activate`.
 
 ## Function: proxyAuthPasskeyReplaceBeginPost
 
@@ -2656,34 +2656,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** Clears the module variable.
-- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
+- **Used by:** `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
 ## Function: resetWalletCeremonyLock
 
 - **Purpose:** Drop the tab-wide wallet WebAuthn lock so a later ceremony can start.
 - **Inputs:** None.
-- **Returns / side effects:** Sets the module lock to idle. Tests call this between cases; production uses `finally` on activate / showPhrase / confirmSaved.
+- **Returns / side effects:** Sets the module lock to idle. Tests call this between cases; production uses `finally` on activate / showPhrase.
 - **Used by:** `useWalletPhrase` tests.
 
 ## Function: useWalletPhrase
 
-- **Purpose:** Activate / show recovery phrase for `/wallet`. Setup uses phrase + Continue, not confirm.
+- **Purpose:** Activate or show the recovery phrase for `/wallet`. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
-- **Returns / side effects:** View, words, actions. Calls replace and backup-seen.
+- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `activate()` runs passkey replace; when `walletRequired !== true`, `POST /me/wallet-backup-seen` after a successful replace (does not navigate and does not clear the words). `showPhrase()` re-derives the words from PRF get().
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreenView
 
 - **Purpose:** Presentational wallet card.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with Activate, 12-word grid, setup **Continue**, optional confirm, or **Show recovery phrase** under closed **Advanced functions** (open shows the button). Error shows a reason, a hint, and **Try again**.
+- **Returns / side effects:** Card with **Activate recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen
 
 - **Purpose:** Signed-in wallet page body.
 - **Inputs:** None.
-- **Returns / side effects:** Calls `useWalletPhrase`.
+- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. No auto-reveal.
 - **Used by:** `WalletPage`.
 
 ## Function: WalletPage
