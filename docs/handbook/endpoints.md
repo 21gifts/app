@@ -282,6 +282,20 @@
 - **Used by:** `fetchMessages`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/messages/places
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/places` (live top-level notes that have a pin).
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `fetchPlaces`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /maps/key
+
+- **Purpose:** Returns `{ key }` for the browser map, or `{ key: null }` when `GOOGLE_MAPS_API_KEY` is unset or blank. An empty value does not fail container boot. The key is not logged.
+- **Errors:** None. Always 200.
+- **Used by:** `PlaceField`, `PlacesMapScreen`.
+- **Auth:** None.
+
 ## Endpoint: GET /forum/messages/hidden
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for moderators). App path is `/forum/messages/hidden` so HTML `/moderate/hidden` can serve the page.
@@ -291,7 +305,7 @@
 
 ## Endpoint: POST /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo). Optional JSON or multipart `goalSats` (positive int, top-level notes only) is the whole-sat ask; omitted on replies and when unset.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo, optional place pin, and optional `goalSats`). Optional JSON or multipart `goalSats` (positive int, top-level notes only) is the whole-sat ask; omitted on replies and when unset. A place pin is likewise top-level only.
 - **Errors:** Upstream 401/400/403/429, or 502 if the api is unreachable. 403 is an unpaid-reply rejection (`A reply needs a Bitcoin payment`, or the api error string).
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.

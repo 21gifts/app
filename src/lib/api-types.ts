@@ -428,6 +428,38 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 export const FORUM_MESSAGE_MAX_LENGTH = 500;
 
 /**
+ * Runtime schema for an optional forum place pin.
+ */
+export const forumPlacePinSchema = z.object({
+  lat: z.number().gte(-90).lte(90),
+  lng: z.number().gte(-180).lte(180),
+  label: z.string().max(80).nullish(),
+});
+
+/**
+ * A confirmed forum place pin (`lat`, `lng`, optional `label`).
+ */
+export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
+
+/**
+ * Runtime schema for `GET /forum/messages/places`.
+ */
+export const forumPlacesResponseSchema = z.object({
+  places: z.array(
+    forumPlacePinSchema.extend({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      createdAt: z.string().min(1),
+    }),
+  ),
+});
+
+/**
+ * One live top-level forum pin, including the note id and author name.
+ */
+export type ForumPlaceRow = ForumPlacePin & { id: string; name: string; createdAt: string };
+
+/**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
  *
  * `sats` is the validated payment total for the note (always present, including 0).
@@ -447,6 +479,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * Gift-only replies may have empty `text` when `sats > 0`.
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
+ * `place` is optional and is not a body.
  */
 export const forumMessageSchema = z
   .object({
@@ -484,6 +517,7 @@ export const forumMessageSchema = z
         role: z.enum(ROLE_ORDER).nullable(),
       })
       .optional(),
+    place: forumPlacePinSchema.optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,

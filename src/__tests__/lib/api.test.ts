@@ -57,6 +57,7 @@ import {
   postTrustVerify,
   postConversationInvoice,
   postConversationMessage,
+  fetchPlaces,
   postMessage,
   fetchComposeTarget,
   postMessageInvoice,
@@ -1300,6 +1301,53 @@ const forumMessage = {
   replyCount: 0,
 };
 
+describe('fetchPlaces', () => {
+  const placeRow = {
+    id: 'msg_1',
+    name: 'Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    lat: 1.2,
+    lng: 3.4,
+    label: 'Harbor',
+  };
+
+  it('returns the places array on 200', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { places: [placeRow] },
+    });
+    await expect(fetchPlaces('tok')).resolves.toEqual([placeRow]);
+  });
+
+  it('rejects on status 500', async () => {
+    stubFetch({
+      ok: false,
+      status: 500,
+      body: { error: 'fail' },
+    });
+    await expect(fetchPlaces('tok')).rejects.toThrow('Could not load places. Please try again.');
+  });
+
+  it('rejects on invalid JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      } as unknown as Response),
+    );
+    await expect(fetchPlaces('tok')).rejects.toThrow('Could not load places. Please try again.');
+  });
+
+  it('rejects when fetch rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(fetchPlaces('tok')).rejects.toThrow('Could not load places. Please try again.');
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('fetchMessages', () => {
   it('returns the validated page with a null cursor and sends the default limit', async () => {
     const forumMessageWithoutRole = {
@@ -1692,6 +1740,30 @@ const parsedForumMessage = {
 };
 
 describe('postMessage', () => {
+  it('includes place only when set', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, place: { lat: 1.2, lng: 3.4, label: 'Harbor' } },
+    });
+    await postMessage('tok', {
+      text: 'Hello from Ada',
+      place: { lat: 1.2, lng: 3.4, label: 'Harbor' },
+    });
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toEqual(
+      expect.objectContaining({
+        text: 'Hello from Ada',
+        place: { lat: 1.2, lng: 3.4, label: 'Harbor' },
+      }),
+    );
+
+    fetchMock.mockClear();
+    await postMessage('tok', { text: 'Hello from Ada' });
+    const without = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(without.body))).not.toHaveProperty('place');
+  });
+
   it('posts the text and returns the validated message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(
@@ -1704,6 +1776,19 @@ describe('postMessage', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hello from Ada' }),
+    });
+  });
+
+  it('omits a place pin on a reply', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', {
+      text: 'Hello from Ada',
+      inReplyTo: 'parent',
+      place: { lat: 1, lng: 2, label: 'Stall' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+      inReplyTo: 'parent',
     });
   });
 
@@ -1906,6 +1991,50 @@ describe('postMessage', () => {
 });
 
 describe('postMessageVideo', () => {
+  it('includes place fields only when set', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/mp4' as const,
+    };
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: created,
+    });
+    const file = new File(['vid'], 'clip.mp4', { type: 'video/mp4' });
+    await postMessageVideo('tok', {
+      text: 'Hello from Ada',
+      video: file,
+      place: { lat: 1.2, lng: 3.4, label: 'Harbor' },
+    });
+    const withLabel = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const labeled = withLabel.body as FormData;
+    expect(labeled.get('placeLat')).toBe('1.2');
+    expect(labeled.get('placeLng')).toBe('3.4');
+    expect(labeled.get('placeLabel')).toBe('Harbor');
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', {
+      text: 'Hello from Ada',
+      video: file,
+      place: { lat: 1.2, lng: 3.4, label: null },
+    });
+    const withNull = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const unlabeled = withNull.body as FormData;
+    expect(unlabeled.get('placeLat')).toBe('1.2');
+    expect(unlabeled.get('placeLng')).toBe('3.4');
+    expect(unlabeled.get('placeLabel')).toBeNull();
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', { text: 'Hello from Ada', video: file });
+    const without = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const empty = without.body as FormData;
+    expect(empty.get('placeLat')).toBeNull();
+    expect(empty.get('placeLng')).toBeNull();
+    expect(empty.get('placeLabel')).toBeNull();
+  });
+
   it('posts multipart video and optional poster and returns the validated message', async () => {
     const created = {
       ...forumMessage,

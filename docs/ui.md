@@ -408,10 +408,10 @@ flowchart TB
 [                         children                                      ]
 ```
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                              | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/pl`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/profile/apply`, `/wallet`, `/members/[accountId]`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/moderate/handbook`, `/trust-chain`, `/contact`, `/shops`, `/pos`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). On `/messages`: `MessagesChromeLeft` (list: back `/welcome`; `?c=` non-empty: back `/messages`, aria All conversations). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
-| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                        | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/view/*`)                                                                              | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `topLeft`  | `HomeWordmark` on `/login`, `/donate`, `/pl`, `/view/*` (`/` unsigned, `/welcome` when hydrated). `Wordmark` → `/` on unsigned `/rules` and unsigned `/messages/[id]`. | `Wordmark` → `/welcome`, except `/setup/*` (span, not a link). On `/profile`, `/profile/apply`, `/wallet`, `/members/[accountId]`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/moderate/handbook`, `/trust-chain`, `/contact`, `/shops`, `/map`, `/pos`, signed-in `/rules`, and signed-in `/messages/[id]`: `ProfileChromeLeft` (back **then** wordmark). On `/messages`: `MessagesChromeLeft` (list: back `/welcome`; `?c=` non-empty: back `/messages`, aria All conversations). `/setup/rules`: page does **not** pass `topLeft`; `RulesSetup` portals Wordmark span + optional back via `AppShellTopLeft` |
+| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                        | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 **`ProfileChromeLeft`.** Link `h-11 w-11` lucide `ArrowLeft` to `/welcome` (optional `backHref` / `backLabelKey`) + `Wordmark href="/welcome"`.
 
@@ -423,6 +423,7 @@ flowchart TB
 | -------------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
 | Home                 | `Home`                        | `/welcome`                                                                          |
 | Shops                | `Store`                       | `/shops`                                                                            |
+| Map                  | `Map`                         | `/map`                                                                              |
 | Point of sale        | `Banknote`                    | `/pos`                                                                              |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
 | Wallet               | `Wallet`                      | `/wallet` — Activate, or Show recovery phrase under Advanced functions              |
@@ -824,7 +825,7 @@ Do not use orange. This is law, not a gift CTA.
 1. Row: `name` (`text-sm font-medium`) + optional **Badge** + `time` (`text-xs text-app-subtle`).
 2. Optional role hint `text-xs text-app-muted`.
 3. Optional photo/video (`rounded-xl`, `max-h-80`). Multiple stills (`photoCount > 1`) use `ForumPhotoGallery` (earlier stills 88% peek, last still full width, `current/total` chip, dots).
-4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text.
+4. Body stays `text-sm text-app-fg whitespace-pre-wrap`; when longer than 280 characters, collapsed preview + `…` + inline **Show more** (`forum.showMore`, app inline link). Expand-in-place, no Show less. Permalink `/messages/[id]` is full text. When `place` is set on a top-level note, a MapPin link to `/map?pin=<id>` shows the label, or coordinates when the label is null. Replies do not show a place link.
 5. Optional `ForumGoalBar` on a top-level note with a positive `goalSats`: **Ask** plus `formatBitcoin(goalSats)` and optional preferred-fiat, then orange `app-accent` through 100%, green `app-success` overflow, uncapped percent label. Not on replies. On `/welcome` it sits between body and footer; on unsigned `/messages/[id]` it sits after the amount line. The welcome composer is a **Send a post** / **Ask for money** pill: Post is attach + text + send; Ask is the four-step wizard (amount starting with the One-time / Daily pill, photos, text, preview with labeled **Post**). There is no leftover Ask field on the Post messenger.
 6. Footer: `flex flex-wrap items-center gap-5` + amount button (`aria-expanded`, visible `formatBitcoin` text, `text-xs font-medium tabular-nums lining-nums text-app-muted`) + IconButtons (React when `parentId` is unset, lucide `Reply`, `forum.react` “React”; copy; delete when present; Gift only when `parentId` is set and `payable`) + reply-count button when `parentId` is unset (`aria-expanded`, visible `forum.replyCount` text, `ml-auto text-xs text-app-subtle`). Confirming delete uses `order-last basis-full w-full` so the bordered confirm group wraps to the next line.
 
@@ -862,6 +863,7 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 - Ask wizard (forum note only, when Ask is selected): heading + `{step} of {total}` on one row (step on the right). Step 1 and the preview begin with the same neutral two-column pill (`forum.askOnce` / `forum.askDaily`, aria `forum.askCadenceLabel`). Step 1 then shows the amount `id="forum-ask-amount"` `forum.askAmountLabel` `inputMode="numeric"` (Continue disabled until `parseForumAskAmount` returns 1..10_000_000; a parsed amount shows `formatBitcoin` plus optional preferred-fiat); step 2 photos (Continue, photos optional); step 3 text; step 4 preview card with photo/text, `ForumGoalBar` at 0 collected (**Ask** plus goal ₿ and optional fiat) and labeled **Post** (the only Ask submit).
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer (Post path and Ask step 2), and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
+- Place: `IconButton` lg secondary, lucide `MapPin`, `aria-label` `forum.addPlace`, immediately after the photo button on the forum note composer only (not replies, not inbox). Optional. Confirming a pin stores it with the note. No Google key: the panel says the map is not available and does not set a pin.
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
 - Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
 - Send/Post: Post path `IconButton` lg primary, lucide `Send`. Ask preview: labeled `Button` `forum.post`. Loading: `Loader2`.
@@ -907,7 +909,7 @@ The same anatomy is reused for an **External** badge (`forum.via.nostr`), shown 
 <p role="alert" className="text-center text-sm text-app-danger">
 ```
 
-Load and request failures next to labeled **Try again** use this grammar (`login.error`, `forum.error`, `forum.repliesError`, `inbox.error`, `notifications.error`, `view.error`). Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above the sentence, then `Button` **Try again**. Validation alerts already use the same `role="alert"` + `text-app-danger`. Missing (`view.missing`) stays muted, not danger. Do not use color alone — the sentence is required.
+Load and request failures next to labeled **Try again** use this grammar (`login.error`, `forum.error`, `forum.repliesError`, `inbox.error`, `notifications.error`, `view.error`, `map.error`). Login error also uses decorative `AlertTriangle` `h-8 w-8 text-app-subtle` above the sentence, then `Button` **Try again**. Validation alerts already use the same `role="alert"` + `text-app-danger`. Missing (`view.missing`) stays muted, not danger. Do not use color alone — the sentence is required.
 
 ### Marketing header / footer / CTA pair
 
@@ -928,6 +930,7 @@ Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-pape
 | Forum no paid               | `forum.emptyPaid`                     | Mode switcher still shown |
 | Forum no gifts yet / unpaid | `forum.emptyUnpaid`                   | Mode switcher still shown |
 | Shops none                  | `shops.empty`                         | Composer still shown      |
+| Map none                    | muted `text-sm` `map.empty`           | None                      |
 | Inbox none (member)         | `inbox.empty`                         | None                      |
 | Inbox none (staff Direct)   | `inbox.empty`                         | Filter still shown        |
 | Inbox none (staff Contact)  | `inbox.empty.contact`                 | Filter still shown        |
@@ -1033,6 +1036,8 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 Author names with `accountId` open `/members/[accountId]`.
 
+Handbook states: place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+
 ### `/wallet`
 
 Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. An account that cannot show a phrase yet: labeled **Activate recovery phrase**. After Activate, and for an account that already can: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
@@ -1103,11 +1108,17 @@ Handbook states: default, forbidden.
 
 Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Contact → lead → rules link (`text-app-fg underline`) → Composer (textarea + `IconButton` Send). Alerts. Success navigates to inbox.
 
+### `/map`
+
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Map. One list of every note that has a pin (author, label or coordinates, link `/messages/{id}`). The map frame is `data-testid="places-map"`. Without `GOOGLE_MAPS_API_KEY` the frame stays empty and the list remains. Empty `map.empty`. Error `map.error` plus **Try again**.
+
+Handbook states: default, pin, empty, loading, error.
+
 ### `/shops`
 
 Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → post composer under the lead. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again.
 
-Handbook states: default, empty, loading, error.
+Handbook states: default, empty, loading, error, place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
 
 ### `/rules`
 

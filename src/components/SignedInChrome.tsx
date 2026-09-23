@@ -11,6 +11,7 @@ import {
   ScrollText,
   Share2,
   Shield,
+  Map,
   Store,
   Banknote,
   User,
@@ -35,7 +36,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with same-line given/received amounts only when that
+ * rows (Home, Shops, Map, Point of sale, Profile with same-line given/received amounts only when that
  * side is non-zero, Wallet, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
@@ -156,6 +157,16 @@ export function SignedInChrome(): ReactElement {
         >
           <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           {t('nav.shops')}
+        </Link>
+        <Link
+          href="/map"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <Map aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('nav.map')}
         </Link>
         <Link
           href="/pos"

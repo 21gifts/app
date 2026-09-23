@@ -1041,6 +1041,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/messages/places') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { places: [] });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/messages/stats') {
     json(res, 200, {
       postCount: 6,

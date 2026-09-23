@@ -7877,6 +7877,191 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-photo');
   });
 
+  test('welcome place', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-place',
+              name: 'Ada',
+              text: 'Here',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('link', { name: 'Happyland' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-place');
+  });
+
+  test('welcome composer-place', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await expect(page.getByText('The map is not available.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-place');
+  });
+
+  test('welcome composer-place-map', async ({ page }) => {
+    await page.addInitScript(() => {
+      class MapShim {
+        constructor(_el: HTMLElement) {}
+
+        setCenter(): void {}
+
+        addListener(): void {}
+      }
+      class MarkerShim {
+        setPosition(): void {}
+        getPosition(): null {
+          return null;
+        }
+        addListener(): void {}
+      }
+      (window as unknown as { google?: unknown }).google = {
+        maps: { Map: MapShim, Marker: MarkerShim },
+      };
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: 'e2e' }),
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    const frame = page.locator('.h-64');
+    await expect(frame).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await frame.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-composer-place-map', false);
+  });
+
+  test('welcome composer-place-confirm', async ({ page }) => {
+    await page.addInitScript(() => {
+      class MapShim {
+        private readonly el: HTMLElement;
+
+        constructor(el: HTMLElement) {
+          this.el = el;
+        }
+
+        setCenter(): void {}
+
+        addListener(
+          event: string,
+          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+        ): void {
+          if (event !== 'click') {
+            return;
+          }
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+      class MarkerShim {
+        setPosition(): void {}
+        getPosition(): null {
+          return null;
+        }
+        addListener(): void {}
+      }
+      (window as unknown as { google?: unknown }).google = {
+        maps: { Map: MapShim, Marker: MarkerShim },
+      };
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: 'e2e' }),
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-composer-place-confirm', false);
+  });
+
+  test('welcome composer-place-set', async ({ page }) => {
+    await page.addInitScript(() => {
+      class MapShim {
+        private readonly el: HTMLElement;
+
+        constructor(el: HTMLElement) {
+          this.el = el;
+        }
+
+        setCenter(): void {}
+
+        addListener(
+          event: string,
+          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+        ): void {
+          if (event !== 'click') {
+            return;
+          }
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+      class MarkerShim {
+        setPosition(): void {}
+        getPosition(): null {
+          return null;
+        }
+        addListener(): void {}
+      }
+      (window as unknown as { google?: unknown }).google = {
+        maps: { Map: MapShim, Marker: MarkerShim },
+      };
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: 'e2e' }),
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-place-set');
+  });
+
   test('welcome composer-photos', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
@@ -8749,6 +8934,268 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-shops-error');
+  });
+
+  async function stubPlaceMap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      class MapShim {
+        private readonly el: HTMLElement;
+
+        constructor(el: HTMLElement) {
+          this.el = el;
+        }
+
+        setCenter(): void {}
+
+        addListener(
+          event: string,
+          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+        ): void {
+          if (event !== 'click') {
+            return;
+          }
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+      class MarkerShim {
+        setPosition(): void {}
+        getPosition(): null {
+          return null;
+        }
+        addListener(): void {}
+      }
+      (window as unknown as { google?: unknown }).google = {
+        maps: { Map: MapShim, Marker: MarkerShim },
+      };
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: 'e2e' }),
+      });
+    });
+  }
+
+  test('shops place', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-place',
+              name: 'Ada',
+              text: 'Here\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByRole('link', { name: 'Happyland' })).toBeVisible();
+    await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-place');
+  });
+
+  test('shops composer-place', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await expect(page.getByText('The map is not available.')).toBeVisible();
+    await shotScreen(page, 'state-shops-composer-place');
+  });
+
+  test('shops composer-place-map', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    const frame = page.locator('.h-64');
+    await expect(frame).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await frame.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-composer-place-map', false);
+  });
+
+  test('shops composer-place-confirm', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-composer-place-confirm', false);
+  });
+
+  test('shops composer-place-set', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-shops-composer-place-set');
+  });
+});
+
+test.describe('map screens', () => {
+  test.describe.configure({ timeout: 60_000 });
+
+  async function seedAda(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+  }
+
+  test('map default', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-pin',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/map');
+    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await shotScreen(page, 'screen-map');
+  });
+
+  test('map pin', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-pin',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/map?pin=m-pin');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
+      timeout: 20_000,
+    });
+    await shotScreen(page, 'state-map-pin');
+  });
+
+  test('map loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/map');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await shotScreen(page, 'state-map-loading');
+    release();
+  });
+
+  test('map empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ places: [] }),
+      });
+    });
+    await page.goto('/map');
+    await expect(page.getByText('No places yet.')).toBeVisible({ timeout: 20_000 });
+    await shotScreen(page, 'state-map-empty');
+  });
+
+  test('map error', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/map');
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible({
+      timeout: 20_000,
+    });
+    await shotScreen(page, 'state-map-error');
   });
 });
 
