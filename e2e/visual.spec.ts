@@ -2460,7 +2460,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-open');
   });
 
@@ -2747,7 +2747,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -2808,61 +2808,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-refresh-failed');
-  });
-
-  test('pos history', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          aboutMe: null,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(/\/pos\/charge$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          charge: null,
-          history: [
-            {
-              id: 'c2',
-              amountSats: 5,
-              status: 'cancelled',
-              createdAt: '2026-09-20T12:00:00.000Z',
-              expiresAt: '2026-09-20T12:05:00.000Z',
-            },
-            {
-              id: 'c3',
-              amountSats: 8,
-              status: 'expired',
-              createdAt: '2026-09-20T11:00:00.000Z',
-              expiresAt: '2026-09-20T11:05:00.000Z',
-            },
-          ],
-        }),
-      });
-    });
-    await page.goto('/pos');
-    await expect(page.getByText('Cancelled')).toBeVisible();
-    await expect(page.getByText('Expired')).toBeVisible();
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-pos-history');
   });
 
   test('pos need username', async ({ page }) => {

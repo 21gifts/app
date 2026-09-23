@@ -1377,7 +1377,7 @@ Same overlay after **Download** failed (here PNG with a browser that cannot enco
 ## Screen: /pos
 
 - **Purpose:** Signed-in point of sale. The member sets one whole-sat amount. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount; the QR on this page is the same Open CryptoPay code as the profile card. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status, because Wallet of Satoshi settles the invoice. Missing username or lightning address links to `/profile`.
-- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, address, desktop QR, amount form only when no charge is open, otherwise the open charge (countdown, including 0:00, amount, and Cancel), history.
+- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, address, desktop QR, amount form only when no charge is open, otherwise the open charge (countdown, including 0:00, amount, and Cancel).
 - **Actions:** Create payment, Cancel. Menu row `pos.nav`.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos`.
@@ -1390,7 +1390,7 @@ Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Hea
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, and **Cancel** stay up. The amount form is gone. History shows the same row as **Open**. Desktop and iPad also show the Open CryptoPay QR; a smartphone does not.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, and **Cancel** stay up. The amount form is gone. Desktop and iPad also show the Open CryptoPay QR; a smartphone does not.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
@@ -1441,12 +1441,6 @@ Open charge of ₿21 with 5:00 left. **Cancel** fails. The charge and **Cancel**
 The open charge has already run out (0:00). Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale refresh failed](images/pos-refresh-failed.png)
-
-### Variant: history
-
-No open charge. History shows a cancelled row and an expired row. The amount form is back.
-
-![21.gifts point of sale history](images/pos-history.png)
 
 ### Variant: need-username
 

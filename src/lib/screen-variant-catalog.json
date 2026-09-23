@@ -882,12 +882,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:history",
-    "label": "/pos history",
-    "visual": "state-pos-history",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/pos:need-username",
     "label": "/pos need-username",
     "visual": "state-pos-need-username",

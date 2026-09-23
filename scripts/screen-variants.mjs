@@ -1137,13 +1137,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
-    id: 'history',
-    image: 'pos-history.png',
-    visual: 'state-pos-history',
-    needle: 'Cancelled',
-  },
-  {
-    route: '/pos',
     id: 'need-username',
     image: 'pos-need-username.png',
     visual: 'state-pos-need-username',

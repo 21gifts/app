@@ -156,36 +156,6 @@ describe('PosScreen', () => {
     ).toBeTruthy();
   });
 
-  it('lists cancelled and expired history', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          charge: null,
-          history: [
-            {
-              id: 'c2',
-              amountSats: 5,
-              status: 'cancelled',
-              createdAt: new Date().toISOString(),
-              expiresAt: new Date().toISOString(),
-            },
-            {
-              id: 'c3',
-              amountSats: 8,
-              status: 'expired',
-              createdAt: new Date().toISOString(),
-              expiresAt: new Date().toISOString(),
-            },
-          ],
-        }),
-      ),
-    );
-    renderWithLocale(<PosScreen />);
-    expect(await screen.findByText('Cancelled')).toBeTruthy();
-    expect(screen.getByText('Expired')).toBeTruthy();
-  });
-
   it('hides the QR on a phone', async () => {
     const original = navigator.userAgent;
     Object.defineProperty(navigator, 'userAgent', {
@@ -254,7 +224,7 @@ describe('PosScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
   });
 
   it('refetches once when the open charge is already expired', async () => {
@@ -281,7 +251,7 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
-    expect(await screen.findByText('Expired')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
     expect(calls).toBe(2);
   });
 
