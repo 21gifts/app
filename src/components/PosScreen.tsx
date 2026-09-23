@@ -7,15 +7,8 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, Card, Field } from '@/components/ui';
-import { formatForumTime } from '@/lib/forum-time';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
-import {
-  cancelPosCharge,
-  createPosCharge,
-  fetchPosState,
-  type PosCharge,
-  type PosState,
-} from '@/lib/pos';
+import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { formatBitcoin } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
@@ -43,7 +36,7 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
  * @returns The point-of-sale card.
  */
 export function PosScreen(): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
@@ -286,45 +279,6 @@ export function PosScreen(): ReactElement {
           {error}
         </p>
       ) : null}
-      {state !== null && pastCharges(state.history, charge).length > 0 ? (
-        <div className="flex flex-col gap-2 border-t border-app-border pt-4">
-          <h2 className="text-sm font-medium text-app-fg">{t('pos.history')}</h2>
-          <ul className="flex flex-col gap-2 text-sm text-app-fg">
-            {pastCharges(state.history, charge).map((row) => (
-              <li key={row.id} className="flex flex-col gap-0.5">
-                <span className="flex justify-between gap-3">
-                  <span className="tabular-nums lining-nums">
-                    {formatBitcoin(row.amountSats, numberFormat)}
-                  </span>
-                  <span className="text-app-subtle">{t(statusKey(row))}</span>
-                </span>
-                <time dateTime={row.createdAt} className="text-xs text-app-subtle">
-                  {formatForumTime(row.createdAt, locale)}
-                </time>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </Card>
   );
-}
-
-/** History is every charge except the one still open on the till. */
-function pastCharges(history: PosCharge[], charge: PosCharge | null): PosCharge[] {
-  if (charge === null) {
-    return history;
-  }
-  return history.filter((row) => row.id !== charge.id);
-}
-
-/** Catalog key for a history row status. */
-function statusKey(row: PosCharge): 'pos.pending' | 'pos.cancelled' | 'pos.expired' {
-  if (row.status === 'cancelled') {
-    return 'pos.cancelled';
-  }
-  if (row.status === 'expired') {
-    return 'pos.expired';
-  }
-  return 'pos.pending';
 }

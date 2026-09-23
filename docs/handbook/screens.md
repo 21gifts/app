@@ -1353,7 +1353,7 @@ Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Hea
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, and **Cancel** stay up. The amount form is gone. History does not repeat that open charge. Desktop and iPad also show the Open CryptoPay QR; a smartphone does not.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, and **Cancel** stay up. The amount form is gone. Desktop and iPad also show the Open CryptoPay QR; a smartphone does not.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
@@ -1404,12 +1404,6 @@ Open charge of ₿21 with 5:00 left. **Cancel** fails. The charge and **Cancel**
 The open charge has already run out (0:00). Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale refresh failed](images/pos-refresh-failed.png)
-
-### Variant: history
-
-No open charge. Each history row shows the amount, **Cancelled** or **Expired**, and the time the charge was created (`createdAt`). Here that is ₿5 **Cancelled** at **Sep 20, 2026, 12:00 PM** and ₿8 **Expired** at **Sep 20, 2026, 11:00 AM** (UTC). The amount form is back.
-
-![21.gifts point of sale history](images/pos-history.png)
 
 ### Variant: need-username
 

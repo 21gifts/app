@@ -156,54 +156,6 @@ describe('PosScreen', () => {
     ).toBeTruthy();
   });
 
-  it('lists cancelled and expired history', async () => {
-    const history = [
-      {
-        id: 'c2',
-        amountSats: 5,
-        status: 'cancelled' as const,
-        createdAt: '2026-09-20T12:00:00.000Z',
-        expiresAt: '2026-09-20T12:05:00.000Z',
-      },
-      {
-        id: 'c3',
-        amountSats: 8,
-        status: 'expired' as const,
-        createdAt: '2026-09-20T11:00:00.000Z',
-        expiresAt: '2026-09-20T11:05:00.000Z',
-      },
-    ];
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history })));
-    renderWithLocale(<PosScreen />);
-    expect(await screen.findByText('Cancelled')).toBeTruthy();
-    expect(screen.getByText('Expired')).toBeTruthy();
-    expect(
-      [...document.querySelectorAll('time')].map((node) => node.getAttribute('dateTime')),
-    ).toEqual(['2026-09-20T12:00:00.000Z', '2026-09-20T11:00:00.000Z']);
-  });
-
-  it('labels a pending history row Open when nothing is on the till', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          charge: null,
-          history: [
-            {
-              id: 'c4',
-              amountSats: 3,
-              status: 'pending',
-              createdAt: '2026-09-20T10:00:00.000Z',
-              expiresAt: '2026-09-20T10:05:00.000Z',
-            },
-          ],
-        }),
-      ),
-    );
-    renderWithLocale(<PosScreen />);
-    expect(await screen.findByText('Open')).toBeTruthy();
-  });
-
   it('hides the QR on a phone', async () => {
     const original = navigator.userAgent;
     Object.defineProperty(navigator, 'userAgent', {
