@@ -5998,6 +5998,214 @@ test('Function: setLocation — signed-in form saves a location', async ({ page,
   await expect(page.getByText('Zug')).toBeVisible();
 });
 
+test('Function: PosPage — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+});
+
+test('Function: PosScreen — till heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+});
+
+test('Function: fetchPosState — till shows the amount form', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+});
+
+test('Function: createPosCharge — create opens the charge', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-e2e',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
+test('Function: cancelPosCharge — cancel returns the amount form', async ({ page }) => {
+  await seedAdaSession(page);
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  };
+  let cancelled = false;
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'DELETE') {
+      cancelled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        cancelled ? { charge: null, history: [] } : { charge: open, history: [open] },
+      ),
+    });
+  });
+  await page.goto('/pos');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+});
+
+test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
+  expect((await request.get('/pos/charge')).status()).toBe(401);
+});
+
+test('Function: proxyPosPost — POST /pos/charge without bearer is 401', async ({ request }) => {
+  expect((await request.post('/pos/charge', { data: { amountSats: 21 } })).status()).toBe(401);
+});
+
+test('Function: proxyPosDelete — DELETE /pos/charge without bearer is 401', async ({ request }) => {
+  expect((await request.delete('/pos/charge')).status()).toBe(401);
+});
+
 test('Function: ProfileScreen — back to forum is visible', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');

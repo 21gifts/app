@@ -1081,6 +1081,33 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathName === '/pos' && (method === 'GET' || method === 'POST' || method === 'DELETE')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (method === 'DELETE') {
+      json(res, 200, { charge: null });
+      return;
+    }
+    if (method === 'POST') {
+      json(res, 201, {
+        charge: {
+          id: 'pos-e2e',
+          amountSats: 21,
+          status: 'pending',
+          createdAt: '2026-09-22T00:00:00.000Z',
+          expiresAt: '2026-09-22T00:05:00.000Z',
+        },
+      });
+      return;
+    }
+    json(res, 200, { charge: null, history: [] });
+    return;
+  }
+
   const EMPTY_ACTIVITY = {
     donatedSats: 0,
     receivedSats: 0,
