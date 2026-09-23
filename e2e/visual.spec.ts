@@ -2198,8 +2198,9 @@ test.describe('onboarding screens', () => {
   });
 
   test('pos open', async ({ page }) => {
-    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
     await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
     await page.route(/\/me$/, async (route) => {
@@ -2247,6 +2248,7 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-open');
   });

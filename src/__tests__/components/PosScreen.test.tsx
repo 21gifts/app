@@ -415,6 +415,44 @@ describe('PosScreen', () => {
     expect(fetchMock.mock.calls.length).toBe(before);
   });
 
+  it('drops a late till load after the screen unmounts', async () => {
+    let release: ((value: Response) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            release = resolve;
+          }),
+      ),
+    );
+    const view = renderWithLocale(<PosScreen />);
+    view.unmount();
+    await act(async () => {
+      release?.(jsonResponse({ charge: null, history: [] }));
+      await Promise.resolve();
+    });
+  });
+
+  it('drops a late till error after the screen unmounts', async () => {
+    let rejectLoad: ((error: Error) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise<Response>((_resolve, reject) => {
+            rejectLoad = reject;
+          }),
+      ),
+    );
+    const view = renderWithLocale(<PosScreen />);
+    view.unmount();
+    await act(async () => {
+      rejectLoad?.(new Error('late'));
+      await Promise.resolve();
+    });
+  });
+
   it('asks for a username when the account has none', async () => {
     useAuthStore.setState({
       session: 'tok',
