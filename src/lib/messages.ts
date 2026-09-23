@@ -810,8 +810,7 @@ const de = {
   'happyland.photo4.caption':
     'Neben und unter den Gebäuden haben sich weggeworfene Materialien angesammelt.',
   'happyland.photo5.alt': 'Eine erwachsene Person und drei Kinder am Eingang eines kleinen Hauses.',
-  'happyland.photo5.caption':
-    'Eine erwachsene Person und Kinder stehen am Eingang eines kleinen Hauses.',
+  'happyland.photo5.caption': 'Lebensraum einer Familie.',
   'happyland.photo6.alt':
     'Eine Frau neben Pfannen, Eimern und Haushaltsgegenständen auf engem Raum.',
   'happyland.photo6.caption':
