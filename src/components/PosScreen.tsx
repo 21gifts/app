@@ -252,7 +252,10 @@ export function PosScreen(): ReactElement {
           </Button>
         </div>
       ) : null}
-      {state !== null && charge === null && (account?.lightningAddress ?? '').trim() !== '' ? (
+      {state !== null &&
+      charge === null &&
+      (account?.username ?? '') !== '' &&
+      (account?.lightningAddress ?? '').trim() !== '' ? (
         <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
           <Field
             label={t('pos.amount')}

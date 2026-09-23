@@ -458,8 +458,16 @@ describe('PosScreen', () => {
       session: 'tok',
       account: { ...ACCOUNT, username: null },
     });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
+    vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('link', { name: 'Set a username first.' })).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    await act(async () => {
+      await fetchMock.mock.results[0]?.value;
+    });
+    expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
   });
 });
