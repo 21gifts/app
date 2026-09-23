@@ -125,6 +125,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         return;
       }
       const result = (await response.json()) as { pr: string; amountSats: number };
+      if (generationRef.current !== generation) {
+        return;
+      }
       setInvoice(result.pr);
     } catch {
       if (generationRef.current === generation) {

@@ -248,6 +248,41 @@ describe('PayLinkScreen', () => {
     expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
   });
 
+  it('drops an invoice body that arrives after the link changes', async () => {
+    const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
+    let releaseJson: (() => void) | undefined;
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        return {
+          ok: true,
+          json: () =>
+            new Promise((resolve) => {
+              releaseJson = () => resolve({ pr: 'lnbc210n1paylink', amountSats: 21 });
+            }),
+        } as Response;
+      }
+      if (url.endsWith('/pay/bob')) {
+        return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
+      }
+      return Response.json(profile);
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    await waitFor(() => {
+      expect(releaseJson).toBeTypeOf('function');
+    });
+    view.rerender(<PayLinkScreen lightning={bob} />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    releaseJson?.();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+  });
+
   it('does not show a stale invoice failure after the link changes', async () => {
     const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
     let rejectInvoice: (error: Error) => void = () => undefined;
