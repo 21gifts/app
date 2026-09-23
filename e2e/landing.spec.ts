@@ -15,6 +15,18 @@ test('landing shows the project donate address', async ({ page }) => {
   );
 });
 
+test('Happyland follows how it works and hides unverified claims', async ({ page }) => {
+  await page.goto('/');
+  const sections = page.locator('main > section');
+  await expect(sections.nth(1)).toHaveAttribute('id', 'how');
+  await expect(sections.nth(2)).toHaveAttribute('id', 'happyland');
+  await expect(
+    page.getByRole('heading', { name: 'Happyland – a glimpse of life in Manila' }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: '21.gifts on the ground' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'What your gift makes possible' })).toHaveCount(0);
+});
+
 test('legal page is reachable', async ({ page }) => {
   await page.goto('/legal');
   await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
