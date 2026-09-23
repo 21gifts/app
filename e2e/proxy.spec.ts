@@ -4,6 +4,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/auth/lnurl')).status()).toBe(404);
   expect((await request.get('/auth/session')).status()).toBe(404);
   expect((await request.get('/me')).status()).toBe(401);
+  expect((await request.get('/pos/charge')).status()).toBe(401);
+  expect((await request.post('/pos/charge')).status()).toBe(401);
+  expect((await request.delete('/pos/charge')).status()).toBe(401);
   expect((await request.get('/push/vapid-public')).status()).toBe(401);
   expect((await request.post('/me/push-subscriptions')).status()).toBe(401);
   expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);

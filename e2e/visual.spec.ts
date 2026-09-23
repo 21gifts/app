@@ -2162,6 +2162,567 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-profile');
   });
 
+  test('screen /pos', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await shotScreen(page, 'screen-pos');
+  });
+
+  test('pos open', async ({ page }) => {
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-e2e',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: '2026-09-20T12:00:00.000Z',
+            expiresAt: '2026-09-20T12:05:00.000Z',
+          },
+          history: [
+            {
+              id: 'pos-e2e',
+              amountSats: 21,
+              status: 'pending',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
+    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-open');
+  });
+
+  test('pos loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, () => new Promise(() => undefined));
+    await page.goto('/pos');
+    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+    await expect(page.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-pos-loading');
+  });
+
+  test('pos error', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: '{"error":"nope"}',
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await shotScreen(page, 'state-pos-error');
+  });
+
+  test('pos bad amount', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await page.getByLabel('Amount').fill('1.5');
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('Enter a whole number.')).toBeVisible();
+    await shotScreen(page, 'state-pos-bad-amount');
+  });
+
+  test('pos create outside', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Amount is outside the wallet range' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('Amount is outside the wallet range.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await page.getByText('Amount is outside the wallet range.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-create-outside');
+  });
+
+  test('pos create already', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'A payment is already open' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('A payment is already open.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await page.getByText('A payment is already open.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-create-already');
+  });
+
+  test('pos create failed', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await page.getByText('Point of sale is unavailable.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-create-failed');
+  });
+
+  test('pos cancel failed', async ({ page }) => {
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-e2e',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: '2026-09-20T12:00:00.000Z',
+            expiresAt: '2026-09-20T12:05:00.000Z',
+          },
+          history: [
+            {
+              id: 'pos-e2e',
+              amountSats: 21,
+              status: 'pending',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-cancel-failed');
+  });
+
+  test('pos refresh failed', async ({ page }) => {
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    let gets = 0;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      gets += 1;
+      if (gets > 1) {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-e2e',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: '2026-09-20T11:55:00.000Z',
+            expiresAt: '2026-09-20T12:00:00.000Z',
+          },
+          history: [
+            {
+              id: 'pos-e2e',
+              amountSats: 21,
+              status: 'pending',
+              createdAt: '2026-09-20T11:55:00.000Z',
+              expiresAt: '2026-09-20T12:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByText('0:00 left')).toBeVisible();
+    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-refresh-failed');
+  });
+
+  test('pos history', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: null,
+          history: [
+            {
+              id: 'c2',
+              amountSats: 5,
+              status: 'cancelled',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+            },
+            {
+              id: 'c3',
+              amountSats: 8,
+              status: 'expired',
+              createdAt: '2026-09-20T11:00:00.000Z',
+              expiresAt: '2026-09-20T11:05:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByText('Cancelled')).toBeVisible();
+    await expect(page.getByText('Expired')).toBeVisible();
+    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-history');
+  });
+
+  test('pos need username', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('link', { name: 'Set a username first.' })).toBeVisible();
+    await shotScreen(page, 'state-pos-need-username');
+  });
+
+  test('pos need address', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(
+      page.getByRole('link', { name: 'Set a Wallet of Satoshi address first.' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-pos-need-address');
+  });
+
   test('profile fiat', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

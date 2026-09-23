@@ -212,6 +212,27 @@
 - **Used by:** `agreeToRules`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /pos/charge
+
+- **Purpose:** Same-origin proxy of api `GET /pos`. Returns the open charge or null, plus history.
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `fetchPosState`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /pos/charge
+
+- **Purpose:** Same-origin proxy of api `POST /pos` with `{ amountSats }`.
+- **Errors:** Upstream 400, 401, 409, 502.
+- **Used by:** `createPosCharge`.
+- **Auth:** Bearer.
+
+## Endpoint: DELETE /pos/charge
+
+- **Purpose:** Same-origin proxy of api `DELETE /pos`. Cancels the open charge.
+- **Errors:** Upstream 401, 404, or 502 if the api is unreachable.
+- **Used by:** `cancelPosCharge`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /me
 
 - **Purpose:** Same-origin proxy of the signed-in account, including optional `funding` (`null` for `basis`).
