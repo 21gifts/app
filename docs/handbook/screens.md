@@ -493,9 +493,27 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ### Variant: ask-amount
 
-**Ask for money** selected. Step 1 of 4: **How much?** with **1000** typed so **₿1'000** and the preferred-fiat counterpart (**$1.00**) show under the field. Continue is enabled. No Post submit on this step.
+**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed so **₿1'000** and the preferred-fiat counterpart (**$1.00**) show under the field. Continue is enabled. No Post submit on this step.
 
 ![21.gifts welcome ask amount](images/welcome-ask-amount.png)
+
+### Variant: ask-daily
+
+**Ask for money** selected. Step 1 of 4 with **Daily** pressed on the pill above the amount and **1000** typed so **₿1'000** and **$1.00** show. Continue is enabled.
+
+![21.gifts welcome ask daily](images/welcome-ask-daily.png)
+
+### Variant: ask-empty
+
+**Ask for money** just opened. Step 1 of 4, **One-time** pressed, amount empty, **Continue** disabled. No bitcoin line yet.
+
+![21.gifts welcome ask empty](images/welcome-ask-empty.png)
+
+### Variant: ask-empty-daily
+
+**Ask for money** just opened. Step 1 of 4, **Daily** pressed, amount empty, **Continue** disabled.
+
+![21.gifts welcome ask empty daily](images/welcome-ask-empty-daily.png)
 
 ### Variant: ask-photos
 
@@ -503,17 +521,167 @@ Ask step 2 of 4: **Add photos** with attach and Continue. Photos are optional.
 
 ![21.gifts welcome ask photos](images/welcome-ask-photos.png)
 
+### Variant: ask-one-photo
+
+Ask step 2 of 4 with one selected photo and **Remove photo**. **Continue** stays enabled.
+
+![21.gifts welcome ask one photo](images/welcome-ask-one-photo.png)
+
+### Variant: ask-several-photos
+
+Ask step 2 of 4 with two selected photos. Each has **Remove photo**.
+
+![21.gifts welcome ask several photos](images/welcome-ask-several-photos.png)
+
+### Variant: ask-video
+
+Ask step 2 of 4 with a selected video and **Remove video**.
+
+![21.gifts welcome ask video](images/welcome-ask-video.png)
+
+### Variant: ask-preparing
+
+Ask step 2 of 4 while the photo is still preparing. No thumbnail yet. **Continue** stays disabled.
+
+![21.gifts welcome ask preparing](images/welcome-ask-preparing.png)
+
+### Variant: ask-unsupported
+
+Ask step 2 of 4 after a file that is not a JPEG, PNG, WebP, MP4, WebM, or MOV. The error sits under the step. No thumbnail.
+
+![21.gifts welcome ask unsupported](images/welcome-ask-unsupported.png)
+
+### Variant: ask-too-large
+
+Ask step 2 of 4 after a photo over 1 MB. The error sits under the step. No thumbnail.
+
+![21.gifts welcome ask too large](images/welcome-ask-too-large.png)
+
+### Variant: ask-too-many
+
+Ask step 2 of 4 after more than 10 photos. The first ten thumbnails stay, and **You can add up to 10 photos** sits under them.
+
+![21.gifts welcome ask too many](images/welcome-ask-too-many.png)
+
 ### Variant: ask-text
 
 Ask step 3 of 4: **Write a message** textarea and Continue.
 
 ![21.gifts welcome ask text](images/welcome-ask-text.png)
 
+### Variant: ask-text-filled
+
+Ask step 3 of 4 with **Need help with a train ticket** typed in the message field. **Continue** stays enabled.
+
+![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
+
 ### Variant: ask-preview
 
-Ask step 4 of 4: preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
+Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
+
+### Variant: ask-preview-daily
+
+Ask step 4 of 4 with **Daily** pressed, the same photo, caption, and goal bar as the one-time preview.
+
+![21.gifts welcome ask preview daily](images/welcome-ask-preview-daily.png)
+
+### Variant: ask-preview-text
+
+Ask step 4 of 4, **One-time** pressed, caption only. No photo. **Post** is enabled.
+
+![21.gifts welcome ask preview text](images/welcome-ask-preview-text.png)
+
+### Variant: ask-preview-text-daily
+
+Ask step 4 of 4, **Daily** pressed, caption only.
+
+![21.gifts welcome ask preview text daily](images/welcome-ask-preview-text-daily.png)
+
+### Variant: ask-preview-one-photo
+
+Ask step 4 of 4, **One-time** pressed, one photo and no caption. **Post** is enabled.
+
+![21.gifts welcome ask preview one photo](images/welcome-ask-preview-one-photo.png)
+
+### Variant: ask-preview-one-photo-daily
+
+Ask step 4 of 4, **Daily** pressed, one photo and no caption.
+
+![21.gifts welcome ask preview one photo daily](images/welcome-ask-preview-one-photo-daily.png)
+
+### Variant: ask-preview-several
+
+Ask step 4 of 4, **One-time** pressed, two photos and no caption.
+
+![21.gifts welcome ask preview several](images/welcome-ask-preview-several.png)
+
+### Variant: ask-preview-several-daily
+
+Ask step 4 of 4, **Daily** pressed, two photos and no caption.
+
+![21.gifts welcome ask preview several daily](images/welcome-ask-preview-several-daily.png)
+
+### Variant: ask-preview-several-text
+
+Ask step 4 of 4, **One-time** pressed, two photos and the caption **Need help with a train ticket**.
+
+![21.gifts welcome ask preview several text](images/welcome-ask-preview-several-text.png)
+
+### Variant: ask-preview-several-text-daily
+
+Ask step 4 of 4, **Daily** pressed, two photos and the caption.
+
+![21.gifts welcome ask preview several text daily](images/welcome-ask-preview-several-text-daily.png)
+
+### Variant: ask-preview-video
+
+Ask step 4 of 4, **One-time** pressed, a video and no caption.
+
+![21.gifts welcome ask preview video](images/welcome-ask-preview-video.png)
+
+### Variant: ask-preview-video-daily
+
+Ask step 4 of 4, **Daily** pressed, a video and no caption.
+
+![21.gifts welcome ask preview video daily](images/welcome-ask-preview-video-daily.png)
+
+### Variant: ask-preview-video-text
+
+Ask step 4 of 4, **One-time** pressed, a video and the caption **Need help with a train ticket**.
+
+![21.gifts welcome ask preview video text](images/welcome-ask-preview-video-text.png)
+
+### Variant: ask-preview-video-text-daily
+
+Ask step 4 of 4, **Daily** pressed, a video and the caption.
+
+![21.gifts welcome ask preview video text daily](images/welcome-ask-preview-video-text-daily.png)
+
+### Variant: ask-posting
+
+Ask step 4 of 4, **One-time** pressed, while **Post** is in flight. The button stays disabled.
+
+![21.gifts welcome ask posting](images/welcome-ask-posting.png)
+
+### Variant: ask-posting-daily
+
+Ask step 4 of 4, **Daily** pressed, while **Post** is in flight.
+
+![21.gifts welcome ask posting daily](images/welcome-ask-posting-daily.png)
+
+### Variant: ask-error-request
+
+Ask step 4 of 4, **One-time** pressed, after the post fails. **Could not post your message** sits under the preview.
+
+![21.gifts welcome ask error request](images/welcome-ask-error-request.png)
+
+### Variant: ask-error-request-daily
+
+Ask step 4 of 4, **Daily** pressed, after the post fails.
+
+![21.gifts welcome ask error request daily](images/welcome-ask-error-request-daily.png)
 
 ### Variant: ask-open
 
@@ -583,9 +751,15 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: error-ask
 
-**Ask for money**, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
+**Ask for money**, with **One-time** pressed on the pill above the amount, type **0**: **Continue** stays disabled (the field is numeric; 0 is not a whole-sat ask).
 
 ![21.gifts welcome ask error](images/welcome-error-ask.png)
+
+### Variant: error-ask-daily
+
+**Ask for money**, with **Daily** pressed on the pill above the amount, type **0**: **Continue** stays disabled.
+
+![21.gifts welcome ask daily error](images/welcome-error-ask-daily.png)
 
 ### Variant: expanded
 
@@ -913,9 +1087,9 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead (**Send a post** / **Ask for money**, photo/video). The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Post a shop (text and/or photo or video), expand a note, open Menu including **Shops**, back to the forum.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`, `ForumAskWizard`.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead as a shop post only (attach, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Post a shop (text and/or photo or video). Expand a note, open Menu including **Shops**, back to the forum.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`.
 
 ### Variant: default
 
@@ -989,9 +1163,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; labeled **Translate** sits on feed note/reply bodies via `NoteTranslate` when the language differs from the UI locale (not on About me). The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR.
+- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; labeled **Translate** sits on feed note/reply bodies via `NoteTranslate` when the language differs from the UI locale (not on About me). The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api. Smartphones never see the button, because the sticker preview is a payment QR.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for `latestRateDay` on feed notes (display-only preferred fiat, no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); icon-only back to the forum; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language feed note or reply (**Translate** / Show original / Show translation); click **N posts** or **N reactions** to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. No edit controls.
+- **Actions:** Open **Menu** for **Home**, **Shops**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); icon-only back to the forum; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language feed note or reply (**Translate** / Show original / Show translation); click **N posts** or **N reactions** to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. On a desktop with a username set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -1156,6 +1330,24 @@ Member identity card with a **Verified** role pill and a second tag **Reviewed b
 Same member card after tapping the reviewed tag. `role="status"` copy **Reviewed by a moderator**.
 
 ![21.gifts member funding reviewed open](images/members-funding-reviewed-open.png)
+
+### Variant: sticker-open
+
+Desktop member card after pressing **Shop sticker** under the Open CryptoPay QR: `ShopStickerOverlay` (scrim `bg-app-overlay`, `Card maxWidth="xl"`, icon-only **Close**) with the title **Shop sticker**, the lead **Print it for a shop window. The QR code pays {handle}.**, a preview of the printable sticker for this member (orange band with the Bitcoin mark and the English/Filipino scan text, sari-sari shop with the 21.gifts sign, the member's QR with the orange Open CryptoPay mark), the **File format** choice PDF | PNG | JPG | SVG (PDF selected), and a labeled **Download**. Escape also closes. On the mobile combos (iPhone UA) there is no QR and no **Shop sticker** button, so the shot is the unchanged member card. The closed card does not cover this result.
+
+![21.gifts member shop sticker open](images/members-sticker-open.png)
+
+### Variant: sticker-busy
+
+Same overlay while **Download** is making the file (here PNG, whose canvas encode is still running): **Download** is disabled until `shopStickerBlob` settles; the preview, the format choice and **Close** stay usable. Mobile combos show the member card without the button, as above.
+
+![21.gifts member shop sticker busy](images/members-sticker-busy.png)
+
+### Variant: sticker-failed
+
+Same overlay after **Download** failed (here PNG with a browser that cannot encode the canvas): `role="alert"` **Could not create the file. Please try again.** above **Download**; the next try clears it. Mobile combos show the member card without the button, as above.
+
+![21.gifts member shop sticker failed](images/members-sticker-failed.png)
 
 ## Screen: /profile
 

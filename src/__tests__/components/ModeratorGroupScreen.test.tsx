@@ -475,6 +475,56 @@ describe('ModeratorGroupScreen', () => {
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
   });
 
+  it('sends a capture time and drops a blank one', async () => {
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'aaa',
+          previewUrl: 'data:image/jpeg;base64,aaa',
+          takenAt: '2026-09-22T11:40:00+08:00',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'bbb',
+          previewUrl: 'data:image/jpeg;base64,bbb',
+          takenAt: '',
+        },
+      });
+    postMock.mockResolvedValue({
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 2,
+    });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const files = [
+      new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' }),
+      new File([new Uint8Array([0xff, 0xd8, 0xff])], 'b.jpg', { type: 'image/jpeg' }),
+    ];
+    await act(async () => {
+      fireEvent.change(input, { target: { files } });
+    });
+    expect(await screen.findAllByAltText('Selected photo')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-mod', '', [
+        { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+        { contentType: 'image/jpeg', data: 'bbb' },
+      ]);
+    });
+  });
+
   it('sets tooMany when more than 10 stills are chosen', async () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();

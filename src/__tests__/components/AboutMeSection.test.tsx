@@ -488,6 +488,63 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('sends the capture time when the prepared photo has one', async () => {
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+        takenAt: '2026-09-22T11:40:00+08:00',
+      },
+    });
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.any(String), {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        takenAt: '2026-09-22T11:40:00+08:00',
+      });
+    });
+  });
+
+  it('omits a blank capture time', async () => {
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+        takenAt: '',
+      },
+    });
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [jpegFile()] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.any(String), {
+        contentType: 'image/jpeg',
+        data: 'abc',
+      });
+    });
+  });
+
   it('disables remove while a replacement photo is still preparing', async () => {
     prepareMock.mockImplementation(() => new Promise(() => undefined));
     const loadPhoto = vi

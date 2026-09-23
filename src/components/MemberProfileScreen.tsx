@@ -16,6 +16,7 @@ import {
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
+import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card } from '@/components/ui';
 import {
   fetchComposeTarget,
@@ -43,7 +44,7 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
+import { latestRateDay, shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -237,12 +238,15 @@ export function MemberProfileScreen({
   const address = giftsLightningAddress(listedProfile.username, host);
   const qr = openCryptoPayQrValue(listedProfile.username, host);
   const [showQr, setShowQr] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
 
   useEffect(() => {
     setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
 
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const rateDayRef = useRef(rateDay);
+  rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -717,6 +721,7 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        shownFiatForSats(sats, rateDayRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -774,8 +779,20 @@ export function MemberProfileScreen({
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(token, parentId, sats)
-          : await postMessageInvoice(token, parentId, sats, trimmed);
+          ? await postMessageInvoice(
+              token,
+              parentId,
+              sats,
+              undefined,
+              shownFiatForSats(sats, rateDayRef.current),
+            )
+          : await postMessageInvoice(
+              token,
+              parentId,
+              sats,
+              trimmed,
+              shownFiatForSats(sats, rateDayRef.current),
+            );
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -929,7 +946,13 @@ export function MemberProfileScreen({
       return (async () => {
         let minted: ForumPayInvoice | null = null;
         try {
-          const invoice = await postMessageInvoice(token, messageId, sats);
+          const invoice = await postMessageInvoice(
+            token,
+            messageId,
+            sats,
+            undefined,
+            shownFiatForSats(sats, rateDayRef.current),
+          );
           if (generation !== payPollGeneration.current) {
             return null;
           }
@@ -1268,9 +1291,28 @@ export function MemberProfileScreen({
               <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
             )}
             {showQr && qr !== null ? (
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-3">
                 <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setStickerOpen(true);
+                  }}
+                >
+                  {t('profile.shopSticker')}
+                </Button>
               </div>
+            ) : null}
+            {stickerOpen && qr !== null && address !== null ? (
+              <ShopStickerOverlay
+                qrValue={qr}
+                handle={address}
+                onClose={() => {
+                  setStickerOpen(false);
+                }}
+              />
             ) : null}
           </div>
           <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">

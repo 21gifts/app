@@ -458,6 +458,46 @@ describe('putAboutMe', () => {
     });
   });
 
+  it('sends takenAt when the about-me photo has a capture time', async () => {
+    const updated = { ...account, aboutMe: 'Hello', aboutMeHasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+    const photo = {
+      contentType: 'image/jpeg',
+      data: 'abc',
+      takenAt: '2026-09-22T11:40:00+08:00',
+    };
+
+    await expect(putAboutMe('sess', 'Hello', photo)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello', photo }),
+    });
+  });
+
+  it('omits a blank about-me capture time', async () => {
+    const updated = { ...account, aboutMe: 'Hello', aboutMeHasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(
+      putAboutMe('sess', 'Hello', { contentType: 'image/jpeg', data: 'abc', takenAt: '' }),
+    ).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: 'Hello',
+        photo: { contentType: 'image/jpeg', data: 'abc' },
+      }),
+    });
+  });
+
   it('throws MissingRequirementsError on 409 missing_requirements', async () => {
     stubFetch({
       ok: false,
@@ -1553,6 +1593,25 @@ describe('postMessageInvoice', () => {
     });
   });
 
+  it('sends the four shown amounts with the invoice', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21 },
+    });
+    const shown = {
+      amountUsd: '5.00',
+      amountChf: '4.00',
+      amountEur: '4.50',
+      amountPhp: null,
+    };
+    await postMessageInvoice('sess', 'm1', 21, undefined, shown);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+      ...shown,
+    });
+  });
+
   it('throws MissingRequirementsError on 409', async () => {
     stubFetch({
       ok: false,
@@ -1706,6 +1765,28 @@ describe('postMessage', () => {
     await postMessage('sess', { text: 'Hello from Ada', goalSats: FORUM_GOAL_SATS_MAX + 1 });
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
+    });
+  });
+
+  it('sends a capture time and drops a blank one', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', {
+      text: 'timed',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'timed',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' },
+      photos: [{ contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' }],
+    });
+    await postMessage('sess', {
+      text: 'blank',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '   ' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[1]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'blank',
+      photo: { contentType: 'image/jpeg', data: 'abc' },
+      photos: [{ contentType: 'image/jpeg', data: 'abc' }],
     });
   });
 
@@ -2742,6 +2823,26 @@ describe('postConversationInvoice', () => {
     });
   });
 
+  it('sends the four shown amounts with the invoice', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' },
+    });
+    const shown = {
+      amountUsd: '5.00',
+      amountChf: null,
+      amountEur: '4.50',
+      amountPhp: '280.00',
+    };
+    await postConversationInvoice('sess', 'c1', 21, 'Thanks', shown);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+      text: 'Thanks',
+      ...shown,
+    });
+  });
+
   it('throws MissingRequirementsError on 409', async () => {
     stubFetch({
       ok: false,
@@ -2878,6 +2979,38 @@ describe('postConversationMessage', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hi', photo: stills[0], photos: stills }),
+    });
+  });
+
+  it('sends a capture time and drops a blank one', async () => {
+    const stills = [
+      { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+      { contentType: 'image/png', data: 'bbb', takenAt: '' },
+    ];
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...conversationMessage, hasPhoto: true, photoCount: 2 },
+    });
+    await expect(postConversationMessage('sess', 'conv-1', 'Hi', stills)).resolves.toEqual({
+      ...conversationMessage,
+      hasPhoto: true,
+      photoCount: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/conv-1', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: 'Hi',
+        photo: { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+        photos: [
+          { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+          { contentType: 'image/png', data: 'bbb' },
+        ],
+      }),
     });
   });
 });

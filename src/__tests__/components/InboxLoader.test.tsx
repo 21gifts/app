@@ -156,6 +156,13 @@ afterEach(() => {
   cleanup();
 });
 
+const NO_RATE_SHOWN = {
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+};
+
 describe('InboxLoader', () => {
   it('renders nothing when there is no session', () => {
     useAuthStore.setState({ session: null, account });
@@ -285,7 +292,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
     });
@@ -359,7 +366,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
     });
@@ -408,7 +415,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 1, undefined, NO_RATE_SHOWN);
       expect(screen.getByText('send ₿1')).toBeTruthy();
     });
   });
@@ -1045,6 +1052,59 @@ describe('InboxLoader', () => {
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
   });
 
+  it('sends a capture time and drops a blank one', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'aaa',
+          previewUrl: 'data:image/jpeg;base64,aaa',
+          takenAt: '2026-09-22T11:40:00+08:00',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'bbb',
+          previewUrl: 'data:image/jpeg;base64,bbb',
+          takenAt: '',
+        },
+      });
+    postMock.mockResolvedValue({
+      id: 'm-photo',
+      name: 'Ada',
+      text: '',
+      createdAt: '2026-08-28T16:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 2,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Your message')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const files = [
+      new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' }),
+      new File([new Uint8Array([0xff, 0xd8, 0xff])], 'b.jpg', { type: 'image/jpeg' }),
+    ];
+    await act(async () => {
+      fireEvent.change(input, { target: { files } });
+    });
+    expect(await screen.findAllByAltText('Selected photo')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', 'conv-1', '', [
+        { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+        { contentType: 'image/jpeg', data: 'bbb' },
+      ]);
+    });
+  });
+
   it('sets tooMany when more than 10 stills are chosen', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
@@ -1440,7 +1500,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -1495,7 +1555,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
     expect(postMock).not.toHaveBeenCalled();

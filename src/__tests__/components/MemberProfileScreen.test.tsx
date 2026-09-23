@@ -318,6 +318,13 @@ afterEach(async () => {
   Object.assign(navigator, { clipboard: originalClipboard });
 });
 
+const NO_RATE_SHOWN = {
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+};
+
 describe('MemberProfileScreen', () => {
   it('keeps member notes ₿-only when gift stats fail', async () => {
     vi.mocked(fetchGiftStats).mockRejectedValueOnce(new Error('stats down'));
@@ -350,6 +357,26 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
     expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('opens the shop sticker overlay from under the QR and closes it again', () => {
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Shop sticker' }));
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+    expect(
+      screen.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('offers no shop sticker without a username', () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, username: null }} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
   });
 
   it('loads the About me photo via the public GET when there is no session', async () => {
@@ -810,7 +837,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        PAYABLE_NESTED.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
@@ -828,7 +861,13 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        PAYABLE_NESTED.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -850,7 +889,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        PAYABLE_NESTED.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
@@ -1224,7 +1269,7 @@ describe('MemberProfileScreen', () => {
     fillPaidReply('reply', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21, 'reply');
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21, 'reply', NO_RATE_SHOWN);
     });
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -2067,6 +2112,7 @@ describe('MemberProfileScreen', () => {
         'fee-note',
         1,
         `inReplyTo:${note.id}\nreply`,
+        NO_RATE_SHOWN,
       );
     });
     expect(postMessage).not.toHaveBeenCalled();
@@ -2199,7 +2245,7 @@ describe('MemberProfileScreen', () => {
     fillPaidReply('reply', '0');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
     });
   });
 
@@ -2230,7 +2276,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        note.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -2243,7 +2295,13 @@ describe('MemberProfileScreen', () => {
     await expandNote();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        note.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -2257,7 +2315,13 @@ describe('MemberProfileScreen', () => {
     await expandNote();
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        note.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -2435,6 +2499,7 @@ describe('MemberProfileScreen', () => {
         'fee-note',
         1,
         `inReplyTo:${secondPost.id}\nreply`,
+        NO_RATE_SHOWN,
       );
     });
   });
@@ -2460,6 +2525,7 @@ describe('MemberProfileScreen', () => {
         'fee-note',
         1,
         `inReplyTo:${note.id}\nreply`,
+        NO_RATE_SHOWN,
       );
     });
   });
@@ -2643,7 +2709,7 @@ describe('MemberProfileScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
     });
   });
 
@@ -2706,7 +2772,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
     });
   });
 
@@ -2827,7 +2893,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', PAYABLE_NESTED.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        PAYABLE_NESTED.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -3183,7 +3255,7 @@ describe('MemberProfileScreen', () => {
     fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply');
+      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
     });
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -3514,7 +3586,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', payableReply.id, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        payableReply.id,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalledWith(

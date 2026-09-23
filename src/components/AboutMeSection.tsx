@@ -26,7 +26,7 @@ const COPY_RESET_MS = 1200;
 export type AboutMeSectionMode = 'owner' | 'public';
 
 /** JPEG payload sent on owner save (preview URL stripped). */
-export type AboutMeSavePhoto = { contentType: string; data: string };
+export type AboutMeSavePhoto = { contentType: string; data: string; takenAt?: string };
 
 /** Props for {@link AboutMeSection}. */
 export type AboutMeSectionProps = {
@@ -223,7 +223,13 @@ export function AboutMeSection({
     try {
       let saved: boolean | void;
       if (photoDraft !== null) {
-        saved = await onSave(draft, { contentType: photoDraft.contentType, data: photoDraft.data });
+        saved = await onSave(draft, {
+          contentType: photoDraft.contentType,
+          data: photoDraft.data,
+          ...(typeof photoDraft.takenAt === 'string' && photoDraft.takenAt !== ''
+            ? { takenAt: photoDraft.takenAt }
+            : {}),
+        });
       } else if (photoRemoved) {
         saved = await onSave(draft, null);
       } else {

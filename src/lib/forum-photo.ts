@@ -1,3 +1,5 @@
+import { readJpegTakenAt } from '@/lib/jpeg-taken-at';
+
 /** Maximum encoded JPEG size accepted for a forum photo upload (1 MiB). */
 export const FORUM_PHOTO_MAX_BYTES = 1_048_576;
 
@@ -14,6 +16,11 @@ export type ForumPhotoPayload = {
   data: string;
   /** Data URL for an `<img>` preview. */
   previewUrl: string;
+  /**
+   * JPEG Exif civil capture time, or `null` when the file has none.
+   * Omitted by callers that do not record a capture time.
+   */
+  takenAt?: string | null;
 };
 
 /** Result of {@link prepareForumPhoto}. */
@@ -90,6 +97,21 @@ function base64ByteLength(data: string): number {
 }
 
 /**
+ * Reads the original file bytes before canvas encode.
+ *
+ * `File.arrayBuffer` is missing on the jsdom `File` used in unit tests.
+ *
+ * @param file - Browser file from the attach control.
+ * @returns A copy of the file bytes.
+ */
+async function readFileBytes(file: File): Promise<Uint8Array> {
+  if (typeof file.arrayBuffer === 'function') {
+    return new Uint8Array(await file.arrayBuffer());
+  }
+  return new Uint8Array(await new Response(file).arrayBuffer());
+}
+
+/**
  * Resizes and JPEG-encodes a forum photo for upload.
  *
  * Rejects unsupported types and payloads larger than
@@ -106,6 +128,8 @@ export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoRe
     return { ok: false, error: 'unsupported' };
   }
 
+  const bytes = await readFileBytes(file);
+  const takenAt = file.type === 'image/jpeg' ? readJpegTakenAt(bytes) : null;
   const loaded = await loadImageSource(file);
   try {
     const longest = Math.max(loaded.width, loaded.height);
@@ -138,6 +162,7 @@ export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoRe
         contentType: 'image/jpeg',
         data,
         previewUrl,
+        takenAt,
       },
     };
   } finally {

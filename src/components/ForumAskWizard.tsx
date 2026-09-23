@@ -7,7 +7,7 @@ import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { Button, IconButton } from '@/components/ui';
+import { Button, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { parseForumAskAmount } from '@/lib/forum-goal';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
@@ -17,8 +17,12 @@ import type { ForumVideoPayload } from '@/lib/forum-video';
 /** Wizard step in the Ask-for-money compose flow. */
 export type ForumAskStep = 1 | 2 | 3 | 4;
 
+/** One-time or daily Ask. The pill is on the amount step and the preview. */
+export type ForumAskCadence = 'once' | 'daily';
+
 /**
  * Four-step Ask composer: amount, photos, text, then a preview with Post.
+ * The One-time / Daily pill is on the amount step and again on the preview.
  *
  * @param props - Drafts, media, and step callbacks from {@link ForumLoader}.
  * @returns The wizard.
@@ -26,6 +30,8 @@ export type ForumAskStep = 1 | 2 | 3 | 4;
 export function ForumAskWizard({
   step,
   onStepChange,
+  askCadence = 'once',
+  onAskCadenceChange = () => undefined,
   askDraft,
   onAskDraftChange,
   draft,
@@ -43,6 +49,8 @@ export function ForumAskWizard({
 }: {
   step: ForumAskStep;
   onStepChange: (step: ForumAskStep) => void;
+  askCadence?: ForumAskCadence;
+  onAskCadenceChange?: (value: ForumAskCadence) => void;
   askDraft: string;
   onAskDraftChange: (value: string) => void;
   draft: string;
@@ -101,6 +109,19 @@ export function ForumAskWizard({
           {t('forum.askStepOf', { step, total: 4 })}
         </p>
       </div>
+      {step === 1 || step === 4 ? (
+        <SegmentedControl
+          value={askCadence}
+          options={[
+            { value: 'once', label: t('forum.askOnce') },
+            { value: 'daily', label: t('forum.askDaily') },
+          ]}
+          onChange={onAskCadenceChange}
+          ariaLabel={t('forum.askCadenceLabel')}
+          tone="neutral"
+          className="!grid grid-cols-2 !rounded-2xl"
+        />
+      ) : null}
       {step === 1 ? (
         <>
           <label

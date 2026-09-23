@@ -266,7 +266,7 @@ export async function setLocation(sessionToken: string, location: string): Promi
 export async function putAboutMe(
   sessionToken: string,
   text: string,
-  photo?: { contentType: string; data: string } | null,
+  photo?: { contentType: string; data: string; takenAt?: string | null } | null,
 ): Promise<Account> {
   const response = await fetch('/me/about', {
     method: 'PUT',
@@ -276,7 +276,20 @@ export async function putAboutMe(
     },
     body: JSON.stringify({
       text,
-      ...(photo === undefined ? {} : { photo }),
+      ...(photo === undefined
+        ? {}
+        : {
+            photo:
+              photo === null
+                ? null
+                : {
+                    contentType: photo.contentType,
+                    data: photo.data,
+                    ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+                      ? { takenAt: photo.takenAt }
+                      : {}),
+                  },
+          }),
     }),
   });
   if (response.status === 409) {
@@ -1468,6 +1481,12 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
   }
 }
 
+type ForumPostStill = {
+  contentType: string;
+  data: string;
+  takenAt?: string | null;
+};
+
 /**
  * Posts a new public forum message (text and/or up to ten photos), or a reply.
  *
@@ -1486,18 +1505,25 @@ export async function postMessage(
   sessionToken: string,
   input: {
     text: string;
-    photo?: { contentType: string; data: string };
-    photos?: { contentType: string; data: string }[];
+    photo?: ForumPostStill;
+    photos?: ForumPostStill[];
     inReplyTo?: string;
     goalSats?: number;
   },
 ): Promise<ForumMessage> {
-  const stills =
+  const sourceStills =
     input.photos !== undefined
       ? input.photos.slice(0, 10)
       : input.photo !== undefined
         ? [input.photo]
         : [];
+  const stills = sourceStills.map((still) => ({
+    contentType: still.contentType,
+    data: still.data,
+    ...(typeof still.takenAt === 'string' && still.takenAt.trim() !== ''
+      ? { takenAt: still.takenAt }
+      : {}),
+  }));
   const inReplyTo =
     input.inReplyTo !== undefined && input.inReplyTo !== '' ? input.inReplyTo : undefined;
   const goalSats =
@@ -1649,6 +1675,7 @@ export async function fetchComposeTarget(
  * @param messageId - Forum message UUID from the public JSON.
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
+ * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
  * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -1659,6 +1686,12 @@ export async function postMessageInvoice(
   messageId: string,
   sats: number,
   text?: string,
+  shown?: {
+    amountUsd: string | null;
+    amountChf: string | null;
+    amountEur: string | null;
+    amountPhp: string | null;
+  },
 ): Promise<MessageInvoice> {
   const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
     method: 'POST',
@@ -1666,7 +1699,11 @@ export async function postMessageInvoice(
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(text === undefined || text === '' ? { sats } : { sats, text }),
+    body: JSON.stringify({
+      sats,
+      ...(text === undefined || text === '' ? {} : { text }),
+      ...(shown === undefined ? {} : shown),
+    }),
   });
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
@@ -1854,6 +1891,7 @@ export async function fetchConversation(
  * @param id - Conversation UUID.
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional comment shown as the gift body.
+ * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
  * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -1864,6 +1902,12 @@ export async function postConversationInvoice(
   id: string,
   sats: number,
   text?: string,
+  shown?: {
+    amountUsd: string | null;
+    amountChf: string | null;
+    amountEur: string | null;
+    amountPhp: string | null;
+  },
 ): Promise<ConversationInvoice> {
   const response = await fetch(`/conversations/${encodeURIComponent(id)}/invoice`, {
     method: 'POST',
@@ -1871,7 +1915,11 @@ export async function postConversationInvoice(
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(text === undefined || text === '' ? { sats } : { sats, text }),
+    body: JSON.stringify({
+      sats,
+      ...(text === undefined || text === '' ? {} : { text }),
+      ...(shown === undefined ? {} : shown),
+    }),
   });
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
@@ -1920,9 +1968,18 @@ export async function postConversationMessage(
   sessionToken: string,
   id: string,
   text: string,
-  photos?: { contentType: string; data: string }[],
+  photos?: { contentType: string; data: string; takenAt?: string | null }[],
 ): Promise<ConversationMessage> {
-  const stills = photos !== undefined && photos.length > 0 ? photos.slice(0, 10) : [];
+  const stills =
+    photos !== undefined && photos.length > 0
+      ? photos.slice(0, 10).map((still) => ({
+          contentType: still.contentType,
+          data: still.data,
+          ...(typeof still.takenAt === 'string' && still.takenAt !== ''
+            ? { takenAt: still.takenAt }
+            : {}),
+        }))
+      : [];
   const response = await fetch(`/conversations/${encodeURIComponent(id)}`, {
     method: 'POST',
     headers: {

@@ -570,6 +570,30 @@ describe('ForumBoard', () => {
     expect(onComposeIntentChange).toHaveBeenCalledWith('ask');
   });
 
+  it('hides Ask for money when allowAsk is false', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        allowAsk={false}
+        composeIntent="ask"
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send a post' })).toBeNull();
+    expect(screen.queryByText('How much?')).toBeNull();
+    expect(document.querySelector('form')).not.toBeNull();
+  });
+
   it('shows How much? when composeIntent is ask', () => {
     renderWithLocale(
       <ForumBoard
@@ -590,6 +614,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('How much?')).toBeTruthy();
     expect(screen.getByLabelText('Ask')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
   });
 
   it('hides the Ask field when composerHidden', () => {

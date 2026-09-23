@@ -10,6 +10,7 @@ import {
   formatUsdTick,
   latestRateDay,
   satsToFiatAmount,
+  shownFiatForSats,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -123,6 +124,23 @@ describe('latestRateDay', () => {
   it('returns null when every day is empty', () => {
     expect(latestRateDay([{ ...RATE_DAY, sats: 0 }])).toBeNull();
     expect(latestRateDay([])).toBeNull();
+  });
+});
+
+describe('shownFiatForSats', () => {
+  it('copies the preview amounts for every currency', () => {
+    expect(shownFiatForSats(21, RATE_DAY)).toEqual({
+      amountUsd: '0.02',
+      amountChf: '0.02',
+      amountEur: '0.02',
+      amountPhp: '1.18',
+    });
+    expect(shownFiatForSats(21, null)).toEqual({
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
+    });
   });
 });
 

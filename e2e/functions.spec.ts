@@ -1,7 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import jsQR from 'jsqr';
+import { PNG } from 'pngjs';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
+import {
+  buildShopStickerPdf,
+  buildShopStickerSvg,
+  type ShopStickerFormat,
+} from '../src/lib/shop-sticker';
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
@@ -11,6 +18,28 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 }
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
+
+test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
+  page,
+  request,
+}) => {
+  await reachWelcomeVerified(page, request);
+  const posted = page.waitForRequest((req) => {
+    if (req.method() !== 'POST') {
+      return false;
+    }
+    return /\/messages\/?$/.test(new URL(req.url()).pathname);
+  });
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/taken-at.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const body = (await posted).postDataJSON() as {
+    photo?: { takenAt?: string };
+    photos?: { takenAt?: string }[];
+  };
+  expect(body.photo?.takenAt).toBe('2020-01-01T00:00:00');
+  expect(body.photos?.[0]?.takenAt).toBe('2020-01-01T00:00:00');
+});
 
 const FX_USD = {
   quote: 'BTC-USD',
@@ -3546,6 +3575,43 @@ test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ 
   await openPayInvoice(page, request);
 });
 
+test('Function: shownFiatForSats — pay sheet sends the shown amounts', async ({
+  page,
+  request,
+}) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await stubWalletLocationAssign(page);
+  await stubPayableNote(page);
+  await signInViaStub(page, request);
+  await saveOnboardingName(page);
+  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  const invoice = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await submitPayAmount(page);
+  const body = (await invoice).postDataJSON() as {
+    amountUsd: string | null;
+    amountChf: string | null;
+    amountEur: string | null;
+    amountPhp: string | null;
+  };
+  expect(body).toMatchObject({
+    amountUsd: '0.02',
+    amountChf: '0.02',
+    amountEur: '0.02',
+    amountPhp: '1.11',
+  });
+});
+
 test('Function: proxyMessagesInvoicePost — pay sheet requests an invoice', async ({
   page,
   request,
@@ -4440,6 +4506,106 @@ test('Function: openCryptoPayQrValue — profile QR is the Open CryptoPay URL', 
   );
   expect(openCryptoPayQrValue(null)).toBeNull();
   expect(openCryptoPayQrValue('   ')).toBeNull();
+});
+
+const CAROL_MEMBER = '/members/22222222-2222-4222-8222-222222222222';
+
+async function openShopSticker(page: Page, request: APIRequestContext): Promise<Locator> {
+  await reachWelcome(page, request);
+  await page.goto(CAROL_MEMBER);
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
+  await page.getByRole('button', { name: 'Shop sticker' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function downloadShopSticker(
+  page: Page,
+  dialog: Locator,
+  format: ShopStickerFormat,
+): Promise<{ name: string; bytes: Buffer }> {
+  await dialog.getByRole('button', { name: format.toUpperCase() }).click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    dialog.getByRole('button', { name: 'Download' }).click(),
+  ]);
+  return { name: download.suggestedFilename(), bytes: fs.readFileSync(await download.path()) };
+}
+
+test('Function: ShopStickerOverlay — Shop sticker opens the preview and Escape closes it', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  await expect(
+    dialog.getByText('Print it for a shop window. The QR code pays carol@21.gifts.'),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' }),
+  ).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Shop sticker' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+});
+
+test('Function: buildShopStickerSvg — preview and SVG download are the member sticker', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  const expected = buildShopStickerSvg(openCryptoPayQrValue('carol') as string);
+  const src = await dialog
+    .getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' })
+    .getAttribute('src');
+  expect(decodeURIComponent((src as string).slice((src as string).indexOf(',') + 1))).toBe(
+    expected,
+  );
+  const svg = await downloadShopSticker(page, dialog, 'svg');
+  expect(svg.bytes.toString('utf8')).toBe(expected);
+});
+
+test('Function: buildShopStickerPdf — PDF download is the one-page vector sticker', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  const pdf = await downloadShopSticker(page, dialog, 'pdf');
+  expect(
+    pdf.bytes.equals(Buffer.from(buildShopStickerPdf(openCryptoPayQrValue('carol') as string))),
+  ).toBe(true);
+  expect(pdf.bytes.subarray(0, 8).toString('latin1')).toBe('%PDF-1.4');
+});
+
+test('Function: shopStickerBlob — PNG and JPG downloads are 3000 px images', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  const png = await downloadShopSticker(page, dialog, 'png');
+  expect(png.bytes.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(png.bytes.readUInt32BE(16)).toBe(3000);
+  expect(png.bytes.readUInt32BE(20)).toBe(1836);
+  // the printed QR, orange mark included, must still scan to Carol's pay link
+  const image = PNG.sync.read(png.bytes);
+  expect(jsQR(new Uint8ClampedArray(image.data), image.width, image.height)?.data).toBe(
+    openCryptoPayQrValue('carol'),
+  );
+  const jpg = await downloadShopSticker(page, dialog, 'jpg');
+  expect(jpg.bytes.subarray(0, 3).toString('hex')).toBe('ffd8ff');
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+});
+
+test('Function: shopStickerFileName — downloads are named after the username', async ({
+  page,
+  request,
+}) => {
+  const dialog = await openShopSticker(page, request);
+  for (const format of ['pdf', 'png', 'jpg', 'svg'] as const) {
+    const file = await downloadShopSticker(page, dialog, format);
+    expect(file.name).toBe(`21gifts-shop-sticker-carol.${format}`);
+  }
 });
 
 test('Function: NameSetup — name screen heading is visible', async ({ page }) => {

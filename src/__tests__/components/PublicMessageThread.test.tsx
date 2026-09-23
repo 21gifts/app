@@ -204,6 +204,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const NO_RATE_SHOWN = {
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+};
+
 describe('PublicMessageThread', () => {
   it('auto-expands the root and loads Bearer replies', async () => {
     signIn();
@@ -234,7 +241,13 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     submitComposer();
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        MESSAGE_ID,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -244,7 +257,13 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     submitComposer('21');
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        MESSAGE_ID,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
@@ -336,7 +355,13 @@ describe('PublicMessageThread', () => {
     await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', REPLY_ID, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        REPLY_ID,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
@@ -438,6 +463,7 @@ describe('PublicMessageThread', () => {
         'fee-note',
         1,
         `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
       );
     });
     await waitFor(() => {
@@ -546,6 +572,7 @@ describe('PublicMessageThread', () => {
         'fee-note',
         1,
         `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
       );
     });
   });
@@ -674,6 +701,7 @@ describe('PublicMessageThread', () => {
         'fee-note',
         1,
         `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
       );
     });
   });
@@ -747,6 +775,7 @@ describe('PublicMessageThread', () => {
         'fee-note',
         1,
         `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
       );
     });
   });
@@ -757,7 +786,13 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 21);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        MESSAGE_ID,
+        21,
+        undefined,
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -769,7 +804,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(replyAmountInput(), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        MESSAGE_ID,
+        5,
+        'thanks',
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -781,7 +822,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(replyAmountInput(), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 1, 'thanks');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        MESSAGE_ID,
+        1,
+        'thanks',
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -864,6 +911,7 @@ describe('PublicMessageThread', () => {
         'fee-note',
         1,
         `inReplyTo:${MESSAGE_ID}\nreply`,
+        NO_RATE_SHOWN,
       );
     });
   });
@@ -1018,7 +1066,13 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        MESSAGE_ID,
+        5,
+        'thanks',
+        NO_RATE_SHOWN,
+      );
     });
   });
 

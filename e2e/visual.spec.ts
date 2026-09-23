@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -477,6 +477,64 @@ async function fulfillPublicThreadReplies(
       body: JSON.stringify({ messages }),
     });
   });
+}
+
+/** Signed-in Ada viewing Carol (username `carol`), for the Shop sticker states. */
+async function seedShopStickerMember(page: Page): Promise<void> {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Carol',
+        location: null,
+        role: 'verified',
+        username: 'carol',
+        lightningAddress: 'carol@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
+}
+
+/** Presses Shop sticker and waits until the preview image has decoded. */
+async function openShopStickerOverlay(page: Page): Promise<Locator> {
+  await page.getByRole('button', { name: 'Shop sticker' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+  const preview = dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+  await expect(preview).toBeVisible();
+  await expect
+    .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+    .toBe(true);
+  return dialog;
 }
 
 const RIANA_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';
@@ -3626,6 +3684,61 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-funding-reviewed-open');
   });
 
+  test('state /members sticker-open', async ({ page }, testInfo) => {
+    await seedShopStickerMember(page);
+    if (isMobileProject(testInfo)) {
+      // iPhone UA: no payment QR, so no Shop sticker button either
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-members-sticker-open');
+      return;
+    }
+    const dialog = await openShopStickerOverlay(page);
+    await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-members-sticker-open', false);
+  });
+
+  test('state /members sticker-busy', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      // the PNG encode never finishes, so Download stays disabled
+      HTMLCanvasElement.prototype.toBlob = function toBlob(): void {};
+    });
+    await seedShopStickerMember(page);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-members-sticker-busy');
+      return;
+    }
+    const dialog = await openShopStickerOverlay(page);
+    await dialog.getByRole('button', { name: 'PNG' }).click();
+    await dialog.getByRole('button', { name: 'Download' }).click();
+    await expect(dialog.getByRole('button', { name: 'Download' })).toBeDisabled();
+    await shotScreen(page, 'state-members-sticker-busy', false);
+  });
+
+  test('state /members sticker-failed', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toBlob = function toBlob(callback: BlobCallback): void {
+        callback(null);
+      };
+    });
+    await seedShopStickerMember(page);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-members-sticker-failed');
+      return;
+    }
+    const dialog = await openShopStickerOverlay(page);
+    await dialog.getByRole('button', { name: 'PNG' }).click();
+    await dialog.getByRole('button', { name: 'Download' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText(
+      'Could not create the file. Please try again.',
+    );
+    await shotScreen(page, 'state-members-sticker-failed', false);
+  });
+
   test('state /members translate', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
@@ -5980,11 +6093,40 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Ask for money' }).click();
+    await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     await expect(page.getByText('How much?')).toBeVisible();
     await page.getByLabel('Ask').fill('1000');
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-amount');
+  });
+
+  test('state /welcome ask-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    await page.getByLabel('Ask').fill('1000');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-daily');
   });
 
   test('state /welcome ask-open', async ({ page }) => {
@@ -6066,12 +6208,435 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Your message').fill('Need help with a train ticket');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Preview')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.00')).toBeVisible();
     await page.getByRole('button', { name: /^Post$/ }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-ask-preview');
+  });
+
+  async function beginAsk(page: Page, daily = false): Promise<void> {
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    if (daily) {
+      await page.getByRole('button', { name: 'Daily' }).click();
+    }
+    await expect(page.getByRole('button', { name: daily ? 'Daily' : 'One-time' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
+
+  async function askAmount(page: Page, amount = '1000'): Promise<void> {
+    await page.getByLabel('Ask').fill(amount);
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
+  test('state /welcome ask-empty', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await expect(page.getByLabel('Ask')).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-ask-empty');
+  });
+
+  test('state /welcome ask-empty-daily', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page, true);
+    await expect(page.getByLabel('Ask')).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-ask-empty-daily');
+  });
+
+  test('state /welcome ask-one-photo', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await expect(page.getByText('Add photos')).toBeVisible();
+    await attachTinyJpeg(page);
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-one-photo');
+  });
+
+  test('state /welcome ask-several-photos', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    await shotScreen(page, 'state-welcome-ask-several-photos');
+  });
+
+  test('state /welcome ask-video', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+    await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('button', { name: 'Remove video' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-video');
+  });
+
+  test('state /welcome ask-preparing', async ({ page }) => {
+    await seedAda(page);
+    await hangCreateImageBitmap(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-ask-preparing');
+  });
+
+  test('state /welcome ask-unsupported', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await attachGif(page);
+    await expect(
+      page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'),
+    ).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-ask-unsupported');
+  });
+
+  test('state /welcome ask-too-large', async ({ page }) => {
+    await seedAda(page);
+    await stubTooLargeJpeg(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-ask-too-large');
+  });
+
+  test('state /welcome ask-too-many', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 15_000 });
+    await shotScreen(page, 'state-welcome-ask-too-many');
+  });
+
+  test('state /welcome ask-text-filled', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Your message').fill('Need help with a train ticket');
+    await expect(page.getByLabel('Your message')).toHaveValue('Need help with a train ticket');
+    await shotScreen(page, 'state-welcome-ask-text-filled');
+  });
+
+  async function openAskPreview(
+    page: Page,
+    options: {
+      daily?: boolean;
+      text?: string;
+      photo?: 'card' | 'one' | 'several' | 'none';
+      video?: boolean;
+    },
+  ): Promise<void> {
+    await beginAsk(page, options.daily === true);
+    await askAmount(page);
+    if (options.video === true) {
+      await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+      await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
+    } else if (options.photo === 'card') {
+      await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+      await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+    } else if (options.photo === 'one') {
+      await attachTinyJpeg(page);
+    } else if (options.photo === 'several') {
+      await page
+        .locator('input[type="file"]')
+        .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
+      await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
+    }
+    await page.getByRole('button', { name: 'Continue' }).click();
+    if (options.text !== undefined) {
+      await page.getByLabel('Your message').fill(options.text);
+    }
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Preview')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: options.daily === true ? 'Daily' : 'One-time' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  }
+
+  test('state /welcome ask-preview-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, {
+      daily: true,
+      photo: 'card',
+      text: 'Need help with a train ticket',
+    });
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await page.getByRole('button', { name: /^Post$/ }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-ask-preview-daily');
+  });
+
+  test('state /welcome ask-preview-text', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { text: 'Need help with a train ticket' });
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-text');
+  });
+
+  test('state /welcome ask-preview-text-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { daily: true, text: 'Need help with a train ticket' });
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-text-daily');
+  });
+
+  test('state /welcome ask-preview-one-photo', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { photo: 'one' });
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await expect(page.getByText('Need help with a train ticket')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-ask-preview-one-photo');
+  });
+
+  test('state /welcome ask-preview-one-photo-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { daily: true, photo: 'one' });
+    await expect(page.getByAltText('Selected photo')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-one-photo-daily');
+  });
+
+  test('state /welcome ask-preview-several', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { photo: 'several' });
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2);
+    await shotScreen(page, 'state-welcome-ask-preview-several');
+  });
+
+  test('state /welcome ask-preview-several-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { daily: true, photo: 'several' });
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2);
+    await shotScreen(page, 'state-welcome-ask-preview-several-daily');
+  });
+
+  test('state /welcome ask-preview-several-text', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { photo: 'several', text: 'Need help with a train ticket' });
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2);
+    await shotScreen(page, 'state-welcome-ask-preview-several-text');
+  });
+
+  test('state /welcome ask-preview-several-text-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, {
+      daily: true,
+      photo: 'several',
+      text: 'Need help with a train ticket',
+    });
+    await expect(page.getByAltText('Selected photo')).toHaveCount(2);
+    await shotScreen(page, 'state-welcome-ask-preview-several-text-daily');
+  });
+
+  test('state /welcome ask-preview-video', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { video: true });
+    await expect(page.locator('video')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-video');
+  });
+
+  test('state /welcome ask-preview-video-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { daily: true, video: true });
+    await expect(page.locator('video')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-video-daily');
+  });
+
+  test('state /welcome ask-preview-video-text', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { video: true, text: 'Need help with a train ticket' });
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await expect(page.locator('video')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-video-text');
+  });
+
+  test('state /welcome ask-preview-video-text-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, {
+      daily: true,
+      video: true,
+      text: 'Need help with a train ticket',
+    });
+    await expect(page.locator('video')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-preview-video-text-daily');
+  });
+
+  async function holdAskPost(page: Page, status: number): Promise<() => void> {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      if (route.request().method() === 'POST') {
+        if (status === 200) {
+          await held;
+        }
+        await route.fulfill({
+          status,
+          contentType: 'application/json',
+          body:
+            status === 200
+              ? JSON.stringify({
+                  id: 'm-ask-post',
+                  name: 'Ada',
+                  text: 'Need help with a train ticket',
+                  createdAt: '2026-08-28T12:00:00.000Z',
+                  sats: 0,
+                  goalSats: 1000,
+                  payable: false,
+                  hasPhoto: true,
+                  role: 'verified',
+                })
+              : JSON.stringify({ error: 'unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    return release;
+  }
+
+  test('state /welcome ask-posting', async ({ page }) => {
+    await seedAda(page, 'verified');
+    const release = await holdAskPost(page, 200);
+    await fulfillRateDay(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { photo: 'one', text: 'Need help with a train ticket' });
+    await page.getByRole('button', { name: /^Post$/ }).click();
+    await expect(page.getByRole('button', { name: /^Post$/ })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-ask-posting');
+    release();
+  });
+
+  test('state /welcome ask-posting-daily', async ({ page }) => {
+    await seedAda(page, 'verified');
+    const release = await holdAskPost(page, 200);
+    await fulfillRateDay(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, {
+      daily: true,
+      photo: 'one',
+      text: 'Need help with a train ticket',
+    });
+    await page.getByRole('button', { name: /^Post$/ }).click();
+    await expect(page.getByRole('button', { name: /^Post$/ })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-ask-posting-daily');
+    release();
+  });
+
+  test('state /welcome ask-error-request', async ({ page }) => {
+    await seedAda(page, 'verified');
+    await holdAskPost(page, 500);
+    await fulfillRateDay(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, { photo: 'one', text: 'Need help with a train ticket' });
+    await page.getByRole('button', { name: /^Post$/ }).click();
+    await expect(page.getByText('Could not post your message')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-error-request');
+  });
+
+  test('state /welcome ask-error-request-daily', async ({ page }) => {
+    await seedAda(page, 'verified');
+    await holdAskPost(page, 500);
+    await fulfillRateDay(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, {
+      daily: true,
+      photo: 'one',
+      text: 'Need help with a train ticket',
+    });
+    await page.getByRole('button', { name: /^Post$/ }).click();
+    await expect(page.getByText('Could not post your message')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-welcome-ask-error-request-daily');
   });
 
   test('welcome filter-open', async ({ page }) => {
@@ -6261,6 +6826,28 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Ask').fill('0');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-welcome-error-ask');
+  });
+
+  test('welcome error-ask-daily', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByLabel('Ask').fill('0');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-error-ask-daily');
   });
 
   test('welcome photo', async ({ page }) => {
