@@ -498,7 +498,7 @@ test.beforeEach(async ({ page }) => {
 
 /** Opens `/profile` and waits until the public member facts have rendered. */
 async function openProfile(page: Page): Promise<void> {
-  await openProfile(page);
+  await page.goto('/profile');
   await expect(page.getByText('alice@21.gifts')).toBeVisible();
   await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
 }
