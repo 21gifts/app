@@ -1036,6 +1036,8 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 Author names with `accountId` open `/members/[accountId]`.
 
+Handbook states: place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+
 ### `/wallet`
 
 Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. An account that cannot show a phrase yet: labeled **Activate recovery phrase**. After Activate, and for an account that already can: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
@@ -1094,7 +1096,7 @@ Handbook states: default list, forbidden, empty, loading, error, external.
 ### `/moderate/group`
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl` `surface={false}`, `showFilter` false, `showAmount` false, `showAttach` true): **h1** **Moderators chat group** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** (stills + quoted-note unfurl) + composer with **Add a photo** (JPEG/PNG/WebP, max 10, photo-only send) and icon send. Direct/Contact/Damus inbox threads attach the same stills on `/messages`; this page is the closed staff room only. Other signed-in visitors see `Card xl` `surface={false}` → **h1** **Moderators chat group** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
-Handbook states: default, stipend, forbidden, empty, loading, error, composer-photo, composer-photos, quoted-note, photo, preparing-photo, error-unsupported, error-too-large, error-too-many, place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+Handbook states: default, stipend, forbidden, empty, loading, error, composer-photo, composer-photos, quoted-note, photo, preparing-photo, error-unsupported, error-too-large, error-too-many.
 
 ### `/moderate/handbook`
 
