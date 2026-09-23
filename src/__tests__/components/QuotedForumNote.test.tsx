@@ -609,6 +609,34 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
   });
 
+  it('keeps a nested nostr url plain when translate is false and truncate is off', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+      text: 'Greetings! https://example.com/hello',
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('External')).toBeTruthy();
+    });
+    expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
   it('strips quote urls from the visible translation and keeps the nested card', async () => {
     fetchAvailable.mockResolvedValue(true);
     translate.mockResolvedValue(`Can anyone lend me a few satoshi this week? ${QUOTED_URL}`);
@@ -632,6 +660,25 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText(QUOTED_URL)).toBeNull();
     expect(screen.queryByText(german)).toBeNull();
     expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+  });
+
+  it('applies formatTranslated to the visible remainder after stripping quote urls', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue(`Can anyone lend me a few satoshi this week? ${QUOTED_URL}`);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`${german} ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, hasPhoto: false, photoCount: 0 }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+        formatTranslated={(translated) => translated.replace('satoshi', 'sats')}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few sats this week?')).toBeTruthy();
+    expect(screen.queryByText(QUOTED_URL)).toBeNull();
   });
 
   it('shows an External badge on a nested quoted note and keeps the url as plain text', async () => {
