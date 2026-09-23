@@ -9118,10 +9118,52 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
   await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
 });
 
-test('Function: setAmountUnit — POST /me/amount-unit without bearer is 401', async ({
-  request,
-}) => {
-  expect((await request.post('/me/amount-unit', { data: { unit: 'fiat' } })).status()).toBe(401);
+test('Function: setAmountUnit — the ask switch saves fiat on the account', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route('**/me/amount-unit', async (route) => {
+    const body = route.request().postDataJSON() as { unit?: string };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: body.unit === 'fiat' ? 'fiat' : 'btc',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await expect(page.getByText('How much?')).toBeVisible();
+  const saved = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/me/amount-unit'),
+  );
+  const usd = page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' });
+  await usd.click();
+  expect(((await saved).postDataJSON() as { unit: string }).unit).toBe('fiat');
+  await expect(usd).toHaveAttribute('aria-pressed', 'true');
 });
 
 const AMOUNT_RATE_STATS = {
