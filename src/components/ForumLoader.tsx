@@ -1242,9 +1242,10 @@ export function ForumLoader({
                           ...(photos.length === 0
                             ? {}
                             : {
-                                photos: photos.map(({ contentType, data }) => ({
+                                photos: photos.map(({ contentType, data, takenAt }) => ({
                                   contentType,
                                   data,
+                                  ...(takenAt === undefined ? {} : { takenAt }),
                                 })),
                               }),
                           ...(goalSats !== undefined ? { goalSats } : {}),
@@ -1602,7 +1603,11 @@ export function ForumLoader({
               ...(pendingPhotos.length === 0
                 ? {}
                 : {
-                    photos: pendingPhotos.map(({ contentType, data }) => ({ contentType, data })),
+                    photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
+                      contentType,
+                      data,
+                      ...(takenAt === undefined ? {} : { takenAt }),
+                    })),
                   }),
               ...(goalSats !== undefined ? { goalSats } : {}),
             });

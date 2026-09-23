@@ -51,6 +51,47 @@ describe('prepareForumPhoto', () => {
     });
   });
 
+  it('reads bytes through File.arrayBuffer when the method exists', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 8, height: 8, close: vi.fn() }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/jpeg;base64,smol',
+    );
+    const file = jpegFile();
+    Object.defineProperty(file, 'arrayBuffer', {
+      configurable: true,
+      value: async () => Uint8Array.from([0xff, 0xd8, 0xff, 0xd9]).buffer,
+    });
+
+    await expect(prepareForumPhoto(file)).resolves.toMatchObject({
+      ok: true,
+      photo: { takenAt: null },
+    });
+  });
+
+  it('leaves takenAt null for a png', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 8, height: 8, close: vi.fn() }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/jpeg;base64,smol',
+    );
+    const file = new File([new Uint8Array([1, 2, 3])], 'shot.png', { type: 'image/png' });
+    await expect(prepareForumPhoto(file)).resolves.toMatchObject({
+      ok: true,
+      photo: { takenAt: null },
+    });
+  });
+
   it('encodes a small jpeg without upscaling', async () => {
     vi.stubGlobal(
       'createImageBitmap',
@@ -70,7 +111,7 @@ describe('prepareForumPhoto', () => {
 
     await expect(prepareForumPhoto(jpegFile())).resolves.toMatchObject({
       ok: true,
-      photo: { data: 'smol' },
+      photo: { data: 'smol', takenAt: null },
     });
     expect(drawImage.mock.calls[0]?.[3]).toBe(40);
     expect(drawImage.mock.calls[0]?.[4]).toBe(30);
@@ -100,6 +141,7 @@ describe('prepareForumPhoto', () => {
         contentType: 'image/jpeg',
         data: 'qqq',
         previewUrl: 'data:image/jpeg;base64,qqq',
+        takenAt: null,
       },
     });
     expect(toDataURL).toHaveBeenCalledWith('image/jpeg', FORUM_PHOTO_JPEG_QUALITY);
@@ -143,6 +185,7 @@ describe('prepareForumPhoto', () => {
         contentType: 'image/jpeg',
         data: 'abc',
         previewUrl: 'data:image/jpeg;base64,abc',
+        takenAt: null,
       },
     });
     expect(revoke).toHaveBeenCalledWith('blob:preview');

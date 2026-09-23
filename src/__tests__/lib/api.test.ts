@@ -458,6 +458,46 @@ describe('putAboutMe', () => {
     });
   });
 
+  it('sends takenAt when the about-me photo has a capture time', async () => {
+    const updated = { ...account, aboutMe: 'Hello', aboutMeHasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+    const photo = {
+      contentType: 'image/jpeg',
+      data: 'abc',
+      takenAt: '2026-09-22T11:40:00+08:00',
+    };
+
+    await expect(putAboutMe('sess', 'Hello', photo)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Hello', photo }),
+    });
+  });
+
+  it('omits a blank about-me capture time', async () => {
+    const updated = { ...account, aboutMe: 'Hello', aboutMeHasPhoto: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(
+      putAboutMe('sess', 'Hello', { contentType: 'image/jpeg', data: 'abc', takenAt: '' }),
+    ).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/about`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: 'Hello',
+        photo: { contentType: 'image/jpeg', data: 'abc' },
+      }),
+    });
+  });
+
   it('throws MissingRequirementsError on 409 missing_requirements', async () => {
     stubFetch({
       ok: false,
@@ -1728,6 +1768,28 @@ describe('postMessage', () => {
     });
   });
 
+  it('sends a capture time and drops a blank one', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', {
+      text: 'timed',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'timed',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' },
+      photos: [{ contentType: 'image/jpeg', data: 'abc', takenAt: '2026-09-22T11:40:00' }],
+    });
+    await postMessage('sess', {
+      text: 'blank',
+      photo: { contentType: 'image/jpeg', data: 'abc', takenAt: '   ' },
+    });
+    expect(JSON.parse((fetchMock.mock.calls[1]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'blank',
+      photo: { contentType: 'image/jpeg', data: 'abc' },
+      photos: [{ contentType: 'image/jpeg', data: 'abc' }],
+    });
+  });
+
   it('includes a photo payload when provided', async () => {
     const withPhoto = { ...forumMessage, text: '', hasPhoto: true };
     const fetchMock = stubFetch({ ok: true, status: 200, body: withPhoto });
@@ -2917,6 +2979,38 @@ describe('postConversationMessage', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text: 'Hi', photo: stills[0], photos: stills }),
+    });
+  });
+
+  it('sends a capture time and drops a blank one', async () => {
+    const stills = [
+      { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+      { contentType: 'image/png', data: 'bbb', takenAt: '' },
+    ];
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...conversationMessage, hasPhoto: true, photoCount: 2 },
+    });
+    await expect(postConversationMessage('sess', 'conv-1', 'Hi', stills)).resolves.toEqual({
+      ...conversationMessage,
+      hasPhoto: true,
+      photoCount: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/conversations/conv-1', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: 'Hi',
+        photo: { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+        photos: [
+          { contentType: 'image/jpeg', data: 'aaa', takenAt: '2026-09-22T11:40:00+08:00' },
+          { contentType: 'image/png', data: 'bbb' },
+        ],
+      }),
     });
   });
 });

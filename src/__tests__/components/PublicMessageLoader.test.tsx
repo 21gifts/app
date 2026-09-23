@@ -495,7 +495,12 @@ describe('PublicMessageLoader', () => {
   });
 
   it('loads a photo gallery when photoCount is greater than one', async () => {
-    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 2, text: '' });
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      hasPhoto: true,
+      photoCount: 2,
+      text: '',
+    });
     fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     vi.spyOn(URL, 'createObjectURL')
       .mockReturnValueOnce('blob:public-0')
