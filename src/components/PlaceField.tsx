@@ -253,7 +253,7 @@ export function PlaceField(props: {
           </IconButton>
         </div>
       ) : null}
-      {open ? (
+      {open && (unavailable || mapsKey !== null) ? (
         <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
           {unavailable ? (
             <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>

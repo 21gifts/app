@@ -129,6 +129,17 @@ describe('PlaceField', () => {
     expect(onChange).toHaveBeenCalledWith({ lat: 14.6, lng: 121, label: 'Stall' });
   });
 
+  it('does not show an empty frame while the map key is loading', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => undefined)),
+    );
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(screen.queryByText('The map is not available.')).toBeNull();
+    expect(screen.queryByLabelText('Place name')).toBeNull();
+  });
+
   it('keeps the attach control disabled and confirms a blank label as null', async () => {
     const onChange = vi.fn();
     const listeners = new Map<string, (event?: unknown) => void>();
