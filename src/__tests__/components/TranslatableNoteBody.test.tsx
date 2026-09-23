@@ -89,6 +89,17 @@ describe('TranslatableNoteBody', () => {
     expect(screen.queryByText(translated)).toBeNull();
   });
 
+  it('keeps the original when the translation is empty', async () => {
+    vi.mocked(translateNote).mockRejectedValue(new Error('Translation response is invalid'));
+    renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} truncate={false} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText(german)).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not translate this note. Please try again.',
+    );
+    expect(screen.queryByRole('button', { name: 'Show original' })).toBeNull();
+  });
+
   it('autolinks a url in the translated body', async () => {
     vi.mocked(translateNote).mockResolvedValue('See https://example.com/hello');
     renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} />);

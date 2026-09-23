@@ -30,7 +30,8 @@ export interface TranslatableNoteBodyProps {
  * Holds translated text and the showing flag. Visible body is original XOR
  * translation — not via a parent `useEffect` after paint.
  *
- * @param props - `messageId`, `text`, optional `plain` / `truncate` /
+ * @param props - `messageId`, `text`, optional `plain` / `truncate`
+ *   (`truncate` applies only to the original body), optional
  *   `className` (`text-app-btn-fg` selects NoteTranslate `tone="onButton"`),
  *   optional `formatTranslated` (applied only to the visible translation).
  * @returns Original or translated body plus the translate control, or null when text is empty.
@@ -64,7 +65,7 @@ export function TranslatableNoteBody({
     <LinkedText text={text} className={className} {...(plain ? { plain: true } : {})} />
   );
   const visible =
-    showingTranslation && translatedText ? (
+    showingTranslation && translatedText !== null ? (
       <ForumNoteText
         text={formatTranslated === undefined ? translatedText : formatTranslated(translatedText)}
         className={className}

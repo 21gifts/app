@@ -419,32 +419,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === 'POST' && pathName === '/v2/translate') {
-    let parsed;
-    try {
-      parsed = JSON.parse(rawBody);
-    } catch {
-      json(res, 400, { error: 'Invalid body' });
-      return;
-    }
-    const text = parsed?.text;
-    if (!Array.isArray(text) || text.length === 0 || typeof text[0] !== 'string') {
-      json(res, 400, { error: 'Invalid body' });
-      return;
-    }
-    const q = text[0];
-    if (q.includes('Kann mir jemand')) {
-      json(res, 200, {
-        translations: [{ text: 'Can anyone lend me a few satoshi this week?' }],
-      });
-      return;
-    }
-    json(res, 200, {
-      translations: [{ text: '[' + (parsed.target_lang || 'EN') + '] ' + q }],
-    });
-    return;
-  }
-
   if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

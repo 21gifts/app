@@ -106,7 +106,7 @@ app/
 │   │   │       └── [file]/route.ts      # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
-│   │   ├── translate/route.ts    # GET availability + POST DeepL v2 proxy
+│   │   ├── translate/route.ts    # re-exports proxyTranslateAvailableGet / proxyTranslateNotePost (api GET /translate + POST /messages/:id/translate)
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   ├── moderator-group/route.ts  # GET /conversations/moderator-group

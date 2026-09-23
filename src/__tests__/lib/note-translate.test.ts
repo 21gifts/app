@@ -157,7 +157,7 @@ describe('translateNote', () => {
     );
   });
 
-  it.each([null, 'translated', {}, { translatedText: 21 }])(
+  it.each([null, 'translated', {}, { translatedText: 21 }, { translatedText: '' }])(
     'throws when translatedText is missing or invalid in %j',
     async (body) => {
       vi.stubGlobal(

@@ -139,9 +139,17 @@ function QuotedForumNote({
             className="whitespace-pre-wrap text-sm text-app-fg"
           />
         ) : truncate ? (
-          <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
+          <ForumNoteText
+            text={note.text}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+            {...(note.via === 'nostr' ? { plain: true } : {})}
+          />
         ) : (
-          <LinkedText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
+          <LinkedText
+            text={note.text}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+            {...(note.via === 'nostr' ? { plain: true } : {})}
+          />
         )
       ) : null}
       <Link href={`/messages/${note.id}`} className="block">
@@ -167,10 +175,12 @@ function QuotedForumNote({
  * @param props - Body text, already-loaded notes, the containing message id,
  *   fiat conversion, optional feed truncation, optional remaining-text
  *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
- *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), optional
+ *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"` via
+ *   TranslatableNoteBody), optional
  *   `translate` (default true; false renders `ForumNoteText` / `LinkedText`
  *   with no Translate control on remaining text and nested quoted cards,
- *   including `via === 'nostr'` — inbox DMs), optional `formatTranslated`
+ *   including `via === 'nostr'` — inbox DMs; `translate={false}` keeps
+ *   nostr nested bodies `plain`), optional `formatTranslated`
  *   (applied to the visible remainder translation after the quote/short-link
  *   strip), and an optional click handler for the nested card.
  * @returns The stripped paragraph (replaced by the translation while shown
