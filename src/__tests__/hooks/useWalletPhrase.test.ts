@@ -330,6 +330,26 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
+  it('refreshes the visual phrase when the wallet event fires', () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=phrase';
+    window.history.replaceState({}, '', url.toString());
+    const { result } = renderHook(() => useWalletPhrase());
+    act(() => {
+      window.dispatchEvent(new Event('21gifts:wallet-phrase'));
+    });
+    expect(result.current.view).toBe('phrase');
+    expect(result.current.words).toHaveLength(12);
+  });
+
+  it('ignores the wallet phrase event when no visual fixture is set', () => {
+    const { result } = renderHook(() => useWalletPhrase());
+    act(() => {
+      window.dispatchEvent(new Event('21gifts:wallet-phrase'));
+    });
+    expect(result.current.words).toEqual([]);
+  });
+
   it('does not show peekSessionPhrase words on mount', () => {
     rememberSessionPhrase(mnemonic);
     const { result } = renderHook(() => useWalletPhrase());
