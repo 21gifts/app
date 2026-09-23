@@ -9010,14 +9010,45 @@ test('Function: replySatsFromDraft — a blank reply amount stays empty', async 
       body: JSON.stringify({ pr: 'lnbc1', amountSats: 1 }),
     });
   });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-pay',
+            accountId: 'acc_bob',
+            name: 'Bob',
+            text: 'Does anyone have spare sats this week?',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
-  await page.getByLabel('Your reaction').fill('Thanks');
+  const reaction = page.getByLabel('Your reaction');
+  await reaction.fill('Thanks');
   const invoice = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/messages/m-compose/invoice'),
   );
-  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await page
+    .locator('form')
+    .filter({ has: reaction })
+    .getByRole('button', { name: 'Post', exact: true })
+    .click();
   expect(((await invoice).postDataJSON() as { sats: number }).sats).toBe(1);
 });
 
@@ -9055,7 +9086,23 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ amountUnit: body.unit === 'fiat' ? 'fiat' : 'btc' }),
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: body.unit === 'fiat' ? 'fiat' : 'btc',
+      }),
     });
   });
   await page.goto('/welcome');
