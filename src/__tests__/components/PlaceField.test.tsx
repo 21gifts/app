@@ -137,10 +137,14 @@ describe('PlaceField', () => {
         listeners.set(event, handler);
       },
     };
+    const markerListeners = new Map<string, () => void>();
+    let markerPos: LatLng | null = { lat: () => 14.6, lng: () => 120.98 };
     const Marker = vi.fn(() => ({
       setPosition: () => undefined,
-      getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
-      addListener: () => undefined,
+      getPosition: () => markerPos,
+      addListener: (event: string, handler: () => void) => {
+        markerListeners.set(event, handler);
+      },
     }));
     (window as { google?: unknown }).google = { maps: { Map: vi.fn(() => map), Marker } };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
@@ -160,6 +164,9 @@ describe('PlaceField', () => {
       map,
       draggable: true,
     });
+    markerListeners.get('dragend')?.();
+    markerPos = null;
+    markerListeners.get('dragend')?.();
   });
 
   it('does not show an empty frame while the map key is loading', () => {
