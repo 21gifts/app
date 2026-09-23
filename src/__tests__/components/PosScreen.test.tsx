@@ -80,6 +80,45 @@ describe('PosScreen', () => {
     });
   });
 
+  it('does not reload the till over an in-flight payment', async () => {
+    let releasePost: ((value: Response) => void) | undefined;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return new Promise<Response>((resolve) => {
+          releasePost = resolve;
+        });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
+    const callsAtForm = fetchMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBe(callsAtForm + 1);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'other', account: ACCOUNT });
+    });
+    expect(fetchMock.mock.calls.length).toBe(callsAtForm + 1);
+    await act(async () => {
+      releasePost?.(
+        jsonResponse({
+          charge: {
+            id: 'c1',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
+      );
+      await Promise.resolve();
+    });
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+  });
+
   it('rejects a fractional amount without calling the api', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
     vi.stubGlobal('fetch', fetchMock);

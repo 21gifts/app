@@ -52,6 +52,8 @@ export function PosScreen(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  busyRef.current = busy;
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
 
@@ -60,7 +62,9 @@ export function PosScreen(): ReactElement {
   }, []);
 
   useEffect(() => {
-    if (session === null) {
+    // A locale or session change must not start a load that shares the
+    // generation of an in-flight create or cancel.
+    if (session === null || busyRef.current) {
       return;
     }
     let alive = true;
