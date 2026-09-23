@@ -2067,7 +2067,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** Renders the welcome glyph and, after `GET /pay/:username`, the name and amount form. **Create invoice** posts the amount. No forum and no auth gate.
+- **Returns / side effects:** Renders the welcome glyph and, after `GET /pay/:username`, the name and amount form. **Create invoice** posts the amount. Desktop then shows the invoice QR and **Pay**; a smartphone shows **Pay** only. A new `lightning` value clears the previous person. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage

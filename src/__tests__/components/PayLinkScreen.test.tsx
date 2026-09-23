@@ -15,6 +15,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 const ADA = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+const originalUserAgent = navigator.userAgent;
+
+function setUserAgent(userAgent: string): void {
+  Object.defineProperty(navigator, 'userAgent', { configurable: true, value: userAgent });
+}
 
 const profile = {
   name: 'Ada Lovelace',
@@ -29,6 +34,7 @@ function mockFetch(handler: (input: RequestInfo | URL, init?: RequestInit) => Pr
 
 afterEach(() => {
   cleanup();
+  setUserAgent(originalUserAgent);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -72,9 +78,23 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Pay' }).getAttribute('href')).toBe(
-      'walletofsatoshi:lightning:LNBC210N1PAYLINK',
-    );
+    const pay = screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    const hrefs: string[] = [];
+    const previous = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        get href(): string {
+          return 'http://localhost/';
+        },
+        set href(value: string) {
+          hrefs.push(value);
+        },
+      },
+    });
+    fireEvent.click(pay);
+    Object.defineProperty(window, 'location', { configurable: true, value: previous });
+    expect(hrefs).toEqual(['walletofsatoshi:lightning:LNBC210N1PAYLINK']);
     expect(screen.queryByRole('button', { name: 'Create invoice' })).toBeNull();
     expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
   });
@@ -145,6 +165,78 @@ describe('PayLinkScreen', () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenCalled();
     });
+  });
+
+  it('hides the QR on a phone and opens the Android wallet intent', async () => {
+    setUserAgent(
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    );
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    const pay = await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    const hrefs: string[] = [];
+    const previous = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        get href(): string {
+          return 'http://localhost/';
+        },
+        set href(value: string) {
+          hrefs.push(value);
+        },
+      },
+    });
+    fireEvent.click(pay);
+    Object.defineProperty(window, 'location', { configurable: true, value: previous });
+    expect(hrefs[0]?.startsWith('intent:lightning:LNBC210N1PAYLINK#Intent;')).toBe(true);
+  });
+
+  it('drops the previous person when the link changes', async () => {
+    mockFetch(async () => Response.json(profile));
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    view.rerender(<PayLinkScreen lightning="" />);
+    expect((await screen.findByRole('alert')).textContent).toBe('This payment link is not valid.');
+    expect(screen.queryByRole('heading', { name: 'Ada Lovelace' })).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
+  it('mints only once when submit fires twice before the response', async () => {
+    let release: (response: Response) => void = () => undefined;
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return new Promise((resolve) => {
+          release = resolve;
+        });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    const button = screen.getByRole('button', { name: 'Create invoice' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    const invoiceCalls = vi
+      .mocked(fetch)
+      .mock.calls.filter((call) => String(call[0]).endsWith('/invoice')).length;
+    expect(invoiceCalls).toBe(1);
+    release(Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+    expect(
+      vi.mocked(fetch).mock.calls.filter((call) => String(call[0]).endsWith('/invoice')).length,
+    ).toBe(1);
   });
 
   it('treats a profile body that cannot be parsed as an invalid link', async () => {

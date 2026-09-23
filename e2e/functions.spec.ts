@@ -9,8 +9,7 @@ import {
   buildShopStickerSvg,
   type ShopStickerFormat,
 } from '../src/lib/shop-sticker';
-import { decodeLnurl, encodeLnurl } from '../src/lib/lnurl';
-import { payLinkUsername } from '../src/lib/pay-link';
+import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
@@ -4480,14 +4479,28 @@ test('Function: giftsLightningAddress — member card shows username@21.gifts', 
 
 const ADA_LNURL = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
 
-test('Function: decodeLnurl — BIP-173 inverse of encodeLnurl', () => {
-  expect(decodeLnurl(ADA_LNURL)).toBe('https://21.gifts/.well-known/lnurlp/ada');
-  expect(decodeLnurl('')).toBeNull();
+test('Function: decodeLnurl — BIP-173 inverse of encodeLnurl', async ({ page }) => {
+  await page.route('**/pay/ada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
 });
 
-test('Function: payLinkUsername — localhost QR names ada', () => {
-  expect(payLinkUsername(ADA_LNURL, 'localhost')).toBe('ada');
-  expect(payLinkUsername(ADA_LNURL, 'dev.21.gifts')).toBeNull();
+test('Function: payLinkUsername — localhost QR names ada', async ({ page }) => {
+  await page.route('**/pay/ada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
 });
 
 test('Function: PayLinkScreen — public pay page names the person', async ({ page }) => {

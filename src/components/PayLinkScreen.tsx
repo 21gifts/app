@@ -1,13 +1,18 @@
 'use client';
 
-import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
+import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, Card, Field, PageChrome } from '@/components/ui';
 import { payLinkUsername } from '@/lib/pay-link';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
+import {
+  isAndroidUserAgent,
+  isSmartphoneUserAgent,
+  walletOfSatoshiHref,
+  walletOfSatoshiIntentHref,
+} from '@/lib/wos-deep-link';
 
 interface PayProfile {
   name: string;
@@ -30,9 +35,21 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [formError, setFormError] = useState<'amount' | 'failed' | null>(null);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
+  const postingRef = useRef(false);
+  /* v8 ignore next 8 -- SSR has no navigator */
+  const isSmartphone =
+    typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
+  const android =
+    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
 
   useEffect(() => {
     let active = true;
+    setInvalid(false);
+    setProfile(null);
+    setInvoice(null);
+    setFormError(null);
+    setPosting(false);
+    postingRef.current = false;
     const username = payLinkUsername(lightning, window.location.host);
     if (username === null) {
       setInvalid(true);
@@ -67,6 +84,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (profile === null) {
       return;
     }
+    if (postingRef.current || invoice !== null) {
+      return;
+    }
     if (!/^\d+$/.test(amount)) {
       setFormError('amount');
       return;
@@ -82,6 +102,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     }
 
     setFormError(null);
+    postingRef.current = true;
     setPosting(true);
     try {
       const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
@@ -98,6 +119,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     } catch {
       setFormError('failed');
     } finally {
+      postingRef.current = false;
       setPosting(false);
     }
   };
@@ -173,8 +195,28 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
             {invoice !== null ? (
               <>
-                <QrCode value={invoice} label={t('pay.invoiceQr')} />
-                <a href={walletOfSatoshiHref(invoice)}>{t('pay.pay')}</a>
+                {isSmartphone ? null : <QrCode value={invoice} label={t('pay.invoiceQr')} />}
+                <Button
+                  type="button"
+                  aria-label={t('forum.payOpenWalletAria')}
+                  icon={
+                    <img
+                      src="/wos-icon.png"
+                      alt=""
+                      width={20}
+                      height={20}
+                      aria-hidden="true"
+                      className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                    />
+                  }
+                  onClick={() => {
+                    window.location.href = android
+                      ? walletOfSatoshiIntentHref(invoice)
+                      : walletOfSatoshiHref(invoice);
+                  }}
+                >
+                  {t('forum.payOpenWallet')}
+                </Button>
               </>
             ) : null}
           </>
