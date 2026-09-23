@@ -9015,7 +9015,7 @@ test('Function: paySatsFromDraft — a blank pay amount is 21 sats', async ({ pa
     (req) => req.method() === 'POST' && req.url().includes('/messages/r-pay/invoice'),
   );
   await reply.getByRole('button', { name: 'Continue' }).click();
-  expect(((await invoice).postDataJSON() as { amountSats: number }).amountSats).toBe(21);
+  expect(((await invoice).postDataJSON() as { sats: number }).sats).toBe(21);
 });
 
 test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range', async ({
@@ -9031,7 +9031,7 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
       body: JSON.stringify({ messages: [] }),
     });
   });
-  await page.route(/\/me\/amount-unit$/, async (route) => {
+  await page.route('**/me/amount-unit', async (route) => {
     const body = route.request().postDataJSON() as { unit?: string };
     await route.fulfill({
       status: 200,
@@ -9042,10 +9042,11 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
   await page.goto('/welcome');
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
-  await page
+  const usd = page
     .getByRole('group', { name: 'Bitcoin or fiat' })
-    .getByRole('button', { name: 'USD' })
-    .click();
+    .getByRole('button', { name: 'USD' });
+  await usd.click();
+  await expect(usd).toHaveAttribute('aria-pressed', 'true');
   await page.getByLabel('Ask').fill('1.00');
   await expect(page.getByText("₿1'000")).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
