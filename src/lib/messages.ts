@@ -20,15 +20,15 @@ const en = {
   'happyland.photo1.alt': 'Overhead view of densely packed roofs and narrow lanes.',
   'happyland.photo1.caption': 'A view from above of closely packed buildings and narrow lanes.',
   'happyland.photo2.alt': 'People standing in a lane beside two-storey homes.',
-  'happyland.photo2.caption': 'Neighbours gather in a lane between homes.',
+  'happyland.photo2.caption': 'Waste sorting is visible in the background.',
   'happyland.photo3.alt': 'A woman cooking beside a food stall with several people nearby.',
   'happyland.photo3.caption': 'Pagpag',
   'happyland.photo4.alt':
     'A person sitting on wooden planks beside an area filled with discarded materials.',
   'happyland.photo4.caption':
     'Discarded materials have accumulated beside and beneath the buildings.',
-  'happyland.photo5.alt': 'An adult and three children at the entrance to a small home.',
-  'happyland.photo5.caption': 'An adult and children stand in the entrance to a compact home.',
+  'happyland.photo5.alt': 'Two adults and three children inside a small home.',
+  'happyland.photo5.caption': 'A family\'s living space.',
   'happyland.photo6.alt': 'A woman beside pans, buckets and household supplies in a compact space.',
   'happyland.photo6.caption':
     'Cooking utensils, water containers and household supplies share a small space.',
@@ -833,7 +833,7 @@ const de = {
     'Eine Person sitzt auf Holzplanken neben einem Bereich voller weggeworfener Materialien.',
   'happyland.photo4.caption':
     'Neben und unter den Gebäuden haben sich weggeworfene Materialien angesammelt.',
-  'happyland.photo5.alt': 'Eine erwachsene Person und drei Kinder am Eingang eines kleinen Hauses.',
+  'happyland.photo5.alt': 'Zwei Erwachsene und drei Kinder in einem kleinen Wohnraum.',
   'happyland.photo5.caption': 'Lebensraum einer Familie.',
   'happyland.photo6.alt':
     'Eine Frau neben Pfannen, Eimern und Haushaltsgegenständen auf engem Raum.',
@@ -1634,16 +1634,16 @@ const es = {
   'happyland.photo1.alt': 'Vista desde arriba de tejados muy juntos y callejones estrechos.',
   'happyland.photo1.caption': 'Vista desde arriba de edificios muy juntos y callejones estrechos.',
   'happyland.photo2.alt': 'Personas en un callejón junto a viviendas de dos plantas.',
-  'happyland.photo2.caption': 'Los vecinos se reúnen en un callejón entre las viviendas.',
+  'happyland.photo2.caption': 'Al fondo se ve el trabajo de separar los residuos.',
   'happyland.photo3.alt': 'Una mujer cocina junto a un puesto de comida con varias personas cerca.',
   'happyland.photo3.caption': 'Pagpag',
   'happyland.photo4.alt':
     'Una persona sentada sobre tablones de madera junto a una zona llena de materiales desechados.',
   'happyland.photo4.caption':
     'Se han acumulado materiales desechados junto a los edificios y debajo de ellos.',
-  'happyland.photo5.alt': 'Una persona adulta y tres niños en la entrada de una pequeña vivienda.',
-  'happyland.photo5.caption':
-    'Una persona adulta y varios niños están en la entrada de una pequeña vivienda.',
+  'happyland.photo5.alt':
+    'Dos personas adultas y tres niños en el interior de una vivienda pequeña.',
+  'happyland.photo5.caption': 'El espacio donde vive una familia.',
   'happyland.photo6.alt':
     'Una mujer junto a sartenes, cubos y enseres domésticos en un espacio reducido.',
   'happyland.photo6.caption':
@@ -2427,8 +2427,7 @@ const fil = {
     'Tanaw mula sa itaas ang magkakadikit na gusali at makikitid na daanan.',
   'happyland.photo2.alt':
     'Mga taong nakatayo sa isang daanan sa tabi ng mga tahanang may dalawang palapag.',
-  'happyland.photo2.caption':
-    'Nagkakatipon ang magkakapitbahay sa isang daanan sa pagitan ng mga tahanan.',
+  'happyland.photo2.caption': 'Makikita sa likuran ang pagbubukod ng mga itinapong materyal.',
   'happyland.photo3.alt':
     'Isang babaeng nagluluto sa tabi ng isang tindahan ng pagkain, na may ilang tao sa paligid.',
   'happyland.photo3.caption': 'Pagpag',
@@ -2436,9 +2435,8 @@ const fil = {
     'Isang taong nakaupo sa mga tablang kahoy sa tabi ng lugar na puno ng mga itinapong materyal.',
   'happyland.photo4.caption': 'Naipon ang mga itinapong materyal sa tabi at ilalim ng mga gusali.',
   'happyland.photo5.alt':
-    'Isang nakatatanda at tatlong bata sa pasukan ng isang maliit na tahanan.',
-  'happyland.photo5.caption':
-    'Isang nakatatanda at mga bata ang nakatayo sa pasukan ng isang maliit na tahanan.',
+    'Dalawang nakatatanda at tatlong bata sa loob ng isang maliit na tahanan.',
+  'happyland.photo5.caption': 'Ang tirahan ng isang pamilya.',
   'happyland.photo6.alt':
     'Isang babae sa tabi ng mga kawali, balde at gamit sa bahay sa isang masikip na lugar.',
   'happyland.photo6.caption':
