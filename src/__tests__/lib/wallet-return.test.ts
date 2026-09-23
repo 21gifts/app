@@ -22,6 +22,11 @@ describe('rememberWalletReturn', () => {
     expect(walletBackHref()).toBe('/messages?c=abc');
   });
 
+  it('accepts a query that URLSearchParams would emit', () => {
+    rememberWalletReturn('/messages?q=a+b*c');
+    expect(walletBackHref()).toBe('/messages?q=a+b*c');
+  });
+
   it('accepts /wallets and /wallet-backup', () => {
     rememberWalletReturn('/wallets');
     expect(walletBackHref()).toBe('/wallets');

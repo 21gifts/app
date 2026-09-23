@@ -1,7 +1,7 @@
 /** Fallback `/wallet` back target when nothing is remembered. */
 export const WALLET_BACK_FALLBACK = '/welcome';
 
-const SAFE_IN_APP_PATH = /^\/[A-Za-z0-9._~/-]*(?:\?[A-Za-z0-9._~%=&-]*)?$/;
+const SAFE_IN_APP_PATH = /^\/[A-Za-z0-9._~/-]*(?:\?[A-Za-z0-9._~%=&*+-]*)?$/;
 
 /** In-memory return path. Never written to `localStorage` or `sessionStorage`. */
 let rememberedPath: string | null = null;
@@ -10,7 +10,8 @@ let rememberedPath: string | null = null;
  * True when `path` is a safe in-app href and is not Wallet itself.
  *
  * Length, `//`, `..`, and `/wallet` are checked explicitly: the regex alone
- * would accept them. `/foo!` fails only the regex, so that test stays last.
+ * would accept them. `/foo!` fails only the regex. The query allows `+` and
+ * `*` because `URLSearchParams.toString()` emits a space as `+` and leaves `*`.
  *
  * @param path - Candidate pathname, optionally with a query string.
  * @returns Whether {@link rememberWalletReturn} may store it.

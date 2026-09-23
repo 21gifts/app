@@ -32,4 +32,11 @@ describe('RememberWalletReturn', () => {
     expect(container.textContent).toBe('');
     expect(walletBackHref()).toBe('/messages?c=abc');
   });
+
+  it('keeps a plus and a star from URLSearchParams', () => {
+    navigation.pathname = '/messages';
+    navigation.query = 'q=a+b*c';
+    renderWithLocale(<RememberWalletReturn />);
+    expect(walletBackHref()).toBe('/messages?q=a+b*c');
+  });
 });
