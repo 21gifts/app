@@ -12,6 +12,14 @@ vi.mock('@/lib/api', () => ({
 
 import { setAmountUnit } from '@/lib/api';
 
+function amountSwitch(index: number): HTMLElement {
+  const group = screen.getAllByRole('group', { name: 'Bitcoin or fiat' })[index];
+  if (group === undefined) {
+    throw new Error('missing amount switch');
+  }
+  return group;
+}
+
 const DAY: FiatRateDay = {
   sats: 100_000_000,
   usd: '100000.00',
@@ -314,15 +322,14 @@ describe('AmountEntry', () => {
       'ch',
       'USD',
     );
-    const groups = (): HTMLElement[] => screen.getAllByRole('group', { name: 'Bitcoin or fiat' });
-    fireEvent.click(within(groups()[0]).getByRole('button', { name: 'USD' }));
+    fireEvent.click(within(amountSwitch(0)).getByRole('button', { name: 'USD' }));
     await waitFor(() => {
-      expect(within(groups()[1]).getByRole('button', { name: 'USD' })).toHaveProperty(
+      expect(within(amountSwitch(1)).getByRole('button', { name: 'USD' })).toHaveProperty(
         'ariaPressed',
         'true',
       );
     });
-    fireEvent.click(within(groups()[1]).getByRole('button', { name: '₿' }));
+    fireEvent.click(within(amountSwitch(1)).getByRole('button', { name: '₿' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -355,15 +362,14 @@ describe('AmountEntry', () => {
       'ch',
       'USD',
     );
-    const groups = (): HTMLElement[] => screen.getAllByRole('group', { name: 'Bitcoin or fiat' });
-    fireEvent.click(within(groups()[0]).getByRole('button', { name: 'USD' }));
+    fireEvent.click(within(amountSwitch(0)).getByRole('button', { name: 'USD' }));
     await waitFor(() => {
-      expect(within(groups()[1]).getByRole('button', { name: 'USD' })).toHaveProperty(
+      expect(within(amountSwitch(1)).getByRole('button', { name: 'USD' })).toHaveProperty(
         'ariaPressed',
         'true',
       );
     });
-    fireEvent.click(within(groups()[1]).getByRole('button', { name: '₿' }));
+    fireEvent.click(within(amountSwitch(1)).getByRole('button', { name: '₿' }));
     await act(async () => {
       rejectSecond(new Error('nope'));
     });
