@@ -2415,7 +2415,7 @@ test.describe('onboarding screens', () => {
           ...E2E_ACCOUNT,
           name: 'Ada',
           username: null,
-          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddress: null,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
