@@ -801,7 +801,7 @@ const de = {
   'happyland.photo1.caption':
     'Blick von oben auf dicht beieinanderstehende Gebäude und schmale Gassen.',
   'happyland.photo2.alt': 'Menschen stehen in einer Gasse neben zweistöckigen Wohnhäusern.',
-  'happyland.photo2.caption': 'Nachbarn treffen sich in einer Gasse zwischen den Häusern.',
+  'happyland.photo2.caption': 'Im Hintergrund sieht man die „Mülltrennungsarbeit“.',
   'happyland.photo3.alt':
     'Eine Frau kocht an einem Essensstand; mehrere Menschen stehen in der Nähe.',
   'happyland.photo3.caption': 'Pagpag',
