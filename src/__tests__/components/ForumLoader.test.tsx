@@ -887,6 +887,26 @@ describe('ForumLoader', () => {
     expect(screen.getByLabelText('Ask')).toHaveProperty('value', '0.021');
   });
 
+  it('keeps an ask in sats when step 1 returns before a rate can convert', async () => {
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21');
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', false);
+  });
+
   it('leaves an unmounted ask draft unchanged when the rate cannot convert it', async () => {
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {

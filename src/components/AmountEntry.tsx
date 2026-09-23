@@ -42,8 +42,14 @@ export interface AmountEntryProps {
   /** Latest gift day for the counter and for conversion. */
   rateDay: FiatRateDay | null;
   /**
-   * Fired with the active unit on mount and whenever it changes.
-   * A signed-out pay link stores this because it has no account.
+   * Unit the current `value` is written in, when that differs from the
+   * account. The field keeps showing this unit until conversion succeeds.
+   */
+  valueUnit?: AmountUnit;
+  /**
+   * Fired when this field is actually showing a unit, not when the account
+   * changes before the draft can convert. A signed-out pay link stores this
+   * because it has no account.
    */
   onUnitChange?: (unit: AmountUnit) => void;
 }
@@ -97,6 +103,7 @@ export function AmountEntry({
   className,
   lockedSats = null,
   rateDay,
+  valueUnit,
   onUnitChange,
 }: AmountEntryProps): ReactElement {
   const { t } = useTranslations();
@@ -109,7 +116,8 @@ export function AmountEntry({
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
   const unit: AmountUnit = session === null ? localUnit : storedUnit;
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
-  const applied = useRef(unit);
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(valueUnit ?? unit);
+  const applied = useRef(shownUnit);
   const posting = useRef(false);
   const draftRef = useRef(value);
   if (!posting.current) {
@@ -123,15 +131,14 @@ export function AmountEntry({
       .replace(/^-|-$/g, '')}`;
 
   useEffect(() => {
-    onUnitChange?.(unit);
-  }, [onUnitChange, unit]);
-
-  useEffect(() => {
     if (locked) {
       applied.current = unit;
+      setShownUnit(unit);
+      onUnitChange?.(unit);
       return;
     }
     if (applied.current === unit) {
+      onUnitChange?.(applied.current);
       return;
     }
     const from = applied.current;
@@ -140,25 +147,31 @@ export function AmountEntry({
       return;
     }
     applied.current = unit;
+    setShownUnit(unit);
+    onUnitChange?.(unit);
     if (converted !== value) {
       onValueChange(converted);
     }
-  }, [fiat, locked, onValueChange, rateDay, unit, value]);
+  }, [fiat, locked, onUnitChange, onValueChange, rateDay, unit, value]);
 
   const changeUnit = (next: AmountUnit): void => {
-    if (disabled || locked || posting.current || next === unit) {
+    if (disabled || locked || posting.current || next === shownUnit) {
       return;
     }
     const previousDraft = value;
-    const previousUnit = unit;
+    const previousUnit = shownUnit;
     const converted = convertAmountDraft(previousUnit, next, value, rateDay, fiat);
     if (value.trim() !== '' && converted === '') {
       return;
     }
     draftRef.current = converted;
     applied.current = next;
+    setShownUnit(next);
+    onUnitChange?.(next);
     if (session === null || account === null) {
-      setLocalUnit(next);
+      if (session === null) {
+        setLocalUnit(next);
+      }
       if (converted !== value) {
         onValueChange(converted);
       }
@@ -187,6 +200,8 @@ export function AmountEntry({
           return;
         }
         applied.current = previousUnit;
+        setShownUnit(previousUnit);
+        onUnitChange?.(previousUnit);
         const current = useAuthStore.getState().account;
         if (current !== null) {
           setAccount({ ...current, amountUnit: previousUnit });
@@ -204,9 +219,10 @@ export function AmountEntry({
   };
 
   const shown = locked ? String(lockedSats) : value;
-  const prefix = locked || unit === 'btc' ? '\u20BF' : fiat;
+  const entryUnit: AmountUnit = locked ? 'btc' : shownUnit;
+  const prefix = entryUnit === 'btc' ? '\u20BF' : fiat;
   const shownPlaceholder =
-    placeholder !== undefined && unit === 'fiat' && /^\d+$/.test(placeholder)
+    placeholder !== undefined && entryUnit === 'fiat' && /^\d+$/.test(placeholder)
       ? (fiatDraftForSats(Number(placeholder), rateDay, fiat) ?? undefined)
       : placeholder;
   let counter: string | null = null;
@@ -215,13 +231,13 @@ export function AmountEntry({
     counter =
       fiatAmount === null ? t('amount.noRate') : formatFiatDisplay(fiatAmount, fiat, numberFormat);
   } else if (value.trim() !== '') {
-    const parsed = parseAmountDraft(unit, value, rateDay, fiat);
-    if (unit === 'btc' && parsed.kind === 'sats') {
+    const parsed = parseAmountDraft(entryUnit, value, rateDay, fiat);
+    if (entryUnit === 'btc' && parsed.kind === 'sats') {
       const fiatAmount = satsToFiatAmount(parsed.sats, rateDay, fiat);
       counter = fiatAmount === null ? null : formatFiatDisplay(fiatAmount, fiat, numberFormat);
-    } else if (unit === 'fiat' && parsed.kind === 'sats') {
+    } else if (entryUnit === 'fiat' && parsed.kind === 'sats') {
       counter = formatBitcoin(parsed.sats, numberFormat);
-    } else if (unit === 'fiat' && FIAT_DRAFT.test(value.trim())) {
+    } else if (entryUnit === 'fiat' && FIAT_DRAFT.test(value.trim())) {
       counter = t('amount.noRate');
     }
   }
@@ -237,7 +253,7 @@ export function AmountEntry({
           <SegmentedControl
             tone="gift"
             shell="app"
-            value={unit}
+            value={entryUnit}
             options={[
               { value: 'btc', label: '\u20BF' },
               { value: 'fiat', label: fiat },
@@ -255,7 +271,7 @@ export function AmountEntry({
           id={fieldId}
           aria-label={label}
           type="text"
-          inputMode={locked || unit === 'btc' ? 'numeric' : 'decimal'}
+          inputMode={entryUnit === 'btc' ? 'numeric' : 'decimal'}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}

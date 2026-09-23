@@ -37,7 +37,12 @@ import {
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
+  type ForumMessage,
+  type ForumPlacePin,
+} from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
   FORUM_HOME_EVENT,
@@ -336,7 +341,9 @@ export function ForumLoader({
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [askDraft, setAskDraft] = useState('');
-  const askUnit = useRef(amountUnit);
+  const [askDraftUnit, setAskDraftUnit] = useState<AmountUnit>(amountUnit);
+  const askUnit = useRef(askDraftUnit);
+  askUnit.current = askDraftUnit;
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
@@ -387,15 +394,18 @@ export function ForumLoader({
       return;
     }
     if (askStep === 1) {
-      askUnit.current = amountUnit;
       return;
     }
     const from = askUnit.current;
+    const adopt = (): void => {
+      askUnit.current = amountUnit;
+      setAskDraftUnit(amountUnit);
+    };
     setAskDraft((draft) => {
       const parsed = parseAmountDraft(from, draft, rateDay, fiat);
       /* v8 ignore next 4 -- an empty ask cannot leave step 1 */
       if (parsed.kind === 'empty') {
-        askUnit.current = amountUnit;
+        adopt();
         return draft;
       }
       /* v8 ignore next 3 -- an unparsable ask cannot leave step 1; a missing rate retries */
@@ -403,14 +413,14 @@ export function ForumLoader({
         return draft;
       }
       if (amountUnit === 'btc') {
-        askUnit.current = amountUnit;
+        adopt();
         return String(parsed.sats);
       }
       const next = fiatDraftForSats(parsed.sats, rateDay, fiat);
       if (next === null) {
         return draft;
       }
-      askUnit.current = amountUnit;
+      adopt();
       return next;
     });
   }, [amountUnit, askStep, fiat, rateDay]);
@@ -1700,7 +1710,7 @@ export function ForumLoader({
     }
     let goalSats: number | undefined;
     if (feed !== 'shops' && composeIntent === 'ask') {
-      const parsed = parseForumAskAmountInUnit(askDraft, amountUnit, rateDay, fiat);
+      const parsed = parseForumAskAmountInUnit(askDraft, askUnit.current, rateDay, fiat);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
       if (parsed === null) {
         setFormError('ask');
@@ -2252,6 +2262,8 @@ export function ForumLoader({
           setFormError(null);
         }}
         askDraft={askDraft}
+        askDraftUnit={askDraftUnit}
+        onAskDraftUnit={setAskDraftUnit}
         onAskDraftChange={(value) => {
           setAskDraft(value);
           setFormError(null);

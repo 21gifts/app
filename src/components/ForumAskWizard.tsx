@@ -7,7 +7,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
-import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit } from '@/lib/api-types';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -33,6 +33,8 @@ export function ForumAskWizard({
   askCadence = 'once',
   onAskCadenceChange = () => undefined,
   askDraft,
+  askDraftUnit,
+  onAskDraftUnit,
   onAskDraftChange,
   draft,
   onDraftChange,
@@ -52,6 +54,10 @@ export function ForumAskWizard({
   askCadence?: ForumAskCadence;
   onAskCadenceChange?: (value: ForumAskCadence) => void;
   askDraft: string;
+  /** Unit `askDraft` is written in. Defaults to the account unit. */
+  askDraftUnit?: AmountUnit;
+  /** Called when the ask field is actually showing a unit. */
+  onAskDraftUnit?: (unit: AmountUnit) => void;
   onAskDraftChange: (value: string) => void;
   draft: string;
   onDraftChange: (value: string) => void;
@@ -69,8 +75,9 @@ export function ForumAskWizard({
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const amountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
+  const draftUnit = askDraftUnit ?? amountUnit;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const parsedAsk = parseForumAskAmountInUnit(askDraft, amountUnit, rateDay, fiat);
+  const parsedAsk = parseForumAskAmountInUnit(askDraft, draftUnit, rateDay, fiat);
   const stepTitle =
     step === 1
       ? t('forum.askHowMuch')
@@ -128,7 +135,9 @@ export function ForumAskWizard({
             id="forum-ask-amount"
             label={t('forum.askAmountLabel')}
             value={askDraft}
+            valueUnit={draftUnit}
             onValueChange={onAskDraftChange}
+            onUnitChange={onAskDraftUnit}
             disabled={posting}
             rateDay={rateDay}
           />

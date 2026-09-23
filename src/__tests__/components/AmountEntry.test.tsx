@@ -60,15 +60,43 @@ describe('AmountEntry', () => {
 
   it('converts to fiat locally when nobody is signed in', () => {
     const onValueChange = vi.fn();
+    const onUnitChange = vi.fn();
     renderWithLocale(
-      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />,
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={onValueChange}
+        onUnitChange={onUnitChange}
+        rateDay={DAY}
+      />,
       'en',
       'ch',
       'USD',
     );
     fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(onUnitChange).toHaveBeenCalledWith('fiat');
     expect(onValueChange).toHaveBeenCalledWith('0.021');
     expect(setAmountUnit).not.toHaveBeenCalled();
+  });
+
+  it('does not save a unit when the session has no account', () => {
+    useAuthStore.setState({ session: 'sess', account: null, wrongAccount: false });
+    const onUnitChange = vi.fn();
+    renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value=""
+        onValueChange={() => undefined}
+        onUnitChange={onUnitChange}
+        rateDay={null}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(setAmountUnit).not.toHaveBeenCalled();
+    expect(onUnitChange).toHaveBeenCalledWith('fiat');
   });
 
   it('shows bitcoin under a fiat draft and the missing-rate line', () => {
@@ -197,6 +225,7 @@ describe('AmountEntry', () => {
         label="Amount"
         value="21"
         onValueChange={() => undefined}
+        onUnitChange={onUnitChange}
         rateDay={null}
         lockedSats={21}
         className=""
@@ -229,8 +258,15 @@ describe('AmountEntry', () => {
   it('waits for a rate before converting a filled draft from outside', () => {
     useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
     const onValueChange = vi.fn();
+    const onUnitChange = vi.fn();
     const { rerender } = renderWithLocale(
-      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={null} />,
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={onValueChange}
+        onUnitChange={onUnitChange}
+        rateDay={null}
+      />,
       'en',
       'ch',
       'USD',
@@ -243,8 +279,17 @@ describe('AmountEntry', () => {
       });
     });
     expect(onValueChange).not.toHaveBeenCalled();
-    rerender(<AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />);
+    rerender(
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={onValueChange}
+        onUnitChange={onUnitChange}
+        rateDay={DAY}
+      />,
+    );
     expect(onValueChange).toHaveBeenCalledWith('0.021');
+    expect(onUnitChange).toHaveBeenCalledWith('fiat');
   });
 
   it('keeps the unit when a filled draft has no rate', () => {
@@ -349,8 +394,15 @@ describe('AmountEntry', () => {
     );
     useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
     const onValueChange = vi.fn();
+    const onUnitChange = vi.fn();
     renderWithLocale(
-      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />,
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={onValueChange}
+        onUnitChange={onUnitChange}
+        rateDay={DAY}
+      />,
       'en',
       'ch',
       'USD',

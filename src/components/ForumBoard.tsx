@@ -44,7 +44,12 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
+  type ForumMessage,
+  type ForumPlacePin,
+} from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import {
   FORUM_COMPOSE_EVENT,
@@ -156,6 +161,10 @@ export interface ForumBoardProps {
   onDraftChange: (value: string) => void;
   /** Optional whole-sat ask draft for a top-level note. */
   askDraft: string;
+  /** Unit the ask draft is written in. Default is the account unit. */
+  askDraftUnit?: AmountUnit;
+  /** Called when the ask field is actually showing a unit. */
+  onAskDraftUnit?: (unit: AmountUnit) => void;
   /** Called when the Ask field changes. */
   onAskDraftChange: (value: string) => void;
   /** Messenger vs Ask wizard. Default `post`. */
@@ -568,6 +577,8 @@ export function ForumBoard({
   draft,
   onDraftChange,
   askDraft,
+  askDraftUnit,
+  onAskDraftUnit,
   onAskDraftChange,
   composeIntent = 'post',
   onComposeIntentChange,
@@ -1605,6 +1616,8 @@ export function ForumBoard({
           askCadence={askCadence}
           onAskCadenceChange={onAskCadenceChange}
           askDraft={askDraft}
+          askDraftUnit={askDraftUnit}
+          onAskDraftUnit={onAskDraftUnit}
           onAskDraftChange={onAskDraftChange}
           draft={draft}
           onDraftChange={onDraftChange}
