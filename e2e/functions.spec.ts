@@ -8996,10 +8996,29 @@ test('Function: replySatsFromDraft — a blank reply amount stays empty', async 
   expect(replySatsFromDraft('', 'btc', AMOUNT_DAY, 'USD')).toBe('empty');
   await seedAdaSession(page);
   await stubPayableNote(page);
+  await page.route('**/messages/compose-target', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messageId: 'm-compose', sats: 0 }),
+    });
+  });
+  await page.route('**/messages/m-compose/invoice', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc1', amountSats: 1 }),
+    });
+  });
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
-  await expect(page.getByLabel('Amount')).toHaveValue('');
+  await page.getByLabel('Your reaction').fill('Thanks');
+  const invoice = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/messages/m-compose/invoice'),
+  );
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  expect(((await invoice).postDataJSON() as { sats: number }).sats).toBe(1);
 });
 
 test('Function: paySatsFromDraft — a blank pay amount is 21 sats', async ({ page }) => {

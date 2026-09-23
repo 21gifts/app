@@ -3429,7 +3429,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: fiatDraftForSats
 
-- **Purpose:** Fiat typing draft for an exact sat amount. Two decimals when they round-trip through `fiatToSats`, otherwise more fraction digits so toggling back returns the same sats.
+- **Purpose:** Fiat typing draft for an exact sat amount. Two decimals when they round-trip through `fiatToSats`, otherwise more fraction digits so toggling back returns the same sats. Null when no digit count does.
 - **Inputs:** Whole `sats`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** A plain dot-decimal string, or null when the day or that currency cannot be used. No I/O.
 - **Used by:** `AmountEntry`, `ForumLoader`.

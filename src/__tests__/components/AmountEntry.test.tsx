@@ -226,6 +226,27 @@ describe('AmountEntry', () => {
     expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
   });
 
+  it('waits for a rate before converting a filled draft from outside', () => {
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    const onValueChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={null} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    act(() => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+        wrongAccount: false,
+      });
+    });
+    expect(onValueChange).not.toHaveBeenCalled();
+    rerender(<AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />);
+    expect(onValueChange).toHaveBeenCalledWith('0.021');
+  });
+
   it('keeps the unit when a filled draft has no rate', () => {
     useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
     const onValueChange = vi.fn();

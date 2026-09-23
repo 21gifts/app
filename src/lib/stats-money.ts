@@ -251,7 +251,8 @@ export function satsToFiatAmount(
  *
  * Uses two decimals when that round-trips through {@link fiatToSats}.
  * Otherwise adds fraction digits, up to eight, so toggling back returns
- * the same sats. Returns `null` when the day or that fiat cannot be used.
+ * the same sats. Returns `null` when the day or that fiat cannot be used,
+ * or when no digit count round-trips.
  *
  * @param sats - Whole sats to show.
  * @param day - Gift day, or `null`.
@@ -285,7 +286,7 @@ export function fiatDraftForSats(
       return text;
     }
   }
-  return two;
+  return null;
 }
 
 /** A trimmed amount draft, as whole sats or a reason it is not. */

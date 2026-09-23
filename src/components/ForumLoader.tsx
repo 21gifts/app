@@ -386,20 +386,32 @@ export function ForumLoader({
     if (askUnit.current === amountUnit) {
       return;
     }
-    const from = askUnit.current;
-    askUnit.current = amountUnit;
     if (askStep === 1) {
+      askUnit.current = amountUnit;
       return;
     }
+    const from = askUnit.current;
     setAskDraft((draft) => {
       const parsed = parseAmountDraft(from, draft, rateDay, fiat);
+      /* v8 ignore next 4 -- an empty ask cannot leave step 1 */
+      if (parsed.kind === 'empty') {
+        askUnit.current = amountUnit;
+        return draft;
+      }
+      /* v8 ignore next 3 -- an unparsable ask cannot leave step 1; a missing rate retries */
       if (parsed.kind !== 'sats') {
         return draft;
       }
       if (amountUnit === 'btc') {
+        askUnit.current = amountUnit;
         return String(parsed.sats);
       }
-      return fiatDraftForSats(parsed.sats, rateDay, fiat) ?? draft;
+      const next = fiatDraftForSats(parsed.sats, rateDay, fiat);
+      if (next === null) {
+        return draft;
+      }
+      askUnit.current = amountUnit;
+      return next;
     });
   }, [amountUnit, askStep, fiat, rateDay]);
   const [expandedId, setExpandedId] = useState<string | null>(null);

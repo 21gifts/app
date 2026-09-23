@@ -135,8 +135,11 @@ export function AmountEntry({
       return;
     }
     const from = applied.current;
-    applied.current = unit;
     const converted = convertAmountDraft(from, unit, value, rateDay, fiat);
+    if (value.trim() !== '' && converted === '') {
+      return;
+    }
+    applied.current = unit;
     if (converted !== value) {
       onValueChange(converted);
     }

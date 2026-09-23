@@ -188,10 +188,10 @@ describe('fiatDraftForSats', () => {
     expect(fiatDraftForSats(21, { ...RATE_DAY, usd: '0.00' }, 'USD')).toBeNull();
   });
 
-  it('falls back to two decimals when more digits still do not round-trip', () => {
-    expect(fiatDraftForSats(1, { ...RATE_DAY, sats: 1_000_000_000_000, usd: '1.00' }, 'USD')).toBe(
-      '0.00',
-    );
+  it('returns null when no digit count round-trips', () => {
+    expect(
+      fiatDraftForSats(1, { ...RATE_DAY, sats: 1_000_000_000_000, usd: '1.00' }, 'USD'),
+    ).toBeNull();
   });
 });
 
