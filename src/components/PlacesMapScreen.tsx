@@ -74,21 +74,27 @@ export function PlacesMapScreen(): ReactElement {
     }
     let cancelled = false;
     const run = async (): Promise<void> => {
+      const keyPromise = fetch('/maps/key')
+        .then(async (response) => {
+          const keyBody: unknown = await response.json();
+          if (
+            typeof keyBody === 'object' &&
+            keyBody !== null &&
+            'key' in keyBody &&
+            typeof keyBody.key === 'string'
+          ) {
+            return keyBody.key;
+          }
+          return null;
+        })
+        .catch(() => null);
       try {
-        const [rows, keyResponse] = await Promise.all([fetchPlaces(session), fetch('/maps/key')]);
-        const keyBody: unknown = await keyResponse.json();
+        const [rows, key] = await Promise.all([fetchPlaces(session), keyPromise]);
         if (cancelled) {
           return;
         }
         setPlaces(rows);
-        setMapsKey(
-          typeof keyBody === 'object' &&
-            keyBody !== null &&
-            'key' in keyBody &&
-            typeof keyBody.key === 'string'
-            ? keyBody.key
-            : null,
-        );
+        setMapsKey(key);
       } catch {
         if (!cancelled) {
           setFailed(true);

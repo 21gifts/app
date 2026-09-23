@@ -74,6 +74,15 @@ describe('PlacesMapScreen', () => {
     expect(await screen.findByText('No places yet.')).toBeTruthy();
   });
 
+  it('keeps the list when the map key request fails', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW]);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('key down')));
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('shows an error and retries', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce([]);
