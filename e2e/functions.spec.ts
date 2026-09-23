@@ -8977,24 +8977,78 @@ test('Function: ExternalLinkWarning — dialog shows title, body, url, Open link
 
 const AMOUNT_DAY = { sats: 100_000_000, usd: '100000.00', chf: null, eur: null, php: null };
 
-test('Function: fiatToSats — one USD on this gift day is 1000 sats', () => {
+test('Function: fiatToSats — one USD on this gift day is 1000 sats', async ({ page }) => {
   expect(fiatToSats(1, AMOUNT_DAY, 'USD')).toBe(1000);
+  await openPayLinkAmount(page);
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(page.getByText("₿1'000")).toBeVisible();
 });
 
-test('Function: parseAmountDraft — a fiat draft becomes sats', () => {
+test('Function: parseAmountDraft — a fiat draft becomes sats', async ({ page }) => {
   expect(parseAmountDraft('fiat', '1.00', AMOUNT_DAY, 'USD')).toEqual({ kind: 'sats', sats: 1000 });
+  await openPayLinkAmount(page);
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(page.getByLabel('Amount')).toHaveValue('1.00');
+  await expect(page.getByText("₿1'000")).toBeVisible();
 });
 
-test('Function: replySatsFromDraft — a blank reply amount stays empty', () => {
+test('Function: replySatsFromDraft — a blank reply amount stays empty', async ({ page }) => {
   expect(replySatsFromDraft('', 'btc', AMOUNT_DAY, 'USD')).toBe('empty');
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await expect(page.getByLabel('Amount')).toHaveValue('');
 });
 
-test('Function: paySatsFromDraft — a blank pay amount is 21 sats', () => {
+test('Function: paySatsFromDraft — a blank pay amount is 21 sats', async ({ page }) => {
   expect(paySatsFromDraft('', 'btc', AMOUNT_DAY, 'USD')).toBe(21);
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const reply = page.locator('[data-reply-id="r-pay"]');
+  await reply.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const invoice = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/messages/r-pay/invoice'),
+  );
+  await reply.getByRole('button', { name: 'Continue' }).click();
+  expect(((await invoice).postDataJSON() as { amountSats: number }).amountSats).toBe(21);
 });
 
-test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range', () => {
+test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range', async ({
+  page,
+}) => {
   expect(parseForumAskAmountInUnit('1.00', 'fiat', AMOUNT_DAY, 'USD')).toBe(1000);
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/me\/amount-unit$/, async (route) => {
+    const body = route.request().postDataJSON() as { unit?: string };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ amountUnit: body.unit === 'fiat' ? 'fiat' : 'btc' }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await expect(page.getByText('How much?')).toBeVisible();
+  await page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await page.getByLabel('Ask').fill('1.00');
+  await expect(page.getByText("₿1'000")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
 });
 
 test('Function: setAmountUnit — POST /me/amount-unit without bearer is 401', async ({
@@ -9028,6 +9082,16 @@ const AMOUNT_RATE_STATS = {
 };
 
 const PAY_LINK = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+
+async function openPayLinkAmount(page: Page): Promise<void> {
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await stubPayLink(page);
+  await page.goto(`/pl?lightning=${PAY_LINK}`);
+  await page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+}
 
 async function stubPayLink(page: Page): Promise<void> {
   await page.route(
