@@ -462,6 +462,44 @@ describe('AmountEntry', () => {
     expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
   });
 
+  it('does not roll a new session back to the previous session unit', async () => {
+    let rejectSecond: (reason: Error) => void = () => undefined;
+    let calls = 0;
+    vi.mocked(setAmountUnit).mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
+        return new Promise(() => undefined);
+      }
+      return new Promise((_, reject) => {
+        rejectSecond = reject;
+      });
+    });
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <>
+        <AmountEntry label="Pay" value="" onValueChange={() => undefined} rateDay={DAY} />
+        <AmountEntry label="Reply" value="" onValueChange={() => undefined} rateDay={DAY} />
+      </>,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(within(amountSwitch(0)).getByRole('button', { name: 'USD' }));
+    const nextAccount = { ...account, amountUnit: 'fiat' as const };
+    useAuthStore.setState({ session: 'other', account: nextAccount, wrongAccount: false });
+    await waitFor(() => {
+      expect(within(amountSwitch(1)).getByRole('button', { name: 'USD' })).toHaveProperty(
+        'ariaPressed',
+        'true',
+      );
+    });
+    fireEvent.click(within(amountSwitch(1)).getByRole('button', { name: '₿' }));
+    await act(async () => {
+      rejectSecond(new Error('nope'));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
+  });
+
   it('restores the stored unit when a later save fails', async () => {
     let rejectSecond: (reason: Error) => void = () => undefined;
     let calls = 0;

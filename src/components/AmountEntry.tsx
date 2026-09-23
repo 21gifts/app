@@ -61,15 +61,22 @@ let unitRequest = 0;
 let unitRequestOpen = false;
 let confirmedRequest = 0;
 let savedUnit: AmountUnit = 'btc';
+let unitRequestSession: string | null = null;
 
 /**
  * Starts one account-wide amount-unit save.
+ * A different session drops the previous burst so its unit cannot leak.
  *
  * @param current - Unit already stored before this click's optimistic update.
+ * @param sessionToken - Session that owns this save.
  * @returns Id of this save. Higher ids happened later.
  */
-function beginUnitRequest(current: AmountUnit): number {
-  if (!unitRequestOpen) {
+function beginUnitRequest(current: AmountUnit, sessionToken: string): number {
+  if (unitRequestSession !== sessionToken) {
+    unitRequestSession = sessionToken;
+    unitRequestOpen = false;
+    savedUnit = current;
+  } else if (!unitRequestOpen) {
     savedUnit = current;
   }
   unitRequestOpen = true;
@@ -241,7 +248,7 @@ export function AmountEntry({
     }
     const token = session;
     const currentAccount = account;
-    const request = beginUnitRequest(currentAccount.amountUnit ?? 'btc');
+    const request = beginUnitRequest(currentAccount.amountUnit ?? 'btc', token);
     posting.current = true;
     setAccount({ ...currentAccount, amountUnit: next });
     if (converted !== value) {
