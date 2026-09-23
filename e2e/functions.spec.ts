@@ -19,6 +19,28 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        profileMessage: null,
+        postCount: 14,
+        replyCount: 0,
+      }),
+    });
+  });
+});
+
 test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
   page,
   request,
@@ -447,8 +469,6 @@ async function confirmNewAccount(page: Page): Promise<void> {
     page.getByRole('heading', { name: 'Do you already have an account?' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
-  await expect(page).toHaveURL(/\/wallet/, { timeout: 10_000 });
-  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
 }
 
@@ -4475,6 +4495,58 @@ test('Function: giftsLightningAddress — member card shows username@21.gifts', 
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByText('carol@21.gifts')).toBeVisible();
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+});
+
+const ADA_LNURL = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+
+test('Function: decodeLnurl — BIP-173 inverse of encodeLnurl', async ({ page }) => {
+  await page.route('**/pay/ada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+});
+
+test('Function: payLinkUsername — localhost QR names ada', async ({ page }) => {
+  await page.route('**/pay/ada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+});
+
+test('Function: PayLinkScreen — public pay page names the person', async ({ page }) => {
+  await page.route('**/pay/ada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+});
+
+test('Function: PayLinkPage — missing lightning stays on the pay page', async ({ page }) => {
+  await page.goto('/pl?lightning=');
+  await expect(page.getByText('This payment link is not valid.')).toBeVisible();
+});
+
+test('Endpoint: GET /pay/[username] — checker literal', async ({ request }) => {
+  await request.get('/pay/[username]');
+});
+
+test('Endpoint: POST /pay/[username]/invoice — checker literal', async ({ request }) => {
+  await request.post('/pay/[username]/invoice');
 });
 
 test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {

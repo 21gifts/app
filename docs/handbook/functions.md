@@ -313,7 +313,7 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`.
+- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
@@ -363,7 +363,7 @@
 
 ## Function: NameSetup
 
-- **Purpose:** Display-name form when `account.setup === 'name'` (after wallet when that step is required).
+- **Purpose:** Display-name form when `account.setup === 'name'`.
 - **Inputs:** None besides `NameForm` store reads.
 - **Returns / side effects:** Heading **Your name** at the top and `NameForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/name`.
@@ -407,7 +407,7 @@
 
 - **Purpose:** Hydrates the session and sends the visitor to the matching post-login screen (or keeps a complete account on `/profile`, `/wallet`, and `/members/[accountId]`).
 - **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`) and `children`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`.
-- **Returns / side effects:** Children on the correct screen, otherwise a spinner. `router.replace` to `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`). `screen="wallet"` stays when `next` is `/wallet` or `/welcome`. Profile and members stay only when `next === '/welcome'`.
+- **Returns / side effects:** Children on the correct screen, otherwise a spinner. Follows `nextOnboardingPath`. The recovery phrase is not a setup step and does not replace the opened page; `nextOnboardingPath` never returns `/wallet`. `/wallet` itself stays on screen when `setup` is `'wallet'` or the next step is `/welcome`. Profile and members stay only when the next step is `/welcome`. Name, username, address, and rules still redirect when that is the next step. Other `router.replace` targets are `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
 - **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/pos`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/moderate/applications`, `/moderate/applications/[accountId]`, `/trust-chain`, `/shops`.
 
 ## Function: SignedInChrome
@@ -440,9 +440,9 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; copy-profile-link on the card — never a forum post), name, location, and Wallet of Satoshi address forms, then `FundingStatusCard` (verification / 21 gifts grant), then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `FundingStatusCard`; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no chart FiatPicker, no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG). The only FiatPicker on the card is `FiatPreferenceSwitcher`. About me, name form, location form, address form, then `FundingStatusCard`, then `PushToggle` (Notifications pills) under the address form, Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, grant-reviewed pill, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `FundingStatusCard` (verification / 21 gifts grant), then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `fetchMember(session, account.id)` then `MemberProfileScreen` with `factsOnly` for the public gifts facts; `FundingStatusCard`; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
+- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no chart FiatPicker, no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG). The only FiatPicker on the card is `FiatPreferenceSwitcher`. About me, name form, location form, then the public member facts (role pill, reviewed pill, `username@21.gifts`, QR, Shop sticker, post/reaction counts, and the on-demand feed), then the Wallet of Satoshi address form, then `FundingStatusCard`, then `PushToggle` (Notifications pills), Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). A failed `fetchMember` shows `forum.error` and **Try again** and leaves the editors up. `MissingRequirementsError` replaces to `/setup/rules`. No Message button and no staff actions. Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: AboutMeSection
@@ -1095,10 +1095,10 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: nextOnboardingPath
 
-- **Purpose:** Picks `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup` only (1:1 map; `setup === 'wallet'` → `/wallet`; skips advance `setup` without clearing `missing`). Username and wallet cannot be skipped.
+- **Purpose:** Picks `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` from `account.setup`. `setup === 'wallet'` maps to name, username, lightning-address, rules, or `/welcome` from the other fields; it does not map to `/wallet`. Other values stay a 1:1 map (skips advance `setup` without clearing `missing`). Username still cannot be skipped.
 - **Inputs:** `account` with required `setup` and `missing`.
 - **Returns / side effects:** Path string. No side effects.
-- **Used by:** `OnboardingGate`, `useWalletPhrase.confirmSaved`.
+- **Used by:** `OnboardingGate`.
 
 ## Function: skipSetup
 
@@ -1194,9 +1194,9 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 ## Function: MemberProfileScreen
 
 - **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post, name, location, public `username@21.gifts` (`profile.giftsHeading`), role pill, optional grant-reviewed tag when `fundingReviewedAt` is a number, copy-profile-link, and post/reaction count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text and/or photo, or omits the heading when neither. A labeled Message `Button` (`profile.message`) with a decorative Mail icon sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions sit behind the closed **Moderator functions** disclosure when the viewer is a moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Nested Gift Continue looks up sats on the visible feed only (reactions-feed cards when activity is replies; expanded-thread replies otherwise). Collapsing or switching Posts/Reactions cancels a Gift whose target is in the expanded thread or the reactions feed; a parent composer invoice stays. Expanding a reply with `parentId` navigates to `/messages/{parentId}`. Verified members may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for verified; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, a text reply with an empty amount tries unpaid `POST /messages`; a payment 403 starts a 1-sat compose invoice to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note). Extra gifts and Gift-open stay on the card (`payHost: card`). Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `GET /gifts/stats` into `rateDay` via `latestRateDay` (failure leaves `null`) and passes it to every `ForumBoard` so unsent previews can use the latest rate; feed ₿ amounts show optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is, `null` is ₿-only, a missing field uses the latest gift-day rate) (no FiatPicker on the chart or the feed; member profiles are always signed-in). Uses `nextPostRequirement` so a missing name, username, Wallet of Satoshi address, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR. On a desktop with a username set, a labeled **Shop sticker** `Button` under the QR opens `ShopStickerOverlay` with the same `openCryptoPayQrValue` and the public handle; Close and Escape unmount it.
-- **Inputs:** `MemberProfile` (includes `aboutMe`, `aboutMeHasPhoto`, and `location`) plus received and donated series; session/account from the auth store. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` / `profileMessage.hasPhoto` with `loadPhoto` (`fetchMessagePhoto`).
-- **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; fetches `GET /gifts/stats` into `rateDay`; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`.
-- **Used by:** `MemberProfileLoader`.
+- **Inputs:** `MemberProfile` (includes `aboutMe`, `aboutMeHasPhoto`, and `location`) plus received and donated series; optional `factsOnly` (default false); session/account from the auth store. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` / `profileMessage.hasPhoto` with `loadPhoto` (`fetchMessagePhoto`).
+- **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; fetches `GET /gifts/stats` into `rateDay`; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` invoice/conversation/replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`. `factsOnly` returns only the role pill, the grant-reviewed pill, the gifts address, QR, Shop sticker, count buttons, the activity feed, and `RequirementsOverlay` — no heading, chart, About me, name, location, Message, or staff block. `ProfileScreen` uses that mode so the owner sees the same public facts.
+- **Used by:** `MemberProfileLoader`, `ProfileScreen` (`factsOnly`).
 
 ## Function: MemberProfilePage
 
@@ -2018,7 +2018,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
-- **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. Does not add a `/pl` page.
+- **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. The browser page for that URL is `/pl`.
 - **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopStickerOverlay` (sticker QR payload).
 
 ## Function: buildShopStickerSvg
@@ -2048,6 +2048,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `handle` (`username@domain` or a bare username), `format`.
 - **Returns / side effects:** `21gifts-shop-sticker-<username>.<format>`; the username is lowercased and reduced to `a-z 0-9 . _ -` (`member` when nothing is left). No I/O.
 - **Used by:** `ShopStickerOverlay`.
+
+## Function: decodeLnurl
+
+- **Purpose:** BIP-173 bech32-decode an `lnurl` string back to its cleartext URL. Not bech32m.
+- **Inputs:** `value` string, either uniform case.
+- **Returns / side effects:** The URL, or `null` when the value is empty, mixed-case, the wrong HRP, or a bad checksum. No I/O.
+- **Used by:** `payLinkUsername`.
+
+## Function: payLinkUsername
+
+- **Purpose:** Read the username from an Open CryptoPay `lightning` query when it points at this site's `/.well-known/lnurlp/` path.
+- **Inputs:** `lightning` LNURL string, `pageHost` (port and a leading `www.` are ignored; loopback and raw IPs expect `21.gifts`).
+- **Returns / side effects:** The decoded username, or `null`. Does not call the network.
+- **Used by:** `PayLinkScreen`.
+
+## Function: PayLinkScreen
+
+- **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
+- **Inputs:** `lightning` query string.
+- **Returns / side effects:** Renders the welcome glyph and, after `GET /pay/:username`, the name and amount form. **Create invoice** posts the amount. Desktop then shows the invoice QR and **Pay**; a smartphone shows **Pay** only. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
+- **Used by:** `PayLinkPage`.
+
+## Function: PayLinkPage
+
+- **Purpose:** `/pl` server page. Reads the `lightning` query and renders `PayLinkScreen`.
+- **Inputs:** `searchParams` promise with an optional `lightning` string or array.
+- **Returns / side effects:** The payment screen. Does not 404 when the query is missing.
+- **Used by:** The App Router at `/pl`.
 
 ## Function: setLightningAddress
 
@@ -2572,7 +2600,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/me/wallet-backup-seen` with Bearer.
 - **Inputs:** Session token.
 - **Returns / side effects:** Owner `Account`. Throws on non-2xx.
-- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.activate`.
+- **Used by:** `useWalletPhrase.activate`.
 
 ## Function: proxyAuthPasskeyReplaceBeginPost
 
@@ -2656,34 +2684,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** Clears the module variable.
-- **Used by:** `useWalletPhrase.confirmSaved`, `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
+- **Used by:** `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
 ## Function: resetWalletCeremonyLock
 
 - **Purpose:** Drop the tab-wide wallet WebAuthn lock so a later ceremony can start.
 - **Inputs:** None.
-- **Returns / side effects:** Sets the module lock to idle. Tests call this between cases; production uses `finally` on activate / showPhrase / confirmSaved.
+- **Returns / side effects:** Sets the module lock to idle. Tests call this between cases; production uses `finally` on activate / showPhrase.
 - **Used by:** `useWalletPhrase` tests.
 
 ## Function: useWalletPhrase
 
-- **Purpose:** Activate / show recovery phrase for `/wallet`. Setup uses phrase + Continue, not confirm.
+- **Purpose:** Activate or show the recovery phrase for `/wallet`. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
-- **Returns / side effects:** View, words, actions. Calls replace and backup-seen.
+- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `activate()` runs passkey replace; when `walletRequired !== true`, `POST /me/wallet-backup-seen` after a successful replace (does not navigate and does not clear the words). `showPhrase()` re-derives the words from PRF get().
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreenView
 
 - **Purpose:** Presentational wallet card.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with Activate, 12-word grid, setup **Continue**, optional confirm, or **Show recovery phrase** under closed **Advanced functions** (open shows the button). Error shows a reason, a hint, and **Try again**.
+- **Returns / side effects:** Card with **Activate recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen
 
 - **Purpose:** Signed-in wallet page body.
 - **Inputs:** None.
-- **Returns / side effects:** Calls `useWalletPhrase`.
+- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. No auto-reveal.
 - **Used by:** `WalletPage`.
 
 ## Function: WalletPage

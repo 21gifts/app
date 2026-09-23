@@ -165,7 +165,6 @@ function usernameTaken(username, accountId) {
 /** Refresh `missing` from filled fields. */
 function refreshMissing(account) {
   const missing = [];
-  if (account.walletRequired === true && !account.walletBackupSeenAt) missing.push('wallet');
   if (!hasName(account)) missing.push('name');
   if (!hasUsername(account)) missing.push('username');
   if (!hasLightningAddress(account)) missing.push('lightning-address');
@@ -227,10 +226,10 @@ function newAccount(linkingKey) {
     viewKey: hex(randomBytes(32)),
     aboutMe: null,
     aboutMeHasPhoto: false,
-    setup: 'wallet',
+    setup: 'name',
     walletRequired: true,
     walletBackupSeenAt: null,
-    missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
+    missing: ['name', 'username', 'lightning-address', 'rules'],
   };
   return account;
 }

@@ -9,20 +9,23 @@ import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { LocationForm } from '@/components/LocationForm';
+import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { fetchAboutMePhoto, putAboutMe } from '@/lib/api';
+import { fetchAboutMePhoto, fetchMember, putAboutMe } from '@/lib/api';
+import type { MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
- * and address forms, FundingStatusCard (verification / 21 gifts grant),
+ * the same public gifts facts as the member card (`MemberProfileScreen`
+ * `factsOnly`), and address forms, FundingStatusCard (verification / 21 gifts grant),
  * PushToggle (All/Active/Mentions always; This device On/Off when Push APIs
  * are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
@@ -40,12 +43,52 @@ export function ProfileScreen(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
+  const accountId = account?.id;
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
+  const [member, setMember] = useState<MemberProfile | null>(null);
+  const [memberStatus, setMemberStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [memberAttempt, setMemberAttempt] = useState(0);
 
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (session === null || accountId === undefined) {
+      return;
+    }
+    let cancelled = false;
+    setMember(null);
+    setMemberStatus('loading');
+    void (async () => {
+      try {
+        const next = await fetchMember(session, accountId);
+        if (cancelled) {
+          return;
+        }
+        if (next === null) {
+          setMemberStatus('error');
+          return;
+        }
+        setMember(next);
+        setMemberStatus('ready');
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+        if (err instanceof MissingRequirementsError) {
+          router.replace('/setup/rules');
+          return;
+        }
+        setMemberStatus('error');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    /* router.replace is used on 409; next/navigation's identity is not stable */
+  }, [session, accountId, memberAttempt]);
 
   return (
     <Card surface={false}>
@@ -98,6 +141,23 @@ export function ProfileScreen(): ReactElement {
       ) : null}
       <NameForm variant="profile" />
       <LocationForm />
+      {memberStatus === 'ready' && member !== null ? (
+        <MemberProfileScreen factsOnly profile={member} received={[]} donated={[]} />
+      ) : memberStatus === 'error' ? (
+        <div className="flex flex-col items-center gap-4">
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.error')}
+          </p>
+          <Button
+            type="button"
+            onClick={() => {
+              setMemberAttempt((n) => n + 1);
+            }}
+          >
+            {t('view.retry')}
+          </Button>
+        </div>
+      ) : null}
       <LightningAddressForm variant="profile" />
       <FundingStatusCard />
       <PushToggle />

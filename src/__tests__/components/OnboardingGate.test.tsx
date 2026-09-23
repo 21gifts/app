@@ -103,6 +103,37 @@ describe('OnboardingGate', () => {
     expect(replace).toHaveBeenCalledWith('/setup/name');
   });
 
+  it('sends a signed-in visitor from login to the name screen when setup is wallet', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/setup/name');
+  });
+
+  it('sends a signed-in visitor from login to welcome when setup is wallet and the other fields are set', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...complete,
+        username: 'ada',
+        setup: 'wallet',
+        missing: ['wallet'],
+      },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/welcome');
+  });
+
   it('lets a complete account open wallet', async () => {
     useAuthStore.setState({ session: 'tok', account: complete });
     renderWithLocale(
@@ -140,7 +171,7 @@ describe('OnboardingGate', () => {
     });
   });
 
-  it('sends a wallet-required account from the name screen to /wallet', async () => {
+  it('renders name children when setup is wallet', async () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
@@ -150,9 +181,42 @@ describe('OnboardingGate', () => {
         <p>name-ui</p>
       </OnboardingGate>,
     );
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/wallet');
+    expect(await screen.findByText('name-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a visitor from welcome to the name screen when setup is wallet and name is missing', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, setup: 'wallet', missing: ['wallet', ...account.missing] },
     });
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/name');
+    });
+  });
+
+  it('renders welcome children when setup is wallet and the other fields are set', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...complete,
+        username: 'ada',
+        setup: 'wallet',
+        missing: ['wallet'],
+      },
+    });
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(await screen.findByText('welcome-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('sends a logged-out visitor from welcome to login', () => {

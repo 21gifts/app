@@ -1,9 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { finishPasskeyReplace, postWalletBackupSeen, startPasskeyReplace } from '@/lib/api';
-import { nextOnboardingPath } from '@/lib/onboarding';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
@@ -31,7 +29,7 @@ export function resetWalletCeremonyLock(): void {
   ceremonyInFlight = false;
 }
 
-/** Fixture words for visual `/wallet:phrase` and `/wallet:confirm` (not live PRF). */
+/** Fixture words for visual `/wallet:phrase` (not live PRF). */
 export const WALLET_VISUAL_FIXTURE_MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
@@ -42,7 +40,7 @@ export type WalletPhraseStatus = 'idle' | 'busy' | 'error';
 export type WalletPhraseErrorKind = 'timeout' | 'prfUnsupported' | 'generic';
 
 /** Which `/wallet` body to render. */
-export type WalletPhraseView = 'activate' | 'confirm' | 'reveal' | 'phrase';
+export type WalletPhraseView = 'activate' | 'reveal' | 'phrase';
 
 /** Public surface of {@link useWalletPhrase}. */
 export type UseWalletPhraseResult = {
@@ -50,10 +48,7 @@ export type UseWalletPhraseResult = {
   status: WalletPhraseStatus;
   error: WalletPhraseErrorKind | null;
   words: string[];
-  /** True while onboarding still requires the recovery-phrase step. */
-  setupWallet?: boolean;
   activate: () => Promise<void>;
-  confirmSaved: () => Promise<void>;
   showPhrase: () => Promise<void>;
   hidePhrase: () => void;
   retry: () => void;
@@ -92,8 +87,7 @@ function visualParam(): string | null {
 }
 
 function visualMnemonicOverride(): string | null {
-  const visual = visualParam();
-  if (visual === 'phrase' || visual === 'confirm') {
+  if (visualParam() === 'phrase') {
     return WALLET_VISUAL_FIXTURE_MNEMONIC;
   }
   return null;
@@ -113,8 +107,8 @@ async function mergePrfExtension(
 }
 
 /**
- * Owns recovery-phrase show / activate / confirm state for the signed-in
- * `/wallet` screen. Derives the 12 words from WebAuthn PRF in memory only.
+ * Owns recovery-phrase show / activate state for the signed-in `/wallet`
+ * screen. Derives the 12 words from WebAuthn PRF in memory only.
  *
  * @returns View, status, words, and actions.
  */
@@ -122,7 +116,6 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
-  const router = useRouter();
   const [status, setStatus] = useState<WalletPhraseStatus>('idle');
   const [error, setError] = useState<WalletPhraseErrorKind | null>(() => {
     const visual = visualParam();
@@ -152,21 +145,13 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     };
   }, []);
 
-  const setupWallet = account?.setup === 'wallet';
   const words = useMemo(() => (mnemonic ? mnemonic.split(/\s+/).filter(Boolean) : []), [mnemonic]);
   const showingWords = words.length === 12;
   const inFlight = useRef(false);
 
   const view: WalletPhraseView = useMemo(() => {
-    const visual = visualParam();
-    if (visual === 'confirm') {
-      return 'confirm';
-    }
-    if (visual === 'phrase') {
+    if (visualParam() === 'phrase') {
       return 'phrase';
-    }
-    if (setupWallet) {
-      return showingWords ? 'phrase' : 'reveal';
     }
     if (showingWords) {
       return 'phrase';
@@ -175,7 +160,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       return 'activate';
     }
     return 'reveal';
-  }, [account?.walletBackupSeenAt, account?.walletRequired, setupWallet, showingWords]);
+  }, [account?.walletBackupSeenAt, account?.walletRequired, showingWords]);
 
   const fail = useCallback((err: unknown) => {
     const kind = classifyWebAuthnError(err);
@@ -323,45 +308,6 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     }
   }, [fail, session]);
 
-  const confirmSaved = useCallback(async () => {
-    if (session === null || inFlight.current || ceremonyInFlight) {
-      return;
-    }
-    if (visualParam() !== null && mnemonic === WALLET_VISUAL_FIXTURE_MNEMONIC) {
-      return;
-    }
-    const token = session;
-    inFlight.current = true;
-    ceremonyInFlight = true;
-    setStatus('busy');
-    setError(null);
-    try {
-      const nextAccount = await postWalletBackupSeen(token);
-      if (abandonStaleSession(token, setError, setStatus, mnemonic)) {
-        return;
-      }
-      setAccount({
-        ...nextAccount,
-        passkeyCredentialId:
-          nextAccount.passkeyCredentialId ??
-          useAuthStore.getState().account?.passkeyCredentialId ??
-          null,
-      });
-      clearSessionPhrase();
-      setMnemonic(null);
-      setStatus('idle');
-      router.push(nextOnboardingPath(nextAccount));
-    } catch (err) {
-      if (abandonStaleSession(token, setError, setStatus, mnemonic)) {
-        return;
-      }
-      fail(err);
-    } finally {
-      inFlight.current = false;
-      ceremonyInFlight = false;
-    }
-  }, [fail, mnemonic, router, session, setAccount]);
-
   const hidePhrase = useCallback(() => {
     clearSessionPhrase();
     setMnemonic(null);
@@ -379,9 +325,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     status,
     error,
     words,
-    setupWallet,
     activate,
-    confirmSaved,
     showPhrase,
     hidePhrase,
     retry,

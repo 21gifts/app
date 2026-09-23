@@ -20,15 +20,15 @@ const en = {
   'happyland.photo1.alt': 'Overhead view of densely packed roofs and narrow lanes.',
   'happyland.photo1.caption': 'A view from above of closely packed buildings and narrow lanes.',
   'happyland.photo2.alt': 'People standing in a lane beside two-storey homes.',
-  'happyland.photo2.caption': 'Neighbours gather in a lane between homes.',
+  'happyland.photo2.caption': 'Waste sorting is visible in the background.',
   'happyland.photo3.alt': 'A woman cooking beside a food stall with several people nearby.',
   'happyland.photo3.caption': 'Pagpag',
   'happyland.photo4.alt':
     'A person sitting on wooden planks beside an area filled with discarded materials.',
   'happyland.photo4.caption':
     'Discarded materials have accumulated beside and beneath the buildings.',
-  'happyland.photo5.alt': 'An adult and three children at the entrance to a small home.',
-  'happyland.photo5.caption': 'An adult and children stand in the entrance to a compact home.',
+  'happyland.photo5.alt': 'Two adults and three children inside a small home.',
+  'happyland.photo5.caption': "A family's living space.",
   'happyland.photo6.alt': 'A woman beside pans, buckets and household supplies in a compact space.',
   'happyland.photo6.caption':
     'Cooking utensils, water containers and household supplies share a small space.',
@@ -329,6 +329,13 @@ const en = {
   'forum.payErrorAuthorWallet': "The author's wallet cannot receive this Bitcoin payment",
   'forum.payConfirm': 'Pay {amount}',
   'forum.payWaiting': 'Waiting for payment…',
+  'pay.amount': 'Amount',
+  'pay.amountPlaceholder': '21',
+  'pay.createInvoice': 'Create invoice',
+  'pay.invoiceQr': 'Bitcoin invoice',
+  'pay.invalid': 'This payment link is not valid.',
+  'pay.failed': 'Could not create the invoice.',
+  'pay.amountInvalid': 'Enter a whole number.',
   'forum.attach': 'Add a photo or video',
   'forum.previewAlt': 'Selected photo',
   'forum.photoAlt': 'Photo from {name}',
@@ -401,7 +408,6 @@ const en = {
   'wallet.activate': 'Activate recovery phrase',
   'wallet.activateHint':
     'Create a new passkey on this device so 21.gifts can show your 12-word recovery phrase. Your previous passkey will stop working.',
-  'wallet.confirmSaved': 'I saved these words',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
@@ -833,7 +839,7 @@ const de = {
     'Eine Person sitzt auf Holzplanken neben einem Bereich voller weggeworfener Materialien.',
   'happyland.photo4.caption':
     'Neben und unter den Gebäuden haben sich weggeworfene Materialien angesammelt.',
-  'happyland.photo5.alt': 'Eine erwachsene Person und drei Kinder am Eingang eines kleinen Hauses.',
+  'happyland.photo5.alt': 'Zwei Erwachsene und drei Kinder in einem kleinen Wohnraum.',
   'happyland.photo5.caption': 'Lebensraum einer Familie.',
   'happyland.photo6.alt':
     'Eine Frau neben Pfannen, Eimern und Haushaltsgegenständen auf engem Raum.',
@@ -1124,6 +1130,13 @@ const de = {
   'forum.payErrorAuthorWallet': 'Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen',
   'forum.payConfirm': '{amount} zahlen',
   'forum.payWaiting': 'Zahlung wird erwartet…',
+  'pay.amount': 'Betrag',
+  'pay.amountPlaceholder': '21',
+  'pay.createInvoice': 'Rechnung erstellen',
+  'pay.invoiceQr': 'Bitcoin-Rechnung',
+  'pay.invalid': 'Dieser Zahlungslink ist ungültig.',
+  'pay.failed': 'Die Rechnung konnte nicht erstellt werden.',
+  'pay.amountInvalid': 'Bitte eine ganze Zahl eingeben.',
   'forum.attach': 'Foto oder Video hinzufügen',
   'forum.previewAlt': 'Ausgewähltes Foto',
   'forum.photoAlt': 'Foto von {name}',
@@ -1198,7 +1211,6 @@ const de = {
   'wallet.activate': 'Wiederherstellungssatz aktivieren',
   'wallet.activateHint':
     'Erstellen Sie einen neuen Passkey auf diesem Gerät, damit 21.gifts Ihren 12-Wörter-Wiederherstellungssatz anzeigen kann. Der bisherige Passkey funktioniert danach nicht mehr.',
-  'wallet.confirmSaved': 'Ich habe diese Wörter gespeichert',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
@@ -1634,16 +1646,16 @@ const es = {
   'happyland.photo1.alt': 'Vista desde arriba de tejados muy juntos y callejones estrechos.',
   'happyland.photo1.caption': 'Vista desde arriba de edificios muy juntos y callejones estrechos.',
   'happyland.photo2.alt': 'Personas en un callejón junto a viviendas de dos plantas.',
-  'happyland.photo2.caption': 'Los vecinos se reúnen en un callejón entre las viviendas.',
+  'happyland.photo2.caption': 'Al fondo se ve el trabajo de separar los residuos.',
   'happyland.photo3.alt': 'Una mujer cocina junto a un puesto de comida con varias personas cerca.',
   'happyland.photo3.caption': 'Pagpag',
   'happyland.photo4.alt':
     'Una persona sentada sobre tablones de madera junto a una zona llena de materiales desechados.',
   'happyland.photo4.caption':
     'Se han acumulado materiales desechados junto a los edificios y debajo de ellos.',
-  'happyland.photo5.alt': 'Una persona adulta y tres niños en la entrada de una pequeña vivienda.',
-  'happyland.photo5.caption':
-    'Una persona adulta y varios niños están en la entrada de una pequeña vivienda.',
+  'happyland.photo5.alt':
+    'Dos personas adultas y tres niños en el interior de una vivienda pequeña.',
+  'happyland.photo5.caption': 'El espacio donde vive una familia.',
   'happyland.photo6.alt':
     'Una mujer junto a sartenes, cubos y enseres domésticos en un espacio reducido.',
   'happyland.photo6.caption':
@@ -1931,6 +1943,13 @@ const es = {
   'forum.payErrorAuthorWallet': 'La wallet del autor no puede recibir este pago en Bitcoin',
   'forum.payConfirm': 'Pagar {amount}',
   'forum.payWaiting': 'Esperando el pago…',
+  'pay.amount': 'Importe',
+  'pay.amountPlaceholder': '21',
+  'pay.createInvoice': 'Crear factura',
+  'pay.invoiceQr': 'Factura Bitcoin',
+  'pay.invalid': 'Este enlace de pago no es válido.',
+  'pay.failed': 'No se pudo crear la factura.',
+  'pay.amountInvalid': 'Introduce un número entero.',
   'forum.attach': 'Añadir una foto o un vídeo',
   'forum.previewAlt': 'Foto seleccionada',
   'forum.photoAlt': 'Foto de {name}',
@@ -2003,7 +2022,6 @@ const es = {
   'wallet.activate': 'Activar frase de recuperación',
   'wallet.activateHint':
     'Crea una passkey nueva en este dispositivo para que 21.gifts pueda mostrar tu frase de recuperación de 12 palabras. La passkey anterior dejará de funcionar.',
-  'wallet.confirmSaved': 'Guardé estas palabras',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
@@ -2427,8 +2445,7 @@ const fil = {
     'Tanaw mula sa itaas ang magkakadikit na gusali at makikitid na daanan.',
   'happyland.photo2.alt':
     'Mga taong nakatayo sa isang daanan sa tabi ng mga tahanang may dalawang palapag.',
-  'happyland.photo2.caption':
-    'Nagkakatipon ang magkakapitbahay sa isang daanan sa pagitan ng mga tahanan.',
+  'happyland.photo2.caption': 'Makikita sa likuran ang pagbubukod ng mga itinapong materyal.',
   'happyland.photo3.alt':
     'Isang babaeng nagluluto sa tabi ng isang tindahan ng pagkain, na may ilang tao sa paligid.',
   'happyland.photo3.caption': 'Pagpag',
@@ -2436,9 +2453,8 @@ const fil = {
     'Isang taong nakaupo sa mga tablang kahoy sa tabi ng lugar na puno ng mga itinapong materyal.',
   'happyland.photo4.caption': 'Naipon ang mga itinapong materyal sa tabi at ilalim ng mga gusali.',
   'happyland.photo5.alt':
-    'Isang nakatatanda at tatlong bata sa pasukan ng isang maliit na tahanan.',
-  'happyland.photo5.caption':
-    'Isang nakatatanda at mga bata ang nakatayo sa pasukan ng isang maliit na tahanan.',
+    'Dalawang nakatatanda at tatlong bata sa loob ng isang maliit na tahanan.',
+  'happyland.photo5.caption': 'Ang tirahan ng isang pamilya.',
   'happyland.photo6.alt':
     'Isang babae sa tabi ng mga kawali, balde at gamit sa bahay sa isang masikip na lugar.',
   'happyland.photo6.caption':
@@ -2729,6 +2745,13 @@ const fil = {
   'forum.payErrorAuthorWallet': 'Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito',
   'forum.payConfirm': 'Magbayad ng {amount}',
   'forum.payWaiting': 'Naghihintay ng bayad…',
+  'pay.amount': 'Halaga',
+  'pay.amountPlaceholder': '21',
+  'pay.createInvoice': 'Gumawa ng invoice',
+  'pay.invoiceQr': 'Bitcoin invoice',
+  'pay.invalid': 'Hindi wasto ang link na ito sa pagbabayad.',
+  'pay.failed': 'Hindi magawa ang invoice.',
+  'pay.amountInvalid': 'Maglagay ng buong bilang.',
   'forum.attach': 'Magdagdag ng litrato o bidyo',
   'forum.previewAlt': 'Napiling litrato',
   'forum.photoAlt': 'Litrato mula kay {name}',
@@ -2802,7 +2825,6 @@ const fil = {
   'wallet.activate': 'I-activate ang recovery phrase',
   'wallet.activateHint':
     'Gumawa ng bagong passkey sa device na ito para maipakita ng 21.gifts ang 12-word recovery phrase mo. Hindi na gagana ang dating passkey.',
-  'wallet.confirmSaved': 'Na-save ko ang mga salitang ito',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',

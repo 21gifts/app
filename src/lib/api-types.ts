@@ -57,13 +57,17 @@ export const accountSchema = z.object({
   /** Fields still missing for posts (may include skipped onboarding steps). */
   missing: z.array(z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules'])),
   /**
-   * True when this account must confirm a recovery phrase. Optional so current
-   * develop api bodies still parse; omitted or false means an existing member.
+   * True when a recovery phrase is required for this account (new register or
+   * first-passkey claim). It does not ask the member to confirm the phrase.
+   * Optional so older api bodies still parse; omitted or false means an
+   * existing member.
    */
   walletRequired: z.boolean().optional(),
   /**
-   * Epoch ms of the first recovery-phrase confirmation, or `null` if unseen.
-   * Optional so current develop api bodies still parse.
+   * Epoch ms recorded after an existing member activates a passkey that can
+   * show a recovery phrase, so Wallet can offer Show next time instead of
+   * Activate. Not a confirmation. Null when that has not been recorded.
+   * Optional so older api bodies still parse.
    */
   walletBackupSeenAt: z.number().nullable().optional(),
   /**
@@ -113,12 +117,16 @@ export const accountSchema = z.object({
  * (name-only auto notes from the api are `null`).
  * `aboutMeHasPhoto` is true when the live profile note has a photo (optional
  * on older api bodies; defaults to false).
- * `setup` is the next onboarding screen (`wallet`, `name`, `username`,
+ * `setup` is the next onboarding screen (`name`, `username`,
  * `lightning-address`, `rules`) or `null` when onboarding is complete
- * (including after skips). `missing` lists fields still unset for posting;
- * skipped steps stay listed until filled. `walletRequired` is true for new
- * passkey accounts; omitted or false on existing members. `walletBackupSeenAt`
- * is the epoch ms of the first recovery-phrase confirmation, or `null`.
+ * (including after skips). The schema still accepts `wallet` from older
+ * responses, and the app does not route to `/wallet` for it. `missing` lists
+ * fields still unset for posting; skipped steps stay listed until filled.
+ * `walletRequired` is true for new passkey accounts; omitted or false on
+ * existing members. `walletBackupSeenAt` is the epoch ms recorded after an
+ * existing member activates a passkey that can show a recovery phrase, so
+ * Wallet can offer Show next time instead of Activate. Not a confirmation.
+ * Null when that has not been recorded.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
