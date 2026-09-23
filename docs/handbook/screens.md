@@ -1340,7 +1340,7 @@ Same overlay after **Download** failed (here PNG with a browser that cannot enco
 ## Screen: /pos
 
 - **Purpose:** Signed-in point of sale. The member sets one whole-sat amount. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount; the QR on this page is the same Open CryptoPay code as the profile card. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status, because Wallet of Satoshi settles the invoice. Missing username or lightning address links to `/profile`.
-- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, address, desktop QR, amount form only when no charge is open, otherwise the open charge (countdown, including 0:00, amount, and Cancel), history.
+- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, address, desktop QR, amount form only when no charge is open, otherwise the open charge (countdown, including 0:00, amount, and Cancel).
 - **Actions:** Create payment, Cancel. Menu row `pos.nav`.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos`.
