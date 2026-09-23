@@ -1569,6 +1569,7 @@ export function ForumLoader({
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
         const postAfterPay = hasMedia || goalSats !== undefined || pendingPlace !== null;
+        pendingComposePlaceRef.current = pendingPlace;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
@@ -1589,7 +1590,6 @@ export function ForumLoader({
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
         pendingComposeGoalRef.current = goalSats;
-        pendingComposePlaceRef.current = pendingPlace;
         startPayPoll(target.messageId, target.sats, goalSats === undefined, null, postAfterPay);
         pendingPostRef.current = null;
         setDraft('');
@@ -1643,6 +1643,7 @@ export function ForumLoader({
         setFormError('request');
         return;
       }
+      pendingComposePlaceRef.current = null;
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
