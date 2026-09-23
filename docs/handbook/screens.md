@@ -180,7 +180,7 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 Existing member, no phrase yet. **Add recovery phrase**.
 
-![21.gifts wallet activate](images/wallet.png)
+![21.gifts wallet add recovery phrase](images/wallet.png)
 
 ### Variant: phrase
 
