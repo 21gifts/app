@@ -13,6 +13,7 @@ import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import type { AmountUnit } from '@/lib/api-types';
 import { formatBitcoin, parseAmountDraft } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
@@ -50,6 +51,7 @@ export function PosScreen(): ReactElement {
   const [state, setState] = useState<PosState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   busyRef.current = busy;
@@ -140,7 +142,7 @@ export function PosScreen(): ReactElement {
     if (session === null) {
       return;
     }
-    const parsed = parseAmountDraft(account?.amountUnit ?? 'btc', amount, rateDay, fiat);
+    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
       return;
@@ -266,6 +268,7 @@ export function PosScreen(): ReactElement {
             placeholder={t('pos.amountPlaceholder')}
             value={amount}
             onValueChange={setAmount}
+            onUnitChange={setShownUnit}
             disabled={busy}
             rateDay={rateDay}
           />

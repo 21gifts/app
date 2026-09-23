@@ -23,6 +23,7 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
@@ -195,6 +196,8 @@ export interface InboxScreenProps {
   amountDraft?: string;
   /** Called when the amount field changes. */
   onAmountDraftChange?: (value: string) => void;
+  /** Unit the amount field is actually showing. */
+  onAmountUnitChange?: (unit: AmountUnit) => void;
   /** Open Lightning invoice, or `null` when no pay sheet is showing. */
   invoice?: InboxInvoice | null;
   /** Cancels the pay sheet and aborts the poll. */
@@ -437,6 +440,7 @@ export function InboxScreen({
   showFilter,
   amountDraft = '',
   onAmountDraftChange = () => undefined,
+  onAmountUnitChange,
   invoice = null,
   onPayCancel = () => undefined,
   payWaiting = false,
@@ -452,6 +456,7 @@ export function InboxScreen({
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const amountUnitChange = onAmountUnitChange ?? ((): void => undefined);
   const inShell = useContext(AppShellContext) !== null;
   const scroller = useAppShellScroller();
   const hadOpenThreadRef = useRef(false);
@@ -930,6 +935,7 @@ export function InboxScreen({
                   disabled={posting || messagesLoading}
                   rateDay={rateDay}
                   onValueChange={onAmountDraftChange}
+                  onUnitChange={amountUnitChange}
                 />
               ) : null}
               <IconButton
@@ -967,6 +973,7 @@ export function InboxScreen({
                   disabled={posting || messagesLoading}
                   rateDay={rateDay}
                   onValueChange={onAmountDraftChange}
+                  onUnitChange={amountUnitChange}
                 />
               ) : null}
               <IconButton

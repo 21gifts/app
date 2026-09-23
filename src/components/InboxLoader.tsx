@@ -19,6 +19,7 @@ import {
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
@@ -138,6 +139,7 @@ export function InboxLoader(): ReactElement | null {
   const paginationGeneration = useRef(0);
   const [draft, setDraft] = useState('');
   const [amountDraft, setAmountDraft] = useState('');
+  const [amountUnit, setAmountUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
@@ -660,7 +662,7 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     const trimmed = draft.trim();
-    const sats = replySatsFromDraft(amountDraft, account?.amountUnit ?? 'btc', rateDay, fiat);
+    const sats = replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
     if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
       return;
@@ -907,6 +909,7 @@ export function InboxLoader(): ReactElement | null {
         setAmountDraft(value);
         setFormError(null);
       }}
+      onAmountUnitChange={setAmountUnit}
       onPost={onPost}
       posting={posting || preparing}
       formError={formError}
