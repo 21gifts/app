@@ -141,7 +141,9 @@ describe('useWalletPhrase', () => {
   });
 
   it('maps seed begin 409 to generic and does not finish', async () => {
-    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new Error('Failed to start passkey seed: 409'));
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to start passkey seed: 409'),
+    );
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.activate();
