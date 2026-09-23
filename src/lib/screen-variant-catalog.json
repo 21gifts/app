@@ -864,6 +864,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:create-outside",
+    "label": "/pos create-outside",
+    "visual": "state-pos-create-outside",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:create-already",
+    "label": "/pos create-already",
+    "visual": "state-pos-create-already",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:create-failed",
+    "label": "/pos create-failed",
+    "visual": "state-pos-create-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancel-failed",
+    "label": "/pos cancel-failed",
+    "visual": "state-pos-cancel-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:refresh-failed",
+    "label": "/pos refresh-failed",
+    "visual": "state-pos-refresh-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:history",
     "label": "/pos history",
     "visual": "state-pos-history",

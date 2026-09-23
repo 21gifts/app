@@ -1387,6 +1387,36 @@ The till request failed. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale bad amount](images/pos-bad-amount.png)
 
+### Variant: create-outside
+
+**Create payment** with `21`. The till answers that the amount is outside the wallet. Alert **Amount is outside the wallet range.** The form stays.
+
+![21.gifts point of sale create outside](images/pos-create-outside.png)
+
+### Variant: create-already
+
+**Create payment** with `21`. The till answers that a payment is already open. Alert **A payment is already open.** The form stays.
+
+![21.gifts point of sale create already](images/pos-create-already.png)
+
+### Variant: create-failed
+
+**Create payment** with `21`. The till does not answer. Alert **Point of sale is unavailable.** The form stays.
+
+![21.gifts point of sale create failed](images/pos-create-failed.png)
+
+### Variant: cancel-failed
+
+Open charge of ₿21 with 5:00 left. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
+
+![21.gifts point of sale cancel failed](images/pos-cancel-failed.png)
+
+### Variant: refresh-failed
+
+The open charge has already run out (0:00). Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
+
+![21.gifts point of sale refresh failed](images/pos-refresh-failed.png)
+
 ### Variant: history
 
 No open charge. History shows a cancelled row and an expired row. The amount form is back.

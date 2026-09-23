@@ -5,11 +5,26 @@ import { proxyPosDelete, proxyPosGet, proxyPosPost } from '@/lib/api-proxies';
  * The page lives at `/pos`.
  */
 
-/** @param request - Incoming request. @returns Proxied response. */
+/**
+ * App Router GET for `/pos/charge`.
+ *
+ * @param request - Incoming request.
+ * @returns The proxied upstream response.
+ */
 export const GET = proxyPosGet;
 
-/** @param request - Incoming request. @returns Proxied response. */
+/**
+ * App Router POST for `/pos/charge`.
+ *
+ * @param request - Incoming request.
+ * @returns The proxied upstream response.
+ */
 export const POST = proxyPosPost;
 
-/** @param request - Incoming request. @returns Proxied response. */
+/**
+ * App Router DELETE for `/pos/charge`.
+ *
+ * @param request - Incoming request.
+ * @returns The proxied upstream response.
+ */
 export const DELETE = proxyPosDelete;
