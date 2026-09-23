@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { TranslatableNoteBody } from '@/components/NoteTranslate';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
@@ -165,11 +165,13 @@ function QuotedForumNote({
  * @param props - Body text, already-loaded notes, the containing message id,
  *   fiat conversion, optional feed truncation, optional remaining-text
  *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
- *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), and
- *   an optional click handler for the nested card.
- * @returns The stripped paragraph (replaced by the translation while shown),
- *   nested post cards, and translation control; `null` when `text` is empty
- *   and no quotes resolved. Unknown quote ids
+ *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), optional
+ *   `translate` (default true; false renders `ForumNoteText` / `LinkedText`
+ *   with no Translate control — inbox DMs), and an optional click handler
+ *   for the nested card.
+ * @returns The stripped paragraph (replaced by the translation while shown
+ *   when `translate` is true), nested post cards, and translation control;
+ *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
  *   are loaded with `fetchPublicMessage` (catch, never throw). Short codes
  *   load with `fetchShortLink` (null, never throw); only a shown message strips
  *   that short URL.
@@ -183,6 +185,7 @@ export function ForumQuotedBody({
   fiat,
   truncate = true,
   className = 'whitespace-pre-wrap text-sm text-app-fg',
+  translate = true,
   onActivate,
 }: {
   text: string;
@@ -192,6 +195,7 @@ export function ForumQuotedBody({
   fiat: FiatCode;
   truncate?: boolean;
   className?: string;
+  translate?: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
   const quoteIds = useMemo(() => {
@@ -309,12 +313,18 @@ export function ForumQuotedBody({
   return (
     <>
       {displayText !== '' ? (
-        <TranslatableNoteBody
-          messageId={excludeId}
-          text={displayText}
-          truncate={truncate}
-          className={className}
-        />
+        translate ? (
+          <TranslatableNoteBody
+            messageId={excludeId}
+            text={displayText}
+            truncate={truncate}
+            className={className}
+          />
+        ) : truncate ? (
+          <ForumNoteText text={displayText} className={className} />
+        ) : (
+          <LinkedText text={displayText} className={className} />
+        )
       ) : null}
       {resolvedNotes.map((note) => (
         <QuotedForumNote

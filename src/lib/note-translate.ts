@@ -35,13 +35,24 @@ export function fetchTranslateAvailable(): Promise<boolean> {
  *
  * @param messageId - Forum message UUID.
  * @param target - Active UI locale.
+ * @param session - Optional bearer token. A non-empty string is sent as
+ *   `Authorization: Bearer …` (hidden staff permalink). Omitted, null, or
+ *   empty leaves the request unsigned so public notes still work.
  * @returns The translated note body.
  * @throws When the route returns a non-2xx response or omits `translatedText`.
  */
-export async function translateNote(messageId: string, target: Locale): Promise<string> {
+export async function translateNote(
+  messageId: string,
+  target: Locale,
+  session?: string | null,
+): Promise<string> {
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (typeof session === 'string' && session !== '') {
+    headers.Authorization = `Bearer ${session}`;
+  }
   const response = await fetch('/translate', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers,
     body: JSON.stringify({ messageId, target }),
   });
   if (!response.ok) {

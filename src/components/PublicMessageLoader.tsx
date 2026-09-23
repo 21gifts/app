@@ -6,7 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { useTranslations } from '@/components/LocaleProvider';
-import { TranslatableNoteBody } from '@/components/NoteTranslate';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';

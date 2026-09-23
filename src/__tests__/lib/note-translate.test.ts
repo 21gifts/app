@@ -105,6 +105,51 @@ describe('translateNote', () => {
     });
   });
 
+  it('sends Authorization when session is a non-empty string', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ translatedText: 'Danke euch beiden.' }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'de', 'tok'),
+    ).resolves.toBe('Danke euch beiden.');
+    expect(fetchMock).toHaveBeenCalledWith('/translate', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        Authorization: 'Bearer tok',
+      },
+      body: JSON.stringify({
+        messageId: '3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a',
+        target: 'de',
+      }),
+    });
+  });
+
+  it.each([null, ''])('omits Authorization when session is %j', async (session) => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ translatedText: 'Danke euch beiden.' }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'de', session),
+    ).resolves.toBe('Danke euch beiden.');
+    expect(fetchMock).toHaveBeenCalledWith('/translate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        messageId: '3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a',
+        target: 'de',
+      }),
+    });
+  });
+
   it('throws when the route returns a non-success response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 502 })));
     await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en')).rejects.toThrow(

@@ -785,6 +785,7 @@ export function InboxScreen({
                     rateDay={rateDay ?? null}
                     fiat={fiat}
                     truncate={false}
+                    translate={false}
                     className={
                       message.fromMe
                         ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'

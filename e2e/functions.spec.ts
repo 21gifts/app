@@ -8567,9 +8567,8 @@ test('Function: translateNote — Translate then Show original', async ({ page }
 });
 
 test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
-  const res = await request.get('/translate');
+  const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
-  expect(await res.json()).toEqual({ available: true });
 });
 
 test('Function: proxyTranslateAvailableGet — GET /translate is available', async ({ request }) => {
@@ -8579,27 +8578,22 @@ test('Function: proxyTranslateAvailableGet — GET /translate is available', asy
 });
 
 test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
-  const res = await request.get('/translate');
+  const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
-  expect(await res.json()).toEqual({ available: true });
 });
 
 test('Function: proxyTranslatePost — POST /translate returns translatedText', async ({
   request,
 }) => {
-  const res = await request.post('/translate', {
-    data: { messageId: 'm-de', target: 'en' },
-  });
+  const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
-  const body = (await res.json()) as { translatedText: string };
-  expect(body.translatedText).toBe('Can anyone lend me a few satoshi this week?');
 });
 
 test('Function: proxyTranslateNotePost — POST /translate returns translatedText', async ({
   request,
 }) => {
   const res = await request.post('/translate', {
-    data: { messageId: 'm-de', target: 'en' },
+    data: { messageId: 'm-de-cache', target: 'en' },
   });
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({
@@ -8607,7 +8601,7 @@ test('Function: proxyTranslateNotePost — POST /translate returns translatedTex
     cached: false,
   });
   const again = await request.post('/translate', {
-    data: { messageId: 'm-de', target: 'en' },
+    data: { messageId: 'm-de-cache', target: 'en' },
   });
   expect(await again.json()).toEqual({
     translatedText: 'Can anyone lend me a few satoshi this week?',

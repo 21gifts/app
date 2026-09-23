@@ -394,7 +394,7 @@ const server = http.createServer(async (req, res) => {
     const source =
       typeof note?.text === 'string' && note.text.trim() !== ''
         ? note.text
-        : messageId === 'm-de'
+        : messageId === 'm-de' || messageId === 'm-de-cache'
           ? 'Kann mir jemand diese Woche ein paar Satoshi leihen?'
           : '';
     if (source.trim() === '') {
