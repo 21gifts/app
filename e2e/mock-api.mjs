@@ -5,7 +5,7 @@
  * callbacks accept any signature. Pay-on-note uses POST /messages/:id/invoice.
  */
 import http from 'node:http';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 const PORT = 3001;
 const HOST = '127.0.0.1';
@@ -28,6 +28,8 @@ const forumPhotos = new Map();
 const conversationPhotos = new Map();
 /** @type {Map<string, Buffer>} */
 const aboutMePhotos = new Map();
+/** @type {Map<string, { hash: string, text: string }>} keyed `${messageId}\0${target}` */
+const messageTranslations = new Map();
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'founder'];
@@ -365,6 +367,55 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'not_found' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/translate') {
+    json(res, 200, { available: true });
+    return;
+  }
+
+  const translateNoteMatch = /^\/messages\/([^/]+)\/translate$/.exec(pathName);
+  if (method === 'POST' && translateNoteMatch) {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const target = parsed?.target;
+    if (target !== 'en' && target !== 'de' && target !== 'es' && target !== 'fil') {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const messageId = decodeURIComponent(translateNoteMatch[1]);
+    const note = forumMessages.find((row) => row.id === messageId);
+    const source =
+      typeof note?.text === 'string' && note.text.trim() !== ''
+        ? note.text
+        : messageId === 'm-de'
+          ? 'Kann mir jemand diese Woche ein paar Satoshi leihen?'
+          : '';
+    if (source.trim() === '') {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const hash = createHash('sha256').update(source, 'utf8').digest('hex');
+    const key = `${messageId}\0${target}`;
+    const hit = messageTranslations.get(key);
+    if (hit !== undefined && hit.hash === hash) {
+      json(res, 200, { translatedText: hit.text, cached: true });
+      return;
+    }
+    let translated;
+    if (source.includes('Kann mir jemand')) {
+      translated = 'Can anyone lend me a few satoshi this week?';
+    } else {
+      translated = '[' + (target === 'fil' ? 'TL' : target.toUpperCase()) + '] ' + source;
+    }
+    messageTranslations.set(key, { hash, text: translated });
+    json(res, 200, { translatedText: translated, cached: false });
     return;
   }
 

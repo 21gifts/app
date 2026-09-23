@@ -1060,6 +1060,7 @@ export function ForumBoard({
                   <div className="mt-2">
                     {message.via === 'nostr' ? (
                       <TranslatableNoteBody
+                        messageId={message.id}
                         plain
                         text={displayText}
                         truncate={truncate}
@@ -1317,6 +1318,7 @@ export function ForumBoard({
                               <div className="mt-1">
                                 {reply.via === 'nostr' ? (
                                   <TranslatableNoteBody
+                                    messageId={reply.id}
                                     plain
                                     text={reply.text}
                                     truncate={truncate}

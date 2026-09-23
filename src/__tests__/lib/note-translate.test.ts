@@ -92,21 +92,24 @@ describe('translateNote', () => {
       );
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(translateNote('Thank you both — that helps.', 'de')).resolves.toBe(
+    await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'de')).resolves.toBe(
       'Danke euch beiden.',
     );
     expect(fetchMock).toHaveBeenCalledWith('/translate', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text: 'Thank you both — that helps.', target: 'de' }),
+      body: JSON.stringify({
+        messageId: '3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a',
+        target: 'de',
+      }),
     });
   });
 
   it('throws when the route returns a non-success response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 502 })));
-    await expect(translateNote('Hallo zusammen und guten Morgen', 'en')).rejects.toThrow(
-      'Translation request failed',
-    );
+    await expect(
+      translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en'),
+    ).rejects.toThrow('Translation request failed');
   });
 
   it.each([null, 'translated', {}, { translatedText: 21 }])(
@@ -116,9 +119,9 @@ describe('translateNote', () => {
         'fetch',
         vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
       );
-      await expect(translateNote('Hallo zusammen und guten Morgen', 'en')).rejects.toThrow(
-        'Translation response is invalid',
-      );
+      await expect(
+        translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en'),
+      ).rejects.toThrow('Translation response is invalid');
     },
   );
 });

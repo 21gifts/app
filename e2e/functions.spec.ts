@@ -8572,6 +8572,12 @@ test('Function: getTranslateUpstream — GET /translate reports available', asyn
   expect(await res.json()).toEqual({ available: true });
 });
 
+test('Function: proxyTranslateAvailableGet — GET /translate is available', async ({ request }) => {
+  const res = await request.get('/translate');
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual({ available: true });
+});
+
 test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
   const res = await request.get('/translate');
   expect(res.status()).toBe(200);
@@ -8582,11 +8588,30 @@ test('Function: proxyTranslatePost — POST /translate returns translatedText', 
   request,
 }) => {
   const res = await request.post('/translate', {
-    data: { text: GERMAN_NOTE_TEXT, target: 'en' },
+    data: { messageId: 'm-de', target: 'en' },
+  });
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { translatedText: string };
+  expect(body.translatedText).toBe('Can anyone lend me a few satoshi this week?');
+});
+
+test('Function: proxyTranslateNotePost — POST /translate returns translatedText', async ({
+  request,
+}) => {
+  const res = await request.post('/translate', {
+    data: { messageId: 'm-de', target: 'en' },
   });
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({
     translatedText: 'Can anyone lend me a few satoshi this week?',
+    cached: false,
+  });
+  const again = await request.post('/translate', {
+    data: { messageId: 'm-de', target: 'en' },
+  });
+  expect(await again.json()).toEqual({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+    cached: true,
   });
 });
 

@@ -1,18 +1,23 @@
-import { proxyTranslateGet, proxyTranslatePost } from '@/lib/translate-upstream';
+import { proxyTranslateAvailableGet, proxyTranslateNotePost } from '@/lib/api-proxies';
 
 /**
  * GET `/translate` availability handler.
  *
- * @returns An always-200 response describing whether translation is configured.
+ * @param request - Incoming request.
+ * @returns Upstream `{ available }` (always 200 from the api).
  * @throws Does not throw.
  */
-export const GET = proxyTranslateGet;
+export function GET(request: Request): Promise<Response> {
+  return proxyTranslateAvailableGet(request);
+}
 
 /**
  * POST `/translate` proxy handler.
  *
- * @param request - Incoming request containing the note text and target locale.
+ * @param request - Incoming request containing `{ messageId, target }`.
  * @returns The translated text or a structured 400, 502, or 503 response.
  * @throws Does not throw.
  */
-export const POST = proxyTranslatePost;
+export function POST(request: Request): Promise<Response> {
+  return proxyTranslateNotePost(request);
+}

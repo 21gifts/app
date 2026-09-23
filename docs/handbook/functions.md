@@ -3376,8 +3376,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: translateNote
 
-- **Purpose:** POST `{ text, target }` to same-origin `/translate` and return the translated body.
-- **Inputs:** Raw forum note `text` and the active UI `target` locale.
+- **Purpose:** POST `{ messageId, target }` to same-origin `/translate` (api cache-first DeepL) and return the translated body.
+- **Inputs:** Forum message UUID and the active UI `target` locale.
 - **Returns / side effects:** The `translatedText` string. Throws when the route is non-2xx or omits a string `translatedText`.
 - **Used by:** `NoteTranslate` on **Translate**.
 
@@ -3400,19 +3400,33 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Validate `{ text, target }` and POST DeepL API v2 `{ text: […], target_lang }` with `DeepL-Auth-Key`. `fil`→`TL`. 500-character max, 15s timeout. Parse `translations[0].text`. Does not forward incoming Authorization.
 - **Inputs:** Incoming `Request` with JSON `{ text, target }` (`en` / `de` / `es` / `fil`).
 - **Returns / side effects:** `{ translatedText }` on success; 400 invalid body, 503 not configured, 502 upstream. Does not throw.
-- **Used by:** App Router POST `/translate`; `translateNote` from `NoteTranslate`.
+- **Used by:** leftover DeepL path in `translate-upstream.ts` (forum notes go through `proxyTranslateNotePost`).
+
+## Function: proxyTranslateAvailableGet
+
+- **Purpose:** Same-origin GET `/translate` → api GET `/translate`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `{ available }`, or 502.
+- **Used by:** App Router GET `/translate`.
+
+## Function: proxyTranslateNotePost
+
+- **Purpose:** Same-origin POST `/translate` `{ messageId, target }` → api `POST /messages/:id/translate`.
+- **Inputs:** Incoming `Request` with JSON `{ messageId, target }`.
+- **Returns / side effects:** Upstream `{ translatedText, cached }`, or 400/502.
+- **Used by:** App Router POST `/translate`.
 
 ## Function: NoteTranslate
 
 - **Purpose:** Client control that offers on-demand translation when the note language differs from the active UI locale and GET `/translate` reports available. **Translate** sits under the note body (not in the footer icon row). Success replaces the original body with the translated body through `ForumNoteText` (the same 280-character Show more collapse) plus **Show original**; **Show original** restores the original and hides the translation. Failure shows **Could not translate this note. Please try again.** and keeps Translate. Optional `plain` forwards plain rendering to that `ForumNoteText` (autolinking is still skipped for `via` rows even after translation). Optional `onShowingTranslation` tells the parent when the translated body is on screen so the original can unmount.
-- **Inputs:** `text` — raw public note or reply body; optional `plain`; optional `tone` (`default` or `onButton`, for `bg-app-btn` bubbles); optional `bodyClassName`; optional `onShowingTranslation`.
+- **Inputs:** `messageId` — forum message UUID; `text` — raw public note or reply body; optional `plain`; optional `tone` (`default` or `onButton`, for `bg-app-btn` bubbles); optional `bodyClassName`; optional `onShowingTranslation`.
 - **Returns / side effects:** The control, or `null` when the text is blank, translation is unavailable, or `shouldOfferNoteTranslate` is false. Calls `fetchTranslateAvailable` on mount and `translateNote` on click. During render, a change of `text` or UI locale resets status, clears the translated body, shows the translation slot again, and invalidates in-flight requests (`identity = text + locale`). Stops click/keydown so forum expand does not fire. `onButton` paints the control and translated body with `text-app-btn-fg`.
 - **Used by:** `TranslatableNoteBody`.
 
 ## Function: TranslatableNoteBody
 
 - **Purpose:** Renders a public note or reply body and, when `NoteTranslate` is offering a translation, replaces that original with the translated body. Idle and error states keep the original. **Show original** brings the original back and hides the translation.
-- **Inputs:** `text`; optional `plain`; optional `truncate` (default true → `ForumNoteText`, false → `LinkedText`); optional `className` (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`).
+- **Inputs:** `messageId`; `text`; optional `plain`; optional `truncate` (default true → `ForumNoteText`, false → `LinkedText`); optional `className` (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`).
 - **Returns / side effects:** Original or translated paragraph plus the translate control, or `null` when `text` is empty. Mounts `NoteTranslate`.
 - **Used by:** `ForumBoard` (notes and replies, including `via === 'nostr'`), `PublicMessageLoader`, `ForumQuotedBody`, and `QuotedForumNote` (nostr captions).
 

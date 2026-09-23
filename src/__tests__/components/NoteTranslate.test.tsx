@@ -17,6 +17,7 @@ vi.mock('@/lib/note-translate', () => ({
 }));
 
 const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+const NOTE_ID = '3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a';
 
 beforeEach(() => {
   vi.mocked(fetchTranslateAvailable).mockReset();
@@ -29,7 +30,7 @@ afterEach(cleanup);
 describe('NoteTranslate', () => {
   it('renders nothing when translation is unavailable', async () => {
     vi.mocked(fetchTranslateAvailable).mockResolvedValue(false);
-    const { container } = renderWithLocale(<NoteTranslate text={german} />);
+    const { container } = renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     await waitFor(() => {
       expect(fetchTranslateAvailable).toHaveBeenCalledTimes(1);
     });
@@ -38,7 +39,7 @@ describe('NoteTranslate', () => {
   });
 
   it('renders nothing for empty text even when translation is available', async () => {
-    const { container } = renderWithLocale(<NoteTranslate text="" />);
+    const { container } = renderWithLocale(<NoteTranslate messageId={NOTE_ID} text="" />);
     await waitFor(() => {
       expect(fetchTranslateAvailable).toHaveBeenCalledTimes(1);
     });
@@ -47,7 +48,9 @@ describe('NoteTranslate', () => {
   });
 
   it('renders nothing for an English fixture in the English UI', async () => {
-    const { container } = renderWithLocale(<NoteTranslate text="Thank you both — that helps." />);
+    const { container } = renderWithLocale(
+      <NoteTranslate messageId={NOTE_ID} text="Thank you both — that helps." />,
+    );
     await waitFor(() => {
       expect(fetchTranslateAvailable).toHaveBeenCalledTimes(1);
     });
@@ -63,7 +66,7 @@ describe('NoteTranslate', () => {
           resolveAvailable = resolve;
         }),
     );
-    const { unmount } = renderWithLocale(<NoteTranslate text={german} />);
+    const { unmount } = renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     await waitFor(() => {
       expect(fetchTranslateAvailable).toHaveBeenCalledTimes(1);
     });
@@ -74,7 +77,7 @@ describe('NoteTranslate', () => {
   });
 
   it('shows Translate for the German fixture', async () => {
-    renderWithLocale(<NoteTranslate text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     expect(
       (await screen.findByRole('button', { name: 'Translate' })).hasAttribute('disabled'),
     ).toBe(false);
@@ -88,11 +91,11 @@ describe('NoteTranslate', () => {
           resolveTranslation = resolve;
         }),
     );
-    renderWithLocale(<NoteTranslate text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     const button = await screen.findByRole('button', { name: 'Translate' });
     fireEvent.click(button);
     expect(button.hasAttribute('disabled')).toBe(true);
-    expect(translateNote).toHaveBeenCalledWith(german, 'en');
+    expect(translateNote).toHaveBeenCalledWith(NOTE_ID, 'en');
     await act(async () => {
       resolveTranslation?.('Can anyone lend me a few satoshi this week?');
     });
@@ -100,7 +103,7 @@ describe('NoteTranslate', () => {
 
   it('shows a successful translation and toggles original and translation', async () => {
     vi.mocked(translateNote).mockResolvedValue('Can anyone lend me a few satoshi this week?');
-    renderWithLocale(<NoteTranslate text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
 
     expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
@@ -113,7 +116,7 @@ describe('NoteTranslate', () => {
   it('replaces the original body while the translation is shown', async () => {
     const translated = 'Can anyone lend me a few satoshi this week?';
     vi.mocked(translateNote).mockResolvedValue(translated);
-    renderWithLocale(<TranslatableNoteBody text={german} truncate={false} />);
+    renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} truncate={false} />);
     expect(await screen.findByText(german)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
     expect(await screen.findByText(translated)).toBeTruthy();
@@ -125,14 +128,14 @@ describe('NoteTranslate', () => {
 
   it('autolinks a url in the translated body', async () => {
     vi.mocked(translateNote).mockResolvedValue('See https://example.com/hello');
-    renderWithLocale(<NoteTranslate text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByRole('link', { name: 'https://example.com/hello' })).toBeTruthy();
   });
 
   it('renders the translated body as plain text when plain', async () => {
     vi.mocked(translateNote).mockResolvedValue('See https://example.com/hello');
-    renderWithLocale(<NoteTranslate plain text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} plain text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByText('See https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
@@ -140,7 +143,7 @@ describe('NoteTranslate', () => {
 
   it('uses button foreground classes when tone is onButton', async () => {
     vi.mocked(translateNote).mockResolvedValue('Can anyone lend me a few satoshi this week?');
-    renderWithLocale(<NoteTranslate tone="onButton" text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} tone="onButton" text={german} />);
     const translate = await screen.findByRole('button', { name: 'Translate' });
     expect(translate.className).toContain('text-app-btn-fg');
     fireEvent.click(translate);
@@ -154,17 +157,17 @@ describe('NoteTranslate', () => {
   it('truncates a long translation behind Show more', async () => {
     const translated = `${'a'.repeat(280)} TRANSTAIL`;
     vi.mocked(translateNote).mockResolvedValue(translated);
-    renderWithLocale(<NoteTranslate text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
     expect(screen.queryByText(/TRANSTAIL/)).toBeNull();
-    expect(translateNote).toHaveBeenCalledWith(german, 'en');
+    expect(translateNote).toHaveBeenCalledWith(NOTE_ID, 'en');
   });
 
   it('paints Show more with button foreground on a long onButton translation', async () => {
     const translated = `${'a'.repeat(280)} TRANSTAIL`;
     vi.mocked(translateNote).mockResolvedValue(translated);
-    renderWithLocale(<NoteTranslate tone="onButton" text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} tone="onButton" text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     const more = await screen.findByRole('button', { name: 'Show more' });
     const classes = more.className.split(/\s+/);
@@ -174,7 +177,7 @@ describe('NoteTranslate', () => {
 
   it('paints the error alert with button foreground when tone is onButton', async () => {
     vi.mocked(translateNote).mockRejectedValue(new Error('offline'));
-    renderWithLocale(<NoteTranslate tone="onButton" text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} tone="onButton" text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     const classes = (await screen.findByRole('alert')).className.split(/\s+/);
     expect(classes).toContain('text-app-btn-fg');
@@ -185,7 +188,7 @@ describe('NoteTranslate', () => {
     vi.mocked(translateNote)
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce('Can anyone lend me a few satoshi this week?');
-    renderWithLocale(<NoteTranslate text={german} />);
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain(
@@ -203,7 +206,7 @@ describe('NoteTranslate', () => {
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <NumberFormatProvider initial={DEFAULT_NUMBER_FORMAT}>
             <ThemeProvider>
-              <NoteTranslate text={german} />
+              <NoteTranslate messageId={NOTE_ID} text={german} />
             </ThemeProvider>
           </NumberFormatProvider>
         </LocaleProvider>
@@ -238,7 +241,7 @@ describe('NoteTranslate', () => {
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <NumberFormatProvider initial={DEFAULT_NUMBER_FORMAT}>
             <ThemeProvider>
-              <NoteTranslate text={german} />
+              <NoteTranslate messageId={NOTE_ID} text={german} />
             </ThemeProvider>
           </NumberFormatProvider>
         </LocaleProvider>
@@ -263,10 +266,10 @@ describe('NoteTranslate', () => {
   it('clears a finished translation when the note text changes', async () => {
     const otherGerman = 'Bitte hilf mir diese Woche mit ein paar Satoshi.';
     vi.mocked(translateNote).mockResolvedValue('Can anyone lend me a few satoshi this week?');
-    const { rerender } = renderWithLocale(<NoteTranslate text={german} />);
+    const { rerender } = renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
-    rerender(<NoteTranslate text={otherGerman} />);
+    rerender(<NoteTranslate messageId={NOTE_ID} text={otherGerman} />);
     expect(screen.queryByText('Can anyone lend me a few satoshi this week?')).toBeNull();
     expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
   });
@@ -280,9 +283,9 @@ describe('NoteTranslate', () => {
           resolveTranslation = resolve;
         }),
     );
-    const { rerender } = renderWithLocale(<NoteTranslate text={german} />);
+    const { rerender } = renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
-    rerender(<NoteTranslate text={otherGerman} />);
+    rerender(<NoteTranslate messageId={NOTE_ID} text={otherGerman} />);
     await act(async () => {
       resolveTranslation?.('stale success');
     });
@@ -296,7 +299,7 @@ describe('NoteTranslate', () => {
     function Parent(): ReactElement {
       return (
         <div onClick={onClick} onKeyDown={onKeyDown}>
-          <NoteTranslate text={german} />
+          <NoteTranslate messageId={NOTE_ID} text={german} />
         </div>
       );
     }

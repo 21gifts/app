@@ -31,16 +31,18 @@ export function fetchTranslateAvailable(): Promise<boolean> {
 /**
  * Translate a forum note through the same-origin translation route.
  *
- * @param text - Raw forum note body.
+ * The API looks up `message_translation` before DeepL.
+ *
+ * @param messageId - Forum message UUID.
  * @param target - Active UI locale.
  * @returns The translated note body.
  * @throws When the route returns a non-2xx response or omits `translatedText`.
  */
-export async function translateNote(text: string, target: Locale): Promise<string> {
+export async function translateNote(messageId: string, target: Locale): Promise<string> {
   const response = await fetch('/translate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text, target }),
+    body: JSON.stringify({ messageId, target }),
   });
   if (!response.ok) {
     throw new Error('Translation request failed');

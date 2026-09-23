@@ -19,6 +19,8 @@ const DEFAULT_BODY_CLASS = 'whitespace-pre-wrap text-sm text-app-fg';
 
 /** Props for the public forum-note translation control. */
 export interface NoteTranslateProps {
+  /** Forum message UUID used for the cached API lookup. */
+  messageId: string;
   /** Raw public note or reply text. */
   text: string;
   /** When true, render the translated body as plain text with no autolinks. */
@@ -33,6 +35,8 @@ export interface NoteTranslateProps {
 
 /** Props for {@link TranslatableNoteBody}. */
 export interface TranslatableNoteBodyProps {
+  /** Forum message UUID used for the cached API lookup. */
+  messageId: string;
   /** Raw public note or reply text. */
   text: string;
   /** When true, render original and translated bodies as plain text. */
@@ -51,6 +55,7 @@ export interface TranslatableNoteBodyProps {
  * @throws Does not throw.
  */
 export function NoteTranslate({
+  messageId,
   text,
   plain = false,
   tone = 'default',
@@ -63,7 +68,7 @@ export function NoteTranslate({
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
   const requestId = useRef(0);
-  const identity = `${text}\0${locale}`;
+  const identity = `${messageId}\0${text}\0${locale}`;
   const [seenIdentity, setSeenIdentity] = useState(identity);
   if (identity !== seenIdentity) {
     setSeenIdentity(identity);
@@ -108,7 +113,7 @@ export function NoteTranslate({
     setShowTranslation(true);
     const id = requestId.current + 1;
     requestId.current = id;
-    void translateNote(text, locale)
+    void translateNote(messageId, locale)
       .then((next) => {
         if (id !== requestId.current) {
           return;
@@ -198,6 +203,7 @@ export function NoteTranslate({
  * @throws Does not throw.
  */
 export function TranslatableNoteBody({
+  messageId,
   text,
   plain = false,
   truncate = true,
@@ -217,6 +223,7 @@ export function TranslatableNoteBody({
     <>
       {showingTranslation ? null : original}
       <NoteTranslate
+        messageId={messageId}
         text={text}
         {...(plain ? { plain: true } : {})}
         {...(onButton ? { tone: 'onButton' as const } : {})}

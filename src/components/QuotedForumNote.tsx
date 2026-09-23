@@ -130,6 +130,7 @@ function QuotedForumNote({
       {note.text !== '' ? (
         note.via === 'nostr' ? (
           <TranslatableNoteBody
+            messageId={note.id}
             plain
             text={note.text}
             truncate={truncate}
@@ -308,7 +309,12 @@ export function ForumQuotedBody({
   return (
     <>
       {displayText !== '' ? (
-        <TranslatableNoteBody text={displayText} truncate={truncate} className={className} />
+        <TranslatableNoteBody
+          messageId={excludeId}
+          text={displayText}
+          truncate={truncate}
+          className={className}
+        />
       ) : null}
       {resolvedNotes.map((note) => (
         <QuotedForumNote

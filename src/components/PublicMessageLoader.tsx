@@ -143,6 +143,7 @@ function PublicThreadCard({
       {note.text !== '' ? (
         note.via === 'nostr' ? (
           <TranslatableNoteBody
+            messageId={note.id}
             plain
             text={note.text}
             truncate={false}
