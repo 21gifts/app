@@ -1,3 +1,4 @@
+import { useState, type ReactElement } from 'react';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AmountEntry } from '@/components/AmountEntry';
@@ -11,6 +12,32 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { setAmountUnit } from '@/lib/api';
+
+function TypingAmount({
+  initial,
+  rateDay,
+  onValueChange,
+  onUnitChange,
+}: {
+  initial: string;
+  rateDay: FiatRateDay | null;
+  onValueChange: (value: string) => void;
+  onUnitChange?: (unit: 'btc' | 'fiat') => void;
+}): ReactElement {
+  const [value, setValue] = useState(initial);
+  return (
+    <AmountEntry
+      label="Amount"
+      value={value}
+      rateDay={rateDay}
+      {...(onUnitChange === undefined ? {} : { onUnitChange })}
+      onValueChange={(next) => {
+        setValue(next);
+        onValueChange(next);
+      }}
+    />
+  );
+}
 
 function amountSwitch(index: number): HTMLElement {
   const group = screen.getAllByRole('group', { name: 'Bitcoin or fiat' })[index];
@@ -645,7 +672,7 @@ describe('AmountEntry', () => {
     expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
   });
 
-  it('keeps unreadable keystrokes when a save fails', async () => {
+  it('keeps a fiat draft typed during a failed save until a rate exists', async () => {
     let rejectSave: (reason: Error) => void = () => undefined;
     vi.mocked(setAmountUnit).mockImplementation(
       () =>
@@ -656,14 +683,49 @@ describe('AmountEntry', () => {
     useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
     const onValueChange = vi.fn();
     const onUnitChange = vi.fn();
-    renderWithLocale(
-      <AmountEntry
-        label="Amount"
-        value="21"
+    const { rerender } = renderWithLocale(
+      <TypingAmount
+        initial=""
+        rateDay={null}
         onValueChange={onValueChange}
         onUnitChange={onUnitChange}
-        rateDay={DAY}
       />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '10.00' } });
+    await act(async () => {
+      rejectSave(new Error('nope'));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+    expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('ariaPressed', 'true');
+    expect(onUnitChange).toHaveBeenCalledWith('fiat');
+    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '10.00');
+    rerender(
+      <TypingAmount
+        initial=""
+        rateDay={DAY}
+        onValueChange={onValueChange}
+        onUnitChange={onUnitChange}
+      />,
+    );
+    expect(onValueChange).toHaveBeenLastCalledWith('10000');
+  });
+
+  it('keeps unreadable keystrokes when a save fails', async () => {
+    let rejectSave: (reason: Error) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectSave = reject;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <TypingAmount initial="21" rateDay={DAY} onValueChange={onValueChange} />,
       'en',
       'ch',
       'USD',
@@ -687,8 +749,15 @@ describe('AmountEntry', () => {
     );
     useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
     const onValueChange = vi.fn();
+    const onUnitChange = vi.fn();
     renderWithLocale(
-      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />,
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={onValueChange}
+        onUnitChange={onUnitChange}
+        rateDay={DAY}
+      />,
       'en',
       'ch',
       'USD',
@@ -699,6 +768,7 @@ describe('AmountEntry', () => {
       rejectSave(new Error('nope'));
     });
     expect(onValueChange).toHaveBeenLastCalledWith('50');
+    expect(onUnitChange).toHaveBeenCalledWith('btc');
     expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
   });
 

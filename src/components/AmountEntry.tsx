@@ -182,6 +182,10 @@ export function AmountEntry({
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [localUnit, setLocalUnit] = useState<AmountUnit>('btc');
+  const rateRef = useRef(rateDay);
+  rateRef.current = rateDay;
+  const fiatRef = useRef(fiat);
+  fiatRef.current = fiat;
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
   const unit: AmountUnit = session === null ? localUnit : storedUnit;
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
@@ -280,9 +284,6 @@ export function AmountEntry({
         }
         const rollback = savedUnit;
         finishUnitRequest(request);
-        applied.current = rollback;
-        setShownUnit(rollback);
-        onUnitChange?.(rollback);
         const current = useAuthStore.getState().account;
         if (current !== null) {
           setAccount({ ...current, amountUnit: rollback });
@@ -291,8 +292,14 @@ export function AmountEntry({
         const restored =
           rollback === previousUnit && live === converted
             ? previousDraft
-            : convertAmountDraft(next, rollback, live, rateDay, fiat);
-        onValueChange(restored === '' && live.trim() !== '' ? live : restored);
+            : convertAmountDraft(next, rollback, live, rateRef.current, fiatRef.current);
+        const keepTyped = restored === '' && live.trim() !== '';
+        applied.current = keepTyped ? next : rollback;
+        setShownUnit(keepTyped ? next : rollback);
+        onUnitChange?.(keepTyped ? next : rollback);
+        if (!keepTyped) {
+          onValueChange(restored);
+        }
       })
       .finally(() => {
         posting.current = false;
