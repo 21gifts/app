@@ -28,7 +28,7 @@ const en = {
   'happyland.photo4.caption':
     'Discarded materials have accumulated beside and beneath the buildings.',
   'happyland.photo5.alt': 'Two adults and three children inside a small home.',
-  'happyland.photo5.caption': 'A family\'s living space.',
+  'happyland.photo5.caption': "A family's living space.",
   'happyland.photo6.alt': 'A woman beside pans, buckets and household supplies in a compact space.',
   'happyland.photo6.caption':
     'Cooking utensils, water containers and household supplies share a small space.',
