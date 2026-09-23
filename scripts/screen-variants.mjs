@@ -1241,6 +1241,27 @@ export const SCREEN_VARIANTS = [
     needle: 'Reviewed by a moderator',
   },
   {
+    route: '/members/[accountId]',
+    id: 'sticker-open',
+    image: 'members-sticker-open.png',
+    visual: 'state-members-sticker-open',
+    needle: 'state-members-sticker-open',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'sticker-busy',
+    image: 'members-sticker-busy.png',
+    visual: 'state-members-sticker-busy',
+    needle: 'state-members-sticker-busy',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'sticker-failed',
+    image: 'members-sticker-failed.png',
+    visual: 'state-members-sticker-failed',
+    needle: 'state-members-sticker-failed',
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',
