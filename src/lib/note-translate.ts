@@ -39,7 +39,8 @@ export function fetchTranslateAvailable(): Promise<boolean> {
  *   `Authorization: Bearer …` (hidden staff permalink). Omitted, null, or
  *   empty leaves the request unsigned so public notes still work.
  * @returns The translated note body.
- * @throws When the route returns a non-2xx response or `translatedText` is missing, not a string, or empty.
+ * @throws When the route returns a non-2xx response or `translatedText` is
+ *   missing, not a string, or empty after trim.
  */
 export async function translateNote(
   messageId: string,
@@ -65,7 +66,7 @@ export async function translateNote(
     body === null ||
     !('translatedText' in body) ||
     typeof body.translatedText !== 'string' ||
-    body.translatedText === ''
+    body.translatedText.trim() === ''
   ) {
     throw new Error('Translation response is invalid');
   }
