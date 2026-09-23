@@ -3344,3 +3344,15 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `text` — raw public note or reply body; optional `plain`; optional `tone` (`default` or `onButton`, for `bg-app-btn` bubbles).
 - **Returns / side effects:** The control, or `null` when the text is blank, translation is unavailable, or `shouldOfferNoteTranslate` is false. Calls `fetchTranslateAvailable` on mount and `translateNote` on click. During render, a change of `text` or UI locale resets status, clears the translated body, shows the translation slot again, and invalidates in-flight requests (`identity = text + locale`). Stops click/keydown so forum expand does not fire. `onButton` paints the control and translated body with `text-app-btn-fg`.
 - **Used by:** `ForumBoard` (notes and replies), `PublicMessageLoader`, and `ForumQuotedBody`.
+
+## Function: HappylandSection
+
+- **Purpose:** Presents Father Severin's account of Happyland after How it works on the public homepage.
+- **Input:** Receives the marketing page locale and reads all paragraphs, headings and image descriptions from the shared English, German, Spanish or Filipino catalog.
+- **Output:** Renders an accessible section with eight full-proportion photographs in a lead image, alternating text and image groups, and a portrait row that stacks on small screens.
+
+## Function: HappylandPhoto
+
+- **Purpose:** Keeps each Happyland photograph and its localized caption together in a semantic figure.
+- **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
+- **Output:** Renders a directly served WebP with intrinsic dimensions, descriptive alternative text and a visible caption. Eager loading keeps the photographs visible in the embedded local preview.
