@@ -34,6 +34,34 @@ describe('TranslatableNoteBody', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it('applies formatTranslated only to the visible translation', async () => {
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    renderWithLocale(
+      <TranslatableNoteBody
+        messageId={NOTE_ID}
+        text={german}
+        truncate={false}
+        formatTranslated={(next) => next.replace('satoshi', 'sats')}
+      />,
+    );
+    expect(await screen.findByText(german)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few sats this week?')).toBeTruthy();
+    expect(screen.queryByText(translated)).toBeNull();
+    expect(screen.queryByText(german)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByText('Can anyone lend me a few sats this week?')).toBeNull();
+  });
+
+  it('shows the translation as returned when formatTranslated is omitted', async () => {
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} truncate={false} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText(translated)).toBeTruthy();
+    expect(screen.queryByText(german)).toBeNull();
+  });
+
   it('shows a successful translation and toggles original and translation', async () => {
     vi.mocked(translateNote).mockResolvedValue(translated);
     renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} truncate={false} />);

@@ -276,7 +276,6 @@ app/
 │   │   ├── translate.ts         # Lookup + `{name}` interpolation (throws if missing)
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
-│   │   ├── translate-upstream.ts # Leftover DeepL v2 GET/POST helpers (not App Router /translate)
 │   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check

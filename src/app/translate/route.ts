@@ -4,7 +4,7 @@ import { proxyTranslateAvailableGet, proxyTranslateNotePost } from '@/lib/api-pr
  * GET `/translate` availability handler.
  *
  * @param request - Incoming request.
- * @returns Upstream `{ available }` (always 200 from the api).
+ * @returns 200 `{ available: boolean }` or 502 if the api is unreachable.
  * @throws Does not throw.
  */
 export function GET(request: Request): Promise<Response> {
@@ -15,7 +15,7 @@ export function GET(request: Request): Promise<Response> {
  * POST `/translate` proxy handler.
  *
  * @param request - Incoming request containing `{ messageId, target }`.
- * @returns The translated text or a structured 400, 502, or 503 response.
+ * @returns `{ translatedText, cached }` or 400/404/503/502.
  * @throws Does not throw.
  */
 export function POST(request: Request): Promise<Response> {

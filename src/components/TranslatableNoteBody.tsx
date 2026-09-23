@@ -20,6 +20,8 @@ export interface TranslatableNoteBodyProps {
   truncate?: boolean;
   /** Paragraph class for the visible body. */
   className?: string;
+  /** Applied only to the visible translated body. */
+  formatTranslated?: (text: string) => string;
 }
 
 /**
@@ -29,7 +31,8 @@ export interface TranslatableNoteBodyProps {
  * translation — not via a parent `useEffect` after paint.
  *
  * @param props - `messageId`, `text`, optional `plain` / `truncate` /
- *   `className` (`text-app-btn-fg` selects NoteTranslate `tone="onButton"`).
+ *   `className` (`text-app-btn-fg` selects NoteTranslate `tone="onButton"`),
+ *   optional `formatTranslated` (applied only to the visible translation).
  * @returns Original or translated body plus the translate control, or null when text is empty.
  * @throws Does not throw.
  */
@@ -39,6 +42,7 @@ export function TranslatableNoteBody({
   plain = false,
   truncate = true,
   className = DEFAULT_BODY_CLASS,
+  formatTranslated,
 }: TranslatableNoteBodyProps): ReactElement | null {
   const { locale } = useTranslations();
   const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export function TranslatableNoteBody({
   const visible =
     showingTranslation && translatedText ? (
       <ForumNoteText
-        text={translatedText}
+        text={formatTranslated === undefined ? translatedText : formatTranslated(translatedText)}
         className={className}
         {...(plain ? { plain: true } : {})}
       />

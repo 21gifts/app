@@ -8566,27 +8566,10 @@ test('Function: translateNote — Translate then Show original', async ({ page }
   await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toHaveCount(0);
 });
 
-test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
-  const res = await request.get('/healthz');
-  expect(res.status()).toBe(200);
-});
-
 test('Function: proxyTranslateAvailableGet — GET /translate is available', async ({ request }) => {
   const res = await request.get('/translate');
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ available: true });
-});
-
-test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
-  const res = await request.get('/healthz');
-  expect(res.status()).toBe(200);
-});
-
-test('Function: proxyTranslatePost — POST /translate returns translatedText', async ({
-  request,
-}) => {
-  const res = await request.get('/healthz');
-  expect(res.status()).toBe(200);
 });
 
 test('Function: proxyTranslateNotePost — POST /translate returns translatedText', async ({

@@ -1635,8 +1635,8 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: ForumQuotedBody
 
-- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`); caption sits beside that link (`ForumNoteText` when truncate, else `LinkedText`, no nested unfurl); ₿ amount is a second permalink link without that aria-label. `TranslatableNoteBody` on stripped display text only (a successful translation replaces that original). Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more, bodies autolinked) until replaced. Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role) and renders its caption as plain text via `TranslatableNoteBody` `plain`, so a URL in a quoted external reply is never a link.
-- **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional className (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects TranslatableNoteBody `tone="onButton"`), optional `translate` (default true; `false` renders remaining text through `ForumNoteText` / `LinkedText` without `TranslatableNoteBody` — inbox DMs; InboxScreen already passes `translate={false}`), optional onActivate.
+- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame: header (name, role span pill, timestamp) and optional photo blob are a permalink link (`forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`); caption sits beside that link (`ForumNoteText` when truncate, else `LinkedText`, no nested unfurl); ₿ amount is a second permalink link without that aria-label. `TranslatableNoteBody` on stripped display text only (a successful translation replaces that original after the same quote/short-link strip; optional `formatTranslated` runs after that strip). Feed remaining text and nested captions go through `ForumNoteText` (280-character Show more, bodies autolinked) until replaced. Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role). Nested nostr captions use `TranslatableNoteBody` `plain` only when `translate` is true (a URL in a quoted external reply is never a link). When `translate` is false, nested cards use `ForumNoteText` / `LinkedText` and never `TranslatableNoteBody`.
+- **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional className (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects TranslatableNoteBody `tone="onButton"`), optional `translate` (default true; `false` renders remaining text and nested quoted cards — including `via === 'nostr'` — through `ForumNoteText` / `LinkedText` without `TranslatableNoteBody`; forwarded to nested `QuotedForumNote` — inbox DMs; InboxScreen already passes `translate={false}`), optional `formatTranslated` (applied only to the visible remainder translation, after the quote/short-link strip), optional onActivate.
 - **Returns / side effects:** React element or null when text==='' and no resolved quotes. Unknown quote ids load via `fetchPublicMessage` (catch, never throw).
 - **Used by:** `ForumBoard`, `PublicMessageLoader`, `InboxScreen`.
 
@@ -3381,27 +3381,6 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The `translatedText` string. Throws when the route is non-2xx or omits a string `translatedText`.
 - **Used by:** `NoteTranslate` on **Translate**.
 
-## Function: getTranslateUpstream
-
-- **Purpose:** Read DeepL API v2 config from `TRANSLATE_URL` (POST URL as-is) and required `TRANSLATE_API_KEY`.
-- **Inputs:** None (process env).
-- **Returns / side effects:** `{ url, apiKey }` or `null` when the URL is missing, blank, or not http(s), or the key is missing or blank after trim. Does not append `/translate`. Does not contact upstream. Does not throw.
-- **Used by:** leftover DeepL path in `translate-upstream.ts` only, not App Router `/translate`.
-
-## Function: proxyTranslateGet
-
-- **Purpose:** `{ available: true }` only when `getTranslateUpstream()` is non-null. Always 200 `{ available: boolean }`. No upstream call.
-- **Inputs:** None.
-- **Returns / side effects:** JSON `Response`. Missing, blank, or invalid URL and missing or blank key are treated as unavailable.
-- **Used by:** leftover DeepL path in `translate-upstream.ts`, not App Router GET `/translate`.
-
-## Function: proxyTranslatePost
-
-- **Purpose:** Validate `{ text, target }` and POST DeepL API v2 `{ text: […], target_lang }` with `DeepL-Auth-Key`. `fil`→`TL`. 500-character max, 15s timeout. Parse `translations[0].text`. Does not forward incoming Authorization.
-- **Inputs:** Incoming `Request` with JSON `{ text, target }` (`en` / `de` / `es` / `fil`).
-- **Returns / side effects:** `{ translatedText }` on success; 400 invalid body, 503 not configured, 502 upstream. Does not throw.
-- **Used by:** leftover DeepL path in `translate-upstream.ts` (forum notes go through `proxyTranslateNotePost`).
-
 ## Function: proxyTranslateAvailableGet
 
 - **Purpose:** Same-origin GET `/translate` → api GET `/translate`.
@@ -3426,7 +3405,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: TranslatableNoteBody
 
 - **Purpose:** Exclusive original XOR translated body in the same React commit (not a parent `useEffect` after paint). Idle and error keep the original. **Show original** restores the original and hides the translation. Identity is `messageId + text + locale`. Holds `translatedText` and `showingTranslation`; a successful POST sets both so the original unmounts in that commit.
-- **Inputs:** Required `messageId` (forum UUID) and `text`. Optional `plain`. Optional `truncate` (default true → `ForumNoteText`, false → `LinkedText`). Optional `className` (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`).
+- **Inputs:** Required `messageId` (forum UUID) and `text`. Optional `plain`. Optional `truncate` (default true → `ForumNoteText`, false → `LinkedText`). Optional `className` (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`). Optional `formatTranslated` (applied only to the visible translation, not the original; not part of the identity key).
 - **Returns / side effects:** Original or translated paragraph plus the translate control, or `null` when `text` is empty. Mounts `NoteTranslate`. Visible body is original XOR translation in the same commit. Idle/error keep original; **Show original** restores original and hides translation.
 - **Used by:** `ForumBoard` (notes and replies, including `via === 'nostr'`), `PublicMessageLoader`, `ForumQuotedBody`, and `QuotedForumNote` (nostr captions).
 

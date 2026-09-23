@@ -555,6 +555,57 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
   });
 
+  it('does not offer Translate on a nested nostr card when translate is false', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(viaQuoted.text, { exact: false })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    expect(fetchAvailable).not.toHaveBeenCalled();
+  });
+
+  it('strips quote urls from the visible translation and keeps the nested card', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue(`Can anyone lend me a few satoshi this week? ${QUOTED_URL}`);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`${german} ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, hasPhoto: false, photoCount: 0 }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+    });
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByText(QUOTED_URL)).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+    expect(screen.queryByText(QUOTED_URL)).toBeNull();
+    expect(screen.queryByText(german)).toBeNull();
+    expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+  });
+
   it('shows an External badge on a nested quoted note and keeps the url as plain text', async () => {
     const viaQuoted: ForumMessage = {
       ...quotedNote,

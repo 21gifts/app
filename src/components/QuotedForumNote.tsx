@@ -36,12 +36,14 @@ function QuotedForumNote({
   rateDay,
   fiat,
   truncate,
+  translate = true,
   onActivate,
 }: {
   note: ForumMessage;
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
   truncate: boolean;
+  translate?: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
@@ -128,7 +130,7 @@ function QuotedForumNote({
         ) : null}
       </Link>
       {note.text !== '' ? (
-        note.via === 'nostr' ? (
+        note.via === 'nostr' && translate ? (
           <TranslatableNoteBody
             messageId={note.id}
             plain
@@ -167,8 +169,10 @@ function QuotedForumNote({
  *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
  *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), optional
  *   `translate` (default true; false renders `ForumNoteText` / `LinkedText`
- *   with no Translate control — inbox DMs), and an optional click handler
- *   for the nested card.
+ *   with no Translate control on remaining text and nested quoted cards,
+ *   including `via === 'nostr'` — inbox DMs), optional `formatTranslated`
+ *   (applied to the visible remainder translation after the quote/short-link
+ *   strip), and an optional click handler for the nested card.
  * @returns The stripped paragraph (replaced by the translation while shown
  *   when `translate` is true), nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
@@ -186,6 +190,7 @@ export function ForumQuotedBody({
   truncate = true,
   className = 'whitespace-pre-wrap text-sm text-app-fg',
   translate = true,
+  formatTranslated,
   onActivate,
 }: {
   text: string;
@@ -196,6 +201,7 @@ export function ForumQuotedBody({
   truncate?: boolean;
   className?: string;
   translate?: boolean;
+  formatTranslated?: (text: string) => string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
   const quoteIds = useMemo(() => {
@@ -305,6 +311,13 @@ export function ForumQuotedBody({
     splitForumMessageQuotes(text, resolvedIdSet).displayText,
     resolvedCodeSet,
   ).displayText;
+  const formatRemainderTranslation = (translated: string): string => {
+    const stripped = splitShortLinks(
+      splitForumMessageQuotes(translated, resolvedIdSet).displayText,
+      resolvedCodeSet,
+    ).displayText;
+    return formatTranslated === undefined ? stripped : formatTranslated(stripped);
+  };
 
   if (text === '' && resolvedNotes.length === 0) {
     return null;
@@ -319,6 +332,7 @@ export function ForumQuotedBody({
             text={displayText}
             truncate={truncate}
             className={className}
+            formatTranslated={formatRemainderTranslation}
           />
         ) : truncate ? (
           <ForumNoteText text={displayText} className={className} />
@@ -333,6 +347,7 @@ export function ForumQuotedBody({
           rateDay={rateDay}
           fiat={fiat}
           truncate={truncate}
+          translate={translate}
           {...(onActivate === undefined ? {} : { onActivate })}
         />
       ))}

@@ -1065,6 +1065,7 @@ export function ForumBoard({
                         text={displayText}
                         truncate={truncate}
                         className="whitespace-pre-wrap text-sm text-app-fg"
+                        {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
                       />
                     ) : (
                       <ForumQuotedBody
@@ -1074,6 +1075,7 @@ export function ForumBoard({
                         rateDay={rateDay ?? null}
                         fiat={fiat}
                         truncate={truncate}
+                        {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
                         onActivate={(event) => {
                           event.stopPropagation();
                         }}
