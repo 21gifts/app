@@ -48,7 +48,7 @@ export async function translateNote(
 ): Promise<string> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (typeof session === 'string' && session !== '') {
-    headers.Authorization = `Bearer ${session}`;
+    headers['Authorization'] = `Bearer ${session}`;
   }
   const response = await fetch('/translate', {
     method: 'POST',

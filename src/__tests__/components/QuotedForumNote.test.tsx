@@ -175,6 +175,23 @@ describe('ForumQuotedBody', () => {
     expect(translate).not.toHaveBeenCalled();
   });
 
+  it('renders ForumNoteText when translate is false and truncate is default', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={german}
+        knownNotes={[]}
+        excludeId="conv-msg-2"
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    expect(screen.getByText(german)).toBeTruthy();
+    await act(async () => undefined);
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+  });
+
   it('shows stored fiat on the nested post when the live rate differs', async () => {
     renderWithLocale(
       <ForumQuotedBody

@@ -30,9 +30,7 @@ afterEach(cleanup);
 
 describe('TranslatableNoteBody', () => {
   it('returns an empty container when text is empty', () => {
-    const { container } = renderWithLocale(
-      <TranslatableNoteBody messageId={NOTE_ID} text="" />,
-    );
+    const { container } = renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text="" />);
     expect(container.firstChild).toBeNull();
   });
 

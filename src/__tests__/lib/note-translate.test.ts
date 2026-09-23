@@ -113,9 +113,9 @@ describe('translateNote', () => {
       );
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(
-      translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'de', 'tok'),
-    ).resolves.toBe('Danke euch beiden.');
+    await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'de', 'tok')).resolves.toBe(
+      'Danke euch beiden.',
+    );
     expect(fetchMock).toHaveBeenCalledWith('/translate', {
       method: 'POST',
       headers: {

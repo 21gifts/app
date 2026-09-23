@@ -792,19 +792,22 @@ describe('api proxy wrappers', () => {
     { messageId: 1, target: 'en' },
     { messageId: 'm1' },
     { messageId: 'm1', target: 1 },
-  ])('proxyTranslateNotePost returns 400 when messageId or target is missing in %j', async (body) => {
-    const fetchMock = stubApi();
-    const response = await proxyTranslateNotePost(
-      new Request('http://localhost/translate', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      }),
-    );
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: 'Invalid body' });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
+  ])(
+    'proxyTranslateNotePost returns 400 when messageId or target is missing in %j',
+    async (body) => {
+      const fetchMock = stubApi();
+      const response = await proxyTranslateNotePost(
+        new Request('http://localhost/translate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+      );
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({ error: 'Invalid body' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 
   it('proxyTranslateNotePost forwards { target } to /messages/:id/translate', async () => {
     const fetchMock = stubApi();
@@ -821,7 +824,7 @@ describe('api proxy wrappers', () => {
     );
     const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/translate');
-    expect((init.method)).toBe('POST');
+    expect(init.method).toBe('POST');
     const outgoing = JSON.parse(new TextDecoder().decode(init.body as ArrayBuffer)) as unknown;
     expect(outgoing).toEqual({ target: 'en' });
     expect(outgoing).not.toEqual({ messageId: 'm1', target: 'en' });
