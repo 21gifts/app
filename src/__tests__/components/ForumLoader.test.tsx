@@ -545,7 +545,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
     publicFetchMock.mockResolvedValue({
@@ -639,7 +639,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
