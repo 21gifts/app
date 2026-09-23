@@ -6,7 +6,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 import { WalletScreen } from '@/components/WalletScreen';
 
 /**
- * `/wallet` — recovery phrase for new accounts and optional activate for existing ones.
+ * `/wallet` shows Activate recovery phrase when the account cannot show a
+ * phrase yet, otherwise Show recovery phrase under Advanced functions.
  *
  * @returns The wallet screen.
  */

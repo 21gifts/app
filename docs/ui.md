@@ -425,7 +425,7 @@ flowchart TB
 | Shops                | `Store`                       | `/shops`                                                                            |
 | Point of sale        | `Banknote`                    | `/pos`                                                                              |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
-| Wallet               | `Wallet`                      | `/wallet` — recovery phrase confirm / activate / reveal                             |
+| Wallet               | `Wallet`                      | `/wallet` — Activate, or Show recovery phrase under Advanced functions              |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |

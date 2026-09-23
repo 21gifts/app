@@ -1,8 +1,8 @@
 import type { Account } from '@/lib/api-types';
 
-/** Where a signed-in visitor belongs in the post-login flow. */
+/** The post-login path is name, username, address, rules, or welcome, and never `/wallet`. */
 export type OnboardingPath =
-  '/wallet' | '/setup/name' | '/setup/username' | '/setup/address' | '/setup/rules' | '/welcome';
+  '/setup/name' | '/setup/username' | '/setup/address' | '/setup/rules' | '/welcome';
 
 /**
  * Whether the account has a display name to show.
