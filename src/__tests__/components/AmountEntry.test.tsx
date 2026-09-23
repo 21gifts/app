@@ -55,7 +55,7 @@ describe('AmountEntry', () => {
     );
     expect(screen.getByLabelText('Amount')).toHaveProperty('value', '21');
     expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Amount unit' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Bitcoin or fiat' })).toBeTruthy();
   });
 
   it('converts to fiat locally when nobody is signed in', () => {

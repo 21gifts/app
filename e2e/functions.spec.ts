@@ -8996,7 +8996,9 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
   expect(parseForumAskAmountInUnit('1.00', 'fiat', AMOUNT_DAY, 'USD')).toBe(1000);
 });
 
-test('Function: setAmountUnit — POST /me/amount-unit without bearer is 401', async ({ request }) => {
+test('Function: setAmountUnit — POST /me/amount-unit without bearer is 401', async ({
+  request,
+}) => {
   expect((await request.post('/me/amount-unit', { data: { unit: 'fiat' } })).status()).toBe(401);
 });
 

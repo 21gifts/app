@@ -247,10 +247,7 @@ export function satsToFiatAmount(
 }
 
 /** A trimmed amount draft, as whole sats or a reason it is not. */
-export type AmountDraft =
-  | { kind: 'empty' }
-  | { kind: 'invalid' }
-  | { kind: 'sats'; sats: number };
+export type AmountDraft = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'sats'; sats: number };
 
 const FIAT_DRAFT = /^\d+([.,]\d{0,2})?$/;
 

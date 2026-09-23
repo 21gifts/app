@@ -37,7 +37,7 @@ const en = {
     'A narrow passage between homes, with uneven ground and scattered waste.',
 
   'language.label': 'Language',
-  'amount.unit': 'Amount unit',
+  'amount.unit': 'Bitcoin or fiat',
   'amount.noRate': 'No exchange rate yet',
 
   'nav.how': 'How it works',
@@ -858,7 +858,7 @@ const de = {
     'Ein schmaler Durchgang zwischen Häusern mit unebenem Boden und verstreutem Abfall.',
 
   'language.label': 'Sprache',
-  'amount.unit': 'Betragseinheit',
+  'amount.unit': 'Bitcoin oder Fiat',
   'amount.noRate': 'Noch kein Wechselkurs',
   'nav.how': "So funktioniert's",
   'nav.why': 'Warum',
@@ -1682,7 +1682,7 @@ const es = {
     'Un paso estrecho entre viviendas, con suelo irregular y residuos dispersos.',
 
   'language.label': 'Idioma',
-  'amount.unit': 'Unidad del importe',
+  'amount.unit': 'Bitcoin o fiat',
   'amount.noRate': 'Aún no hay tipo de cambio',
   'nav.how': 'Cómo funciona',
   'nav.why': 'Por qué',
@@ -2489,7 +2489,7 @@ const fil = {
     'Isang makitid na daanan sa pagitan ng mga tahanan, na may lubak-lubak na lupa at kalat na basura.',
 
   'language.label': 'Wika',
-  'amount.unit': 'Yunit ng halaga',
+  'amount.unit': 'Bitcoin o fiat',
   'amount.noRate': 'Wala pang halaga ng palitan',
   'nav.how': 'Paano ito gumagana',
   'nav.why': 'Bakit',

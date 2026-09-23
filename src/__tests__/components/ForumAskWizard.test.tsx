@@ -33,7 +33,7 @@ describe('ForumAskWizard', () => {
     expect(onStepChange).not.toHaveBeenCalled();
     rerender(<ForumAskWizard step={1} onStepChange={onStepChange} {...idle} askDraft="21000" />);
     expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21000');
-    expect(screen.getByRole('group', { name: 'Amount unit' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Bitcoin or fiat' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(2);
   });

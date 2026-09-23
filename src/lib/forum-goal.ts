@@ -74,4 +74,3 @@ export function parseForumAskAmountInUnit(
   }
   return parsed.sats;
 }
-

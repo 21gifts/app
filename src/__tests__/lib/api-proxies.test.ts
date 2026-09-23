@@ -249,9 +249,7 @@ describe('api proxy wrappers', () => {
 
   it('proxyMeAmountUnitPost hits POST /me/amount-unit', async () => {
     const fetchMock = stubApi();
-    await proxyMeAmountUnitPost(
-      new Request('http://localhost/me/amount-unit', { method: 'POST' }),
-    );
+    await proxyMeAmountUnitPost(new Request('http://localhost/me/amount-unit', { method: 'POST' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/amount-unit');
   });
