@@ -1,6 +1,41 @@
 import type { Locale } from '@/lib/locale';
 
 const en = {
+  'happyland.title': 'Happyland – a glimpse of life in Manila',
+  'happyland.intro':
+    'Happyland is in Tondo, Manila. Families live here under difficult, often extremely difficult, conditions. We want to look more closely and portray the people and their surroundings with respect.',
+  'happyland.daily':
+    'For some families, collecting and sorting recyclable materials provides an income. Waste around their homes also makes daily life harder. At times, the smell can be overwhelming.',
+  'happyland.observation':
+    'One extreme example is the collection of discarded chicken bones with varying amounts of meat still attached. These are cooked again and sold as “pagpag”. I, Father Severin, a moderator, have witnessed this several times myself.',
+  'happyland.poverty':
+    'The informal settlements of Tondo are among the poorest areas of Manila. The small rooms people live in often serve as a kitchen, bedroom and living space all at once. People often wash in the street, scooping water from a bucket and pouring it over themselves.',
+  'happyland.lanes': 'The paths are often in very poor condition and very dirty.',
+  'happyland.kicker': 'Tondo · Manila',
+  'happyland.dailyTitle': 'Daily life, waste and recycling',
+  'happyland.povertyTitle': 'Living with poverty',
+  'happyland.photo0.alt': 'People walking along a street lined with homes and small shops.',
+  'happyland.photo0.caption':
+    'Happyland’s main street, lined with homes and small shops. Photograph by Father Severin.',
+  'happyland.photo1.alt': 'Overhead view of densely packed roofs and narrow lanes.',
+  'happyland.photo1.caption': 'A view from above of closely packed buildings and narrow lanes.',
+  'happyland.photo2.alt': 'People standing in a lane beside two-storey homes.',
+  'happyland.photo2.caption': 'Neighbours gather in a lane between homes.',
+  'happyland.photo3.alt': 'A woman cooking beside a food stall with several people nearby.',
+  'happyland.photo3.caption': 'Pagpag',
+  'happyland.photo4.alt':
+    'A person sitting on wooden planks beside an area filled with discarded materials.',
+  'happyland.photo4.caption':
+    'Discarded materials have accumulated beside and beneath the buildings.',
+  'happyland.photo5.alt': 'An adult and three children at the entrance to a small home.',
+  'happyland.photo5.caption': 'An adult and children stand in the entrance to a compact home.',
+  'happyland.photo6.alt': 'A woman beside pans, buckets and household supplies in a compact space.',
+  'happyland.photo6.caption':
+    'Cooking utensils, water containers and household supplies share a small space.',
+  'happyland.photo7.alt': 'A narrow lane with uneven ground, containers and scattered rubbish.',
+  'happyland.photo7.caption':
+    'A narrow passage between homes, with uneven ground and scattered waste.',
+
   'language.label': 'Language',
 
   'nav.how': 'How it works',
@@ -745,6 +780,46 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 const de = {
+  'happyland.title': 'Happyland – ein Einblick in das Leben in Manila',
+  'happyland.intro':
+    'Happyland liegt in Tondo, Manila. Familien leben hier unter schwierigen, oft sehr schwierigen Bedingungen. Wir möchten genauer hinschauen und die Menschen und ihr Umfeld mit Respekt darstellen.',
+  'happyland.daily':
+    'Für manche Familien ist das Sammeln und Sortieren wiederverwertbarer Materialien eine Einnahmequelle. Abfälle rund um ihre Häuser erschweren zugleich den Alltag. Manchmal ist der Geruch überwältigend.',
+  'happyland.observation':
+    'Ein extremes Beispiel ist das Sammeln weggeworfener Hühnerknochen, an denen noch unterschiedlich viel Fleisch hängt. Diese werden erneut gekocht und als „Pagpag“ verkauft. Ich, Pater Severin, ein Moderator, habe dies selbst schon mehrmals gesehen.',
+  'happyland.poverty':
+    'Die informellen Siedlungen von Tondo gehören zu den ärmsten Gebieten Manilas. Die kleinen Räume, in denen die Menschen leben, dienen oft gleichzeitig als Küche, Schlafzimmer und Wohnraum. Häufig waschen sich die Menschen auf der Straße, indem sie Wasser aus einem Eimer schöpfen und über sich gießen.',
+  'happyland.lanes': 'Die Wege sind oft in sehr schlechtem Zustand und sehr schmutzig.',
+  'happyland.kicker': 'Tondo · Manila',
+  'happyland.dailyTitle': 'Alltag, Abfall und Recycling',
+  'happyland.povertyTitle': 'Leben in Armut',
+  'happyland.photo0.alt':
+    'Menschen gehen durch eine Straße mit Wohnhäusern und kleinen Geschäften.',
+  'happyland.photo0.caption':
+    'Happylands Hauptstraße mit Wohnhäusern und kleinen Geschäften. Foto von Pater Severin.',
+  'happyland.photo1.alt': 'Blick von oben auf dicht beieinanderliegende Dächer und schmale Gassen.',
+  'happyland.photo1.caption':
+    'Blick von oben auf dicht beieinanderstehende Gebäude und schmale Gassen.',
+  'happyland.photo2.alt': 'Menschen stehen in einer Gasse neben zweistöckigen Wohnhäusern.',
+  'happyland.photo2.caption': 'Nachbarn treffen sich in einer Gasse zwischen den Häusern.',
+  'happyland.photo3.alt':
+    'Eine Frau kocht an einem Essensstand; mehrere Menschen stehen in der Nähe.',
+  'happyland.photo3.caption': 'Pagpag',
+  'happyland.photo4.alt':
+    'Eine Person sitzt auf Holzplanken neben einem Bereich voller weggeworfener Materialien.',
+  'happyland.photo4.caption':
+    'Neben und unter den Gebäuden haben sich weggeworfene Materialien angesammelt.',
+  'happyland.photo5.alt': 'Eine erwachsene Person und drei Kinder am Eingang eines kleinen Hauses.',
+  'happyland.photo5.caption':
+    'Eine erwachsene Person und Kinder stehen am Eingang eines kleinen Hauses.',
+  'happyland.photo6.alt':
+    'Eine Frau neben Pfannen, Eimern und Haushaltsgegenständen auf engem Raum.',
+  'happyland.photo6.caption':
+    'Kochutensilien, Wasserbehälter und Haushaltsgegenstände teilen sich einen kleinen Raum.',
+  'happyland.photo7.alt': 'Eine schmale Gasse mit unebenem Boden, Behältern und verstreutem Müll.',
+  'happyland.photo7.caption':
+    'Ein schmaler Durchgang zwischen Häusern mit unebenem Boden und verstreutem Abfall.',
+
   'language.label': 'Sprache',
   'nav.how': "So funktioniert's",
   'nav.why': 'Warum',
@@ -1493,6 +1568,44 @@ const de = {
 } satisfies Messages;
 
 const es = {
+  'happyland.title': 'Happyland: una mirada a la vida en Manila',
+  'happyland.intro':
+    'Happyland está en Tondo, Manila. Las familias viven aquí en condiciones difíciles, a menudo extremadamente difíciles. Queremos conocer mejor a las personas y su entorno y mostrarlos con respeto.',
+  'happyland.daily':
+    'Para algunas familias, recoger y clasificar materiales reciclables es una fuente de ingresos. Los residuos alrededor de sus viviendas también dificultan la vida cotidiana. A veces, el olor puede ser abrumador.',
+  'happyland.observation':
+    'Un ejemplo extremo es la recogida de huesos de pollo desechados que aún tienen distintas cantidades de carne. Se vuelven a cocinar y se venden como «pagpag». Yo, el padre Severin, moderador, lo he presenciado personalmente varias veces.',
+  'happyland.poverty':
+    'Los asentamientos informales de Tondo se encuentran entre las zonas más pobres de Manila. Las pequeñas habitaciones donde vive la gente suelen servir a la vez de cocina, dormitorio y sala de estar. A menudo, las personas se lavan en la calle, sacando agua de un cubo y vertiéndola sobre su cuerpo.',
+  'happyland.lanes': 'Los caminos suelen estar en muy mal estado y muy sucios.',
+  'happyland.kicker': 'Tondo · Manila',
+  'happyland.dailyTitle': 'Vida cotidiana, residuos y reciclaje',
+  'happyland.povertyTitle': 'Vivir con la pobreza',
+  'happyland.photo0.alt': 'Personas caminando por una calle con viviendas y pequeñas tiendas.',
+  'happyland.photo0.caption':
+    'La calle principal de Happyland, con viviendas y pequeñas tiendas. Fotografía del padre Severin.',
+  'happyland.photo1.alt': 'Vista desde arriba de tejados muy juntos y callejones estrechos.',
+  'happyland.photo1.caption': 'Vista desde arriba de edificios muy juntos y callejones estrechos.',
+  'happyland.photo2.alt': 'Personas en un callejón junto a viviendas de dos plantas.',
+  'happyland.photo2.caption': 'Los vecinos se reúnen en un callejón entre las viviendas.',
+  'happyland.photo3.alt': 'Una mujer cocina junto a un puesto de comida con varias personas cerca.',
+  'happyland.photo3.caption': 'Pagpag',
+  'happyland.photo4.alt':
+    'Una persona sentada sobre tablones de madera junto a una zona llena de materiales desechados.',
+  'happyland.photo4.caption':
+    'Se han acumulado materiales desechados junto a los edificios y debajo de ellos.',
+  'happyland.photo5.alt': 'Una persona adulta y tres niños en la entrada de una pequeña vivienda.',
+  'happyland.photo5.caption':
+    'Una persona adulta y varios niños están en la entrada de una pequeña vivienda.',
+  'happyland.photo6.alt':
+    'Una mujer junto a sartenes, cubos y enseres domésticos en un espacio reducido.',
+  'happyland.photo6.caption':
+    'Los utensilios de cocina, los recipientes de agua y los enseres domésticos comparten un espacio reducido.',
+  'happyland.photo7.alt':
+    'Un callejón estrecho con suelo irregular, recipientes y basura dispersa.',
+  'happyland.photo7.caption':
+    'Un paso estrecho entre viviendas, con suelo irregular y residuos dispersos.',
+
   'language.label': 'Idioma',
   'nav.how': 'Cómo funciona',
   'nav.why': 'Por qué',
@@ -2220,6 +2333,49 @@ const es = {
 } satisfies Messages;
 
 const fil = {
+  'happyland.title': 'Happyland – isang sulyap sa buhay sa Maynila',
+  'happyland.intro':
+    'Ang Happyland ay nasa Tondo, Maynila. Namumuhay rito ang mga pamilya sa mahirap, at kadalasan ay napakahirap, na kalagayan. Nais naming mas maunawaan at mailarawan nang may paggalang ang mga tao at ang kanilang paligid.',
+  'happyland.daily':
+    'Para sa ilang pamilya, pinagkukunan ng kita ang pangongolekta at pagbubukod ng mga materyal na maaaring i-recycle. Pinahihirap din ng basura sa paligid ng kanilang mga tahanan ang araw-araw na pamumuhay. Kung minsan, napakatindi ng amoy.',
+  'happyland.observation':
+    'Isang matinding halimbawa ang pangongolekta ng mga itinapong buto ng manok na may natitira pang karne. Niluluto itong muli at ibinebenta bilang “pagpag”. Ako, si Padre Severin, isang moderator, ay ilang beses nang personal na nakasaksi nito.',
+  'happyland.poverty':
+    'Ang mga impormal na pamayanan sa Tondo ay kabilang sa pinakamahihirap na lugar sa Maynila. Ang maliliit na kuwartong tinitirhan ay madalas na nagsisilbing kusina, silid-tulugan at sala nang sabay-sabay. Madalas maligo ang mga tao sa kalye, gamit ang tubig na sinasalok mula sa balde at ibinubuhos sa katawan.',
+  'happyland.lanes': 'Ang mga daanan ay madalas na sira-sira at napakarumi.',
+  'happyland.kicker': 'Tondo · Manila',
+  'happyland.dailyTitle': 'Araw-araw na buhay, basura at pagre-recycle',
+  'happyland.povertyTitle': 'Pamumuhay sa kahirapan',
+  'happyland.photo0.alt':
+    'Mga taong naglalakad sa kalyeng may mga tahanan at maliliit na tindahan.',
+  'happyland.photo0.caption':
+    'Ang pangunahing kalye ng Happyland, na may mga tahanan at maliliit na tindahan. Kuha ni Padre Severin.',
+  'happyland.photo1.alt': 'Tanaw mula sa itaas ang magkakadikit na bubong at makikitid na daanan.',
+  'happyland.photo1.caption':
+    'Tanaw mula sa itaas ang magkakadikit na gusali at makikitid na daanan.',
+  'happyland.photo2.alt':
+    'Mga taong nakatayo sa isang daanan sa tabi ng mga tahanang may dalawang palapag.',
+  'happyland.photo2.caption':
+    'Nagkakatipon ang magkakapitbahay sa isang daanan sa pagitan ng mga tahanan.',
+  'happyland.photo3.alt':
+    'Isang babaeng nagluluto sa tabi ng isang tindahan ng pagkain, na may ilang tao sa paligid.',
+  'happyland.photo3.caption': 'Pagpag',
+  'happyland.photo4.alt':
+    'Isang taong nakaupo sa mga tablang kahoy sa tabi ng lugar na puno ng mga itinapong materyal.',
+  'happyland.photo4.caption': 'Naipon ang mga itinapong materyal sa tabi at ilalim ng mga gusali.',
+  'happyland.photo5.alt':
+    'Isang nakatatanda at tatlong bata sa pasukan ng isang maliit na tahanan.',
+  'happyland.photo5.caption':
+    'Isang nakatatanda at mga bata ang nakatayo sa pasukan ng isang maliit na tahanan.',
+  'happyland.photo6.alt':
+    'Isang babae sa tabi ng mga kawali, balde at gamit sa bahay sa isang masikip na lugar.',
+  'happyland.photo6.caption':
+    'Magkakasama sa isang maliit na lugar ang mga gamit sa pagluluto, lalagyan ng tubig at iba pang gamit sa bahay.',
+  'happyland.photo7.alt':
+    'Isang makitid na daanan na may lubak-lubak na lupa, mga lalagyan at kalat na basura.',
+  'happyland.photo7.caption':
+    'Isang makitid na daanan sa pagitan ng mga tahanan, na may lubak-lubak na lupa at kalat na basura.',
+
   'language.label': 'Wika',
   'nav.how': 'Paano ito gumagana',
   'nav.why': 'Bakit',
