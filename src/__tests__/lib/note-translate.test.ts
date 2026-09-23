@@ -107,9 +107,9 @@ describe('translateNote', () => {
 
   it('throws when the route returns a non-success response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 502 })));
-    await expect(
-      translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en'),
-    ).rejects.toThrow('Translation request failed');
+    await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en')).rejects.toThrow(
+      'Translation request failed',
+    );
   });
 
   it.each([null, 'translated', {}, { translatedText: 21 }])(
@@ -119,9 +119,9 @@ describe('translateNote', () => {
         'fetch',
         vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
       );
-      await expect(
-        translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en'),
-      ).rejects.toThrow('Translation response is invalid');
+      await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en')).rejects.toThrow(
+        'Translation response is invalid',
+      );
     },
   );
 });

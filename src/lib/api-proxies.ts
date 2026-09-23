@@ -509,9 +509,15 @@ export async function proxyTranslateNotePost(request: Request): Promise<Response
     return Response.json({ error: 'Invalid body' }, { status: 400 });
   }
   const { messageId, target } = input;
+  const headers = new Headers();
+  const authorization = request.headers.get('authorization');
+  if (authorization !== null) {
+    headers.set('authorization', authorization);
+  }
+  headers.set('content-type', 'application/json');
   const forwarded = new Request(request.url, {
     method: 'POST',
-    headers: request.headers,
+    headers,
     body: JSON.stringify({ target }),
   });
   return proxyApiRequest(forwarded, `/messages/${encodeURIComponent(messageId)}/translate`);
