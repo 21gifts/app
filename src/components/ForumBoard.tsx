@@ -217,6 +217,8 @@ export interface ForumBoardProps {
   onPayOpen: (messageId: string) => void;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
+  /** Unit the pay field is actually showing. */
+  onPayUnitChange?: (unit: AmountUnit) => void;
   /** Submits the pay amount for an invoice. */
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   /** Closes the pay sheet and clears invoice state. */
@@ -278,6 +280,8 @@ export interface ForumBoardProps {
   replyAmountDraft?: string;
   /** Called when the reply amount draft changes. */
   onReplyAmountDraftChange?: (value: string) => void;
+  /** Unit the reply amount field is actually showing. */
+  onReplyUnitChange?: (unit: AmountUnit) => void;
   /** Called when the reply form is submitted. */
   onReplyPost: () => void;
   /** True while a reply post is in flight. */
@@ -319,6 +323,7 @@ function ForumPaySheet({
   payInvoice,
   payWaiting,
   onPayDraftChange,
+  onPayUnitChange,
   onPaySubmit,
   onPayCancel,
   rateDay,
@@ -332,6 +337,7 @@ function ForumPaySheet({
   payInvoice: ForumPayInvoice | null;
   payWaiting: boolean;
   onPayDraftChange: (value: string) => void;
+  onPayUnitChange?: (unit: AmountUnit) => void;
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
@@ -416,6 +422,7 @@ function ForumPaySheet({
             lockedSats={invoiceForCard === null ? null : invoiceForCard.amountSats}
             rateDay={rateDay}
             onValueChange={onPayDraftChange}
+            {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
           />
           {payError === 'amount' ? (
             <p role="alert" className="text-sm text-app-danger">
@@ -601,6 +608,7 @@ export function ForumBoard({
   payWaiting,
   onPayOpen,
   onPayDraftChange,
+  onPayUnitChange,
   onPaySubmit,
   onPayCancel,
   rateDay = null,
@@ -628,6 +636,7 @@ export function ForumBoard({
   onReplyDraftChange,
   replyAmountDraft = '',
   onReplyAmountDraftChange,
+  onReplyUnitChange,
   onReplyPost,
   replyPosting,
   replyFormError,
@@ -1175,6 +1184,7 @@ export function ForumBoard({
                   payInvoice={payInvoice}
                   payWaiting={payWaiting}
                   onPayDraftChange={onPayDraftChange}
+                  {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                   onPaySubmit={onPaySubmit}
                   onPayCancel={onPayCancel}
                   rateDay={rateDay}
@@ -1399,6 +1409,7 @@ export function ForumBoard({
                                 payInvoice={payInvoice}
                                 payWaiting={payWaiting}
                                 onPayDraftChange={onPayDraftChange}
+                                {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                                 onPaySubmit={onPaySubmit}
                                 onPayCancel={onPayCancel}
                                 rateDay={rateDay}
@@ -1437,6 +1448,9 @@ export function ForumBoard({
                           }
                           rateDay={rateDay}
                           onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                          {...(onReplyUnitChange === undefined
+                            ? {}
+                            : { onUnitChange: onReplyUnitChange })}
                         />
                         <IconButton
                           type="submit"
@@ -1771,6 +1785,7 @@ export function ForumBoard({
           payInvoice={payInvoice}
           payWaiting={payWaiting}
           onPayDraftChange={onPayDraftChange}
+          {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
           onPaySubmit={onPaySubmit}
           onPayCancel={onPayCancel}
           rateDay={rateDay}

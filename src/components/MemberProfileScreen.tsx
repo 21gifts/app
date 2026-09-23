@@ -33,6 +33,7 @@ import {
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
   type ForumMessage,
   type AccountActivity,
   type MemberProfile,
@@ -187,6 +188,8 @@ export function MemberProfileScreen({
   const account = useAuthStore((state) => state.account);
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
+  const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
+  const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
@@ -908,7 +911,7 @@ export function MemberProfileScreen({
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
-    const sats = paySatsFromDraft(payDraft, amountUnit, rateDay, fiat);
+    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -1043,7 +1046,7 @@ export function MemberProfileScreen({
       setReplyFormError('tooLong');
       return;
     }
-    const parsed = replySatsFromDraft(replyAmountDraft, amountUnit, rateDay, fiat);
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const token = session;
     const parentId = expandedId;
     const parentRow = posts?.find((message) => message.id === parentId);
@@ -1124,6 +1127,8 @@ export function MemberProfileScreen({
       setPayDraft(value);
       setPayError(null);
     },
+    onPayUnitChange: setPayShownUnit,
+    onReplyUnitChange: setReplyShownUnit,
     onPaySubmit: handlePaySubmit,
     onPayCancel: handlePayCancel,
     expandedId,

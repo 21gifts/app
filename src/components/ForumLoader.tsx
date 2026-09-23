@@ -321,6 +321,8 @@ export function ForumLoader({
   const account = useAuthStore((state) => state.account);
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
+  const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
+  const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
   const router = useRouter();
   const scroller = useAppShellScroller();
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -1747,7 +1749,7 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
-    const sats = paySatsFromDraft(payDraft, amountUnit, rateDay, fiat);
+    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -2105,7 +2107,7 @@ export function ForumLoader({
       setReplyFormError('tooLong');
       return;
     }
-    const parsed = replySatsFromDraft(replyAmountDraft, amountUnit, rateDay, fiat);
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
@@ -2320,6 +2322,8 @@ export function ForumLoader({
           setPayWaiting(false);
           setPayBusy(false);
         }}
+        onPayUnitChange={setPayShownUnit}
+        onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
           setPayDraft(value);
           setPayError(null);

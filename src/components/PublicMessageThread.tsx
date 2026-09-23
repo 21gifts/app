@@ -18,7 +18,7 @@ import {
   postMessage,
   postMessageInvoice,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -177,6 +177,8 @@ export function PublicMessageThread(props: {
   const account = useAuthStore((state) => state.account);
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
+  const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
+  const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [note, setNote] = useState(root);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
@@ -778,7 +780,7 @@ export function PublicMessageThread(props: {
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
-    const sats = paySatsFromDraft(payDraft, amountUnit, rateDay, fiat);
+    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -932,7 +934,7 @@ export function PublicMessageThread(props: {
       setReplyFormError('tooLong');
       return;
     }
-    const parsed = replySatsFromDraft(replyAmountDraft, amountUnit, rateDay, fiat);
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const token = session;
     const parentId = expandedId;
     const exempt = isReplyPaymentExempt(account, note.accountId);
@@ -1048,6 +1050,8 @@ export function PublicMessageThread(props: {
           setPayDraft(value);
           setPayError(null);
         }}
+        onPayUnitChange={setPayShownUnit}
+        onReplyUnitChange={setReplyShownUnit}
         onPaySubmit={handlePaySubmit}
         onPayCancel={handlePayCancel}
         expandedId={expandedId}
