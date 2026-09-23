@@ -451,6 +451,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-amount-fiat',
+    image: 'welcome-ask-amount-fiat.png',
+    visual: 'state-welcome-ask-amount-fiat',
+    needle: 'state /welcome ask-amount-fiat',
+  },
+  {
+    route: '/welcome',
     id: 'ask-daily',
     image: 'welcome-ask-daily.png',
     visual: 'state-welcome-ask-daily',

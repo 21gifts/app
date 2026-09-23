@@ -3427,6 +3427,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
 - **Output:** Renders a directly served WebP with intrinsic dimensions, descriptive alternative text and a visible caption. Eager loading keeps the photographs visible in the embedded local preview.
 
+## Function: fiatDraftForSats
+
+- **Purpose:** Fiat typing draft for an exact sat amount. Two decimals when they round-trip through `fiatToSats`, otherwise more fraction digits so toggling back returns the same sats.
+- **Inputs:** Whole `sats`, gift `day` or null, fiat `code`.
+- **Returns / side effects:** A plain dot-decimal string, or null when the day or that currency cannot be used. No I/O.
+- **Used by:** `AmountEntry`, `ForumLoader`.
+
 ## Function: fiatToSats
 
 - **Purpose:** Inverse of `satsToFiatAmount` on the same gift-day totals. A positive amount that rounds to 0 becomes 1 sat.
@@ -3436,7 +3443,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: parseAmountDraft
 
-- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most two fraction digits.
+- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip.
 - **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, or `{ kind: 'sats', sats }`. No I/O.
 - **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosScreen`.

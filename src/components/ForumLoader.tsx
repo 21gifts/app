@@ -17,7 +17,13 @@ import {
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import {
+  fiatDraftForSats,
+  parseAmountDraft,
+  paySatsFromDraft,
+  replySatsFromDraft,
+  shownFiatForSats,
+} from '@/lib/stats-money';
 import {
   dismissForumLaws,
   fetchMessagePhoto,
@@ -330,6 +336,7 @@ export function ForumLoader({
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [askDraft, setAskDraft] = useState('');
+  const askUnit = useRef(amountUnit);
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
@@ -375,6 +382,26 @@ export function ForumLoader({
   const rateDay = useLatestRateDay();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
+  useEffect(() => {
+    if (askUnit.current === amountUnit) {
+      return;
+    }
+    const from = askUnit.current;
+    askUnit.current = amountUnit;
+    if (askStep === 1) {
+      return;
+    }
+    setAskDraft((draft) => {
+      const parsed = parseAmountDraft(from, draft, rateDay, fiat);
+      if (parsed.kind !== 'sats') {
+        return draft;
+      }
+      if (amountUnit === 'btc') {
+        return String(parsed.sats);
+      }
+      return fiatDraftForSats(parsed.sats, rateDay, fiat) ?? draft;
+    });
+  }, [amountUnit, askStep, fiat, rateDay]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;

@@ -13,6 +13,7 @@ import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
 import {
+  fiatDraftForSats,
   fiatToSats,
   parseAmountDraft,
   paySatsFromDraft,
@@ -9002,7 +9003,74 @@ test('Function: setAmountUnit — POST /me/amount-unit without bearer is 401', a
   expect((await request.post('/me/amount-unit', { data: { unit: 'fiat' } })).status()).toBe(401);
 });
 
-test('Function: AmountEntry — the ask field shows the unit switch', async () => {
-  const { AmountEntry: Entry } = await import('../src/components/AmountEntry');
-  expect(typeof Entry).toBe('function');
+const AMOUNT_RATE_STATS = {
+  ...EMPTY_STATS,
+  totalSats: 100_000_000,
+  totalBtc: '1.00000000',
+  totalUsd: '100000.00',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '100000.00',
+      cumulativeUsd: '100000.00',
+      chf: '80000.00',
+      eur: '90000.00',
+      php: '5600000.00',
+      cumulativeChf: '80000.00',
+      cumulativeEur: '90000.00',
+      cumulativePhp: '5600000.00',
+    },
+  ],
+};
+
+const PAY_LINK = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+
+async function stubPayLink(page: Page): Promise<void> {
+  await page.route(
+    (url) => new URL(url).pathname.startsWith('/pay/'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada Lovelace',
+          username: 'ada',
+          minSats: 1,
+          maxSats: 100000000,
+        }),
+      });
+    },
+  );
+}
+
+test('Function: fiatDraftForSats — 21 sats stays 21 sats after a fiat toggle', async ({ page }) => {
+  expect(
+    fiatDraftForSats(
+      21,
+      { sats: 100_000_000, usd: '100000.00', chf: null, eur: null, php: null },
+      'USD',
+    ),
+  ).toBe('0.021');
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await stubPayLink(page);
+  await page.goto(`/pl?lightning=${PAY_LINK}`);
+  await page.getByLabel('Amount').fill('21');
+  await expect(page.getByText('$0.02')).toBeVisible();
+  await page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Amount')).toHaveValue('0.021');
+  await expect(page.getByText('₿21')).toBeVisible();
+});
+
+test('Function: AmountEntry — the ask field shows the unit switch', async ({ page }) => {
+  await stubPayLink(page);
+  await page.goto(`/pl?lightning=${PAY_LINK}`);
+  await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toBeVisible();
+  await expect(page.getByLabel('Amount')).toBeVisible();
 });

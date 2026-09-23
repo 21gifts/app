@@ -518,13 +518,19 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ### Variant: ask-amount
 
-**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed so **₿1'000** and the preferred-fiat counterpart (**$1.00**) show under the field. Continue is enabled. No Post submit on this step.
+**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step.
 
 ![21.gifts welcome ask amount](images/welcome-ask-amount.png)
 
+### Variant: ask-amount-fiat
+
+**Ask for money** selected. Step 1 of 4 with **One-time** pressed and the amount switch on **USD**. **1000** was typed in bitcoin, then the switch moved to fiat, so the field shows **1.00** and **₿1'000** under it. Continue is enabled.
+
+![21.gifts welcome ask amount fiat](images/welcome-ask-amount-fiat.png)
+
 ### Variant: ask-daily
 
-**Ask for money** selected. Step 1 of 4 with **Daily** pressed on the pill above the amount and **1000** typed so **₿1'000** and **$1.00** show. Continue is enabled.
+**Ask for money** selected. Step 1 of 4 with **Daily** pressed on the pill above the amount and **1000** typed in bitcoin so **$1.00** shows under the field. Continue is enabled.
 
 ![21.gifts welcome ask daily](images/welcome-ask-daily.png)
 

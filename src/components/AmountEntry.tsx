@@ -8,6 +8,7 @@ import { SegmentedControl } from '@/components/ui';
 import { setAmountUnit } from '@/lib/api';
 import type { AmountUnit } from '@/lib/api-types';
 import {
+  fiatDraftForSats,
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
@@ -47,7 +48,7 @@ export interface AmountEntryProps {
   onUnitChange?: (unit: AmountUnit) => void;
 }
 
-const FIAT_DRAFT = /^\d+([.,]\d{0,2})?$/;
+const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
 /**
  * Converts a draft from one typing unit to the other.
@@ -66,9 +67,6 @@ function convertAmountDraft(
   day: FiatRateDay | null,
   code: FiatCode,
 ): string {
-  if (from === to) {
-    return draft;
-  }
   const parsed = parseAmountDraft(from, draft, day, code);
   if (parsed.kind !== 'sats') {
     return '';
@@ -76,7 +74,7 @@ function convertAmountDraft(
   if (to === 'btc') {
     return String(parsed.sats);
   }
-  return satsToFiatAmount(parsed.sats, day, code) ?? '';
+  return fiatDraftForSats(parsed.sats, day, code) ?? '';
 }
 
 /**
@@ -113,6 +111,10 @@ export function AmountEntry({
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
   const applied = useRef(unit);
   const posting = useRef(false);
+  const draftRef = useRef(value);
+  if (!posting.current) {
+    draftRef.current = value;
+  }
   const fieldId =
     id ??
     `amount-${label
@@ -147,6 +149,10 @@ export function AmountEntry({
     const previousDraft = value;
     const previousUnit = unit;
     const converted = convertAmountDraft(previousUnit, next, value, rateDay, fiat);
+    if (value.trim() !== '' && converted === '') {
+      return;
+    }
+    draftRef.current = converted;
     applied.current = next;
     if (session === null || account === null) {
       setLocalUnit(next);
@@ -157,11 +163,11 @@ export function AmountEntry({
     }
     const token = session;
     const currentAccount = account;
+    posting.current = true;
     setAccount({ ...currentAccount, amountUnit: next });
     if (converted !== value) {
       onValueChange(converted);
     }
-    posting.current = true;
     void setAmountUnit(token, next)
       .then((updated) => {
         if (useAuthStore.getState().session !== token) {
@@ -182,7 +188,12 @@ export function AmountEntry({
         if (current !== null) {
           setAccount({ ...current, amountUnit: previousUnit });
         }
-        onValueChange(previousDraft);
+        const live = draftRef.current;
+        onValueChange(
+          live === converted
+            ? previousDraft
+            : convertAmountDraft(next, previousUnit, live, rateDay, fiat),
+        );
       })
       .finally(() => {
         posting.current = false;
@@ -191,6 +202,10 @@ export function AmountEntry({
 
   const shown = locked ? String(lockedSats) : value;
   const prefix = locked || unit === 'btc' ? '\u20BF' : fiat;
+  const shownPlaceholder =
+    placeholder !== undefined && unit === 'fiat' && /^\d+$/.test(placeholder)
+      ? (fiatDraftForSats(Number(placeholder), rateDay, fiat) ?? undefined)
+      : placeholder;
   let counter: string | null = null;
   if (locked) {
     const fiatAmount = satsToFiatAmount(lockedSats, rateDay, fiat);
@@ -241,11 +256,12 @@ export function AmountEntry({
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          placeholder={placeholder}
+          placeholder={shownPlaceholder}
           value={shown}
           disabled={disabled || locked}
           onChange={(event) => {
             if (!locked) {
+              draftRef.current = event.target.value;
               onValueChange(event.target.value);
             }
           }}

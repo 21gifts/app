@@ -798,6 +798,116 @@ describe('ForumLoader', () => {
     expect(screen.queryByLabelText('Ask')).toBeNull();
   });
 
+  it('converts an ask draft that is not on screen when the account unit changes', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Add photos' })).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '0.021');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      useAuthStore.setState({ session: 'sess', account });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21');
+  });
+
+  it('leaves the ask field to convert itself while step 1 is open', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '0.021');
+  });
+
+  it('leaves an unmounted ask draft unchanged when the rate cannot convert it', async () => {
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    await act(async () => {
+      useAuthStore.setState({ session: 'sess', account });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21');
+  });
+
   it('shows empty copy when fetch resolves to an empty list', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);

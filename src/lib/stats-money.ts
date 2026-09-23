@@ -246,10 +246,52 @@ export function satsToFiatAmount(
   return `${whole}.${frac}`;
 }
 
+/**
+ * Fiat typing draft for an exact sat amount.
+ *
+ * Uses two decimals when that round-trips through {@link fiatToSats}.
+ * Otherwise adds fraction digits, up to eight, so toggling back returns
+ * the same sats. Returns `null` when the day or that fiat cannot be used.
+ *
+ * @param sats - Whole sats to show.
+ * @param day - Gift day, or `null`.
+ * @param code - Preferred fiat.
+ * @returns A plain dot-decimal string, or `null`.
+ */
+export function fiatDraftForSats(
+  sats: number,
+  day: FiatRateDay | null,
+  code: FiatCode,
+): string | null {
+  if (day === null || !Number.isFinite(sats) || sats < 0) {
+    return null;
+  }
+  const two = satsToFiatAmount(sats, day, code);
+  if (two !== null && fiatToSats(Number(two), day, code) === sats) {
+    return two;
+  }
+  const raw = fiatFieldOnDay(day, code);
+  if (raw === null || day.sats <= 0) {
+    return null;
+  }
+  const dayFiat = Number(raw);
+  if (!Number.isFinite(dayFiat) || dayFiat === 0) {
+    return null;
+  }
+  const exact = (sats * dayFiat) / day.sats;
+  for (let digits = 3; digits <= 8; digits += 1) {
+    const text = exact.toFixed(digits);
+    if (fiatToSats(Number(text), day, code) === sats) {
+      return text;
+    }
+  }
+  return two;
+}
+
 /** A trimmed amount draft, as whole sats or a reason it is not. */
 export type AmountDraft = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'sats'; sats: number };
 
-const FIAT_DRAFT = /^\d+([.,]\d{0,2})?$/;
+const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
 /**
  * Inverse of {@link satsToFiatAmount} on the same gift-day totals.
@@ -288,7 +330,7 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
 /**
  * Parses a bitcoin or fiat typing draft into whole sats.
  *
- * @param unit - `btc` for digits-only sats, `fiat` for a two-decimal amount.
+ * @param unit - `btc` for digits-only sats, `fiat` for up to eight decimal places.
  * @param draft - Raw field value.
  * @param day - Gift day used for fiat conversion, or `null`.
  * @param code - Preferred fiat.

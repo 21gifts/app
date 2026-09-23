@@ -6821,9 +6821,27 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByText('How much?')).toBeVisible();
     await page.getByLabel('Ask').fill('1000');
-    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByLabel('Ask')).toHaveValue('1000');
     await expect(page.getByText('$1.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-amount');
+  });
+
+  test('state /welcome ask-amount-fiat', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await expect(page.getByText('How much?')).toBeVisible();
+    await page.getByLabel('Ask').fill('1000');
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await expect(page.getByLabel('Ask')).toHaveValue('1.00');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-amount-fiat');
   });
 
   test('state /welcome ask-daily', async ({ page }) => {
@@ -6842,7 +6860,7 @@ test.describe('welcome forum variants', () => {
       'false',
     );
     await page.getByLabel('Ask').fill('1000');
-    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByLabel('Ask')).toHaveValue('1000');
     await expect(page.getByText('$1.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-daily');
   });

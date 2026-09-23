@@ -8,6 +8,7 @@ import {
   formatFiatTick,
   formatUsdDisplay,
   formatUsdTick,
+  fiatDraftForSats,
   fiatToSats,
   latestRateDay,
   parseAmountDraft,
@@ -172,6 +173,28 @@ describe('satsToFiatAmount', () => {
   });
 });
 
+describe('fiatDraftForSats', () => {
+  it('keeps two decimals when they round-trip and adds digits when they do not', () => {
+    expect(fiatDraftForSats(1000, RATE_DAY, 'USD')).toBe('1.00');
+    expect(fiatDraftForSats(21, RATE_DAY, 'USD')).toBe('0.021');
+  });
+
+  it('returns null without a usable rate or a finite non-negative amount', () => {
+    expect(fiatDraftForSats(21, null, 'USD')).toBeNull();
+    expect(fiatDraftForSats(Number.NaN, RATE_DAY, 'USD')).toBeNull();
+    expect(fiatDraftForSats(-1, RATE_DAY, 'USD')).toBeNull();
+    expect(fiatDraftForSats(21, { ...RATE_DAY, chf: null }, 'CHF')).toBeNull();
+    expect(fiatDraftForSats(21, { ...RATE_DAY, sats: 0 }, 'USD')).toBeNull();
+    expect(fiatDraftForSats(21, { ...RATE_DAY, usd: '0.00' }, 'USD')).toBeNull();
+  });
+
+  it('falls back to two decimals when more digits still do not round-trip', () => {
+    expect(fiatDraftForSats(1, { ...RATE_DAY, sats: 1_000_000_000_000, usd: '1.00' }, 'USD')).toBe(
+      '0.00',
+    );
+  });
+});
+
 describe('fiatToSats', () => {
   it('inverts a gift-day rate and clamps a positive dust amount to 1', () => {
     expect(fiatToSats(1, RATE_DAY, 'USD')).toBe(1000);
@@ -198,9 +221,14 @@ describe('parseAmountDraft', () => {
     expect(parseAmountDraft('btc', '1.5', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
     expect(parseAmountDraft('fiat', '1.00', RATE_DAY, 'USD')).toEqual({ kind: 'sats', sats: 1000 });
     expect(parseAmountDraft('fiat', '1,', RATE_DAY, 'USD')).toEqual({ kind: 'sats', sats: 1000 });
-    expect(parseAmountDraft('fiat', '1.234', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '1.234', RATE_DAY, 'USD')).toEqual({
+      kind: 'sats',
+      sats: 1234,
+    });
+    expect(parseAmountDraft('fiat', '1.123456789', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
     expect(parseAmountDraft('fiat', '1.00', null, 'USD')).toEqual({ kind: 'invalid' });
     expect(parseAmountDraft('btc', '9'.repeat(40), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '9'.repeat(400), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
   });
 });
 

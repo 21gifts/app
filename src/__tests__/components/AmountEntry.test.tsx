@@ -67,18 +67,23 @@ describe('AmountEntry', () => {
       'USD',
     );
     fireEvent.click(screen.getByRole('button', { name: 'USD' }));
-    expect(onValueChange).toHaveBeenCalledWith('0.02');
+    expect(onValueChange).toHaveBeenCalledWith('0.021');
     expect(setAmountUnit).not.toHaveBeenCalled();
   });
 
   it('shows bitcoin under a fiat draft and the missing-rate line', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+      wrongAccount: false,
+    });
     const { rerender } = renderWithLocale(
-      <AmountEntry label="Amount" value="1.00" onValueChange={() => undefined} rateDay={null} />,
+      <AmountEntry label="Amount" value="1.00" onValueChange={() => undefined} rateDay={DAY} />,
       'en',
       'ch',
       'USD',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(screen.getByText("₿1'000")).toBeTruthy();
     rerender(
       <AmountEntry label="Amount" value="1.00" onValueChange={() => undefined} rateDay={null} />,
     );
@@ -116,7 +121,7 @@ describe('AmountEntry', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'USD' }));
     });
-    expect(onValueChange).toHaveBeenCalledWith('0.02');
+    expect(onValueChange).toHaveBeenCalledWith('0.021');
     expect(setAmountUnit).toHaveBeenCalledWith('sess', 'fiat');
     expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
   });
@@ -136,5 +141,246 @@ describe('AmountEntry', () => {
     });
     expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
     expect(onValueChange).toHaveBeenLastCalledWith('21');
+  });
+
+  it('does not switch when the draft is not a whole sat amount', () => {
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <AmountEntry label="Amount" value="1.00" onValueChange={onValueChange} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+  });
+
+  it('ignores a press of the unit that is already selected', () => {
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={onValueChange}
+        rateDay={DAY}
+        disabled
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('reports the unit and shows a class on the wrapper', () => {
+    const onUnitChange = vi.fn();
+    const { container, rerender } = renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+        onUnitChange={onUnitChange}
+        className="mt-1"
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(onUnitChange).toHaveBeenCalledWith('btc');
+    expect(container.firstChild).toHaveProperty('className', expect.stringContaining('mt-1'));
+    rerender(
+      <AmountEntry
+        label="Amount"
+        value="21"
+        onValueChange={() => undefined}
+        rateDay={null}
+        lockedSats={21}
+        className=""
+      />,
+    );
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '21');
+  });
+
+  it('uses the requested unit when the saved account omits it', async () => {
+    vi.mocked(setAmountUnit).mockImplementation(async () => {
+      const updated = { ...account };
+      delete updated.amountUnit;
+      return updated;
+    });
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <AmountEntry label="Amount" value="" onValueChange={() => undefined} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
+  });
+
+  it('keeps the unit when a filled draft has no rate', () => {
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={null} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(setAmountUnit).not.toHaveBeenCalled();
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+  });
+
+  it('ignores a saved unit after the session changed', async () => {
+    let resolveSave: (value: Account) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={() => undefined} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    useAuthStore.setState({
+      session: 'other',
+      account: { ...account, amountUnit: 'fiat' },
+      wrongAccount: false,
+    });
+    await act(async () => {
+      resolveSave({ ...account, amountUnit: 'btc' });
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
+  });
+
+  it('leaves a missing account alone after the save succeeds', async () => {
+    let resolveSave: (value: Account) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={() => undefined} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    useAuthStore.setState({ session: 'sess', account: null, wrongAccount: false });
+    await act(async () => {
+      resolveSave({ ...account, amountUnit: 'btc' });
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not revert the unit when the session changed before the save failed', async () => {
+    let rejectSave: (reason: Error) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectSave = reject;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={() => undefined} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    useAuthStore.setState({
+      session: 'other',
+      account: { ...account, amountUnit: 'fiat' },
+      wrongAccount: false,
+    });
+    await act(async () => {
+      rejectSave(new Error('nope'));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
+  });
+
+  it('converts keystrokes typed during a failed save back to the previous unit', async () => {
+    let rejectSave: (reason: Error) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectSave = reject;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0.05' } });
+    await act(async () => {
+      rejectSave(new Error('nope'));
+    });
+    expect(onValueChange).toHaveBeenLastCalledWith('50');
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+  });
+
+  it('shows a sat placeholder as fiat while fiat is the typing unit', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+      wrongAccount: false,
+    });
+    const { rerender } = renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value=""
+        placeholder="21"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '0.021');
+    rerender(
+      <AmountEntry
+        label="Amount"
+        value=""
+        placeholder="21"
+        onValueChange={() => undefined}
+        rateDay={null}
+      />,
+    );
+    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '');
+    rerender(
+      <AmountEntry
+        label="Amount"
+        value=""
+        placeholder="soon"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+    );
+    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', 'soon');
   });
 });
