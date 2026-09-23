@@ -339,6 +339,31 @@ describe('AmountEntry', () => {
     expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
   });
 
+  it('keeps unreadable keystrokes when a save fails', async () => {
+    let rejectSave: (reason: Error) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectSave = reject;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'abc' } });
+    await act(async () => {
+      rejectSave(new Error('nope'));
+    });
+    expect(onValueChange).toHaveBeenLastCalledWith('abc');
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+  });
+
   it('converts keystrokes typed during a failed save back to the previous unit', async () => {
     let rejectSave: (reason: Error) => void = () => undefined;
     vi.mocked(setAmountUnit).mockImplementation(

@@ -192,11 +192,11 @@ export function AmountEntry({
           setAccount({ ...current, amountUnit: previousUnit });
         }
         const live = draftRef.current;
-        onValueChange(
+        const restored =
           live === converted
             ? previousDraft
-            : convertAmountDraft(next, previousUnit, live, rateDay, fiat),
-        );
+            : convertAmountDraft(next, previousUnit, live, rateDay, fiat);
+        onValueChange(restored === '' && live.trim() !== '' ? live : restored);
       })
       .finally(() => {
         posting.current = false;
