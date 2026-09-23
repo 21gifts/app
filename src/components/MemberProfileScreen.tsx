@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Mail } from 'lucide-react';
+import { HandHeart, Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -158,9 +158,27 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
+function FundingProgramMark({ admittedAt }: { admittedAt: number }): ReactElement {
+  const { t, locale } = useTranslations();
+  const label = t('funding.participatesSince', {
+    date: formatForumTimeFromMs(admittedAt, locale),
+  });
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-muted"
+    >
+      <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
+    </span>
+  );
+}
+
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
- * Address, role pill, optional grant-reviewed tag when `fundingReviewedAt` is a
+ * Address, role pill, optional funding-program icon (HandHeart, accessible name
+ * is participation since the date), not a text tag when `fundingReviewedAt` is a
  * number, copy-profile-link, optional Message, post/reply counts, stacked
  * activity feeds, and staff Trust Chain actions when the viewer is
  * a moderator and the subject is someone else. About me is not a forum post.
@@ -181,7 +199,7 @@ export function MemberProfileScreen({
   donated?: AccountActivity['donatedOverTime'];
   factsOnly?: boolean;
 }): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -852,7 +870,6 @@ export function MemberProfileScreen({
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
-  const [fundingHintOpen, setFundingHintOpen] = useState(false);
   const tagged =
     listedProfile.role === 'founder' ||
     listedProfile.role === 'moderator' ||
@@ -1292,30 +1309,14 @@ export function MemberProfileScreen({
                 {t(roleKeys.label)}
               </button>
             ) : null}
-            {showFundingReviewed ? (
-              <button
-                type="button"
-                aria-expanded={fundingHintOpen}
-                onClick={() => {
-                  setFundingHintOpen((open) => !open);
-                }}
-                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-              >
-                {t('funding.reviewedOn', {
-                  date: formatForumTimeFromMs(fundingReviewedAt, locale),
-                })}
-              </button>
+            {typeof fundingReviewedAt === 'number' ? (
+              <FundingProgramMark admittedAt={fundingReviewedAt} />
             ) : null}
           </div>
         ) : null}
         {roleHintOpen && roleKeys !== null ? (
           <p role="status" className="text-center text-xs text-app-muted">
             {t(roleKeys.hint)}
-          </p>
-        ) : null}
-        {fundingHintOpen && showFundingReviewed ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {t('funding.reviewedBy')}
           </p>
         ) : null}
         {giftsBlock}
@@ -1388,29 +1389,13 @@ export function MemberProfileScreen({
                   {t(roleKeys.label)}
                 </button>
               ) : null}
-              {showFundingReviewed ? (
-                <button
-                  type="button"
-                  aria-expanded={fundingHintOpen}
-                  onClick={() => {
-                    setFundingHintOpen((open) => !open);
-                  }}
-                  className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                >
-                  {t('funding.reviewedOn', {
-                    date: formatForumTimeFromMs(fundingReviewedAt, locale),
-                  })}
-                </button>
+              {typeof fundingReviewedAt === 'number' ? (
+                <FundingProgramMark admittedAt={fundingReviewedAt} />
               ) : null}
             </div>
             {roleHintOpen && roleKeys !== null ? (
               <p role="status" className="text-center text-xs text-app-muted">
                 {t(roleKeys.hint)}
-              </p>
-            ) : null}
-            {fundingHintOpen && showFundingReviewed ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {t('funding.reviewedBy')}
               </p>
             ) : null}
           </div>

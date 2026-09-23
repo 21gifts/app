@@ -1086,12 +1086,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:funding-reviewed-open",
-    "label": "/members/[accountId] funding-reviewed-open",
-    "visual": "state-members-funding-reviewed-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/members/[accountId]:sticker-open",
     "label": "/members/[accountId] sticker-open",
     "visual": "state-members-sticker-open",

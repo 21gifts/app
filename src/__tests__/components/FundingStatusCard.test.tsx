@@ -184,7 +184,12 @@ describe('FundingStatusCard', () => {
     renderWithLocale(<FundingStatusCard />);
     expect(screen.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeTruthy();
     expect(
-      screen.getByText(`Reviewed by a moderator on ${formatForumTimeFromMs(admittedAt, 'en')}`),
+      screen.getByText(
+        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+          admittedAt,
+          'en',
+        )}`,
+      ),
     ).toBeTruthy();
   });
 
@@ -202,6 +207,6 @@ describe('FundingStatusCard', () => {
       },
     });
     renderWithLocale(<FundingStatusCard />);
-    expect(screen.getByText('Reviewed by a moderator')).toBeTruthy();
+    expect(screen.getByText('Takes part in the 21.gifts funding program')).toBeTruthy();
   });
 });

@@ -1399,14 +1399,7 @@ export const SCREEN_VARIANTS = [
     id: 'funding-reviewed',
     image: 'members-funding-reviewed.png',
     visual: 'state-members-funding-reviewed',
-    needle: 'Reviewed by a moderator on',
-  },
-  {
-    route: '/members/[accountId]',
-    id: 'funding-reviewed-open',
-    image: 'members-funding-reviewed-open.png',
-    visual: 'state-members-funding-reviewed-open',
-    needle: 'Reviewed by a moderator',
+    needle: 'Takes part in the 21.gifts funding program since',
   },
   {
     route: '/members/[accountId]',
