@@ -803,6 +803,9 @@ test.describe('screen baselines', () => {
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
     await shotScreen(page, 'screen-pl');
+    await page.getByRole('button', { name: 'Create invoice' }).click();
+    await expect(page.getByText('Enter a whole number.')).toBeVisible();
+    await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Create invoice' }).click();
     if (isMobileProject(testInfo)) {

@@ -178,6 +178,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'amount-invalid',
+    image: 'pl-amount-invalid.png',
+    visual: 'state-pl-amount-invalid',
+    needle: 'Enter a whole number.',
+  },
+  {
+    route: '/pl',
     id: 'invalid',
     image: 'pl-invalid.png',
     visual: 'state-pl-invalid',

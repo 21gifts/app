@@ -296,7 +296,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
 - **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading. Under it, an **Amount** field and **Create invoice**. A bad link shows **This payment link is not valid.** and no form.
-- **Actions:** Type a whole number of sats and press **Create invoice**. Success replaces that button with **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). A desktop also shows the Bitcoin invoice QR. A smartphone does not. A failed mint keeps the form and shows **Could not create the invoice.** Change language from the header.
+- **Actions:** Type a whole number and press **Create invoice**. An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success replaces that button with **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). A desktop also shows the Bitcoin invoice QR. A smartphone does not. A failed mint keeps the form and shows **Could not create the invoice.** Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -310,6 +310,12 @@ The person's name, the amount field, and **Create invoice**. No QR yet.
 The amount is kept and **Create invoice** is gone. Desktop shows the Bitcoin invoice QR and **Pay**. A smartphone shows **Pay** only.
 
 ![21.gifts pay link invoice](images/pl-invoice.png)
+
+### Variant: amount-invalid
+
+**Create invoice** with an empty or non-whole amount shows **Enter a whole number.** The form stays.
+
+![21.gifts pay link amount invalid](images/pl-amount-invalid.png)
 
 ### Variant: invalid
 
