@@ -59,14 +59,14 @@ const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 /** Shared across fields so a slower save cannot overwrite a later choice. */
 let unitRequest = 0;
 let unitRequestOpen = false;
+let confirmedRequest = 0;
 let savedUnit: AmountUnit = 'btc';
 
 /**
  * Starts one account-wide amount-unit save.
- * The returned id is the only one that may write the account.
  *
  * @param current - Unit already stored before this click's optimistic update.
- * @returns Id of this save.
+ * @returns Id of this save. Higher ids happened later.
  */
 function beginUnitRequest(current: AmountUnit): number {
   if (!unitRequestOpen) {
@@ -96,6 +96,26 @@ function finishUnitRequest(request: number): void {
   if (request === unitRequest) {
     unitRequestOpen = false;
   }
+}
+
+/**
+ * Records a successful save. A newer success replaces an older one.
+ * An older success still counts after a later failure, so the rollback
+ * keeps the unit the server already stored.
+ *
+ * @param request - Id from {@link beginUnitRequest}.
+ * @param chosen - Unit the server stored.
+ * @returns True when the account should show `chosen` now.
+ */
+function confirmUnitRequest(request: number, chosen: AmountUnit): boolean {
+  if (request <= confirmedRequest) {
+    return false;
+  }
+  confirmedRequest = request;
+  savedUnit = chosen;
+  const apply = request === unitRequest || !unitRequestOpen;
+  finishUnitRequest(request);
+  return apply;
 }
 
 /**
@@ -229,23 +249,26 @@ export function AmountEntry({
     }
     void setAmountUnit(token, next)
       .then((updated) => {
-        if (!isLatestUnitRequest(request) || useAuthStore.getState().session !== token) {
-          finishUnitRequest(request);
-          return;
-        }
-        const current = useAuthStore.getState().account;
-        if (current === null) {
+        if (useAuthStore.getState().session !== token) {
           finishUnitRequest(request);
           return;
         }
         const chosen = updated.amountUnit ?? next;
-        savedUnit = chosen;
-        finishUnitRequest(request);
-        setAccount({ ...current, amountUnit: chosen });
+        if (!confirmUnitRequest(request, chosen)) {
+          return;
+        }
+        const current = useAuthStore.getState().account;
+        if (current === null) {
+          return;
+        }
+        setAccount({ ...current, amountUnit: savedUnit });
       })
       .catch(() => {
-        if (!isLatestUnitRequest(request) || useAuthStore.getState().session !== token) {
+        if (useAuthStore.getState().session !== token) {
           finishUnitRequest(request);
+          return;
+        }
+        if (!isLatestUnitRequest(request)) {
           return;
         }
         const rollback = savedUnit;
