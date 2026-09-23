@@ -1664,6 +1664,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount.
 - **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`.
 
+## Function: shownFiatForSats
+
+- **Purpose:** The four fiat amounts shown for a sat amount the visitor is about to pay, using the same gift day as the preview.
+- **Inputs:** Whole `sats` and `rateDay` (`FiatRateDay | null`).
+- **Returns / side effects:** `{ amountUsd, amountChf, amountEur, amountPhp }`, each a two-decimal string or `null`. No I/O.
+- **Used by:** `ForumLoader`, `InboxLoader`, `MemberProfileScreen`, `PublicMessageThread`.
+
 ## Function: satsToFiatAmount
 
 - **Purpose:** Scales whole sats into a two-decimal fiat string using one gift day's totals (`Math.round` on cents).
@@ -2611,8 +2618,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: postMessageInvoice
 
-- **Purpose:** POST `/messages/:id/invoice` with `{ sats }` or `{ sats, text }` when the visitor attached a reply comment. Empty `text` is omitted.
-- **Inputs:** session token, message id, sats, optional text.
+- **Purpose:** POST `/messages/:id/invoice` with `{ sats }`, `{ sats, text }` when the visitor attached a reply comment, and `amountUsd`, `amountChf`, `amountEur`, `amountPhp` when a preview rate is on screen. Empty `text` is omitted. A missing preview omits those four fields.
+- **Inputs:** session token, message id, sats, optional text, optional shown `amountUsd`, `amountChf`, `amountEur`, and `amountPhp` (each a two-decimal string or null). The amounts are read when the request is sent, not when an earlier requirements step started.
 - **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy. 409 `missing_requirements` throws `MissingRequirementsError`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 
@@ -2701,8 +2708,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: postConversationInvoice
 
-- **Purpose:** POST `/conversations/:id/invoice` with `{ sats }` or `{ sats, text }`.
-- **Inputs:** Session token, conversation id, sats, optional text.
+- **Purpose:** POST `/conversations/:id/invoice` with `{ sats }`, `{ sats, text }`, and `amountUsd`, `amountChf`, `amountEur`, `amountPhp` when a preview rate is on screen. Empty `text` is omitted. A missing preview omits those four fields.
+- **Inputs:** Session token, conversation id, sats, optional text, optional shown `amountUsd`, `amountChf`, `amountEur`, and `amountPhp` (each a two-decimal string or null).
 - **Returns / side effects:** `{ pr, amountSats, messageId }`, or throws api/visitor copy.
 - **Used by:** `InboxLoader`.
 

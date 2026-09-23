@@ -1553,6 +1553,25 @@ describe('postMessageInvoice', () => {
     });
   });
 
+  it('sends the four shown amounts with the invoice', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21 },
+    });
+    const shown = {
+      amountUsd: '5.00',
+      amountChf: '4.00',
+      amountEur: '4.50',
+      amountPhp: null,
+    };
+    await postMessageInvoice('sess', 'm1', 21, undefined, shown);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+      ...shown,
+    });
+  });
+
   it('throws MissingRequirementsError on 409', async () => {
     stubFetch({
       ok: false,
@@ -2739,6 +2758,26 @@ describe('postConversationInvoice', () => {
     await postConversationInvoice('sess', 'c1', 21, '');
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       sats: 21,
+    });
+  });
+
+  it('sends the four shown amounts with the invoice', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' },
+    });
+    const shown = {
+      amountUsd: '5.00',
+      amountChf: null,
+      amountEur: '4.50',
+      amountPhp: '280.00',
+    };
+    await postConversationInvoice('sess', 'c1', 21, 'Thanks', shown);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
+      text: 'Thanks',
+      ...shown,
     });
   });
 

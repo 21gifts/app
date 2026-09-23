@@ -16,6 +16,7 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { shownFiatForSats } from '@/lib/stats-money';
 import {
   dismissForumLaws,
   fetchMessagePhoto,
@@ -389,6 +390,8 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const rateDay = useLatestRateDay();
+  const rateDayRef = useRef(rateDay);
+  rateDayRef.current = rateDay;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;
@@ -1562,6 +1565,7 @@ export function ForumLoader({
           target.messageId,
           1,
           postAfterPay ? undefined : trimmed,
+          shownFiatForSats(1, rateDayRef.current),
         );
         setPayMessageId(target.messageId);
         setPayError(null);
@@ -1715,7 +1719,13 @@ export function ForumLoader({
       return (async () => {
         let minted: ForumPayInvoice | null = null;
         try {
-          const invoice = await postMessageInvoice(session, messageId, sats);
+          const invoice = await postMessageInvoice(
+            session,
+            messageId,
+            sats,
+            undefined,
+            shownFiatForSats(sats, rateDayRef.current),
+          );
           if (generation !== payPollGeneration.current) {
             return null;
           }
@@ -1920,8 +1930,20 @@ export function ForumLoader({
     try {
       const invoice =
         trimmed === ''
-          ? await postMessageInvoice(session, parentId, sats)
-          : await postMessageInvoice(session, parentId, sats, trimmed);
+          ? await postMessageInvoice(
+              session,
+              parentId,
+              sats,
+              undefined,
+              shownFiatForSats(sats, rateDayRef.current),
+            )
+          : await postMessageInvoice(
+              session,
+              parentId,
+              sats,
+              trimmed,
+              shownFiatForSats(sats, rateDayRef.current),
+            );
       if (generation !== payPollGeneration.current) {
         return;
       }
@@ -1986,6 +2008,7 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        shownFiatForSats(sats, rateDayRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {

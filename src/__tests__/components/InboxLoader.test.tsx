@@ -156,6 +156,13 @@ afterEach(() => {
   cleanup();
 });
 
+const NO_RATE_SHOWN = {
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+};
+
 describe('InboxLoader', () => {
   it('renders nothing when there is no session', () => {
     useAuthStore.setState({ session: null, account });
@@ -285,7 +292,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
     });
@@ -359,7 +366,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
     });
@@ -408,7 +415,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 1, undefined, NO_RATE_SHOWN);
       expect(screen.getByText('send ₿1')).toBeTruthy();
     });
   });
@@ -1440,7 +1447,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -1495,7 +1502,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
     expect(postMock).not.toHaveBeenCalled();

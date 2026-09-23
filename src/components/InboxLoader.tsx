@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { shownFiatForSats } from '@/lib/stats-money';
 import {
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
@@ -706,6 +707,7 @@ export function InboxLoader(): ReactElement | null {
             conversationId,
             sats,
             trimmed === '' ? undefined : trimmed,
+            shownFiatForSats(sats, rateDay),
           );
         } catch (err) {
           if (openIdRef.current === conversationId) {

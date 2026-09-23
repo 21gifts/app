@@ -324,6 +324,13 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
+const NO_RATE_SHOWN = {
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+};
+
 describe('ForumLoader', () => {
   it('renders nothing when there is no session', () => {
     useAuthStore.setState({ session: null, account });
@@ -622,7 +629,13 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'Cafe Luna\n\n#21GiftsShop');
+      expect(invoiceMock).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        'Cafe Luna\n\n#21GiftsShop',
+        NO_RATE_SHOWN,
+      );
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -2356,7 +2369,7 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'Hello gifts');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'Hello gifts', NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
@@ -2531,7 +2544,13 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi');
+      expect(invoiceMock).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        'inReplyTo:m-bob\nHi',
+        NO_RATE_SHOWN,
+      );
     });
     await waitFor(() => {
       expect(screen.getByText('Hi')).toBeTruthy();
@@ -2598,7 +2617,7 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
@@ -2653,7 +2672,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'with photo' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
@@ -2710,7 +2729,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
@@ -2770,7 +2789,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'clip' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
       expect(postVideoMock).toHaveBeenCalledWith('sess', {
@@ -3543,7 +3562,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+    expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     expect(publicFetchMock).toHaveBeenCalledWith(
       'r-pay',
       expect.objectContaining({
@@ -3576,7 +3595,7 @@ describe('ForumLoader', () => {
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     });
     expect(assign).not.toHaveBeenCalled();
     await waitFor(() => {
@@ -3788,7 +3807,7 @@ describe('ForumLoader', () => {
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     });
     useAuthStore.setState({ session: 'sess', account: null });
     await act(async () => {
@@ -3913,7 +3932,7 @@ describe('ForumLoader', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
       expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
@@ -3968,7 +3987,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
       expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
@@ -4015,7 +4034,7 @@ describe('ForumLoader', () => {
     expect((within(replyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('');
 
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     });
   });
 
@@ -4038,7 +4057,7 @@ describe('ForumLoader', () => {
     expect((within(replyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('   ');
 
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     });
   });
 
@@ -4928,7 +4947,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'Fresh reply');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm1', 1, 'Fresh reply', NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -4951,7 +4970,13 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi Bob');
+      expect(invoiceMock).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        'inReplyTo:m-bob\nHi Bob',
+        NO_RATE_SHOWN,
+      );
     });
     expect(postMock).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
@@ -5185,7 +5210,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob', NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -5207,7 +5232,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -5228,7 +5253,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')?.textContent).not.toBe(
@@ -5253,7 +5278,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -5274,7 +5299,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -5800,7 +5825,13 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m-bob\nHi');
+      expect(invoiceMock).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        'inReplyTo:m-bob\nHi',
+        NO_RATE_SHOWN,
+      );
     });
     expect(postMock).toHaveBeenCalled();
   });
@@ -5859,7 +5890,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, 'Hi', NO_RATE_SHOWN);
     });
   });
 
@@ -5879,7 +5910,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 1, undefined, NO_RATE_SHOWN);
     });
   });
 
@@ -5922,7 +5953,13 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'inReplyTo:m1\nown');
+      expect(invoiceMock).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        'inReplyTo:m1\nown',
+        NO_RATE_SHOWN,
+      );
     });
   });
 
@@ -7118,7 +7155,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     await waitFor(() => {
-      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21);
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     });
   });
 
@@ -7844,7 +7881,7 @@ it('pays a payable reply and polls that reply id', async () => {
   fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
   fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
   await waitFor(() => {
-    expect(invoiceMock).toHaveBeenCalledWith('sess', 'r1', 21);
+    expect(invoiceMock).toHaveBeenCalledWith('sess', 'r1', 21, undefined, NO_RATE_SHOWN);
   });
   await waitFor(() => {
     expect(publicFetchMock).toHaveBeenCalledWith(
@@ -7876,7 +7913,7 @@ it('keeps a reply pay sheet when Active hides the parent note', async () => {
   fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
   fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
   await waitFor(() => {
-    expect(invoiceMock).toHaveBeenCalledWith('sess', 'r1', 21);
+    expect(invoiceMock).toHaveBeenCalledWith('sess', 'r1', 21, undefined, NO_RATE_SHOWN);
   });
   chooseForumMode('Active');
   expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
