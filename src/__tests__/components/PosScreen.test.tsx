@@ -182,6 +182,28 @@ describe('PosScreen', () => {
     ).toEqual(['2026-09-20T12:00:00.000Z', '2026-09-20T11:00:00.000Z']);
   });
 
+  it('labels a pending history row Open when nothing is on the till', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          charge: null,
+          history: [
+            {
+              id: 'c4',
+              amountSats: 3,
+              status: 'pending',
+              createdAt: '2026-09-20T10:00:00.000Z',
+              expiresAt: '2026-09-20T10:05:00.000Z',
+            },
+          ],
+        }),
+      ),
+    );
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByText('Open')).toBeTruthy();
+  });
+
   it('hides the QR on a phone', async () => {
     const original = navigator.userAgent;
     Object.defineProperty(navigator, 'userAgent', {
