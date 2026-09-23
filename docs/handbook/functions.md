@@ -3377,7 +3377,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `{ messageId, target }` to same-origin `/translate` (api cache-first DeepL) and return the translated body.
 - **Inputs:** `translateNote(messageId, target, session?)` — forum message UUID, the active UI `target` locale, and optional session Bearer. A non-empty string is sent as `Authorization: Bearer …` (hidden staff permalink). Omitted, null, or empty leaves the request unsigned so public notes still work.
-- **Returns / side effects:** The `translatedText` string. Throws when the route is non-2xx or omits a string `translatedText`.
+- **Returns / side effects:** The `translatedText` string. Throws when the route is non-2xx or `translatedText` is missing, not a string, or empty.
 - **Used by:** `NoteTranslate` on **Translate**.
 
 ## Function: proxyTranslateAvailableGet

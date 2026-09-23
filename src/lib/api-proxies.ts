@@ -489,7 +489,7 @@ export async function proxyTranslateAvailableGet(request: Request): Promise<Resp
  * `POST /messages/:id/translate`.
  *
  * @param request - Incoming App Router request (JSON body).
- * @returns The upstream response, or 400 when `messageId` is missing.
+ * @returns The upstream response, or 400 for invalid JSON or a missing/non-string `messageId` or `target`.
  */
 export async function proxyTranslateNotePost(request: Request): Promise<Response> {
   let input: unknown;
