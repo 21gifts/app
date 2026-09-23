@@ -600,6 +600,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:place",
+    "label": "/welcome place",
+    "visual": "state-welcome-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-place",
+    "label": "/welcome composer-place",
+    "visual": "state-welcome-composer-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-place-map",
+    "label": "/welcome composer-place-map",
+    "visual": "state-welcome-composer-place-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-place-confirm",
+    "label": "/welcome composer-place-confirm",
+    "visual": "state-welcome-composer-place-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-place-set",
+    "label": "/welcome composer-place-set",
+    "visual": "state-welcome-composer-place-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-photos",
     "label": "/welcome composer-photos",
     "visual": "state-welcome-composer-photos",
@@ -2088,6 +2118,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:composer-place-map",
+    "label": "/shops composer-place-map",
+    "visual": "state-shops-composer-place-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:composer-place-confirm",
     "label": "/shops composer-place-confirm",
     "visual": "state-shops-composer-place-confirm",
@@ -2103,6 +2139,12 @@
     "id": "/map:default",
     "label": "/map default",
     "visual": "screen-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/map:pin",
+    "label": "/map pin",
+    "visual": "state-map-pin",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

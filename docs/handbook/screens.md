@@ -926,6 +926,12 @@ One unpaid note on **All** with a place. The card shows a MapPin link **Happylan
 
 ![21.gifts welcome composer place](images/welcome-composer-place.png)
 
+### Variant: composer-place-map
+
+**Add a place** is open with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+
+![21.gifts welcome composer place map](images/welcome-composer-place-map.png)
+
 ### Variant: composer-place-confirm
 
 **Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
@@ -1176,6 +1182,12 @@ One shop note with a place. The card shows a MapPin link **Happyland** to `/map?
 
 ![21.gifts shops composer place](images/shops-composer-place.png)
 
+### Variant: composer-place-map
+
+**Add a place** is open on an empty shop list with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+
+![21.gifts shops composer place map](images/shops-composer-place-map.png)
+
 ### Variant: composer-place-confirm
 
 **Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
@@ -1200,6 +1212,12 @@ A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove 
 Heading **Map** and one pin **Ada · Happyland**.
 
 ![21.gifts map](images/map.png)
+
+### Variant: pin
+
+`/map?pin=m-pin` selects **Ada · Happyland**. The row is semibold.
+
+![21.gifts map pin](images/map-pin.png)
 
 ### Variant: loading
 

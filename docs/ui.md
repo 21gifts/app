@@ -1094,7 +1094,7 @@ Handbook states: default list, forbidden, empty, loading, error, external.
 ### `/moderate/group`
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}` (the only back control; no in-card back) `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → founders and moderators get `InboxScreen` as one open thread (`Card xl` `surface={false}`, `showFilter` false, `showAmount` false, `showAttach` true): **h1** **Moderators chat group** from `moderate.groupLabel` (never the api row name) + origin caption + **Inbox thread bubbles** (stills + quoted-note unfurl) + composer with **Add a photo** (JPEG/PNG/WebP, max 10, photo-only send) and icon send. Direct/Contact/Damus inbox threads attach the same stills on `/messages`; this page is the closed staff room only. Other signed-in visitors see `Card xl` `surface={false}` → **h1** **Moderators chat group** → `moderate.groupForbidden` and no fetch. Loading **Loading…**; error copy + **Try again**.
-Handbook states: default, stipend, forbidden, empty, loading, error, composer-photo, composer-photos, quoted-note, photo, preparing-photo, error-unsupported, error-too-large, error-too-many.
+Handbook states: default, stipend, forbidden, empty, loading, error, composer-photo, composer-photos, quoted-note, photo, preparing-photo, error-unsupported, error-too-large, error-too-many, place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
 
 ### `/moderate/handbook`
 
@@ -1110,13 +1110,13 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Map. One list of every note that has a pin (author, label or coordinates, link `/messages/{id}`). The map frame is `data-testid="places-map"`. Without `GOOGLE_MAPS_API_KEY` the frame stays empty and the list remains. Empty `map.empty`. Error `map.error` plus **Try again**.
 
-Handbook states: default, empty, loading, error.
+Handbook states: default, pin, empty, loading, error.
 
 ### `/shops`
 
 Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → post composer under the lead. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again.
 
-Handbook states: default, empty, loading, error.
+Handbook states: default, empty, loading, error, place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
 
 ### `/rules`
 

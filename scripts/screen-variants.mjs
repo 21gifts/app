@@ -822,6 +822,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-place-map',
+    image: 'welcome-composer-place-map.png',
+    visual: 'state-welcome-composer-place-map',
+    needle: 'welcome composer-place-map',
+  },
+  {
+    route: '/welcome',
     id: 'composer-place-confirm',
     image: 'welcome-composer-place-confirm.png',
     visual: 'state-welcome-composer-place-confirm',
@@ -2593,6 +2600,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'composer-place-map',
+    image: 'shops-composer-place-map.png',
+    visual: 'state-shops-composer-place-map',
+    needle: 'shops composer-place-map',
+  },
+  {
+    route: '/shops',
     id: 'composer-place-confirm',
     image: 'shops-composer-place-confirm.png',
     visual: 'state-shops-composer-place-confirm',
@@ -2611,6 +2625,13 @@ export const SCREEN_VARIANTS = [
     image: 'map.png',
     visual: 'screen-map',
     needle: 'Happyland',
+  },
+  {
+    route: '/map',
+    id: 'pin',
+    image: 'map-pin.png',
+    visual: 'state-map-pin',
+    needle: 'map pin',
   },
   {
     route: '/map',
