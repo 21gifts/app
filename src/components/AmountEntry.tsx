@@ -56,6 +56,48 @@ export interface AmountEntryProps {
 
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
+/** Shared across fields so a slower save cannot overwrite a later choice. */
+let unitRequest = 0;
+let unitRequestOpen = false;
+let savedUnit: AmountUnit = 'btc';
+
+/**
+ * Starts one account-wide amount-unit save.
+ * The returned id is the only one that may write the account.
+ *
+ * @param current - Unit already stored before this click's optimistic update.
+ * @returns Id of this save.
+ */
+function beginUnitRequest(current: AmountUnit): number {
+  if (!unitRequestOpen) {
+    savedUnit = current;
+  }
+  unitRequestOpen = true;
+  unitRequest += 1;
+  return unitRequest;
+}
+
+/**
+ * Whether this save is still the latest one.
+ *
+ * @param request - Id from {@link beginUnitRequest}.
+ * @returns True when no newer save has started.
+ */
+function isLatestUnitRequest(request: number): boolean {
+  return request === unitRequest;
+}
+
+/**
+ * Marks the latest save finished so the next click starts a new burst.
+ *
+ * @param request - Id from {@link beginUnitRequest}.
+ */
+function finishUnitRequest(request: number): void {
+  if (request === unitRequest) {
+    unitRequestOpen = false;
+  }
+}
+
 /**
  * Converts a draft from one typing unit to the other.
  *
@@ -179,6 +221,7 @@ export function AmountEntry({
     }
     const token = session;
     const currentAccount = account;
+    const request = beginUnitRequest(currentAccount.amountUnit ?? 'btc');
     posting.current = true;
     setAccount({ ...currentAccount, amountUnit: next });
     if (converted !== value) {
@@ -186,31 +229,39 @@ export function AmountEntry({
     }
     void setAmountUnit(token, next)
       .then((updated) => {
-        if (useAuthStore.getState().session !== token) {
+        if (!isLatestUnitRequest(request) || useAuthStore.getState().session !== token) {
+          finishUnitRequest(request);
           return;
         }
         const current = useAuthStore.getState().account;
         if (current === null) {
+          finishUnitRequest(request);
           return;
         }
-        setAccount({ ...current, amountUnit: updated.amountUnit ?? next });
+        const chosen = updated.amountUnit ?? next;
+        savedUnit = chosen;
+        finishUnitRequest(request);
+        setAccount({ ...current, amountUnit: chosen });
       })
       .catch(() => {
-        if (useAuthStore.getState().session !== token) {
+        if (!isLatestUnitRequest(request) || useAuthStore.getState().session !== token) {
+          finishUnitRequest(request);
           return;
         }
-        applied.current = previousUnit;
-        setShownUnit(previousUnit);
-        onUnitChange?.(previousUnit);
+        const rollback = savedUnit;
+        finishUnitRequest(request);
+        applied.current = rollback;
+        setShownUnit(rollback);
+        onUnitChange?.(rollback);
         const current = useAuthStore.getState().account;
         if (current !== null) {
-          setAccount({ ...current, amountUnit: previousUnit });
+          setAccount({ ...current, amountUnit: rollback });
         }
         const live = draftRef.current;
         const restored =
-          live === converted
+          rollback === previousUnit && live === converted
             ? previousDraft
-            : convertAmountDraft(next, previousUnit, live, rateDay, fiat);
+            : convertAmountDraft(next, rollback, live, rateDay, fiat);
         onValueChange(restored === '' && live.trim() !== '' ? live : restored);
       })
       .finally(() => {

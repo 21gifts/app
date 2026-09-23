@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AmountEntry } from '@/components/AmountEntry';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -290,6 +290,101 @@ describe('AmountEntry', () => {
     );
     expect(onValueChange).toHaveBeenCalledWith('0.021');
     expect(onUnitChange).toHaveBeenCalledWith('fiat');
+  });
+
+  it('ignores a slower unit save after a later field chooses', async () => {
+    let resolveFirst: (value: Account) => void = () => undefined;
+    let calls = 0;
+    vi.mocked(setAmountUnit).mockImplementation((_token, unit) => {
+      calls += 1;
+      if (calls === 1) {
+        return new Promise((resolve) => {
+          resolveFirst = resolve;
+        });
+      }
+      return Promise.resolve({ ...account, amountUnit: unit });
+    });
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <>
+        <AmountEntry label="Pay" value="" onValueChange={() => undefined} rateDay={DAY} />
+        <AmountEntry label="Reply" value="" onValueChange={() => undefined} rateDay={DAY} />
+      </>,
+      'en',
+      'ch',
+      'USD',
+    );
+    const groups = (): HTMLElement[] => screen.getAllByRole('group', { name: 'Bitcoin or fiat' });
+    fireEvent.click(within(groups()[0]).getByRole('button', { name: 'USD' }));
+    await waitFor(() => {
+      expect(within(groups()[1]).getByRole('button', { name: 'USD' })).toHaveProperty(
+        'ariaPressed',
+        'true',
+      );
+    });
+    fireEvent.click(within(groups()[1]).getByRole('button', { name: '₿' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+    await act(async () => {
+      resolveFirst({ ...account, amountUnit: 'fiat' });
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+  });
+
+  it('restores the stored unit when a later save fails', async () => {
+    let rejectSecond: (reason: Error) => void = () => undefined;
+    let calls = 0;
+    vi.mocked(setAmountUnit).mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
+        return new Promise(() => undefined);
+      }
+      return new Promise((_, reject) => {
+        rejectSecond = reject;
+      });
+    });
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <>
+        <AmountEntry label="Pay" value="" onValueChange={() => undefined} rateDay={DAY} />
+        <AmountEntry label="Reply" value="" onValueChange={() => undefined} rateDay={DAY} />
+      </>,
+      'en',
+      'ch',
+      'USD',
+    );
+    const groups = (): HTMLElement[] => screen.getAllByRole('group', { name: 'Bitcoin or fiat' });
+    fireEvent.click(within(groups()[0]).getByRole('button', { name: 'USD' }));
+    await waitFor(() => {
+      expect(within(groups()[1]).getByRole('button', { name: 'USD' })).toHaveProperty(
+        'ariaPressed',
+        'true',
+      );
+    });
+    fireEvent.click(within(groups()[1]).getByRole('button', { name: '₿' }));
+    await act(async () => {
+      rejectSecond(new Error('nope'));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
+  });
+
+  it('treats a missing stored unit as bitcoin when a save starts', async () => {
+    const bare = { ...account };
+    delete bare.amountUnit;
+    vi.mocked(setAmountUnit).mockResolvedValue({ ...account, amountUnit: 'fiat' });
+    useAuthStore.setState({ session: 'sess', account: bare, wrongAccount: false });
+    renderWithLocale(
+      <AmountEntry label="Amount" value="" onValueChange={() => undefined} rateDay={DAY} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
   });
 
   it('keeps the unit when a filled draft has no rate', () => {
