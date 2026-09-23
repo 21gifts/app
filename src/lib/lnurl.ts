@@ -51,6 +51,76 @@ function convert8to5(data: Uint8Array): number[] {
 }
 
 /**
+ * Decode a BIP-173 `lnurl` value into its cleartext URL.
+ *
+ * @param value - Bech32 LNURL in either uniform casing.
+ * @returns The decoded URL, or `null` when the value is invalid.
+ */
+export function decodeLnurl(value: string): string | null {
+  try {
+    if (value === '') {
+      return null;
+    }
+    if (value !== value.toLowerCase() && value !== value.toUpperCase()) {
+      return null;
+    }
+
+    const normalized = value.toLowerCase();
+    if ([...normalized].some((char) => char.charCodeAt(0) < 33 || char.charCodeAt(0) > 126)) {
+      return null;
+    }
+
+    const separator = normalized.lastIndexOf('1');
+    if (separator < 1 || separator + 7 > normalized.length) {
+      return null;
+    }
+    const hrp = normalized.slice(0, separator);
+    if (hrp !== 'lnurl') {
+      return null;
+    }
+
+    const values: number[] = [];
+    for (const char of normalized.slice(separator + 1)) {
+      const index = CHARSET.indexOf(char);
+      if (index === -1) {
+        return null;
+      }
+      values.push(index);
+    }
+    if (polymod([...hrpExpand(hrp), ...values]) !== 1) {
+      return null;
+    }
+
+    const data = values.slice(0, -6);
+    if (data.length === 0) {
+      return null;
+    }
+
+    const bytes: number[] = [];
+    let acc = 0;
+    let bits = 0;
+    for (const word of data) {
+      acc = (acc << 5) | word;
+      bits += 5;
+      while (bits >= 8) {
+        bits -= 8;
+        bytes.push((acc >>> bits) & 0xff);
+      }
+    }
+    // encodeLnurl never emits a checksum that still has leftover 5-bit padding
+    // or bytes that are not UTF-8. Both rejects stay for hostile input.
+    /* v8 ignore next 8 */
+    if (bits >= 5 || ((acc << (8 - bits)) & 0xff) !== 0) {
+      return null;
+    }
+
+    return new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * BIP-173 bech32 (not bech32m) of `url` with HRP `lnurl`, returned UPPERCASE.
  *
  * @param url - Cleartext URL.

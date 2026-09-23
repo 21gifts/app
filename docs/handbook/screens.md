@@ -292,6 +292,37 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 ![21.gifts donate](images/donate.png)
 
+## Screen: /pl
+
+- **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading. Under it, an **Amount** field and **Create invoice**. A bad link shows **This payment link is not valid.** and no form.
+- **Actions:** Type a whole number of sats and press **Create invoice**. Success replaces the button with the Bitcoin invoice QR and **Pay**. A failed mint keeps the form and shows **Could not create the invoice.** Change language from the header.
+- **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
+
+### Variant: default
+
+The person's name, the amount field, and **Create invoice**. No QR yet.
+
+![21.gifts pay link](images/pl.png)
+
+### Variant: invoice
+
+The amount is kept, **Create invoice** is gone, and the Bitcoin invoice QR plus **Pay** are shown.
+
+![21.gifts pay link invoice](images/pl-invoice.png)
+
+### Variant: invalid
+
+The gift glyph and **This payment link is not valid.** No amount field.
+
+![21.gifts pay link invalid](images/pl-invalid.png)
+
+### Variant: failed
+
+The form stays, and **Could not create the invoice.** is shown under it.
+
+![21.gifts pay link failed](images/pl-failed.png)
+
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — when `account.setup === 'name'` (after `/wallet` when that step is required).

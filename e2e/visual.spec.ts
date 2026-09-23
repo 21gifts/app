@@ -774,6 +774,76 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate');
   });
 
+  test('screen /pl', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 21 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 1,
+            maxSats: 100000000,
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+    await shotScreen(page, 'screen-pl');
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Create invoice' }).click();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    await shotScreen(page, 'state-pl-invoice');
+  });
+
+  test('screen /pl invalid', async ({ page }) => {
+    await page.goto('/pl');
+    await expect(page.getByText('This payment link is not valid.')).toBeVisible();
+    await shotScreen(page, 'state-pl-invalid');
+  });
+
+  test('screen /pl failed', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        if (route.request().url().includes('/invoice')) {
+          await route.fulfill({ status: 502, contentType: 'application/json', body: '{}' });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 1,
+            maxSats: 100000000,
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}&fail=1`);
+    await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Create invoice' }).click();
+    await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+    await shotScreen(page, 'state-pl-failed');
+  });
+
   test('screen /wallet', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

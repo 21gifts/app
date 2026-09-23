@@ -2018,7 +2018,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
-- **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. Does not add a `/pl` page.
+- **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. The browser page for that URL is `/pl`.
 - **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopStickerOverlay` (sticker QR payload).
 
 ## Function: buildShopStickerSvg
@@ -2048,6 +2048,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `handle` (`username@domain` or a bare username), `format`.
 - **Returns / side effects:** `21gifts-shop-sticker-<username>.<format>`; the username is lowercased and reduced to `a-z 0-9 . _ -` (`member` when nothing is left). No I/O.
 - **Used by:** `ShopStickerOverlay`.
+
+## Function: decodeLnurl
+
+- **Purpose:** BIP-173 bech32-decode an `lnurl` string back to its cleartext URL. Not bech32m.
+- **Inputs:** `value` string, either uniform case.
+- **Returns / side effects:** The URL, or `null` when the value is empty, mixed-case, the wrong HRP, or a bad checksum. No I/O.
+- **Used by:** `payLinkUsername`.
+
+## Function: payLinkUsername
+
+- **Purpose:** Read the username from an Open CryptoPay `lightning` query when it points at this site's `/.well-known/lnurlp/` path.
+- **Inputs:** `lightning` LNURL string, `pageHost` (port and a leading `www.` are ignored; loopback and raw IPs expect `21.gifts`).
+- **Returns / side effects:** The decoded username, or `null`. Does not call the network.
+- **Used by:** `PayLinkScreen`.
+
+## Function: PayLinkScreen
+
+- **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
+- **Inputs:** `lightning` query string.
+- **Returns / side effects:** Renders the welcome glyph and, after `GET /pay/:username`, the name and amount form. **Create invoice** posts the amount. No forum and no auth gate.
+- **Used by:** `PayLinkPage`.
+
+## Function: PayLinkPage
+
+- **Purpose:** `/pl` server page. Reads the `lightning` query and renders `PayLinkScreen`.
+- **Inputs:** `searchParams` promise with an optional `lightning` string or array.
+- **Returns / side effects:** The payment screen. Does not 404 when the query is missing.
+- **Used by:** The App Router at `/pl`.
 
 ## Function: setLightningAddress
 
