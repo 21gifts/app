@@ -363,7 +363,7 @@
 
 ## Function: NameSetup
 
-- **Purpose:** Display-name form when `account.setup === 'name'` (after wallet when that step is required).
+- **Purpose:** Display-name form when `account.setup === 'name'`.
 - **Inputs:** None besides `NameForm` store reads.
 - **Returns / side effects:** Heading **Your name** at the top and `NameForm` (`variant="onboarding"`) with **Continue** at the bottom of the screen. No `LogoutButton`.
 - **Used by:** Screen `/setup/name`.

@@ -15,7 +15,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
- * `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
+ * `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
  * or `/welcome`.
  *
  * @returns The card element.
