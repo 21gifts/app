@@ -428,7 +428,7 @@ flowchart TB
 | Map                  | `Map`                         | `/map`                                                                              |
 | Point of sale        | `Banknote`                    | `/pos`                                                                              |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
-| Wallet               | `Wallet`                      | `/wallet` — Activate, or Show recovery phrase under Advanced functions              |
+| Wallet               | `Wallet`                      | `/wallet` — Add recovery phrase, or Show recovery phrase under Advanced functions   |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |
@@ -1042,9 +1042,9 @@ Handbook states: place, composer-place, composer-place-map, composer-place-confi
 
 ### `/wallet`
 
-Fill `AppShell` (page frame); `topLeft={<WalletChromeLeft />}` (same arrow geometry as `ProfileChromeLeft`) `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. An account that cannot show a phrase yet: labeled **Activate recovery phrase**. After Activate, and for an account that already can: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
+Fill `AppShell` (page frame); `topLeft={<WalletChromeLeft />}` (same arrow geometry as `ProfileChromeLeft`) `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. Missing or empty `passkeyCredentialId`: labeled **Add recovery phrase** and a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Add button beside it).
 
-Handbook states: default (activate), phrase, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
+Handbook states: default (Add recovery phrase), phrase, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
 
 ### `/pos`
 

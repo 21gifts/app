@@ -39,7 +39,7 @@ import {
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
-  finishPasskeyReplace,
+  finishPasskeySeed,
   isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   WRONG_ACCOUNT_ERROR,
@@ -76,7 +76,7 @@ import {
   resolveLightningAddress,
   startPasskeyAuthentication,
   startPasskeyRegistration,
-  startPasskeyReplace,
+  startPasskeySeed,
   unlinkLightningAddress,
 } from '@/lib/api';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
@@ -3576,29 +3576,27 @@ describe('finishPasskeyAuthentication', () => {
   });
 });
 
-describe('startPasskeyReplace', () => {
+describe('startPasskeySeed', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
-    await expect(startPasskeyReplace('sess')).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/replace/begin', {
+    await expect(startPasskeySeed('sess')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/seed/begin', {
       method: 'POST',
       headers: { Authorization: 'Bearer sess' },
     });
   });
 
-  it('throws on a non-ok response', async () => {
-    stubFetch({ ok: false, status: 401, body: {} });
-    await expect(startPasskeyReplace('sess')).rejects.toThrow(
-      'Failed to start passkey replace: 401',
-    );
+  it('throws on a 409 response', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Conflict' } });
+    await expect(startPasskeySeed('sess')).rejects.toThrow('Failed to start passkey seed: 409');
   });
 });
 
-describe('finishPasskeyReplace', () => {
-  it('returns the account from the wrapped body', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: { account } });
-    await expect(finishPasskeyReplace('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/replace/finish', {
+describe('finishPasskeySeed', () => {
+  it('returns the owner account body', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/seed/finish', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
@@ -3610,8 +3608,8 @@ describe('finishPasskeyReplace', () => {
 
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 400, body: {} });
-    await expect(finishPasskeyReplace('sess', 'ch', {})).rejects.toThrow(
-      'Failed to finish passkey replace: 400',
+    await expect(finishPasskeySeed('sess', 'ch', {})).rejects.toThrow(
+      'Failed to finish passkey seed: 400',
     );
   });
 });

@@ -61,21 +61,21 @@ export const accountSchema = z.object({
   missing: z.array(z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules'])),
   /**
    * True when a recovery phrase is required for this account (new register or
-   * first-passkey claim). It does not ask the member to confirm the phrase.
+   * first-passkey claim). The app does not read this for Wallet view.
    * Optional so older api bodies still parse; omitted or false means an
    * existing member.
    */
   walletRequired: z.boolean().optional(),
   /**
-   * Epoch ms recorded after an existing member activates a passkey that can
-   * show a recovery phrase, so Wallet can offer Show next time instead of
-   * Activate. Not a confirmation. Null when that has not been recorded.
+   * Epoch ms the api may record after a recovery phrase was shown. The app
+   * does not read this field. Null when that has not been recorded.
    * Optional so older api bodies still parse.
    */
   walletBackupSeenAt: z.number().nullable().optional(),
   /**
-   * Current passkey credential id (base64url). Optional so current develop
-   * api bodies still parse; missing means reveal cannot bind allowCredentials.
+   * Seed passkey credential id (base64url). The api sends this only when
+   * `walletRequired` is true, and then it is the seed passkey. A missing,
+   * null, or empty value means the account has no seed yet.
    */
   passkeyCredentialId: z.string().min(1).nullable().optional(),
   /**
@@ -131,10 +131,10 @@ export const accountSchema = z.object({
  * responses, and the app does not route to `/wallet` for it. `missing` lists
  * fields still unset for posting; skipped steps stay listed until filled.
  * `walletRequired` is true for new passkey accounts; omitted or false on
- * existing members. `walletBackupSeenAt` is the epoch ms recorded after an
- * existing member activates a passkey that can show a recovery phrase, so
- * Wallet can offer Show next time instead of Activate. Not a confirmation.
- * Null when that has not been recorded.
+ * existing members. The app does not consult it for Wallet. `walletBackupSeenAt`
+ * is epoch ms the api may record after a phrase was shown; the app does not
+ * read it. `passkeyCredentialId` is the seed passkey id when the api sends it
+ * (only with `walletRequired` true); missing, null, or empty means no seed.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).

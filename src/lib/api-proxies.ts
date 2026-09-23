@@ -61,6 +61,26 @@ export async function proxyAuthPasskeyReplaceFinishPost(request: Request): Promi
 }
 
 /**
+ * Proxies POST /auth/passkey/seed/begin to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeySeedBeginPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/seed/begin');
+}
+
+/**
+ * Proxies POST /auth/passkey/seed/finish to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeySeedFinishPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/seed/finish');
+}
+
+/**
  * Proxies GET /me to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).

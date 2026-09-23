@@ -939,7 +939,7 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet');
     await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Activate recovery phrase' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
     await shotScreen(page, 'screen-wallet');
   });
 
@@ -961,6 +961,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
         }),
       });
     });
@@ -987,6 +988,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
         }),
       });
     });
@@ -1014,6 +1016,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
         }),
       });
     });

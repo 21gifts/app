@@ -202,7 +202,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'wallet.png',
     visual: 'screen-wallet',
-    needle: 'Activate recovery phrase',
+    needle: 'Add recovery phrase',
   },
   {
     route: '/wallet',

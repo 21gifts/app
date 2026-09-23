@@ -7,6 +7,8 @@ import {
   proxyAuthPasskeyRegisterFinishPost,
   proxyAuthPasskeyReplaceBeginPost,
   proxyAuthPasskeyReplaceFinishPost,
+  proxyAuthPasskeySeedBeginPost,
+  proxyAuthPasskeySeedFinishPost,
   proxyMeWalletBackupSeenPost,
   proxyLightningAddressGet,
   proxyGiftsGet,
@@ -108,6 +110,23 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/auth/passkey/replace/finish', { method: 'POST', body: '{}' }),
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/replace/finish');
+  });
+
+  it('proxyAuthPasskeySeedBeginPost hits POST /auth/passkey/seed/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeySeedBeginPost(
+      new Request('http://localhost/auth/passkey/seed/begin', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/seed/begin');
+  });
+
+  it('proxyAuthPasskeySeedFinishPost hits POST /auth/passkey/seed/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeySeedFinishPost(
+      new Request('http://localhost/auth/passkey/seed/finish', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/auth/passkey/seed/finish');
   });
 
   it('proxyMeWalletBackupSeenPost hits POST /me/wallet-backup-seen', async () => {
