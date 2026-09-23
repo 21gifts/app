@@ -1407,7 +1407,7 @@ The open charge has already run out (0:00). Refreshing it fails. **Cancel** stay
 
 ### Variant: history
 
-No open charge. History shows ₿5 **Cancelled** at **Sep 20, 2026, 12:00 PM** and ₿8 **Expired** at **Sep 20, 2026, 11:00 AM** (UTC). The amount form is back.
+No open charge. Each history row shows the amount, **Cancelled** or **Expired**, and the time the charge was created (`createdAt`). Here that is ₿5 **Cancelled** at **Sep 20, 2026, 12:00 PM** and ₿8 **Expired** at **Sep 20, 2026, 11:00 AM** (UTC). The amount form is back.
 
 ![21.gifts point of sale history](images/pos-history.png)
 
