@@ -437,6 +437,65 @@ function isMobileProject(testInfo: { project: { name: string } }): boolean {
   return testInfo.project.name.startsWith('mobile-');
 }
 
+/** Member card for the signed-in e2e account, so `/profile` can show the public facts. */
+async function stubOwnMember(page: Page): Promise<void> {
+  await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        profileMessage: null,
+        postCount: 14,
+        replyCount: 0,
+      }),
+    });
+  });
+}
+
+/** Signed-in Ada on `/profile`, with the public member stub from `stubOwnMember`. */
+async function seedProfilePage(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+}
+
+test.beforeEach(async ({ page }) => {
+  await stubOwnMember(page);
+});
+
 test.beforeEach(async ({ page }, testInfo) => {
   const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
   await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
@@ -2128,7 +2187,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-moderator-appointed', false);
   });
 
-  test('screen /profile', async ({ page }) => {
+  test('screen /profile', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -2157,9 +2216,119 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
+    await stubOwnMember(page);
     await page.goto('/profile');
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toBeVisible();
+    await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toBeVisible();
+    }
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('state /profile sticker-open', async ({ page }, testInfo) => {
+    await seedProfilePage(page);
+    await page.goto('/profile');
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-profile-sticker-open');
+      return;
+    }
+    await page.getByRole('button', { name: 'Shop sticker' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await shotScreen(page, 'state-profile-sticker-open', false);
+  });
+
+  test('state /profile posts-open', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await expect(page.getByText('Second post from Ada.')).toBeVisible();
+    await shotScreen(page, 'state-profile-posts-open');
+  });
+
+  test('state /profile replies-open', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'basis',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route(/\/forum\/members\/acc_e2e\/replies$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '55555555-5555-4555-8555-555555555555',
+              parentId: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'A reply from Ada.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/profile');
+    await page.getByRole('button', { name: '1 reactions' }).click();
+    await expect(page.getByText('A reply from Ada.')).toBeVisible();
+    await shotScreen(page, 'state-profile-replies-open');
   });
 
   test('screen /pos', async ({ page }) => {

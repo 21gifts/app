@@ -339,6 +339,62 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('—')).toBeNull();
   });
 
+  it('factsOnly shows the public gifts facts without the profile heading or Message', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, fundingReviewedAt: 1_700_000_000_000 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByRole('heading', { name: 'Profile' })).toBeNull();
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Shop sticker' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Message' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Verified' }));
+    expect(
+      screen.getByText('A moderator has met this person in real life and confirmed they are real.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Reviewed by a moderator on/ }));
+    expect(screen.getByText('Reviewed by a moderator')).toBeTruthy();
+  });
+
+  it('factsOnly shows the role pill without a reviewed pill', () => {
+    renderWithLocale(
+      <MemberProfileScreen factsOnly profile={profile} received={[]} donated={[]} />,
+    );
+    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Reviewed by a moderator on/ })).toBeNull();
+  });
+
+  it('factsOnly omits the role and reviewed pills for a basis member', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, role: 'basis' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Reviewed by a moderator on/ })).toBeNull();
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+  });
+
+  it('factsOnly shows the reviewed pill without a role pill', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, role: 'basis', fundingReviewedAt: 1_700_000_000_000 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.getByRole('button', { name: /Reviewed by a moderator on/ })).toBeTruthy();
+  });
+
   it('shows name, address, chart empty state, and role pill', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByRole('heading', { name: 'Profile' }).className).toContain('sm:text-3xl');

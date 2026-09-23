@@ -1143,6 +1143,27 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('group', { name: 'Fiat currency' })",
   },
   {
+    route: '/profile',
+    id: 'sticker-open',
+    image: 'profile-sticker-open.png',
+    visual: 'state-profile-sticker-open',
+    needle: 'state-profile-sticker-open',
+  },
+  {
+    route: '/profile',
+    id: 'posts-open',
+    image: 'profile-posts-open.png',
+    visual: 'state-profile-posts-open',
+    needle: 'Second post from Ada.',
+  },
+  {
+    route: '/profile',
+    id: 'replies-open',
+    image: 'profile-replies-open.png',
+    visual: 'state-profile-replies-open',
+    needle: 'A reply from Ada.',
+  },
+  {
     route: '/members/[accountId]',
     id: 'default',
     image: 'members.png',

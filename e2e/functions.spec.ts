@@ -19,6 +19,28 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 
 const PAY_INVOICE = 'lnbc21n1exampleinvoice';
 
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        profileMessage: null,
+        postCount: 14,
+        replyCount: 0,
+      }),
+    });
+  });
+});
+
 test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
   page,
   request,

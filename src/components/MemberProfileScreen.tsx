@@ -180,16 +180,20 @@ const IDLE_BOARD = {
  * a moderator and the subject is someone else. About me is not a forum post.
  *
  * @param props - Member profile and both activity series for the chart.
+ *   `factsOnly` (default false) keeps every hook and returns only the public
+ *   pills, gifts block, post/reaction counts, and activity feed.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
   profile,
   received,
   donated = [],
+  factsOnly = false,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  factsOnly?: boolean;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -1173,18 +1177,174 @@ export function MemberProfileScreen({
       ? profile.profileMessage.id
       : undefined;
 
-  return (
-    <>
-      {overlayRequirement !== null ? (
-        <RequirementsOverlay
-          requirement={overlayRequirement}
-          onDismiss={() => {
-            setOverlayRequirement(null);
-            pendingPostRef.current = null;
+  const giftsBlock = (
+    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+        {t('profile.giftsHeading')}
+      </p>
+      {address !== null && address.trim() !== '' ? (
+        <p className="min-w-0 truncate font-mono text-sm text-app-fg">{address}</p>
+      ) : (
+        <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
+      )}
+      {showQr && qr !== null ? (
+        <div className="flex flex-col items-center gap-3">
+          <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setStickerOpen(true);
+            }}
+          >
+            {t('profile.shopSticker')}
+          </Button>
+        </div>
+      ) : null}
+      {stickerOpen && qr !== null && address !== null ? (
+        <ShopStickerOverlay
+          qrValue={qr}
+          handle={address}
+          onClose={() => {
+            setStickerOpen(false);
           }}
-          onSatisfied={onOverlaySatisfied}
         />
       ) : null}
+    </div>
+  );
+  const countButtons = (
+    <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">
+      <Button
+        type="button"
+        size="sm"
+        variant={activity === 'posts' ? 'primary' : 'secondary'}
+        aria-pressed={activity === 'posts'}
+        onClick={() => openActivity('posts')}
+      >
+        {t('profile.postCount', { count: String(profile.postCount) })}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant={activity === 'replies' ? 'primary' : 'secondary'}
+        aria-pressed={activity === 'replies'}
+        onClick={() => openActivity('replies')}
+      >
+        {t('profile.replyCount', { count: String(profile.replyCount) })}
+      </Button>
+    </div>
+  );
+  const activityFeed =
+    activity === 'posts' || activity === 'replies' ? (
+      activityLoading ? (
+        <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
+      ) : activityError ? (
+        <div className="flex flex-col items-center gap-4">
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.error')}
+          </p>
+          <Button type="button" onClick={() => void loadActivityFeed(activity)}>
+            {t('view.retry')}
+          </Button>
+        </div>
+      ) : (
+        <>
+          {activity === 'posts' ? (
+            <ForumBoard {...IDLE_BOARD} messages={activityMessages} {...sharedForumProps} />
+          ) : (
+            <ForumBoard
+              {...IDLE_BOARD}
+              messages={activityMessages}
+              {...sharedForumProps}
+              onToggleExpand={(messageId) => {
+                const parentId = activityReplies?.find(
+                  (message) => message.id === messageId,
+                )?.parentId;
+                if (typeof parentId === 'string' && parentId.trim() !== '') {
+                  router.push(`/messages/${parentId}`);
+                }
+              }}
+            />
+          )}
+          {activityMessages.length < activityCount ? (
+            <p role="status" className="text-center text-sm text-app-muted">
+              {t('profile.activityLatest', {
+                shown: String(activityMessages.length),
+                total: String(activityCount),
+              })}
+            </p>
+          ) : null}
+        </>
+      )
+    ) : null;
+
+  const requirementOverlay =
+    overlayRequirement !== null ? (
+      <RequirementsOverlay
+        requirement={overlayRequirement}
+        onDismiss={() => {
+          setOverlayRequirement(null);
+          pendingPostRef.current = null;
+        }}
+        onSatisfied={onOverlaySatisfied}
+      />
+    ) : null;
+
+  if (factsOnly) {
+    return (
+      <>
+        {requirementOverlay}
+        {roleKeys !== null || showFundingReviewed ? (
+          <div className="flex w-full flex-wrap items-center justify-center gap-2">
+            {roleKeys !== null ? (
+              <button
+                type="button"
+                aria-expanded={roleHintOpen}
+                onClick={() => {
+                  setRoleHintOpen((open) => !open);
+                }}
+                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+              >
+                {t(roleKeys.label)}
+              </button>
+            ) : null}
+            {showFundingReviewed ? (
+              <button
+                type="button"
+                aria-expanded={fundingHintOpen}
+                onClick={() => {
+                  setFundingHintOpen((open) => !open);
+                }}
+                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+              >
+                {t('funding.reviewedOn', {
+                  date: formatForumTimeFromMs(fundingReviewedAt, locale),
+                })}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {roleHintOpen && roleKeys !== null ? (
+          <p role="status" className="text-center text-xs text-app-muted">
+            {t(roleKeys.hint)}
+          </p>
+        ) : null}
+        {fundingHintOpen && showFundingReviewed ? (
+          <p role="status" className="text-center text-xs text-app-muted">
+            {t('funding.reviewedBy')}
+          </p>
+        ) : null}
+        {giftsBlock}
+        {countButtons}
+        {activityFeed}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {requirementOverlay}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <Card surface={false}>
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -1281,108 +1441,15 @@ export function MemberProfileScreen({
                 : t('location.unset')}
             </p>
           </div>
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('profile.giftsHeading')}
-            </p>
-            {address !== null && address.trim() !== '' ? (
-              <p className="min-w-0 truncate font-mono text-sm text-app-fg">{address}</p>
-            ) : (
-              <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
-            )}
-            {showQr && qr !== null ? (
-              <div className="flex flex-col items-center gap-3">
-                <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setStickerOpen(true);
-                  }}
-                >
-                  {t('profile.shopSticker')}
-                </Button>
-              </div>
-            ) : null}
-            {stickerOpen && qr !== null && address !== null ? (
-              <ShopStickerOverlay
-                qrValue={qr}
-                handle={address}
-                onClose={() => {
-                  setStickerOpen(false);
-                }}
-              />
-            ) : null}
-          </div>
-          <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">
-            <Button
-              type="button"
-              size="sm"
-              variant={activity === 'posts' ? 'primary' : 'secondary'}
-              aria-pressed={activity === 'posts'}
-              onClick={() => openActivity('posts')}
-            >
-              {t('profile.postCount', { count: String(profile.postCount) })}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={activity === 'replies' ? 'primary' : 'secondary'}
-              aria-pressed={activity === 'replies'}
-              onClick={() => openActivity('replies')}
-            >
-              {t('profile.replyCount', { count: String(profile.replyCount) })}
-            </Button>
-          </div>
+          {giftsBlock}
+          {countButtons}
           {account !== null &&
           roleAtLeast(account.role, 'moderator') &&
           listedProfile.id !== account.id ? (
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />
           ) : null}
         </Card>
-        {activity === 'posts' || activity === 'replies' ? (
-          activityLoading ? (
-            <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
-          ) : activityError ? (
-            <div className="flex flex-col items-center gap-4">
-              <p role="alert" className="text-center text-sm text-app-danger">
-                {t('forum.error')}
-              </p>
-              <Button type="button" onClick={() => void loadActivityFeed(activity)}>
-                {t('view.retry')}
-              </Button>
-            </div>
-          ) : (
-            <>
-              {activity === 'posts' ? (
-                <ForumBoard {...IDLE_BOARD} messages={activityMessages} {...sharedForumProps} />
-              ) : (
-                <ForumBoard
-                  {...IDLE_BOARD}
-                  messages={activityMessages}
-                  {...sharedForumProps}
-                  onToggleExpand={(messageId) => {
-                    const parentId = activityReplies?.find(
-                      (message) => message.id === messageId,
-                    )?.parentId;
-                    if (typeof parentId === 'string' && parentId.trim() !== '') {
-                      router.push(`/messages/${parentId}`);
-                    }
-                  }}
-                />
-              )}
-              {activityMessages.length < activityCount ? (
-                <p role="status" className="text-center text-sm text-app-muted">
-                  {t('profile.activityLatest', {
-                    shown: String(activityMessages.length),
-                    total: String(activityCount),
-                  })}
-                </p>
-              ) : null}
-            </>
-          )
-        ) : null}
+        {activityFeed}
       </div>
     </>
   );
