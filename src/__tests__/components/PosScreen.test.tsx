@@ -251,7 +251,7 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
-    expect(await screen.findByText('Expired')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
     expect(calls).toBe(2);
   });
 
