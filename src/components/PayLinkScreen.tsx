@@ -36,6 +36,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const postingRef = useRef(false);
+  const generationRef = useRef(0);
   /* v8 ignore next 8 -- SSR has no navigator */
   const isSmartphone =
     typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
@@ -44,6 +45,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
   useEffect(() => {
     let active = true;
+    generationRef.current += 1;
     setInvalid(false);
     setProfile(null);
     setInvoice(null);
@@ -58,14 +60,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
     void fetch(`/pay/${encodeURIComponent(username)}`)
       .then(async (response) => {
-        if (!active) {
-          return;
-        }
         if (!response.ok) {
+          if (!active) {
+            return;
+          }
           setInvalid(true);
           return;
         }
-        setProfile((await response.json()) as PayProfile);
+        const body = (await response.json()) as PayProfile;
+        if (!active) {
+          return;
+        }
+        setProfile(body);
       })
       .catch(() => {
         if (!active) {
@@ -87,6 +93,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (postingRef.current || invoice !== null) {
       return;
     }
+    const generation = generationRef.current;
     if (!/^\d+$/.test(amount)) {
       setFormError('amount');
       return;
@@ -110,6 +117,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ amountSats }),
       });
+      if (generationRef.current !== generation) {
+        return;
+      }
       if (!response.ok) {
         setFormError('failed');
         return;
@@ -117,10 +127,14 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       const result = (await response.json()) as { pr: string; amountSats: number };
       setInvoice(result.pr);
     } catch {
-      setFormError('failed');
+      if (generationRef.current === generation) {
+        setFormError('failed');
+      }
     } finally {
-      postingRef.current = false;
-      setPosting(false);
+      if (generationRef.current === generation) {
+        postingRef.current = false;
+        setPosting(false);
+      }
     }
   };
 

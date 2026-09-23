@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { PayLinkScreen } from '@/components/PayLinkScreen';
+import { encodeLnurl } from '@/lib/lnurl';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -151,6 +152,22 @@ describe('PayLinkScreen', () => {
     });
   });
 
+  it('ignores an error status that arrives after unmount', async () => {
+    let resolveGet: (response: Response) => void = () => undefined;
+    mockFetch(
+      () =>
+        new Promise((resolve) => {
+          resolveGet = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    unmount();
+    resolveGet(new Response('missing', { status: 404 }));
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+  });
+
   it('ignores a profile failure that arrives after unmount', async () => {
     let rejectGet: (error: Error) => void = () => undefined;
     mockFetch(
@@ -199,6 +216,64 @@ describe('PayLinkScreen', () => {
     fireEvent.click(pay);
     Object.defineProperty(window, 'location', { configurable: true, value: previous });
     expect(hrefs[0]?.startsWith('intent:lightning:LNBC210N1PAYLINK#Intent;')).toBe(true);
+  });
+
+  it('does not apply an in-flight invoice after the link changes', async () => {
+    const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
+    let releaseInvoice: (response: Response) => void = () => undefined;
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        return new Promise((resolve) => {
+          releaseInvoice = resolve;
+        });
+      }
+      if (url.endsWith('/pay/bob')) {
+        return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
+      }
+      return Response.json(profile);
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    view.rerender(<PayLinkScreen lightning={bob} />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    releaseInvoice(Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 }));
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Ada Lovelace' })).toBeNull();
+    });
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+  });
+
+  it('does not show a stale invoice failure after the link changes', async () => {
+    const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
+    let rejectInvoice: (error: Error) => void = () => undefined;
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        return new Promise((_resolve, reject) => {
+          rejectInvoice = reject;
+        });
+      }
+      if (url.endsWith('/pay/bob')) {
+        return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
+      }
+      return Response.json(profile);
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    view.rerender(<PayLinkScreen lightning={bob} />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    rejectInvoice(new Error('offline'));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Could not create the invoice.')).toBeNull();
   });
 
   it('drops the previous person when the link changes', async () => {
