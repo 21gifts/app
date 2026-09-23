@@ -575,7 +575,7 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText(viaQuoted.text, { exact: false })).toBeTruthy();
+      expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
     });
     expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
     expect(fetchAvailable).not.toHaveBeenCalled();
