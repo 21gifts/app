@@ -219,6 +219,13 @@
 - **Used by:** `postNotificationLevel`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/amount-unit
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/amount-unit`. JSON body `{ unit: "btc"|"fiat" }` returns the owner Account. The same unit again is still 200.
+- **Errors:** Upstream 401, 400 invalid unit, or 502 if the api is unreachable.
+- **Used by:** `setAmountUnit`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/rules-agreement
 
 - **Purpose:** Same-origin proxy to record living-room rules agreement on the signed-in account (`rulesAgreedAt`).

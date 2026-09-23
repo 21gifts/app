@@ -19,7 +19,8 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
-import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
+import { AmountEntry } from '@/components/AmountEntry';
+import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
   type Conversation,
@@ -921,18 +922,14 @@ export function InboxScreen({
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               {showAmount ? (
-                <Field
-                  className="w-24"
+                <AmountEntry
+                  className="w-36"
                   label={t('inbox.amountLabel')}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
                   placeholder={t('forum.payAmountPlaceholder')}
                   value={amountDraft}
                   disabled={posting || messagesLoading}
-                  onChange={(event) => onAmountDraftChange(event.target.value)}
+                  rateDay={rateDay}
+                  onValueChange={onAmountDraftChange}
                 />
               ) : null}
               <IconButton
@@ -962,18 +959,14 @@ export function InboxScreen({
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               {showAmount ? (
-                <Field
-                  className="w-24"
+                <AmountEntry
+                  className="w-36"
                   label={t('inbox.amountLabel')}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
                   placeholder={t('forum.payAmountPlaceholder')}
                   value={amountDraft}
                   disabled={posting || messagesLoading}
-                  onChange={(event) => onAmountDraftChange(event.target.value)}
+                  rateDay={rateDay}
+                  onValueChange={onAmountDraftChange}
                 />
               ) : null}
               <IconButton

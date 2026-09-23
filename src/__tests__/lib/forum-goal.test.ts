@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { forumGoalPercent, parseForumAskAmount } from '@/lib/forum-goal';
+import { forumGoalPercent, parseForumAskAmount, parseForumAskAmountInUnit } from '@/lib/forum-goal';
 
 describe('forumGoalPercent', () => {
   it('returns 110 for 23100/21000', () => {
@@ -42,5 +42,16 @@ describe('parseForumAskAmount', () => {
     expect(parseForumAskAmount('abc')).toBeNull();
     expect(parseForumAskAmount('0')).toBeNull();
     expect(parseForumAskAmount('10000001')).toBeNull();
+  });
+});
+
+const DAY = { sats: 100_000_000, usd: '100000.00', chf: null, eur: null, php: null };
+
+describe('parseForumAskAmountInUnit', () => {
+  it('keeps a bitcoin draft and converts fiat inside the ask range', () => {
+    expect(parseForumAskAmountInUnit('21000', 'btc', DAY, 'USD')).toBe(21000);
+    expect(parseForumAskAmountInUnit('1.00', 'fiat', DAY, 'USD')).toBe(1000);
+    expect(parseForumAskAmountInUnit('1.00', 'fiat', null, 'USD')).toBeNull();
+    expect(parseForumAskAmountInUnit('0', 'fiat', DAY, 'USD')).toBeNull();
   });
 });

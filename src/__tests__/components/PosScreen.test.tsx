@@ -4,6 +4,14 @@ import { PosScreen } from '@/components/PosScreen';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
+  return {
+    ...actual,
+    fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  };
+});
+
 const ACCOUNT = {
   id: 'acc_1',
   linkingKey: null,

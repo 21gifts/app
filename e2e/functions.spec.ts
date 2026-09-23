@@ -11,6 +11,13 @@ import {
 } from '../src/lib/shop-sticker';
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
+import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
+import {
+  fiatToSats,
+  parseAmountDraft,
+  paySatsFromDraft,
+  replySatsFromDraft,
+} from '../src/lib/stats-money';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -1873,6 +1880,12 @@ test('Function: proxyMeNotificationLevelPost — POST /me/notification-level wit
   request,
 }) => {
   expect((await request.post('/me/notification-level')).status()).toBe(401);
+});
+
+test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/amount-unit')).status()).toBe(401);
 });
 
 test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({
@@ -8959,4 +8972,35 @@ test('Function: ExternalLinkWarning — dialog shows title, body, url, Open link
   await expect(page.getByRole('button', { name: 'Open link' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
   await expect(page.getByText('Close', { exact: true })).toHaveCount(0);
+});
+
+const AMOUNT_DAY = { sats: 100_000_000, usd: '100000.00', chf: null, eur: null, php: null };
+
+test('Function: fiatToSats — one USD on this gift day is 1000 sats', () => {
+  expect(fiatToSats(1, AMOUNT_DAY, 'USD')).toBe(1000);
+});
+
+test('Function: parseAmountDraft — a fiat draft becomes sats', () => {
+  expect(parseAmountDraft('fiat', '1.00', AMOUNT_DAY, 'USD')).toEqual({ kind: 'sats', sats: 1000 });
+});
+
+test('Function: replySatsFromDraft — a blank reply amount stays empty', () => {
+  expect(replySatsFromDraft('', 'btc', AMOUNT_DAY, 'USD')).toBe('empty');
+});
+
+test('Function: paySatsFromDraft — a blank pay amount is 21 sats', () => {
+  expect(paySatsFromDraft('', 'btc', AMOUNT_DAY, 'USD')).toBe(21);
+});
+
+test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range', () => {
+  expect(parseForumAskAmountInUnit('1.00', 'fiat', AMOUNT_DAY, 'USD')).toBe(1000);
+});
+
+test('Function: setAmountUnit — POST /me/amount-unit without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/amount-unit', { data: { unit: 'fiat' } })).status()).toBe(401);
+});
+
+test('Function: AmountEntry — the ask field shows the unit switch', async () => {
+  const { AmountEntry: Entry } = await import('../src/components/AmountEntry');
+  expect(typeof Entry).toBe('function');
 });

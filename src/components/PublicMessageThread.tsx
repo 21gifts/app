@@ -21,7 +21,14 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt } from '@/lib/roles';
-import { latestRateDay, shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import {
+  latestRateDay,
+  paySatsFromDraft,
+  replySatsFromDraft,
+  shownFiatForSats,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -29,27 +36,6 @@ const PAY_POLL_MS = 2000;
 
 /** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;
-
-/**
- * Parses the reply-composer sats draft.
- *
- * @param raw - Amount field value.
- * @returns Whole sats (`0` becomes `1`), `'empty'` when blank, or `'invalid'`.
- */
-function parseReplySats(raw: string): number | 'empty' | 'invalid' {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    return 'empty';
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return 'invalid';
-  }
-  const sats = Number.parseInt(trimmed, 10);
-  if (!Number.isSafeInteger(sats)) {
-    return 'invalid';
-  }
-  return sats < 1 ? 1 : sats;
-}
 
 /**
  * True when the api rejected an unpaid reply.
@@ -189,6 +175,8 @@ export function PublicMessageThread(props: {
   const { root, highlightId, seedReply, onRootDeleted } = props;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { fiat } = useFiatPreference();
+  const amountUnit = account?.amountUnit ?? 'btc';
   const setAccount = useAuthStore((state) => state.setAccount);
   const [note, setNote] = useState(root);
   const [payMessageId, setPayMessageId] = useState<string | null>(null);
@@ -790,19 +778,10 @@ export function PublicMessageThread(props: {
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
-    const rawAmount = payDraft.trim();
-    let sats: number;
-    if (rawAmount === '') {
-      sats = DEFAULT_FORUM_PAY_SATS;
-    } else if (!/^\d+$/.test(rawAmount)) {
+    const sats = paySatsFromDraft(payDraft, amountUnit, rateDay, fiat);
+    if (sats === 'invalid') {
       setPayError('amount');
       return;
-    } else {
-      sats = Number.parseInt(rawAmount, 10);
-      if (sats <= 0 || !Number.isSafeInteger(sats)) {
-        setPayError('amount');
-        return;
-      }
     }
     const token = session;
     const messageId = payMessageId;
@@ -953,7 +932,7 @@ export function PublicMessageThread(props: {
       setReplyFormError('tooLong');
       return;
     }
-    const parsed = parseReplySats(replyAmountDraft);
+    const parsed = replySatsFromDraft(replyAmountDraft, amountUnit, rateDay, fiat);
     const token = session;
     const parentId = expandedId;
     const exempt = isReplyPaymentExempt(account, note.accountId);

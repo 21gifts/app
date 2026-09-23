@@ -8,7 +8,11 @@ import {
   formatFiatTick,
   formatUsdDisplay,
   formatUsdTick,
+  fiatToSats,
   latestRateDay,
+  parseAmountDraft,
+  paySatsFromDraft,
+  replySatsFromDraft,
   satsToFiatAmount,
   shownFiatForSats,
   type FiatRateDay,
@@ -165,5 +169,51 @@ describe('satsToFiatAmount', () => {
 
   it('returns 0.00 for zero sats', () => {
     expect(satsToFiatAmount(0, RATE_DAY, 'USD')).toBe('0.00');
+  });
+});
+
+describe('fiatToSats', () => {
+  it('inverts a gift-day rate and clamps a positive dust amount to 1', () => {
+    expect(fiatToSats(1, RATE_DAY, 'USD')).toBe(1000);
+    expect(fiatToSats(0, RATE_DAY, 'USD')).toBe(0);
+    expect(fiatToSats(0.0000001, RATE_DAY, 'USD')).toBe(1);
+  });
+
+  it('returns null without a usable rate', () => {
+    expect(fiatToSats(1, null, 'USD')).toBeNull();
+    expect(fiatToSats(1, { ...RATE_DAY, sats: 0 }, 'USD')).toBeNull();
+    expect(fiatToSats(1, { ...RATE_DAY, chf: null }, 'CHF')).toBeNull();
+    expect(fiatToSats(1, { ...RATE_DAY, usd: '0.00' }, 'USD')).toBeNull();
+    expect(fiatToSats(Number.NaN, RATE_DAY, 'USD')).toBeNull();
+    expect(fiatToSats(-1, RATE_DAY, 'USD')).toBeNull();
+    expect(fiatToSats(1, { ...RATE_DAY, usd: 'nope' }, 'USD')).toBeNull();
+    expect(fiatToSats(Number.MAX_VALUE, RATE_DAY, 'USD')).toBeNull();
+  });
+});
+
+describe('parseAmountDraft', () => {
+  it('reads whole sats and a two-decimal fiat draft', () => {
+    expect(parseAmountDraft('btc', '', RATE_DAY, 'USD')).toEqual({ kind: 'empty' });
+    expect(parseAmountDraft('btc', '21', RATE_DAY, 'USD')).toEqual({ kind: 'sats', sats: 21 });
+    expect(parseAmountDraft('btc', '1.5', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '1.00', RATE_DAY, 'USD')).toEqual({ kind: 'sats', sats: 1000 });
+    expect(parseAmountDraft('fiat', '1,', RATE_DAY, 'USD')).toEqual({ kind: 'sats', sats: 1000 });
+    expect(parseAmountDraft('fiat', '1.234', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '1.00', null, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('btc', '9'.repeat(40), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+  });
+});
+
+describe('replySatsFromDraft and paySatsFromDraft', () => {
+  it('keeps an empty reply empty and bills 0 as 1', () => {
+    expect(replySatsFromDraft('', 'btc', RATE_DAY, 'USD')).toBe('empty');
+    expect(replySatsFromDraft('0', 'btc', RATE_DAY, 'USD')).toBe(1);
+    expect(replySatsFromDraft('nope', 'fiat', RATE_DAY, 'USD')).toBe('invalid');
+  });
+
+  it('treats a blank pay field as 21 sats', () => {
+    expect(paySatsFromDraft('  ', 'fiat', RATE_DAY, 'USD')).toBe(21);
+    expect(paySatsFromDraft('0', 'btc', RATE_DAY, 'USD')).toBe('invalid');
+    expect(paySatsFromDraft('1.00', 'fiat', RATE_DAY, 'USD')).toBe(1000);
   });
 });

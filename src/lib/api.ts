@@ -34,6 +34,7 @@ import {
   vapidPublicSchema,
   viewProfileSchema,
   type Account,
+  type AmountUnit,
   type NotificationLevel,
   type ContactMessage,
   type Conversation,
@@ -667,6 +668,30 @@ export async function postNotificationLevel(
   });
   if (!response.ok) {
     throw new Error('Could not save notification level.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets the signed-in account amount unit.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param unit - `btc` or `fiat`.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function setAmountUnit(session: string, unit: AmountUnit): Promise<Account> {
+  const response = await fetch('/me/amount-unit', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ unit }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save amount unit.');
   }
   return accountSchema.parse(await response.json());
 }

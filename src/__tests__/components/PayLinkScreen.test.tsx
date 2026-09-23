@@ -62,7 +62,7 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '101' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it('shows the invoice QR after a successful mint', async () => {

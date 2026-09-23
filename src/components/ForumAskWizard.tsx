@@ -2,15 +2,15 @@
 
 import { ArrowLeft, ImagePlus, Loader2, X } from 'lucide-react';
 import { useRef, type ChangeEvent, type ReactElement } from 'react';
+import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { useTranslations } from '@/components/LocaleProvider';
-import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
-import { parseForumAskAmount } from '@/lib/forum-goal';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
+import type { FiatRateDay } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 
@@ -68,9 +68,9 @@ export function ForumAskWizard({
 }): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
-  const { numberFormat } = useNumberFormat();
+  const amountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const parsedAsk = parseForumAskAmount(askDraft);
+  const parsedAsk = parseForumAskAmountInUnit(askDraft, amountUnit, rateDay, fiat);
   const stepTitle =
     step === 1
       ? t('forum.askHowMuch')
@@ -124,38 +124,14 @@ export function ForumAskWizard({
       ) : null}
       {step === 1 ? (
         <>
-          <label
-            htmlFor="forum-ask-amount"
-            className="flex flex-col gap-1 text-left text-sm text-app-fg"
-          >
-            {t('forum.askAmountLabel')}
-            <span className="flex min-h-11 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base">
-              <span aria-hidden="true" className="text-app-muted">
-                ₿
-              </span>
-              <input
-                id="forum-ask-amount"
-                aria-label={t('forum.askAmountLabel')}
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                value={askDraft}
-                disabled={posting}
-                onChange={(event) => {
-                  onAskDraftChange(event.target.value);
-                }}
-                className="min-w-0 flex-1 bg-transparent text-base text-app-fg"
-              />
-            </span>
-          </label>
-          {parsedAsk !== null ? (
-            <p className="text-sm tabular-nums lining-nums text-app-muted">
-              <span>{formatBitcoin(parsedAsk, numberFormat)}</span>
-              {preferredFiatSuffix(parsedAsk, rateDay, fiat, numberFormat)}
-            </p>
-          ) : null}
+          <AmountEntry
+            id="forum-ask-amount"
+            label={t('forum.askAmountLabel')}
+            value={askDraft}
+            onValueChange={onAskDraftChange}
+            disabled={posting}
+            rateDay={rateDay}
+          />
           <Button
             type="button"
             variant="primary"

@@ -661,12 +661,19 @@
 - **Returns / side effects:** A `<section>` wrapper. No network. Nested panel for public notes and overlays; page-body columns (`LoginCard`, profile, welcome, inbox) use `surface={false}`.
 - **Used by:** `PublicMessageLoader`, `LoginCard`, profile and setup screens.
 
+## Function: AmountEntry
+
+- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch.
+- **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`.
+- **Returns / side effects:** A labeled input, the switch, and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
+- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosScreen`.
+
 ## Function: Field
 
 - **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted.
 - **Inputs:** `label`, optional `id` / `className`, `multiline` (textarea when true), plus native input or textarea attributes.
 - **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
-- **Used by:** `ForumBoard`.
+- **Used by:** Labeled text primitive. Amount fields use `AmountEntry` instead.
 
 ## Function: APP_HEIGHT_BOOTSTRAP_SCRIPT
 
@@ -1765,9 +1772,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Latest gift-day totals for preferred-fiat conversion. Fetches `GET /gifts/stats`
   once on mount via `fetchGiftStats` and resolves `latestRateDay` of `spendOverTime`; a failed
   fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
-- **Inputs:** None.
-- **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`.
+- **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
+- **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosScreen`.
 
 ## Function: shownFiatForSats
 
@@ -3419,3 +3426,52 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Keeps each Happyland photograph and its localized caption together in a semantic figure.
 - **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
 - **Output:** Renders a directly served WebP with intrinsic dimensions, descriptive alternative text and a visible caption. Eager loading keeps the photographs visible in the embedded local preview.
+
+## Function: fiatToSats
+
+- **Purpose:** Inverse of `satsToFiatAmount` on the same gift-day totals. A positive amount that rounds to 0 becomes 1 sat.
+- **Inputs:** Fiat `amount`, gift `day` or null, fiat `code`.
+- **Returns / side effects:** Whole sats, or null when the day or that currency is missing or zero. No I/O.
+- **Used by:** `parseAmountDraft`.
+
+## Function: parseAmountDraft
+
+- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most two fraction digits.
+- **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
+- **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, or `{ kind: 'sats', sats }`. No I/O.
+- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosScreen`.
+
+## Function: replySatsFromDraft
+
+- **Purpose:** Reply and inbox amount. Blank stays empty. Zero is billed as 1 sat.
+- **Inputs:** Raw `draft`, typing `unit`, gift `day` or null, fiat `code`.
+- **Returns / side effects:** Whole sats, `empty`, or `invalid`. No I/O.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`, `InboxLoader`.
+
+## Function: paySatsFromDraft
+
+- **Purpose:** Pay-sheet amount. A blank field is 21 sats in either typing unit. Zero or a bad draft is invalid.
+- **Inputs:** Raw `draft`, typing `unit`, gift `day` or null, fiat `code`.
+- **Returns / side effects:** Whole sats, or `invalid`. No I/O.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
+
+## Function: parseForumAskAmountInUnit
+
+- **Purpose:** Ask amount in the active typing unit. Bitcoin uses `parseForumAskAmount`. Fiat converts, then the same 1..10_000_000 range.
+- **Inputs:** Raw draft, `unit`, gift day or null, fiat code.
+- **Returns / side effects:** Whole sats in range, or null. No I/O.
+- **Used by:** `ForumAskWizard`, `ForumLoader`.
+
+## Function: setAmountUnit
+
+- **Purpose:** POST `/me/amount-unit` with JSON `{ unit }` (`btc` or `fiat`) and the bearer session.
+- **Inputs:** Session token and `unit`.
+- **Returns / side effects:** Parsed owner `Account`. Throws when the response is not ok or fails `accountSchema`.
+- **Used by:** `AmountEntry`.
+
+## Function: proxyMeAmountUnitPost
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/amount-unit` with JSON `{ unit }`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ unit }`.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/me/amount-unit`.

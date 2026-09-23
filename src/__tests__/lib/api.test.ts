@@ -63,6 +63,7 @@ import {
   postMessageInvoice,
   postMessageVideo,
   postNotificationLevel,
+  setAmountUnit,
   postPushSubscription,
   postWalletBackupSeen,
   agreeToRules,
@@ -833,6 +834,33 @@ describe('postNotificationLevel', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(postNotificationLevel('sess', 'active')).rejects.toThrow();
+  });
+});
+
+describe('setAmountUnit', () => {
+  it('posts the unit and returns the validated account', async () => {
+    const updated = { ...account, amountUnit: 'fiat' as const };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(setAmountUnit('sess', 'fiat')).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/amount-unit', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ unit: 'fiat' }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setAmountUnit('sess', 'btc')).rejects.toThrow('Could not save amount unit.');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setAmountUnit('sess', 'btc')).rejects.toThrow();
   });
 });
 

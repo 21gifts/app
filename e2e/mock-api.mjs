@@ -1581,6 +1581,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/amount-unit') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a unit of btc or fiat' });
+      return;
+    }
+    if (parsed?.unit !== 'btc' && parsed?.unit !== 'fiat') {
+      json(res, 400, { error: 'Expected a JSON body with a unit of btc or fiat' });
+      return;
+    }
+    account.amountUnit = parsed.unit;
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/notification-level') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

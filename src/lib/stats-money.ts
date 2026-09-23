@@ -245,3 +245,138 @@ export function satsToFiatAmount(
     .padStart(2, '0');
   return `${whole}.${frac}`;
 }
+
+/** A trimmed amount draft, as whole sats or a reason it is not. */
+export type AmountDraft =
+  | { kind: 'empty' }
+  | { kind: 'invalid' }
+  | { kind: 'sats'; sats: number };
+
+const FIAT_DRAFT = /^\d+([.,]\d{0,2})?$/;
+
+/**
+ * Inverse of {@link satsToFiatAmount} on the same gift-day totals.
+ *
+ * @param amount - Fiat amount (not a grouped string).
+ * @param day - Gift day with `sats > 0`, or `null`.
+ * @param code - Selected fiat.
+ * @returns Whole sats, `0` when `amount` is 0, `1` when a positive amount
+ *   rounds to 0, or `null` when the day or that fiat is missing or zero.
+ */
+export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCode): number | null {
+  if (day === null || day.sats <= 0 || !Number.isFinite(amount) || amount < 0) {
+    return null;
+  }
+  const raw = fiatFieldOnDay(day, code);
+  if (raw === null) {
+    return null;
+  }
+  const dayFiat = Number(raw);
+  if (!Number.isFinite(dayFiat) || dayFiat === 0) {
+    return null;
+  }
+  if (amount === 0) {
+    return 0;
+  }
+  const sats = Math.round((amount * day.sats) / dayFiat);
+  if (!Number.isFinite(sats) || !Number.isSafeInteger(sats)) {
+    return null;
+  }
+  if (sats === 0) {
+    return 1;
+  }
+  return sats;
+}
+
+/**
+ * Parses a bitcoin or fiat typing draft into whole sats.
+ *
+ * @param unit - `btc` for digits-only sats, `fiat` for a two-decimal amount.
+ * @param draft - Raw field value.
+ * @param day - Gift day used for fiat conversion, or `null`.
+ * @param code - Preferred fiat.
+ * @returns `empty` when blank, `invalid` when the draft or rate cannot be used,
+ *   or `sats` (including 0; callers still clamp).
+ */
+export function parseAmountDraft(
+  unit: 'btc' | 'fiat',
+  draft: string,
+  day: FiatRateDay | null,
+  code: FiatCode,
+): AmountDraft {
+  const trimmed = draft.trim();
+  if (trimmed === '') {
+    return { kind: 'empty' };
+  }
+  if (unit === 'btc') {
+    if (!/^\d+$/.test(trimmed)) {
+      return { kind: 'invalid' };
+    }
+    const sats = Number.parseInt(trimmed, 10);
+    if (!Number.isSafeInteger(sats)) {
+      return { kind: 'invalid' };
+    }
+    return { kind: 'sats', sats };
+  }
+  if (!FIAT_DRAFT.test(trimmed)) {
+    return { kind: 'invalid' };
+  }
+  const normalized = trimmed.replace(',', '.');
+  const numeric = normalized.endsWith('.') ? normalized.slice(0, -1) : normalized;
+  const amount = Number(numeric);
+  if (!Number.isFinite(amount)) {
+    return { kind: 'invalid' };
+  }
+  const sats = fiatToSats(amount, day, code);
+  if (sats === null) {
+    return { kind: 'invalid' };
+  }
+  return { kind: 'sats', sats };
+}
+
+/**
+ * Reply and inbox amount: blank stays blank, and 0 is billed as 1 sat.
+ *
+ * @param draft - Raw field value.
+ * @param unit - Active typing unit.
+ * @param day - Gift day, or `null`.
+ * @param code - Preferred fiat.
+ * @returns Whole sats, `empty`, or `invalid`.
+ */
+export function replySatsFromDraft(
+  draft: string,
+  unit: 'btc' | 'fiat',
+  day: FiatRateDay | null,
+  code: FiatCode,
+): number | 'empty' | 'invalid' {
+  const parsed = parseAmountDraft(unit, draft, day, code);
+  if (parsed.kind !== 'sats') {
+    return parsed.kind;
+  }
+  return parsed.sats < 1 ? 1 : parsed.sats;
+}
+
+/**
+ * Pay-sheet amount. A blank field is 21 sats in either unit.
+ *
+ * @param draft - Raw field value.
+ * @param unit - Active typing unit.
+ * @param day - Gift day, or `null`.
+ * @param code - Preferred fiat.
+ * @returns Whole sats, or `invalid`.
+ */
+export function paySatsFromDraft(
+  draft: string,
+  unit: 'btc' | 'fiat',
+  day: FiatRateDay | null,
+  code: FiatCode,
+): number | 'invalid' {
+  const parsed = parseAmountDraft(unit, draft, day, code);
+  if (parsed.kind === 'empty') {
+    return 21;
+  }
+  if (parsed.kind !== 'sats' || parsed.sats < 1) {
+    return 'invalid';
+  }
+  return parsed.sats;
+}
