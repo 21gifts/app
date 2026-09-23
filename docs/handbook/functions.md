@@ -426,10 +426,45 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading`, default `profile.back`).
+- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading` | `nav.back`, default `profile.back`).
 - **Inputs:** Optional `backHref` and `backLabelKey`; catalog via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. No network.
-- **Used by:** `ProfilePage`, `WalletPage`, `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Used by:** `ProfilePage`, `WalletChromeLeft`, `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` no longer mounts `ProfileChromeLeft` directly (it mounts `WalletChromeLeft`, which renders `ProfileChromeLeft`).
+
+## Function: resetWalletReturn
+
+- **Purpose:** Clear the in-memory `/wallet` return path so back falls back to the forum (`/welcome`) after a direct open or after tests reset module memory.
+- **Inputs:** None.
+- **Returns / side effects:** `void`. Drops the remembered path; does not touch `localStorage` or `sessionStorage`.
+- **Used by:** Wallet return tests, `RememberWalletReturn` tests, `WalletChromeLeft` tests (`afterEach`).
+
+## Function: rememberWalletReturn
+
+- **Purpose:** Remember a safe in-app path (not Wallet itself) as the `/wallet` back target. Rejects protocol-relative URLs, `..`, whitespace, `#`, overlong paths, and `/wallet` itself without clobbering a previous good path.
+- **Inputs:** `path` string (pathname, optionally with a query string).
+- **Returns / side effects:** `void`. Writes module memory only when the path is a safe in-app route other than Wallet.
+- **Used by:** `RememberWalletReturn`.
+
+## Function: walletBackHref
+
+- **Purpose:** Read the remembered in-app path for `/wallet` back, or `/welcome` when nothing is remembered (direct open / full load).
+- **Inputs:** None (reads module memory).
+- **Returns / side effects:** The remembered path string, or `WALLET_BACK_FALLBACK` (`/welcome`). No network and no storage.
+- **Used by:** `WalletChromeLeft`.
+
+## Function: RememberWalletReturn
+
+- **Purpose:** Client recorder mounted in the root layout. On each pathname/search change, calls `rememberWalletReturn` with the current in-app path so `/wallet` can later link back there.
+- **Inputs:** `usePathname` and `useSearchParams`. Non-empty query is appended as `?…`.
+- **Returns / side effects:** `null`. Side effect is module memory via `rememberWalletReturn`. No storage.
+- **Used by:** `RootLayout` (inside `ThemeProvider`, wrapped in `Suspense`).
+
+## Function: WalletChromeLeft
+
+- **Purpose:** Client `/wallet` chrome that renders `ProfileChromeLeft`. The first paint links back to `/welcome` so server and client match. After mount, back uses the path remembered in this tab. Forum fallback uses `profile.back`; any other path uses `nav.back`. Wordmark stays `/welcome`.
+- **Inputs:** `walletBackHref()` from module memory, read after mount; catalog via `ProfileChromeLeft`.
+- **Returns / side effects:** `ProfileChromeLeft`. No `router.back()`, no click interceptor, no second wordmark.
+- **Used by:** `WalletPage`.
 
 ## Function: MessagesChromeLeft
 

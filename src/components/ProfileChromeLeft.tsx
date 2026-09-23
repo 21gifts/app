@@ -13,8 +13,9 @@ export interface ProfileChromeLeftProps {
   /**
    * Catalog key for the icon-only back aria-label. Default `profile.back`;
    * `/moderate/group` passes `moderate.heading` with `backHref="/moderate"`.
+   * `/wallet` passes `nav.back` when returning to a non-forum in-app page.
    */
-  backLabelKey?: 'profile.back' | 'inbox.back' | 'moderate.heading';
+  backLabelKey?: 'profile.back' | 'inbox.back' | 'moderate.heading' | 'nav.back';
 }
 
 /**
