@@ -2250,6 +2250,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
+    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-pos-open');
   });
 
@@ -2398,6 +2399,7 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByText('Cancelled')).toBeVisible();
     await expect(page.getByText('Expired')).toBeVisible();
+    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-pos-history');
   });
 
