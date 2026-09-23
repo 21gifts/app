@@ -140,6 +140,19 @@ describe('PlaceField', () => {
     expect(screen.queryByLabelText('Place name')).toBeNull();
   });
 
+  it('closes the place panel while a post is in flight', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const view = renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    view.rerender(<PlaceField place={null} disabled onChange={() => undefined} />);
+    await waitFor(() => {
+      expect(screen.queryByText('The map is not available.')).toBeNull();
+    });
+  });
+
   it('keeps the attach control disabled and confirms a blank label as null', async () => {
     const onChange = vi.fn();
     const listeners = new Map<string, (event?: unknown) => void>();

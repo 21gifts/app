@@ -66,6 +66,12 @@ export function PlaceField(props: {
   const markerRef = useRef<GoogleMarker | null>(null);
 
   useEffect(() => {
+    if (props.disabled) {
+      setOpen(false);
+    }
+  }, [props.disabled]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
@@ -253,7 +259,7 @@ export function PlaceField(props: {
           </IconButton>
         </div>
       ) : null}
-      {open && (unavailable || mapsKey !== null) ? (
+      {open && !props.disabled && (unavailable || mapsKey !== null) ? (
         <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
           {unavailable ? (
             <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
@@ -265,6 +271,7 @@ export function PlaceField(props: {
                 maxLength={80}
                 aria-label={t('forum.placeLabel')}
                 value={labelDraft}
+                disabled={props.disabled}
                 onChange={(event) => {
                   setLabelDraft(event.target.value);
                 }}
@@ -275,6 +282,7 @@ export function PlaceField(props: {
                   type="button"
                   variant="secondary"
                   className="mt-3"
+                  disabled={props.disabled}
                   onClick={() => {
                     const trimmed = labelDraft.trim();
                     props.onChange({
