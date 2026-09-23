@@ -1393,6 +1393,12 @@ No open charge. History shows a cancelled row and an expired row. The amount for
 
 ![21.gifts point of sale history](images/pos-history.png)
 
+### Variant: need-username
+
+Setup is finished and the username is empty. Link **Set a username first.** No address and no amount form.
+
+![21.gifts point of sale need username](images/pos-need-username.png)
+
 ### Variant: need-address
 
 Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi address first.** No amount form.

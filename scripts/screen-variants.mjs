@@ -1088,6 +1088,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'need-username',
+    image: 'pos-need-username.png',
+    visual: 'state-pos-need-username',
+    needle: 'Set a username first.',
+  },
+  {
+    route: '/pos',
     id: 'need-address',
     image: 'pos-need-address.png',
     visual: 'state-pos-need-address',
