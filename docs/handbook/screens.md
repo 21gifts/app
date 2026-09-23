@@ -1164,6 +1164,30 @@ Empty copy **No shops yet — add the first one.** Composer still present.
 
 ![21.gifts shops error](images/shops-error.png)
 
+### Variant: place
+
+One shop note with a place. The card shows a MapPin link **Happyland** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
+
+![21.gifts shops place](images/shops-place.png)
+
+### Variant: composer-place
+
+**Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.**
+
+![21.gifts shops composer place](images/shops-composer-place.png)
+
+### Variant: composer-place-confirm
+
+**Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
+
+![21.gifts shops composer place confirm](images/shops-composer-place-confirm.png)
+
+### Variant: composer-place-set
+
+A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed. The shop list is still empty.
+
+![21.gifts shops composer place set](images/shops-composer-place-set.png)
+
 ## Screen: /map
 
 - **URL:** `/map` — signed-in map of every forum note that has a pin. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.

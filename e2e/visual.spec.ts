@@ -8896,6 +8896,117 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-shops-error');
   });
+
+  async function stubPlaceMap(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      class MapShim {
+        private readonly el: HTMLElement;
+
+        constructor(el: HTMLElement) {
+          this.el = el;
+        }
+
+        setCenter(): void {}
+
+        addListener(
+          event: string,
+          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+        ): void {
+          if (event !== 'click') {
+            return;
+          }
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+      class MarkerShim {
+        setPosition(): void {}
+        getPosition(): null {
+          return null;
+        }
+        addListener(): void {}
+      }
+      (window as unknown as { google?: unknown }).google = {
+        maps: { Map: MapShim, Marker: MarkerShim },
+      };
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: 'e2e' }),
+      });
+    });
+  }
+
+  test('shops place', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-place',
+              name: 'Ada',
+              text: 'Here\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByRole('link', { name: 'Happyland' })).toBeVisible();
+    await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-place');
+  });
+
+  test('shops composer-place', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await expect(page.getByText('The map is not available.')).toBeVisible();
+    await shotScreen(page, 'state-shops-composer-place');
+  });
+
+  test('shops composer-place-confirm', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-composer-place-confirm', false);
+  });
+
+  test('shops composer-place-set', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-shops-composer-place-set');
+  });
 });
 
 test.describe('map screens', () => {
