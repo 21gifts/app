@@ -43,7 +43,7 @@ export function giftsLightningAddress(
  *
  * Null when {@link giftsLightningAddress} is null. The URL is
  * `https://<domain>/pl/?lightning=` plus the uppercase LNURL of
- * `https://<domain>/.well-known/lnurlp/<local>`. Does not add a `/pl` page.
+ * `https://<domain>/.well-known/lnurlp/<local>`.
  *
  * @param username - Stored LUD-16 local-part, or null/blank.
  * @param hostname - Site host (`21.gifts`, `dev.21.gifts`, `localhost`).

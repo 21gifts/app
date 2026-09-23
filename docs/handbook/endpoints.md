@@ -14,6 +14,20 @@
 - **Used by:** Lightning wallets.
 - **Auth:** none.
 
+## Endpoint: GET /pay/[username]
+
+- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`) from the api.
+- **Errors:** Upstream 404 when the person cannot be paid, 502 when the linked address cannot be resolved.
+- **Used by:** `PayLinkScreen`.
+- **Auth:** none.
+
+## Endpoint: POST /pay/[username]/invoice
+
+- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats }`.
+- **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
+- **Used by:** `PayLinkScreen` after **Create invoice**.
+- **Auth:** none.
+
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]
 
 - **Purpose:** CORS preflight for LUD-16.
