@@ -7,6 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, Card, Field } from '@/components/ui';
+import { formatForumTime } from '@/lib/forum-time';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import {
   cancelPosCharge,
@@ -42,7 +43,7 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
  * @returns The point-of-sale card.
  */
 export function PosScreen(): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
@@ -285,16 +286,21 @@ export function PosScreen(): ReactElement {
           {error}
         </p>
       ) : null}
-      {state !== null && state.history.length > 0 ? (
+      {state !== null && pastCharges(state.history, charge).length > 0 ? (
         <div className="flex flex-col gap-2 border-t border-app-border pt-4">
           <h2 className="text-sm font-medium text-app-fg">{t('pos.history')}</h2>
-          <ul className="flex flex-col gap-1 text-sm text-app-fg">
-            {state.history.map((row) => (
-              <li key={row.id} className="flex justify-between gap-3">
-                <span className="tabular-nums lining-nums">
-                  {formatBitcoin(row.amountSats, numberFormat)}
+          <ul className="flex flex-col gap-2 text-sm text-app-fg">
+            {pastCharges(state.history, charge).map((row) => (
+              <li key={row.id} className="flex flex-col gap-0.5">
+                <span className="flex justify-between gap-3">
+                  <span className="tabular-nums lining-nums">
+                    {formatBitcoin(row.amountSats, numberFormat)}
+                  </span>
+                  <span className="text-app-subtle">{t(statusKey(row))}</span>
                 </span>
-                <span className="text-app-subtle">{t(statusKey(row))}</span>
+                <time dateTime={row.createdAt} className="text-xs text-app-subtle">
+                  {formatForumTime(row.createdAt, locale)}
+                </time>
               </li>
             ))}
           </ul>
@@ -302,6 +308,14 @@ export function PosScreen(): ReactElement {
       ) : null}
     </Card>
   );
+}
+
+/** History is every charge except the one still open on the till. */
+function pastCharges(history: PosCharge[], charge: PosCharge | null): PosCharge[] {
+  if (charge === null) {
+    return history;
+  }
+  return history.filter((row) => row.id !== charge.id);
 }
 
 /** Catalog key for a history row status. */

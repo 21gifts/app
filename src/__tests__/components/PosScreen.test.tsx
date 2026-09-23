@@ -157,33 +157,29 @@ describe('PosScreen', () => {
   });
 
   it('lists cancelled and expired history', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          charge: null,
-          history: [
-            {
-              id: 'c2',
-              amountSats: 5,
-              status: 'cancelled',
-              createdAt: new Date().toISOString(),
-              expiresAt: new Date().toISOString(),
-            },
-            {
-              id: 'c3',
-              amountSats: 8,
-              status: 'expired',
-              createdAt: new Date().toISOString(),
-              expiresAt: new Date().toISOString(),
-            },
-          ],
-        }),
-      ),
-    );
+    const history = [
+      {
+        id: 'c2',
+        amountSats: 5,
+        status: 'cancelled' as const,
+        createdAt: '2026-09-20T12:00:00.000Z',
+        expiresAt: '2026-09-20T12:05:00.000Z',
+      },
+      {
+        id: 'c3',
+        amountSats: 8,
+        status: 'expired' as const,
+        createdAt: '2026-09-20T11:00:00.000Z',
+        expiresAt: '2026-09-20T11:05:00.000Z',
+      },
+    ];
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history })));
     renderWithLocale(<PosScreen />);
     expect(await screen.findByText('Cancelled')).toBeTruthy();
     expect(screen.getByText('Expired')).toBeTruthy();
+    expect(
+      [...document.querySelectorAll('time')].map((node) => node.getAttribute('dateTime')),
+    ).toEqual(['2026-09-20T12:00:00.000Z', '2026-09-20T11:00:00.000Z']);
   });
 
   it('hides the QR on a phone', async () => {
@@ -254,7 +250,7 @@ describe('PosScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
   });
 
   it('refetches once when the open charge is already expired', async () => {

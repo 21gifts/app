@@ -2206,7 +2206,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-open');
   });
 
@@ -2493,7 +2493,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -2554,7 +2554,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-refresh-failed');
   });
 
@@ -2607,6 +2607,8 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByText('Cancelled')).toBeVisible();
     await expect(page.getByText('Expired')).toBeVisible();
+    await expect(page.getByText('Sep 20, 2026, 12:00 PM')).toBeVisible();
+    await expect(page.getByText('Sep 20, 2026, 11:00 AM')).toBeVisible();
     await page.getByRole('heading', { name: 'History' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-pos-history');
   });
