@@ -129,6 +129,39 @@ describe('PlaceField', () => {
     expect(onChange).toHaveBeenCalledWith({ lat: 14.6, lng: 121, label: 'Stall' });
   });
 
+  it('restores the confirmed pin when the map opens again', async () => {
+    const listeners = new Map<string, (event?: unknown) => void>();
+    const map = {
+      setCenter: vi.fn(),
+      addListener: (event: string, handler: (event?: unknown) => void) => {
+        listeners.set(event, handler);
+      },
+    };
+    const Marker = vi.fn(() => ({
+      setPosition: () => undefined,
+      getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+      addListener: () => undefined,
+    }));
+    (window as { google?: unknown }).google = { maps: { Map: vi.fn(() => map), Marker } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
+    expect(screen.getByLabelText('Place name')).toHaveProperty('value', 'Happyland');
+    expect(Marker).toHaveBeenCalledWith({
+      position: { lat: 14.6, lng: 120.98 },
+      map,
+      draggable: true,
+    });
+  });
+
   it('does not show an empty frame while the map key is loading', () => {
     vi.stubGlobal(
       'fetch',

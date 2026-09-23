@@ -185,9 +185,26 @@ export function PlaceField(props: {
     if (maps === undefined) {
       return;
     }
-    const map = new maps.Map(el, { center: START_CENTER, zoom: 2 });
+    const saved = props.place;
+    const map = new maps.Map(el, { center: saved ?? START_CENTER, zoom: 2 });
     markerRef.current = null;
-    setMarkerPos(null);
+    setMarkerPos(saved === null ? null : { lat: saved.lat, lng: saved.lng });
+    setLabelDraft(saved?.label ?? '');
+    if (saved !== null) {
+      const savedMarker = new maps.Marker({
+        position: { lat: saved.lat, lng: saved.lng },
+        map,
+        draggable: true,
+      });
+      savedMarker.addListener('dragend', () => {
+        const next = savedMarker.getPosition();
+        if (next === null) {
+          return;
+        }
+        setMarkerPos({ lat: next.lat(), lng: next.lng() });
+      });
+      markerRef.current = savedMarker;
+    }
     map.addListener('click', (event: GoogleMapMouseEvent) => {
       if (event.latLng === null) {
         return;
@@ -208,7 +225,7 @@ export function PlaceField(props: {
       }
       setMarkerPos(pos);
     });
-    if (navigator.geolocation !== undefined) {
+    if (saved === null && navigator.geolocation !== undefined) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           map.setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
@@ -218,7 +235,7 @@ export function PlaceField(props: {
         },
       );
     }
-  }, [open, unavailable, mapsKey, scriptReady]);
+  }, [open, unavailable, mapsKey, scriptReady, props.place]);
 
   const previewText =
     props.place === null
