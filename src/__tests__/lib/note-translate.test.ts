@@ -164,16 +164,13 @@ describe('translateNote', () => {
     { translatedText: 21 },
     { translatedText: '' },
     { translatedText: '   ' },
-  ])(
-    'throws when translatedText is missing or invalid in %j',
-    async (body) => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
-      );
-      await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en')).rejects.toThrow(
-        'Translation response is invalid',
-      );
-    },
-  );
+  ])('throws when translatedText is missing or invalid in %j', async (body) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
+    );
+    await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en')).rejects.toThrow(
+      'Translation response is invalid',
+    );
+  });
 });
