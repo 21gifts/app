@@ -172,8 +172,8 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /wallet
 
 - **URL:** `/wallet` — signed-in recovery phrase.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. New accounts (`setup` is wallet) see the 12-word grid and **Continue** (no Skip, no **I saved these words**). Existing accounts see **Activate recovery phrase** until they replace the passkey; afterwards **Show recovery phrase** lives under **Advanced functions**. Optional **I saved these words** is only the `visual=confirm` fixture, not setup.
-- **Actions:** Activate a new passkey. Existing members (`walletRequired` is not true) also `POST /me/wallet-backup-seen` after a successful replace. New accounts (`setup` is wallet) continue (`POST /me/wallet-backup-seen`). Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Point of sale, Profile, Wallet, …). Opening any other signed-in page does not show the 12 words, and Continue is not required to leave.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. An account that cannot show a phrase yet sees **Activate recovery phrase**. After Activate, and for an account that already can, **Show recovery phrase** sits under **Advanced functions**. Pressing it shows the 12 words and the only-backup line. There is no confirmation and no **Continue** on the words.
+- **Actions:** Activate a new passkey. Existing members (`walletRequired` is not true) also `POST /me/wallet-backup-seen` after a successful replace, so the next visit offers **Show recovery phrase** instead of **Activate**. That post is not a confirmation. Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Point of sale, Profile, Wallet, …). Opening any other signed-in page shows that page. The 12 words appear only on `/wallet`, after **Show recovery phrase** or right after **Activate**.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
 
 ### Variant: default
@@ -188,27 +188,15 @@ Existing member, no phrase yet. **Activate recovery phrase**.
 
 ![21.gifts wallet phrase](images/wallet-phrase.png)
 
-### Variant: setup
-
-New account (`setup` is wallet) with the 12-word grid and **Continue**.
-
-![21.gifts wallet setup](images/wallet-setup.png)
-
-### Variant: confirm
-
-Optional **I saved these words** (`visual=confirm`). Not shown during setup.
-
-![21.gifts wallet confirm](images/wallet-confirm.png)
-
 ### Variant: reveal
 
-Existing member after a saved backup, no phrase in the tab. Closed **Advanced functions** holds **Show recovery phrase**.
+Account that can already show a phrase, no phrase in the tab. Closed **Advanced functions** holds **Show recovery phrase**.
 
 ![21.gifts wallet reveal](images/wallet-reveal.png)
 
 ### Variant: reveal-open
 
-Existing member after a saved backup, no phrase in the tab. Open **Advanced functions** shows **Show recovery phrase**.
+Account that can already show a phrase, no phrase in the tab. Open **Advanced functions** shows **Show recovery phrase**.
 
 ![21.gifts wallet reveal open](images/wallet-reveal-open.png)
 
@@ -233,7 +221,7 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. An unconfirmed recovery phrase does not replace that page.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 

@@ -33,8 +33,8 @@ interface OnboardingGateProps {
 
 /**
  * Hydrates the session and sends the visitor to the matching onboarding screen.
- * An unconfirmed recovery phrase is not a route: {@link nextOnboardingPath}
- * never returns `/wallet` for that step.
+ * The recovery phrase is not a setup step: {@link nextOnboardingPath} never
+ * returns `/wallet`.
  *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.

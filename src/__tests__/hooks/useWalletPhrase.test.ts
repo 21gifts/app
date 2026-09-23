@@ -43,11 +43,6 @@ vi.mock('@/lib/webauthn-browser', () => ({
   base64UrlToBytes: vi.fn((value: string) => new TextEncoder().encode(value)),
 }));
 
-const push = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
-}));
-
 const account = {
   id: 'acc_1',
   linkingKey: null as string | null,
@@ -75,7 +70,6 @@ const originalHref = window.location.href;
 beforeEach(() => {
   clearSessionPhrase();
   resetWalletCeremonyLock();
-  push.mockReset();
   useAuthStore.setState({ session: 'tok', account });
   vi.mocked(startPasskeyReplace)
     .mockReset()
@@ -151,7 +145,6 @@ describe('useWalletPhrase', () => {
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.activate();
-      await result.current.confirmSaved();
       await result.current.showPhrase();
     });
     expect(startPasskeyReplace).not.toHaveBeenCalled();
@@ -215,15 +208,6 @@ describe('useWalletPhrase', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('confirmSaved fail sets generic error', async () => {
-    vi.mocked(postWalletBackupSeen).mockRejectedValueOnce(new Error('nope'));
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.confirmSaved();
-    });
-    expect(result.current.error).toBe('generic');
-  });
-
   it('activate fail maps timeout', async () => {
     vi.mocked(startPasskeyReplace).mockRejectedValueOnce(
       Object.assign(new Error('t'), { name: 'TimeoutError' }),
@@ -283,7 +267,7 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
-  it('shows phrase, not confirm, during wallet setup', () => {
+  it('twelve words in memory are the phrase view even when setup is wallet', () => {
     rememberSessionPhrase(mnemonic);
     useAuthStore.setState({
       session: 'tok',
@@ -291,27 +275,16 @@ describe('useWalletPhrase', () => {
     });
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('phrase');
-    expect(result.current.setupWallet).toBe(true);
   });
 
-  it('asks to show the phrase during setup when the tab has no words', () => {
+  it('setup wallet with walletRequired and no words is reveal', () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, setup: 'wallet', walletRequired: true },
     });
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('reveal');
-    expect(result.current.setupWallet).toBe(true);
     expect(result.current.words).toEqual([]);
-  });
-
-  it('uses the visual confirm fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=confirm';
-    window.history.replaceState({}, '', url.toString());
-    const { result } = renderHook(() => useWalletPhrase());
-    expect(result.current.view).toBe('confirm');
-    expect(result.current.words).toHaveLength(12);
   });
 
   it('uses the visual timeout fixture', () => {
@@ -339,21 +312,6 @@ describe('useWalletPhrase', () => {
     expect(result.current.error).toBe('prfUnsupported');
   });
 
-  it('does not post backup-seen for the visual fixture phrase', async () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=confirm';
-    window.history.replaceState({}, '', url.toString());
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet' },
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.confirmSaved();
-    });
-    expect(postWalletBackupSeen).not.toHaveBeenCalled();
-  });
-
   it('hidePhrase and retry clear error state', async () => {
     rememberSessionPhrase(mnemonic);
     const { result } = renderHook(() => useWalletPhrase());
@@ -364,59 +322,6 @@ describe('useWalletPhrase', () => {
     expect(peekSessionPhrase()).toBeNull();
     expect(result.current.error).toBeNull();
     expect(result.current.status).toBe('idle');
-  });
-
-  it('keeps the stored credential id when confirmSaved omits it', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet', passkeyCredentialId: 'cred-owner' },
-    });
-    rememberSessionPhrase(mnemonic);
-    vi.mocked(postWalletBackupSeen).mockResolvedValueOnce({
-      ...account,
-      setup: 'name',
-      walletBackupSeenAt: 1,
-      passkeyCredentialId: null,
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.confirmSaved();
-    });
-    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred-owner');
-  });
-
-  it('stores a null credential id when confirmSaved and the session have none', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet', passkeyCredentialId: null },
-    });
-    rememberSessionPhrase(mnemonic);
-    vi.mocked(postWalletBackupSeen).mockResolvedValueOnce({
-      ...account,
-      setup: 'name',
-      walletBackupSeenAt: 1,
-      passkeyCredentialId: null,
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.confirmSaved();
-    });
-    expect(useAuthStore.getState().account?.passkeyCredentialId).toBeNull();
-  });
-
-  it('confirmSaved posts backup-seen and navigates', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet' },
-    });
-    rememberSessionPhrase(mnemonic);
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.confirmSaved();
-    });
-    expect(postWalletBackupSeen).toHaveBeenCalledWith('tok');
-    expect(push).toHaveBeenCalledWith('/setup/name');
-    expect(peekSessionPhrase()).toBeNull();
   });
 
   it('does not keep a phrase when the session ends during showPhrase', async () => {
@@ -553,23 +458,6 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toEqual([]);
   });
 
-  it('does not navigate when the session ends during confirmSaved', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet' },
-    });
-    rememberSessionPhrase(mnemonic);
-    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
-      useAuthStore.setState({ session: null, account: null });
-      return { ...account, setup: 'name', walletBackupSeenAt: 1 };
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.confirmSaved();
-    });
-    expect(push).not.toHaveBeenCalled();
-  });
-
   it('runs only one activate at a time', async () => {
     let release: (() => void) | undefined;
     vi.mocked(startPasskeyReplace).mockImplementation(
@@ -612,7 +500,6 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await secondHook.result.current.activate();
       await secondHook.result.current.showPhrase();
-      await secondHook.result.current.confirmSaved();
     });
     expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
     expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
@@ -706,22 +593,17 @@ describe('useWalletPhrase', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('does not surface an error when confirmSaved rejects after logout', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet' },
-    });
-    rememberSessionPhrase(mnemonic);
-    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
-      useAuthStore.setState({ session: null, account: null });
-      throw new Error('aborted');
+  it('does not post backup-seen when walletRequired is true', async () => {
+    vi.mocked(finishPasskeyReplace).mockResolvedValueOnce({
+      ...account,
+      walletRequired: true,
     });
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
-      await result.current.confirmSaved();
+      await result.current.activate();
     });
-    expect(result.current.status).toBe('idle');
-    expect(result.current.error).toBeNull();
-    expect(push).not.toHaveBeenCalled();
+    expect(postWalletBackupSeen).not.toHaveBeenCalled();
+    expect(result.current.words).toHaveLength(12);
+    expect(result.current.view).toBe('phrase');
   });
 });

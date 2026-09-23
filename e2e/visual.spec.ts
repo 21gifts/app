@@ -825,50 +825,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-phrase');
   });
 
-  test('wallet setup', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          setup: 'wallet',
-          walletRequired: true,
-          walletBackupSeenAt: null,
-          missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
-        }),
-      });
-    });
-    await page.goto('/wallet?visual=phrase');
-    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-setup');
-  });
-
-  test('wallet confirm', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          setup: 'wallet',
-          walletRequired: true,
-          walletBackupSeenAt: null,
-          missing: ['wallet', 'name', 'username', 'lightning-address', 'rules'],
-        }),
-      });
-    });
-    await page.goto('/wallet?visual=confirm');
-    await expect(page.getByRole('button', { name: 'I saved these words' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-confirm');
-  });
-
   test('wallet reveal', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
