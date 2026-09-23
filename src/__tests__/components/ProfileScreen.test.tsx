@@ -1,8 +1,8 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileScreen } from '@/components/ProfileScreen';
-import { fetchAboutMePhoto, fetchAccountActivity, putAboutMe } from '@/lib/api';
-import type { Account, AccountActivity } from '@/lib/api-types';
+import { fetchAboutMePhoto, fetchAccountActivity, fetchMember, putAboutMe } from '@/lib/api';
+import type { Account, AccountActivity, MemberProfile } from '@/lib/api-types';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
@@ -69,6 +69,18 @@ vi.mock('@/lib/api', () => ({
   fetchAboutMePhoto: vi
     .fn()
     .mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' })),
+  fetchMember: vi.fn(),
+  fetchComposeTarget: vi.fn(),
+  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchMemberPosts: vi.fn().mockResolvedValue([]),
+  fetchMemberReplies: vi.fn().mockResolvedValue([]),
+  fetchMessagePhoto: vi.fn(),
+  fetchPublicMessage: vi.fn(),
+  fetchPublicMessagePhoto: vi.fn(),
+  fetchReplies: vi.fn(),
+  openConversation: vi.fn(),
+  postMessage: vi.fn(),
+  postMessageInvoice: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-photo', () => ({
@@ -104,12 +116,36 @@ const FX_ALL = {
 
 const VIEW_KEY = 'a'.repeat(64);
 
+const OWN_MEMBER: MemberProfile = {
+  id: 'acc_1',
+  name: 'Ada',
+  username: 'alice',
+  location: null,
+  role: 'verified',
+  lightningAddress: null,
+  createdAt: '2026-01-15T12:00:00.000Z',
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  profileMessage: null,
+  postCount: 14,
+  replyCount: 0,
+  fundingReviewedAt: null,
+  trust: {
+    verifiedBy: null,
+    proposedBy: null,
+    confirmedBy: null,
+    appointedBy: null,
+  },
+};
+
 beforeEach(() => {
   hydrateReady = true;
   replace.mockReset();
   vi.mocked(fetchAccountActivity).mockReset();
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(putAboutMe).mockReset();
+  vi.mocked(fetchMember).mockReset();
+  vi.mocked(fetchMember).mockReturnValue(new Promise(() => undefined));
   vi.mocked(fetchAboutMePhoto).mockReset();
   vi.mocked(fetchAboutMePhoto).mockResolvedValue(
     new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
@@ -463,5 +499,83 @@ describe('ProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Could not save. Please try again.')).toBeTruthy();
+  });
+
+  it('shows the public gifts address, shop sticker, and post count after fetchMember', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(OWN_MEMBER);
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Shop sticker' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '14 posts' })).toBeTruthy();
+  });
+
+  it('shows forum.error and keeps address editors when fetchMember rejects, and retry fetches again', async () => {
+    vi.mocked(fetchMember).mockRejectedValue(new Error('network'));
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(screen.getByText('Name')).toBeTruthy();
+    expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(fetchMember).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchMember).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('redirects to setup/rules when fetchMember throws MissingRequirementsError', async () => {
+    vi.mocked(fetchMember).mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+  });
+
+  it('shows the retry alert when fetchMember returns null', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(null);
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+  });
+
+  it('ignores a member profile that arrives after unmount', async () => {
+    let resolveMember: (value: MemberProfile) => void = () => undefined;
+    vi.mocked(fetchMember).mockReturnValue(
+      new Promise((resolve) => {
+        resolveMember = resolve;
+      }),
+    );
+    const view = renderWithLocale(<ProfileScreen />);
+    view.unmount();
+    await act(async () => {
+      resolveMember(OWN_MEMBER);
+    });
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+  });
+
+  it('does not fetch a member profile without a session', () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<ProfileScreen />);
+    expect(fetchMember).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
+  });
+
+  it('does not fetch a member profile when the account is missing', () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    renderWithLocale(<ProfileScreen />);
+    expect(fetchMember).not.toHaveBeenCalled();
+  });
+
+  it('ignores a rejected fetchMember after unmount', async () => {
+    let rejectMember: (err: Error) => void = () => undefined;
+    vi.mocked(fetchMember).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectMember = reject;
+      }),
+    );
+    const view = renderWithLocale(<ProfileScreen />);
+    view.unmount();
+    await act(async () => {
+      rejectMember(new Error('late'));
+    });
   });
 });

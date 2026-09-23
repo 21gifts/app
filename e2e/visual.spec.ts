@@ -437,6 +437,72 @@ function isMobileProject(testInfo: { project: { name: string } }): boolean {
   return testInfo.project.name.startsWith('mobile-');
 }
 
+/** Member card for the signed-in e2e account, so `/profile` can show the public facts. */
+async function stubOwnMember(page: Page): Promise<void> {
+  await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        profileMessage: null,
+        postCount: 14,
+        replyCount: 0,
+      }),
+    });
+  });
+}
+
+/** Signed-in Ada on `/profile`, with the public member stub from `stubOwnMember`. */
+async function seedProfilePage(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+}
+
+test.beforeEach(async ({ page }) => {
+  await stubOwnMember(page);
+});
+
+/** Opens `/profile` and waits until the public member facts have rendered. */
+async function openProfile(page: Page): Promise<void> {
+  await page.goto('/profile');
+  await expect(page.getByText('alice@21.gifts')).toBeVisible();
+  await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+}
+
 test.beforeEach(async ({ page }, testInfo) => {
   const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
   await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
@@ -2084,7 +2150,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-moderator-appointed', false);
   });
 
-  test('screen /profile', async ({ page }) => {
+  test('screen /profile', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -2113,9 +2179,119 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
-    await page.goto('/profile');
+    await stubOwnMember(page);
+    await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toBeVisible();
+    await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toBeVisible();
+    }
     await shotScreen(page, 'screen-profile');
+  });
+
+  test('state /profile sticker-open', async ({ page }, testInfo) => {
+    await seedProfilePage(page);
+    await openProfile(page);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+      await shotScreen(page, 'state-profile-sticker-open');
+      return;
+    }
+    await page.getByRole('button', { name: 'Shop sticker' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await shotScreen(page, 'state-profile-sticker-open', false);
+  });
+
+  test('state /profile posts-open', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await expect(page.getByText('Second post from Ada.')).toBeVisible();
+    await shotScreen(page, 'state-profile-posts-open');
+  });
+
+  test('state /profile replies-open', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'basis',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route(/\/forum\/members\/acc_e2e\/replies$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '55555555-5555-4555-8555-555555555555',
+              parentId: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'A reply from Ada.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: '1 reactions' }).click();
+    await expect(page.getByText('A reply from Ada.')).toBeVisible();
+    await shotScreen(page, 'state-profile-replies-open');
   });
 
   test('screen /pos', async ({ page }) => {
@@ -2707,7 +2883,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
-    await page.goto('/profile');
+    await openProfile(page);
     const group = page.getByRole('group', { name: 'Fiat currency' }).last();
     await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
     await group.scrollIntoViewIfNeeded();
@@ -5648,7 +5824,7 @@ test.describe('profile activity chart variants', () => {
   test('profile receive', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_RECEIVE_STATS);
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('2026-06-01')).toBeVisible();
     await shotScreen(page, 'state-profile-receive');
   });
@@ -5656,7 +5832,7 @@ test.describe('profile activity chart variants', () => {
   test('profile usd-scale', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_RECEIVE_STATS);
-    await page.goto('/profile');
+    await openProfile(page);
     await page
       .getByRole('group', { name: 'Chart scale' })
       .getByRole('button', { name: 'USD' })
@@ -5668,7 +5844,7 @@ test.describe('profile activity chart variants', () => {
   test('profile single-day', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_SINGLE_DAY_STATS);
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('2026-06-01')).toBeVisible();
     await shotScreen(page, 'state-profile-single-day');
   });
@@ -5676,7 +5852,7 @@ test.describe('profile activity chart variants', () => {
   test('profile large-usd', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_LARGE_USD_STATS);
-    await page.goto('/profile');
+    await openProfile(page);
     await page
       .getByRole('group', { name: 'Chart scale' })
       .getByRole('button', { name: 'USD' })
@@ -5690,7 +5866,7 @@ test.describe('profile activity chart variants', () => {
     // state-profile-given-received
     await seedAdaProfile(page);
     await stubProfileStats(page, GIVEN_RECEIVED_ACTIVITY);
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('2026-06-01')).toBeVisible();
     await shotScreen(page, 'state-profile-given-received');
   });
@@ -5698,7 +5874,7 @@ test.describe('profile activity chart variants', () => {
   test('profile about-filled', async ({ page }) => {
     await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin' });
     await stubProfileStats(page, EMPTY_ACTIVITY);
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('I build on Bitcoin')).toBeVisible();
     await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
@@ -5715,7 +5891,7 @@ test.describe('profile activity chart variants', () => {
         body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
       });
     });
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('I build on Bitcoin')).toBeVisible();
     await expect(page.getByAltText('About me photo')).toBeVisible();
     await shotScreen(page, 'state-profile-about-photo');
@@ -5724,7 +5900,7 @@ test.describe('profile activity chart variants', () => {
   test('profile about-editing', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, EMPTY_ACTIVITY);
-    await page.goto('/profile');
+    await openProfile(page);
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
@@ -5741,7 +5917,7 @@ test.describe('profile activity chart variants', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/profile');
+    await openProfile(page);
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await page.getByRole('button', { name: 'Save About me' }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
@@ -5758,7 +5934,7 @@ test.describe('profile activity chart variants', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/profile');
+    await openProfile(page);
     await page.getByRole('button', { name: 'Active' }).click();
     await expect(page.getByText('Could not save notification level.')).toBeVisible();
     await shotScreen(page, 'state-profile-notification-level-error');
@@ -5767,7 +5943,7 @@ test.describe('profile activity chart variants', () => {
   test('profile push-enable-error', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, EMPTY_ACTIVITY);
-    await page.goto('/profile');
+    await openProfile(page);
     await page
       .getByRole('group', { name: 'This device' })
       .getByRole('button', { name: 'On' })
@@ -5827,14 +6003,14 @@ test.describe('profile funding states', () => {
 
   test('profile funding not-verified', async ({ page }) => {
     await seedFundingProfile(page, { role: 'basis', funding: null });
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('You are not verified yet.')).toBeVisible();
     await shotScreen(page, 'state-profile-funding-not-verified');
   });
 
   test('profile funding none', async ({ page }) => {
     await seedFundingProfile(page);
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-none');
   });
@@ -5848,7 +6024,7 @@ test.describe('profile funding states', () => {
         reviewedByName: null,
       },
     });
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(
       page.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeVisible();
@@ -5864,7 +6040,7 @@ test.describe('profile funding states', () => {
         reviewedByName: null,
       },
     });
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(
       page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
     ).toBeVisible();
@@ -5880,7 +6056,7 @@ test.describe('profile funding states', () => {
         reviewedByName: 'Ada',
       },
     });
-    await page.goto('/profile');
+    await openProfile(page);
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
   });
