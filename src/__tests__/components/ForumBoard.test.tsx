@@ -3214,9 +3214,7 @@ describe('ForumBoard', () => {
   it('renders a via nostr shop note with the shop pill', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[
-          { ...SAMPLE, via: 'nostr', payable: false, text: 'Cafe Luna\n\n#21GiftsShop' },
-        ]}
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false, text: 'Cafe Luna\n\n#21GiftsShop' }]}
         error={false}
         loading={false}
         posting={false}
