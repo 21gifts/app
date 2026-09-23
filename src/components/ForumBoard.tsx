@@ -31,11 +31,9 @@ import {
   type ForumAskStep,
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
-import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
-import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { TranslatableNoteBody } from '@/components/NoteTranslate';
 import { PlaceField } from '@/components/PlaceField';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -1061,22 +1059,12 @@ export function ForumBoard({
                 {displayText !== '' ? (
                   <div className="mt-2">
                     {message.via === 'nostr' ? (
-                      <>
-                        {truncate ? (
-                          <ForumNoteText
-                            plain
-                            text={displayText}
-                            className="whitespace-pre-wrap text-sm text-app-fg"
-                          />
-                        ) : (
-                          <LinkedText
-                            plain
-                            text={displayText}
-                            className="whitespace-pre-wrap text-sm text-app-fg"
-                          />
-                        )}
-                        <NoteTranslate plain text={displayText} />
-                      </>
+                      <TranslatableNoteBody
+                        plain
+                        text={displayText}
+                        truncate={truncate}
+                        className="whitespace-pre-wrap text-sm text-app-fg"
+                      />
                     ) : (
                       <ForumQuotedBody
                         text={displayText}
@@ -1328,22 +1316,12 @@ export function ForumBoard({
                             {reply.text !== '' ? (
                               <div className="mt-1">
                                 {reply.via === 'nostr' ? (
-                                  <>
-                                    {truncate ? (
-                                      <ForumNoteText
-                                        plain
-                                        text={reply.text}
-                                        className="whitespace-pre-wrap text-sm text-app-fg"
-                                      />
-                                    ) : (
-                                      <LinkedText
-                                        plain
-                                        text={reply.text}
-                                        className="whitespace-pre-wrap text-sm text-app-fg"
-                                      />
-                                    )}
-                                    <NoteTranslate plain text={reply.text} />
-                                  </>
+                                  <TranslatableNoteBody
+                                    plain
+                                    text={reply.text}
+                                    truncate={truncate}
+                                    className="whitespace-pre-wrap text-sm text-app-fg"
+                                  />
                                 ) : (
                                   <ForumQuotedBody
                                     text={reply.text}

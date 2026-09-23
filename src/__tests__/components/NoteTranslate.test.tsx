@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { NoteTranslate, TranslatableNoteBody } from '@/components/NoteTranslate';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Locale } from '@/lib/locale';
@@ -108,6 +108,19 @@ describe('NoteTranslate', () => {
     expect(screen.queryByText('Can anyone lend me a few satoshi this week?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show translation' }));
     expect(screen.getByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+  });
+
+  it('replaces the original body while the translation is shown', async () => {
+    const translated = 'Can anyone lend me a few satoshi this week?';
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    renderWithLocale(<TranslatableNoteBody text={german} truncate={false} />);
+    expect(await screen.findByText(german)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText(translated)).toBeTruthy();
+    expect(screen.queryByText(german)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByText(translated)).toBeNull();
   });
 
   it('autolinks a url in the translated body', async () => {

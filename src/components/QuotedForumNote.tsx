@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { TranslatableNoteBody } from '@/components/NoteTranslate';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
@@ -129,22 +129,12 @@ function QuotedForumNote({
       </Link>
       {note.text !== '' ? (
         note.via === 'nostr' ? (
-          <>
-            {truncate ? (
-              <ForumNoteText
-                plain
-                text={note.text}
-                className="whitespace-pre-wrap text-sm text-app-fg"
-              />
-            ) : (
-              <LinkedText
-                plain
-                text={note.text}
-                className="whitespace-pre-wrap text-sm text-app-fg"
-              />
-            )}
-            <NoteTranslate plain text={note.text} />
-          </>
+          <TranslatableNoteBody
+            plain
+            text={note.text}
+            truncate={truncate}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+          />
         ) : truncate ? (
           <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
         ) : (
@@ -176,8 +166,9 @@ function QuotedForumNote({
  *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
  *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), and
  *   an optional click handler for the nested card.
- * @returns The stripped paragraph, nested post cards, and translation control;
- *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
+ * @returns The stripped paragraph (replaced by the translation while shown),
+ *   nested post cards, and translation control; `null` when `text` is empty
+ *   and no quotes resolved. Unknown quote ids
  *   are loaded with `fetchPublicMessage` (catch, never throw). Short codes
  *   load with `fetchShortLink` (null, never throw); only a shown message strips
  *   that short URL.
@@ -317,19 +308,7 @@ export function ForumQuotedBody({
   return (
     <>
       {displayText !== '' ? (
-        truncate ? (
-          <ForumNoteText text={displayText} className={className} />
-        ) : (
-          <LinkedText text={displayText} className={className} />
-        )
-      ) : null}
-      {displayText !== '' ? (
-        <NoteTranslate
-          text={displayText}
-          {...(className.split(/\s+/).includes('text-app-btn-fg')
-            ? { tone: 'onButton' as const }
-            : {})}
-        />
+        <TranslatableNoteBody text={displayText} truncate={truncate} className={className} />
       ) : null}
       {resolvedNotes.map((note) => (
         <QuotedForumNote

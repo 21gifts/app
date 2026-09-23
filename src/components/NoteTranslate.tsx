@@ -10,9 +10,12 @@ import {
   type ReactElement,
 } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
+import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
+
+const DEFAULT_BODY_CLASS = 'whitespace-pre-wrap text-sm text-app-fg';
 
 /** Props for the public forum-note translation control. */
 export interface NoteTranslateProps {
@@ -22,6 +25,22 @@ export interface NoteTranslateProps {
   plain?: boolean;
   /** `onButton` uses `text-app-btn-fg` so the control stays readable on `bg-app-btn`. */
   tone?: 'default' | 'onButton';
+  /** Class for the translated body when it replaces the original. */
+  bodyClassName?: string;
+  /** Called when the translated body is shown in place of the original. */
+  onShowingTranslation?: (showing: boolean) => void;
+}
+
+/** Props for {@link TranslatableNoteBody}. */
+export interface TranslatableNoteBodyProps {
+  /** Raw public note or reply text. */
+  text: string;
+  /** When true, render original and translated bodies as plain text. */
+  plain?: boolean;
+  /** When true, collapse long bodies behind Show more. */
+  truncate?: boolean;
+  /** Paragraph class for the visible body. */
+  className?: string;
 }
 
 /**
@@ -35,6 +54,8 @@ export function NoteTranslate({
   text,
   plain = false,
   tone = 'default',
+  bodyClassName,
+  onShowingTranslation,
 }: NoteTranslateProps): ReactElement | null {
   const { locale, t } = useTranslations();
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -52,6 +73,9 @@ export function NoteTranslate({
     requestId.current += 1;
   }
 
+  const offering = available === true && shouldOfferNoteTranslate(text, locale);
+  const replacing = offering && status === 'success' && showTranslation && translatedText !== null;
+
   useEffect(() => {
     let active = true;
     void fetchTranslateAvailable().then((next) => {
@@ -64,7 +88,11 @@ export function NoteTranslate({
     };
   }, []);
 
-  if (text.trim() === '' || available !== true || !shouldOfferNoteTranslate(text, locale)) {
+  useEffect(() => {
+    onShowingTranslation?.(replacing);
+  }, [replacing, onShowingTranslation]);
+
+  if (text.trim() === '' || !offering) {
     return null;
   }
 
@@ -100,9 +128,11 @@ export function NoteTranslate({
   const controlClass = onButton
     ? 'mt-2 text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50'
     : 'mt-2 text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50';
-  const bodyClass = onButton
-    ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
-    : 'mt-2 whitespace-pre-wrap text-sm text-app-fg';
+  const bodyClass =
+    bodyClassName ??
+    (onButton
+      ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
+      : 'mt-2 whitespace-pre-wrap text-sm text-app-fg');
   const errorClass = onButton ? 'mt-2 text-sm text-app-btn-fg' : 'mt-2 text-sm text-app-danger';
 
   return (
@@ -157,5 +187,42 @@ export function NoteTranslate({
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Render a note body and replace it with the translation when the visitor asks.
+ *
+ * @param props - Body text, optional plain/truncate flags, and paragraph class.
+ * @returns Original or translated body plus the translate control, or null when text is empty.
+ * @throws Does not throw.
+ */
+export function TranslatableNoteBody({
+  text,
+  plain = false,
+  truncate = true,
+  className = DEFAULT_BODY_CLASS,
+}: TranslatableNoteBodyProps): ReactElement | null {
+  const [showingTranslation, setShowingTranslation] = useState(false);
+  if (text === '') {
+    return null;
+  }
+  const onButton = className.split(/\s+/).includes('text-app-btn-fg');
+  const original = truncate ? (
+    <ForumNoteText text={text} className={className} {...(plain ? { plain: true } : {})} />
+  ) : (
+    <LinkedText text={text} className={className} {...(plain ? { plain: true } : {})} />
+  );
+  return (
+    <>
+      {showingTranslation ? null : original}
+      <NoteTranslate
+        text={text}
+        {...(plain ? { plain: true } : {})}
+        {...(onButton ? { tone: 'onButton' as const } : {})}
+        bodyClassName={className}
+        onShowingTranslation={setShowingTranslation}
+      />
+    </>
   );
 }

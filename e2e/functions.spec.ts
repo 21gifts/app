@@ -8556,8 +8556,14 @@ test('Function: fetchTranslateAvailable — GET /translate enables Translate', a
 test('Function: translateNote — Translate then Show original', async ({ page }) => {
   await seedGermanNoteWelcome(page);
   await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
   await page.getByRole('button', { name: 'Translate' }).click();
   await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+  await page.getByRole('button', { name: 'Show original' }).click();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toHaveCount(0);
 });
 
 test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
@@ -8590,6 +8596,18 @@ test('Function: NoteTranslate — German welcome note shows Translate', async ({
   await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
   await page.getByRole('button', { name: 'Translate' }).click();
   await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+});
+
+test('Function: TranslatableNoteBody — translation replaces the original body', async ({
+  page,
+}) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
 });
 
 const RIANA_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';

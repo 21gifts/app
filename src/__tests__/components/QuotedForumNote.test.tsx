@@ -151,6 +151,7 @@ describe('ForumQuotedBody', () => {
     fireEvent.click(translateButton);
     const body = await screen.findByText('Can anyone lend me a few satoshi this week?');
     expect(body.closest('p')?.className).toContain('text-app-btn-fg');
+    expect(screen.queryByText(german)).toBeNull();
   });
 
   it('shows stored fiat on the nested post when the live rate differs', async () => {

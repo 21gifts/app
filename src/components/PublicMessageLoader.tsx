@@ -5,9 +5,8 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
-import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { TranslatableNoteBody } from '@/components/NoteTranslate';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
@@ -143,14 +142,12 @@ function PublicThreadCard({
       ) : null}
       {note.text !== '' ? (
         note.via === 'nostr' ? (
-          <>
-            <LinkedText
-              plain
-              text={note.text}
-              className="whitespace-pre-wrap text-sm text-app-fg"
-            />
-            <NoteTranslate plain text={note.text} />
-          </>
+          <TranslatableNoteBody
+            plain
+            text={note.text}
+            truncate={false}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+          />
         ) : (
           <ForumQuotedBody
             text={note.text}

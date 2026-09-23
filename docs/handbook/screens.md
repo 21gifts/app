@@ -838,7 +838,7 @@ Same German note after clicking **Translate** while POST `/translate` hangs. The
 
 ### Variant: translate-done
 
-Same German note after a successful translation. Translated body plus **Show original**.
+Same German note after a successful translation. Translated body plus **Show original**; the German original is not shown.
 
 ![21.gifts welcome translate done](images/welcome-translate-done.png)
 
@@ -1413,7 +1413,7 @@ Same German post after clicking **Translate** while POST `/translate` hangs. The
 
 ### Variant: translate-done
 
-Same German post after a successful translation. Translated body plus **Show original**.
+Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
 
 ![21.gifts member translate done](images/members-translate-done.png)
 
@@ -2430,7 +2430,7 @@ After clicking **Translate** while POST `/translate` hangs. The control is busy.
 
 ### Variant: translate-done
 
-After successful translation: **Show original**.
+After successful translation: **Show original**; the German original is not shown.
 
 ![21.gifts public message translate done](images/messages-id-translate-done.png)
 
