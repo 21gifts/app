@@ -1616,8 +1616,8 @@ export function ForumBoard({
           askCadence={askCadence}
           onAskCadenceChange={onAskCadenceChange}
           askDraft={askDraft}
-          askDraftUnit={askDraftUnit}
-          onAskDraftUnit={onAskDraftUnit}
+          {...(askDraftUnit === undefined ? {} : { askDraftUnit })}
+          {...(onAskDraftUnit === undefined ? {} : { onAskDraftUnit })}
           onAskDraftChange={onAskDraftChange}
           draft={draft}
           onDraftChange={onDraftChange}

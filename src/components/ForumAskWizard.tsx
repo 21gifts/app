@@ -137,7 +137,7 @@ export function ForumAskWizard({
             value={askDraft}
             valueUnit={draftUnit}
             onValueChange={onAskDraftChange}
-            onUnitChange={onAskDraftUnit}
+            {...(onAskDraftUnit === undefined ? {} : { onUnitChange: onAskDraftUnit })}
             disabled={posting}
             rateDay={rateDay}
           />
