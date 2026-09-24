@@ -3211,6 +3211,26 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('renders a via nostr shop note with the shop pill', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false, text: 'Cafe Luna\n\n#21GiftsShop' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'External' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
+  });
+
   it('renders a via note url as plain text and does not unfurl a quoted note', async () => {
     const quotedId = 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec';
     const quotedUrl = `https://21.gifts/messages/${quotedId}`;

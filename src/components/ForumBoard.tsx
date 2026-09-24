@@ -31,12 +31,10 @@ import {
   type ForumAskStep,
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
-import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
-import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
 import { PlaceField } from '@/components/PlaceField';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -1061,22 +1059,14 @@ export function ForumBoard({
                 {displayText !== '' ? (
                   <div className="mt-2">
                     {message.via === 'nostr' ? (
-                      <>
-                        {truncate ? (
-                          <ForumNoteText
-                            plain
-                            text={displayText}
-                            className="whitespace-pre-wrap text-sm text-app-fg"
-                          />
-                        ) : (
-                          <LinkedText
-                            plain
-                            text={displayText}
-                            className="whitespace-pre-wrap text-sm text-app-fg"
-                          />
-                        )}
-                        <NoteTranslate plain text={displayText} />
-                      </>
+                      <TranslatableNoteBody
+                        messageId={message.id}
+                        plain
+                        text={displayText}
+                        truncate={truncate}
+                        className="whitespace-pre-wrap text-sm text-app-fg"
+                        {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
+                      />
                     ) : (
                       <ForumQuotedBody
                         text={displayText}
@@ -1085,6 +1075,7 @@ export function ForumBoard({
                         rateDay={rateDay ?? null}
                         fiat={fiat}
                         truncate={truncate}
+                        {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
                         onActivate={(event) => {
                           event.stopPropagation();
                         }}
@@ -1328,22 +1319,13 @@ export function ForumBoard({
                             {reply.text !== '' ? (
                               <div className="mt-1">
                                 {reply.via === 'nostr' ? (
-                                  <>
-                                    {truncate ? (
-                                      <ForumNoteText
-                                        plain
-                                        text={reply.text}
-                                        className="whitespace-pre-wrap text-sm text-app-fg"
-                                      />
-                                    ) : (
-                                      <LinkedText
-                                        plain
-                                        text={reply.text}
-                                        className="whitespace-pre-wrap text-sm text-app-fg"
-                                      />
-                                    )}
-                                    <NoteTranslate plain text={reply.text} />
-                                  </>
+                                  <TranslatableNoteBody
+                                    messageId={reply.id}
+                                    plain
+                                    text={reply.text}
+                                    truncate={truncate}
+                                    className="whitespace-pre-wrap text-sm text-app-fg"
+                                  />
                                 ) : (
                                   <ForumQuotedBody
                                     text={reply.text}

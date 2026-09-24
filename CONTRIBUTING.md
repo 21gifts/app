@@ -106,7 +106,7 @@ app/
 │   │   │       └── [file]/route.ts      # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
-│   │   ├── translate/route.ts    # GET availability + POST DeepL v2 proxy
+│   │   ├── translate/route.ts    # re-exports proxyTranslateAvailableGet / proxyTranslateNotePost (api GET /translate + POST /messages/:id/translate)
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   ├── moderator-group/route.ts  # GET /conversations/moderator-group
@@ -188,6 +188,7 @@ app/
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
+│   │   ├── TranslatableNoteBody.tsx # Exclusive original XOR translated note body
 │   │   ├── LinkedText.tsx       # Autolink http(s) in note bodies; internal Link, external warning
 │   │   ├── ExternalLinkWarning.tsx # Confirm overlay before leaving 21.gifts
 │   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview + PDF/PNG/JPG/SVG download
@@ -276,7 +277,6 @@ app/
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
 │   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
-│   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart

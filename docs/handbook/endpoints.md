@@ -613,14 +613,14 @@
 
 ## Endpoint: GET /translate
 
-- **Purpose:** `{ available: boolean }` is true only when `TRANSLATE_URL` is a valid http(s) URL and `TRANSLATE_API_KEY` is non-blank after trim. No upstream call. Always 200.
-- **Errors:** none (missing, blank, or invalid URL; missing or blank key — all treated as unavailable).
+- **Purpose:** Same-origin proxy of api `GET /translate`. `{ available: boolean }` is true when the api has `TRANSLATE_URL` and `TRANSLATE_API_KEY`. Always 200 from the api.
+- **Errors:** 502 when the api is unreachable.
 - **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
 - **Auth:** Public.
 
 ## Endpoint: POST /translate
 
-- **Purpose:** `{ text, target }` → DeepL API v2 (`text` array, `target_lang`; `fil`→`TL`; `en`/`de`/`es`→`EN`/`DE`/`ES`). Server POSTs `TRANSLATE_URL` as-is with `authorization: DeepL-Auth-Key …`. Returns `{ translatedText }`. Max 500 chars. 15s timeout. Does not forward incoming Authorization. Does not send `source_lang`.
-- **Errors:** 400 invalid body, 503 not configured, 502 upstream.
+- **Purpose:** Same-origin proxy of api `POST /messages/:id/translate`. Body `{ messageId, target }`. The api looks up `message_translation` before DeepL and returns `{ translatedText, cached }`.
+- **Errors:** 400 invalid body, 404 unknown/hidden note, 503 not configured, 502 upstream.
 - **Used by:** `translateNote` from `NoteTranslate`.
-- **Auth:** Public.
+- **Auth:** Public for a live note (Bearer forwarded for a hidden staff permalink).

@@ -8556,31 +8556,39 @@ test('Function: fetchTranslateAvailable — GET /translate enables Translate', a
 test('Function: translateNote — Translate then Show original', async ({ page }) => {
   await seedGermanNoteWelcome(page);
   await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
   await page.getByRole('button', { name: 'Translate' }).click();
   await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+  await page.getByRole('button', { name: 'Show original' }).click();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toHaveCount(0);
 });
 
-test('Function: getTranslateUpstream — GET /translate reports available', async ({ request }) => {
+test('Function: proxyTranslateAvailableGet — GET /translate is available', async ({ request }) => {
   const res = await request.get('/translate');
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ available: true });
 });
 
-test('Function: proxyTranslateGet — GET /translate is available', async ({ request }) => {
-  const res = await request.get('/translate');
-  expect(res.status()).toBe(200);
-  expect(await res.json()).toEqual({ available: true });
-});
-
-test('Function: proxyTranslatePost — POST /translate returns translatedText', async ({
+test('Function: proxyTranslateNotePost — POST /translate returns translatedText', async ({
   request,
 }) => {
   const res = await request.post('/translate', {
-    data: { text: GERMAN_NOTE_TEXT, target: 'en' },
+    data: { messageId: 'm-de-cache', target: 'en' },
   });
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({
     translatedText: 'Can anyone lend me a few satoshi this week?',
+    cached: false,
+  });
+  const again = await request.post('/translate', {
+    data: { messageId: 'm-de-cache', target: 'en' },
+  });
+  expect(await again.json()).toEqual({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+    cached: true,
   });
 });
 
@@ -8590,6 +8598,18 @@ test('Function: NoteTranslate — German welcome note shows Translate', async ({
   await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
   await page.getByRole('button', { name: 'Translate' }).click();
   await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+});
+
+test('Function: TranslatableNoteBody — translation replaces the original body', async ({
+  page,
+}) => {
+  await seedGermanNoteWelcome(page);
+  await page.goto('/welcome');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
 });
 
 const RIANA_ID = '444d655b-73a4-475a-b5fc-f7e36210e82e';

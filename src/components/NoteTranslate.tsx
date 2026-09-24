@@ -9,48 +9,62 @@ import {
   type MouseEvent,
   type ReactElement,
 } from 'react';
-import { ForumNoteText } from '@/components/ForumNoteText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for the public forum-note translation control. */
 export interface NoteTranslateProps {
+  /** Forum message UUID used for the cached API lookup. */
+  messageId: string;
   /** Raw public note or reply text. */
   text: string;
-  /** When true, render the translated body as plain text with no autolinks. */
-  plain?: boolean;
   /** `onButton` uses `text-app-btn-fg` so the control stays readable on `bg-app-btn`. */
   tone?: 'default' | 'onButton';
+  /** Parent-owned flag: true while the translated body is on screen. */
+  showingTranslation?: boolean;
+  /** Called with the translated string after a successful POST. */
+  onTranslated?: (translatedText: string) => void;
+  /** Called when the visitor toggles Show original / Show translation. */
+  onToggleShowing?: () => void;
 }
 
 /**
  * Offer an on-demand translation when the note differs from the active UI locale.
  *
- * @param props - Raw public note or reply text, optional plain mode, and optional button tone.
- * @returns Translation control and result, or null when unavailable or unnecessary.
+ * Control-only: Translate, Show original, Show translation, error, and spinner.
+ * Does not render `ForumNoteText` or the translated body. Identity is
+ * `messageId + text + locale`.
+ *
+ * @param props - `messageId` (forum UUID), `text`, optional `tone`,
+ *   parent-owned `showingTranslation`, `onTranslated` on success, and
+ *   `onToggleShowing` for Show original / Show translation.
+ * @returns Translation control, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */
 export function NoteTranslate({
+  messageId,
   text,
-  plain = false,
   tone = 'default',
+  showingTranslation = false,
+  onTranslated,
+  onToggleShowing,
 }: NoteTranslateProps): ReactElement | null {
   const { locale, t } = useTranslations();
+  const session = useAuthStore((state) => state.session);
   const [available, setAvailable] = useState<boolean | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [translatedText, setTranslatedText] = useState<string | null>(null);
-  const [showTranslation, setShowTranslation] = useState(true);
   const requestId = useRef(0);
-  const identity = `${text}\0${locale}`;
+  const identity = `${messageId}\0${text}\0${locale}`;
   const [seenIdentity, setSeenIdentity] = useState(identity);
   if (identity !== seenIdentity) {
     setSeenIdentity(identity);
     setStatus('idle');
-    setTranslatedText(null);
-    setShowTranslation(true);
     requestId.current += 1;
   }
+
+  const offering = available === true && shouldOfferNoteTranslate(text, locale);
 
   useEffect(() => {
     let active = true;
@@ -64,7 +78,7 @@ export function NoteTranslate({
     };
   }, []);
 
-  if (text.trim() === '' || available !== true || !shouldOfferNoteTranslate(text, locale)) {
+  if (text.trim() === '' || !offering) {
     return null;
   }
 
@@ -76,17 +90,15 @@ export function NoteTranslate({
     event.stopPropagation();
     event.preventDefault();
     setStatus('loading');
-    setTranslatedText(null);
-    setShowTranslation(true);
     const id = requestId.current + 1;
     requestId.current = id;
-    void translateNote(text, locale)
+    void translateNote(messageId, locale, session)
       .then((next) => {
         if (id !== requestId.current) {
           return;
         }
-        setTranslatedText(next);
         setStatus('success');
+        onTranslated?.(next);
       })
       .catch(() => {
         if (id !== requestId.current) {
@@ -100,9 +112,6 @@ export function NoteTranslate({
   const controlClass = onButton
     ? 'mt-2 text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50'
     : 'mt-2 text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50';
-  const bodyClass = onButton
-    ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
-    : 'mt-2 whitespace-pre-wrap text-sm text-app-fg';
   const errorClass = onButton ? 'mt-2 text-sm text-app-btn-fg' : 'mt-2 text-sm text-app-danger';
 
   return (
@@ -112,29 +121,20 @@ export function NoteTranslate({
       }}
       onKeyDown={stopKeyDown}
     >
-      {status === 'success' && translatedText !== null ? (
-        <>
-          {showTranslation ? (
-            <ForumNoteText
-              text={translatedText}
-              className={bodyClass}
-              {...(plain ? { plain: true } : {})}
-            />
-          ) : null}
-          <button
-            type="button"
-            className={controlClass}
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-              setShowTranslation((shown) => !shown);
-            }}
-          >
-            {showTranslation
-              ? t('forum.translateShowOriginal')
-              : t('forum.translateShowTranslation')}
-          </button>
-        </>
+      {status === 'success' ? (
+        <button
+          type="button"
+          className={controlClass}
+          onClick={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            onToggleShowing?.();
+          }}
+        >
+          {showingTranslation
+            ? t('forum.translateShowOriginal')
+            : t('forum.translateShowTranslation')}
+        </button>
       ) : (
         <>
           {status === 'error' ? (
