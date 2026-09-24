@@ -478,7 +478,7 @@ A stack of labeled moderator or founder actions on a member card is not shown as
 
 ### Amount entry (hard requirement)
 
-Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state.
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
 ### Payment QR vs deep links (hard requirement)
 

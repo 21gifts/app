@@ -696,7 +696,7 @@ transition focus-visible:border-app-fg disabled:opacity-50
 
 16px (`text-base`) so iOS Safari does not auto-zoom on focus. No `outline-none`. The global `:focus-visible` ring is the keyboard encoding. No `error` prop; screens keep external `role="alert"` siblings.
 
-Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. An amount the person types is `AmountEntry`, not `Field`: the gift `SegmentedControl` (₿ | fiat code) and the other unit under the field.
+Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. An amount the person types is `AmountEntry`, not `Field`: the gift `SegmentedControl` (₿ | fiat code) and the other unit under the field. The inbox composer keeps attach, the message, and send on one row and puts that amount on the next row (`layout="composer"`: switch beside the input, counter under the input, label for assistive tech only).
 
 **API.** `FieldProps` input/textarea union (`multiline?: false` / `multiline: true`).
 
