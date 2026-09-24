@@ -348,7 +348,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('$0.04')).toBeNull();
   });
 
-  it('stays bitcoin-only on a nested post that stored no fiat', async () => {
+  it('shows the live viewer fiat on a nested post that stored no fiat', async () => {
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
@@ -368,7 +368,7 @@ describe('ForumQuotedBody', () => {
       expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
     });
     expect(screen.getByText('₿43')).toBeTruthy();
-    expect(screen.queryByText('$0.04')).toBeNull();
+    expect(screen.getByText('$0.04')).toBeTruthy();
   });
 
   it('ignores a quoted-note resolve if the body unmounts during fetch', async () => {

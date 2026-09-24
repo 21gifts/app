@@ -3388,7 +3388,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toHaveCount(0);
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await page.getByText('Goal note at one hundred ten percent').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-110');
   });
@@ -5583,7 +5584,8 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toHaveCount(0);
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await shotScreen(page, 'state-messages-id-goal-110');
   });
 
@@ -7832,7 +7834,8 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toHaveCount(0);
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-110');
   });
 
@@ -7966,7 +7969,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await expect(page.getByText('$1.00')).toHaveCount(0);
+    await expect(page.getByText('$1.00')).toBeVisible();
     await page.getByText("₿1'000").scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-ask-open');
   });

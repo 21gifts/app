@@ -36,20 +36,22 @@ function fiatSuffixMarkup(
 }
 
 /**
- * Preferred-fiat suffix next to a ₿ amount. A stored string is shown as-is.
- * When `stored` is passed, a present `null` or a missing field for the
- * visitor's currency is ₿-only and never uses the live rate. Omitting
- * `stored` keeps the unsent preview and may use the latest gift-day rate.
+ * Preferred-fiat suffix next to a ₿ amount.
+ *
+ * A shown amount is never one currency. Bitcoin is not the visitor's default
+ * fiat, so this suffix is the default fiat beside it. A stored string for
+ * that currency is shown as-is. A null or missing field uses the gift-day
+ * rate. Returns null only when neither a stored string nor a usable rate
+ * exists.
  *
  * @param sats - Whole sats.
- * @param rateDay - Latest gift-day totals, or `null`. Used only when `stored`
- *   is omitted.
- * @param fiat - Visitor preference.
+ * @param rateDay - Latest gift-day totals, or `null`. Used when `stored`
+ *   has no string for `fiat`.
+ * @param fiat - Visitor's default fiat.
  * @param numberFormat - Grouping style.
- * @param stored - Fiat stored when that payment was made. Omitted keeps the
- *   live rate. A present object is never live-converted: a string is
- *   formatted as-is; `null` or a missing field is ₿-only.
- * @returns ` · ` plus formatted fiat, or `null`.
+ * @param stored - Fiat stored when that payment was made. A string wins.
+ *   Null or a missing field falls through to `rateDay`.
+ * @returns ` · ` plus formatted fiat, or `null` when no figure exists.
  */
 export function preferredFiatSuffix(
   sats: number,
@@ -60,10 +62,9 @@ export function preferredFiatSuffix(
 ): ReactElement | null {
   if (stored !== undefined) {
     const amount = stored[STORED_FIAT_FIELD[fiat]];
-    if (typeof amount !== 'string') {
-      return null;
+    if (typeof amount === 'string') {
+      return fiatSuffixMarkup(amount, fiat, numberFormat);
     }
-    return fiatSuffixMarkup(amount, fiat, numberFormat);
   }
   if (rateDay === null) {
     return null;

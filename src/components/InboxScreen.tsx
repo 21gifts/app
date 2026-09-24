@@ -34,6 +34,7 @@ import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
+  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -292,7 +293,11 @@ const STORED_FIAT_FIELD = {
   PHP: 'amountPhp',
 } as const;
 
-/** Plain-text ₿ amount plus the fiat stored on that gift, never a later rate. */
+/**
+ * Plain-text ₿ amount plus the visitor's default fiat.
+ * A stored string wins. Otherwise the gift-day rate. Bitcoin alone only
+ * when neither figure exists.
+ */
 function giftAmountText(
   sats: number,
   fiat: FiatCode,
@@ -303,13 +308,16 @@ function giftAmountText(
     amountEur?: string | null | undefined;
     amountPhp?: string | null | undefined;
   },
+  rateDay: FiatRateDay | null,
 ): string {
   const bitcoin = formatBitcoin(sats, numberFormat);
   const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
-  if (typeof storedAmount !== 'string') {
+  const fiatAmount =
+    typeof storedAmount === 'string' ? storedAmount : satsToFiatAmount(sats, rateDay, fiat);
+  if (fiatAmount === null) {
     return bitcoin;
   }
-  return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
+  return `${bitcoin} · ${formatFiatDisplay(fiatAmount, fiat, numberFormat)}`;
 }
 
 /**
@@ -929,7 +937,7 @@ export function InboxScreen({
                     role="note"
                     aria-label={t('inbox.giftForLabel', {
                       name: gift.name,
-                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift),
+                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift, rateDay),
                     })}
                     data-message-id={gift.id}
                     data-gift-for={message.id}

@@ -90,13 +90,16 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * in SVG user units 0–100; overflow past 100% continues in green from `x=100`,
  * at most another 100 units (visual max 200%). The percent label is a sibling
  * so it stays readable, and is not capped. The asked amount is the Ask label
- * plus optional defined fiat, `formatBitcoin(goalSats)`, and an optional
- * frozen viewer snapshot. Without `preview`, `rateDay` is unused. Lengths use
+ * plus the defined fiat when the ask was defined in fiat, `formatBitcoin(goalSats)`,
+ * and the visitor's default fiat unless the ask was defined in that same fiat.
+ * The visitor figure is the frozen snapshot when that string exists, otherwise
+ * the gift-day rate. Lengths use
  * SVG `width` / `x` / `viewBox` attributes, not React `style`.
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
- * @param rateDay - Latest gift-day totals. Used only for a Bitcoin preview.
+ * @param rateDay - Latest gift-day totals. Fills the visitor's fiat when no
+ *   snapshot string is stored.
  * @param goalCurrency - Ask definition code when the api sent one.
  * @param goalAmount - Typed definition string when the api sent one.
  * @param goalAmountUsd - Frozen USD snapshot of the goal, or null.
@@ -107,7 +110,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountChf - Payment CHF snapshot used for a CHF fiat percent.
  * @param amountEur - Payment EUR snapshot used for a EUR fiat percent.
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
- * @param preview - Wizard unsent preview; live fiat is allowed only for BTC.
+ * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -182,13 +185,14 @@ export function ForumGoalBar({
   const viewWidth = 100 + overflowWidth;
   const percentLabel = String(percent);
   const viewerSnapshot = snapshots[GOAL_SNAPSHOT_FIELD[fiat]];
-  const liveSuffix =
-    preview && !isFiatGoalCurrency(goalCurrency)
-      ? preferredFiatSuffix(goalSats, rateDay, fiat, numberFormat)
-      : null;
-  const snapshotSuffix =
-    !preview && typeof viewerSnapshot === 'string' && (defined === '' || goalCurrency !== fiat)
+  const definedInViewerFiat = showDefinedFiat && goalCurrency === fiat;
+  const frozenViewer =
+    !definedInViewerFiat && typeof viewerSnapshot === 'string'
       ? fiatSuffixMarkup(formatFiatDisplay(viewerSnapshot, fiat, numberFormat))
+      : null;
+  const liveViewer =
+    !definedInViewerFiat && frozenViewer === null
+      ? preferredFiatSuffix(goalSats, rateDay, fiat, numberFormat)
       : null;
   return (
     <div className="mt-2 flex flex-col gap-1">
@@ -201,8 +205,8 @@ export function ForumGoalBar({
           </>
         ) : null}
         <span>{formatBitcoin(goalSats, numberFormat)}</span>
-        {liveSuffix}
-        {snapshotSuffix}
+        {frozenViewer}
+        {liveViewer}
       </p>
       <div className="flex items-center gap-2">
         <svg

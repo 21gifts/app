@@ -1594,7 +1594,7 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $5.00`);
   });
 
-  it('keeps a nested gift ₿-only when stored fiat is null', () => {
+  it('shows the live viewer fiat when stored fiat is null', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = {
       ...MESSAGE,
@@ -1627,13 +1627,13 @@ describe('InboxScreen', () => {
       />,
     );
     const note = screen.getByRole('note');
-    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
     expect(note.textContent).toContain(formatBitcoin(21));
-    expect(note.textContent).not.toContain('$0.02');
+    expect(note.textContent).toContain('$0.02');
     expect(note.textContent).not.toContain('$5.00');
   });
 
-  it('keeps a nested gift bitcoin-only when no fiat was stored', () => {
+  it('shows the live viewer fiat when no fiat was stored', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
     renderWithLocale(
@@ -1658,8 +1658,8 @@ describe('InboxScreen', () => {
       />,
     );
     const note = screen.getByRole('note');
-    expect(note.textContent).not.toContain('$0.02');
-    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
+    expect(note.textContent).toContain('$0.02');
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
   });
 
   it('styles a nested gift inside an own bubble with the bubble foreground', () => {
@@ -1749,7 +1749,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Hello team')).toBeTruthy();
   });
 
-  it('keeps gift bubbles bitcoin-only when no fiat was stored', () => {
+  it('shows the live viewer fiat on gift bubbles when no fiat was stored', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[DIRECT]}
@@ -1781,7 +1781,7 @@ describe('InboxScreen', () => {
     expect(items[1]?.textContent).toContain('send ₿21');
     expect(items[2]?.textContent).toContain('Hi');
     expect(items[2]?.textContent).toContain('₿21');
-    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.getAllByText('$0.02').length).toBeGreaterThan(0);
   });
 
   it('scrolls the AppShell scroller to the bottom for an open thread', () => {

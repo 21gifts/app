@@ -50,15 +50,12 @@ describe('ForumGoalBar', () => {
     expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
   });
 
-  it('shows the asked bitcoin amount without live fiat on a legacy ask', () => {
-    const { container } = renderWithLocale(
-      <ForumGoalBar sats={23100} goalSats={21000} rateDay={RATE_DAY} />,
-    );
+  it('shows the visitor fiat beside a legacy bitcoin ask', () => {
+    renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} rateDay={RATE_DAY} />);
     expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText('$21.00')).toBeTruthy();
     expect(screen.getByText('110%')).toBeTruthy();
-    expect(screen.queryByText('$21.00')).toBeNull();
-    expect(container.textContent).not.toContain('$');
   });
 
   it('shows bitcoin and the viewer snapshot on a BTC ask without a second defined fiat', () => {
@@ -111,11 +108,12 @@ describe('ForumGoalBar', () => {
     expect(screen.getByText('$1.00')).toBeTruthy();
   });
 
-  it('omits the dollar snapshot when goalAmountUsd is null on a PHP ask', () => {
-    const { container } = renderWithLocale(
+  it('uses the live viewer rate when the USD snapshot is missing on a PHP ask', () => {
+    renderWithLocale(
       <ForumGoalBar
         sats={0}
         goalSats={21000}
+        rateDay={RATE_DAY}
         goalCurrency="PHP"
         goalAmount="10.125"
         goalAmountUsd={null}
@@ -123,8 +121,7 @@ describe('ForumGoalBar', () => {
     );
     expect(screen.getByText('PHP 10.125')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
-    expect(screen.queryByText('$1.00')).toBeNull();
-    expect(container.textContent).not.toContain('$');
+    expect(screen.getByText('$21.00')).toBeTruthy();
   });
 
   it('shows 0% when the defined amount is zero', () => {
