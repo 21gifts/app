@@ -34,6 +34,9 @@ export function MarketingHeader(): ReactElement {
           <Link href="/#how" onClick={closeMenu}>
             {t('nav.how')}
           </Link>
+          <Link href="/#happyland" onClick={closeMenu}>
+            {t('nav.happyland')}
+          </Link>
           <Link href="/#why" onClick={closeMenu}>
             {t('nav.why')}
           </Link>
