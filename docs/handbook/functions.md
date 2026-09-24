@@ -1382,7 +1382,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard` and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `InboxScreen`, `PosScreen`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumBoard` only when the UA is not a smartphone. `InboxScreen`, `PayLinkScreen`, `PosScreen`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
 
 ## Function: RootLayout
 
@@ -2211,7 +2211,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** Renders the welcome glyph when no till is open, and the shop sticker's storefront when an unexpired charge is open. After `GET /pay/:username`, shows the name and amount form, or that open till. **Create invoice** posts the amount. Desktop then shows the invoice QR and **Pay**. A smartphone shows only **Pay** (`isSmartphoneUserAgent`, not viewport). A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
+- **Returns / side effects:** Renders the welcome glyph when no till is open, and the shop sticker's storefront when an unexpired charge is open. After `GET /pay/:username`, shows the name and amount form, or that open till. **Create invoice** posts the amount. Desktop and smartphone then show the invoice QR and **Pay**. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage

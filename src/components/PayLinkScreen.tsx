@@ -26,7 +26,6 @@ import {
 } from '@/lib/shop-sticker-pictogram';
 import {
   isAndroidUserAgent,
-  isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
@@ -207,17 +206,12 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [formError, setFormError] = useState<'amount' | 'failed' | null>(null);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
-  const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
   /* v8 ignore next 2 -- SSR has no navigator */
   const android =
     typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-
-  useEffect(() => {
-    setShowInvoiceQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -286,6 +280,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (charge !== null && !chargeLive) {
       setInvoice(null);
       setFormError(null);
+      postingRef.current = false;
+      setPosting(false);
     }
   }, [charge, chargeLive]);
 
@@ -327,6 +323,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       });
     return () => {
       active = false;
+      if (generationRef.current === generation) {
+        postingRef.current = false;
+        setPosting(false);
+      }
     };
   }, [charge, chargeLive, mintNonce, profile]);
 
@@ -415,7 +415,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                     {t('pay.failed')}
                   </p>
                 ) : null}
-                {invoice !== null && showInvoiceQr ? (
+                {invoice !== null ? (
                   <div className="flex w-full justify-center">
                     <QrCode value={invoice} label={t('pay.invoiceQr')} />
                   </div>
@@ -476,7 +476,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
                 {invoice !== null ? (
                   <>
-                    {showInvoiceQr ? <QrCode value={invoice} label={t('pay.invoiceQr')} /> : null}
+                    <QrCode value={invoice} label={t('pay.invoiceQr')} />
                     <Button
                       type="button"
                       aria-label={t('forum.payOpenWalletAria')}

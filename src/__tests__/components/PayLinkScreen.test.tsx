@@ -186,7 +186,7 @@ describe('PayLinkScreen', () => {
     });
   });
 
-  it('opens the Android wallet intent without an invoice QR', async () => {
+  it('shows the QR on a phone and opens the Android wallet intent', async () => {
     setUserAgent(
       'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
     );
@@ -201,7 +201,7 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     const pay = await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' });
-    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     const hrefs: string[] = [];
     const previous = window.location;
     Object.defineProperty(window, 'location', {
@@ -357,7 +357,7 @@ describe('PayLinkScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('This payment link is not valid.');
   });
 
-  it('keeps Pay and omits the invoice QR on a smartphone till', async () => {
+  it('shows the invoice QR on a smartphone till', async () => {
     setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);
@@ -374,7 +374,7 @@ describe('PayLinkScreen', () => {
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
   });
 
   it('shows an open till instead of creating another invoice', async () => {
@@ -544,6 +544,27 @@ describe('PayLinkScreen', () => {
       { timeout: 4000 },
     );
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+  });
+
+  it('enables Create invoice when the till expires while minting', async () => {
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return new Promise(() => undefined);
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 21, expiresAt: new Date(Date.now() + 1_200).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText(/left/)).toBeTruthy();
+    await waitFor(
+      () => {
+        const button = screen.getByRole('button', { name: 'Create invoice' });
+        expect(button.hasAttribute('disabled')).toBe(false);
+      },
+      { timeout: 4000 },
+    );
   });
 
   it('shows a till error when minting throws', async () => {
