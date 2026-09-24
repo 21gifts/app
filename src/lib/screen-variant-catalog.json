@@ -3,199 +3,109 @@
     "id": "/:default",
     "label": "/ default",
     "visual": "screen-root",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/:mobile-nav",
     "label": "/ mobile-nav",
     "visual": "state-root-mobile-nav",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/:language-open",
     "label": "/ language-open",
     "visual": "state-root-language",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/legal:default",
     "label": "/legal default",
     "visual": "screen-legal",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/about:default",
     "label": "/about default",
     "visual": "screen-about",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:idle",
     "label": "/login idle",
     "visual": "screen-login",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:starting",
     "label": "/login starting",
     "visual": "state-login-starting",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:error",
     "label": "/login error",
     "visual": "state-login-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:wrong-account",
     "label": "/login wrong-account",
     "visual": "state-login-wrong-account",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:choice",
     "label": "/login choice",
     "visual": "state-login-choice",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:in-app",
     "label": "/login in-app",
     "visual": "state-login-in-app",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/login:language-open",
     "label": "/login language-open",
     "visual": "state-login-language",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/donate:default",
     "label": "/donate default",
     "visual": "screen-donate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pl:default",
     "label": "/pl default",
     "visual": "screen-pl",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pl:invoice",
     "label": "/pl invoice",
     "visual": "state-pl-invoice",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pl:amount-invalid",
     "label": "/pl amount-invalid",
     "visual": "state-pl-amount-invalid",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pl:invalid",
     "label": "/pl invalid",
     "visual": "state-pl-invalid",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pl:failed",
     "label": "/pl failed",
     "visual": "state-pl-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pl:default",
@@ -231,419 +141,229 @@
     "id": "/wallet:default",
     "label": "/wallet default",
     "visual": "screen-wallet",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/wallet:phrase",
     "label": "/wallet phrase",
     "visual": "state-wallet-phrase",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/wallet:reveal",
     "label": "/wallet reveal",
     "visual": "state-wallet-reveal",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/wallet:reveal-open",
     "label": "/wallet reveal-open",
     "visual": "state-wallet-reveal-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/wallet:error",
     "label": "/wallet error",
     "visual": "state-wallet-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/wallet:timeout",
     "label": "/wallet timeout",
     "visual": "state-wallet-timeout",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/wallet:prf-unsupported",
     "label": "/wallet prf-unsupported",
     "visual": "state-wallet-prf-unsupported",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/username:default",
     "label": "/setup/username default",
     "visual": "screen-setup-username",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/address:default",
     "label": "/setup/address default",
     "visual": "screen-setup-address",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:default",
     "label": "/setup/rules default",
     "visual": "screen-setup-rules",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:law1",
     "label": "/setup/rules law1",
     "visual": "state-setup-rules-law1",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:law2",
     "label": "/setup/rules law2",
     "visual": "state-setup-rules-law2",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:law3",
     "label": "/setup/rules law3",
     "visual": "state-setup-rules-law3",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:wanted",
     "label": "/setup/rules wanted",
     "visual": "state-setup-rules-wanted",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:allowed",
     "label": "/setup/rules allowed",
     "visual": "state-setup-rules-allowed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:ratherNot",
     "label": "/setup/rules ratherNot",
     "visual": "state-setup-rules-ratherNot",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:forbidden",
     "label": "/setup/rules forbidden",
     "visual": "state-setup-rules-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:house",
     "label": "/setup/rules house",
     "visual": "state-setup-rules-house",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:error",
     "label": "/setup/rules error",
     "visual": "state-setup-rules-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/setup/rules:busy",
     "label": "/setup/rules busy",
     "visual": "state-setup-rules-busy",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:default",
     "label": "/welcome default",
     "visual": "screen-welcome",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:laws",
     "label": "/welcome laws",
     "visual": "state-welcome-laws",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:moderation",
     "label": "/welcome moderation",
     "visual": "state-welcome-moderation",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:delete-confirm",
     "label": "/welcome delete-confirm",
     "visual": "state-welcome-delete-confirm",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:deleting",
     "label": "/welcome deleting",
     "visual": "state-welcome-deleting",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:delete-error",
     "label": "/welcome delete-error",
     "visual": "state-welcome-delete-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:reply-moderation",
     "label": "/welcome reply-moderation",
     "visual": "state-welcome-reply-moderation",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:reply-delete-confirm",
     "label": "/welcome reply-delete-confirm",
     "visual": "state-welcome-reply-delete-confirm",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:reply-deleting",
     "label": "/welcome reply-deleting",
     "visual": "state-welcome-reply-deleting",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:reply-delete-error",
     "label": "/welcome reply-delete-error",
     "visual": "state-welcome-reply-delete-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:all",
     "label": "/welcome all",
     "visual": "state-welcome-all",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:goal-50",
     "label": "/welcome goal-50",
     "visual": "state-welcome-goal-50",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:goal-100",
     "label": "/welcome goal-100",
     "visual": "state-welcome-goal-100",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:goal-110",
     "label": "/welcome goal-110",
     "visual": "state-welcome-goal-110",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:goal-fiat",
     "label": "/welcome goal-fiat",
     "visual": "state-welcome-goal-fiat",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-amount",
     "label": "/welcome ask-amount",
     "visual": "state-welcome-ask-amount",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-amount-fiat",
     "label": "/welcome ask-amount-fiat",
     "visual": "state-welcome-ask-amount-fiat",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-amount-fiat",
@@ -655,584 +375,319 @@
     "id": "/welcome:ask-daily",
     "label": "/welcome ask-daily",
     "visual": "state-welcome-ask-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-empty",
     "label": "/welcome ask-empty",
     "visual": "state-welcome-ask-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-empty-daily",
     "label": "/welcome ask-empty-daily",
     "visual": "state-welcome-ask-empty-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-photos",
     "label": "/welcome ask-photos",
     "visual": "state-welcome-ask-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-one-photo",
     "label": "/welcome ask-one-photo",
     "visual": "state-welcome-ask-one-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-several-photos",
     "label": "/welcome ask-several-photos",
     "visual": "state-welcome-ask-several-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-video",
     "label": "/welcome ask-video",
     "visual": "state-welcome-ask-video",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preparing",
     "label": "/welcome ask-preparing",
     "visual": "state-welcome-ask-preparing",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-unsupported",
     "label": "/welcome ask-unsupported",
     "visual": "state-welcome-ask-unsupported",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-too-large",
     "label": "/welcome ask-too-large",
     "visual": "state-welcome-ask-too-large",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-too-many",
     "label": "/welcome ask-too-many",
     "visual": "state-welcome-ask-too-many",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-text",
     "label": "/welcome ask-text",
     "visual": "state-welcome-ask-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-text-filled",
     "label": "/welcome ask-text-filled",
     "visual": "state-welcome-ask-text-filled",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-fiat",
     "label": "/welcome ask-preview-fiat",
     "visual": "state-welcome-ask-preview-fiat",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview",
     "label": "/welcome ask-preview",
     "visual": "state-welcome-ask-preview",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-daily",
     "label": "/welcome ask-preview-daily",
     "visual": "state-welcome-ask-preview-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-text",
     "label": "/welcome ask-preview-text",
     "visual": "state-welcome-ask-preview-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-text-daily",
     "label": "/welcome ask-preview-text-daily",
     "visual": "state-welcome-ask-preview-text-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-one-photo",
     "label": "/welcome ask-preview-one-photo",
     "visual": "state-welcome-ask-preview-one-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-one-photo-daily",
     "label": "/welcome ask-preview-one-photo-daily",
     "visual": "state-welcome-ask-preview-one-photo-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-several",
     "label": "/welcome ask-preview-several",
     "visual": "state-welcome-ask-preview-several",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-several-daily",
     "label": "/welcome ask-preview-several-daily",
     "visual": "state-welcome-ask-preview-several-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-several-text",
     "label": "/welcome ask-preview-several-text",
     "visual": "state-welcome-ask-preview-several-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-several-text-daily",
     "label": "/welcome ask-preview-several-text-daily",
     "visual": "state-welcome-ask-preview-several-text-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-video",
     "label": "/welcome ask-preview-video",
     "visual": "state-welcome-ask-preview-video",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-video-daily",
     "label": "/welcome ask-preview-video-daily",
     "visual": "state-welcome-ask-preview-video-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-video-text",
     "label": "/welcome ask-preview-video-text",
     "visual": "state-welcome-ask-preview-video-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-preview-video-text-daily",
     "label": "/welcome ask-preview-video-text-daily",
     "visual": "state-welcome-ask-preview-video-text-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-posting",
     "label": "/welcome ask-posting",
     "visual": "state-welcome-ask-posting",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-posting-daily",
     "label": "/welcome ask-posting-daily",
     "visual": "state-welcome-ask-posting-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-error-request",
     "label": "/welcome ask-error-request",
     "visual": "state-welcome-ask-error-request",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-error-request-daily",
     "label": "/welcome ask-error-request-daily",
     "visual": "state-welcome-ask-error-request-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:ask-open",
     "label": "/welcome ask-open",
     "visual": "state-welcome-ask-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:filter-open",
     "label": "/welcome filter-open",
     "visual": "state-welcome-filter-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:unpaid",
     "label": "/welcome unpaid",
     "visual": "state-welcome-unpaid",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:unpaid-new-count",
     "label": "/welcome unpaid-new-count",
     "visual": "state-welcome-unpaid-new-count",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:empty-unpaid",
     "label": "/welcome empty-unpaid",
     "visual": "state-welcome-empty-unpaid",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:popular",
     "label": "/welcome popular",
     "visual": "state-welcome-popular",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:empty-paid",
     "label": "/welcome empty-paid",
     "visual": "state-welcome-empty-paid",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:empty",
     "label": "/welcome empty",
     "visual": "state-welcome-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:loading",
     "label": "/welcome loading",
     "visual": "state-welcome-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error",
     "label": "/welcome error",
     "visual": "state-welcome-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:validation-error",
     "label": "/welcome validation-error",
     "visual": "state-welcome-validation-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-ask",
     "label": "/welcome error-ask",
     "visual": "state-welcome-error-ask",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-ask-daily",
     "label": "/welcome error-ask-daily",
     "visual": "state-welcome-error-ask-daily",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:photo",
     "label": "/welcome photo",
     "visual": "state-welcome-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:photos",
     "label": "/welcome photos",
     "visual": "state-welcome-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:photo-and-text",
     "label": "/welcome photo-and-text",
     "visual": "state-welcome-photo-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:photos-and-text",
     "label": "/welcome photos-and-text",
     "visual": "state-welcome-photos-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-text",
     "label": "/welcome composer-text",
     "visual": "state-welcome-composer-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:keyboard-viewport",
     "label": "/welcome keyboard-viewport",
     "visual": "state-welcome-keyboard-viewport",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-photo",
     "label": "/welcome composer-photo",
     "visual": "state-welcome-composer-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:place",
     "label": "/welcome place",
     "visual": "state-welcome-place",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:place-coords",
@@ -1244,45 +699,25 @@
     "id": "/welcome:composer-place",
     "label": "/welcome composer-place",
     "visual": "state-welcome-composer-place",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-place-map",
     "label": "/welcome composer-place-map",
     "visual": "state-welcome-composer-place-map",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-place-confirm",
     "label": "/welcome composer-place-confirm",
     "visual": "state-welcome-composer-place-confirm",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-place-set",
     "label": "/welcome composer-place-set",
     "visual": "state-welcome-composer-place-set",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-place-pending",
@@ -1306,584 +741,319 @@
     "id": "/welcome:composer-photos",
     "label": "/welcome composer-photos",
     "visual": "state-welcome-composer-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-photo-and-text",
     "label": "/welcome composer-photo-and-text",
     "visual": "state-welcome-composer-photo-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-photos-and-text",
     "label": "/welcome composer-photos-and-text",
     "visual": "state-welcome-composer-photos-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-video",
     "label": "/welcome composer-video",
     "visual": "state-welcome-composer-video",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-video-and-text",
     "label": "/welcome composer-video-and-text",
     "visual": "state-welcome-composer-video-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:composer-text-after-remove",
     "label": "/welcome composer-text-after-remove",
     "visual": "state-welcome-composer-text-after-remove",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:preparing-photo",
     "label": "/welcome preparing-photo",
     "visual": "state-welcome-preparing-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:preparing-photo-and-text",
     "label": "/welcome preparing-photo-and-text",
     "visual": "state-welcome-preparing-photo-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:posting-photo-and-text",
     "label": "/welcome posting-photo-and-text",
     "visual": "state-welcome-posting-photo-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:photo-loading",
     "label": "/welcome photo-loading",
     "visual": "state-welcome-photo-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-unsupported",
     "label": "/welcome error-unsupported",
     "visual": "state-welcome-error-unsupported",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-unsupported-with-text",
     "label": "/welcome error-unsupported-with-text",
     "visual": "state-welcome-error-unsupported-with-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-too-large",
     "label": "/welcome error-too-large",
     "visual": "state-welcome-error-too-large",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-too-many",
     "label": "/welcome error-too-many",
     "visual": "state-welcome-error-too-many",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-composer",
     "label": "/welcome pay-composer",
     "visual": "state-welcome-pay-composer",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-too-large-with-text",
     "label": "/welcome error-too-large-with-text",
     "visual": "state-welcome-error-too-large-with-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-too-many-with-text",
     "label": "/welcome error-too-many-with-text",
     "visual": "state-welcome-error-too-many-with-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:error-request-photo-and-text",
     "label": "/welcome error-request-photo-and-text",
     "visual": "state-welcome-error-request-photo-and-text",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:menu-open",
     "label": "/welcome menu-open",
     "visual": "state-welcome-menu",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:menu-unread",
     "label": "/welcome menu-unread",
     "visual": "state-welcome-menu-unread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:menu-inbox-unread",
     "label": "/welcome menu-inbox-unread",
     "visual": "state-welcome-menu-inbox-unread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:menu-moderation-unread",
     "label": "/welcome menu-moderation-unread",
     "visual": "state-welcome-menu-moderation-unread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-amount",
     "label": "/welcome pay-amount",
     "visual": "state-welcome-pay-amount",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-qr",
     "label": "/welcome pay-qr",
     "visual": "state-welcome-pay-qr",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-smartphone",
     "label": "/welcome pay-smartphone",
     "visual": "state-welcome-pay-smartphone",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-author-wallet",
     "label": "/welcome pay-author-wallet",
     "visual": "state-welcome-pay-author-wallet",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:role-hint",
     "label": "/welcome role-hint",
     "visual": "state-welcome-role-hint",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:overlay-address",
     "label": "/welcome overlay-address",
     "visual": "state-welcome-overlay-address",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:overlay-username",
     "label": "/welcome overlay-username",
     "visual": "state-welcome-overlay-username",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:overlay-introduce",
     "label": "/welcome overlay-introduce",
     "visual": "state-welcome-overlay-introduce",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:overlay-external-link",
     "label": "/welcome overlay-external-link",
     "visual": "state-welcome-overlay-external-link",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/rules:default",
     "label": "/rules default",
     "visual": "screen-rules",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/rules:signed-in",
     "label": "/rules signed-in",
     "visual": "state-rules-signed-in",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/contact:default",
     "label": "/contact default",
     "visual": "screen-contact",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/contact:validation-error",
     "label": "/contact validation-error",
     "visual": "state-contact-validation-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/contact:success",
     "label": "/contact success",
     "visual": "state-contact-success",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:default",
     "label": "/profile default",
     "visual": "screen-profile",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:default",
     "label": "/pos default",
     "visual": "screen-pos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:open",
     "label": "/pos open",
     "visual": "state-pos-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:loading",
     "label": "/pos loading",
     "visual": "state-pos-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:error",
     "label": "/pos error",
     "visual": "state-pos-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:bad-amount",
     "label": "/pos bad-amount",
     "visual": "state-pos-bad-amount",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:create-outside",
     "label": "/pos create-outside",
     "visual": "state-pos-create-outside",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:create-already",
     "label": "/pos create-already",
     "visual": "state-pos-create-already",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:create-failed",
     "label": "/pos create-failed",
     "visual": "state-pos-create-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:cancel-failed",
     "label": "/pos cancel-failed",
     "visual": "state-pos-cancel-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:refresh-failed",
     "label": "/pos refresh-failed",
     "visual": "state-pos-refresh-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:need-username",
     "label": "/pos need-username",
     "visual": "state-pos-need-username",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/pos:need-address",
     "label": "/pos need-address",
     "visual": "state-pos-need-address",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:fiat",
     "label": "/profile fiat",
     "visual": "state-profile-fiat",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:sticker-open",
     "label": "/profile sticker-open",
     "visual": "state-profile-sticker-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:posts-open",
     "label": "/profile posts-open",
     "visual": "state-profile-posts-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:replies-open",
     "label": "/profile replies-open",
     "visual": "state-profile-replies-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:sticker-open",
@@ -1907,320 +1077,175 @@
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
     "visual": "screen-members-accountId",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-open",
     "label": "/members/[accountId] posts-open",
     "visual": "state-members-posts-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-open-photo",
     "label": "/members/[accountId] posts-open-photo",
     "visual": "state-members-posts-open-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-open-goal-110",
     "label": "/members/[accountId] posts-open-goal-110",
     "visual": "state-members-posts-open-goal-110",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-open-goal-fiat",
     "label": "/members/[accountId] posts-open-goal-fiat",
     "visual": "state-members-posts-open-goal-fiat",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-open-photos",
     "label": "/members/[accountId] posts-open-photos",
     "visual": "state-members-posts-open-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:replies-open",
     "label": "/members/[accountId] replies-open",
     "visual": "state-members-replies-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-loading",
     "label": "/members/[accountId] posts-loading",
     "visual": "state-members-posts-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:replies-loading",
     "label": "/members/[accountId] replies-loading",
     "visual": "state-members-replies-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-error",
     "label": "/members/[accountId] posts-error",
     "visual": "state-members-posts-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:replies-error",
     "label": "/members/[accountId] replies-error",
     "visual": "state-members-replies-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:posts-truncated",
     "label": "/members/[accountId] posts-truncated",
     "visual": "state-members-posts-truncated",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:replies-truncated",
     "label": "/members/[accountId] replies-truncated",
     "visual": "state-members-replies-truncated",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:note-null",
     "label": "/members/[accountId] note-null",
     "visual": "state-members-note-null",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:missing",
     "label": "/members/[accountId] missing",
     "visual": "state-members-missing",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:error",
     "label": "/members/[accountId] error",
     "visual": "state-members-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:own",
     "label": "/members/[accountId] own",
     "visual": "state-members-own",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:overlay-address",
     "label": "/members/[accountId] overlay-address",
     "visual": "state-members-overlay-address",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:overlay-username",
     "label": "/members/[accountId] overlay-username",
     "visual": "state-members-overlay-username",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:translate",
     "label": "/members/[accountId] translate",
     "visual": "state-members-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:translate-loading",
     "label": "/members/[accountId] translate-loading",
     "visual": "state-members-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:translate-done",
     "label": "/members/[accountId] translate-done",
     "visual": "state-members-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:translate-hidden",
     "label": "/members/[accountId] translate-hidden",
     "visual": "state-members-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:translate-error",
     "label": "/members/[accountId] translate-error",
     "visual": "state-members-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:about-translate",
     "label": "/members/[accountId] about-translate",
     "visual": "state-members-about-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:about-translate-loading",
     "label": "/members/[accountId] about-translate-loading",
     "visual": "state-members-about-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:about-translate-done",
     "label": "/members/[accountId] about-translate-done",
     "visual": "state-members-about-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:about-translate-hidden",
     "label": "/members/[accountId] about-translate-hidden",
     "visual": "state-members-about-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:about-translate-error",
     "label": "/members/[accountId] about-translate-error",
     "visual": "state-members-about-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:about-translate",
@@ -2256,199 +1281,109 @@
     "id": "/members/[accountId]:staff-verify",
     "label": "/members/[accountId] staff-verify",
     "visual": "state-members-staff-verify",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:staff-verify-open",
     "label": "/members/[accountId] staff-verify-open",
     "visual": "state-members-staff-verify-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:funding-reviewed",
     "label": "/members/[accountId] funding-reviewed",
     "visual": "state-members-funding-reviewed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:funding-program-open",
     "label": "/members/[accountId] funding-program-open",
     "visual": "state-members-funding-program-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:sticker-open",
     "label": "/members/[accountId] sticker-open",
     "visual": "state-members-sticker-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:sticker-busy",
     "label": "/members/[accountId] sticker-busy",
     "visual": "state-members-sticker-busy",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/members/[accountId]:sticker-failed",
     "label": "/members/[accountId] sticker-failed",
     "visual": "state-members-sticker-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:usd-scale",
     "label": "/profile usd-scale",
     "visual": "state-profile-usd-scale",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:single-day",
     "label": "/profile single-day",
     "visual": "state-profile-single-day",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:large-usd",
     "label": "/profile large-usd",
     "visual": "state-profile-large-usd",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:given-received",
     "label": "/profile given-received",
     "visual": "state-profile-given-received",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:about-filled",
     "label": "/profile about-filled",
     "visual": "state-profile-about-filled",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:translate",
     "label": "/profile translate",
     "visual": "state-profile-about-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:translate-loading",
     "label": "/profile translate-loading",
     "visual": "state-profile-about-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:translate-done",
     "label": "/profile translate-done",
     "visual": "state-profile-about-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:translate-hidden",
     "label": "/profile translate-hidden",
     "visual": "state-profile-about-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:translate-error",
     "label": "/profile translate-error",
     "visual": "state-profile-about-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:translate",
@@ -2484,221 +1419,121 @@
     "id": "/profile:about-photo",
     "label": "/profile about-photo",
     "visual": "state-profile-about-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:about-editing",
     "label": "/profile about-editing",
     "visual": "state-profile-about-editing",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:about-save-error",
     "label": "/profile about-save-error",
     "visual": "state-profile-about-save-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:notification-level-error",
     "label": "/profile notification-level-error",
     "visual": "state-profile-notification-level-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:push-enable-error",
     "label": "/profile push-enable-error",
     "visual": "state-profile-push-enable-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:funding-not-verified",
     "label": "/profile funding-not-verified",
     "visual": "state-profile-funding-not-verified",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:funding-none",
     "label": "/profile funding-none",
     "visual": "state-profile-funding-none",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:funding-pending",
     "label": "/profile funding-pending",
     "visual": "state-profile-funding-pending",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:funding-trial",
     "label": "/profile funding-trial",
     "visual": "state-profile-funding-trial",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:funding-admitted",
     "label": "/profile funding-admitted",
     "visual": "state-profile-funding-admitted",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile:funding-program-open",
     "label": "/profile funding-program-open",
     "visual": "state-profile-funding-program-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:default",
     "label": "/profile/apply default",
     "visual": "screen-profile-apply",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:photo",
     "label": "/profile/apply photo",
     "visual": "state-profile-apply-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:location",
     "label": "/profile/apply location",
     "visual": "state-profile-apply-location",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:principle-1",
     "label": "/profile/apply principle-1",
     "visual": "state-profile-apply-principle-1",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:translate",
     "label": "/profile/apply translate",
     "visual": "state-profile-apply-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:translate-loading",
     "label": "/profile/apply translate-loading",
     "visual": "state-profile-apply-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:translate-done",
     "label": "/profile/apply translate-done",
     "visual": "state-profile-apply-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:translate-hidden",
     "label": "/profile/apply translate-hidden",
     "visual": "state-profile-apply-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:translate-error",
     "label": "/profile/apply translate-error",
     "visual": "state-profile-apply-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:translate",
@@ -2734,221 +1569,121 @@
     "id": "/profile/apply:principle-2",
     "label": "/profile/apply principle-2",
     "visual": "state-profile-apply-principle-2",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:principle-3",
     "label": "/profile/apply principle-3",
     "visual": "state-profile-apply-principle-3",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:truth",
     "label": "/profile/apply truth",
     "visual": "state-profile-apply-truth",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:forbidden",
     "label": "/profile/apply forbidden",
     "visual": "state-profile-apply-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:pending",
     "label": "/profile/apply pending",
     "visual": "state-profile-apply-pending",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:trial",
     "label": "/profile/apply trial",
     "visual": "state-profile-apply-trial",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:admitted",
     "label": "/profile/apply admitted",
     "visual": "state-profile-apply-admitted",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:empty-posts",
     "label": "/profile/apply empty-posts",
     "visual": "state-profile-apply-empty-posts",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:loading",
     "label": "/profile/apply loading",
     "visual": "state-profile-apply-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:error",
     "label": "/profile/apply error",
     "visual": "state-profile-apply-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:applying",
     "label": "/profile/apply applying",
     "visual": "state-profile-apply-applying",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:apply-failed",
     "label": "/profile/apply apply-failed",
     "visual": "state-profile-apply-apply-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/profile/apply:unmet",
     "label": "/profile/apply unmet",
     "visual": "state-profile-apply-unmet",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:about-filled",
     "label": "/view/[viewKey] about-filled",
     "visual": "state-view-about-filled",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:translate",
     "label": "/view/[viewKey] translate",
     "visual": "state-view-about-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:translate-loading",
     "label": "/view/[viewKey] translate-loading",
     "visual": "state-view-about-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:translate-done",
     "label": "/view/[viewKey] translate-done",
     "visual": "state-view-about-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:translate-hidden",
     "label": "/view/[viewKey] translate-hidden",
     "visual": "state-view-about-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:translate-error",
     "label": "/view/[viewKey] translate-error",
     "visual": "state-view-about-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:translate",
@@ -2984,309 +1719,169 @@
     "id": "/view/[viewKey]:about-photo",
     "label": "/view/[viewKey] about-photo",
     "visual": "state-view-about-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:missing",
     "label": "/view/[viewKey] missing",
     "visual": "state-view-missing",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:loading",
     "label": "/view/[viewKey] loading",
     "visual": "state-view-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:error",
     "label": "/view/[viewKey] error",
     "visual": "state-view-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:claimed",
     "label": "/view/[viewKey] claimed",
     "visual": "state-view-claimed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/view/[viewKey]:in-app",
     "label": "/view/[viewKey] in-app",
     "visual": "state-view-in-app",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats:default",
     "label": "/stats default",
     "visual": "screen-stats",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats:usd-scale",
     "label": "/stats usd-scale",
     "visual": "state-stats-usd-scale",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats:empty",
     "label": "/stats empty",
     "visual": "state-stats-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats:loading",
     "label": "/stats loading",
     "visual": "state-stats-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats:error",
     "label": "/stats error",
     "visual": "state-stats-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/trust-chain:default",
     "label": "/trust-chain default",
     "visual": "screen-trust-chain",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/trust-chain:expanded",
     "label": "/trust-chain expanded",
     "visual": "state-trust-chain-expanded",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/trust-chain:empty",
     "label": "/trust-chain empty",
     "visual": "state-trust-chain-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/trust-chain:loading",
     "label": "/trust-chain loading",
     "visual": "state-trust-chain-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/trust-chain:error",
     "label": "/trust-chain error",
     "visual": "state-trust-chain-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/trust-chain:hop-error",
     "label": "/trust-chain hop-error",
     "visual": "state-trust-chain-hop-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats/[day]:default",
     "label": "/stats/[day] default",
     "visual": "screen-stats-day",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats/[day]:empty",
     "label": "/stats/[day] empty",
     "visual": "state-stats-day-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats/[day]:loading",
     "label": "/stats/[day] loading",
     "visual": "state-stats-day-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/stats/[day]:error",
     "label": "/stats/[day] error",
     "visual": "state-stats-day-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:default",
     "label": "/messages default",
     "visual": "screen-messages",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:unread",
     "label": "/messages unread",
     "visual": "state-messages-unread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:translate",
     "label": "/messages translate",
     "visual": "state-messages-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:translate-loading",
     "label": "/messages translate-loading",
     "visual": "state-messages-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:translate-done",
     "label": "/messages translate-done",
     "visual": "state-messages-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:translate-hidden",
     "label": "/messages translate-hidden",
     "visual": "state-messages-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:translate-error",
     "label": "/messages translate-error",
     "visual": "state-messages-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:translate",
@@ -3322,133 +1917,73 @@
     "id": "/messages:contact",
     "label": "/messages contact",
     "visual": "state-messages-contact",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:damus",
     "label": "/messages damus",
     "visual": "state-messages-damus",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:sent-preview",
     "label": "/messages sent-preview",
     "visual": "state-messages-sent-preview",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:empty",
     "label": "/messages empty",
     "visual": "state-messages-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:loading",
     "label": "/messages loading",
     "visual": "state-messages-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:error",
     "label": "/messages error",
     "visual": "state-messages-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread",
     "label": "/messages thread",
     "visual": "state-messages-thread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-translate",
     "label": "/messages thread-translate",
     "visual": "state-messages-thread-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-translate-loading",
     "label": "/messages thread-translate-loading",
     "visual": "state-messages-thread-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-translate-done",
     "label": "/messages thread-translate-done",
     "visual": "state-messages-thread-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-translate-hidden",
     "label": "/messages thread-translate-hidden",
     "visual": "state-messages-thread-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-translate-error",
     "label": "/messages thread-translate-error",
     "visual": "state-messages-thread-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-translate",
@@ -3484,199 +2019,109 @@
     "id": "/messages:sent-sats",
     "label": "/messages sent-sats",
     "visual": "state-messages-sent-sats",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-gift",
     "label": "/messages thread-gift",
     "visual": "state-messages-thread-gift",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-text-sats",
     "label": "/messages thread-text-sats",
     "visual": "state-messages-thread-text-sats",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-pay-qr",
     "label": "/messages thread-pay-qr",
     "visual": "state-messages-thread-pay-qr",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-quoted-note",
     "label": "/messages thread-quoted-note",
     "visual": "state-messages-thread-quoted-note",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-composer-photo",
     "label": "/messages thread-composer-photo",
     "visual": "state-messages-thread-composer-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-composer-photos",
     "label": "/messages thread-composer-photos",
     "visual": "state-messages-thread-composer-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-photo",
     "label": "/messages thread-photo",
     "visual": "state-messages-thread-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-preparing-photo",
     "label": "/messages thread-preparing-photo",
     "visual": "state-messages-thread-preparing-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-error-unsupported",
     "label": "/messages thread-error-unsupported",
     "visual": "state-messages-thread-error-unsupported",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-error-too-large",
     "label": "/messages thread-error-too-large",
     "visual": "state-messages-thread-error-too-large",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages:thread-error-too-many",
     "label": "/messages thread-error-too-many",
     "visual": "state-messages-thread-error-too-many",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:translate",
     "label": "/notifications translate",
     "visual": "state-notifications-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:translate-loading",
     "label": "/notifications translate-loading",
     "visual": "state-notifications-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:translate-done",
     "label": "/notifications translate-done",
     "visual": "state-notifications-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:translate-hidden",
     "label": "/notifications translate-hidden",
     "visual": "state-notifications-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:translate-error",
     "label": "/notifications translate-error",
     "visual": "state-notifications-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:translate",
@@ -3712,188 +2157,103 @@
     "id": "/notifications:empty",
     "label": "/notifications empty",
     "visual": "state-notifications-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:loading",
     "label": "/notifications loading",
     "visual": "state-notifications-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:error",
     "label": "/notifications error",
     "visual": "state-notifications-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/notifications:moderator-proposal",
     "label": "/notifications moderator-proposal",
     "visual": "state-notifications-moderator-proposal",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:default",
     "label": "/moderate default",
     "visual": "screen-moderate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:group-unread",
     "label": "/moderate group-unread",
     "visual": "state-moderate-group-unread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:proposals-unread",
     "label": "/moderate proposals-unread",
     "visual": "state-moderate-proposals-unread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:forbidden",
     "label": "/moderate forbidden",
     "visual": "state-moderate-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:goal-open",
     "label": "/moderate goal-open",
     "visual": "state-moderate-goal-open",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:loading",
     "label": "/moderate loading",
     "visual": "state-moderate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate:error",
     "label": "/moderate error",
     "visual": "state-moderate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:default",
     "label": "/moderate/hidden default",
     "visual": "screen-moderate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:translate",
     "label": "/moderate/hidden translate",
     "visual": "state-moderate-hidden-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:translate-loading",
     "label": "/moderate/hidden translate-loading",
     "visual": "state-moderate-hidden-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:translate-done",
     "label": "/moderate/hidden translate-done",
     "visual": "state-moderate-hidden-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:translate-hidden",
     "label": "/moderate/hidden translate-hidden",
     "visual": "state-moderate-hidden-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:translate-error",
     "label": "/moderate/hidden translate-error",
     "visual": "state-moderate-hidden-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:translate",
@@ -3929,309 +2289,169 @@
     "id": "/moderate/hidden:external",
     "label": "/moderate/hidden external",
     "visual": "state-moderate-hidden-external",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:forbidden",
     "label": "/moderate/hidden forbidden",
     "visual": "state-moderate-hidden-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:empty",
     "label": "/moderate/hidden empty",
     "visual": "state-moderate-hidden-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:loading",
     "label": "/moderate/hidden loading",
     "visual": "state-moderate-hidden-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/hidden:error",
     "label": "/moderate/hidden error",
     "visual": "state-moderate-hidden-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:default",
     "label": "/moderate/proposals default",
     "visual": "screen-moderate-proposals",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:forbidden",
     "label": "/moderate/proposals forbidden",
     "visual": "state-moderate-proposals-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:empty",
     "label": "/moderate/proposals empty",
     "visual": "state-moderate-proposals-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:loading",
     "label": "/moderate/proposals loading",
     "visual": "state-moderate-proposals-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:error",
     "label": "/moderate/proposals error",
     "visual": "state-moderate-proposals-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:waiting-confirm",
     "label": "/moderate/proposals waiting-confirm",
     "visual": "state-moderate-proposals-waiting-confirm",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:confirm-error",
     "label": "/moderate/proposals confirm-error",
     "visual": "state-moderate-proposals-confirm-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:reject-error",
     "label": "/moderate/proposals reject-error",
     "visual": "state-moderate-proposals-reject-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:reject-error-self",
     "label": "/moderate/proposals reject-error-self",
     "visual": "state-moderate-proposals-reject-error-self",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:confirming",
     "label": "/moderate/proposals confirming",
     "visual": "state-moderate-proposals-confirming",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:rejecting",
     "label": "/moderate/proposals rejecting",
     "visual": "state-moderate-proposals-rejecting",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/proposals:rejecting-self",
     "label": "/moderate/proposals rejecting-self",
     "visual": "state-moderate-proposals-rejecting-self",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications:default",
     "label": "/moderate/applications default",
     "visual": "screen-moderate-applications",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications:forbidden",
     "label": "/moderate/applications forbidden",
     "visual": "state-moderate-applications-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications:empty",
     "label": "/moderate/applications empty",
     "visual": "state-moderate-applications-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications:loading",
     "label": "/moderate/applications loading",
     "visual": "state-moderate-applications-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications:error",
     "label": "/moderate/applications error",
     "visual": "state-moderate-applications-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:default",
     "label": "/moderate/applications/[accountId] default",
     "visual": "screen-moderate-applications-accountId",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:translate",
     "label": "/moderate/applications/[accountId] translate",
     "visual": "state-applications-id-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:translate-loading",
     "label": "/moderate/applications/[accountId] translate-loading",
     "visual": "state-applications-id-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:translate-done",
     "label": "/moderate/applications/[accountId] translate-done",
     "visual": "state-applications-id-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:translate-hidden",
     "label": "/moderate/applications/[accountId] translate-hidden",
     "visual": "state-applications-id-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:translate-error",
     "label": "/moderate/applications/[accountId] translate-error",
     "visual": "state-applications-id-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:translate",
@@ -4267,309 +2487,169 @@
     "id": "/moderate/applications/[accountId]:forbidden",
     "label": "/moderate/applications/[accountId] forbidden",
     "visual": "state-moderate-applications-accountId-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:empty",
     "label": "/moderate/applications/[accountId] empty",
     "visual": "state-moderate-applications-accountId-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:loading",
     "label": "/moderate/applications/[accountId] loading",
     "visual": "state-moderate-applications-accountId-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:error",
     "label": "/moderate/applications/[accountId] error",
     "visual": "state-moderate-applications-accountId-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:decide-failed",
     "label": "/moderate/applications/[accountId] decide-failed",
     "visual": "state-moderate-applications-accountId-decide-failed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:deciding",
     "label": "/moderate/applications/[accountId] deciding",
     "visual": "state-moderate-applications-accountId-deciding",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:principle-2",
     "label": "/moderate/applications/[accountId] principle-2",
     "visual": "state-moderate-applications-accountId-principle-2",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:principle-3",
     "label": "/moderate/applications/[accountId] principle-3",
     "visual": "state-moderate-applications-accountId-principle-3",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/applications/[accountId]:truth",
     "label": "/moderate/applications/[accountId] truth",
     "visual": "state-moderate-applications-accountId-truth",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:default",
     "label": "/moderate/group default",
     "visual": "screen-moderate-group",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:stipend",
     "label": "/moderate/group stipend",
     "visual": "state-moderate-group-stipend",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:forbidden",
     "label": "/moderate/group forbidden",
     "visual": "state-moderate-group-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:empty",
     "label": "/moderate/group empty",
     "visual": "state-moderate-group-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:loading",
     "label": "/moderate/group loading",
     "visual": "state-moderate-group-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:error",
     "label": "/moderate/group error",
     "visual": "state-moderate-group-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:composer-photo",
     "label": "/moderate/group composer-photo",
     "visual": "state-moderate-group-composer-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:composer-photos",
     "label": "/moderate/group composer-photos",
     "visual": "state-moderate-group-composer-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:quoted-note",
     "label": "/moderate/group quoted-note",
     "visual": "state-moderate-group-quoted-note",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:photo",
     "label": "/moderate/group photo",
     "visual": "state-moderate-group-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:preparing-photo",
     "label": "/moderate/group preparing-photo",
     "visual": "state-moderate-group-preparing-photo",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:error-unsupported",
     "label": "/moderate/group error-unsupported",
     "visual": "state-moderate-group-error-unsupported",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:error-too-large",
     "label": "/moderate/group error-too-large",
     "visual": "state-moderate-group-error-too-large",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:error-too-many",
     "label": "/moderate/group error-too-many",
     "visual": "state-moderate-group-error-too-many",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:translate",
     "label": "/moderate/group translate",
     "visual": "state-moderate-group-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:translate-loading",
     "label": "/moderate/group translate-loading",
     "visual": "state-moderate-group-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:translate-done",
     "label": "/moderate/group translate-done",
     "visual": "state-moderate-group-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:translate-hidden",
     "label": "/moderate/group translate-hidden",
     "visual": "state-moderate-group-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:translate-error",
     "label": "/moderate/group translate-error",
     "visual": "state-moderate-group-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/group:translate",
@@ -4605,45 +2685,25 @@
     "id": "/moderate/handbook:default",
     "label": "/moderate/handbook default",
     "visual": "screen-moderate-handbook",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/moderate/handbook:forbidden",
     "label": "/moderate/handbook forbidden",
     "visual": "state-moderate-handbook-forbidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/404:default",
     "label": "/404 default",
     "visual": "screen-404",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:default",
     "label": "/messages/[id] default",
     "visual": "screen-messages-id",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:place",
@@ -4661,309 +2721,169 @@
     "id": "/messages/[id]:goal-110",
     "label": "/messages/[id] goal-110",
     "visual": "state-messages-id-goal-110",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:goal-fiat",
     "label": "/messages/[id] goal-fiat",
     "visual": "state-messages-id-goal-fiat",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:photos",
     "label": "/messages/[id] photos",
     "visual": "state-messages-id-photos",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:signed-in",
     "label": "/messages/[id] signed-in",
     "visual": "state-messages-id-signed-in",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:hidden",
     "label": "/messages/[id] hidden",
     "visual": "state-messages-id-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:missing",
     "label": "/messages/[id] missing",
     "visual": "state-messages-id-missing",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:loading",
     "label": "/messages/[id] loading",
     "visual": "state-messages-id-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:error",
     "label": "/messages/[id] error",
     "visual": "state-messages-id-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:expanded",
     "label": "/welcome expanded",
     "visual": "state-welcome-expanded",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:expanded-gifts",
     "label": "/welcome expanded-gifts",
     "visual": "state-welcome-expanded-gifts",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:expanded-external",
     "label": "/welcome expanded-external",
     "visual": "state-welcome-expanded-external",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:quoted-note",
     "label": "/welcome quoted-note",
     "visual": "state-welcome-quoted-note",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:copy",
     "label": "/welcome copy",
     "visual": "state-welcome-copy",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:reply-copy",
     "label": "/welcome reply-copy",
     "visual": "state-welcome-reply-copy",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:translate",
     "label": "/welcome translate",
     "visual": "state-welcome-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:translate-loading",
     "label": "/welcome translate-loading",
     "visual": "state-welcome-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:translate-done",
     "label": "/welcome translate-done",
     "visual": "state-welcome-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:translate-hidden",
     "label": "/welcome translate-hidden",
     "visual": "state-welcome-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:translate-error",
     "label": "/welcome translate-error",
     "visual": "state-welcome-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:note-truncated",
     "label": "/welcome note-truncated",
     "visual": "state-welcome-note-truncated",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:new-posts",
     "label": "/welcome new-posts",
     "visual": "state-welcome-new-posts",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:moderator-appointed",
     "label": "/welcome moderator-appointed",
     "visual": "state-welcome-moderator-appointed",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:shop-tag",
     "label": "/welcome shop-tag",
     "visual": "state-welcome-shop-tag",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:default",
     "label": "/shops default",
     "visual": "screen-shops",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:empty",
     "label": "/shops empty",
     "visual": "state-shops-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:loading",
     "label": "/shops loading",
     "visual": "state-shops-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:error",
     "label": "/shops error",
     "visual": "state-shops-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:place",
     "label": "/shops place",
     "visual": "state-shops-place",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:place-coords",
@@ -4975,45 +2895,25 @@
     "id": "/shops:composer-place",
     "label": "/shops composer-place",
     "visual": "state-shops-composer-place",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:composer-place-map",
     "label": "/shops composer-place-map",
     "visual": "state-shops-composer-place-map",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:composer-place-confirm",
     "label": "/shops composer-place-confirm",
     "visual": "state-shops-composer-place-confirm",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:composer-place-set",
     "label": "/shops composer-place-set",
     "visual": "state-shops-composer-place-set",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/shops:composer-place-pending",
@@ -5037,23 +2937,13 @@
     "id": "/map:default",
     "label": "/map default",
     "visual": "screen-map",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/map:pin",
     "label": "/map pin",
     "visual": "state-map-pin",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/map:with-key",
@@ -5095,132 +2985,72 @@
     "id": "/map:empty",
     "label": "/map empty",
     "visual": "state-map-empty",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/map:loading",
     "label": "/map loading",
     "visual": "state-map-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/map:error",
     "label": "/map error",
     "visual": "state-map-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:translate",
     "label": "/messages/[id] translate",
     "visual": "state-messages-id-translate",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:translate-loading",
     "label": "/messages/[id] translate-loading",
     "visual": "state-messages-id-translate-loading",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:translate-done",
     "label": "/messages/[id] translate-done",
     "visual": "state-messages-id-translate-done",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:translate-hidden",
     "label": "/messages/[id] translate-hidden",
     "visual": "state-messages-id-translate-hidden",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:translate-error",
     "label": "/messages/[id] translate-error",
     "visual": "state-messages-id-translate-error",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:thread",
     "label": "/messages/[id] thread",
     "visual": "state-messages-id-thread",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:external-reply",
     "label": "/messages/[id] external-reply",
     "visual": "state-messages-id-external-reply",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:quoted-note",
     "label": "/messages/[id] quoted-note",
     "visual": "state-messages-id-quoted-note",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
-    "combos": [
-      "desktop-light",
-      "desktop-dark",
-      "mobile-light",
-      "mobile-dark"
-    ]
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]
