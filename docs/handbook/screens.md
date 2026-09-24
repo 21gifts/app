@@ -283,7 +283,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading. With no open till, under it an **Amount** field and **Create invoice**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. When `GET /pay/:username` returns an unexpired `charge`, the amount field and **Create invoice** stay hidden. The page shows time left, the sat amount, the viewer's fiat when a gift-day rate exists, then the Bitcoin invoice QR and **Pay**. A bad link shows **This payment link is not valid.** and no form.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). With no open till, the welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading, then an **Amount** field and **Create invoice**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. When `GET /pay/:username` returns an unexpired `charge`, that glyph is replaced by the shop sticker's storefront and the amount field and **Create invoice** stay hidden. The page shows time left, the sat amount, the viewer's fiat when a gift-day rate exists, then the Bitcoin invoice QR and **Pay**. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
 - **Actions:** With no open till, type a whole number and press **Create invoice**. An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success replaces that button with **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no second create step. **Pay** opens Wallet of Satoshi. Desktop and smartphone both show the Bitcoin invoice QR. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed mint with no till keeps the form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
@@ -319,7 +319,7 @@ The form stays, and **Could not create the invoice.** is shown under it.
 
 ### Variant: charge
 
-The open till: time left, the sat amount, **Pay**, and the Bitcoin invoice QR. No amount field. A failed mint keeps the charge and shows **Could not create the invoice.**
+The open till: the shop sticker's storefront above the name, then time left, the sat amount, **Pay**, and the Bitcoin invoice QR. No gift glyph and no amount field. A failed mint keeps the charge and shows **Could not create the invoice.**
 
 ![21.gifts pay link charge](images/pl-charge.png)
 

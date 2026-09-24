@@ -463,23 +463,25 @@ flowchart LR
 
 ## Iconography
 
-**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, and handbook images.
+**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, the shop-sticker storefront on an open till, and handbook images.
 
 **Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills.
 
 **Sizes (glyph, not hit target).**
 
-| Glyph | px  | Tailwind      | Use                                                 |
-| ----- | --- | ------------- | --------------------------------------------------- |
-| 14    | 14  | `h-3.5 w-3.5` | Menu row icons, ₿\|USD is text not icon             |
-| 16    | 16  | `h-4 w-4`     | Button leading icon, Field-adjacent, pay-sheet back |
-| 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back              |
-| 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                 |
-| 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG                        |
+| Glyph | px  | Tailwind      | Use                                                  |
+| ----- | --- | ------------- | ---------------------------------------------------- |
+| 14    | 14  | `h-3.5 w-3.5` | Menu row icons, ₿\|USD is text not icon              |
+| 16    | 16  | `h-4 w-4`     | Button leading icon, Field-adjacent, pay-sheet back  |
+| 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back               |
+| 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                  |
+| 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG; open-till shop sticker |
 
 **Decorative vs control.** Decorative: `aria-hidden="true"` (gift-and-Bitcoin SVG on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button.
 
-**Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome.
+**Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome. On `/pl` it stays only while no till is open.
+
+**Open-till shop glyph.** The shop sticker's storefront, the same paths the printable sticker paints (awning, counter, goods, 21.gifts sign). Not the Open CryptoPay mark from the QR centre, and not a lucide store icon. `h-12 w-12`, `aria-hidden`, only on `/pl` while a till charge is open. Colours stay `#F99602`, `#000000`, and `#FFFFFF`.
 
 **React control glyph.** Lucide **`Reply`**. Accessible name is catalog `forum.react` = **“React”** (DE **Reagieren**). Icon-only on every top-level note (`parentId` unset). Click expands the reply composer when the card is collapsed and focuses the reply textarea when it is already expanded. Nested replies have no React control.
 
