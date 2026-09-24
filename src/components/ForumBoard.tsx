@@ -646,10 +646,11 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
+  const shownReplies = replies === null ? -1 : replies.length;
   useLayoutEffect(() => {
     const field = replyComposerRef.current;
     revealReplyForm(scroller, field === null ? null : field.form);
-  }, [expandedId, scroller]);
+  }, [expandedId, repliesLoading, scroller, shownReplies]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
