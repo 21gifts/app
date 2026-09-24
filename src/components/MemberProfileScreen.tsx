@@ -17,7 +17,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
 import {
   fetchComposeTarget,
   fetchGiftStats,
@@ -172,15 +172,15 @@ function FundingProgramMark({
     date: formatForumTimeFromMs(admittedAt, locale),
   });
   return (
-    <button
-      type="button"
+    <IconButton
+      size="sm"
+      variant="secondary"
       aria-label={label}
       aria-expanded={expanded}
       onClick={onToggle}
-      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-app-border-strong bg-transparent p-0 text-app-muted"
     >
       <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
-    </button>
+    </IconButton>
   );
 }
 
