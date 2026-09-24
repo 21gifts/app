@@ -479,9 +479,9 @@ function ConversationListItem({
  * that passes true (`/messages` open threads and the staff room);
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
  * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
- * when the payment was made (a stored string as-is; null or a missing field on
- * that payment is Bitcoin-only). Unpaid invoice previews omit that object and
- * still use optional `rateDay`. A message whose `giftFor` points at
+ * when the payment was made (a stored string as-is; null or a missing field
+ * uses `rateDay`). Unpaid invoice previews omit the stored object and use the
+ * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
  * Wallet of Satoshi / QR pay sheet. The
