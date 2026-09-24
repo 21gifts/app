@@ -4895,6 +4895,75 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
+test('Function: revealReplyForm — expanded reply stays inside the shell', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 1,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/messages/**/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByText('Hello from Ada').click();
+  const field = page.getByPlaceholder('Write a reaction');
+  await expect(field).toBeVisible();
+  const inside = await field.evaluate((node) => {
+    const form = node.closest('form');
+    const scroller = node.closest('.overflow-y-auto');
+    if (!(form instanceof HTMLElement) || !(scroller instanceof HTMLElement)) {
+      return false;
+    }
+    const formBox = form.getBoundingClientRect();
+    const shell = scroller.getBoundingClientRect();
+    return formBox.top >= shell.top - 1 && formBox.bottom <= shell.bottom + 1;
+  });
+  expect(inside).toBe(true);
+});
+
 test('Function: ForumAskWizard — welcome loads', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
