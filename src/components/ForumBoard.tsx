@@ -655,7 +655,18 @@ export function ForumBoard({
   const shownReplies = replies === null ? -1 : replies.length;
   useLayoutEffect(() => {
     const field = replyComposerRef.current;
-    revealReplyForm(scroller, field === null ? null : field.form);
+    const form = field === null ? null : field.form;
+    revealReplyForm(scroller, form);
+    if (form === null || scroller === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      revealReplyForm(scroller, form);
+    });
+    observer.observe(form);
+    return () => {
+      observer.disconnect();
+    };
   }, [expandedId, repliesLoading, scroller, shownReplies]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);

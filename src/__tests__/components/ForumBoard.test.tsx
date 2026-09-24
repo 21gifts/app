@@ -6182,6 +6182,54 @@ describe('ForumBoard', () => {
   });
 });
 
+describe('reply form size', () => {
+  it('scrolls again when the open reply form changes size', () => {
+    const observed: Element[] = [];
+    let disconnected = false;
+    class FakeResizeObserver {
+      constructor(private readonly onResize: ResizeObserverCallback) {
+        void this.onResize;
+      }
+
+      observe(target: Element): void {
+        observed.push(target);
+        this.onResize([], this as unknown as ResizeObserver);
+      }
+
+      disconnect(): void {
+        disconnected = true;
+      }
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const view = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    expect(observed.some((node) => node instanceof HTMLFormElement)).toBe(true);
+    view.unmount();
+    expect(disconnected).toBe(true);
+    globalThis.ResizeObserver = previous;
+  });
+});
+
 describe('revealReplyForm', () => {
   function box(bottom: number): DOMRect {
     return {
