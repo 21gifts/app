@@ -354,4 +354,211 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect((await screen.findByRole('alert')).textContent).toBe('This payment link is not valid.');
   });
+
+  it('shows an open till instead of creating another invoice', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    const bodies: string[] = [];
+    mockFetch(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        bodies.push(String(init?.body));
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      return Response.json({
+        ...profile,
+        minSats: 238093,
+        maxSats: 238093,
+        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('5:00 left')).toBeTruthy();
+    expect(screen.getByText("₿238'093")).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create invoice' })).toBeNull();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(bodies).toEqual([JSON.stringify({ amountSats: 238093 })]);
+    const hrefs: string[] = [];
+    const previous = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        get href(): string {
+          return 'http://localhost/';
+        },
+        set href(value: string) {
+          hrefs.push(value);
+        },
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    Object.defineProperty(window, 'location', { configurable: true, value: previous });
+    expect(hrefs).toEqual(['walletofsatoshi:lightning:LNBC210N1PAYLINK']);
+  });
+
+  it('retries a failed till invoice without showing the amount field', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    let invoices = 0;
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        invoices += 1;
+        if (invoices === 1) {
+          return new Response('no', { status: 502 });
+        }
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(invoices).toBe(2);
+  });
+
+  it('keeps the amount form when the till charge is missing or not payable', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    const charges: unknown[] = [
+      null,
+      { amountSats: 0, expiresAt: new Date(fixed + 300_000).toISOString() },
+      { amountSats: 1.5, expiresAt: new Date(fixed + 300_000).toISOString() },
+      { amountSats: 21, expiresAt: fixed },
+      { amountSats: 21, expiresAt: 'not-a-date' },
+      { amountSats: 21, expiresAt: new Date(fixed - 1_000).toISOString() },
+    ];
+    for (const charge of charges) {
+      mockFetch(async (input) => {
+        if (String(input).endsWith('/invoice')) {
+          throw new Error('should not mint');
+        }
+        return Response.json({ ...profile, charge });
+      });
+      const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+      expect(await screen.findByRole('button', { name: 'Create invoice' })).toBeTruthy();
+      view.unmount();
+    }
+  });
+
+  it('shows the viewer fiat under an open till when a gift day exists', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    const day = {
+      day: '2026-09-24',
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '84000.00',
+      cumulativeUsd: '84000.00',
+      chf: null,
+      eur: null,
+      php: null,
+      cumulativeChf: null,
+      cumulativeEur: null,
+      cumulativePhp: null,
+    };
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.includes('/gifts/stats')) {
+        return Response.json({
+          totalSats: 100_000_000,
+          totalBtc: '1.00000000',
+          totalUsd: '84000.00',
+          totalChf: null,
+          totalEur: null,
+          totalPhp: null,
+          giftCount: 1,
+          recipientCount: 1,
+          firstPaidAt: null,
+          lastPaidAt: null,
+          spendOverTime: [day],
+          byRecipient: [],
+          byMonth: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [],
+          },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('$200.00')).toBeTruthy();
+  });
+
+  it('returns to the amount form when the till runs out', async () => {
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 21, expiresAt: new Date(Date.now() + 1_200).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText(/left/)).toBeTruthy();
+    await waitFor(
+      () => {
+        expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+      },
+      { timeout: 4000 },
+    );
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+  });
+
+  it('shows a till error when minting throws', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        throw new Error('offline');
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 21, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+  });
+
+  it('ignores a till invoice that arrives after unmount', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    let release: (response: Response) => void = () => undefined;
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return new Promise((resolve) => {
+          release = resolve;
+        });
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('5:00 left')).toBeTruthy();
+    view.unmount();
+    release(Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 }));
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+  });
 });

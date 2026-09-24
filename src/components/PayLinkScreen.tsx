@@ -8,10 +8,17 @@ import { QrCode } from '@/components/QrCode';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { Button, Card, PageChrome } from '@/components/ui';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import type { AmountUnit } from '@/lib/api-types';
 import { payLinkUsername } from '@/lib/pay-link';
-import { parseAmountDraft, type FiatRateDay } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  parseAmountDraft,
+  satsToFiatAmount,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   walletOfSatoshiHref,
@@ -44,11 +51,74 @@ function PayLinkAmount(props: {
   );
 }
 
+interface PayCharge {
+  amountSats: number;
+  expiresAt: string;
+}
+
 interface PayProfile {
   name: string;
   username: string;
   minSats: number;
   maxSats: number;
+  charge: PayCharge | null;
+}
+
+/** Remaining time as m:ss. */
+function formatLeft(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
+ * An unexpired till amount, or `null` when the payload is not one.
+ *
+ * @param value - `charge` from `GET /pay/:username`, if present.
+ * @param now - Clock in epoch milliseconds.
+ * @returns The charge the page should show.
+ */
+function readCharge(value: unknown, now: number): PayCharge | null {
+  if (value === null || typeof value !== 'object') {
+    return null;
+  }
+  const amountSats = (value as { amountSats?: unknown }).amountSats;
+  const expiresAt = (value as { expiresAt?: unknown }).expiresAt;
+  if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
+    return null;
+  }
+  if (typeof expiresAt !== 'string') {
+    return null;
+  }
+  const expiresMs = Date.parse(expiresAt);
+  if (!Number.isFinite(expiresMs) || expiresMs <= now) {
+    return null;
+  }
+  return { amountSats, expiresAt };
+}
+
+/** Open Wallet of Satoshi on this invoice. */
+function openWallet(invoice: string, android: boolean): void {
+  window.location.href = android
+    ? walletOfSatoshiIntentHref(invoice)
+    : walletOfSatoshiHref(invoice);
+}
+
+/** Viewer's fiat for a till amount, or nothing when no gift-day rate is ready. */
+function ChargeFiat(props: { amountSats: number }): ReactElement | null {
+  const { fiat } = useFiatPreference();
+  const { numberFormat } = useNumberFormat();
+  const rateDay = useLatestRateDay();
+  const amount = satsToFiatAmount(props.amountSats, rateDay, fiat);
+  if (amount === null) {
+    return null;
+  }
+  return (
+    <p className="text-center text-sm text-app-subtle">
+      {formatFiatDisplay(amount, fiat, numberFormat)}
+    </p>
+  );
 }
 
 /**
@@ -60,7 +130,9 @@ interface PayProfile {
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
+  const { numberFormat } = useNumberFormat();
   const [unit, setUnit] = useState<AmountUnit>('btc');
+  const [now, setNow] = useState(() => Date.now());
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [profile, setProfile] = useState<PayProfile | null>(null);
   const [invalid, setInvalid] = useState(false);
@@ -68,6 +140,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [formError, setFormError] = useState<'amount' | 'failed' | null>(null);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
+  const [mintNonce, setMintNonce] = useState(0);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
   /* v8 ignore next 2 -- SSR has no navigator */
@@ -98,11 +171,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           setInvalid(true);
           return;
         }
-        const body = (await response.json()) as PayProfile;
+        const body = (await response.json()) as PayProfile & { charge?: unknown };
         if (!active) {
           return;
         }
-        setProfile(body);
+        setProfile({
+          name: body.name,
+          username: body.username,
+          minSats: body.minSats,
+          maxSats: body.maxSats,
+          charge: readCharge(body.charge, Date.now()),
+        });
       })
       .catch(() => {
         if (!active) {
@@ -114,6 +193,70 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       active = false;
     };
   }, [lightning]);
+
+  const charge = profile?.charge ?? null;
+  const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
+  const chargeLive = charge !== null && remaining > 0;
+
+  useEffect(() => {
+    if (charge === null) {
+      return;
+    }
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [charge]);
+
+  useEffect(() => {
+    if (charge !== null && !chargeLive) {
+      setInvoice(null);
+      setFormError(null);
+    }
+  }, [charge, chargeLive]);
+
+  useEffect(() => {
+    if (!chargeLive || profile === null || charge === null) {
+      return;
+    }
+    const generation = generationRef.current;
+    let active = true;
+    postingRef.current = true;
+    setPosting(true);
+    setFormError(null);
+    void fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ amountSats: charge.amountSats }),
+    })
+      .then(async (response) => {
+        const result = response.ok ? ((await response.json()) as { pr: string }) : null;
+        if (!active || generationRef.current !== generation) {
+          return;
+        }
+        if (result === null) {
+          setFormError('failed');
+          return;
+        }
+        setInvoice(result.pr);
+      })
+      .catch(() => {
+        if (active && generationRef.current === generation) {
+          setFormError('failed');
+        }
+      })
+      .finally(() => {
+        if (active && generationRef.current === generation) {
+          postingRef.current = false;
+          setPosting(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [charge, chargeLive, mintNonce, profile]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -206,38 +349,26 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
               {profile.name}
             </h1>
-            <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-              <PayLinkAmount
-                value={amount}
-                disabled={posting || invoice !== null}
-                onUnitChange={setUnit}
-                onValueChange={setAmount}
-                onRate={setRateDay}
-              />
-              {invoice === null ? (
-                <Button type="submit" className="w-full" disabled={posting}>
-                  {t('pay.createInvoice')}
-                </Button>
-              ) : null}
-            </form>
-
-            {formError === 'amount' ? (
-              <p role="alert" className="text-sm text-app-danger">
-                {t('pay.amountInvalid')}
-              </p>
-            ) : null}
-            {formError === 'failed' ? (
-              <p role="alert" className="text-sm text-app-danger">
-                {t('pay.failed')}
-              </p>
-            ) : null}
-
-            {invoice !== null ? (
-              <>
-                <QrCode value={invoice} label={t('pay.invoiceQr')} />
+            {chargeLive && charge !== null ? (
+              <div className="flex w-full flex-col gap-3">
+                <p className="text-center text-sm text-app-subtle">
+                  {t('pay.timeLeft', { time: formatLeft(remaining) })}
+                </p>
+                <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+                  {formatBitcoin(charge.amountSats, numberFormat)}
+                </p>
+                <ChargeFiat amountSats={charge.amountSats} />
+                {formError === 'failed' ? (
+                  <p role="alert" className="text-center text-sm text-app-danger">
+                    {t('pay.failed')}
+                  </p>
+                ) : null}
+                {invoice !== null ? <QrCode value={invoice} label={t('pay.invoiceQr')} /> : null}
                 <Button
                   type="button"
+                  className="w-full"
                   aria-label={t('forum.payOpenWalletAria')}
+                  disabled={posting || (invoice === null && formError !== 'failed')}
                   icon={
                     <img
                       src="/wos-icon.png"
@@ -249,15 +380,70 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                     />
                   }
                   onClick={() => {
-                    window.location.href = android
-                      ? walletOfSatoshiIntentHref(invoice)
-                      : walletOfSatoshiHref(invoice);
+                    if (invoice !== null) {
+                      openWallet(invoice, android);
+                      return;
+                    }
+                    setMintNonce((nonce) => nonce + 1);
                   }}
                 >
                   {t('forum.payOpenWallet')}
                 </Button>
+              </div>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+                  <PayLinkAmount
+                    value={amount}
+                    disabled={posting || invoice !== null}
+                    onUnitChange={setUnit}
+                    onValueChange={setAmount}
+                    onRate={setRateDay}
+                  />
+                  {invoice === null ? (
+                    <Button type="submit" className="w-full" disabled={posting}>
+                      {t('pay.createInvoice')}
+                    </Button>
+                  ) : null}
+                </form>
+
+                {formError === 'amount' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.amountInvalid')}
+                  </p>
+                ) : null}
+                {formError === 'failed' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.failed')}
+                  </p>
+                ) : null}
+
+                {invoice !== null ? (
+                  <>
+                    <QrCode value={invoice} label={t('pay.invoiceQr')} />
+                    <Button
+                      type="button"
+                      aria-label={t('forum.payOpenWalletAria')}
+                      icon={
+                        <img
+                          src="/wos-icon.png"
+                          alt=""
+                          width={20}
+                          height={20}
+                          aria-hidden="true"
+                          className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                        />
+                      }
+                      onClick={() => {
+                        openWallet(invoice, android);
+                      }}
+                    >
+                      {t('forum.payOpenWallet')}
+                    </Button>
+                  </>
+                ) : null}
               </>
-            ) : null}
+            )}
           </>
         ) : null}
       </Card>

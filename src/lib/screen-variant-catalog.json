@@ -1002,6 +1002,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:charge",
+    "label": "/pl charge",
+    "visual": "state-pl-charge",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:fiat",
     "label": "/profile fiat",
     "visual": "state-profile-fiat",

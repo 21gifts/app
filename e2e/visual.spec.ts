@@ -1063,6 +1063,42 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-failed');
   });
 
+  test('screen /pl charge', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await page.clock.install({ time: new Date('2026-09-24T12:00:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        if (route.request().url().includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 238093 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 238093,
+            maxSats: 238093,
+            charge: { amountSats: 238093, expiresAt: '2026-09-24T12:05:00.000Z' },
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create invoice' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-pl-charge');
+  });
+
   test('screen /wallet', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
