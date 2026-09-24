@@ -9,6 +9,86 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 }
 
 /**
+ * Stable map for visual baselines. Live Google tiles are not a baseline:
+ * they depend on a key, billing, and the network. The stub paints a fixed
+ * surface and, when the app drops a marker, a fixed pin.
+ */
+async function installBaselineMap(page: Page, options?: { click?: boolean }): Promise<void> {
+  const enableClick = options?.click === true;
+  await page.addInitScript((click: boolean) => {
+    class MapShim {
+      readonly el: HTMLElement;
+
+      constructor(el: HTMLElement) {
+        this.el = el;
+        el.style.position = 'relative';
+        const surface = document.createElement('div');
+        surface.dataset['e2eMap'] = 'surface';
+        surface.style.position = 'absolute';
+        surface.style.inset = '0';
+        surface.style.backgroundColor = '#e7efe4';
+        surface.style.backgroundImage =
+          'linear-gradient(#c9d7c6 1px, transparent 1px), linear-gradient(90deg, #c9d7c6 1px, transparent 1px)';
+        surface.style.backgroundSize = '40px 40px';
+        el.appendChild(surface);
+      }
+
+      setCenter(): void {}
+
+      addListener(
+        event: string,
+        handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+      ): void {
+        if (!click || event !== 'click') {
+          return;
+        }
+        this.el.addEventListener('click', () => {
+          handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+        });
+      }
+    }
+    class MarkerShim {
+      constructor(opts: { map?: MapShim }) {
+        const host = opts.map?.el;
+        if (host === undefined) {
+          return;
+        }
+        const pin = document.createElement('div');
+        pin.dataset['e2eMap'] = 'pin';
+        pin.style.position = 'absolute';
+        pin.style.left = '50%';
+        pin.style.top = '42%';
+        pin.style.width = '16px';
+        pin.style.height = '16px';
+        pin.style.margin = '-8px 0 0 -8px';
+        pin.style.borderRadius = '999px';
+        pin.style.background = '#161616';
+        pin.style.boxShadow = '0 0 0 4px #ffffff';
+        host.appendChild(pin);
+      }
+
+      setPosition(): void {}
+
+      getPosition(): null {
+        return null;
+      }
+
+      addListener(): void {}
+    }
+    (window as unknown as { google?: unknown }).google = {
+      maps: { Map: MapShim, Marker: MarkerShim },
+    };
+  }, enableClick);
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: 'e2e' }),
+    });
+  });
+}
+
+/**
  * Visual baselines are Linux Chromium (CI and the Playwright Docker image).
  * Behavioral e2e specs still run on macOS; these comparisons do not.
  */
@@ -8698,32 +8778,7 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome composer-place-map', async ({ page }) => {
-    await page.addInitScript(() => {
-      class MapShim {
-        constructor(_el: HTMLElement) {}
-
-        setCenter(): void {}
-
-        addListener(): void {}
-      }
-      class MarkerShim {
-        setPosition(): void {}
-        getPosition(): null {
-          return null;
-        }
-        addListener(): void {}
-      }
-      (window as unknown as { google?: unknown }).google = {
-        maps: { Map: MapShim, Marker: MarkerShim },
-      };
-    });
-    await page.route('**/maps/key', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ key: 'e2e' }),
-      });
-    });
+    await installBaselineMap(page);
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
@@ -8731,52 +8786,15 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     const frame = page.locator('.h-64');
     await expect(frame).toBeVisible();
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await frame.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-composer-place-map', false);
   });
 
   test('welcome composer-place-confirm', async ({ page }) => {
-    await page.addInitScript(() => {
-      class MapShim {
-        private readonly el: HTMLElement;
-
-        constructor(el: HTMLElement) {
-          this.el = el;
-        }
-
-        setCenter(): void {}
-
-        addListener(
-          event: string,
-          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
-        ): void {
-          if (event !== 'click') {
-            return;
-          }
-          this.el.addEventListener('click', () => {
-            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
-          });
-        }
-      }
-      class MarkerShim {
-        setPosition(): void {}
-        getPosition(): null {
-          return null;
-        }
-        addListener(): void {}
-      }
-      (window as unknown as { google?: unknown }).google = {
-        maps: { Map: MapShim, Marker: MarkerShim },
-      };
-    });
-    await page.route('**/maps/key', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ key: 'e2e' }),
-      });
-    });
+    await installBaselineMap(page, { click: true });
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
@@ -8785,52 +8803,14 @@ test.describe('welcome forum variants', () => {
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
     const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-composer-place-confirm', false);
   });
 
   test('welcome composer-place-set', async ({ page }) => {
-    await page.addInitScript(() => {
-      class MapShim {
-        private readonly el: HTMLElement;
-
-        constructor(el: HTMLElement) {
-          this.el = el;
-        }
-
-        setCenter(): void {}
-
-        addListener(
-          event: string,
-          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
-        ): void {
-          if (event !== 'click') {
-            return;
-          }
-          this.el.addEventListener('click', () => {
-            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
-          });
-        }
-      }
-      class MarkerShim {
-        setPosition(): void {}
-        getPosition(): null {
-          return null;
-        }
-        addListener(): void {}
-      }
-      (window as unknown as { google?: unknown }).google = {
-        maps: { Map: MapShim, Marker: MarkerShim },
-      };
-    });
-    await page.route('**/maps/key', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ key: 'e2e' }),
-      });
-    });
+    await installBaselineMap(page, { click: true });
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
@@ -9713,46 +9693,7 @@ test.describe('shops screens', () => {
   });
 
   async function stubPlaceMap(page: Page): Promise<void> {
-    await page.addInitScript(() => {
-      class MapShim {
-        private readonly el: HTMLElement;
-
-        constructor(el: HTMLElement) {
-          this.el = el;
-        }
-
-        setCenter(): void {}
-
-        addListener(
-          event: string,
-          handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
-        ): void {
-          if (event !== 'click') {
-            return;
-          }
-          this.el.addEventListener('click', () => {
-            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
-          });
-        }
-      }
-      class MarkerShim {
-        setPosition(): void {}
-        getPosition(): null {
-          return null;
-        }
-        addListener(): void {}
-      }
-      (window as unknown as { google?: unknown }).google = {
-        maps: { Map: MapShim, Marker: MarkerShim },
-      };
-    });
-    await page.route('**/maps/key', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ key: 'e2e' }),
-      });
-    });
+    await installBaselineMap(page, { click: true });
   }
 
   test('shops place', async ({ page }) => {
@@ -9803,6 +9744,8 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     const frame = page.locator('.h-64');
     await expect(frame).toBeVisible();
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await frame.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-map', false);
@@ -9818,6 +9761,7 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
     const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-confirm', false);
@@ -9892,10 +9836,13 @@ test.describe('map screens', () => {
         }),
       });
     });
+    await installBaselineMap(page);
     await page.goto('/map');
     await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
       timeout: 20_000,
     });
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await shotScreen(page, 'screen-map');
   });
 
@@ -9919,10 +9866,13 @@ test.describe('map screens', () => {
         }),
       });
     });
+    await installBaselineMap(page);
     await page.goto('/map?pin=m-pin');
     await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
       timeout: 20_000,
     });
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await shotScreen(page, 'state-map-pin');
   });
 
