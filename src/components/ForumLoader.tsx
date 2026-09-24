@@ -256,8 +256,9 @@ function appendMessages(
 }
 
 /**
- * Updates sats/payable on ids already in `prev`. Does not insert unseen ids
- * (those wait behind the New posts pill while the visitor is scrolled down).
+ * Updates sats, payable, and the four payment snapshots on ids already in
+ * `prev`. Does not insert unseen ids (those wait behind the New posts pill
+ * while the visitor is scrolled down).
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the payable poll GET.
@@ -271,10 +272,26 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
   const byId = new Map(next.map((message) => [message.id, message]));
   return prev.map((row) => {
     const fresh = byId.get(row.id);
-    if (fresh === undefined || (fresh.payable === row.payable && fresh.sats === row.sats)) {
+    if (
+      fresh === undefined ||
+      (fresh.payable === row.payable &&
+        fresh.sats === row.sats &&
+        fresh.amountUsd === row.amountUsd &&
+        fresh.amountChf === row.amountChf &&
+        fresh.amountEur === row.amountEur &&
+        fresh.amountPhp === row.amountPhp)
+    ) {
       return row;
     }
-    return { ...row, payable: fresh.payable, sats: fresh.sats };
+    return {
+      ...row,
+      payable: fresh.payable,
+      sats: fresh.sats,
+      amountUsd: fresh.amountUsd,
+      amountChf: fresh.amountChf,
+      amountEur: fresh.amountEur,
+      amountPhp: fresh.amountPhp,
+    };
   });
 }
 

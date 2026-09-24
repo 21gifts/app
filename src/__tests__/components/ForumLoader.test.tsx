@@ -4761,6 +4761,53 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('copies payment snapshots when the payable poll updates a fiat ask', async () => {
+    vi.useFakeTimers();
+    const asking: ForumMessage = {
+      id: 'm-ask',
+      name: 'Ada',
+      text: 'Half a dollar',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      goalSats: 1000,
+      goalCurrency: 'USD',
+      goalAmount: '1.50',
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    const withUsd: ForumMessage = { ...asking, amountUsd: '0.75' };
+    const withChf: ForumMessage = { ...withUsd, amountChf: '0.60' };
+    const withEur: ForumMessage = { ...withChf, amountEur: '0.70' };
+    const withPhp: ForumMessage = { ...withEur, amountPhp: '40.00', payable: true };
+    fetchMock
+      .mockResolvedValueOnce(forumPage([asking]))
+      .mockResolvedValueOnce(forumPage([withUsd]))
+      .mockResolvedValueOnce(forumPage([withChf]))
+      .mockResolvedValueOnce(forumPage([withEur]))
+      .mockResolvedValueOnce(forumPage([withPhp]));
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('0%')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByText('50%')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(8000);
+    });
+    expect(screen.getByText('50%')).toBeTruthy();
+  });
+
   it('enables Send Bitcoin after payable poll upgrades an unsigned post', async () => {
     vi.useFakeTimers();
     const unsigned: ForumMessage = {
