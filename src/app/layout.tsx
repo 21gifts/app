@@ -24,7 +24,7 @@ const outfit = Outfit({
 });
 
 const description =
-  'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.';
+  'Direct human-to-human giving in Bitcoin. People helping people — no middleman.';
 const title = '21.gifts — peer-to-peer Bitcoin gifts';
 
 /**
