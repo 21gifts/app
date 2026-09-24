@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { getCatalog } from '../src/lib/messages';
 
 test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await page.goto('/');
@@ -96,3 +97,58 @@ test('Function: HappylandPhoto preserves photographs and displays descriptive ca
       .toBe(true);
   }
 });
+
+for (const locale of ['en', 'de', 'es', 'fil'] as const) {
+  for (const width of [375, 768, 1024, 1280]) {
+    test(`Function: MarketingHeader opens Happyland in ${locale} at ${width}px`, async ({
+      page,
+      context,
+    }) => {
+      await context.addCookies([{ name: 'locale', value: locale, url: 'http://localhost:3000' }]);
+      await page.setViewportSize({ width, height: 812 });
+      await page.goto('/');
+      const menu = page.getByRole('button', {
+        name: getCatalog(locale)['aria.menu'],
+        exact: true,
+        includeHidden: true,
+      });
+      if (await menu.isVisible()) await menu.click();
+      const nav = page.locator('header nav');
+      const happyland = nav.getByRole('link', { name: 'Happyland', exact: true });
+      await expect(nav.getByRole('link').nth(0)).toHaveAttribute('href', '/#how');
+      await expect(nav.getByRole('link').nth(1)).toHaveText('Happyland');
+      await expect(happyland).toHaveAttribute('href', '/#happyland');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await happyland.click();
+      await expect(page).toHaveURL(/\/#happyland$/);
+      await expect(page.locator('#happyland-title')).toBeInViewport();
+      await expect(menu).toHaveAttribute('aria-expanded', 'false');
+      await expect
+        .poll(async () => {
+          const heading = await page.locator('#happyland-title').boundingBox();
+          const header = await page.locator('header').boundingBox();
+          return heading !== null && header !== null && heading.y >= header.y + header.height;
+        })
+        .toBe(true);
+    });
+  }
+}
+
+for (const width of [375, 1280]) {
+  test(`Happyland navigation returns from About to the photo essay at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 812 });
+    await page.goto('/about');
+    const menu = page.getByRole('button', { name: 'Menu', exact: true, includeHidden: true });
+    if (await menu.isVisible()) await menu.click();
+    await page.locator('header nav').getByRole('link', { name: 'Happyland', exact: true }).click();
+    await expect(page).toHaveURL(/\/#happyland$/);
+    await expect(page.locator('#happyland-title')).toBeInViewport();
+    await expect(
+      page.getByRole('button', { name: 'Menu', exact: true, includeHidden: true }),
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+}

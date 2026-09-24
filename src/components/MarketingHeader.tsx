@@ -9,7 +9,7 @@ import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink } from '@/components/ui';
 
 /**
- * Sticky dark header for marketing pages: wordmark, section nav including About, optional
+ * Sticky dark header for marketing pages: wordmark, section nav including Happyland, optional
  * PWA install control, language switcher, login CTA, and a mobile menu
  * toggle.
  *
@@ -29,7 +29,7 @@ export function MarketingHeader(): ReactElement {
       <div className="flex items-center gap-4">
         <nav
           aria-label={t('aria.primary')}
-          className={`items-center gap-6 text-sm text-paper/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4' : 'hidden md:flex'}`}
+          className={`items-center gap-6 text-sm text-paper/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4' : 'hidden lg:flex'}`}
         >
           <Link href="/#how" onClick={closeMenu}>
             {t('nav.how')}
@@ -62,7 +62,7 @@ export function MarketingHeader(): ReactElement {
         <LanguageSwitcher tone="dark" />
         <button
           type="button"
-          className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 md:hidden"
+          className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 lg:hidden"
           aria-label={t('aria.menu')}
           aria-expanded={open}
           onClick={() => {

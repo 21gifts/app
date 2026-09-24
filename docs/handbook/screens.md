@@ -13,13 +13,13 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, About, Stats, Handbook, Log in). No hamburger.
+Desktop/wide layout (from 1024px): section nav is visible in the header (How it works, Happyland, Why, FAQ, About, Stats, Handbook, Log in). Happyland links to `/#happyland`, including from other marketing pages, and leaves space below the sticky header for the section heading. No hamburger.
 
 ![21.gifts home](images/root.png)
 
 ### Variant: mobile-nav
 
-Captured at desktop and mobile. On mobile the header shows the Menu button; open it to reveal the same links stacked (tapping a link closes the menu). On desktop this is the landing without the hamburger.
+Captured at desktop and mobile. Below 1024px the header shows the Menu button; open it to reveal the same links stacked, with Happyland immediately after How it works. Tapping Happyland closes the menu and scrolls to the existing photo essay. On desktop this is the landing without the hamburger.
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
