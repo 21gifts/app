@@ -114,6 +114,8 @@ describe('AmountEntry', () => {
     expect(field?.className).toContain('rounded-2xl');
     expect(screen.getByText('Amount').className).toContain('sr-only');
     expect(screen.getByText('$0.02').className).toContain('text-xs');
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(screen.getByLabelText('Amount')).toHaveProperty('inputMode', 'decimal');
   });
 
   it('omits the composer counter when the draft is empty', () => {
