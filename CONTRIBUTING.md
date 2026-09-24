@@ -199,7 +199,7 @@ app/
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
 │   │   ├── WalletScreen.tsx     # Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
-│   │   ├── WalletScreenView.tsx # Presentational wallet card
+│   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)

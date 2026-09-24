@@ -426,10 +426,10 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`) and `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading` | `nav.back`, default `profile.back`).
-- **Inputs:** Optional `backHref` and `backLabelKey`; catalog via `useTranslations`.
-- **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. No network.
-- **Used by:** `ProfilePage`, `WalletChromeLeft`, `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` no longer mounts `ProfileChromeLeft` directly (it mounts `WalletChromeLeft`, which renders `ProfileChromeLeft`).
+- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`), `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading` | `nav.back`, default `profile.back`), and `onBackClick`. An unmodified click runs `onBackClick` and does not follow `backHref`. Modified clicks still follow `backHref`. Wallet's handler hides the words, closes Advanced functions, goes back, or opens the forum.
+- **Inputs:** Optional `backHref`, `backLabelKey`, and `onBackClick`; catalog via `useTranslations`.
+- **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. `onBackClick` runs on an unmodified primary click. No network.
+- **Used by:** `ProfilePage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
 
 ## Function: resetWalletReturn
 
@@ -463,7 +463,7 @@
 
 - **Purpose:** Client `/wallet` chrome that renders `ProfileChromeLeft`. The server render links back to `/welcome`. Before paint, back uses the path this tab remembered. Forum fallback uses `profile.back`; any other path uses `nav.back`. Wordmark stays `/welcome`.
 - **Inputs:** `walletBackHref()` from the shared tab slot, read in `useLayoutEffect`; catalog via `ProfileChromeLeft`.
-- **Returns / side effects:** `ProfileChromeLeft`. No `router.back()`, no click interceptor, no second wordmark.
+- **Returns / side effects:** `ProfileChromeLeft`. A plain click is `history.back()`, or `/welcome` when the tab has no previous page. Modified clicks follow the remembered href. The card's Back replaces this one while Wallet is shown.
 - **Used by:** `WalletPage`.
 
 ## Function: MessagesChromeLeft
@@ -796,6 +796,7 @@
 - **Returns / side effects:** Portal into the shell top-left host when present; otherwise the children. Layout only.
 - **Used by:**
   - **`RulesSetup`** (chapter back + wordmark)
+  - **`WalletScreenView`** (Wallet Back and wordmark; wins over the page `topLeft`)
   - **`AppShell` unit tests** (child portal wins over the page `topLeft` prop)
 
 ## Function: PageChrome
@@ -2813,9 +2814,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletScreenView
 
-- **Purpose:** Presentational wallet card.
+- **Purpose:** Wallet card, and the header Back for that page. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Error shows a reason, a hint, and **Try again**.
+- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Header Back takes one step: hide the words, close **Advanced functions**, `history.back()`, or open `/welcome` when the tab has no previous page. Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen
