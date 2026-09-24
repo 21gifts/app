@@ -106,7 +106,12 @@ describe('AmountEntry', () => {
       'ch',
       'USD',
     );
-    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '21');
+    const input = screen.getByLabelText('Amount');
+    const switchGroup = screen.getByRole('group', { name: 'Bitcoin or fiat' });
+    const row = input.parentElement?.parentElement;
+    expect(input).toHaveProperty('value', '21');
+    expect(row).toBe(switchGroup.parentElement?.parentElement);
+    expect(row?.className).toContain('items-center');
     expect(screen.getByText('Amount').className).toContain('sr-only');
     expect(screen.getByText('$0.02').className).toContain('ps-24');
   });
