@@ -49,12 +49,10 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/lib/note-translate', () => ({
   fetchTranslateAvailable: vi.fn().mockResolvedValue(true),
   translateNote: vi.fn(),
-  translateConversationMessage: vi
-    .fn()
-    .mockResolvedValue({
-      translatedText: 'Can anyone lend me a few satoshi this week?',
-      cached: false,
-    }),
+  translateConversationMessage: vi.fn().mockResolvedValue({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+    cached: false,
+  }),
 }));
 
 beforeEach(() => {
