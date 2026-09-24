@@ -1542,6 +1542,13 @@ export const SCREEN_VARIANTS = [
     needle: 'You are admitted to daily 21.gifts grant payouts.',
   },
   {
+    route: '/profile',
+    id: 'funding-program-open',
+    image: 'profile-funding-program-open.png',
+    visual: 'state-profile-funding-program-open',
+    needle: 'state-profile-funding-program-open',
+  },
+  {
     route: '/profile/apply',
     id: 'default',
     image: 'profile-apply.png',

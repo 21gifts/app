@@ -1206,6 +1206,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:funding-program-open",
+    "label": "/profile funding-program-open",
+    "visual": "state-profile-funding-program-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile/apply:default",
     "label": "/profile/apply default",
     "visual": "screen-profile-apply",

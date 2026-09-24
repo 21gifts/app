@@ -6075,6 +6075,47 @@ test.describe('profile funding states', () => {
     await expect(page.getByText(/Takes part in the 21.gifts funding program since/)).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
   });
+
+  test('state /profile funding-program-open', async ({ page }) => {
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        reviewedByName: 'Ada',
+      },
+    });
+    await openProfile(page);
+    const sentence = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      Date.parse('2026-08-28T12:00:00.000Z'),
+      'en',
+    )}`;
+    await page.getByRole('button', { name: sentence }).click();
+    const revealed = page.getByRole('status', { name: sentence });
+    await expect(revealed).toBeVisible();
+    await revealed.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-funding-program-open', false);
+  });
 });
 
 test.describe('profile apply screens', () => {
