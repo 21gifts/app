@@ -3387,7 +3387,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$21.00')).toHaveCount(0);
     await page.getByText('Goal note at one hundred ten percent').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-110');
   });
@@ -5507,7 +5507,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$21.00')).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-110');
   });
 
@@ -7726,7 +7726,7 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$21.00')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-110');
   });
 
@@ -7827,7 +7827,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await expect(page.getByText('$1.00')).toBeVisible();
+    await expect(page.getByText('$1.00')).toHaveCount(0);
     await page.getByText("₿1'000").scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-ask-open');
   });
@@ -12895,6 +12895,10 @@ test.describe('moderate group screens', () => {
       giftFor?: string;
       hasPhoto?: boolean;
       photoCount?: number;
+      amountUsd?: string;
+      amountChf?: string;
+      amountEur?: string;
+      amountPhp?: string;
     }>,
   ): Promise<void> {
     await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
@@ -12970,6 +12974,10 @@ test.describe('moderate group screens', () => {
         createdAt: '2026-08-28T15:01:00.000Z',
         fromMe: false,
         sats: 6158,
+        amountUsd: '5.00',
+        amountChf: '4.00',
+        amountEur: '4.50',
+        amountPhp: '280.00',
         giftFor: 'm1',
       },
     ]);
