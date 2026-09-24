@@ -14,7 +14,7 @@ describe('PageChrome', () => {
     );
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
-    expect(main?.className).not.toContain('overflow-hidden');
+    expect(main?.className).toContain('overflow-hidden');
     expect(main?.className).not.toContain('justify-center');
     expect(screen.getByText('Body')).toBeTruthy();
     const chrome = main?.querySelector('[data-app-chrome]');
@@ -56,7 +56,7 @@ describe('PageChrome', () => {
     const main = container.querySelector('main');
     expect(main?.className).toContain('justify-start');
     expect(main?.className).toContain('h-[var(--app-height)]');
-    expect(main?.className).not.toContain('overflow-hidden');
+    expect(main?.className).toContain('overflow-hidden');
     expect(main?.className).not.toContain('justify-center');
   });
 

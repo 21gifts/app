@@ -50,7 +50,7 @@ describe('ViewProfilePage', () => {
     expect(screen.getByTestId('view-profile-loader').textContent).toBe(viewKey);
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
-    expect(main?.className).not.toContain('overflow-hidden');
+    expect(main?.className).toContain('overflow-hidden');
   });
 
   it('links the unsigned wordmark home', async () => {

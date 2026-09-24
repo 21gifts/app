@@ -48,7 +48,7 @@ describe('AppShell', () => {
     );
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
-    expect(main?.className).not.toContain('overflow-hidden');
+    expect(main?.className).toContain('overflow-hidden');
     expect(main?.className).toContain('py-4');
     expect(main?.className).not.toContain('min-h-screen');
     expect(main?.className).not.toContain('h-svh');
@@ -106,7 +106,7 @@ describe('AppShell', () => {
       );
       const main = container.querySelector('main');
       expect(main?.className).toContain('h-[var(--app-height)]');
-      expect(main?.className).not.toContain('overflow-hidden');
+      expect(main?.className).toContain('overflow-hidden');
       expect(main?.className).toContain('py-4');
       expect(main?.className).not.toContain('justify-center');
       const frame = main?.querySelector(':scope > section');

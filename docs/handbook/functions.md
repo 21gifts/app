@@ -753,7 +753,7 @@
 
 ## Function: AppShell
 
-- **Purpose:** App page shell driven by `--app-height`. Always draws one `rounded-3xl` page frame. `fill` and `flow` share that geometry: locked height, frame-header chrome row, inner `overflow-y-auto` scroller, footer host. Prefer this over Tailwind viewport-height utilities on app routes. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). Card never hosts page chrome. Never `justify-center` on `<main>` or the overflow scroller.
+- **Purpose:** App page shell driven by `--app-height`. Always draws one `rounded-3xl` page frame. `fill` and `flow` share that geometry: locked height, frame-header chrome row, inner `overflow-y-auto` scroller, footer host. `<main>` is `overflow-hidden`, so a tall page cannot stretch the document past the frame; scrolling stays on the inner scroller. Prefer this over Tailwind viewport-height utilities on app routes. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). Card never hosts page chrome. Never `justify-center` on `<main>` or the overflow scroller.
 - **Inputs:** `children`, required `mode` (`fill` | `flow`; both values render the same frame), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`).
 - **Returns / side effects:** A `<main>` layout with a rounded page frame, chrome row, header/footer portals, and inner scroller. `useAppShellScroller` reads that scroller from context. No network.
 - **Used by:**
