@@ -202,7 +202,7 @@ Account that can already show a phrase, no phrase in the tab. Open **Advanced fu
 
 ### Variant: error
 
-Generic failure. Alert **The recovery phrase could not be opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
+Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
 
 ![21.gifts wallet error](images/wallet-error.png)
 

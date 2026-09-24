@@ -230,7 +230,7 @@ export const SCREEN_VARIANTS = [
     id: 'error',
     image: 'wallet-error.png',
     visual: 'state-wallet-error',
-    needle: 'The recovery phrase could not be opened. Check this device and try again.',
+    needle: 'The recovery phrase could not be created or opened. Check this device and try again.',
   },
   {
     route: '/wallet',
