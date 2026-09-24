@@ -22,6 +22,10 @@ async function installBaselineMap(page: Page, options?: { click?: boolean }): Pr
       constructor(el: HTMLElement) {
         this.el = el;
         el.style.position = 'relative';
+        el.style.backgroundColor = '#e7efe4';
+        el.style.backgroundImage =
+          'linear-gradient(#c9d7c6 1px, transparent 1px), linear-gradient(90deg, #c9d7c6 1px, transparent 1px)';
+        el.style.backgroundSize = '40px 40px';
         const surface = document.createElement('div');
         surface.dataset['e2eMap'] = 'surface';
         surface.style.position = 'absolute';

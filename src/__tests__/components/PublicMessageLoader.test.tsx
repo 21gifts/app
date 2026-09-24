@@ -216,6 +216,44 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
+  it('shows a place link on a public note, or coordinates when the label is missing', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    });
+    const view = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    const named = await screen.findByRole('link', { name: 'Happyland' });
+    expect(named.getAttribute('href')).toBe(`/map?pin=${MESSAGE_ID}`);
+    view.unmount();
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      place: { lat: 14.6, lng: 120.98, label: null },
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(await screen.findByRole('link', { name: '14.60000, 120.98000' })).toBeTruthy();
+  });
+
+  it('does not show a place link on a public reply', async () => {
+    const parentId = '22222222-2222-4222-8222-222222222222';
+    const reply: ForumMessage = {
+      ...sample,
+      parentId,
+      text: 'A reply',
+      place: { lat: 1, lng: 2, label: 'Hidden' },
+    };
+    fetchMessage.mockImplementation(async (id: string) => {
+      if (id === parentId) {
+        return { ...sample, id: parentId, text: 'Parent note' };
+      }
+      return reply;
+    });
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(await screen.findByText('Parent note')).toBeTruthy();
+    expect(await screen.findByText('A reply')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Hidden' })).toBeNull();
+  });
+
   it('shows the goal bar on a top-level note past 100%', async () => {
     fetchMessage.mockResolvedValue({ ...sample, sats: 23100, goalSats: 21000 });
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
