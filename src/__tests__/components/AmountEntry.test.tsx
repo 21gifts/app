@@ -148,15 +148,15 @@ describe('AmountEntry', () => {
     );
     const input = screen.getByLabelText('Amount');
     const group = screen.getByRole('group', { name: 'Bitcoin or fiat' });
-    const row = group.parentElement;
-    expect(row).toBe(input.parentElement?.parentElement);
+    const row = input.parentElement?.parentElement;
+    expect(row).toBe(group.parentElement?.parentElement);
     expect(row?.className).toContain('items-center');
     expect(screen.getByText('Amount').className).toContain('sr-only');
     expect(screen.getByText('$0.02')).toBeTruthy();
     const children = Array.from(row?.children ?? []);
     const amountIndex = children.indexOf(input.parentElement as HTMLElement);
     const switchIndex = children.indexOf(group.parentElement as HTMLElement);
-    expect(amountIndex < switchIndex).toBe(true);
+    expect(amountIndex >= 0 && switchIndex > amountIndex).toBe(true);
   });
 
   it('omits the reply counter when the draft is empty', () => {
