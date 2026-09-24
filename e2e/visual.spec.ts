@@ -1047,7 +1047,9 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet?visual=error');
     await expect(
-      page.getByText('The recovery phrase could not be opened. Check this device and try again.'),
+      page.getByText(
+        'The recovery phrase could not be created or opened. Check this device and try again.',
+      ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-wallet-error');

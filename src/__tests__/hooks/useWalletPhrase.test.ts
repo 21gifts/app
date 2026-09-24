@@ -7,7 +7,7 @@ import {
   resetWalletCeremonyLock,
   useWalletPhrase,
 } from '@/hooks/useWalletPhrase';
-import { finishPasskeySeed, postWalletBackupSeen, startPasskeySeed } from '@/lib/api';
+import { fetchMe, finishPasskeySeed, postWalletBackupSeen, startPasskeySeed } from '@/lib/api';
 import { obtainPrfFirst, obtainPrfFirstFromGet, mnemonicFromPrfFirst } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/auth-store';
 vi.mock('@/lib/api', () => ({
   startPasskeySeed: vi.fn(),
   finishPasskeySeed: vi.fn(),
+  fetchMe: vi.fn(),
   postWalletBackupSeen: vi.fn(),
 }));
 
@@ -88,6 +89,7 @@ beforeEach(() => {
       ...account,
       passkeyCredentialId: 'seed-from-api',
     });
+  vi.mocked(fetchMe).mockReset().mockResolvedValue(null);
   vi.mocked(postWalletBackupSeen).mockReset();
   vi.mocked(obtainPrfFirst).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
   vi.mocked(obtainPrfFirstFromGet).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
@@ -140,6 +142,23 @@ describe('useWalletPhrase', () => {
     expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('seed-from-api');
     expect(result.current.words).toEqual([]);
     expect(result.current.error).toBe('generic');
+  });
+
+  it('loads the seed from the server when finish fails after it was stored', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockResolvedValueOnce({
+      ...account,
+      passkeyCredentialId: 'seed-from-server',
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('seed-from-server');
   });
 
   it('does not finish seed when PRF is missing', async () => {

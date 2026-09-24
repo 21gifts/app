@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { finishPasskeySeed, startPasskeySeed } from '@/lib/api';
+import { fetchMe, finishPasskeySeed, startPasskeySeed } from '@/lib/api';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
@@ -234,6 +234,24 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       setMnemonic(nextMnemonic);
       setStatus('idle');
     } catch (err) {
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
+      try {
+        const latest = await fetchMe(token);
+        if (
+          useAuthStore.getState().session === token &&
+          latest !== null &&
+          hasSeedPasskey(latest.passkeyCredentialId)
+        ) {
+          setAccount(latest);
+          setError(null);
+          setStatus('idle');
+          return;
+        }
+      } catch {
+        // The original failure still stands when the account cannot be reloaded.
+      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }

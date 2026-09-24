@@ -425,7 +425,7 @@ const en = {
     'This browser cannot create a recovery phrase. Try another browser or device.',
   'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
   'wallet.errorGeneric':
-    'The recovery phrase could not be opened. Check this device and try again.',
+    'The recovery phrase could not be created or opened. Check this device and try again.',
   'wallet.errorHint':
     'If this keeps happening, try another browser or the device you already used to sign in.',
 
@@ -1238,7 +1238,7 @@ const de = {
   'wallet.timeout':
     'Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut.',
   'wallet.errorGeneric':
-    'Der Wiederherstellungssatz konnte nicht geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
+    'Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
   'wallet.errorHint':
     'Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben.',
 
@@ -2058,7 +2058,7 @@ const es = {
   'wallet.timeout':
     'La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo.',
   'wallet.errorGeneric':
-    'No se pudo abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
+    'No se pudo crear ni abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
   'wallet.errorHint':
     'Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión.',
 
@@ -2869,7 +2869,7 @@ const fil = {
     'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
   'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',
   'wallet.errorGeneric':
-    'Hindi mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
+    'Hindi magawa o mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
   'wallet.errorHint':
     'Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in.',
 
