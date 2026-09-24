@@ -2756,6 +2756,7 @@ describe('ForumBoard', () => {
         messages={[
           { ...SAMPLE, id: 'm-founder', role: 'founder' },
           { ...SAMPLE, id: 'm-mod', name: 'Bob', role: 'moderator' },
+          { ...SAMPLE, id: 'm-init', name: 'Ivy', role: 'initiator' },
           { ...SAMPLE, id: 'm-ver', name: 'Carol', role: 'verified' },
         ]}
         error={false}
@@ -2772,7 +2773,10 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByRole('button', { name: 'Founder' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Initiator' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Initiator' }));
+    expect(screen.getByRole('status').textContent).toBe('This person was named an initiator.');
   });
 
   it('shows Founder, Moderator, and Verified tags on replies', () => {

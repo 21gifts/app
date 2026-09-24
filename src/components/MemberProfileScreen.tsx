@@ -104,13 +104,18 @@ function isAuthorWalletError(err: unknown): boolean {
 }
 
 /** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'verified';
+type MemberTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
 
 const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
   founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
   moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
+
+function isMemberTaggedRole(role: string): role is MemberTaggedRole {
+  return role in ROLE_TAG_KEYS;
+}
 
 /* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
 const IDLE_BOARD = {
@@ -853,12 +858,7 @@ export function MemberProfileScreen({
   const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const [fundingHintOpen, setFundingHintOpen] = useState(false);
-  const tagged =
-    listedProfile.role === 'founder' ||
-    listedProfile.role === 'moderator' ||
-    listedProfile.role === 'verified'
-      ? listedProfile.role
-      : null;
+  const tagged = isMemberTaggedRole(listedProfile.role) ? listedProfile.role : null;
   const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
   const fundingReviewedAt = listedProfile.fundingReviewedAt;
   const showFundingReviewed = typeof fundingReviewedAt === 'number';

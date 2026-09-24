@@ -1,29 +1,39 @@
 /**
- * Account roles in rank order, lowest first: basis, verified, moderator, founder.
+ * Account roles as membership order, not the rank sequence: basis, verified,
+ * moderator, initiator, founder.
  *
- * Product rule: roles form a strict hierarchy founder > moderator > verified >
- * basis. A higher role can always do and see everything a lower role can; there
- * are no exceptions. Viewer permission checks use {@link roleAtLeast}; an
- * equality test on the viewer's role is a defect.
+ * Numeric ranks: basis 0, verified 1, moderator 2, initiator 2, founder 3.
+ * Viewer permission checks use {@link roleAtLeast}; an equality test on the
+ * viewer's role is a defect. Do not write "moderator or initiator" or
+ * „Moderator oder Initiator“; permission checks name the minimum rank only.
  */
-export const ROLE_ORDER = ['basis', 'verified', 'moderator', 'founder'] as const;
+export const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'] as const;
 
 /** One of {@link ROLE_ORDER}. */
 export type Role = (typeof ROLE_ORDER)[number];
 
+const ROLE_RANK: Record<Role, number> = {
+  basis: 0,
+  verified: 1,
+  moderator: 2,
+  initiator: 2,
+  founder: 3,
+};
+
 /**
- * Numeric rank of a role in {@link ROLE_ORDER} (0 for basis, 3 for founder).
+ * Numeric rank of a role from the explicit rank map (not {@link ROLE_ORDER}'s
+ * index).
  *
  * @param role - A live account role.
  * @returns Rank from 0 through 3.
  */
 export function roleRank(role: Role): number {
-  return ROLE_ORDER.indexOf(role);
+  return ROLE_RANK[role];
 }
 
 /**
- * True when `role` is `min` or higher in the founder > moderator > verified >
- * basis hierarchy.
+ * True when `role` meets or exceeds `min` by numeric rank. An equal rank
+ * meets the minimum.
  *
  * `null` and `undefined` are never at least `min`.
  *

@@ -6,8 +6,9 @@ describe('roleRank', () => {
     expect(roleRank('basis')).toBe(0);
     expect(roleRank('verified')).toBe(1);
     expect(roleRank('moderator')).toBe(2);
+    expect(roleRank('initiator')).toBe(2);
     expect(roleRank('founder')).toBe(3);
-    expect(ROLE_ORDER).toEqual(['basis', 'verified', 'moderator', 'founder']);
+    expect(ROLE_ORDER).toEqual(['basis', 'verified', 'moderator', 'initiator', 'founder']);
   });
 });
 
@@ -16,18 +17,27 @@ describe('roleAtLeast', () => {
     ['basis', 'basis', true],
     ['basis', 'verified', false],
     ['basis', 'moderator', false],
+    ['basis', 'initiator', false],
     ['basis', 'founder', false],
     ['verified', 'basis', true],
     ['verified', 'verified', true],
     ['verified', 'moderator', false],
+    ['verified', 'initiator', false],
     ['verified', 'founder', false],
     ['moderator', 'basis', true],
     ['moderator', 'verified', true],
     ['moderator', 'moderator', true],
+    ['moderator', 'initiator', true],
     ['moderator', 'founder', false],
+    ['initiator', 'basis', true],
+    ['initiator', 'verified', true],
+    ['initiator', 'moderator', true],
+    ['initiator', 'initiator', true],
+    ['initiator', 'founder', false],
     ['founder', 'basis', true],
     ['founder', 'verified', true],
     ['founder', 'moderator', true],
+    ['founder', 'initiator', true],
     ['founder', 'founder', true],
   ] as const)('roleAtLeast(%s, %s) is %s', (role, min, expected) => {
     expect(roleAtLeast(role, min)).toBe(expected);
@@ -51,7 +61,7 @@ describe('isReplyPaymentExempt', () => {
     expect(isReplyPaymentExempt(null, undefined)).toBe(false);
   });
 
-  it.each(['verified', 'moderator', 'founder'] as const)(
+  it.each(['verified', 'moderator', 'initiator', 'founder'] as const)(
     'is true for a %s account regardless of parent author',
     (role) => {
       expect(isReplyPaymentExempt(account(role), undefined)).toBe(true);

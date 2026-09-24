@@ -906,7 +906,7 @@ export type MemberProfile = z.infer<typeof memberProfileSchema>;
 export const trustChainNodeSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  role: z.enum(['verified', 'moderator', 'founder']),
+  role: z.enum(['verified', 'moderator', 'initiator', 'founder']),
 });
 
 /**

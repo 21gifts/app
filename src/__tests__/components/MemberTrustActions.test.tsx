@@ -213,6 +213,16 @@ describe('MemberTrustActions', () => {
     expect(screen.getByRole('link', { name: 'Already on the Trust Chain.' })).toBeTruthy();
   });
 
+  it('links Already on the Trust Chain for an initiator subject', () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    renderWithLocale(<MemberTrustActions profile={{ ...profile, role: 'initiator' }} />);
+    openStaffFunctions();
+    expect(screen.getByRole('link', { name: 'Already on the Trust Chain.' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Propose as moderator' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Appoint as moderator' })).toBeNull();
+  });
+
   it('sets role=alert when the action fails', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     vi.mocked(postTrustVerify).mockRejectedValue(new Error('fail'));

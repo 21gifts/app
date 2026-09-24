@@ -219,6 +219,14 @@ describe('trustChainSchema', () => {
   it('accepts an empty graph', () => {
     expect(trustChainSchema.parse({ nodes: [], edges: [] })).toEqual({ nodes: [], edges: [] });
   });
+
+  it('accepts an initiator node', () => {
+    const body = {
+      nodes: [{ id: 'i', name: 'Ivy', role: 'initiator' as const }],
+      edges: [],
+    };
+    expect(trustChainSchema.parse(body)).toEqual(body);
+  });
 });
 
 describe('trustActionResultSchema', () => {
