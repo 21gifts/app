@@ -93,6 +93,46 @@ describe('AmountEntry', () => {
     expect(screen.getByRole('group', { name: 'Bitcoin or fiat' })).toBeTruthy();
   });
 
+  it('puts the switch beside the input in a composer and hides the label', () => {
+    renderWithLocale(
+      <AmountEntry
+        layout="composer"
+        label="Amount"
+        value="21"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    const input = screen.getByLabelText('Amount');
+    const switchGroup = screen.getByRole('group', { name: 'Bitcoin or fiat' });
+    const row = input.parentElement?.parentElement;
+    expect(input).toHaveProperty('value', '21');
+    expect(row).toBe(switchGroup.parentElement?.parentElement);
+    expect(row?.className).toContain('items-center');
+    expect(screen.getByText('Amount').className).toContain('sr-only');
+    expect(screen.getByText('$0.02').className).toContain('ps-24');
+  });
+
+  it('omits the composer counter when the draft is empty', () => {
+    renderWithLocale(
+      <AmountEntry
+        layout="composer"
+        label="Amount"
+        value=""
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.getByText('Amount').className).toContain('sr-only');
+  });
+
   it('converts to fiat locally when nobody is signed in', () => {
     const onValueChange = vi.fn();
     const onUnitChange = vi.fn();

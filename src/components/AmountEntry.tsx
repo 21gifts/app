@@ -52,6 +52,12 @@ export interface AmountEntryProps {
    * because it has no account.
    */
   onUnitChange?: (unit: AmountUnit) => void;
+  /**
+   * `field` stacks the label, switch, and input. `composer` puts the switch
+   * beside the input, keeps the label for assistive tech only, and puts the
+   * other unit under the input. The inbox composer uses `composer`.
+   */
+  layout?: 'field' | 'composer';
 }
 
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
@@ -174,6 +180,7 @@ export function AmountEntry({
   rateDay,
   valueUnit,
   onUnitChange,
+  layout = 'field',
 }: AmountEntryProps): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -330,6 +337,64 @@ export function AmountEntry({
     }
   }
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
+  const unitSwitch = (
+    <div className={disabled || locked ? 'pointer-events-none opacity-50' : undefined}>
+      <SegmentedControl
+        tone="gift"
+        shell="app"
+        value={entryUnit}
+        options={[
+          { value: 'btc', label: '\u20BF' },
+          { value: 'fiat', label: fiat },
+        ]}
+        onChange={changeUnit}
+        ariaLabel={t('amount.unit')}
+      />
+    </div>
+  );
+  const amountInput = (
+    <span className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base">
+      <span aria-hidden="true" className="text-app-muted">
+        {prefix}
+      </span>
+      <input
+        id={fieldId}
+        aria-label={label}
+        type="text"
+        inputMode={entryUnit === 'btc' ? 'numeric' : 'decimal'}
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        placeholder={shownPlaceholder}
+        value={shown}
+        disabled={disabled || locked}
+        onChange={(event) => {
+          if (!locked) {
+            draftRef.current = event.target.value;
+            onValueChange(event.target.value);
+          }
+        }}
+        className="min-w-0 flex-1 bg-transparent text-base text-app-fg outline-none"
+      />
+    </span>
+  );
+
+  if (layout === 'composer') {
+    return (
+      <div className={`flex min-w-0 flex-col gap-1${extra}`}>
+        <label htmlFor={fieldId} className="sr-only">
+          {label}
+        </label>
+        <div className="flex min-w-0 items-center gap-2">
+          {unitSwitch}
+          {amountInput}
+        </div>
+        {counter !== null ? (
+          <p className="ps-24 text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col gap-1${extra}`}>
@@ -337,44 +402,9 @@ export function AmountEntry({
         <label htmlFor={fieldId} className="text-sm text-app-fg">
           {label}
         </label>
-        <div className={disabled || locked ? 'pointer-events-none opacity-50' : undefined}>
-          <SegmentedControl
-            tone="gift"
-            shell="app"
-            value={entryUnit}
-            options={[
-              { value: 'btc', label: '\u20BF' },
-              { value: 'fiat', label: fiat },
-            ]}
-            onChange={changeUnit}
-            ariaLabel={t('amount.unit')}
-          />
-        </div>
+        {unitSwitch}
       </div>
-      <span className="flex min-h-11 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base">
-        <span aria-hidden="true" className="text-app-muted">
-          {prefix}
-        </span>
-        <input
-          id={fieldId}
-          aria-label={label}
-          type="text"
-          inputMode={entryUnit === 'btc' ? 'numeric' : 'decimal'}
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          placeholder={shownPlaceholder}
-          value={shown}
-          disabled={disabled || locked}
-          onChange={(event) => {
-            if (!locked) {
-              draftRef.current = event.target.value;
-              onValueChange(event.target.value);
-            }
-          }}
-          className="min-w-0 flex-1 bg-transparent text-base text-app-fg outline-none"
-        />
-      </span>
+      {amountInput}
       {counter !== null ? (
         <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
       ) : null}

@@ -357,8 +357,23 @@ describe('MemberProfileScreen', () => {
     expect(
       screen.getByText('A moderator has met this person in real life and confirmed they are real.'),
     ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Reviewed by a moderator on/ }));
-    expect(screen.getByText('Reviewed by a moderator')).toBeTruthy();
+    const fundingLabel = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      1_700_000_000_000,
+      'en',
+    )}`;
+    const fundingMark = screen.getByRole('button', {
+      name: /Takes part in the 21.gifts funding program since/,
+    });
+    expect(fundingMark).toBeTruthy();
+    expect(fundingMark.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText(fundingLabel)).toBeNull();
+    fireEvent.click(fundingMark);
+    expect(screen.getByText(fundingLabel)).toBeTruthy();
+    expect(fundingMark.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(fundingMark);
+    expect(screen.queryByText(fundingLabel)).toBeNull();
+    expect(fundingMark.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: /Reviewed by a moderator/ })).toBeNull();
   });
 
   it('factsOnly shows the role pill without a reviewed pill', () => {
@@ -366,7 +381,10 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen factsOnly profile={profile} received={[]} donated={[]} />,
     );
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Reviewed by a moderator on/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /Reviewed by a moderator/ })).toBeNull();
   });
 
   it('factsOnly omits the role and reviewed pills for a basis member', () => {
@@ -379,7 +397,9 @@ describe('MemberProfileScreen', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Reviewed by a moderator on/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
+    ).toBeNull();
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
   });
 
@@ -393,7 +413,12 @@ describe('MemberProfileScreen', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
-    expect(screen.getByRole('button', { name: /Reviewed by a moderator on/ })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
+    ).toBeNull();
   });
 
   it('shows name, address, chart empty state, and role pill', () => {
@@ -480,11 +505,20 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    const label = `Reviewed by a moderator on ${formatForumTimeFromMs(admittedAt, 'en')}`;
-    fireEvent.click(screen.getByRole('button', { name: label }));
-    expect(screen.getByText('Reviewed by a moderator', { exact: true })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: label }));
-    expect(screen.queryByText('Reviewed by a moderator', { exact: true })).toBeNull();
+    const label = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      admittedAt,
+      'en',
+    )}`;
+    const mark = screen.getByRole('button', { name: label });
+    expect(mark).toBeTruthy();
+    expect(mark.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText(label)).toBeNull();
+    fireEvent.click(mark);
+    expect(screen.getByText(label)).toBeTruthy();
+    expect(mark.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(mark);
+    expect(screen.queryByText(label)).toBeNull();
+    expect(mark.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('does not show a reviewed-by tag when fundingReviewedAt is null', () => {
@@ -495,7 +529,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    expect(screen.queryByText(/Reviewed by a moderator on/)).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
+    ).toBeNull();
+    expect(screen.queryByText(/Reviewed by a moderator/)).toBeNull();
   });
 
   it('shows clickable post and reply counts, including the empty 0/0 state', () => {

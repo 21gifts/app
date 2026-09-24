@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Mail } from 'lucide-react';
+import { HandHeart, Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -17,7 +17,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
 import {
   fetchComposeTarget,
   fetchGiftStats,
@@ -163,10 +163,38 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
+function FundingProgramMark({
+  admittedAt,
+  expanded,
+  onToggle,
+}: {
+  admittedAt: number;
+  expanded: boolean;
+  onToggle: () => void;
+}): ReactElement {
+  const { t, locale } = useTranslations();
+  const label = t('funding.participatesSince', {
+    date: formatForumTimeFromMs(admittedAt, locale),
+  });
+  return (
+    <IconButton
+      size="sm"
+      variant="secondary"
+      aria-label={label}
+      aria-expanded={expanded}
+      onClick={onToggle}
+    >
+      <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
+    </IconButton>
+  );
+}
+
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
- * Address, role pill, optional grant-reviewed tag when `fundingReviewedAt` is a
- * number, copy-profile-link, optional Message, post/reply counts, stacked
+ * Address, role pill, optional funding-program icon-only button (HandHeart;
+ * accessible name is participation since the date; pressing it reveals that
+ * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
+ * is a number, copy-profile-link, optional Message, post/reply counts, stacked
  * activity feeds, and staff Trust Chain actions when the viewer is
  * a moderator and the subject is someone else. About me is not a forum post.
  *
@@ -1292,19 +1320,12 @@ export function MemberProfileScreen({
                 {t(roleKeys.label)}
               </button>
             ) : null}
-            {showFundingReviewed ? (
-              <button
-                type="button"
-                aria-expanded={fundingHintOpen}
-                onClick={() => {
-                  setFundingHintOpen((open) => !open);
-                }}
-                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-              >
-                {t('funding.reviewedOn', {
-                  date: formatForumTimeFromMs(fundingReviewedAt, locale),
-                })}
-              </button>
+            {typeof fundingReviewedAt === 'number' ? (
+              <FundingProgramMark
+                admittedAt={fundingReviewedAt}
+                expanded={fundingHintOpen}
+                onToggle={() => setFundingHintOpen((open) => !open)}
+              />
             ) : null}
           </div>
         ) : null}
@@ -1313,9 +1334,11 @@ export function MemberProfileScreen({
             {t(roleKeys.hint)}
           </p>
         ) : null}
-        {fundingHintOpen && showFundingReviewed ? (
+        {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
           <p role="status" className="text-center text-xs text-app-muted">
-            {t('funding.reviewedBy')}
+            {t('funding.participatesSince', {
+              date: formatForumTimeFromMs(fundingReviewedAt, locale),
+            })}
           </p>
         ) : null}
         {giftsBlock}
@@ -1388,19 +1411,12 @@ export function MemberProfileScreen({
                   {t(roleKeys.label)}
                 </button>
               ) : null}
-              {showFundingReviewed ? (
-                <button
-                  type="button"
-                  aria-expanded={fundingHintOpen}
-                  onClick={() => {
-                    setFundingHintOpen((open) => !open);
-                  }}
-                  className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                >
-                  {t('funding.reviewedOn', {
-                    date: formatForumTimeFromMs(fundingReviewedAt, locale),
-                  })}
-                </button>
+              {typeof fundingReviewedAt === 'number' ? (
+                <FundingProgramMark
+                  admittedAt={fundingReviewedAt}
+                  expanded={fundingHintOpen}
+                  onToggle={() => setFundingHintOpen((open) => !open)}
+                />
               ) : null}
             </div>
             {roleHintOpen && roleKeys !== null ? (
@@ -1408,9 +1424,11 @@ export function MemberProfileScreen({
                 {t(roleKeys.hint)}
               </p>
             ) : null}
-            {fundingHintOpen && showFundingReviewed ? (
+            {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
               <p role="status" className="text-center text-xs text-app-muted">
-                {t('funding.reviewedBy')}
+                {t('funding.participatesSince', {
+                  date: formatForumTimeFromMs(fundingReviewedAt, locale),
+                })}
               </p>
             ) : null}
           </div>

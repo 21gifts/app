@@ -1399,14 +1399,14 @@ export const SCREEN_VARIANTS = [
     id: 'funding-reviewed',
     image: 'members-funding-reviewed.png',
     visual: 'state-members-funding-reviewed',
-    needle: 'Reviewed by a moderator on',
+    needle: 'Takes part in the 21.gifts funding program since',
   },
   {
     route: '/members/[accountId]',
-    id: 'funding-reviewed-open',
-    image: 'members-funding-reviewed-open.png',
-    visual: 'state-members-funding-reviewed-open',
-    needle: 'Reviewed by a moderator',
+    id: 'funding-program-open',
+    image: 'members-funding-program-open.png',
+    visual: 'state-members-funding-program-open',
+    needle: 'state-members-funding-program-open',
   },
   {
     route: '/members/[accountId]',
@@ -1540,6 +1540,13 @@ export const SCREEN_VARIANTS = [
     image: 'profile-funding-admitted.png',
     visual: 'state-profile-funding-admitted',
     needle: 'You are admitted to daily 21.gifts grant payouts.',
+  },
+  {
+    route: '/profile',
+    id: 'funding-program-open',
+    image: 'profile-funding-program-open.png',
+    visual: 'state-profile-funding-program-open',
+    needle: 'state-profile-funding-program-open',
   },
   {
     route: '/profile/apply',
