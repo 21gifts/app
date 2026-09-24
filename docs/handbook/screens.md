@@ -832,7 +832,7 @@ Signed-in `/welcome` on the default filter; expand Ada's note to show its reply.
 
 ### Variant: translate
 
-Signed-in `/welcome` with one paid German note. **Translate** is visible under the body (not in the footer icon row). English notes on other fixtures still hide it.
+Signed-in `/welcome` with one paid German note. **Translate** is visible in the footer icon row with react / copy. English notes on other fixtures still hide it.
 
 ![21.gifts welcome translate](images/welcome-translate.png)
 
@@ -1407,7 +1407,7 @@ Named visitor with living-room rules agreed and no username. Posts feed open, li
 
 ### Variant: translate
 
-Signed-in `/members/:id` with a German post in the posts feed. **Translate** is visible under the body (not in the footer icon row).
+Signed-in `/members/:id` with a German post in the posts feed. **Translate** is visible in the footer icon row with react / copy.
 
 ![21.gifts member translate](images/members-translate.png)
 

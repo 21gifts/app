@@ -141,6 +141,26 @@ describe('TranslatableNoteBody', () => {
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
   });
 
+  it('portals Translate into controlSlotId', async () => {
+    const slot = document.createElement('span');
+    slot.id = `note-translate-${NOTE_ID}`;
+    document.body.appendChild(slot);
+    try {
+      renderWithLocale(
+        <TranslatableNoteBody
+          messageId={NOTE_ID}
+          text={german}
+          truncate={false}
+          controlSlotId={slot.id}
+        />,
+      );
+      const button = await screen.findByRole('button', { name: 'Translate' });
+      expect(slot.contains(button)).toBe(true);
+    } finally {
+      slot.remove();
+    }
+  });
+
   it('uses button foreground classes when className is on-button', async () => {
     vi.mocked(translateNote).mockResolvedValue(translated);
     renderWithLocale(
