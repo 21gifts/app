@@ -9,8 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: '21.gifts',
     short_name: '21.gifts',
-    description:
-      'Direct human-to-human giving in Bitcoin. People helping people — no middleman.',
+    description: 'Direct human-to-human giving in Bitcoin. People helping people — no middleman.',
     start_url: '/welcome',
     scope: '/',
     display: 'standalone',
