@@ -4,7 +4,18 @@ import { WalletScreenView } from '@/components/WalletScreenView';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-afterEach(cleanup);
+const back = vi.fn();
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { back: typeof back; push: typeof push } => ({ back, push }),
+}));
+
+afterEach(() => {
+  cleanup();
+  back.mockClear();
+  push.mockClear();
+});
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
@@ -76,6 +87,54 @@ describe('WalletScreenView', () => {
     );
     fireEvent.click(screen.getByRole('link', { name: 'Back' }));
     expect(hidePhrase).toHaveBeenCalledTimes(1);
+    expect(back).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('closes Advanced functions before leaving the page', () => {
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    const details = screen.getByText('Advanced functions').closest('details');
+    if (details === null) {
+      throw new Error('missing details');
+    }
+    details.open = true;
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(details.open).toBe(false);
+    expect(back).not.toHaveBeenCalled();
+  });
+
+  it('goes back one history step when nothing on the page is open', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
+    Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(push).not.toHaveBeenCalled();
+    if (descriptor) {
+      Object.defineProperty(window.history, 'length', descriptor);
+    }
   });
 
   it('does not show the grid when phrase view has fewer than twelve words', () => {
