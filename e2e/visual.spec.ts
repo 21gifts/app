@@ -6111,7 +6111,7 @@ test.describe('profile funding states', () => {
       'en',
     )}`;
     await page.getByRole('button', { name: sentence }).click();
-    const revealed = page.getByRole('status', { name: sentence });
+    const revealed = page.locator('p[role="status"]').getByText(sentence, { exact: true });
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-funding-program-open', false);
