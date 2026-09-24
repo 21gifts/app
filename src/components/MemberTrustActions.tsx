@@ -57,9 +57,9 @@ async function runTrustAction(
 /**
  * Staff-only Trust Chain actions on another member's identity card.
  *
- * Hidden when signed out, when the viewer is not a moderator, or when
+ * Hidden when signed out, when the viewer is below the moderator rank, or when
  * the subject is the viewer. Founders may appoint; moderators
- * verify, propose, or confirm. Subjects already moderator or founder see a
+ * verify, propose, or confirm. Subjects already at the moderator rank see a
  * link to the public chain instead of buttons.
  *
  * @param props - Subject profile and optional update callback.
@@ -89,7 +89,7 @@ export function MemberTrustActions({
     return null;
   }
 
-  const alreadyOnChain = profile.role === 'moderator' || profile.role === 'founder';
+  const alreadyOnChain = roleAtLeast(profile.role, 'moderator');
   const showVerify = profile.role === 'basis';
   const showPropose = profile.role === 'verified' && profile.trust.proposedBy === null;
   const proposedBy = profile.trust.proposedBy;

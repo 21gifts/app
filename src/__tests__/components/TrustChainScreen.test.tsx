@@ -17,6 +17,7 @@ const POPULATED: TrustChain = {
 };
 
 const EXPLAIN_FOUNDER = 'A founder started 21.gifts and is the first link of the chain.';
+const EXPLAIN_INITIATOR = 'An initiator is named directly. There is no proposal step.';
 
 describe('TrustChainScreen', () => {
   it('shows loading copy and the role explanation', () => {
@@ -36,6 +37,7 @@ describe('TrustChainScreen', () => {
     expect(heading.className).not.toContain('text-paper');
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
+    expect(screen.getByText(EXPLAIN_INITIATOR)).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
   });
 

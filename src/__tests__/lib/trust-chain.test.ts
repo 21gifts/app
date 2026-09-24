@@ -4,6 +4,7 @@ import { layoutTrustChain, mergeTrustChain } from '@/lib/trust-chain';
 
 const FOUNDER = { id: 'f', name: 'Cyrill', role: 'founder' as const };
 const MODERATOR = { id: 'm', name: 'Severin', role: 'moderator' as const };
+const INITIATOR = { id: 'i', name: 'Ivy', role: 'initiator' as const };
 const ADA = { id: 'ada', name: 'Ada', role: 'verified' as const };
 const BOB = { id: 'bob', name: 'Bob', role: 'verified' as const };
 
@@ -85,6 +86,46 @@ describe('layoutTrustChain', () => {
     expect(laid.edges).toBe(edges);
     expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 16 });
     expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 112 });
+  });
+
+  it('does not throw on role initiator', () => {
+    expect(() => layoutTrustChain({ nodes: [INITIATOR], edges: [] })).not.toThrow();
+  });
+
+  it('stacks a later initiator above an earlier verified sibling of the founder', () => {
+    const edges: TrustChain['edges'] = [
+      { from: 'f', to: 'ada', kind: 'verify' },
+      { from: 'f', to: 'i', kind: 'verify' },
+    ];
+    const laid = layoutTrustChain({
+      nodes: [FOUNDER, INITIATOR, ADA],
+      edges,
+    });
+    expect(laid.edges).toBe(edges);
+    expect(laid.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 112 });
+  });
+
+  it('keeps edge order when a moderator and an initiator hang off the founder', () => {
+    const modFirst = layoutTrustChain({
+      nodes: [FOUNDER, MODERATOR, INITIATOR],
+      edges: [
+        { from: 'f', to: 'm', kind: 'moderator_appoint' },
+        { from: 'f', to: 'i', kind: 'moderator_appoint' },
+      ],
+    });
+    expect(modFirst.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 16 });
+    expect(modFirst.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 112 });
+
+    const initFirst = layoutTrustChain({
+      nodes: [FOUNDER, INITIATOR, MODERATOR],
+      edges: [
+        { from: 'f', to: 'i', kind: 'moderator_appoint' },
+        { from: 'f', to: 'm', kind: 'moderator_appoint' },
+      ],
+    });
+    expect(initFirst.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 16 });
+    expect(initFirst.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 112 });
   });
 
   it('places a nested stack below the first child subtree, not in the same cell', () => {

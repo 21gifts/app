@@ -20,11 +20,16 @@ type ShortHit = { code: string; messageId: string };
 /** Stable empty list so a body with no short codes does not rerender. */
 const NO_SHORT_HITS: ShortHit[] = [];
 
-const ROLE_LABEL_KEYS: Record<'founder' | 'moderator' | 'verified', MessageKey> = {
+const ROLE_LABEL_KEYS: Record<'founder' | 'moderator' | 'initiator' | 'verified', MessageKey> = {
   founder: 'forum.role.founder',
   moderator: 'forum.role.moderator',
+  initiator: 'forum.role.initiator',
   verified: 'forum.role.verified',
 };
+
+function isQuotedTaggedRole(role: string): role is keyof typeof ROLE_LABEL_KEYS {
+  return role in ROLE_LABEL_KEYS;
+}
 
 function findKnownNote(knownNotes: readonly ForumMessage[], id: string): ForumMessage | undefined {
   const needle = id.toLowerCase();
@@ -83,10 +88,7 @@ function QuotedForumNote({
   }, [note.hasPhoto, note.id]);
 
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
-  const roleLabel =
-    note.role === 'founder' || note.role === 'moderator' || note.role === 'verified'
-      ? t(ROLE_LABEL_KEYS[note.role])
-      : null;
+  const roleLabel = isQuotedTaggedRole(note.role) ? t(ROLE_LABEL_KEYS[note.role]) : null;
   const viaLabel = note.via === 'nostr' ? t('forum.via.nostr') : null;
   const badgeLabel = roleLabel ?? viaLabel;
   const handleActivate = (event: { stopPropagation: () => void }): void => {
