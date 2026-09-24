@@ -204,8 +204,8 @@ export interface InboxScreenProps {
   /** True while waiting for the gift row after invoice mint. */
   payWaiting?: boolean;
   /**
-   * Show the sats Amount field beside the composer. Default true; the closed
-   * staff room passes false (no gifts).
+   * Show the sats Amount field on the row under the message. Default true;
+   * the closed staff room passes false (no gifts).
    */
   showAmount?: boolean;
   /** Latest gift-day totals for unpaid invoice previews, or `null` without a usable rate. */
