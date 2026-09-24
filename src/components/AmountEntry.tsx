@@ -54,8 +54,9 @@ export interface AmountEntryProps {
   onUnitChange?: (unit: AmountUnit) => void;
   /**
    * `field` stacks the label, switch, and input. `composer` puts the switch
-   * beside the input, keeps the label for assistive tech only, and puts the
-   * other unit under the input. The inbox composer uses `composer`.
+   * inside the left of one field, keeps the label for assistive tech only,
+   * and puts the other unit under that field. The inbox composer uses
+   * `composer`.
    */
   layout?: 'field' | 'composer';
 }
