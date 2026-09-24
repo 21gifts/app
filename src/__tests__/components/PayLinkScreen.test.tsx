@@ -56,13 +56,13 @@ describe('PayLinkScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     expect(document.querySelector('path[d^="M12 32v24"]')).not.toBeNull();
     expect(document.querySelector('path[d^="M199.3 516.4"]')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '101' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
     expect(fetch).toHaveBeenCalledTimes(2);
   });
@@ -79,7 +79,7 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     const pay = screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
     const hrefs: string[] = [];
@@ -98,8 +98,9 @@ describe('PayLinkScreen', () => {
     fireEvent.click(pay);
     Object.defineProperty(window, 'location', { configurable: true, value: previous });
     expect(hrefs).toEqual(['walletofsatoshi:lightning:LNBC210N1PAYLINK']);
-    expect(screen.queryByRole('button', { name: 'Create invoice' })).toBeNull();
-    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.getByText('₿21')).toBeTruthy();
   });
 
   it('keeps the form when the invoice request fails', async () => {
@@ -112,11 +113,11 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
-    expect(
-      (screen.getByRole('button', { name: 'Create invoice' }) as HTMLButtonElement).disabled,
-    ).toBe(false);
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('treats a profile error and a thrown invoice request as failures', async () => {
@@ -134,7 +135,7 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
   });
 
@@ -199,7 +200,7 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     const pay = await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' });
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
     const hrefs: string[] = [];
@@ -238,7 +239,7 @@ describe('PayLinkScreen', () => {
     const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     view.rerender(<PayLinkScreen lightning={bob} />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
     releaseInvoice(Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 }));
@@ -247,7 +248,7 @@ describe('PayLinkScreen', () => {
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
   it('drops an invoice body that arrives after the link changes', async () => {
@@ -272,7 +273,7 @@ describe('PayLinkScreen', () => {
     const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(releaseJson).toBeTypeOf('function');
     });
@@ -280,7 +281,7 @@ describe('PayLinkScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
     releaseJson?.();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
   });
@@ -303,12 +304,12 @@ describe('PayLinkScreen', () => {
     const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     view.rerender(<PayLinkScreen lightning={bob} />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
     rejectInvoice(new Error('offline'));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     });
     expect(screen.queryByText('Could not create the invoice.')).toBeNull();
   });
@@ -336,16 +337,19 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    const button = screen.getByRole('button', { name: 'Create invoice' });
-    fireEvent.click(button);
-    fireEvent.click(button);
+    const form = document.querySelector('form');
+    if (form === null) {
+      throw new Error('amount form missing');
+    }
+    fireEvent.submit(form);
+    fireEvent.submit(form);
     const invoiceCalls = vi
       .mocked(fetch)
       .mock.calls.filter((call) => String(call[0]).endsWith('/invoice')).length;
     expect(invoiceCalls).toBe(1);
     release(Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
-    fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+    expect(document.querySelector('form')).toBeNull();
     expect(
       vi.mocked(fetch).mock.calls.filter((call) => String(call[0]).endsWith('/invoice')).length,
     ).toBe(1);
@@ -400,7 +404,7 @@ describe('PayLinkScreen', () => {
     expect(document.querySelector('path[d^="M12 32v24"]')).toBeNull();
     expect(screen.getByText("₿238'093")).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Create invoice' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     expect(bodies).toEqual([JSON.stringify({ amountSats: 238093 })]);
     const hrefs: string[] = [];
@@ -465,7 +469,7 @@ describe('PayLinkScreen', () => {
         return Response.json({ ...profile, charge });
       });
       const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
-      expect(await screen.findByRole('button', { name: 'Create invoice' })).toBeTruthy();
+      expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
       view.unmount();
     }
   });
@@ -539,14 +543,14 @@ describe('PayLinkScreen', () => {
     expect(await screen.findByText(/left/)).toBeTruthy();
     await waitFor(
       () => {
-        expect(screen.getByRole('button', { name: 'Create invoice' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
       },
       { timeout: 4000 },
     );
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
   });
 
-  it('enables Create invoice when the till expires while minting', async () => {
+  it('enables Continue when the till expires while minting', async () => {
     mockFetch(async (input) => {
       if (String(input).endsWith('/invoice')) {
         return new Promise(() => undefined);
@@ -560,7 +564,7 @@ describe('PayLinkScreen', () => {
     expect(await screen.findByText(/left/)).toBeTruthy();
     await waitFor(
       () => {
-        const button = screen.getByRole('button', { name: 'Create invoice' });
+        const button = screen.getByRole('button', { name: 'Continue' });
         expect(button.hasAttribute('disabled')).toBe(false);
       },
       { timeout: 4000 },

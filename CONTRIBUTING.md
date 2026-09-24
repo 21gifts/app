@@ -489,7 +489,7 @@ shown wherever that profile QR is shown.
 
 A specific invoice is different. The forum post pay sheet
 (`ForumBoard`, including the composer pay slot) and the public pay link
-(`PayLinkScreen`, the open till and **Create invoice**) do not mount
+(`PayLinkScreen`, the open till and **Continue**) do not mount
 the invoice `QrCode` on a smartphone. The wallet button still opens
 Wallet of Satoshi (`walletofsatoshi:` on iOS, Android Intent on
 Android). Desktop and iPad show that invoice QR and the same button.

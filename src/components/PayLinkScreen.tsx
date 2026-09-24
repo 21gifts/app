@@ -207,6 +207,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [formError, setFormError] = useState<'amount' | 'failed' | null>(null);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
+  const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
   const postingRef = useRef(false);
@@ -225,6 +226,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvalid(false);
     setProfile(null);
     setInvoice(null);
+    setMintedSats(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -379,6 +381,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         return;
       }
       setInvoice(result.pr);
+      setMintedSats(result.amountSats);
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
@@ -452,23 +455,50 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   {t('forum.payOpenWallet')}
                 </Button>
               </div>
+            ) : invoice !== null && mintedSats !== null ? (
+              <div className="flex w-full flex-col gap-3">
+                <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+                  {formatBitcoin(mintedSats, numberFormat)}
+                </p>
+                <ChargeFiat amountSats={mintedSats} />
+                {showInvoiceQr ? (
+                  <div className="flex w-full justify-center">
+                    <QrCode value={invoice} label={t('pay.invoiceQr')} />
+                  </div>
+                ) : null}
+                <Button
+                  type="button"
+                  className="w-full"
+                  aria-label={t('forum.payOpenWalletAria')}
+                  icon={
+                    <img
+                      src="/wos-icon.png"
+                      alt=""
+                      width={20}
+                      height={20}
+                      aria-hidden="true"
+                      className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                    />
+                  }
+                  onClick={() => {
+                    openWallet(invoice, android);
+                  }}
+                >
+                  {t('forum.payOpenWallet')}
+                </Button>
+              </div>
             ) : (
-              <>
-                <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-                  <PayLinkAmount
-                    value={amount}
-                    disabled={posting || invoice !== null}
-                    onUnitChange={setUnit}
-                    onValueChange={setAmount}
-                    onRate={setRateDay}
-                  />
-                  {invoice === null ? (
-                    <Button type="submit" className="w-full" disabled={posting}>
-                      {t('pay.createInvoice')}
-                    </Button>
-                  ) : null}
-                </form>
-
+              <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+                <PayLinkAmount
+                  value={amount}
+                  disabled={posting}
+                  onUnitChange={setUnit}
+                  onValueChange={setAmount}
+                  onRate={setRateDay}
+                />
+                <Button type="submit" className="w-full" disabled={posting}>
+                  {t('forum.payContinue')}
+                </Button>
                 {formError === 'amount' ? (
                   <p role="alert" className="text-sm text-app-danger">
                     {t('pay.amountInvalid')}
@@ -479,32 +509,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                     {t('pay.failed')}
                   </p>
                 ) : null}
-
-                {invoice !== null ? (
-                  <>
-                    {showInvoiceQr ? <QrCode value={invoice} label={t('pay.invoiceQr')} /> : null}
-                    <Button
-                      type="button"
-                      aria-label={t('forum.payOpenWalletAria')}
-                      icon={
-                        <img
-                          src="/wos-icon.png"
-                          alt=""
-                          width={20}
-                          height={20}
-                          aria-hidden="true"
-                          className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                        />
-                      }
-                      onClick={() => {
-                        openWallet(invoice, android);
-                      }}
-                    >
-                      {t('forum.payOpenWallet')}
-                    </Button>
-                  </>
-                ) : null}
-              </>
+              </form>
             )}
           </>
         ) : null}

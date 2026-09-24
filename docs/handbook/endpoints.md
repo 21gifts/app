@@ -25,7 +25,7 @@
 
 - **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats }`.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Create invoice**.
+- **Used by:** `PayLinkScreen` after **Continue**.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]

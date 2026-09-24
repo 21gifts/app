@@ -167,7 +167,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'pl.png',
     visual: 'screen-pl',
-    needle: 'Create invoice',
+    needle: 'Continue',
   },
   {
     route: '/pl',
