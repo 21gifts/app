@@ -220,7 +220,7 @@ export function ForumQuotedBody({
   conversationId?: string;
   formatTranslated?: (text: string) => string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
-  /** When set, NoteTranslate portals into this element (footer icon row). */
+  /** When set, forwarded to TranslatableNoteBody, which portals NoteTranslate into this element (footer icon row). */
   controlSlotId?: string;
 }): ReactElement | null {
   const quoteIds = useMemo(() => {
