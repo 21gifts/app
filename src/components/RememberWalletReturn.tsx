@@ -16,10 +16,13 @@ export function RememberWalletReturn(): ReactElement | null {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
+  const path = query === '' ? pathname : `${pathname}?${query}`;
+
+  rememberWalletReturn(path);
 
   useEffect(() => {
-    rememberWalletReturn(query === '' ? pathname : `${pathname}?${query}`);
-  }, [pathname, query]);
+    rememberWalletReturn(path);
+  }, [path]);
 
   return null;
 }
