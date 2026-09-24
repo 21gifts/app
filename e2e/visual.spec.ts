@@ -1858,7 +1858,11 @@ test.describe('onboarding screens', () => {
         quotedPhoto.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth >= 100),
       )
       .toBe(true);
-    await page.getByText('Riana Rosello').first().scrollIntoViewIfNeeded();
+    const parentName = page.getByText('Riana Rosello').first();
+    await parentName.evaluate((el: HTMLElement) => {
+      el.scrollIntoView({ block: 'start' });
+    });
+    await expect(parentName).toBeInViewport();
     await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
     await shotScreen(page, 'state-welcome-quoted-note');
   });
