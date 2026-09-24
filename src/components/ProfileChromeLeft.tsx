@@ -17,9 +17,9 @@ export interface ProfileChromeLeftProps {
    */
   backLabelKey?: 'profile.back' | 'inbox.back' | 'moderate.heading' | 'nav.back';
   /**
-   * Plain click handler. Modified clicks still follow `backHref`. Used while
-   * the wallet recovery phrase is on screen, where Back hides the words
-   * instead of leaving the page.
+   * Unmodified primary click. The link does not follow `backHref`. Modified
+   * clicks still do. Wallet uses this for one step: hide the words, close
+   * Advanced functions, go back, or open the forum.
    */
   onBackClick?: () => void;
 }
@@ -27,11 +27,12 @@ export interface ProfileChromeLeftProps {
 /**
  * Shared signed-in top-left chrome: icon-only back plus wordmark to `/welcome`.
  *
- * Back stays a link (navigation), with IconButton `md` geometry. Optional
- * `backHref` and `backLabelKey` change the back target and aria-label; defaults
- * remain `/welcome` and `profile.back`.
+ * Back stays a link, with IconButton `md` geometry. Optional `backHref` and
+ * `backLabelKey` change the target and aria-label; defaults remain `/welcome`
+ * and `profile.back`. An unmodified click with `onBackClick` runs that handler
+ * and does not follow `backHref`.
  *
- * @param props - Optional back target and catalog key.
+ * @param props - Optional back target, catalog key, and plain-click handler.
  * @returns The back link and wordmark.
  */
 export function ProfileChromeLeft({

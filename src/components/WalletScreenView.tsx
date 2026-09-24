@@ -13,10 +13,12 @@ import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 export type WalletScreenViewProps = UseWalletPhraseResult;
 
 /**
- * Presentational recovery-phrase UI. Tokens match ProfileScreen (`Card surface={false}`).
+ * Wallet card and the header Back for that page. Tokens match ProfileScreen
+ * (`Card surface={false}`). Back takes one step: hide the words, close
+ * Advanced functions, `history.back()`, or open `/welcome`.
  *
  * @param props - State from {@link useWalletPhrase}.
- * @returns The card.
+ * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
  */
 export function WalletScreenView({
   view,
