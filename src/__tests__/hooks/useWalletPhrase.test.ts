@@ -144,6 +144,35 @@ describe('useWalletPhrase', () => {
     expect(result.current.error).toBe('generic');
   });
 
+  it('shows the original error when reloading the account throws', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockRejectedValueOnce(new Error('network'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBe('generic');
+  });
+
+  it('does not adopt a seed when the session ends while reloading', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { ...account, passkeyCredentialId: 'seed-from-server' };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
   it('loads the seed from the server when finish fails after it was stored', async () => {
     vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
       new Error('Failed to finish passkey seed: 500'),
