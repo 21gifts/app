@@ -15,7 +15,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
     <section
       id="happyland"
       aria-labelledby="happyland-title"
-      className="border-y border-paper/10 bg-paper/[0.035] px-5 py-20 sm:py-28"
+      className="scroll-mt-24 border-y border-paper/10 bg-paper/[0.035] px-5 py-20 sm:py-28"
     >
       <div className="mx-auto max-w-[1100px]">
         <p className="text-sm font-medium tracking-widest text-accent uppercase">
