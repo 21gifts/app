@@ -884,7 +884,7 @@ export function InboxScreen({
           </ul>
         ) : null}
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
-          <div className="flex items-end gap-2">
+          <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
             {showAttach ? (
               <>
                 <IconButton
