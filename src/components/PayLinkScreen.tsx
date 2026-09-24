@@ -5,14 +5,45 @@ import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, Card, Field, PageChrome } from '@/components/ui';
+import { AmountEntry } from '@/components/AmountEntry';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { Button, Card, PageChrome } from '@/components/ui';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import type { AmountUnit } from '@/lib/api-types';
 import { payLinkUsername } from '@/lib/pay-link';
+import { parseAmountDraft, type FiatRateDay } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
+
+function PayLinkAmount(props: {
+  value: string;
+  onValueChange: (value: string) => void;
+  disabled: boolean;
+  onUnitChange: (unit: AmountUnit) => void;
+  onRate: (day: FiatRateDay | null) => void;
+}): ReactElement {
+  const { t } = useTranslations();
+  const rateDay = useLatestRateDay();
+  const { onRate } = props;
+  useEffect(() => {
+    onRate(rateDay);
+  }, [onRate, rateDay]);
+  return (
+    <AmountEntry
+      label={t('pay.amount')}
+      placeholder={t('pay.amountPlaceholder')}
+      value={props.value}
+      disabled={props.disabled}
+      rateDay={rateDay}
+      onUnitChange={props.onUnitChange}
+      onValueChange={props.onValueChange}
+    />
+  );
+}
 
 interface PayProfile {
   name: string;
@@ -29,6 +60,9 @@ interface PayProfile {
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
+  const { fiat } = useFiatPreference();
+  const [unit, setUnit] = useState<AmountUnit>('btc');
+  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [profile, setProfile] = useState<PayProfile | null>(null);
   const [invalid, setInvalid] = useState(false);
   const [amount, setAmount] = useState('');
@@ -94,19 +128,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       return;
     }
     const generation = generationRef.current;
-    if (!/^\d+$/.test(amount)) {
-      setFormError('amount');
-      return;
-    }
-    const amountSats = Number(amount);
+    const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
     if (
-      !Number.isSafeInteger(amountSats) ||
-      amountSats < profile.minSats ||
-      amountSats > profile.maxSats
+      parsed.kind !== 'sats' ||
+      !Number.isSafeInteger(parsed.sats) ||
+      parsed.sats < profile.minSats ||
+      parsed.sats > profile.maxSats
     ) {
       setFormError('amount');
       return;
     }
+    const amountSats = parsed.sats;
 
     setFormError(null);
     postingRef.current = true;
@@ -178,19 +210,12 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
               {profile.name}
             </h1>
             <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-              <Field
-                label={t('pay.amount')}
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder={t('pay.amountPlaceholder')}
+              <PayLinkAmount
                 value={amount}
                 disabled={posting || invoice !== null}
-                onChange={(event) => {
-                  setAmount(event.target.value);
-                }}
+                onUnitChange={setUnit}
+                onValueChange={setAmount}
+                onRate={setRateDay}
               />
               {invoice === null ? (
                 <Button type="submit" className="w-full" disabled={posting}>

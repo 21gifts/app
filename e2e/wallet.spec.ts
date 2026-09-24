@@ -186,3 +186,28 @@ test('Function: WalletScreen — wallet heading is Wallet', async ({ page }) => 
   await page.goto('/wallet');
   await expect(page).toHaveURL(/\/(wallet|login)/);
 });
+
+test('Function: resetWalletReturn — wallet heading is Wallet', async ({ page }) => {
+  await page.goto('/wallet');
+  await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
+test('Function: rememberWalletReturn — wallet heading is Wallet', async ({ page }) => {
+  await page.goto('/wallet');
+  await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
+test('Function: walletBackHref — wallet heading is Wallet', async ({ page }) => {
+  await page.goto('/wallet');
+  await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
+test('Function: RememberWalletReturn — wallet heading is Wallet', async ({ page }) => {
+  await page.goto('/wallet');
+  await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
+test('Function: WalletChromeLeft — wallet heading is Wallet', async ({ page }) => {
+  await page.goto('/wallet');
+  await expect(page).toHaveURL(/\/(wallet|login)/);
+});

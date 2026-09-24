@@ -219,6 +219,13 @@
 - **Used by:** `postNotificationLevel`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/amount-unit
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/amount-unit`. JSON body `{ unit: "btc"|"fiat" }` returns the owner Account. The same unit again is still 200.
+- **Errors:** Upstream 401, 400 invalid unit, or 502 if the api is unreachable.
+- **Used by:** `setAmountUnit`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/rules-agreement
 
 - **Purpose:** Same-origin proxy to record living-room rules agreement on the signed-in account (`rulesAgreedAt`).
@@ -282,6 +289,20 @@
 - **Used by:** `fetchMessages`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/messages/places
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/places` (live top-level notes that have a pin).
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `fetchPlaces`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /maps/key
+
+- **Purpose:** Returns `{ key }` for the browser map, or `{ key: null }` when `GOOGLE_MAPS_API_KEY` is unset or blank. An empty value does not fail container boot. The key is not logged.
+- **Errors:** None. Always 200.
+- **Used by:** `PlaceField`, `PlacesMapScreen`.
+- **Auth:** None.
+
 ## Endpoint: GET /forum/messages/hidden
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/messages/hidden` (hidden living-room notes for moderators). App path is `/forum/messages/hidden` so HTML `/moderate/hidden` can serve the page.
@@ -291,7 +312,7 @@
 
 ## Endpoint: POST /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo). Optional JSON or multipart `goalSats` (positive int, top-level notes only) is the whole-sat ask; omitted on replies and when unset.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo, optional place pin, and optional `goalSats`). Optional JSON or multipart `goalSats` (positive int, top-level notes only) is the whole-sat ask; omitted on replies and when unset. A place pin is likewise top-level only.
 - **Errors:** Upstream 401/400/403/429, or 502 if the api is unreachable. 403 is an unpaid-reply rejection (`A reply needs a Bitcoin payment`, or the api error string).
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.
@@ -599,14 +620,14 @@
 
 ## Endpoint: GET /translate
 
-- **Purpose:** `{ available: boolean }` is true only when `TRANSLATE_URL` is a valid http(s) URL and `TRANSLATE_API_KEY` is non-blank after trim. No upstream call. Always 200.
-- **Errors:** none (missing, blank, or invalid URL; missing or blank key — all treated as unavailable).
+- **Purpose:** Same-origin proxy of api `GET /translate`. `{ available: boolean }` is true when the api has `TRANSLATE_URL` and `TRANSLATE_API_KEY`. Always 200 from the api.
+- **Errors:** 502 when the api is unreachable.
 - **Used by:** `fetchTranslateAvailable` in `NoteTranslate`.
 - **Auth:** Public.
 
 ## Endpoint: POST /translate
 
-- **Purpose:** `{ text, target }` → DeepL API v2 (`text` array, `target_lang`; `fil`→`TL`; `en`/`de`/`es`→`EN`/`DE`/`ES`). Server POSTs `TRANSLATE_URL` as-is with `authorization: DeepL-Auth-Key …`. Returns `{ translatedText }`. Max 500 chars. 15s timeout. Does not forward incoming Authorization. Does not send `source_lang`.
-- **Errors:** 400 invalid body, 503 not configured, 502 upstream.
+- **Purpose:** Same-origin proxy of api `POST /messages/:id/translate`. Body `{ messageId, target }`. The api looks up `message_translation` before DeepL and returns `{ translatedText, cached }`.
+- **Errors:** 400 invalid body, 404 unknown/hidden note, 503 not configured, 502 upstream.
 - **Used by:** `translateNote` from `NoteTranslate`.
-- **Auth:** Public.
+- **Auth:** Public for a live note (Bearer forwarded for a hidden staff permalink).

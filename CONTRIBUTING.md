@@ -83,6 +83,10 @@ app/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
 │   │   ├── shops/
 │   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
+│   │   ├── map/
+│   │   │   └── page.tsx         # GET /map — signed-in map of forum notes that have a pin
+│   │   ├── maps/
+│   │   │   └── key/route.ts     # GET /maps/key — browser map key or null
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -102,7 +106,7 @@ app/
 │   │   │       └── [file]/route.ts      # GET /messages/[id]/video.mp4|.webm|.mov same-origin proxy
 │   │   ├── public-messages/
 │   │   │   └── [id]/route.ts    # GET /public-messages/:id → api GET /messages/:id
-│   │   ├── translate/route.ts    # GET availability + POST DeepL v2 proxy
+│   │   ├── translate/route.ts    # re-exports proxyTranslateAvailableGet / proxyTranslateNotePost (api GET /translate + POST /messages/:id/translate)
 │   │   ├── conversations/
 │   │   │   ├── route.ts         # GET/POST /conversations same-origin proxy
 │   │   │   ├── moderator-group/route.ts  # GET /conversations/moderator-group
@@ -115,6 +119,7 @@ app/
 │   │   ├── forum/
 │   │   │   ├── messages/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy
+│   │   │   │   ├── places/route.ts  # GET /forum/messages/places
 │   │   │   │   └── [id]/replies/route.ts  # GET /forum/messages/[id]/replies
 │   │   │   └── members/
 │   │   │       └── [accountId]/
@@ -183,6 +188,7 @@ app/
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
 │   │   ├── NoteTranslate.tsx    # Labeled public note/reply translation control
+│   │   ├── TranslatableNoteBody.tsx # Exclusive original XOR translated note body
 │   │   ├── LinkedText.tsx       # Autolink http(s) in note bodies; internal Link, external warning
 │   │   ├── ExternalLinkWarning.tsx # Confirm overlay before leaving 21.gifts
 │   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview + PDF/PNG/JPG/SVG download
@@ -221,6 +227,8 @@ app/
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
+│   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
+│   │   ├── PlacesMapScreen.tsx  # Signed-in /map body (every note that has a pin)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer
@@ -269,7 +277,6 @@ app/
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
 │   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
-│   │   ├── translate-upstream.ts # Optional server-side translation upstream proxy
 │   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
@@ -465,6 +472,10 @@ Reviewers follow `Review.md` and `docs/ui.md`.
 ### Staff actions (hard requirement)
 
 A stack of labeled moderator or founder actions on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") uses the same `details` / `summary` as wallet **Advanced functions**, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
+
+### Amount entry (hard requirement)
+
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state.
 
 ### Payment QR vs deep links (hard requirement)
 

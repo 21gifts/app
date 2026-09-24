@@ -1000,6 +1000,91 @@ describe('forumMessageSchema', () => {
   });
 });
 
+describe('forumMessageSchema place', () => {
+  const base = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis' as const,
+    replyCount: 0,
+  };
+
+  it('accepts a valid place', () => {
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 1.2, lng: 3.4, label: 'Harbor' },
+      }).place,
+    ).toEqual({ lat: 1.2, lng: 3.4, label: 'Harbor' });
+  });
+
+  it('accepts a place that omits the label', () => {
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 1.2, lng: 3.4 },
+      }).place,
+    ).toEqual({ lat: 1.2, lng: 3.4 });
+  });
+
+  it('accepts a null place label', () => {
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 1.2, lng: 3.4, label: null },
+      }).place,
+    ).toEqual({ lat: 1.2, lng: 3.4, label: null });
+  });
+
+  it('throws when lat is 91', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 91, lng: 3.4, label: null },
+      }),
+    ).toThrow();
+  });
+
+  it('throws when lng is 181', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 1.2, lng: 181, label: null },
+      }),
+    ).toThrow();
+  });
+
+  it('throws when the place label is 81 characters', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 1.2, lng: 3.4, label: 'x'.repeat(81) },
+      }),
+    ).toThrow();
+  });
+
+  it('leaves omitted place undefined', () => {
+    expect(forumMessageSchema.parse(base).place).toBeUndefined();
+  });
+
+  it('throws when empty text has a place but no photo, video, or sats', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        ...base,
+        text: '',
+        hasPhoto: false,
+        hasVideo: false,
+        sats: 0,
+        place: { lat: 1.2, lng: 3.4, label: 'Harbor' },
+      }),
+    ).toThrow();
+  });
+});
+
 describe('accountSchema', () => {
   it('accepts a well-formed account without a linked address', () => {
     expect(accountSchema.parse(account)).toEqual(account);

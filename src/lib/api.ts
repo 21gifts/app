@@ -12,6 +12,7 @@ import {
   notificationSchema,
   forumListSchema,
   forumMessageSchema,
+  forumPlacesResponseSchema,
   hiddenListSchema,
   lnAddressResolvedSchema,
   giftDaySchema,
@@ -33,6 +34,7 @@ import {
   vapidPublicSchema,
   viewProfileSchema,
   type Account,
+  type AmountUnit,
   type NotificationLevel,
   type ContactMessage,
   type Conversation,
@@ -41,6 +43,8 @@ import {
   type Notification,
   type NotificationList,
   type ForumMessage,
+  type ForumPlacePin,
+  type ForumPlaceRow,
   type HiddenMessage,
   type GiftDay,
   type GiftStats,
@@ -669,6 +673,30 @@ export async function postNotificationLevel(
 }
 
 /**
+ * Sets the signed-in account amount unit.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param unit - `btc` or `fiat`.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function setAmountUnit(session: string, unit: AmountUnit): Promise<Account> {
+  const response = await fetch('/me/amount-unit', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ unit }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save amount unit.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Records agreement to the living-room rules on the signed-in account.
  *
  * @param sessionToken - A bearer token from a completed challenge.
@@ -1290,6 +1318,32 @@ export async function listHiddenMessages(sessionToken: string): Promise<HiddenMe
   }
 }
 
+const PLACES_LOAD_ERROR = 'Could not load places. Please try again.';
+
+/**
+ * Fetches forum place pins for the signed-in session.
+ *
+ * Hits same-origin `GET /forum/messages/places` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns Place rows from {@link forumPlacesResponseSchema}.
+ * @throws Error with visitor-facing copy on a non-2xx status, a network
+ * failure, or a body that fails {@link forumPlacesResponseSchema}.
+ */
+export async function fetchPlaces(sessionToken: string): Promise<ForumPlaceRow[]> {
+  try {
+    const response = await fetch('/forum/messages/places', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(PLACES_LOAD_ERROR);
+    }
+    return forumPlacesResponseSchema.parse(await response.json()).places;
+  } catch {
+    throw new Error(PLACES_LOAD_ERROR);
+  }
+}
+
 /**
  * Signed-in single-note fetch (app path `/forum/messages/:id`).
  * Staff sessions receive soft-hidden rows; others get 404 → null.
@@ -1493,8 +1547,9 @@ type ForumPostStill = {
  * @param sessionToken - A bearer token from a completed challenge.
  * @param input - Trimmed text, optional legacy `photo`, optional `photos`,
  * optional `inReplyTo` parent id (thread composer only; omit for top-level
- * notes), and optional `goalSats` (positive int on a top-level note; omitted
- * on replies and when unset).
+ * notes), optional `goalSats` (positive int on a top-level note; omitted
+ * on replies and when unset), and optional `place` pin (omit when unset;
+ * replies must not send it).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
@@ -1509,6 +1564,7 @@ export async function postMessage(
     photos?: ForumPostStill[];
     inReplyTo?: string;
     goalSats?: number;
+    place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
   const sourceStills =
@@ -1545,6 +1601,7 @@ export async function postMessage(
       ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
       ...(inReplyTo !== undefined ? { inReplyTo } : {}),
       ...(goalSats !== undefined ? { goalSats } : {}),
+      ...(inReplyTo === undefined && input.place !== undefined ? { place: input.place } : {}),
     }),
   });
   if (response.status === 400 || response.status === 429) {
@@ -1579,7 +1636,8 @@ export async function postMessage(
  *
  * @param sessionToken - Bearer session.
  * @param input - Text, video file, optional JPEG poster, optional `goalSats`
- * (positive int; omitted from the form when unset).
+ * (positive int; omitted from the form when unset), and optional `place`
+ * pin (omit when unset; form fields only when set).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
@@ -1587,7 +1645,13 @@ export async function postMessage(
  */
 export async function postMessageVideo(
   sessionToken: string,
-  input: { text: string; video: File; poster?: Blob; goalSats?: number },
+  input: {
+    text: string;
+    video: File;
+    poster?: Blob;
+    goalSats?: number;
+    place?: ForumPlacePin;
+  },
 ): Promise<ForumMessage> {
   const form = new FormData();
   form.set('text', input.text);
@@ -1602,6 +1666,13 @@ export async function postMessageVideo(
     input.goalSats <= FORUM_GOAL_SATS_MAX
   ) {
     form.set('goalSats', String(input.goalSats));
+  }
+  if (input.place !== undefined) {
+    form.set('placeLat', String(input.place.lat));
+    form.set('placeLng', String(input.place.lng));
+    if (typeof input.place.label === 'string') {
+      form.set('placeLabel', input.place.label);
+    }
   }
   const response = await fetch('/forum/messages', {
     method: 'POST',

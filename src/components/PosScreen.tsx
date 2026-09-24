@@ -3,20 +3,18 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { AmountEntry } from '@/components/AmountEntry';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, Card, Field } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
-import {
-  cancelPosCharge,
-  createPosCharge,
-  fetchPosState,
-  type PosCharge,
-  type PosState,
-} from '@/lib/pos';
+import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { formatBitcoin } from '@/lib/stats-money';
+import type { AmountUnit } from '@/lib/api-types';
+import { formatBitcoin, parseAmountDraft } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -44,13 +42,16 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
 export function PosScreen(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
+  const rateDay = useLatestRateDay(session !== null);
   const [state, setState] = useState<PosState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   busyRef.current = busy;
@@ -141,11 +142,12 @@ export function PosScreen(): ReactElement {
     if (session === null) {
       return;
     }
-    const amountSats = Number(amount);
-    if (!Number.isInteger(amountSats) || amountSats < 1) {
+    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+    if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
       return;
     }
+    const amountSats = parsed.sats;
     const mine = ++generation.current;
     setBusy(true);
     setError(null);
@@ -261,19 +263,14 @@ export function PosScreen(): ReactElement {
       (account?.username ?? '') !== '' &&
       (account?.lightningAddress ?? '').trim() !== '' ? (
         <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
-          <Field
+          <AmountEntry
             label={t('pos.amount')}
-            name="amount"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
             placeholder={t('pos.amountPlaceholder')}
             value={amount}
-            onChange={(event) => {
-              setAmount(event.target.value);
-            }}
+            onValueChange={setAmount}
+            onUnitChange={setShownUnit}
             disabled={busy}
+            rateDay={rateDay}
           />
           <Button type="submit" size="lg" disabled={busy}>
             {t('pos.create')}
@@ -285,32 +282,6 @@ export function PosScreen(): ReactElement {
           {error}
         </p>
       ) : null}
-      {state !== null && state.history.length > 0 ? (
-        <div className="flex flex-col gap-2 border-t border-app-border pt-4">
-          <h2 className="text-sm font-medium text-app-fg">{t('pos.history')}</h2>
-          <ul className="flex flex-col gap-1 text-sm text-app-fg">
-            {state.history.map((row) => (
-              <li key={row.id} className="flex justify-between gap-3">
-                <span className="tabular-nums lining-nums">
-                  {formatBitcoin(row.amountSats, numberFormat)}
-                </span>
-                <span className="text-app-subtle">{t(statusKey(row))}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </Card>
   );
-}
-
-/** Catalog key for a history row status. */
-function statusKey(row: PosCharge): 'pos.pending' | 'pos.cancelled' | 'pos.expired' {
-  if (row.status === 'cancelled') {
-    return 'pos.cancelled';
-  }
-  if (row.status === 'expired') {
-    return 'pos.expired';
-  }
-  return 'pos.pending';
 }

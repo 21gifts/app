@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
@@ -36,12 +36,14 @@ function QuotedForumNote({
   rateDay,
   fiat,
   truncate,
+  translate = true,
   onActivate,
 }: {
   note: ForumMessage;
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
   truncate: boolean;
+  translate?: boolean;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
@@ -128,27 +130,26 @@ function QuotedForumNote({
         ) : null}
       </Link>
       {note.text !== '' ? (
-        note.via === 'nostr' ? (
-          <>
-            {truncate ? (
-              <ForumNoteText
-                plain
-                text={note.text}
-                className="whitespace-pre-wrap text-sm text-app-fg"
-              />
-            ) : (
-              <LinkedText
-                plain
-                text={note.text}
-                className="whitespace-pre-wrap text-sm text-app-fg"
-              />
-            )}
-            <NoteTranslate plain text={note.text} />
-          </>
+        note.via === 'nostr' && translate ? (
+          <TranslatableNoteBody
+            messageId={note.id}
+            plain
+            text={note.text}
+            truncate={truncate}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+          />
         ) : truncate ? (
-          <ForumNoteText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
+          <ForumNoteText
+            text={note.text}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+            {...(note.via === 'nostr' ? { plain: true } : {})}
+          />
         ) : (
-          <LinkedText text={note.text} className="whitespace-pre-wrap text-sm text-app-fg" />
+          <LinkedText
+            text={note.text}
+            className="whitespace-pre-wrap text-sm text-app-fg"
+            {...(note.via === 'nostr' ? { plain: true } : {})}
+          />
         )
       ) : null}
       <Link href={`/messages/${note.id}`} className="block">
@@ -174,9 +175,16 @@ function QuotedForumNote({
  * @param props - Body text, already-loaded notes, the containing message id,
  *   fiat conversion, optional feed truncation, optional remaining-text
  *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
- *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"`), and
- *   an optional click handler for the nested card.
- * @returns The stripped paragraph, nested post cards, and translation control;
+ *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"` via
+ *   TranslatableNoteBody), optional
+ *   `translate` (default true; false renders `ForumNoteText` / `LinkedText`
+ *   with no Translate control on remaining text and nested quoted cards,
+ *   including `via === 'nostr'` — inbox DMs; `translate={false}` keeps
+ *   nostr nested bodies `plain`), optional `formatTranslated`
+ *   (applied to the visible remainder translation after the quote/short-link
+ *   strip), and an optional click handler for the nested card.
+ * @returns The stripped paragraph (replaced by the translation while shown
+ *   when `translate` is true), nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
  *   are loaded with `fetchPublicMessage` (catch, never throw). Short codes
  *   load with `fetchShortLink` (null, never throw); only a shown message strips
@@ -191,6 +199,8 @@ export function ForumQuotedBody({
   fiat,
   truncate = true,
   className = 'whitespace-pre-wrap text-sm text-app-fg',
+  translate = true,
+  formatTranslated,
   onActivate,
 }: {
   text: string;
@@ -200,6 +210,8 @@ export function ForumQuotedBody({
   fiat: FiatCode;
   truncate?: boolean;
   className?: string;
+  translate?: boolean;
+  formatTranslated?: (text: string) => string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
   const quoteIds = useMemo(() => {
@@ -309,6 +321,13 @@ export function ForumQuotedBody({
     splitForumMessageQuotes(text, resolvedIdSet).displayText,
     resolvedCodeSet,
   ).displayText;
+  const formatRemainderTranslation = (translated: string): string => {
+    const stripped = splitShortLinks(
+      splitForumMessageQuotes(translated, resolvedIdSet).displayText,
+      resolvedCodeSet,
+    ).displayText;
+    return formatTranslated === undefined ? stripped : formatTranslated(stripped);
+  };
 
   if (text === '' && resolvedNotes.length === 0) {
     return null;
@@ -317,19 +336,19 @@ export function ForumQuotedBody({
   return (
     <>
       {displayText !== '' ? (
-        truncate ? (
+        translate ? (
+          <TranslatableNoteBody
+            messageId={excludeId}
+            text={displayText}
+            truncate={truncate}
+            className={className}
+            formatTranslated={formatRemainderTranslation}
+          />
+        ) : truncate ? (
           <ForumNoteText text={displayText} className={className} />
         ) : (
           <LinkedText text={displayText} className={className} />
         )
-      ) : null}
-      {displayText !== '' ? (
-        <NoteTranslate
-          text={displayText}
-          {...(className.split(/\s+/).includes('text-app-btn-fg')
-            ? { tone: 'onButton' as const }
-            : {})}
-        />
       ) : null}
       {resolvedNotes.map((note) => (
         <QuotedForumNote
@@ -338,6 +357,7 @@ export function ForumQuotedBody({
           rateDay={rateDay}
           fiat={fiat}
           truncate={truncate}
+          translate={translate}
           {...(onActivate === undefined ? {} : { onActivate })}
         />
       ))}

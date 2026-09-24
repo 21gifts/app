@@ -7,6 +7,9 @@ export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
 /** One of {@link NOTIFICATION_LEVELS}. */
 export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
 
+/** Typing unit stored on an account. Missing means bitcoin. */
+export type AmountUnit = 'btc' | 'fiat';
+
 /**
  * Runtime schema for the owner `funding` object on `GET /me`.
  *
@@ -87,6 +90,11 @@ export const accountSchema = z.object({
    */
   notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
   /**
+   * Typing unit for amount fields (`btc` or `fiat`). Optional so older api
+   * bodies still parse. Missing means bitcoin in the UI.
+   */
+  amountUnit: z.enum(['btc', 'fiat']).optional(),
+  /**
    * Owner funding-program grant. Optional so mixed deploys parse. `basis` is
    * `null`; verified+ is an object (`status: 'none'` when there is no row).
    * Missing or `undefined` is the same as `null` (no funding object).
@@ -133,6 +141,8 @@ export const accountSchema = z.object({
  * `notificationLevel` is `all` (every living-room post, reply, and gift),
  * `active` (posts with gifts), or `mentions` (admin/staff posts and events
  * that involve the owner). Omitted on older api builds; treat as `all`.
+ * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
+ * builds; treat as `btc`.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
  */
@@ -428,6 +438,38 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 export const FORUM_MESSAGE_MAX_LENGTH = 500;
 
 /**
+ * Runtime schema for an optional forum place pin.
+ */
+export const forumPlacePinSchema = z.object({
+  lat: z.number().gte(-90).lte(90),
+  lng: z.number().gte(-180).lte(180),
+  label: z.string().max(80).nullish(),
+});
+
+/**
+ * A confirmed forum place pin (`lat`, `lng`, optional `label`).
+ */
+export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
+
+/**
+ * Runtime schema for `GET /forum/messages/places`.
+ */
+export const forumPlacesResponseSchema = z.object({
+  places: z.array(
+    forumPlacePinSchema.extend({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      createdAt: z.string().min(1),
+    }),
+  ),
+});
+
+/**
+ * One live top-level forum pin, including the note id and author name.
+ */
+export type ForumPlaceRow = ForumPlacePin & { id: string; name: string; createdAt: string };
+
+/**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
  *
  * `sats` is the validated payment total for the note (always present, including 0).
@@ -447,6 +489,7 @@ export const FORUM_MESSAGE_MAX_LENGTH = 500;
  * Gift-only replies may have empty `text` when `sats > 0`.
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
+ * `place` is optional and is not a body.
  */
 export const forumMessageSchema = z
   .object({
@@ -484,6 +527,7 @@ export const forumMessageSchema = z
         role: z.enum(ROLE_ORDER).nullable(),
       })
       .optional(),
+    place: forumPlacePinSchema.optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,

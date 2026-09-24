@@ -98,10 +98,6 @@ export default async function Home(): Promise<ReactElement> {
             <h3 className="text-xl font-semibold">{t('home.why3Title')}</h3>
             <p className="mt-2 text-paper/60">{t('home.why3Body')}</p>
           </div>
-          <div>
-            <h3 className="text-xl font-semibold">{t('home.why4Title')}</h3>
-            <p className="mt-2 text-paper/60">{t('home.why4Body')}</p>
-          </div>
         </div>
       </section>
 
@@ -130,10 +126,6 @@ export default async function Home(): Promise<ReactElement> {
           <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq1Q')}</summary>
             <p className="mt-3 text-paper/60">{t('home.faq1A')}</p>
-          </details>
-          <details className="border-b border-paper/10 py-4">
-            <summary className="cursor-pointer font-medium">{t('home.faq2Q')}</summary>
-            <p className="mt-3 text-paper/60">{t('home.faq2A')}</p>
           </details>
           <details className="border-b border-paper/10 py-4">
             <summary className="cursor-pointer font-medium">{t('home.faq3Q')}</summary>

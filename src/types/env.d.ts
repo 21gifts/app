@@ -30,17 +30,6 @@ declare global {
        * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
        */
       APP_VERSION?: string;
-      /**
-       * Full DeepL API v2 POST URL, used as-is (example: `https://api.deepl.com/v2/translate`).
-       * Missing, empty, or non-http(s) values disable translation.
-       * Tests assign it.
-       */
-      TRANSLATE_URL?: string;
-      /**
-       * Required DeepL auth key. Missing or blank after trim disables translation
-       * even when the URL is set. Tests assign it.
-       */
-      TRANSLATE_API_KEY?: string;
       /** Set by CI systems (GitHub Actions sets `"true"`); read by `playwright.config.ts`. */
       readonly CI?: string;
     }

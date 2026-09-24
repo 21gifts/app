@@ -31,16 +31,30 @@ export function fetchTranslateAvailable(): Promise<boolean> {
 /**
  * Translate a forum note through the same-origin translation route.
  *
- * @param text - Raw forum note body.
+ * The API looks up `message_translation` before DeepL.
+ *
+ * @param messageId - Forum message UUID.
  * @param target - Active UI locale.
+ * @param session - Optional bearer token. A non-empty string is sent as
+ *   `Authorization: Bearer …` (hidden staff permalink). Omitted, null, or
+ *   empty leaves the request unsigned so public notes still work.
  * @returns The translated note body.
- * @throws When the route returns a non-2xx response or omits `translatedText`.
+ * @throws When the route returns a non-2xx response or `translatedText` is
+ *   missing, not a string, or empty after trim.
  */
-export async function translateNote(text: string, target: Locale): Promise<string> {
+export async function translateNote(
+  messageId: string,
+  target: Locale,
+  session?: string | null,
+): Promise<string> {
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (typeof session === 'string' && session !== '') {
+    headers['Authorization'] = `Bearer ${session}`;
+  }
   const response = await fetch('/translate', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text, target }),
+    headers,
+    body: JSON.stringify({ messageId, target }),
   });
   if (!response.ok) {
     throw new Error('Translation request failed');
@@ -51,7 +65,8 @@ export async function translateNote(text: string, target: Locale): Promise<strin
     typeof body !== 'object' ||
     body === null ||
     !('translatedText' in body) ||
-    typeof body.translatedText !== 'string'
+    typeof body.translatedText !== 'string' ||
+    body.translatedText.trim() === ''
   ) {
     throw new Error('Translation response is invalid');
   }

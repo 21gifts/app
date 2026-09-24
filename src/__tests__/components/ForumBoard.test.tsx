@@ -175,6 +175,7 @@ const idleProps: Pick<
   | 'replyFormError'
   | 'askDraft'
   | 'onAskDraftChange'
+  | 'onPlaceDraftChange'
 > = {
   payMessageId: null,
   payDraft: '',
@@ -207,6 +208,7 @@ const idleProps: Pick<
   replyFormError: null,
   askDraft: '',
   onAskDraftChange: () => undefined,
+  onPlaceDraftChange: () => undefined,
 };
 
 function modeProps(
@@ -272,6 +274,58 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).not.toHaveBeenCalled();
     expect(screen.getByText(/TAILWORD/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('links a top-level note to the map and ignores a reply pin', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, place: { lat: 14.6, lng: 120.98, label: 'Happyland' } },
+          { ...SAMPLE, id: 'm-coords', text: 'Coords', place: { lat: 1, lng: 2, label: null } },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            parentId: 'm1',
+            name: 'Bob',
+            text: 'Reply',
+            sats: 0,
+            payable: false,
+            place: { lat: 3, lng: 4, label: 'Stall' },
+          },
+          {
+            ...SAMPLE,
+            id: 'r2',
+            parentId: 'm1',
+            name: 'Cara',
+            text: 'Reply two',
+            sats: 0,
+            payable: false,
+            place: { lat: 5, lng: 6, label: null },
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const labeled = screen.getByRole('link', { name: 'Happyland' });
+    expect(labeled.getAttribute('href')).toBe('/map?pin=m1');
+    fireEvent.click(labeled);
+    expect(screen.getByRole('link', { name: '1.00000, 2.00000' }).getAttribute('href')).toBe(
+      '/map?pin=m-coords',
+    );
+    expect(screen.queryByRole('link', { name: 'Stall' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '5.00000, 6.00000' })).toBeNull();
   });
 
   it('keeps a long note full when truncate is off', () => {
@@ -475,12 +529,35 @@ describe('ForumBoard', () => {
     expect(button.textContent?.trim()).toBe('');
     expect(screen.getByLabelText('Add a photo or video').textContent?.trim()).toBe('');
     expect(field.nextElementSibling).toBe(button);
-    expect(field.previousElementSibling?.previousElementSibling).toBe(
-      screen.getByLabelText('Add a photo or video'),
-    );
+    const photo = screen.getByLabelText('Add a photo or video');
+    const place = screen.getByLabelText('Add a place');
+    expect(screen.queryByText('Add a place')).toBeNull();
+    expect(photo.compareDocumentPosition(place) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(place.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     expect(screen.queryByText('Dismiss')).toBeNull();
+  });
+
+  it('omits the place control when the board cannot store a pin', () => {
+    const { onPlaceDraftChange, ...withoutPlace } = idleProps;
+    expect(onPlaceDraftChange).toBeTypeOf('function');
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...withoutPlace}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByLabelText('Add a place')).toBeNull();
   });
 
   it('sets the new-post textarea maxLength from composerMaxLength', () => {
@@ -1926,7 +2003,6 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payDraft="21"
-
         {...modeProps('all')}
       />,
       'de',
@@ -3133,6 +3209,26 @@ describe('ForumBoard', () => {
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('renders a via nostr shop note with the shop pill', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false, text: 'Cafe Luna\n\n#21GiftsShop' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'External' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
   });
 
   it('renders a via note url as plain text and does not unfurl a quoted note', async () => {
@@ -4768,7 +4864,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText("₿21'000 senden")).toBeTruthy();
     expect(screen.queryByText('—')).toBeNull();
-    expect(screen.queryByText(/CHF/)).toBeNull();
+    expect(screen.queryByText(/^CHF /)).toBeNull();
   });
 
   it('renders reply text with the gift amount underneath', () => {

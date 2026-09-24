@@ -15,8 +15,15 @@ import {
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { shownFiatForSats } from '@/lib/stats-money';
+import {
+  fiatDraftForSats,
+  parseAmountDraft,
+  paySatsFromDraft,
+  replySatsFromDraft,
+  shownFiatForSats,
+} from '@/lib/stats-money';
 import {
   dismissForumLaws,
   fetchMessagePhoto,
@@ -30,7 +37,12 @@ import {
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
+  type ForumMessage,
+  type ForumPlacePin,
+} from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
   FORUM_HOME_EVENT,
@@ -40,7 +52,7 @@ import {
   unpaidNewCount,
   visibleForumMessages,
 } from '@/lib/forum-feed';
-import { parseForumAskAmount } from '@/lib/forum-goal';
+import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
@@ -118,27 +130,6 @@ function isAuthorWalletError(err: unknown): boolean {
     return false;
   }
   return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
-}
-
-/**
- * Parses the reply-composer sats draft.
- *
- * @param raw - Amount field value.
- * @returns Whole sats (`0` becomes `1`), `'empty'` when blank, or `'invalid'`.
- */
-function parseReplySats(raw: string): number | 'empty' | 'invalid' {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    return 'empty';
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return 'invalid';
-  }
-  const sats = Number.parseInt(trimmed, 10);
-  if (!Number.isSafeInteger(sats)) {
-    return 'invalid';
-  }
-  return sats < 1 ? 1 : sats;
 }
 
 /**
@@ -328,6 +319,10 @@ export function ForumLoader({
 } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { fiat } = useFiatPreference();
+  const amountUnit = account?.amountUnit ?? 'btc';
+  const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
+  const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
   const router = useRouter();
   const scroller = useAppShellScroller();
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -348,6 +343,9 @@ export function ForumLoader({
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [askDraft, setAskDraft] = useState('');
+  const [askDraftUnit, setAskDraftUnit] = useState<AmountUnit>(amountUnit);
+  const askUnit = useRef(askDraftUnit);
+  askUnit.current = askDraftUnit;
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
@@ -357,6 +355,7 @@ export function ForumLoader({
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
   const videoDraftRef = useRef(videoDraft);
   videoDraftRef.current = videoDraft;
+  const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -392,6 +391,41 @@ export function ForumLoader({
   const rateDay = useLatestRateDay();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
+  useEffect(() => {
+    if (askUnit.current === amountUnit) {
+      return;
+    }
+    if (askStep === 1) {
+      return;
+    }
+    const from = askUnit.current;
+    const adopt = (): void => {
+      askUnit.current = amountUnit;
+      setAskDraftUnit(amountUnit);
+    };
+    setAskDraft((draft) => {
+      const parsed = parseAmountDraft(from, draft, rateDay, fiat);
+      /* v8 ignore next 4 -- an empty ask cannot leave step 1 */
+      if (parsed.kind === 'empty') {
+        adopt();
+        return draft;
+      }
+      /* v8 ignore next 3 -- an unparsable ask cannot leave step 1; a missing rate retries */
+      if (parsed.kind !== 'sats') {
+        return draft;
+      }
+      if (amountUnit === 'btc') {
+        adopt();
+        return String(parsed.sats);
+      }
+      const next = fiatDraftForSats(parsed.sats, rateDay, fiat);
+      if (next === null) {
+        return draft;
+      }
+      adopt();
+      return next;
+    });
+  }, [amountUnit, askStep, fiat, rateDay]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;
@@ -414,6 +448,7 @@ export function ForumLoader({
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
   const pendingComposeGoalRef = useRef<number | undefined>(undefined);
+  const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
   const composeFeePaidRef = useRef(false);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
@@ -1226,6 +1261,8 @@ export function ForumLoader({
                 const photos = pendingComposePhotosRef.current;
                 const video = pendingComposeVideoRef.current;
                 const goalSats = pendingComposeGoalRef.current;
+                const pendingPlace = pendingComposePlaceRef.current;
+                const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
                 try {
                   const created =
                     video !== null
@@ -1235,6 +1272,7 @@ export function ForumLoader({
                           poster: video.poster,
                           /* v8 ignore next -- Ask plus a video clip is the photo path in tests */
                           ...(goalSats !== undefined ? { goalSats } : {}),
+                          ...placeFields,
                         })
                       : await postMessage(session, {
                           text: caption,
@@ -1249,10 +1287,12 @@ export function ForumLoader({
                                 })),
                               }),
                           ...(goalSats !== undefined ? { goalSats } : {}),
+                          ...placeFields,
                         });
                   applyCreatedNote(created, photos, video);
                   composeFeePaidRef.current = false;
                   pendingComposeGoalRef.current = undefined;
+                  pendingComposePlaceRef.current = null;
                 } catch {
                   setFormError('request');
                   composeFeePaidRef.current = true;
@@ -1537,6 +1577,7 @@ export function ForumLoader({
     setComposeIntent('post');
     setAskStep(1);
     setAskCadence('once');
+    setPlaceDraft(null);
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
@@ -1548,6 +1589,7 @@ export function ForumLoader({
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
     goalSats: number | undefined,
+    pendingPlace: ForumPlacePin | null,
   ): Promise<void> => {
     setPosting(true);
     setFormError(null);
@@ -1559,7 +1601,8 @@ export function ForumLoader({
         !composeFeePaidRef.current
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
-        const postAfterPay = hasMedia || goalSats !== undefined;
+        const postAfterPay = hasMedia || goalSats !== undefined || pendingPlace !== null;
+        pendingComposePlaceRef.current = pendingPlace;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
@@ -1590,6 +1633,7 @@ export function ForumLoader({
         awaitingPay = true;
         return;
       }
+      const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
       const created =
         pendingVideo !== null
           ? await postMessageVideo(session, {
@@ -1597,6 +1641,7 @@ export function ForumLoader({
               video: pendingVideo.file,
               poster: pendingVideo.poster,
               ...(goalSats !== undefined ? { goalSats } : {}),
+              ...placeFields,
             })
           : await postMessage(session, {
               text: trimmed,
@@ -1610,6 +1655,7 @@ export function ForumLoader({
                     })),
                   }),
               ...(goalSats !== undefined ? { goalSats } : {}),
+              ...placeFields,
             });
       applyCreatedNote(created, pendingPhotos, pendingVideo);
       pendingPostRef.current = null;
@@ -1622,7 +1668,7 @@ export function ForumLoader({
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
-            startNotePost(trimmed, pendingPhotos, pendingVideo, true, goalSats);
+            startNotePost(trimmed, pendingPhotos, pendingVideo, true, goalSats, pendingPlace);
             return Promise.resolve();
           };
           return;
@@ -1630,6 +1676,7 @@ export function ForumLoader({
         setFormError('request');
         return;
       }
+      pendingComposePlaceRef.current = null;
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
@@ -1645,10 +1692,11 @@ export function ForumLoader({
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
     goalSats: number | undefined,
+    pendingPlace: ForumPlacePin | null,
   ): void => {
     if (notePostInFlightRef.current) return;
     notePostInFlightRef.current = true;
-    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry, goalSats);
+    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry, goalSats, pendingPlace);
   };
 
   const onPost = (): void => {
@@ -1664,7 +1712,7 @@ export function ForumLoader({
     }
     let goalSats: number | undefined;
     if (feed !== 'shops' && composeIntent === 'ask') {
-      const parsed = parseForumAskAmount(askDraft);
+      const parsed = parseForumAskAmountInUnit(askDraft, askUnit.current, rateDay, fiat);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
       if (parsed === null) {
         setFormError('ask');
@@ -1673,11 +1721,12 @@ export function ForumLoader({
       goalSats = parsed;
     }
     const missing = account?.missing ?? [];
+    const pendingPlace = placeDraft;
     if (openOverlayForMissing(missing)) {
       const pendingPhotos = photoDrafts;
       const pendingVideo = videoDraft;
       pendingPostRef.current = () => {
-        startNotePost(body, pendingPhotos, pendingVideo, true, goalSats);
+        startNotePost(body, pendingPhotos, pendingVideo, true, goalSats, pendingPlace);
         return Promise.resolve();
       };
       return;
@@ -1685,7 +1734,7 @@ export function ForumLoader({
     pickGeneration.current += 1;
     const pendingPhotos = photoDrafts;
     const pendingVideo = videoDraft;
-    startNotePost(body, pendingPhotos, pendingVideo, false, goalSats);
+    startNotePost(body, pendingPhotos, pendingVideo, false, goalSats, pendingPlace);
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
@@ -1700,20 +1749,10 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
-    const rawAmount = payDraft.trim();
-    let sats: number;
-    if (rawAmount === '') {
-      sats = DEFAULT_FORUM_PAY_SATS;
-    } else if (!/^\d+$/.test(rawAmount)) {
+    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    if (sats === 'invalid') {
       setPayError('amount');
       return;
-    } else {
-      sats = Number.parseInt(rawAmount, 10);
-      /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
-      if (sats <= 0 || !Number.isSafeInteger(sats)) {
-        setPayError('amount');
-        return;
-      }
     }
     const messageId = payMessageId;
     const baseline = listed.sats;
@@ -2068,7 +2107,7 @@ export function ForumLoader({
       setReplyFormError('tooLong');
       return;
     }
-    const parsed = parseReplySats(replyAmountDraft);
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
@@ -2218,11 +2257,15 @@ export function ForumLoader({
         onRefresh={onRefresh}
         posting={posting || preparing}
         draft={draft}
+        placeDraft={placeDraft}
+        onPlaceDraftChange={setPlaceDraft}
         onDraftChange={(value) => {
           setDraft(value);
           setFormError(null);
         }}
         askDraft={askDraft}
+        askDraftUnit={askDraftUnit}
+        onAskDraftUnit={setAskDraftUnit}
         onAskDraftChange={(value) => {
           setAskDraft(value);
           setFormError(null);
@@ -2230,6 +2273,10 @@ export function ForumLoader({
         composeIntent={composeIntent}
         onComposeIntentChange={(intent) => {
           setComposeIntent(intent);
+          if (intent === 'ask') {
+            setPlaceDraft(null);
+            pendingComposePlaceRef.current = null;
+          }
           if (intent === 'post') {
             setAskStep(1);
           }
@@ -2275,6 +2322,8 @@ export function ForumLoader({
           setPayWaiting(false);
           setPayBusy(false);
         }}
+        onPayUnitChange={setPayShownUnit}
+        onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
           setPayDraft(value);
           setPayError(null);

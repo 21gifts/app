@@ -373,6 +373,284 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('posts a place pin with the note', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue(SAMPLE);
+    const listeners = new Map<
+      string,
+      (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void
+    >();
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({
+          setCenter: vi.fn(),
+          addListener: (
+            event: string,
+            handler: (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void,
+          ) => {
+            listeners.set(event, handler);
+          },
+        })),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => null,
+          addListener: () => undefined,
+        })),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        place: { lat: 14.5, lng: 120.9, label: 'Stall' },
+      });
+    });
+    fetchSpy.mockRestore();
+    delete (window as { google?: unknown }).google;
+  });
+
+  it('does not keep a place pin after switching to Ask', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue(SAMPLE);
+    const listeners = new Map<
+      string,
+      (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void
+    >();
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({
+          setCenter: vi.fn(),
+          addListener: (
+            event: string,
+            handler: (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void,
+          ) => {
+            listeners.set(event, handler);
+          },
+        })),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => null,
+          addListener: () => undefined,
+        })),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+    });
+    fetchSpy.mockRestore();
+    delete (window as { google?: unknown }).google;
+  });
+
+  it('drops a place pin if Ask is chosen before the compose fee confirms', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'place-dropped',
+      text: 'Hello',
+      sats: 0,
+      payable: false,
+    });
+    const listeners = new Map<
+      string,
+      (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void
+    >();
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({
+          setCenter: vi.fn(),
+          addListener: (
+            event: string,
+            handler: (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void,
+          ) => {
+            listeners.set(event, handler);
+          },
+        })),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => null,
+          addListener: () => undefined,
+        })),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    await waitFor(
+      () => {
+        expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello' });
+      },
+      { timeout: 5000 },
+    );
+    expect(postMock.mock.calls[0]?.[1]).not.toHaveProperty('place');
+    fetchSpy.mockRestore();
+    delete (window as { google?: unknown }).google;
+  });
+
+  it('posts a basis place pin after the compose fee confirms', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'place-paid',
+      text: 'Hello',
+      sats: 0,
+      payable: false,
+    });
+    const listeners = new Map<
+      string,
+      (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void
+    >();
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({
+          setCenter: vi.fn(),
+          addListener: (
+            event: string,
+            handler: (event?: { latLng: { lat: () => number; lng: () => number } | null }) => void,
+          ) => {
+            listeners.set(event, handler);
+          },
+        })),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => null,
+          addListener: () => undefined,
+        })),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
+    });
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        place: { lat: 14.5, lng: 120.9, label: 'Stall' },
+      });
+    });
+    fetchSpy.mockRestore();
+    delete (window as { google?: unknown }).google;
+  });
+
   it('posts a valid Ask amount as goalSats', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
@@ -518,6 +796,136 @@ describe('ForumLoader', () => {
     });
     expect(screen.getByRole('button', { name: 'Send a post' })).toBeTruthy();
     expect(screen.queryByLabelText('Ask')).toBeNull();
+  });
+
+  it('converts an ask draft that is not on screen when the account unit changes', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Add photos' })).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '0.021');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      useAuthStore.setState({ session: 'sess', account });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21');
+  });
+
+  it('leaves the ask field to convert itself while step 1 is open', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect(screen.getByText('$0.02')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '0.021');
+  });
+
+  it('keeps an ask in sats when step 1 returns before a rate can convert', async () => {
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21');
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', false);
+  });
+
+  it('leaves an unmounted ask draft unchanged when the rate cannot convert it', async () => {
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+    });
+    await act(async () => {
+      useAuthStore.setState({ session: 'sess', account });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('Ask')).toHaveProperty('value', '21');
   });
 
   it('shows empty copy when fetch resolves to an empty list', async () => {

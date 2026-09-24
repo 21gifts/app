@@ -37,6 +37,8 @@ const en = {
     'A narrow passage between homes, with uneven ground and scattered waste.',
 
   'language.label': 'Language',
+  'amount.unit': 'Bitcoin or fiat',
+  'amount.noRate': 'No exchange rate yet',
 
   'nav.how': 'How it works',
   'nav.why': 'Why',
@@ -48,6 +50,7 @@ const en = {
   'nav.login': 'Log in',
   'nav.home': 'Home',
   'nav.shops': 'Shops',
+  'nav.map': 'Map',
   'nav.legal': 'Legal & Privacy',
   'nav.rules': 'Living room rules',
   'nav.inbox': 'Messages',
@@ -57,6 +60,7 @@ const en = {
   'nav.moderate': 'Moderation',
   'nav.moderateUnread': 'Moderation, {count} unread',
   'nav.contact': 'Contact',
+  'nav.back': 'Back',
 
   'pwa.install': 'Install app',
   'pwa.iosTitle': 'Add 21.gifts to your Home Screen',
@@ -116,9 +120,6 @@ const en = {
   'home.why3Title': 'Your Bitcoin, not ours',
   'home.why3Body':
     'Gifts are Bitcoin payments to a Wallet of Satoshi address. If 21.gifts disappeared tomorrow, those addresses would keep working.',
-  'home.why4Title': 'Non-profit by design',
-  'home.why4Body':
-    'There is no take rate, no platform fee, and no funding round to pay back. The project covers its own infrastructure costs and nothing more.',
   'home.projectKicker': 'The project',
   'home.projectTitle': 'Donate to this project',
   'home.projectLead':
@@ -128,9 +129,6 @@ const en = {
   'home.faq1Q': 'Who can use this?',
   'home.faq1A':
     'Anyone with a Wallet of Satoshi address. There is no application and no review process.',
-  'home.faq2Q': 'Do you take a cut of the gifts?',
-  'home.faq2A':
-    "No. Payments go directly from the donor's Wallet of Satoshi to the receiver's Wallet of Satoshi address. 21.gifts is never in the payment path and earns nothing per transaction.",
   'home.faq3Q': 'What happens to my keys?',
   'home.faq3A':
     'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and, if you choose to publish it, your Wallet of Satoshi address. No password and no seed phrase is ever stored on our servers.',
@@ -142,7 +140,7 @@ const en = {
     'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
   'home.faq6Q': 'Why only Bitcoin?',
   'home.faq6A':
-    'Bitcoin is fast, cheap to send, and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
+    'Bitcoin is fast and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
   'home.faq7Q': 'Is this regulated, and how do taxes work?',
   'home.faq7A':
     '21.gifts is a non-profit communication and discovery layer. It is not a payment service provider and does not move funds. Donors and receivers are responsible for their own tax treatment in their jurisdiction.',
@@ -167,11 +165,11 @@ const en = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direct, with no middleman',
   'about.conv2Body':
-    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. The whole gift arrives: nobody takes a cut, delays it, or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
+    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. Nobody delays it or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin is the most effective money',
   'about.conv3Body':
-    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless: no bank, no ID, no opening hours. It reaches the whole world around the clock, and for a gift across a border it is the simplest way to send money — as simple as an email address. Small amounts arrive fast and cheap. Nobody can print more of it or stop it at a border, and it lands with the receiver, not with us. That matters most to people who already have little.',
+    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless: no bank, no ID, no opening hours. It reaches the whole world around the clock, and for a gift across a border it is the simplest way to send money — as simple as an email address. Nobody can print more of it or stop it at a border, and it lands with the receiver, not with us. That matters most to people who already have little.',
   'about.ctaForum': 'Open the living room',
 
   'donate.pageTitle': 'Send help',
@@ -345,6 +343,11 @@ const en = {
   'forum.quotedNoteExternal': 'Open linked note from {name} (external)',
   'forum.removePhoto': 'Remove photo',
   'forum.removeVideo': 'Remove video',
+  'forum.addPlace': 'Add a place',
+  'forum.placeRemove': 'Remove place',
+  'forum.placeLabel': 'Place name',
+  'forum.placeDone': 'Use this place',
+  'forum.placeUnavailable': 'The map is not available.',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
   'forum.errorTooMany': 'You can add up to 10 photos',
@@ -478,12 +481,8 @@ const en = {
   'pos.amountPlaceholder': '0',
   'pos.create': 'Create payment',
   'pos.cancel': 'Cancel',
-  'pos.history': 'History',
   'pos.needUsername': 'Set a username first.',
   'pos.needAddress': 'Set a Wallet of Satoshi address first.',
-  'pos.pending': 'Open',
-  'pos.cancelled': 'Cancelled',
-  'pos.expired': 'Expired',
   'pos.left': '{time} left',
   'pos.error': 'Point of sale is unavailable.',
   'pos.outside': 'Amount is outside the wallet range.',
@@ -629,6 +628,10 @@ const en = {
   'shops.heading': 'Shops',
   'shops.lead':
     'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
+  'map.heading': 'Map',
+  'map.empty': 'No places yet.',
+  'map.error': 'Could not load places. Please try again.',
+  'map.loading': 'Loading…',
   'shops.empty': 'No shops yet — add the first one.',
 
   'inbox.heading': 'Messages',
@@ -850,6 +853,8 @@ const de = {
     'Ein schmaler Durchgang zwischen Häusern mit unebenem Boden und verstreutem Abfall.',
 
   'language.label': 'Sprache',
+  'amount.unit': 'Bitcoin oder Fiat',
+  'amount.noRate': 'Noch kein Wechselkurs',
   'nav.how': "So funktioniert's",
   'nav.why': 'Warum',
   'nav.faq': 'FAQ',
@@ -860,6 +865,7 @@ const de = {
   'nav.login': 'Anmelden',
   'nav.home': 'Start',
   'nav.shops': 'Shops',
+  'nav.map': 'Karte',
   'nav.legal': 'Impressum & Datenschutz',
   'nav.rules': 'Wohnzimmerregeln',
   'nav.inbox': 'Posteingang',
@@ -869,6 +875,7 @@ const de = {
   'nav.moderate': 'Moderation',
   'nav.moderateUnread': 'Moderation, {count} ungelesen',
   'nav.contact': 'Kontakt',
+  'nav.back': 'Zurück',
   'pwa.install': 'App installieren',
   'pwa.iosTitle': '21.gifts auf den Home-Bildschirm',
   'pwa.iosLead': 'Auf dem iPhone sind das drei Taps im Teilen-Menü.',
@@ -924,9 +931,6 @@ const de = {
   'home.why3Title': 'Ihr Bitcoin, nicht unserer',
   'home.why3Body':
     'Geschenke sind Bitcoin-Zahlungen an eine Wallet of Satoshi address. Würde 21.gifts morgen verschwinden, funktionierten diese Adressen weiter.',
-  'home.why4Title': 'Gemeinnützig von Grund auf',
-  'home.why4Body':
-    'Keine Provision, keine Plattformgebühr, keine Finanzierungsrunde, die zurückverdient werden müsste. Das Projekt trägt seine eigenen Infrastrukturkosten und sonst nichts.',
   'home.projectKicker': 'Das Projekt',
   'home.projectTitle': 'An dieses Projekt spenden',
   'home.projectLead':
@@ -935,9 +939,6 @@ const de = {
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
   'home.faq1A': 'Jede Person mit einer Wallet of Satoshi address. Kein Antrag, keine Prüfung.',
-  'home.faq2Q': 'Behält 21.gifts einen Anteil der Geschenke?',
-  'home.faq2A':
-    'Nein. Zahlungen gehen direkt von der Wallet of Satoshi der gebenden Person an die Wallet of Satoshi address der empfangenden Person. 21.gifts liegt nicht im Zahlungsweg und verdient pro Transaktion nichts.',
   'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
   'home.faq3A':
     'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und, wenn Sie sie veröffentlichen, Ihre Wallet of Satoshi address. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
@@ -949,7 +950,7 @@ const de = {
     'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
   'home.faq6Q': 'Warum nur Bitcoin?',
   'home.faq6A':
-    'Bitcoin ist schnell, günstig und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
+    'Bitcoin ist schnell und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
   'home.faq7Q': 'Ist das reguliert, und wie sieht es mit Steuern aus?',
   'home.faq7A':
     '21.gifts ist eine gemeinnützige Kommunikations- und Vermittlungsschicht. Es ist kein Zahlungsdienstleister und bewegt kein Geld. Gebende und Empfangende sind selbst für die steuerliche Behandlung in ihrem Land verantwortlich.',
@@ -973,11 +974,11 @@ const de = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkt, niemand dazwischen',
   'about.conv2Body':
-    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Das ganze Geschenk kommt an. Niemand behält einen Anteil, hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
+    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Niemand hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
   'about.conv3Body':
-    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeiten. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es der einfachste Weg, Geld zu senden — so einfach wie eine E-Mail-Adresse. Kleine Beträge kommen schnell und günstig an. Es landet bei der empfangenden Person, nicht bei uns. Niemand kann mehr davon drucken oder es an der Grenze zurückhalten. Am meisten zählt das für Menschen, die ohnehin wenig haben.',
+    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeiten. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es der einfachste Weg, Geld zu senden — so einfach wie eine E-Mail-Adresse. Es landet bei der empfangenden Person, nicht bei uns. Niemand kann mehr davon drucken oder es an der Grenze zurückhalten. Am meisten zählt das für Menschen, die ohnehin wenig haben.',
   'about.ctaForum': 'Wohnzimmer öffnen',
   'donate.pageTitle': 'Hilfe senden',
   'donate.lead':
@@ -1146,6 +1147,11 @@ const de = {
   'forum.quotedNoteExternal': 'Verknüpfte Notiz von {name} (extern) öffnen',
   'forum.removePhoto': 'Foto entfernen',
   'forum.removeVideo': 'Video entfernen',
+  'forum.addPlace': 'Ort hinzufügen',
+  'forum.placeRemove': 'Ort entfernen',
+  'forum.placeLabel': 'Ortsname',
+  'forum.placeDone': 'Diesen Ort verwenden',
+  'forum.placeUnavailable': 'Die Karte ist nicht verfügbar.',
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
@@ -1283,12 +1289,8 @@ const de = {
   'pos.amountPlaceholder': '0',
   'pos.create': 'Zahlung anlegen',
   'pos.cancel': 'Abbrechen',
-  'pos.history': 'Verlauf',
   'pos.needUsername': 'Zuerst einen Benutzernamen setzen.',
   'pos.needAddress': 'Zuerst eine Wallet of Satoshi-Adresse setzen.',
-  'pos.pending': 'Offen',
-  'pos.cancelled': 'Abgebrochen',
-  'pos.expired': 'Abgelaufen',
   'pos.left': 'noch {time}',
   'pos.error': 'Die Kasse ist gerade nicht erreichbar.',
   'pos.outside': 'Der Betrag liegt außerhalb der Wallet.',
@@ -1438,6 +1440,10 @@ const de = {
   'shops.heading': 'Shops',
   'shops.lead':
     'Fügen Sie einen Shop hinzu wie einen Wohnzimmer-Beitrag. Er erscheint hier und im Forum mit einem #Shop-Tag.',
+  'map.heading': 'Karte',
+  'map.empty': 'Noch keine Orte.',
+  'map.error': 'Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'map.loading': 'Wird geladen…',
   'shops.empty': 'Noch keine Shops — fügen Sie den ersten hinzu.',
 
   'inbox.heading': 'Nachrichten',
@@ -1666,6 +1672,8 @@ const es = {
     'Un paso estrecho entre viviendas, con suelo irregular y residuos dispersos.',
 
   'language.label': 'Idioma',
+  'amount.unit': 'Bitcoin o fiat',
+  'amount.noRate': 'Aún no hay tipo de cambio',
   'nav.how': 'Cómo funciona',
   'nav.why': 'Por qué',
   'nav.faq': 'FAQ',
@@ -1676,6 +1684,7 @@ const es = {
   'nav.login': 'Iniciar sesión',
   'nav.home': 'Inicio',
   'nav.shops': 'Tiendas',
+  'nav.map': 'Mapa',
   'nav.legal': 'Aviso legal y privacidad',
   'nav.rules': 'Reglas del salón',
   'nav.inbox': 'Bandeja',
@@ -1685,6 +1694,7 @@ const es = {
   'nav.moderate': 'Moderación',
   'nav.moderateUnread': 'Moderación, {count} sin leer',
   'nav.contact': 'Contacto',
+  'nav.back': 'Volver',
   'pwa.install': 'Instalar app',
   'pwa.iosTitle': 'Añadir 21.gifts a la pantalla de inicio',
   'pwa.iosLead': 'En iPhone son tres toques en el menú Compartir.',
@@ -1741,9 +1751,6 @@ const es = {
   'home.why3Title': 'Tu Bitcoin, no el nuestro',
   'home.why3Body':
     'Los regalos son pagos en Bitcoin a una Wallet of Satoshi address. Si 21.gifts desapareciera mañana, esas direcciones seguirían funcionando.',
-  'home.why4Title': 'Sin ánimo de lucro por diseño',
-  'home.why4Body':
-    'No hay comisión, ni tarifa de plataforma, ni ronda de inversión que devolver. El proyecto cubre sus propios costes de infraestructura y nada más.',
   'home.projectKicker': 'El proyecto',
   'home.projectTitle': 'Dona a este proyecto',
   'home.projectLead':
@@ -1753,9 +1760,6 @@ const es = {
   'home.faq1Q': '¿Quién puede usarlo?',
   'home.faq1A':
     'Cualquiera con una Wallet of Satoshi address. No hay solicitud ni proceso de revisión.',
-  'home.faq2Q': '¿Se quedan con una parte de los regalos?',
-  'home.faq2A':
-    'No. Los pagos van directamente de la Wallet of Satoshi de quien da a la Wallet of Satoshi address de quien recibe. 21.gifts nunca está en la ruta del pago y no gana nada por transacción.',
   'home.faq3Q': '¿Qué pasa con mis claves?',
   'home.faq3A':
     'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y, si decides publicarla, tu Wallet of Satoshi address. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
@@ -1767,7 +1771,7 @@ const es = {
     'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió la reacción.',
   'home.faq6Q': '¿Por qué solo Bitcoin?',
   'home.faq6A':
-    'Bitcoin es rápido, barato de enviar y resistente a la censura. Wallet of Satoshi hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
+    'Bitcoin es rápido y resistente a la censura. Wallet of Satoshi hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
   'home.faq7Q': '¿Está regulado y cómo funcionan los impuestos?',
   'home.faq7A':
     '21.gifts es una capa de comunicación y descubrimiento sin ánimo de lucro. No es un proveedor de servicios de pago y no mueve fondos. Quien da y quien recibe son responsables de su propio tratamiento fiscal en su jurisdicción.',
@@ -1790,11 +1794,11 @@ const es = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Directo, sin intermediario',
   'about.conv2Body':
-    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Llega entero. Nadie se queda con una parte, lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
+    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Nadie lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin es el dinero más eficaz',
   'about.conv3Body':
-    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Las cantidades pequeñas llegan rápido y cuestan poco. Llega a quien recibe, no a nosotros. Nadie puede emitir más ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
+    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Llega a quien recibe, no a nosotros. Nadie puede emitir más ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
   'about.ctaForum': 'Abrir el salón',
   'donate.pageTitle': 'Enviar ayuda',
   'donate.lead':
@@ -1959,6 +1963,11 @@ const es = {
   'forum.quotedNoteExternal': 'Abrir la nota enlazada de {name} (externo)',
   'forum.removePhoto': 'Quitar foto',
   'forum.removeVideo': 'Quitar vídeo',
+  'forum.addPlace': 'Añadir un lugar',
+  'forum.placeRemove': 'Quitar el lugar',
+  'forum.placeLabel': 'Nombre del lugar',
+  'forum.placeDone': 'Usar este lugar',
+  'forum.placeUnavailable': 'El mapa no está disponible.',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
   'forum.errorTooMany': 'Puedes añadir hasta 10 fotos',
@@ -2095,12 +2104,8 @@ const es = {
   'pos.amountPlaceholder': '0',
   'pos.create': 'Crear pago',
   'pos.cancel': 'Cancelar',
-  'pos.history': 'Historial',
   'pos.needUsername': 'Primero elige un nombre de usuario.',
   'pos.needAddress': 'Primero define una dirección de Wallet of Satoshi.',
-  'pos.pending': 'Abierto',
-  'pos.cancelled': 'Cancelado',
-  'pos.expired': 'Caducado',
   'pos.left': 'quedan {time}',
   'pos.error': 'La caja no está disponible.',
   'pos.outside': 'El importe está fuera del rango de la wallet.',
@@ -2246,6 +2251,10 @@ const es = {
   'shops.heading': 'Tiendas',
   'shops.lead':
     'Añade una tienda igual que un mensaje del salón. Aparece aquí y en el foro con una etiqueta #Shop.',
+  'map.heading': 'Mapa',
+  'map.empty': 'Aún no hay lugares.',
+  'map.error': 'No se pudieron cargar los lugares. Inténtalo de nuevo.',
+  'map.loading': 'Cargando…',
   'shops.empty': 'Aún no hay tiendas — añade la primera.',
 
   'inbox.heading': 'Mensajes',
@@ -2465,6 +2474,8 @@ const fil = {
     'Isang makitid na daanan sa pagitan ng mga tahanan, na may lubak-lubak na lupa at kalat na basura.',
 
   'language.label': 'Wika',
+  'amount.unit': 'Bitcoin o fiat',
+  'amount.noRate': 'Wala pang halaga ng palitan',
   'nav.how': 'Paano ito gumagana',
   'nav.why': 'Bakit',
   'nav.faq': 'FAQ',
@@ -2475,6 +2486,7 @@ const fil = {
   'nav.login': 'Mag-log in',
   'nav.home': 'Home',
   'nav.shops': 'Mga Tindahan',
+  'nav.map': 'Mapa',
   'nav.legal': 'Legal at Privacy',
   'nav.rules': 'Mga patakaran sa living room',
   'nav.inbox': 'Mga mensahe',
@@ -2484,6 +2496,7 @@ const fil = {
   'nav.moderate': 'Moderasyon',
   'nav.moderateUnread': 'Moderasyon, {count} hindi pa nababasa',
   'nav.contact': 'Contact',
+  'nav.back': 'Bumalik',
   'pwa.install': 'I-install ang app',
   'pwa.iosTitle': 'Idagdag ang 21.gifts sa Home Screen',
   'pwa.iosLead': 'Sa iPhone, tatlong tap sa Share menu.',
@@ -2540,9 +2553,6 @@ const fil = {
   'home.why3Title': 'Ang Bitcoin mo, hindi sa amin',
   'home.why3Body':
     'Ang mga regalo ay Bitcoin payment sa isang Wallet of Satoshi address. Kung mawala man ang 21.gifts bukas, gagana pa rin ang mga address na iyon.',
-  'home.why4Title': 'Non-profit mula sa simula',
-  'home.why4Body':
-    'Walang komisyon, walang platform fee, at walang funding round na kailangang bawiin. Sinasagot ng proyekto ang sarili nitong gastos sa infrastructure at wala nang iba.',
   'home.projectKicker': 'Ang proyekto',
   'home.projectTitle': 'Mag-donate sa proyektong ito',
   'home.projectLead':
@@ -2552,9 +2562,6 @@ const fil = {
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',
   'home.faq1A':
     'Sinumang may Wallet of Satoshi address. Walang application at walang review process.',
-  'home.faq2Q': 'Kumukuha ba kayo ng parte sa mga regalo?',
-  'home.faq2A':
-    'Hindi. Diretso ang bayad mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Hindi kailanman nasa payment path ang 21.gifts at wala itong kita sa bawat transaksyon.',
   'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
   'home.faq3A':
     'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at, kung pipiliin mong i-publish, ang Wallet of Satoshi address mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
@@ -2566,7 +2573,7 @@ const fil = {
     'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng reaksyon ang Bitcoin.',
   'home.faq6Q': 'Bakit Bitcoin lang?',
   'home.faq6A':
-    'Mabilis ang Bitcoin, mura ang pagpapadala, at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng Wallet of Satoshi ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
+    'Mabilis ang Bitcoin at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng Wallet of Satoshi ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
   'home.faq7Q': 'Regulado ba ito, at paano ang buwis?',
   'home.faq7A':
     'Ang 21.gifts ay isang non-profit na communication at discovery layer. Hindi ito payment service provider at hindi ito naglilipat ng pondo. Responsibilidad ng nagbibigay at ng tumatanggap ang sarili nilang tax treatment sa kanilang bansa.',
@@ -2590,11 +2597,11 @@ const fil = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta, walang tagapamagitan',
   'about.conv2Body':
-    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Buo itong dumarating. Walang kumukuha ng parte, walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
+    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
   'about.conv3Body':
-    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Mabilis at mura ang pagpapadala ng maliliit na halaga. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
+    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
   'about.ctaForum': 'Buksan ang living room',
   'donate.pageTitle': 'Magpadala ng tulong',
   'donate.lead':
@@ -2761,6 +2768,11 @@ const fil = {
   'forum.quotedNoteExternal': 'Buksan ang naka-link na nota mula kay {name} (panlabas)',
   'forum.removePhoto': 'Alisin ang litrato',
   'forum.removeVideo': 'Alisin ang bidyo',
+  'forum.addPlace': 'Magdagdag ng lugar',
+  'forum.placeRemove': 'Alisin ang lugar',
+  'forum.placeLabel': 'Pangalan ng lugar',
+  'forum.placeDone': 'Gamitin ang lugar na ito',
+  'forum.placeUnavailable': 'Hindi available ang mapa.',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
   'forum.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
@@ -2897,12 +2909,8 @@ const fil = {
   'pos.amountPlaceholder': '0',
   'pos.create': 'Gumawa ng bayad',
   'pos.cancel': 'Kanselahin',
-  'pos.history': 'Kasaysayan',
   'pos.needUsername': 'Maglagay muna ng username.',
   'pos.needAddress': 'Maglagay muna ng Wallet of Satoshi address.',
-  'pos.pending': 'Bukas',
-  'pos.cancelled': 'Kinansela',
-  'pos.expired': 'Paso na',
   'pos.left': '{time} na lang',
   'pos.error': 'Hindi available ang point of sale.',
   'pos.outside': 'Labas sa range ng wallet ang halaga.',
@@ -3054,6 +3062,10 @@ const fil = {
   'shops.heading': 'Mga Tindahan',
   'shops.lead':
     'Magdagdag ng shop gaya ng isang living-room post. Lilitaw ito rito at sa forum na may #Shop na tag.',
+  'map.heading': 'Mapa',
+  'map.empty': 'Wala pang mga lugar.',
+  'map.error': 'Hindi ma-load ang mga lugar. Subukan ulit.',
+  'map.loading': 'Naglo-load…',
   'shops.empty': 'Wala pang mga shop — magdagdag ng una.',
 
   'inbox.heading': 'Mga mensahe',

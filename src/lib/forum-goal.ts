@@ -1,3 +1,5 @@
+import { parseAmountDraft, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+
 /** Maximum whole-sat ask a member may set on a top-level note. */
 export const FORUM_GOAL_SATS_MAX = 10_000_000;
 
@@ -39,4 +41,36 @@ export function forumGoalPercent(sats: number, goalSats: number): number {
   }
   const collected = Number.isFinite(sats) && sats > 0 ? sats : 0;
   return Math.floor((collected * 100) / goalSats);
+}
+
+/**
+ * Parse an Ask draft in the active typing unit.
+ *
+ * Bitcoin keeps {@link parseForumAskAmount}. Fiat converts with
+ * {@link parseAmountDraft} and then the same 1..{@link FORUM_GOAL_SATS_MAX}
+ * range.
+ *
+ * @param raw - Field value.
+ * @param unit - `btc` or `fiat`.
+ * @param day - Gift day for fiat, or `null`.
+ * @param code - Preferred fiat.
+ * @returns Whole sats in range, or `null`.
+ */
+export function parseForumAskAmountInUnit(
+  raw: string,
+  unit: 'btc' | 'fiat',
+  day: FiatRateDay | null,
+  code: FiatCode,
+): number | null {
+  if (unit === 'btc') {
+    return parseForumAskAmount(raw);
+  }
+  const parsed = parseAmountDraft('fiat', raw, day, code);
+  if (parsed.kind !== 'sats' || !Number.isSafeInteger(parsed.sats)) {
+    return null;
+  }
+  if (parsed.sats < 1 || parsed.sats > FORUM_GOAL_SATS_MAX) {
+    return null;
+  }
+  return parsed.sats;
 }

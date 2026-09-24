@@ -4,6 +4,14 @@ import { PosScreen } from '@/components/PosScreen';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
+  return {
+    ...actual,
+    fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  };
+});
+
 const ACCOUNT = {
   id: 'acc_1',
   linkingKey: null,
@@ -156,36 +164,6 @@ describe('PosScreen', () => {
     ).toBeTruthy();
   });
 
-  it('lists cancelled and expired history', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          charge: null,
-          history: [
-            {
-              id: 'c2',
-              amountSats: 5,
-              status: 'cancelled',
-              createdAt: new Date().toISOString(),
-              expiresAt: new Date().toISOString(),
-            },
-            {
-              id: 'c3',
-              amountSats: 8,
-              status: 'expired',
-              createdAt: new Date().toISOString(),
-              expiresAt: new Date().toISOString(),
-            },
-          ],
-        }),
-      ),
-    );
-    renderWithLocale(<PosScreen />);
-    expect(await screen.findByText('Cancelled')).toBeTruthy();
-    expect(screen.getByText('Expired')).toBeTruthy();
-  });
-
   it('hides the QR on a phone', async () => {
     const original = navigator.userAgent;
     Object.defineProperty(navigator, 'userAgent', {
@@ -254,7 +232,7 @@ describe('PosScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
   });
 
   it('refetches once when the open charge is already expired', async () => {
@@ -281,7 +259,7 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
-    expect(await screen.findByText('Expired')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
     expect(calls).toBe(2);
   });
 
@@ -369,17 +347,19 @@ describe('PosScreen', () => {
     };
     let releaseRefresh: ((value: Response) => void) | undefined;
     let calls = 0;
+    let cancelled = false;
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          cancelled = true;
+          return jsonResponse({ charge: null });
+        }
         calls += 1;
         if (calls === 1) {
           return jsonResponse({ charge: expired, history: [expired] });
         }
-        if (init?.method === 'DELETE') {
-          return jsonResponse({ charge: null });
-        }
-        if (releaseRefresh === undefined) {
+        if (!cancelled && releaseRefresh === undefined) {
           return new Promise<Response>((resolve) => {
             releaseRefresh = resolve;
           });
@@ -392,6 +372,9 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByText('0:00 left')).toBeTruthy();
+    await waitFor(() => {
+      expect(releaseRefresh).toEqual(expect.any(Function));
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
     await act(async () => {

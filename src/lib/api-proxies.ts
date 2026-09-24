@@ -251,6 +251,16 @@ export function proxyMeNotificationLevelPost(request: Request): Promise<Response
 }
 
 /**
+ * Proxies POST /me/amount-unit to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ unit }`).
+ * @returns The upstream response.
+ */
+export function proxyMeAmountUnitPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/amount-unit');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -475,6 +485,55 @@ export async function proxyMessagesComposeTargetGet(request: Request): Promise<R
 }
 
 /**
+ * Proxies GET /translate to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyTranslateAvailableGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/translate');
+}
+
+/**
+ * Proxies POST /translate `{ messageId, target }` to api
+ * `POST /messages/:id/translate`.
+ *
+ * @param request - Incoming App Router request (JSON body).
+ * @returns The upstream response, or 400 for invalid JSON or a missing/non-string `messageId` or `target`.
+ */
+export async function proxyTranslateNotePost(request: Request): Promise<Response> {
+  let input: unknown;
+  try {
+    input = await request.json();
+  } catch {
+    return Response.json({ error: 'Invalid body' }, { status: 400 });
+  }
+  if (
+    typeof input !== 'object' ||
+    input === null ||
+    !('messageId' in input) ||
+    typeof input.messageId !== 'string' ||
+    !('target' in input) ||
+    typeof input.target !== 'string'
+  ) {
+    return Response.json({ error: 'Invalid body' }, { status: 400 });
+  }
+  const { messageId, target } = input;
+  const headers = new Headers();
+  const authorization = request.headers.get('authorization');
+  if (authorization !== null) {
+    headers.set('authorization', authorization);
+  }
+  headers.set('content-type', 'application/json');
+  const forwarded = new Request(request.url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ target }),
+  });
+  return proxyApiRequest(forwarded, `/messages/${encodeURIComponent(messageId)}/translate`);
+}
+
+/**
  * Proxies GET /messages/hidden to the 21.gifts api (app path `/forum/messages/hidden`).
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -482,6 +541,16 @@ export async function proxyMessagesComposeTargetGet(request: Request): Promise<R
  */
 export async function proxyMessagesHiddenGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/messages/hidden');
+}
+
+/**
+ * Proxies GET /messages/places (app path /forum/messages/places). Bearer session. Returns the upstream response.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The proxied upstream response.
+ */
+export async function proxyMessagesPlacesGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/messages/places');
 }
 
 /**

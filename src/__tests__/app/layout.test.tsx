@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
+import { Suspense } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/font/google', () => ({
@@ -11,6 +12,7 @@ import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
+import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
@@ -40,7 +42,7 @@ describe('metadata', () => {
 
   it('describes the product without charity-speak', () => {
     expect(metadata.description).toBe(
-      'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.',
+      'Direct human-to-human giving in Bitcoin. People helping people — no middleman.',
     );
   });
 
@@ -197,6 +199,15 @@ describe('RootLayout', () => {
     expect(fiatProvider.props.initial).toBe('USD');
     const themeProvider = fiatProvider.props.children;
     expect(themeProvider.type).toBe(ThemeProvider);
-    expect(themeProvider.props.children).toBe('content');
+    const themeChildren = themeProvider.props.children as ReactNode[];
+    expect(Array.isArray(themeChildren)).toBe(true);
+    const suspense = themeChildren[0] as ReactElement<{
+      fallback: null;
+      children: ReactElement;
+    }>;
+    expect(suspense.type).toBe(Suspense);
+    expect(suspense.props.fallback).toBe(null);
+    expect(suspense.props.children.type).toBe(RememberWalletReturn);
+    expect(themeChildren[1]).toBe('content');
   });
 });

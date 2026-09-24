@@ -151,6 +151,45 @@ describe('ForumQuotedBody', () => {
     fireEvent.click(translateButton);
     const body = await screen.findByText('Can anyone lend me a few satoshi this week?');
     expect(body.closest('p')?.className).toContain('text-app-btn-fg');
+    expect(screen.queryByText(german)).toBeNull();
+  });
+
+  it('does not offer Translate when translate is false', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    const conversationId = 'conv-msg-1';
+    renderWithLocale(
+      <ForumQuotedBody
+        text={german}
+        knownNotes={[]}
+        excludeId={conversationId}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+        translate={false}
+      />,
+    );
+    expect(screen.getByText(german)).toBeTruthy();
+    await act(async () => undefined);
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    expect(fetchAvailable).not.toHaveBeenCalled();
+    expect(translate).not.toHaveBeenCalled();
+  });
+
+  it('renders ForumNoteText when translate is false and truncate is default', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={german}
+        knownNotes={[]}
+        excludeId="conv-msg-2"
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    expect(screen.getByText(german)).toBeTruthy();
+    await act(async () => undefined);
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
   });
 
   it('shows stored fiat on the nested post when the live rate differs', async () => {
@@ -514,6 +553,132 @@ describe('ForumQuotedBody', () => {
     });
     expect(screen.getByRole('button', { name: 'Show more' }).closest('a')).toBeNull();
     expect(screen.queryByText(/TAILTOKEN/)).toBeNull();
+  });
+
+  it('does not offer Translate on a nested nostr card when translate is false', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    expect(fetchAvailable).not.toHaveBeenCalled();
+  });
+
+  it('keeps a nested nostr url as plain text when translate is false', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+      text: 'Greetings! https://example.com/hello',
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('External')).toBeTruthy();
+    });
+    expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+  });
+
+  it('keeps a nested nostr url plain when translate is false and truncate is off', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      hasPhoto: false,
+      photoCount: 0,
+      text: 'Greetings! https://example.com/hello',
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('External')).toBeTruthy();
+    });
+    expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
+  it('strips quote urls from the visible translation and keeps the nested card', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue(`Can anyone lend me a few satoshi this week? ${QUOTED_URL}`);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`${german} ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, hasPhoto: false, photoCount: 0 }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+    });
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByText(QUOTED_URL)).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+    expect(screen.queryByText(QUOTED_URL)).toBeNull();
+    expect(screen.queryByText(german)).toBeNull();
+    expect(screen.getByText('A Quick Technical Note', { exact: false })).toBeTruthy();
+  });
+
+  it('applies formatTranslated to the visible remainder after stripping quote urls', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue(`Can anyone lend me a few satoshi this week? ${QUOTED_URL}`);
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`${german} ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, hasPhoto: false, photoCount: 0 }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+        formatTranslated={(translated) => translated.replace('satoshi', 'sats')}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few sats this week?')).toBeTruthy();
+    expect(screen.queryByText(QUOTED_URL)).toBeNull();
   });
 
   it('shows an External badge on a nested quoted note and keeps the url as plain text', async () => {

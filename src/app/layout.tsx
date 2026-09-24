@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
+import { Suspense } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
+import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { getRequestFiat } from '@/lib/request-fiat';
@@ -22,7 +24,7 @@ const outfit = Outfit({
 });
 
 const description =
-  'Direct human-to-human giving in Bitcoin. People helping people — no middleman, no cut.';
+  'Direct human-to-human giving in Bitcoin. People helping people — no middleman.';
 const title = '21.gifts — peer-to-peer Bitcoin gifts';
 
 /**
@@ -143,7 +145,12 @@ export default async function RootLayout({
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <NumberFormatProvider initial={numberFormat}>
             <FiatPreferenceProvider initial={fiat}>
-              <ThemeProvider>{children}</ThemeProvider>
+              <ThemeProvider>
+                <Suspense fallback={null}>
+                  <RememberWalletReturn />
+                </Suspense>
+                {children}
+              </ThemeProvider>
             </FiatPreferenceProvider>
           </NumberFormatProvider>
         </LocaleProvider>

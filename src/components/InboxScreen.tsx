@@ -19,9 +19,11 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
-import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
+import { AmountEntry } from '@/components/AmountEntry';
+import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
@@ -194,6 +196,8 @@ export interface InboxScreenProps {
   amountDraft?: string;
   /** Called when the amount field changes. */
   onAmountDraftChange?: (value: string) => void;
+  /** Unit the amount field is actually showing. */
+  onAmountUnitChange?: (unit: AmountUnit) => void;
   /** Open Lightning invoice, or `null` when no pay sheet is showing. */
   invoice?: InboxInvoice | null;
   /** Cancels the pay sheet and aborts the poll. */
@@ -436,6 +440,7 @@ export function InboxScreen({
   showFilter,
   amountDraft = '',
   onAmountDraftChange = () => undefined,
+  onAmountUnitChange,
   invoice = null,
   onPayCancel = () => undefined,
   payWaiting = false,
@@ -451,6 +456,7 @@ export function InboxScreen({
   const router = useRouter();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const amountUnitChange = onAmountUnitChange ?? ((): void => undefined);
   const inShell = useContext(AppShellContext) !== null;
   const scroller = useAppShellScroller();
   const hadOpenThreadRef = useRef(false);
@@ -785,6 +791,7 @@ export function InboxScreen({
                     rateDay={rateDay ?? null}
                     fiat={fiat}
                     truncate={false}
+                    translate={false}
                     className={
                       message.fromMe
                         ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
@@ -921,18 +928,15 @@ export function InboxScreen({
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               {showAmount ? (
-                <Field
-                  className="w-24"
+                <AmountEntry
+                  className="w-36"
                   label={t('inbox.amountLabel')}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
                   placeholder={t('forum.payAmountPlaceholder')}
                   value={amountDraft}
                   disabled={posting || messagesLoading}
-                  onChange={(event) => onAmountDraftChange(event.target.value)}
+                  rateDay={rateDay}
+                  onValueChange={onAmountDraftChange}
+                  onUnitChange={amountUnitChange}
                 />
               ) : null}
               <IconButton
@@ -962,18 +966,15 @@ export function InboxScreen({
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               {showAmount ? (
-                <Field
-                  className="w-24"
+                <AmountEntry
+                  className="w-36"
                   label={t('inbox.amountLabel')}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
                   placeholder={t('forum.payAmountPlaceholder')}
                   value={amountDraft}
                   disabled={posting || messagesLoading}
-                  onChange={(event) => onAmountDraftChange(event.target.value)}
+                  rateDay={rateDay}
+                  onValueChange={onAmountDraftChange}
+                  onUnitChange={amountUnitChange}
                 />
               ) : null}
               <IconButton

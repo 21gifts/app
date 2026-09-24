@@ -17,6 +17,7 @@ import {
   proxyPosGet,
   proxyPosPost,
   proxyMeForumLawsDismissedPost,
+  proxyMeAmountUnitPost,
   proxyMeNotificationLevelPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
@@ -47,6 +48,7 @@ import {
   proxyMessagesComposeTargetGet,
   proxyMessagesGet,
   proxyMessagesHiddenGet,
+  proxyMessagesPlacesGet,
   proxyMessagesInvoicePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
@@ -57,6 +59,8 @@ import {
   proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
+  proxyTranslateAvailableGet,
+  proxyTranslateNotePost,
   proxyViewActivityGet,
   proxyTrustAppointModeratorPost,
   proxyTrustChainGet,
@@ -245,6 +249,13 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/notification-level');
   });
 
+  it('proxyMeAmountUnitPost hits POST /me/amount-unit', async () => {
+    const fetchMock = stubApi();
+    await proxyMeAmountUnitPost(new Request('http://localhost/me/amount-unit', { method: 'POST' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/amount-unit');
+  });
+
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {
     const fetchMock = stubApi();
     await proxyMeLightningAddressPost(
@@ -316,6 +327,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMessagesHiddenGet(new Request('http://localhost/forum/messages/hidden'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/hidden');
+  });
+
+  it('proxyMessagesPlacesGet hits /messages/places', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPlacesGet(new Request('http://localhost/forum/messages/places'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/places');
   });
 
   it('proxyMessagesPost hits POST /messages', async () => {
@@ -752,5 +769,102 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/reject');
+  });
+
+  it('proxyTranslateAvailableGet hits GET /translate', async () => {
+    const fetchMock = stubApi();
+    await proxyTranslateAvailableGet(new Request('http://localhost/translate'));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('GET');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/translate');
+  });
+
+  it('proxyTranslateNotePost returns 400 on invalid JSON', async () => {
+    const fetchMock = stubApi();
+    const response = await proxyTranslateNotePost(
+      new Request('http://localhost/translate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: 'not-json',
+      }),
+    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid body' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    null,
+    21,
+    [],
+    { target: 'en' },
+    { messageId: 1, target: 'en' },
+    { messageId: 'm1' },
+    { messageId: 'm1', target: 1 },
+  ])(
+    'proxyTranslateNotePost returns 400 when messageId or target is missing in %j',
+    async (body) => {
+      const fetchMock = stubApi();
+      const response = await proxyTranslateNotePost(
+        new Request('http://localhost/translate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+      );
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({ error: 'Invalid body' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it('proxyTranslateNotePost forwards { target } to /messages/:id/translate', async () => {
+    const fetchMock = stubApi();
+    const incomingBody = JSON.stringify({ messageId: 'm1', target: 'en' });
+    await proxyTranslateNotePost(
+      new Request('http://localhost/translate', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'content-length': String(incomingBody.length),
+        },
+        body: incomingBody,
+      }),
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/translate');
+    expect(init.method).toBe('POST');
+    const outgoing = JSON.parse(new TextDecoder().decode(init.body as ArrayBuffer)) as unknown;
+    expect(outgoing).toEqual({ target: 'en' });
+    expect(outgoing).not.toEqual({ messageId: 'm1', target: 'en' });
+    const headers = new Headers(init.headers);
+    expect(headers.get('authorization')).toBeNull();
+    expect(headers.get('content-type')).toBe('application/json');
+    expect(headers.get('content-length')).not.toBe(String(incomingBody.length));
+  });
+
+  it('proxyTranslateNotePost forwards Authorization and drops a stale content-length', async () => {
+    const fetchMock = stubApi();
+    await proxyTranslateNotePost(
+      new Request('http://localhost/translate', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'content-length': '9999',
+          authorization: 'Bearer tok',
+        },
+        body: JSON.stringify({ messageId: 'm1', target: 'en' }),
+      }),
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/translate');
+    const headers = new Headers(init.headers);
+    expect(headers.get('authorization')).toBe('Bearer tok');
+    expect(headers.get('content-type')).toBe('application/json');
+    expect(headers.get('content-length')).not.toBe('9999');
+    const outgoing = JSON.parse(new TextDecoder().decode(init.body as ArrayBuffer)) as unknown;
+    expect(outgoing).toEqual({ target: 'en' });
+    if (headers.get('content-length') !== null) {
+      expect(headers.get('content-length')).toBe(String(JSON.stringify({ target: 'en' }).length));
+    }
   });
 });

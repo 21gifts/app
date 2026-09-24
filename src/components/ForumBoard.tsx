@@ -8,6 +8,7 @@ import {
   ImagePlus,
   Link2,
   Loader2,
+  MapPin,
   Reply,
   Send,
   X,
@@ -23,6 +24,7 @@ import {
   type MouseEvent,
   type ReactElement,
 } from 'react';
+import { AmountEntry } from '@/components/AmountEntry';
 import { useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
@@ -30,18 +32,22 @@ import {
   type ForumAskStep,
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
-import { ForumNoteText } from '@/components/ForumNoteText';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
-import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { PlaceField } from '@/components/PlaceField';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
-import { Button, Field, IconButton, SegmentedControl } from '@/components/ui';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { Button, IconButton, SegmentedControl } from '@/components/ui';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
+  type ForumMessage,
+  type ForumPlacePin,
+} from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import {
   FORUM_COMPOSE_EVENT,
@@ -57,12 +63,7 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import {
-  formatBitcoin,
-  formatFiatDisplay,
-  satsToFiatAmount,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
   isSmartphoneUserAgent,
@@ -118,30 +119,6 @@ function forumTaggedRole(role: string | undefined): ForumTaggedRole | null {
 
 const COPY_RESET_MS = 1200;
 
-/** Empty pay-sheet draft submits this many sats (same as the placeholder). */
-const DEFAULT_PAY_PREVIEW_SATS = 21;
-
-/**
- * Whole sats implied by the pay-sheet draft.
- *
- * @param draft - Raw field value.
- * @returns Preview sats, or `null` when the draft is not a valid amount.
- */
-function previewPaySats(draft: string): number | null {
-  const raw = draft.trim();
-  if (raw === '') {
-    return DEFAULT_PAY_PREVIEW_SATS;
-  }
-  if (!/^\d+$/.test(raw)) {
-    return null;
-  }
-  const sats = Number.parseInt(raw, 10);
-  if (sats <= 0 || !Number.isSafeInteger(sats)) {
-    return null;
-  }
-  return sats;
-}
-
 /** Active pay invoice shown under a forum card. */
 export interface ForumPayInvoice {
   /** Message id the invoice belongs to. */
@@ -182,6 +159,10 @@ export interface ForumBoardProps {
   onDraftChange: (value: string) => void;
   /** Optional whole-sat ask draft for a top-level note. */
   askDraft: string;
+  /** Unit the ask draft is written in. Default is the account unit. */
+  askDraftUnit?: AmountUnit;
+  /** Called when the ask field is actually showing a unit. */
+  onAskDraftUnit?: (unit: AmountUnit) => void;
   /** Called when the Ask field changes. */
   onAskDraftChange: (value: string) => void;
   /** Messenger vs Ask wizard. Default `post`. */
@@ -234,6 +215,8 @@ export interface ForumBoardProps {
   onPayOpen: (messageId: string) => void;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
+  /** Unit the pay field is actually showing. */
+  onPayUnitChange?: (unit: AmountUnit) => void;
   /** Submits the pay amount for an invoice. */
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   /** Closes the pay sheet and clears invoice state. */
@@ -295,6 +278,8 @@ export interface ForumBoardProps {
   replyAmountDraft?: string;
   /** Called when the reply amount draft changes. */
   onReplyAmountDraftChange?: (value: string) => void;
+  /** Unit the reply amount field is actually showing. */
+  onReplyUnitChange?: (unit: AmountUnit) => void;
   /** Called when the reply form is submitted. */
   onReplyPost: () => void;
   /** True while a reply post is in flight. */
@@ -316,6 +301,10 @@ export interface ForumBoardProps {
    * Default true for the feed and profile.
    */
   truncate?: boolean;
+  /** Optional place pin draft for the top-level composer. Default null. */
+  placeDraft?: ForumPlacePin | null;
+  /** Called when the top-level composer pin changes. Default no-op. */
+  onPlaceDraftChange?: (place: ForumPlacePin | null) => void;
 }
 
 /**
@@ -332,6 +321,7 @@ function ForumPaySheet({
   payInvoice,
   payWaiting,
   onPayDraftChange,
+  onPayUnitChange,
   onPaySubmit,
   onPayCancel,
   rateDay,
@@ -345,6 +335,7 @@ function ForumPaySheet({
   payInvoice: ForumPayInvoice | null;
   payWaiting: boolean;
   onPayDraftChange: (value: string) => void;
+  onPayUnitChange?: (unit: AmountUnit) => void;
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
@@ -356,11 +347,6 @@ function ForumPaySheet({
   const { fiat } = useFiatPreference();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
-  const payPreviewSats = invoiceForCard?.amountSats ?? previewPaySats(payDraft);
-  const payPreviewFiat =
-    payPreviewSats !== null && rateDay !== null
-      ? satsToFiatAmount(payPreviewSats, rateDay, fiat)
-      : null;
   /* v8 ignore next 8 -- SSR has no navigator */
   const isSmartphone =
     typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
@@ -426,23 +412,16 @@ function ForumPaySheet({
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </IconButton>
-          <Field
+          <AmountEntry
             label={t('forum.payAmountLabel')}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
             placeholder={t('forum.payAmountPlaceholder')}
-            value={invoiceForCard === null ? payDraft : String(invoiceForCard.amountSats)}
+            value={payDraft}
             disabled={payBusy || invoiceForCard !== null}
-            onChange={(event) => onPayDraftChange(event.target.value)}
+            lockedSats={invoiceForCard === null ? null : invoiceForCard.amountSats}
+            rateDay={rateDay}
+            onValueChange={onPayDraftChange}
+            {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
           />
-          {payPreviewFiat !== null ? (
-            <p className="text-sm tabular-nums lining-nums text-app-muted">
-              {formatFiatDisplay(payPreviewFiat, fiat, numberFormat)}
-            </p>
-          ) : null}
           {payError === 'amount' ? (
             <p role="alert" className="text-sm text-app-danger">
               {t('forum.payErrorAmount')}
@@ -603,6 +582,8 @@ export function ForumBoard({
   draft,
   onDraftChange,
   askDraft,
+  askDraftUnit,
+  onAskDraftUnit,
   onAskDraftChange,
   composeIntent = 'post',
   onComposeIntentChange,
@@ -625,6 +606,7 @@ export function ForumBoard({
   payWaiting,
   onPayOpen,
   onPayDraftChange,
+  onPayUnitChange,
   onPaySubmit,
   onPayCancel,
   rateDay = null,
@@ -652,6 +634,7 @@ export function ForumBoard({
   onReplyDraftChange,
   replyAmountDraft = '',
   onReplyAmountDraftChange,
+  onReplyUnitChange,
   onReplyPost,
   replyPosting,
   replyFormError,
@@ -659,6 +642,8 @@ export function ForumBoard({
   onDeleted,
   permalinkTargetId = null,
   truncate = true,
+  placeDraft = null,
+  onPlaceDraftChange,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -1053,22 +1038,14 @@ export function ForumBoard({
                 {displayText !== '' ? (
                   <div className="mt-2">
                     {message.via === 'nostr' ? (
-                      <>
-                        {truncate ? (
-                          <ForumNoteText
-                            plain
-                            text={displayText}
-                            className="whitespace-pre-wrap text-sm text-app-fg"
-                          />
-                        ) : (
-                          <LinkedText
-                            plain
-                            text={displayText}
-                            className="whitespace-pre-wrap text-sm text-app-fg"
-                          />
-                        )}
-                        <NoteTranslate plain text={displayText} />
-                      </>
+                      <TranslatableNoteBody
+                        messageId={message.id}
+                        plain
+                        text={displayText}
+                        truncate={truncate}
+                        className="whitespace-pre-wrap text-sm text-app-fg"
+                        {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
+                      />
                     ) : (
                       <ForumQuotedBody
                         text={displayText}
@@ -1077,12 +1054,24 @@ export function ForumBoard({
                         rateDay={rateDay ?? null}
                         fiat={fiat}
                         truncate={truncate}
+                        {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
                         onActivate={(event) => {
                           event.stopPropagation();
                         }}
                       />
                     )}
                   </div>
+                ) : null}
+                {message.parentId === undefined && message.place !== undefined ? (
+                  <Link
+                    href={`/map?pin=${encodeURIComponent(message.id)}`}
+                    className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
+                    onClick={stopCardToggle}
+                  >
+                    <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    {message.place.label ??
+                      `${message.place.lat.toFixed(5)}, ${message.place.lng.toFixed(5)}`}
+                  </Link>
                 ) : null}
               </div>
               {message.parentId === undefined &&
@@ -1186,6 +1175,7 @@ export function ForumBoard({
                   payInvoice={payInvoice}
                   payWaiting={payWaiting}
                   onPayDraftChange={onPayDraftChange}
+                  {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                   onPaySubmit={onPaySubmit}
                   onPayCancel={onPayCancel}
                   rateDay={rateDay}
@@ -1309,22 +1299,13 @@ export function ForumBoard({
                             {reply.text !== '' ? (
                               <div className="mt-1">
                                 {reply.via === 'nostr' ? (
-                                  <>
-                                    {truncate ? (
-                                      <ForumNoteText
-                                        plain
-                                        text={reply.text}
-                                        className="whitespace-pre-wrap text-sm text-app-fg"
-                                      />
-                                    ) : (
-                                      <LinkedText
-                                        plain
-                                        text={reply.text}
-                                        className="whitespace-pre-wrap text-sm text-app-fg"
-                                      />
-                                    )}
-                                    <NoteTranslate plain text={reply.text} />
-                                  </>
+                                  <TranslatableNoteBody
+                                    messageId={reply.id}
+                                    plain
+                                    text={reply.text}
+                                    truncate={truncate}
+                                    className="whitespace-pre-wrap text-sm text-app-fg"
+                                  />
                                 ) : (
                                   <ForumQuotedBody
                                     text={reply.text}
@@ -1410,6 +1391,7 @@ export function ForumBoard({
                                 payInvoice={payInvoice}
                                 payWaiting={payWaiting}
                                 onPayDraftChange={onPayDraftChange}
+                                {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                                 onPaySubmit={onPaySubmit}
                                 onPayCancel={onPayCancel}
                                 rateDay={rateDay}
@@ -1438,21 +1420,19 @@ export function ForumBoard({
                           }
                           className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
                         />
-                        <Field
+                        <AmountEntry
                           id="forum-reply-amount"
                           label={t('forum.replyAmountLabel')}
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          autoCorrect="off"
-                          spellCheck={false}
                           placeholder={t('forum.payAmountPlaceholder')}
                           value={replyAmountDraft}
                           disabled={
                             replyPosting || repliesLoading || repliesError || replies === null
                           }
-                          onChange={(event) => onReplyAmountDraftChange?.(event.target.value)}
-                          className="w-24"
+                          rateDay={rateDay}
+                          onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                          {...(onReplyUnitChange === undefined
+                            ? {}
+                            : { onUnitChange: onReplyUnitChange })}
                         />
                         <IconButton
                           type="submit"
@@ -1632,6 +1612,8 @@ export function ForumBoard({
           askCadence={askCadence}
           onAskCadenceChange={onAskCadenceChange}
           askDraft={askDraft}
+          {...(askDraftUnit === undefined ? {} : { askDraftUnit })}
+          {...(onAskDraftUnit === undefined ? {} : { onAskDraftUnit })}
           onAskDraftChange={onAskDraftChange}
           draft={draft}
           onDraftChange={onDraftChange}
@@ -1663,6 +1645,9 @@ export function ForumBoard({
             >
               <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
             </IconButton>
+            {onPlaceDraftChange !== undefined ? (
+              <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
+            ) : null}
             <input
               ref={fileInputRef}
               type="file"
@@ -1782,6 +1767,7 @@ export function ForumBoard({
           payInvoice={payInvoice}
           payWaiting={payWaiting}
           onPayDraftChange={onPayDraftChange}
+          {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
           onPaySubmit={onPaySubmit}
           onPayCancel={onPayCancel}
           rateDay={rateDay}

@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { shownFiatForSats } from '@/lib/stats-money';
+import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import {
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
@@ -18,6 +19,7 @@ import {
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
@@ -30,27 +32,6 @@ function revokeIfBlob(url: string): void {
   if (url.startsWith('blob:')) {
     URL.revokeObjectURL(url);
   }
-}
-
-/**
- * Parses the inbox composer amount draft.
- *
- * @param raw - Amount field value.
- * @returns Whole sats (`0` becomes `1`), `'empty'` when blank, or `'invalid'`.
- */
-function parseReplySats(raw: string): number | 'empty' | 'invalid' {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    return 'empty';
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return 'invalid';
-  }
-  const sats = Number.parseInt(trimmed, 10);
-  if (!Number.isSafeInteger(sats)) {
-    return 'invalid';
-  }
-  return sats < 1 ? 1 : sats;
 }
 
 /**
@@ -139,6 +120,7 @@ function appendUnseenMessages(
 export function InboxLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { fiat } = useFiatPreference();
   const router = useRouter();
   const searchParams = useSearchParams();
   const rateDay = useLatestRateDay();
@@ -157,6 +139,7 @@ export function InboxLoader(): ReactElement | null {
   const paginationGeneration = useRef(0);
   const [draft, setDraft] = useState('');
   const [amountDraft, setAmountDraft] = useState('');
+  const [amountUnit, setAmountUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
@@ -679,7 +662,7 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     const trimmed = draft.trim();
-    const sats = parseReplySats(amountDraft);
+    const sats = replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
     if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
       return;
@@ -926,6 +909,7 @@ export function InboxLoader(): ReactElement | null {
         setAmountDraft(value);
         setFormError(null);
       }}
+      onAmountUnitChange={setAmountUnit}
       onPost={onPost}
       posting={posting || preparing}
       formError={formError}
