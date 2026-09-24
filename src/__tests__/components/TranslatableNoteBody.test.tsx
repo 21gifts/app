@@ -161,6 +161,20 @@ describe('TranslatableNoteBody', () => {
     }
   });
 
+  it('omits Translate when controlSlotId is set but the slot is missing', async () => {
+    renderWithLocale(
+      <TranslatableNoteBody
+        messageId={NOTE_ID}
+        text={german}
+        truncate={false}
+        controlSlotId="note-translate-missing"
+      />,
+    );
+    await Promise.resolve();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    expect(screen.getByText(german)).toBeTruthy();
+  });
+
   it('uses button foreground classes when className is on-button', async () => {
     vi.mocked(translateNote).mockResolvedValue(translated);
     renderWithLocale(

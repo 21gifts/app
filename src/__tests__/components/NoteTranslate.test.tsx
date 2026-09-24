@@ -206,6 +206,12 @@ describe('NoteTranslate', () => {
     expect(screen.getByRole('button', { name: 'Show original' })).toBeTruthy();
   });
 
+  it('drops stacked margin when placement is row', async () => {
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
+    const translate = await screen.findByRole('button', { name: 'Translate' });
+    expect(translate.className.split(/\s+/)).not.toContain('mt-2');
+  });
+
   it('uses button foreground classes when tone is onButton', async () => {
     renderWithLocale(<NoteTranslate messageId={NOTE_ID} tone="onButton" text={german} />);
     const translate = await screen.findByRole('button', { name: 'Translate' });
