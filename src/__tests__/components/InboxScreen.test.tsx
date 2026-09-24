@@ -409,6 +409,39 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Andere Nachricht bitte helfen')).toBeTruthy();
   });
 
+  it('does not offer Translate when the list preview has no message id', () => {
+    const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    const props = {
+      error: false,
+      loading: false,
+      onRetry: () => undefined,
+      openId: null,
+      onOpen: () => undefined,
+      messages: null,
+      messagesLoading: false,
+      messagesError: false,
+      onRetryMessages: () => undefined,
+      draft: '',
+      onDraftChange: () => undefined,
+      onPost: () => undefined,
+      posting: false,
+      formError: null,
+      showFilter: false,
+    };
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...props} conversations={[{ ...THREAD, lastText: german }]} />,
+    );
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    rerender(
+      <InboxScreen
+        {...props}
+        conversations={[{ ...THREAD, lastText: german, lastMessageId: '' }]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+  });
+
   it('lists threads and opens one', () => {
     const onOpen = vi.fn();
     renderWithLocale(

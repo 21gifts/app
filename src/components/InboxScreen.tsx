@@ -441,8 +441,7 @@ function ConversationListItem({
   const previewText = showing && translated !== null ? translated : row.lastText;
   const unreadMessageCount =
     row.unreadMessageCount > 0 ? row.unreadMessageCount : row.unread ? 1 : 0;
-  const canTranslate =
-    row.lastMessageId !== null && row.lastMessageId !== '' && row.lastText !== '';
+  const previewMessageId = row.lastMessageId;
   return (
     <li>
       <button
@@ -498,9 +497,9 @@ function ConversationListItem({
           </span>
         ) : null}
       </button>
-      {canTranslate ? (
+      {typeof previewMessageId === 'string' && previewMessageId !== '' && row.lastText !== '' ? (
         <NoteTranslate
-          messageId={row.lastMessageId ?? ''}
+          messageId={previewMessageId}
           text={row.lastText}
           source={{ kind: 'conversation', conversationId: row.id }}
           showingTranslation={showing}
