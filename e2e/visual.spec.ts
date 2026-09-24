@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { formatForumTimeFromMs } from '../src/lib/forum-time';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -4346,11 +4347,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await expect(page.getByRole('button', { name: /Reviewed by a moderator on/ })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeVisible();
     await shotScreen(page, 'state-members-funding-reviewed');
   });
 
-  test('state /members funding-reviewed-open', async ({ page }) => {
+  test('state /members funding-program-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -4389,9 +4392,19 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: /Reviewed by a moderator on/ }).click();
-    await expect(page.getByText('Reviewed by a moderator', { exact: true })).toBeVisible();
-    await shotScreen(page, 'state-members-funding-reviewed-open');
+    await page
+      .getByRole('button', { name: /Takes part in the 21.gifts funding program since/ })
+      .click();
+    await expect(
+      page.getByText(
+        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+          Date.parse('2026-08-28T12:00:00.000Z'),
+          'en',
+        )}`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-members-funding-program-open');
   });
 
   test('state /members sticker-open', async ({ page }) => {
@@ -6059,7 +6072,49 @@ test.describe('profile funding states', () => {
     });
     await openProfile(page);
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
+    await expect(page.getByText(/Takes part in the 21.gifts funding program since/)).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
+  });
+
+  test('state /profile funding-program-open', async ({ page }) => {
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        reviewedByName: 'Ada',
+      },
+    });
+    await openProfile(page);
+    const sentence = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      Date.parse('2026-08-28T12:00:00.000Z'),
+      'en',
+    )}`;
+    await page.getByRole('button', { name: sentence }).click();
+    const revealed = page.locator('p[role="status"]').getByText(sentence, { exact: true });
+    await expect(revealed).toBeVisible();
+    await revealed.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-funding-program-open', false);
   });
 });
 

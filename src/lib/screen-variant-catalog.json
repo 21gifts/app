@@ -1086,9 +1086,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:funding-reviewed-open",
-    "label": "/members/[accountId] funding-reviewed-open",
-    "visual": "state-members-funding-reviewed-open",
+    "id": "/members/[accountId]:funding-program-open",
+    "label": "/members/[accountId] funding-program-open",
+    "visual": "state-members-funding-program-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1203,6 +1203,12 @@
     "id": "/profile:funding-admitted",
     "label": "/profile funding-admitted",
     "visual": "state-profile-funding-admitted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:funding-program-open",
+    "label": "/profile funding-program-open",
+    "visual": "state-profile-funding-program-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

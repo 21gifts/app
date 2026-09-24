@@ -17,7 +17,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * Verified and above see funding status from `account.funding` (missing or
  * `null` is treated as `none`): grace copy, About link, and Apply link to
  * `/profile/apply` for `none`/`rejected` (no denial sentence and no conviction
- * titles), open application, one-day trial, or admitted with a reviewed-by date.
+ * titles), open application, one-day trial, or admitted with the participation sentence.
  *
  * @returns The grant section, or `null` without a session or account.
  */
@@ -65,8 +65,10 @@ export function FundingStatusCard(): ReactElement | null {
         <p className="text-center text-sm text-app-muted">{t('funding.admitted')}</p>
         <p className="text-center text-sm text-app-muted">
           {admittedAt === null
-            ? t('funding.reviewedBy')
-            : t('funding.reviewedOn', { date: formatForumTimeFromMs(admittedAt, locale) })}
+            ? t('funding.participates')
+            : t('funding.participatesSince', {
+                date: formatForumTimeFromMs(admittedAt, locale),
+              })}
         </p>
       </>
     );
