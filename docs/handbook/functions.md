@@ -433,36 +433,36 @@
 
 ## Function: resetWalletReturn
 
-- **Purpose:** Clear the in-memory `/wallet` return path so back falls back to the forum (`/welcome`) after a direct open or after tests reset module memory.
+- **Purpose:** Clear the `/wallet` return path so back falls back to the forum (`/welcome`) when this tab has not opened another page.
 - **Inputs:** None.
-- **Returns / side effects:** `void`. Drops the remembered path; does not touch `localStorage` or `sessionStorage`.
+- **Returns / side effects:** `void`. Drops the shared tab slot and `sessionStorage` key `21gifts.walletReturn`. Does not touch `localStorage`.
 - **Used by:** Wallet return tests, `RememberWalletReturn` tests, `WalletChromeLeft` tests (`afterEach`).
 
 ## Function: rememberWalletReturn
 
 - **Purpose:** Remember a safe in-app path (not Wallet itself) as the `/wallet` back target. Rejects protocol-relative URLs, `..`, whitespace, `#`, overlong paths, and `/wallet` itself without clobbering a previous good path.
 - **Inputs:** `path` string (pathname, optionally with a query string).
-- **Returns / side effects:** `void`. Writes module memory only when the path is a safe in-app route other than Wallet.
+- **Returns / side effects:** `void`. Writes a `globalThis` slot and `sessionStorage` (`21gifts.walletReturn`) so every copy of the module in this tab sees the same path. No `localStorage`. No-op during SSR.
 - **Used by:** `RememberWalletReturn`.
 
 ## Function: walletBackHref
 
-- **Purpose:** Read the remembered in-app path for `/wallet` back, or `/welcome` when nothing is remembered (direct open / full load).
-- **Inputs:** None (reads module memory).
-- **Returns / side effects:** The remembered path string, or `WALLET_BACK_FALLBACK` (`/welcome`). No network and no storage.
+- **Purpose:** Read the remembered in-app path for `/wallet` back, or `/welcome` when this tab has not opened another page.
+- **Inputs:** None (reads the shared tab slot, which loads `sessionStorage` the first time).
+- **Returns / side effects:** The remembered path string, or `WALLET_BACK_FALLBACK` (`/welcome`). No network.
 - **Used by:** `WalletChromeLeft`.
 
 ## Function: RememberWalletReturn
 
 - **Purpose:** Client recorder mounted in the root layout. On each pathname/search change, calls `rememberWalletReturn` with the current in-app path so `/wallet` can later link back there.
 - **Inputs:** `usePathname` and `useSearchParams`. Non-empty query is appended as `?…`.
-- **Returns / side effects:** `null`. Side effect is module memory via `rememberWalletReturn`. No storage.
+- **Returns / side effects:** `null`. Calls `rememberWalletReturn` during render and again from an effect, so the path is stored before Wallet reads it.
 - **Used by:** `RootLayout` (inside `ThemeProvider`, wrapped in `Suspense`).
 
 ## Function: WalletChromeLeft
 
-- **Purpose:** Client `/wallet` chrome that renders `ProfileChromeLeft`. The first paint links back to `/welcome` so server and client match. After mount, back uses the path remembered in this tab. Forum fallback uses `profile.back`; any other path uses `nav.back`. Wordmark stays `/welcome`.
-- **Inputs:** `walletBackHref()` from module memory, read after mount; catalog via `ProfileChromeLeft`.
+- **Purpose:** Client `/wallet` chrome that renders `ProfileChromeLeft`. The server render links back to `/welcome`. Before paint, back uses the path this tab remembered. Forum fallback uses `profile.back`; any other path uses `nav.back`. Wordmark stays `/welcome`.
+- **Inputs:** `walletBackHref()` from the shared tab slot, read in `useLayoutEffect`; catalog via `ProfileChromeLeft`.
 - **Returns / side effects:** `ProfileChromeLeft`. No `router.back()`, no click interceptor, no second wordmark.
 - **Used by:** `WalletPage`.
 
