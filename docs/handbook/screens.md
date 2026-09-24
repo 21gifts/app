@@ -516,6 +516,12 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumG
 
 ![21.gifts welcome goal 110](images/welcome-goal-110.png)
 
+### Variant: goal-fiat
+
+On **All**: a top-level note defined as **$1.50**, with frozen **₿1'000** and no second dollar amount, because the viewer's currency is the definition currency. Label **0%**.
+
+![21.gifts welcome goal fiat](images/welcome-goal-fiat.png)
+
 ### Variant: ask-amount
 
 **Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step.
@@ -611,6 +617,12 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
+
+### Variant: ask-preview-fiat
+
+Ask step 4 of 4 after the amount was defined in USD. The preview shows **$1.00 · ₿1'000**, not bitcoin first. **Post** is the only submit.
+
+![21.gifts welcome ask preview fiat](images/welcome-ask-preview-fiat.png)
 
 ### Variant: ask-preview-daily
 
@@ -1404,6 +1416,12 @@ Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto
 Identity card; posts pressed; profile note hidden; the listed post has `sats: 23100` and `goalSats: 21000`. `ForumGoalBar` names the ask (**Ask ₿21'000**), then full orange plus in-flow green overflow and label **110%**, same as `/welcome` `goal-110`.
 
 ![21.gifts member posts open with 110 percent goal](images/members-posts-open-goal-110.png)
+
+### Variant: posts-open-goal-fiat
+
+Identity card; posts pressed; the listed post is defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount.
+
+![21.gifts member posts open with fiat goal](images/members-posts-open-goal-fiat.png)
 
 ### Variant: posts-open-photos
 
@@ -2757,6 +2775,12 @@ Unsigned permalink of the same note with no place label. The MapPin link reads *
 Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. `ForumGoalBar` sits after the amount line and names the ask (**Ask ₿21'000**): full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
 
 ![21.gifts public message goal 110](images/messages-id-goal-110.png)
+
+### Variant: goal-fiat
+
+Unsigned permalink of a note defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. No composer Ask.
+
+![21.gifts public message fiat goal](images/messages-id-goal-fiat.png)
 
 ### Variant: photos
 
