@@ -228,7 +228,7 @@ describe('FundingApplyScreen', () => {
   it('asks for a photo when About me is filled without one', () => {
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, aboutMe: 'I build on Bitcoin' },
+      account: { ...account, aboutMe: 'I build on Bitcoin', aboutMessageId: 'note-1' },
     });
     renderWithLocale(<FundingApplyScreen />);
     expect(screen.getByText('Next, add a photo to your About me.')).toBeTruthy();

@@ -721,6 +721,27 @@ test('Function: proxyConversationReadPost — POST /conversations/[id]/read with
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyTranslateConversationMessagePost — POST conversation translate without bearer', async ({
+  request,
+}) => {
+  expect(
+    (
+      await request.post('/conversations/[id]/messages/[messageId]/translate', {
+        data: { target: 'en' },
+      })
+    ).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: translateConversationMessage — unsigned conversation translate is rejected', async ({
+  request,
+}) => {
+  const res = await request.post('/conversations/[id]/messages/[messageId]/translate', {
+    data: { target: 'en' },
+  });
+  expect(res.status()).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyConversationMessagePhotoGet — GET photo without bearer', async ({
   request,
 }) => {

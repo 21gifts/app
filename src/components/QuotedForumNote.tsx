@@ -132,13 +132,13 @@ function QuotedForumNote({
         ) : null}
       </Link>
       {note.text !== '' ? (
-        note.via === 'nostr' && translate ? (
+        translate ? (
           <TranslatableNoteBody
             messageId={note.id}
-            plain
             text={note.text}
             truncate={truncate}
             className="whitespace-pre-wrap text-sm text-app-fg"
+            {...(note.via === 'nostr' ? { plain: true } : {})}
           />
         ) : truncate ? (
           <ForumNoteText
@@ -178,10 +178,11 @@ function QuotedForumNote({
  *   fiat conversion, optional feed truncation, optional remaining-text
  *   `className` (defaults to `whitespace-pre-wrap text-sm text-app-fg`;
  *   `text-app-btn-fg` selects NoteTranslate `tone="onButton"` via
- *   TranslatableNoteBody), optional
+ *   TranslatableNoteBody), optional `conversationId` for translating the
+ *   remaining body through the conversation-message route, optional
  *   `translate` (default true; false renders `ForumNoteText` / `LinkedText`
  *   with no Translate control on remaining text and nested quoted cards,
- *   including `via === 'nostr'` — inbox DMs; `translate={false}` keeps
+ *   including `via === 'nostr'`; `translate={false}` keeps
  *   nostr nested bodies `plain`), optional `formatTranslated`
  *   (applied to the visible remainder translation after the quote/short-link
  *   strip), and an optional click handler for the nested card.
@@ -202,6 +203,7 @@ export function ForumQuotedBody({
   truncate = true,
   className = 'whitespace-pre-wrap text-sm text-app-fg',
   translate = true,
+  conversationId,
   formatTranslated,
   onActivate,
 }: {
@@ -213,6 +215,7 @@ export function ForumQuotedBody({
   truncate?: boolean;
   className?: string;
   translate?: boolean;
+  conversationId?: string;
   formatTranslated?: (text: string) => string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement | null {
@@ -345,6 +348,9 @@ export function ForumQuotedBody({
             truncate={truncate}
             className={className}
             formatTranslated={formatRemainderTranslation}
+            {...(conversationId !== undefined && conversationId !== ''
+              ? { source: { kind: 'conversation' as const, conversationId } }
+              : {})}
           />
         ) : truncate ? (
           <ForumNoteText text={displayText} className={className} />

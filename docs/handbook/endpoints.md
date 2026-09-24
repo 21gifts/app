@@ -645,3 +645,10 @@
 - **Errors:** 400 invalid body, 404 unknown/hidden note, 503 not configured, 502 upstream.
 - **Used by:** `translateNote` from `NoteTranslate`.
 - **Auth:** Public for a live note (Bearer forwarded for a hidden staff permalink).
+
+## Endpoint: POST /conversations/[id]/messages/[messageId]/translate
+
+- **Purpose:** Same-origin proxy of api `POST /conversations/:id/messages/:messageId/translate`. Body `{ target }`. The api translates the stored conversation message and returns `{ translatedText, cached }`.
+- **Errors:** 400 invalid body, 401 without a session, 404 when the thread or message is missing, 503 not configured, 502 upstream.
+- **Used by:** `translateConversationMessage` from `NoteTranslate` on inbox and moderator-room prose.
+- **Auth:** Forwards Bearer authorization. The api requires a participant session.

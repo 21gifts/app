@@ -86,6 +86,16 @@ describe('AboutMeSection', () => {
     expect(screen.getByRole('button', { name: 'Write your About me' })).toBeTruthy();
   });
 
+  it('shows a translatable body when a message id is set', () => {
+    const text = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    const { rerender } = renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={text} messageId="note-1" />,
+    );
+    expect(screen.getByText(text)).toBeTruthy();
+    rerender(<AboutMeSection mode="public" aboutMe={text} name="Ada" messageId="note-1" />);
+    expect(screen.getByText(text)).toBeTruthy();
+  });
+
   it('shows the filled text and pencil in owner mode', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe="I like gifts." />);
     expect(screen.getByText('I like gifts.')).toBeTruthy();

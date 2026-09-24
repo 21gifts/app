@@ -307,6 +307,19 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
   });
 
+  it('passes the About me message id into the readable bio', () => {
+    const account = useAuthStore.getState().account;
+    useAuthStore.setState({
+      session: 'tok',
+      account:
+        account === null
+          ? null
+          : { ...account, aboutMe: 'Hello from Ada.', aboutMessageId: 'note-1' },
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByText('Hello from Ada.')).toBeTruthy();
+  });
+
   it('shows the empty About me prompt and copy-link button when aboutMe is null', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByText('Tell others who you are.')).toBeTruthy();

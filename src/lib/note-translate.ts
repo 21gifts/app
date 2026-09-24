@@ -1,5 +1,8 @@
 import type { Locale } from '@/lib/locale';
 
+/** UI locale sent as the translation `target`. */
+export type NoteTranslateTarget = Locale;
+
 let availablePromise: Promise<boolean> | null = null;
 
 /**
@@ -71,4 +74,58 @@ export async function translateNote(
     throw new Error('Translation response is invalid');
   }
   return body.translatedText;
+}
+
+/**
+ * Translate a conversation message through the same-origin conversation
+ * translation route.
+ *
+ * Session is required. A non-empty string is sent as `Authorization: Bearer …`.
+ *
+ * @param conversationId - Conversation UUID.
+ * @param messageId - Conversation message id.
+ * @param target - Active UI locale.
+ * @param session - Bearer token. Empty omits Authorization (the api then 401s).
+ * @returns The translated body and whether the api served a cache hit.
+ * @throws When the route returns a non-2xx response or `translatedText` is
+ *   missing, not a string, or empty after trim.
+ */
+export async function translateConversationMessage(
+  conversationId: string,
+  messageId: string,
+  target: NoteTranslateTarget,
+  session: string,
+): Promise<{ translatedText: string; cached: boolean }> {
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (session !== '') {
+    headers['Authorization'] = `Bearer ${session}`;
+  }
+  const response = await fetch(
+    `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(
+      messageId,
+    )}/translate`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ target }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error('Translation request failed');
+  }
+
+  const body: unknown = await response.json();
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    !('translatedText' in body) ||
+    typeof body.translatedText !== 'string' ||
+    body.translatedText.trim() === ''
+  ) {
+    throw new Error('Translation response is invalid');
+  }
+  return {
+    translatedText: body.translatedText,
+    cached: 'cached' in body && body.cached === true,
+  };
 }

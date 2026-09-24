@@ -53,6 +53,11 @@ export const accountSchema = z.object({
   viewKey: z.string().regex(/^[0-9a-f]{64}$/),
   /** About me note, or `null` when unfilled (name-only auto notes). */
   aboutMe: z.string().nullable(),
+  /**
+   * Forum message id for a filled About me note. Optional so older api bodies
+   * still parse; missing means null. Set only when `aboutMe` is non-null.
+   */
+  aboutMessageId: z.string().nullable().optional(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
@@ -123,6 +128,8 @@ export const accountSchema = z.object({
  * never rendered as visible text in the signed-in profile UI).
  * `aboutMe` is the profile card note, or `null` until the giver writes one
  * (name-only auto notes from the api are `null`).
+ * `aboutMessageId` is the forum message id for that note when `aboutMe` is
+ * set, or `null`. Omitted on older api builds; treat missing as null.
  * `aboutMeHasPhoto` is true when the live profile note has a photo (optional
  * on older api bodies; defaults to false).
  * `setup` is the next onboarding screen (`name`, `username`,
@@ -175,6 +182,11 @@ export const viewProfileSchema = z.object({
   hasPasskey: z.boolean(),
   /** About me note, or `null` when unfilled. */
   aboutMe: z.string().nullable(),
+  /**
+   * Forum message id for a filled About me note. Optional so older api bodies
+   * still parse; missing means null. Set only when `aboutMe` is non-null.
+   */
+  aboutMessageId: z.string().nullable().optional(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
 });
@@ -668,6 +680,11 @@ export const conversationSchema = z.object({
   lastAt: z.string().datetime({ offset: true }),
   lastFromMe: z.boolean(),
   lastSats: z.number().int().nonnegative(),
+  /**
+   * Id of the last message. Optional so older api bodies still parse; missing
+   * means null.
+   */
+  lastMessageId: z.string().nullable().optional(),
   /** Optional 21.gifts counterpart id on list rows. */
   accountId: z.string().min(1).optional(),
   unread: z.boolean().default(false),

@@ -1,5 +1,12 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/note-translate', () => ({
+  fetchTranslateAvailable: vi.fn().mockResolvedValue(true),
+  translateNote: vi.fn().mockResolvedValue('Can anyone lend me a few satoshi this week?'),
+  translateConversationMessage: vi.fn(),
+}));
+
 import { NotificationsScreen } from '@/components/NotificationsScreen';
 import type { Notification } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -108,6 +115,36 @@ const PROPOSAL_ROW: Notification = {
 const PROPOSAL_TEXT: Notification = { ...PROPOSAL_ROW, id: 'n11', text: 'Rose' };
 
 describe('NotificationsScreen', () => {
+  it('translates a foreign post and resets when the text changes', async () => {
+    const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    const row: Notification = { ...POST, text: german };
+    const { rerender } = renderWithLocale(
+      <NotificationsScreen
+        notifications={[row]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
+    expect(screen.getByText(german)).toBeTruthy();
+    rerender(
+      <NotificationsScreen
+        notifications={[{ ...row, text: 'Andere Nachricht bitte helfen' }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Andere Nachricht bitte helfen')).toBeTruthy();
+    });
+  });
+
   it('shows loading heading and copy', () => {
     renderWithLocale(
       <NotificationsScreen

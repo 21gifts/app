@@ -32,16 +32,22 @@ vi.mock('@/lib/api', () => ({
 
 vi.mock('@/lib/note-translate', () => ({
   fetchTranslateAvailable: vi.fn(),
+  translateConversationMessage: vi.fn(),
   translateNote: vi.fn(),
 }));
 
 import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
-import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
+import {
+  fetchTranslateAvailable,
+  translateConversationMessage,
+  translateNote,
+} from '@/lib/note-translate';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchShort = vi.mocked(fetchShortLink);
 const fetchAvailable = vi.mocked(fetchTranslateAvailable);
+const translateConversation = vi.mocked(translateConversationMessage);
 const translate = vi.mocked(translateNote);
 const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 
@@ -85,6 +91,7 @@ beforeEach(() => {
   fetchShort.mockReset();
   fetchShort.mockResolvedValue(null);
   fetchAvailable.mockReset();
+  translateConversation.mockReset();
   translate.mockReset();
   fetchMessage.mockResolvedValue(null);
   fetchPhoto.mockRejectedValue(new Error('no photo'));
@@ -152,6 +159,131 @@ describe('ForumQuotedBody', () => {
     const body = await screen.findByText('Can anyone lend me a few satoshi this week?');
     expect(body.closest('p')?.className).toContain('text-app-btn-fg');
     expect(screen.queryByText(german)).toBeNull();
+  });
+
+  it('uses the conversation source only for the remainder, not a nested card', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translateConversation.mockResolvedValue({
+      translatedText: 'Translated conversation body',
+      cached: false,
+    });
+    translate.mockResolvedValue('Translated nested caption');
+    const conversationId = 'conv-1';
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`${german} ${QUOTED_URL}`}
+        knownNotes={[{ ...quotedNote, text: german, hasPhoto: false, photoCount: 0 }]}
+        excludeId={PARENT_ID}
+        conversationId={conversationId}
+        rateDay={null}
+        fiat="USD"
+        truncate={false}
+      />,
+    );
+    const buttons = await screen.findAllByRole('button', { name: 'Translate' });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[0]!);
+    await waitFor(() => {
+      expect(translateConversation).toHaveBeenCalledWith(conversationId, PARENT_ID, 'en', '');
+    });
+    fireEvent.click(buttons[1]!);
+    await waitFor(() => {
+      expect(translate).toHaveBeenCalledWith(QUOTED_ID, 'en', null);
+    });
+    expect(translateConversation).not.toHaveBeenCalledWith(conversationId, QUOTED_ID, 'en', '');
+  });
+
+  it.each([undefined, ''])(
+    'keeps the forum source for conversationId %j',
+    async (conversationId) => {
+      fetchAvailable.mockResolvedValue(true);
+      translate.mockResolvedValue('Translated remainder');
+      renderWithLocale(
+        <ForumQuotedBody
+          text={german}
+          knownNotes={[]}
+          excludeId={PARENT_ID}
+          rateDay={null}
+          fiat="USD"
+          {...(conversationId === undefined ? {} : { conversationId })}
+        />,
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+      expect(translate).toHaveBeenCalledWith(PARENT_ID, 'en', null);
+      expect(translateConversation).not.toHaveBeenCalled();
+    },
+  );
+
+  it('translates a non-nostr nested caption using its forum id and keeps links active', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue('Translated nested caption');
+    const caption = `${german} https://example.com/hello`;
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[{ ...quotedNote, text: caption, hasPhoto: false, photoCount: 0 }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    expect(await screen.findByRole('link', { name: 'https://example.com/hello' })).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(translate).toHaveBeenCalledWith(QUOTED_ID, 'en', null);
+  });
+
+  it('translates a nostr nested caption while keeping its body plain', async () => {
+    fetchAvailable.mockResolvedValue(true);
+    translate.mockResolvedValue('Translated nested caption');
+    const caption = `${german} https://example.com/hello`;
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[
+          {
+            ...quotedNote,
+            role: 'basis',
+            via: 'nostr',
+            text: caption,
+            hasPhoto: false,
+            photoCount: 0,
+          },
+        ]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    expect(await screen.findByText(caption)).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(translate).toHaveBeenCalledWith(QUOTED_ID, 'en', null);
+  });
+
+  it('renders a non-nostr nested note without Translate when translate is false', async () => {
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[{ ...quotedNote, text: 'Plain nested note' }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    expect(await screen.findByText('Plain nested note')).toBeTruthy();
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[{ ...quotedNote, text: 'Plain nested note' }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+      />,
+    );
+    expect(screen.getAllByText('Plain nested note').length).toBeGreaterThan(0);
   });
 
   it('does not offer Translate when translate is false', async () => {

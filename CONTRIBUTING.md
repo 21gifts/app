@@ -115,7 +115,8 @@ app/
 │   │   │       ├── invoice/route.ts  # POST /conversations/:id/invoice
 │   │   │       ├── messages/[messageId]/photo/route.ts # GET conversation photo 0
 │   │   │       ├── messages/[messageId]/photo/[file]/route.ts # GET extra stills 1–9
-│   │   │       └── read/route.ts # POST /conversations/[id]/read
+│   │   │       ├── read/route.ts # POST /conversations/[id]/read
+│   │   │       └── messages/[messageId]/translate/route.ts # POST conversation translate
 │   │   ├── forum/
 │   │   │   ├── messages/
 │   │   │   │   ├── route.ts     # GET/POST /forum/messages same-origin proxy

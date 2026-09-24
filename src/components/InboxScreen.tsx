@@ -18,6 +18,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { NoteTranslate } from '@/components/NoteTranslate';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
@@ -419,6 +420,103 @@ function inboxAuthorProfileButton(
  *   {@link ModeratorGroupScreen}.
  * @returns The inbox card.
  */
+function ConversationListItem({
+  row,
+  onOpen,
+}: {
+  row: Conversation;
+  onOpen: (id: string) => void;
+}): ReactElement {
+  const { t, locale } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  const previewKey = `${row.lastMessageId ?? ''}\0${row.lastText}`;
+  const [seenPreview, setSeenPreview] = useState(previewKey);
+  const [translated, setTranslated] = useState<string | null>(null);
+  const [showing, setShowing] = useState(false);
+  if (previewKey !== seenPreview) {
+    setSeenPreview(previewKey);
+    setTranslated(null);
+    setShowing(false);
+  }
+  const previewText = showing && translated !== null ? translated : row.lastText;
+  const unreadMessageCount =
+    row.unreadMessageCount > 0 ? row.unreadMessageCount : row.unread ? 1 : 0;
+  const canTranslate =
+    row.lastMessageId !== null && row.lastMessageId !== '' && row.lastText !== '';
+  return (
+    <li>
+      <button
+        type="button"
+        {...(unreadMessageCount > 0
+          ? {
+              'aria-label': t('inbox.threadUnread', {
+                name: row.name,
+                count: String(unreadMessageCount),
+              }),
+            }
+          : {})}
+        onClick={() => {
+          onOpen(row.id);
+        }}
+        className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
+      >
+        <span className="flex w-full items-baseline justify-between gap-2">
+          <span
+            className={
+              row.unread ? 'text-sm font-semibold text-app-fg' : 'text-sm font-medium text-app-fg'
+            }
+          >
+            {row.name}
+          </span>
+          <span className="flex items-baseline gap-2">
+            {unreadMessageCount > 0 ? (
+              <span className="text-sm font-semibold tabular-nums lining-nums">
+                {unreadMessageCount}
+              </span>
+            ) : null}
+            <time dateTime={row.lastAt} className="text-xs text-app-subtle">
+              {formatForumTime(row.lastAt, locale)}
+            </time>
+          </span>
+        </span>
+        <span className="text-xs text-app-subtle">{t(CONVERSATION_ORIGIN_KEY[row.kind])}</span>
+        {row.lastText !== '' ? (
+          <span
+            className={
+              row.lastFromMe
+                ? listPreviewClass(true)
+                : row.unread
+                  ? 'line-clamp-2 text-sm text-app-fg'
+                  : listPreviewClass(false)
+            }
+          >
+            {row.lastFromMe ? t('inbox.sentPreview', { text: previewText }) : previewText}
+          </span>
+        ) : row.lastSats > 0 ? (
+          <span className={listPreviewClass(row.lastFromMe)}>
+            {formatBitcoin(row.lastSats, numberFormat)}
+          </span>
+        ) : null}
+      </button>
+      {canTranslate ? (
+        <NoteTranslate
+          messageId={row.lastMessageId ?? ''}
+          text={row.lastText}
+          source={{ kind: 'conversation', conversationId: row.id }}
+          showingTranslation={showing}
+          onTranslated={(next) => {
+            setTranslated(next);
+            setShowing(true);
+          }}
+          onToggleShowing={() => {
+            setShowing((current) => !current);
+          }}
+        />
+      ) : null}
+    </li>
+  );
+}
+
 export function InboxScreen({
   conversations,
   error,
@@ -784,7 +882,7 @@ export function InboxScreen({
                     rateDay={rateDay ?? null}
                     fiat={fiat}
                     truncate={false}
-                    translate={false}
+                    conversationId={openId}
                     className={
                       message.fromMe
                         ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
@@ -1117,73 +1215,9 @@ export function InboxScreen({
           </p>
         ) : (
           <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
-            {filtered.map((row) => {
-              const unreadMessageCount =
-                row.unreadMessageCount > 0 ? row.unreadMessageCount : row.unread ? 1 : 0;
-              return (
-                <li key={row.id}>
-                  <button
-                    type="button"
-                    {...(unreadMessageCount > 0
-                      ? {
-                          'aria-label': t('inbox.threadUnread', {
-                            name: row.name,
-                            count: String(unreadMessageCount),
-                          }),
-                        }
-                      : {})}
-                    onClick={() => {
-                      onOpen(row.id);
-                    }}
-                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
-                  >
-                    <span className="flex w-full items-baseline justify-between gap-2">
-                      <span
-                        className={
-                          row.unread
-                            ? 'text-sm font-semibold text-app-fg'
-                            : 'text-sm font-medium text-app-fg'
-                        }
-                      >
-                        {row.name}
-                      </span>
-                      <span className="flex items-baseline gap-2">
-                        {unreadMessageCount > 0 ? (
-                          <span className="text-sm font-semibold tabular-nums lining-nums">
-                            {unreadMessageCount}
-                          </span>
-                        ) : null}
-                        <time dateTime={row.lastAt} className="text-xs text-app-subtle">
-                          {formatForumTime(row.lastAt, locale)}
-                        </time>
-                      </span>
-                    </span>
-                    <span className="text-xs text-app-subtle">
-                      {t(CONVERSATION_ORIGIN_KEY[row.kind])}
-                    </span>
-                    {row.lastText !== '' ? (
-                      <span
-                        className={
-                          row.lastFromMe
-                            ? listPreviewClass(true)
-                            : row.unread
-                              ? 'line-clamp-2 text-sm text-app-fg'
-                              : listPreviewClass(false)
-                        }
-                      >
-                        {row.lastFromMe
-                          ? t('inbox.sentPreview', { text: row.lastText })
-                          : row.lastText}
-                      </span>
-                    ) : row.lastSats > 0 ? (
-                      <span className={listPreviewClass(row.lastFromMe)}>
-                        {formatBitcoin(row.lastSats, numberFormat)}
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
-              );
-            })}
+            {filtered.map((row) => (
+              <ConversationListItem key={row.id} row={row} onOpen={onOpen} />
+            ))}
           </ul>
         )}
       </>

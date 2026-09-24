@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { translateNote } from '@/lib/note-translate';
+import { translateConversationMessage, translateNote } from '@/lib/note-translate';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -172,5 +172,69 @@ describe('translateNote', () => {
     await expect(translateNote('3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a', 'en')).rejects.toThrow(
       'Translation response is invalid',
     );
+  });
+});
+
+describe('translateConversationMessage', () => {
+  const conversationId = '4b4b4b4b-4b4b-44b4-84b4-4b4b4b4b4b4b';
+  const messageId = '5c5c5c5c-5c5c-45c5-85c5-5c5c5c5c5c5c';
+
+  it('posts the target and returns translatedText with cached false when omitted', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ translatedText: 'Hello' }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(
+      translateConversationMessage(conversationId, messageId, 'en', ''),
+    ).resolves.toEqual({ translatedText: 'Hello', cached: false });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/conversations/${conversationId}/messages/${messageId}/translate`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ target: 'en' }),
+      },
+    );
+  });
+
+  it('sends Authorization and reports a cache hit', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ translatedText: 'Hello', cached: true }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(
+      translateConversationMessage(conversationId, messageId, 'de', 'tok'),
+    ).resolves.toEqual({ translatedText: 'Hello', cached: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/conversations/${conversationId}/messages/${messageId}/translate`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', Authorization: 'Bearer tok' },
+        body: JSON.stringify({ target: 'de' }),
+      },
+    );
+  });
+
+  it('throws when the route is not successful', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+    await expect(
+      translateConversationMessage(conversationId, messageId, 'en', 'tok'),
+    ).rejects.toThrow('Translation request failed');
+  });
+
+  it('throws when translatedText is blank', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify({ translatedText: '  ' }), { status: 200 })),
+    );
+    await expect(
+      translateConversationMessage(conversationId, messageId, 'en', 'tok'),
+    ).rejects.toThrow('Translation response is invalid');
   });
 });

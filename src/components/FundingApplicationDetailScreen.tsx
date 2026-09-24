@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
 import type { FundingApplicationDetail } from '@/lib/api-types';
@@ -214,7 +215,12 @@ export function FundingApplicationDetailScreen({
                     </time>
                   </span>
                   {row.text !== '' ? (
-                    <span className="text-sm text-app-muted">{row.text}</span>
+                    <TranslatableNoteBody
+                      messageId={row.id}
+                      text={row.text}
+                      truncate={false}
+                      className="text-sm text-app-muted"
+                    />
                   ) : null}
                 </div>
               </li>

@@ -12,8 +12,16 @@ import {
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui/IconButton';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
-import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
+import {
+  fetchTranslateAvailable,
+  translateConversationMessage,
+  translateNote,
+} from '@/lib/note-translate';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Translation API source for a painted prose body. */
+export type NoteTranslateSource =
+  { kind: 'message' } | { kind: 'conversation'; conversationId: string };
 
 /** Props for the public forum-note translation control. */
 export interface NoteTranslateProps {
@@ -21,6 +29,8 @@ export interface NoteTranslateProps {
   messageId: string;
   /** Raw public note or reply text. */
   text: string;
+  /** Forum-message source by default, or a containing conversation. */
+  source?: NoteTranslateSource;
   /** `onButton` uses `text-app-btn-fg` so the control stays readable on `bg-app-btn`. */
   tone?: 'default' | 'onButton';
   /** Parent-owned flag: true while the translated body is on screen. */
@@ -36,9 +46,9 @@ export interface NoteTranslateProps {
  *
  * Control-only: Translate (Languages icon), Show original, Show translation,
  * error, and spinner. Does not render `ForumNoteText` or the translated body.
- * Identity is `messageId + text + locale`.
+ * Identity is `source + messageId + text + locale`.
  *
- * @param props - `messageId` (forum UUID), `text`, optional `tone`,
+ * @param props - `messageId`, `text`, optional `source` / `tone`,
  *   parent-owned `showingTranslation`, `onTranslated` on success, and
  *   `onToggleShowing` for Show original / Show translation.
  * @returns Translation control, or null when unavailable or unnecessary.
@@ -47,6 +57,7 @@ export interface NoteTranslateProps {
 export function NoteTranslate({
   messageId,
   text,
+  source = { kind: 'message' },
   tone = 'default',
   showingTranslation = false,
   onTranslated,
@@ -57,7 +68,9 @@ export function NoteTranslate({
   const [available, setAvailable] = useState<boolean | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const requestId = useRef(0);
-  const identity = `${messageId}\0${text}\0${locale}`;
+  const sourceIdentity =
+    source.kind === 'conversation' ? `${source.kind}\0${source.conversationId}` : source.kind;
+  const identity = `${sourceIdentity}\0${messageId}\0${text}\0${locale}`;
   const [seenIdentity, setSeenIdentity] = useState(identity);
   if (identity !== seenIdentity) {
     setSeenIdentity(identity);
@@ -93,7 +106,16 @@ export function NoteTranslate({
     setStatus('loading');
     const id = requestId.current + 1;
     requestId.current = id;
-    void translateNote(messageId, locale, session)
+    const translation =
+      source.kind === 'conversation'
+        ? translateConversationMessage(
+            source.conversationId,
+            messageId,
+            locale,
+            session ?? '',
+          ).then((result) => result.translatedText)
+        : translateNote(messageId, locale, session);
+    void translation
       .then((next) => {
         if (id !== requestId.current) {
           return;
