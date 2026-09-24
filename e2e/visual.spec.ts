@@ -1855,9 +1855,10 @@ test.describe('onboarding screens', () => {
     await expect(quotedPhoto).toBeVisible();
     await expect
       .poll(() =>
-        quotedPhoto.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0),
+        quotedPhoto.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth >= 100),
       )
       .toBe(true);
+    await page.getByText('Riana Rosello').first().scrollIntoViewIfNeeded();
     await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
     await shotScreen(page, 'state-welcome-quoted-note');
   });
