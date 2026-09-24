@@ -515,7 +515,13 @@ function fallbackCopy(text: string): boolean {
   return ok;
 }
 
-/** Scrolls the reply form up only when its bottom sits past the shell. */
+/**
+ * Scrolls the reply form up only when its bottom sits past the shell.
+ *
+ * @param scroller - App shell scroller, or null when the board is not inside one.
+ * @param form - Reply form, or null when no reply composer is open.
+ * @returns void
+ */
 export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElement | null): void {
   if (scroller === null || form === null) {
     return;
