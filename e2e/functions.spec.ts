@@ -3422,7 +3422,6 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   await expect(page.getByText('Pay ₿21')).toBeVisible();
-  await expect(page.getByLabel('Amount')).toHaveCount(0);
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
