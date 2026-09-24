@@ -1449,9 +1449,15 @@ Same moderator and basis member after pressing **Moderator functions**. The disc
 
 ### Variant: funding-reviewed
 
-Member identity card with a **Verified** role pill and, beside it, one funding-program icon (not a button) when `fundingReviewedAt` is a number. The icon's accessible name is **Takes part in the 21.gifts funding program since {date}**. There is no second line.
+Member identity card with a **Verified** role pill and, beside it, one icon-only funding-program button when `fundingReviewedAt` is a number. The accessible name is **Takes part in the 21.gifts funding program since {date}**. The sentence is not visible until the icon is pressed. The resting shot does not cover the press.
 
 ![21.gifts member funding reviewed](images/members-funding-reviewed.png)
+
+### Variant: funding-program-open
+
+Same card after pressing the funding-program icon. One status line **Takes part in the 21.gifts funding program since {date}**. No second line.
+
+![21.gifts member funding program open](images/members-funding-program-open.png)
 
 ### Variant: sticker-open
 

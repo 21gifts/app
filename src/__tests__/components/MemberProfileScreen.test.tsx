@@ -357,21 +357,23 @@ describe('MemberProfileScreen', () => {
     expect(
       screen.getByText('A moderator has met this person in real life and confirmed they are real.'),
     ).toBeTruthy();
-    expect(
-      screen.getByRole('img', { name: /Takes part in the 21.gifts funding program since/ }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
-    ).toBeNull();
+    const fundingLabel = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      1_700_000_000_000,
+      'en',
+    )}`;
+    const fundingMark = screen.getByRole('button', {
+      name: /Takes part in the 21.gifts funding program since/,
+    });
+    expect(fundingMark).toBeTruthy();
+    expect(fundingMark.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText(fundingLabel)).toBeNull();
+    fireEvent.click(fundingMark);
+    expect(screen.getByText(fundingLabel)).toBeTruthy();
+    expect(fundingMark.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(fundingMark);
+    expect(screen.queryByText(fundingLabel)).toBeNull();
+    expect(fundingMark.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('button', { name: /Reviewed by a moderator/ })).toBeNull();
-    expect(
-      screen.queryByText(
-        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
-          1_700_000_000_000,
-          'en',
-        )}`,
-      ),
-    ).toBeNull();
   });
 
   it('factsOnly shows the role pill without a reviewed pill', () => {
@@ -380,7 +382,7 @@ describe('MemberProfileScreen', () => {
     );
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
     expect(
-      screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
     ).toBeNull();
     expect(screen.queryByRole('button', { name: /Reviewed by a moderator/ })).toBeNull();
   });
@@ -396,7 +398,7 @@ describe('MemberProfileScreen', () => {
     );
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
     expect(
-      screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
     ).toBeNull();
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
   });
@@ -412,8 +414,11 @@ describe('MemberProfileScreen', () => {
     );
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
     expect(
-      screen.getByRole('img', { name: /Takes part in the 21.gifts funding program since/ }),
+      screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
     ).toBeTruthy();
+    expect(
+      screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
+    ).toBeNull();
   });
 
   it('shows name, address, chart empty state, and role pill', () => {
@@ -504,9 +509,16 @@ describe('MemberProfileScreen', () => {
       admittedAt,
       'en',
     )}`;
-    expect(screen.getByRole('img', { name: label })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: label })).toBeNull();
+    const mark = screen.getByRole('button', { name: label });
+    expect(mark).toBeTruthy();
+    expect(mark.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByText(label)).toBeNull();
+    fireEvent.click(mark);
+    expect(screen.getByText(label)).toBeTruthy();
+    expect(mark.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(mark);
+    expect(screen.queryByText(label)).toBeNull();
+    expect(mark.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('does not show a reviewed-by tag when fundingReviewedAt is null', () => {
@@ -518,7 +530,7 @@ describe('MemberProfileScreen', () => {
       />,
     );
     expect(
-      screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program/ }),
     ).toBeNull();
     expect(screen.queryByText(/Reviewed by a moderator/)).toBeNull();
   });

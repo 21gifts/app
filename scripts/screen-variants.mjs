@@ -1403,6 +1403,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'funding-program-open',
+    image: 'members-funding-program-open.png',
+    visual: 'state-members-funding-program-open',
+    needle: 'state-members-funding-program-open',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'sticker-open',
     image: 'members-sticker-open.png',
     visual: 'state-members-sticker-open',

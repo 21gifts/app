@@ -158,28 +158,38 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
-function FundingProgramMark({ admittedAt }: { admittedAt: number }): ReactElement {
+function FundingProgramMark({
+  admittedAt,
+  expanded,
+  onToggle,
+}: {
+  admittedAt: number;
+  expanded: boolean;
+  onToggle: () => void;
+}): ReactElement {
   const { t, locale } = useTranslations();
   const label = t('funding.participatesSince', {
     date: formatForumTimeFromMs(admittedAt, locale),
   });
   return (
-    <span
-      role="img"
+    <button
+      type="button"
       aria-label={label}
-      title={label}
-      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-app-border-strong text-app-muted"
+      aria-expanded={expanded}
+      onClick={onToggle}
+      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-app-border-strong bg-transparent p-0 text-app-muted"
     >
       <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
-    </span>
+    </button>
   );
 }
 
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
- * Address, role pill, optional funding-program icon (HandHeart, accessible name
- * is participation since the date), not a text tag when `fundingReviewedAt` is a
- * number, copy-profile-link, optional Message, post/reply counts, stacked
+ * Address, role pill, optional funding-program icon-only button (HandHeart;
+ * accessible name is participation since the date; pressing it reveals that
+ * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
+ * is a number, copy-profile-link, optional Message, post/reply counts, stacked
  * activity feeds, and staff Trust Chain actions when the viewer is
  * a moderator and the subject is someone else. About me is not a forum post.
  *
@@ -199,7 +209,7 @@ export function MemberProfileScreen({
   donated?: AccountActivity['donatedOverTime'];
   factsOnly?: boolean;
 }): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -870,6 +880,7 @@ export function MemberProfileScreen({
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
   const [roleHintOpen, setRoleHintOpen] = useState(false);
+  const [fundingHintOpen, setFundingHintOpen] = useState(false);
   const tagged =
     listedProfile.role === 'founder' ||
     listedProfile.role === 'moderator' ||
@@ -1310,13 +1321,24 @@ export function MemberProfileScreen({
               </button>
             ) : null}
             {typeof fundingReviewedAt === 'number' ? (
-              <FundingProgramMark admittedAt={fundingReviewedAt} />
+              <FundingProgramMark
+                admittedAt={fundingReviewedAt}
+                expanded={fundingHintOpen}
+                onToggle={() => setFundingHintOpen((open) => !open)}
+              />
             ) : null}
           </div>
         ) : null}
         {roleHintOpen && roleKeys !== null ? (
           <p role="status" className="text-center text-xs text-app-muted">
             {t(roleKeys.hint)}
+          </p>
+        ) : null}
+        {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
+          <p role="status" className="text-center text-xs text-app-muted">
+            {t('funding.participatesSince', {
+              date: formatForumTimeFromMs(fundingReviewedAt, locale),
+            })}
           </p>
         ) : null}
         {giftsBlock}
@@ -1390,12 +1412,23 @@ export function MemberProfileScreen({
                 </button>
               ) : null}
               {typeof fundingReviewedAt === 'number' ? (
-                <FundingProgramMark admittedAt={fundingReviewedAt} />
+                <FundingProgramMark
+                  admittedAt={fundingReviewedAt}
+                  expanded={fundingHintOpen}
+                  onToggle={() => setFundingHintOpen((open) => !open)}
+                />
               ) : null}
             </div>
             {roleHintOpen && roleKeys !== null ? (
               <p role="status" className="text-center text-xs text-app-muted">
                 {t(roleKeys.hint)}
+              </p>
+            ) : null}
+            {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
+              <p role="status" className="text-center text-xs text-app-muted">
+                {t('funding.participatesSince', {
+                  date: formatForumTimeFromMs(fundingReviewedAt, locale),
+                })}
               </p>
             ) : null}
           </div>

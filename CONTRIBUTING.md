@@ -587,6 +587,13 @@ variant, an e2e needle, a `shotScreen` call, and a Playwright Linux baseline
 for every combo in `BASELINE_COMBOS`, in the same PR. Shipping only the idle
 or closed shot is an undeclared deviation and is rejected.
 
+An icon-only status mark is a control when pressing it reveals or hides the
+sentence that names it. That pressed result is its own distinct UI state. The
+resting icon shot does not cover it. The same PR must add the handbook variant,
+the e2e needle, the `shotScreen` call, and a Playwright Linux baseline for
+every combo in `BASELINE_COMBOS`. Shipping the icon without that pressed
+baseline is an undeclared deviation and is rejected.
+
 `/setup/rules` is one screen with **one state per
 living-room rules chapter** (`RULES_CHAPTER_IDS` in `src/lib/rules-chapters.ts`);
 each chapter is a variant. Viewport and theme are combo shots of those
