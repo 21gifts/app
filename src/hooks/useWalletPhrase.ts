@@ -218,7 +218,15 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+      let nextMnemonic: string;
+      try {
+        nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+      } catch (deriveErr) {
+        if (useAuthStore.getState().session === token) {
+          setAccount(nextAccount);
+        }
+        throw deriveErr;
+      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }

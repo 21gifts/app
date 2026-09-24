@@ -117,7 +117,7 @@ describe('session phrase helpers', () => {
 });
 
 describe('useWalletPhrase', () => {
-  it('activates seed, derives words, and does not finish without PRF', async () => {
+  it('adds a seed, shows the words, and does not keep them in tab RAM', async () => {
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('activate');
     await act(async () => {
@@ -128,6 +128,18 @@ describe('useWalletPhrase', () => {
     expect(postWalletBackupSeen).not.toHaveBeenCalled();
     expect(result.current.words).toHaveLength(12);
     expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('keeps the seed account when word derivation throws', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('boom'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeySeed).toHaveBeenCalled();
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('seed-from-api');
+    expect(result.current.words).toEqual([]);
+    expect(result.current.error).toBe('generic');
   });
 
   it('does not finish seed when PRF is missing', async () => {
