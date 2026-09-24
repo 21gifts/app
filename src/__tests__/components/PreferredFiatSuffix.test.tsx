@@ -58,13 +58,14 @@ describe('preferredFiatSuffix', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('uses the rate day when the stored field for that fiat is omitted', () => {
+  it('renders no fiat when stored is passed without the viewer field', () => {
     const { container } = render(
       <p>
         {preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountChf: '5.00' })}
       </p>,
     );
-    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(container.textContent).toBe('');
+    expect(screen.queryByText('$0.02')).toBeNull();
     expect(container.textContent).not.toContain('5.00');
   });
 

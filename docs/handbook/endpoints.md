@@ -340,7 +340,7 @@
 
 ## Endpoint: POST /forum/messages
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo, optional place pin, and optional `goalSats`). Optional JSON or multipart `goalSats` (positive int, top-level notes only) is the whole-sat ask; omitted on replies and when unset. A place pin is likewise top-level only.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages` (create a public forum message or reply with optional photo, optional place pin, and optional Ask fields). JSON and multipart send `goalCurrency` and `goalAmount`; `goalSats` remains a field of the read note. Optional JSON or multipart `goalCurrency` and `goalAmount` (top-level notes only) are the ask; omitted on replies and when unset. A place pin is likewise top-level only.
 - **Errors:** Upstream 401/400/403/429, or 502 if the api is unreachable. 403 is an unpaid-reply rejection (`A reply needs a Bitcoin payment`, or the api error string).
 - **Used by:** `postMessage`.
 - **Auth:** Bearer.

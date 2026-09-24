@@ -373,7 +373,7 @@ describe('ModeratorGroupScreen', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 
-  it('shows a fiat suffix on a sats message when gift stats resolve', async () => {
+  it('stays bitcoin-only on a sats message that stored no fiat', async () => {
     giftStatsMock.mockResolvedValue({
       spendOverTime: [
         {
@@ -388,10 +388,11 @@ describe('ModeratorGroupScreen', () => {
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
+    expect(await screen.findByText('₿21')).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByText('$0.02')).toBeTruthy();
+      expect(giftStatsMock).toHaveBeenCalled();
     });
-    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('survives a failing stats fetch', async () => {

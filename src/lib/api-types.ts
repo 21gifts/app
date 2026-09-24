@@ -471,6 +471,15 @@ export const forumPlacePinSchema = z.object({
  */
 export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
 
+/** Currency a top-level Ask was typed in. */
+export const FORUM_GOAL_CURRENCIES = ['BTC', 'USD', 'CHF', 'EUR', 'PHP'] as const;
+
+/** One of {@link FORUM_GOAL_CURRENCIES}. */
+export type ForumGoalCurrency = (typeof FORUM_GOAL_CURRENCIES)[number];
+
+/** Typed Ask amount: integer plus at most eight decimal digits. */
+export const FORUM_GOAL_AMOUNT_RE = /^\d+(\.\d{1,8})?$/;
+
 /**
  * Runtime schema for `GET /forum/messages/places`.
  */
@@ -504,6 +513,11 @@ export type ForumPlaceRow = ForumPlacePin & { id: string; name: string; createdA
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * `goalSats` is the optional whole-sat ask on a top-level note; omitted when
  * the note has no goal; mixed/old payloads without the key still parse.
+ * `goalCurrency` / `goalAmount` are the Ask definition (fiat code or BTC plus
+ * the typed amount string). Optional so an older payload still parses.
+ * Absent `goalCurrency` with `goalSats` is a legacy Ask.
+ * `goalAmountUsd` / `goalAmountChf` / `goalAmountEur` / `goalAmountPhp` are
+ * frozen two-decimal snapshots of that goal, optional, each a string or null.
  * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
  * that row's `sats`, optional so an older payload still parses.
  * Gift-only replies may have empty `text` when `sats > 0`.
@@ -525,6 +539,12 @@ export const forumMessageSchema = z
     amountEur: fiatAmountSchema.optional(),
     amountPhp: fiatAmountSchema.optional(),
     goalSats: z.number().int().positive().optional(),
+    goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
+    goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
+    goalAmountUsd: fiatAmountSchema.optional(),
+    goalAmountChf: fiatAmountSchema.optional(),
+    goalAmountEur: fiatAmountSchema.optional(),
+    goalAmountPhp: fiatAmountSchema.optional(),
     payable: z.boolean(),
     hasPhoto: z.boolean(),
     photoCount: z.number().int().min(0).max(10).optional(),

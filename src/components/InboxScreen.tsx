@@ -34,7 +34,6 @@ import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
-  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -293,13 +292,12 @@ const STORED_FIAT_FIELD = {
   PHP: 'amountPhp',
 } as const;
 
-/** Plain-text ₿ amount plus optional fiat suffix for a nested gift `aria-label`. */
+/** Plain-text ₿ amount plus the fiat stored on that gift, never a later rate. */
 function giftAmountText(
   sats: number,
-  rateDay: FiatRateDay | null,
   fiat: FiatCode,
   numberFormat: NumberFormatStyle,
-  stored?: {
+  stored: {
     amountUsd?: string | null | undefined;
     amountChf?: string | null | undefined;
     amountEur?: string | null | undefined;
@@ -307,22 +305,11 @@ function giftAmountText(
   },
 ): string {
   const bitcoin = formatBitcoin(sats, numberFormat);
-  if (stored !== undefined) {
-    const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
-    if (storedAmount === null) {
-      return bitcoin;
-    }
-    if (storedAmount !== undefined) {
-      return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
-    }
-  }
-  if (rateDay === null) {
+  const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
+  if (typeof storedAmount !== 'string') {
     return bitcoin;
   }
-  const amount = satsToFiatAmount(sats, rateDay, fiat);
-  return amount === null
-    ? bitcoin
-    : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
+  return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
 }
 
 /**
@@ -942,7 +929,7 @@ export function InboxScreen({
                     role="note"
                     aria-label={t('inbox.giftForLabel', {
                       name: gift.name,
-                      amount: giftAmountText(gift.sats, rateDay, fiat, numberFormat, gift),
+                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift),
                     })}
                     data-message-id={gift.id}
                     data-gift-for={message.id}

@@ -37,16 +37,18 @@ function fiatSuffixMarkup(
 
 /**
  * Preferred-fiat suffix next to a ₿ amount. A stored string is shown as-is.
- * A present `null` is ₿-only. A missing field uses the live rate and is
- * ₿-only only when that conversion is unusable.
+ * When `stored` is passed, a present `null` or a missing field for the
+ * visitor's currency is ₿-only and never uses the live rate. Omitting
+ * `stored` keeps the unsent preview and may use the latest gift-day rate.
  *
  * @param sats - Whole sats.
- * @param rateDay - Latest gift-day totals, or `null`. Used when `stored` is
- *   omitted or the selected stored field is absent.
+ * @param rateDay - Latest gift-day totals, or `null`. Used only when `stored`
+ *   is omitted.
  * @param fiat - Visitor preference.
  * @param numberFormat - Grouping style.
  * @param stored - Fiat stored when that payment was made. Omitted keeps the
- *   live rate. A present `null` field is ₿-only; a string is formatted as-is.
+ *   live rate. A present object is never live-converted: a string is
+ *   formatted as-is; `null` or a missing field is ₿-only.
  * @returns ` · ` plus formatted fiat, or `null`.
  */
 export function preferredFiatSuffix(
@@ -58,12 +60,10 @@ export function preferredFiatSuffix(
 ): ReactElement | null {
   if (stored !== undefined) {
     const amount = stored[STORED_FIAT_FIELD[fiat]];
-    if (amount === null) {
+    if (typeof amount !== 'string') {
       return null;
     }
-    if (amount !== undefined) {
-      return fiatSuffixMarkup(amount, fiat, numberFormat);
-    }
+    return fiatSuffixMarkup(amount, fiat, numberFormat);
   }
   if (rateDay === null) {
     return null;

@@ -72,6 +72,28 @@ describe('ForumAskWizard', () => {
     expect(onStepChange).toHaveBeenCalledWith(3);
   });
 
+  it('previews a fiat definition on the last step', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        draft="Hi"
+        askDraft="1"
+        askDraftUnit="fiat"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+      />,
+    );
+    expect(screen.getByText('$1.00')).toBeTruthy();
+    expect(screen.getByText("₿1'000")).toBeTruthy();
+  });
+
   it('posts only from the preview', () => {
     const onPost = vi.fn();
     renderWithLocale(
