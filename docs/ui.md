@@ -963,7 +963,7 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 
 ### `/` — marketing home
 
-`MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#happyland` (localized photo essay; accent kicker, h2 and lead, full-width lead photograph, asymmetric text/image groups, three portraits; intrinsic image proportions and visible captions; stacked on mobile) → `#why` (kicker, h2, 2×2 h3+body) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
+`MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#happyland` (localized photo essay; accent kicker, h2 and lead, full-width lead photograph, asymmetric text/image groups, three portraits; intrinsic image proportions and visible captions; stacked on mobile) → `#why` (kicker, h2, three h3+body in `sm:grid-cols-2`) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
 
 Handbook states: live marketing home.
 
