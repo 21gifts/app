@@ -409,7 +409,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                     {t('pay.failed')}
                   </p>
                 ) : null}
-                {invoice !== null ? <QrCode value={invoice} label={t('pay.invoiceQr')} /> : null}
+                {invoice !== null ? (
+                  <div className="flex w-full justify-center">
+                    <QrCode value={invoice} label={t('pay.invoiceQr')} />
+                  </div>
+                ) : null}
                 <Button
                   type="button"
                   className="w-full"
