@@ -1011,12 +1011,17 @@ test.describe('screen baselines', () => {
             username: 'ada',
             minSats: 1,
             maxSats: 100000000,
+            charge: null,
           }),
         });
       },
     );
     await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await shotScreen(page, 'screen-pl');
     await page.getByRole('button', { name: 'Create invoice' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();

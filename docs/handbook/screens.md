@@ -289,7 +289,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 ### Variant: default
 
-The person's name, the amount field, and **Create invoice**. No QR yet.
+Scanned pay link with no open payment (`charge` null or absent). The gift glyph, the person's name, the amount field, and **Create invoice**. No countdown, no **Pay**, and no invoice QR.
 
 ![21.gifts pay link](images/pl.png)
 
