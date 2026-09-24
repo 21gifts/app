@@ -54,10 +54,11 @@ export interface AmountEntryProps {
   onUnitChange?: (unit: AmountUnit) => void;
   /**
    * `field` stacks the label, switch, and input. `composer` puts the switch
-   * beside the input, keeps the label for assistive tech only, and puts the
-   * other unit under the input. The inbox composer uses `composer`.
+   * beside the input for the inbox. `inline` puts the amount before the
+   * switch on one line for a forum reply, so the text row stays full width.
+   * `composer` and `inline` keep the label for assistive tech only.
    */
-  layout?: 'field' | 'composer';
+  layout?: 'field' | 'composer' | 'inline';
 }
 
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
@@ -337,8 +338,10 @@ export function AmountEntry({
     }
   }
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
+  const switchClass =
+    `${layout === 'inline' ? 'shrink-0' : ''}${disabled || locked ? ' pointer-events-none opacity-50' : ''}`.trim();
   const unitSwitch = (
-    <div className={disabled || locked ? 'pointer-events-none opacity-50' : undefined}>
+    <div className={switchClass === '' ? undefined : switchClass}>
       <SegmentedControl
         tone="gift"
         shell="app"
@@ -353,7 +356,13 @@ export function AmountEntry({
     </div>
   );
   const amountInput = (
-    <span className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base">
+    <span
+      className={
+        layout === 'inline'
+          ? 'flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 text-base'
+          : 'flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base'
+      }
+    >
       <span aria-hidden="true" className="text-app-muted">
         {prefix}
       </span>
@@ -378,7 +387,6 @@ export function AmountEntry({
       />
     </span>
   );
-
   if (layout === 'composer') {
     return (
       <div className={`flex min-w-0 flex-col gap-1${extra}`}>
@@ -391,6 +399,23 @@ export function AmountEntry({
         </div>
         {counter !== null ? (
           <p className="ps-24 text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (layout === 'inline') {
+    return (
+      <div className={`flex min-w-0 flex-col gap-1${extra}`}>
+        <div className="flex items-center gap-2">
+          <label htmlFor={fieldId} className="sr-only">
+            {label}
+          </label>
+          {amountInput}
+          {unitSwitch}
+        </div>
+        {counter !== null ? (
+          <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
         ) : null}
       </div>
     );
