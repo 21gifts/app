@@ -73,9 +73,10 @@ export const accountSchema = z.object({
    */
   walletBackupSeenAt: z.number().nullable().optional(),
   /**
-   * Seed passkey credential id (base64url). The api sends this only when
-   * `walletRequired` is true, and then it is the seed passkey. A missing,
-   * null, or empty value means the account has no seed yet.
+   * Seed passkey credential id (base64url). Present once a seed passkey
+   * exists: new accounts from the start, and older accounts after seed
+   * finish (which also sets `walletRequired`). A missing, null, or empty
+   * value means the account has no seed yet.
    */
   passkeyCredentialId: z.string().min(1).nullable().optional(),
   /**
@@ -133,8 +134,8 @@ export const accountSchema = z.object({
  * `walletRequired` is true for new passkey accounts; omitted or false on
  * existing members. The app does not consult it for Wallet. `walletBackupSeenAt`
  * is epoch ms the api may record after a phrase was shown; the app does not
- * read it. `passkeyCredentialId` is the seed passkey id when the api sends it
- * (only with `walletRequired` true); missing, null, or empty means no seed.
+ * read it. `passkeyCredentialId` is set once a seed passkey exists, including
+ * an older account after seed finish; missing, null, or empty means no seed.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).

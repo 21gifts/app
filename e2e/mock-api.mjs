@@ -181,7 +181,7 @@ function refreshMissing(account) {
  */
 function afterFieldWrite(account) {
   refreshMissing(account);
-  if (account.setup === 'wallet' && account.walletBackupSeenAt) {
+  if (account.setup === 'wallet') {
     account.setup = hasName(account)
       ? hasUsername(account)
         ? hasLightningAddress(account)
@@ -1863,6 +1863,7 @@ const server = http.createServer(async (req, res) => {
     let account;
     if (expectedType === 'register') {
       account = newAccount(null);
+      account.passkeyCredentialId = credId;
       byPasskeyCredential.set(credId, account);
     } else {
       account = byPasskeyCredential.get(credId);
@@ -1883,9 +1884,6 @@ const server = http.createServer(async (req, res) => {
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
-    }
-    if (account.walletBackupSeenAt == null) {
-      account.walletBackupSeenAt = Date.now();
     }
     afterFieldWrite(account);
     json(res, 200, account);
@@ -1970,6 +1968,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    if (typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '') {
+      json(res, 409, { error: 'This account already has a recovery phrase' });
+      return;
+    }
     const challengeId = hex(randomBytes(32));
     const userId = hex(randomBytes(16));
     byPasskey.set(challengeId, { type: 'seed', account });
@@ -2012,8 +2014,13 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Invalid passkey' });
       return;
     }
+    if (typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '') {
+      json(res, 409, { error: 'This account already has a recovery phrase' });
+      return;
+    }
     byPasskeyCredential.set(credId, account);
     account.passkeyCredentialId = credId;
+    account.walletRequired = true;
     json(res, 200, account);
     return;
   }

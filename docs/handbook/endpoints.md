@@ -101,7 +101,7 @@
 ## Endpoint: POST /auth/passkey/seed/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/seed/finish`. Bearer plus JSON `{ challengeId, credential }`. 200 is the owner account JSON itself, including `passkeyCredentialId` of the new seed passkey. No new token.
-- **Errors:** Upstream 401/400, or 502 if the api is unreachable.
+- **Errors:** Upstream 401, 409 `{ error }` when the account already has a seed, 400, or 502 if the api is unreachable.
 - **Used by:** `finishPasskeySeed`.
 - **Auth:** Bearer.
 
