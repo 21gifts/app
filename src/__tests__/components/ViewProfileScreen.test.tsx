@@ -98,7 +98,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
   });
 
-  it('hides the Open CryptoPay QR on a smartphone user agent', () => {
+  it('shows the Open CryptoPay QR on a smartphone user agent', () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
@@ -107,7 +107,7 @@ describe('ViewProfileScreen', () => {
       <ViewProfileScreen profile={named} viewKey={VIEW_KEY} received={[]} donated={[]} />,
     );
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
-    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
+    expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
   });
 
   it('shows view.noGiftsAddress when username is null', () => {

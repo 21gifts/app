@@ -1964,7 +1964,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
   });
 
-  it('labels the iPhone amount CTA Pay in English and Bezahlen in German', () => {
+  it('labels the iPhone amount CTA Continue in English and Weiter in German', () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: IPHONE_UA,
@@ -1986,8 +1986,8 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Pay' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay' })).toBeNull();
     unmount();
     renderWithLocale(
       <ForumBoard
@@ -2007,11 +2007,11 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Bezahlen' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Weiter' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Weiter' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Bezahlen' })).toBeNull();
   });
 
-  it('does not assign the wallet href on iPhone after Pay', async () => {
+  it('does not assign the wallet href on iPhone after Continue', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: IPHONE_UA,
@@ -2039,7 +2039,7 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Pay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await act(async () => {
       await Promise.resolve();
       await Promise.resolve();
@@ -2325,7 +2325,9 @@ describe('ForumBoard', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationAssign).not.toHaveBeenCalled();
@@ -2362,9 +2364,10 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('42');
+    expect(screen.getByText(/Pay ₿42/)).toBeTruthy();
     expect(screen.getByText('$0.04')).toBeTruthy();
     expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
   it('shows waiting copy on iPhone after the invoice is minted', () => {
@@ -2391,7 +2394,34 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
+  it('disables the amount field and Continue while pay is busy', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payDraft="21"
+        payBusy
+        {...modeProps('all')}
+      />,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('hides the invoice QR on Android Mobile and uses an Intent href', async () => {
@@ -2420,7 +2450,9 @@ describe('ForumBoard', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationAssign).not.toHaveBeenCalled();

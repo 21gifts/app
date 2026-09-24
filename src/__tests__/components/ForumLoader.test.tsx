@@ -3999,7 +3999,7 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
-  it('requests the invoice on iPhone Pay without assigning the wallet href', async () => {
+  it('requests the invoice on iPhone Continue without assigning the wallet href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
@@ -4019,7 +4019,7 @@ describe('ForumLoader', () => {
     });
     const replyCard = await clickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
     });

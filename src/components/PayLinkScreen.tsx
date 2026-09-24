@@ -14,7 +14,6 @@ import { payLinkUsername } from '@/lib/pay-link';
 import { parseAmountDraft, type FiatRateDay } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
-  isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
@@ -71,9 +70,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [invoice, setInvoice] = useState<string | null>(null);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
-  /* v8 ignore next 8 -- SSR has no navigator */
-  const isSmartphone =
-    typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
+  /* v8 ignore next 2 -- SSR has no navigator */
   const android =
     typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
 
@@ -237,7 +234,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
             {invoice !== null ? (
               <>
-                {isSmartphone ? null : <QrCode value={invoice} label={t('pay.invoiceQr')} />}
+                <QrCode value={invoice} label={t('pay.invoiceQr')} />
                 <Button
                   type="button"
                   aria-label={t('forum.payOpenWalletAria')}

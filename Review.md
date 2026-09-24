@@ -22,11 +22,13 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 
 ## Payment QR vs deep links
 
-Reject the PR when a pay sheet (or any Bitcoin payment UI) renders a QR
-on a smartphone user-agent. Smartphones pay only via Wallet of Satoshi
-deep links. Desktop shows QR and deep link. Detection is
-`isSmartphoneUserAgent`, not viewport width. See CONTRIBUTING.md
-“Payment QR vs deep links”.
+Reject the PR when the forum-post pay sheet mounts its invoice QR on a
+smartphone user-agent, or when any other payment QR (profile, member,
+public view, point of sale, pay link, inbox) is hidden on a smartphone.
+Detection is `isSmartphoneUserAgent`, not viewport width. On that pay
+sheet the phone opens Wallet of Satoshi and shows no QR; everywhere else
+the phone matches the desktop. See CONTRIBUTING.md “Payment QR vs deep
+links”.
 
 ## Completeness gates
 
