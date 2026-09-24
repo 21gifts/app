@@ -463,7 +463,7 @@
 
 - **Purpose:** Client `/wallet` chrome that renders `ProfileChromeLeft`. The server render links back to `/welcome`. Before paint, back uses the path this tab remembered. Forum fallback uses `profile.back`; any other path uses `nav.back`. Wordmark stays `/welcome`.
 - **Inputs:** `walletBackHref()` from the shared tab slot, read in `useLayoutEffect`; catalog via `ProfileChromeLeft`.
-- **Returns / side effects:** `ProfileChromeLeft`. No `router.back()`, no click interceptor, no second wordmark.
+- **Returns / side effects:** `ProfileChromeLeft`. A plain click is `history.back()`, or `/welcome` when the tab has no previous page. Modified clicks follow the remembered href. The card's Back replaces this one while Wallet is shown.
 - **Used by:** `WalletPage`.
 
 ## Function: MessagesChromeLeft
