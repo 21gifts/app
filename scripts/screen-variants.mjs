@@ -205,6 +205,13 @@ export const SCREEN_VARIANTS = [
     needle: '5:00 left',
   },
   {
+    route: '/pl',
+    id: 'charge-failed',
+    image: 'pl-charge-failed.png',
+    visual: 'state-pl-charge-failed',
+    needle: 'Could not create the invoice.',
+  },
+  {
     route: '/wallet',
     id: 'default',
     image: 'wallet.png',

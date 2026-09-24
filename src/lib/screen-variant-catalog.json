@@ -1008,6 +1008,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:charge-failed",
+    "label": "/pl charge-failed",
+    "visual": "state-pl-charge-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:fiat",
     "label": "/profile fiat",
     "visual": "state-profile-fiat",

@@ -319,9 +319,15 @@ The form stays, and **Could not create the invoice.** is shown under it.
 
 ### Variant: charge
 
-The open till: the shop sticker's storefront above the name, then time left, the sat amount, **Pay**, and the Bitcoin invoice QR. Desktop and smartphone both show that QR. No gift glyph and no amount field. A failed mint keeps the charge and shows **Could not create the invoice.**
+The open till: the shop sticker's storefront above the name, then time left, the sat amount, **Pay**, and the Bitcoin invoice QR. Desktop and smartphone both show that QR. No gift glyph and no amount field.
 
 ![21.gifts pay link charge](images/pl-charge.png)
+
+### Variant: charge-failed
+
+Open till, mint failed. The shop sticker, time left, the sat amount, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
+
+![21.gifts pay link charge failed](images/pl-charge-failed.png)
 
 ## Screen: /setup/name
 
