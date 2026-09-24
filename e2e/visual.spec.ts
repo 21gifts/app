@@ -742,7 +742,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
 
 const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 
-/** One paid German Ada note so Active shows Translate under the body. */
+/** One paid German Ada note so Active shows Translate in the footer icon row. */
 async function fulfillGermanPaidAdaNote(page: Page): Promise<void> {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
