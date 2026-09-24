@@ -1851,7 +1851,13 @@ test.describe('onboarding screens', () => {
     await page.getByText(/Good morning everyone especially to our sponsor/).click();
     await expect(page.getByText('just for information:')).toBeVisible();
     await expect(page.getByText('A Quick Technical Note')).toBeVisible();
-    await expect(page.getByAltText('Photo from Cyrill')).toBeVisible();
+    const quotedPhoto = page.getByAltText('Photo from Cyrill');
+    await expect(quotedPhoto).toBeVisible();
+    await expect
+      .poll(() =>
+        quotedPhoto.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0),
+      )
+      .toBe(true);
     await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
     await shotScreen(page, 'state-welcome-quoted-note');
   });
