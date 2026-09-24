@@ -2591,6 +2591,36 @@ Moderator. Empty thread. Eleven files → **You can add up to 10 photos**.
 
 ![21.gifts moderator group error too many](images/moderate-group-error-too-many.png)
 
+### Variant: translate
+
+Moderator. One incoming German message. **Translate** is visible. The German text stays.
+
+![21.gifts moderator group translate](images/moderate-group-translate.png)
+
+### Variant: translate-loading
+
+Moderator. **Translate** was pressed and the request has not returned. The button is busy.
+
+![21.gifts moderator group translate loading](images/moderate-group-translate-loading.png)
+
+### Variant: translate-done
+
+Moderator. The message shows the English translation and **Show original**.
+
+![21.gifts moderator group translate done](images/moderate-group-translate-done.png)
+
+### Variant: translate-hidden
+
+Moderator. **Show original** was pressed. The German text is back, with **Show translation**.
+
+![21.gifts moderator group translate hidden](images/moderate-group-translate-hidden.png)
+
+### Variant: translate-error
+
+Moderator. Translation failed. The alert says the note could not be translated, and **Translate** is still there.
+
+![21.gifts moderator group translate error](images/moderate-group-translate-error.png)
+
 ## Screen: /moderate/handbook
 
 - **URL:** `/moderate/handbook` — signed-in staff handbook of how 21.gifts works. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Hub is `/moderate`.

@@ -12941,6 +12941,80 @@ test.describe('moderate group screens', () => {
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-moderate-group-error-too-many');
   });
+
+  async function openGermanGroup(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'cm-de',
+        name: 'Ada',
+        text: GERMAN_NOTE_TEXT,
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+    ]);
+  }
+
+  test('state /moderate/group translate', async ({ page }) => {
+    await openGermanGroup(page);
+    await page.goto('/moderate/group');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-group-translate');
+  });
+
+  test('state /moderate/group translate-loading', async ({ page }) => {
+    await openGermanGroup(page);
+    await fulfillConversationTranslatePost(page, 'hang');
+    await page.goto('/moderate/group');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-group-translate-loading');
+  });
+
+  test('state /moderate/group translate-done', async ({ page }) => {
+    await openGermanGroup(page);
+    await fulfillConversationTranslatePost(page, 'ok');
+    await page.goto('/moderate/group');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeHidden();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-group-translate-done');
+  });
+
+  test('state /moderate/group translate-hidden', async ({ page }) => {
+    await openGermanGroup(page);
+    await fulfillConversationTranslatePost(page, 'ok');
+    await page.goto('/moderate/group');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-group-translate-hidden');
+  });
+
+  test('state /moderate/group translate-error', async ({ page }) => {
+    await openGermanGroup(page);
+    await fulfillConversationTranslatePost(page, 'fail');
+    await page.goto('/moderate/group');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-group-translate-error');
+  });
 });
 
 test.describe('moderate handbook screens', () => {
