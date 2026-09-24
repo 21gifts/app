@@ -1111,7 +1111,7 @@ export function ForumBoard({
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
                   {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                 </button>
-                <span id={`note-translate-${message.id}`} className="contents" />
+                <div id={`note-translate-${message.id}`} className="contents" />
                 {message.parentId === undefined && message.deletedAt === undefined ? (
                   <IconButton
                     type="button"
@@ -1353,7 +1353,7 @@ export function ForumBoard({
                               </p>
                             ) : null}
                             <div className="mt-2 flex flex-wrap items-center gap-5">
-                              <span id={`note-translate-${reply.id}`} className="contents" />
+                              <div id={`note-translate-${reply.id}`} className="contents" />
                               {reply.deletedAt === undefined && reply.payable ? (
                                 <IconButton
                                   type="button"

@@ -142,7 +142,7 @@ describe('TranslatableNoteBody', () => {
   });
 
   it('portals Translate into controlSlotId', async () => {
-    const slot = document.createElement('span');
+    const slot = document.createElement('div');
     slot.id = `note-translate-${NOTE_ID}`;
     document.body.appendChild(slot);
     try {
