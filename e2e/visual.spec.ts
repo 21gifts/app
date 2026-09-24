@@ -1974,6 +1974,7 @@ test.describe('onboarding screens', () => {
     });
     await expect(parentName).toBeInViewport();
     await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
+    await page.getByText('Riana Rosello').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-quoted-note');
   });
 
@@ -3463,6 +3464,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await page.getByText('Goal defined in dollars').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-fiat');
   });
 
