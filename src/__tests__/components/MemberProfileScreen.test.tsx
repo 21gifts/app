@@ -834,6 +834,17 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText(`/members/${profile.id}`)).toBeNull();
   });
 
+  it('shows About me through the profile note id', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, aboutMe: 'Hello from my profile note.', profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+  });
+
   it('shows Message for another member with a profileMessage', () => {
     renderWithLocale(
       <MemberProfileScreen

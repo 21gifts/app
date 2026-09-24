@@ -419,6 +419,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const conversationTranslateMatch =
+    /^\/conversations\/([^/]+)\/messages\/([^/]+)\/translate$/.exec(pathName);
+  if (method === 'POST' && conversationTranslateMatch) {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const target = parsed?.target;
+    if (target !== 'en' && target !== 'de' && target !== 'es' && target !== 'fil') {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const messageId = decodeURIComponent(conversationTranslateMatch[2] ?? '');
+    let source = '';
+    for (const thread of conversations) {
+      const message = thread.messages.find((row) => row.id === messageId);
+      if (typeof message?.text === 'string' && message.text.trim() !== '') {
+        source = message.text;
+        break;
+      }
+    }
+    if (source.trim() === '' && messageId === 'cm-de') {
+      source = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    }
+    if (source.trim() === '') {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const translated = source.includes('Kann mir jemand')
+      ? 'Can anyone lend me a few satoshi this week?'
+      : '[' + (target === 'fil' ? 'TL' : target.toUpperCase()) + '] ' + source;
+    json(res, 200, { translatedText: translated, cached: false });
+    return;
+  }
+
   if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

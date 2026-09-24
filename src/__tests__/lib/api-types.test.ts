@@ -49,6 +49,7 @@ const account = {
   rulesAgreedAt: null,
   viewKey: 'a'.repeat(64),
   aboutMe: null,
+  aboutMessageId: null,
   aboutMeHasPhoto: false,
   setup: 'name' as const,
   missing: ['name', 'lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
@@ -439,6 +440,7 @@ describe('conversationSchema', () => {
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      lastMessageId: null,
       unread: false,
       unreadMessageCount: 0,
     };
@@ -479,6 +481,7 @@ describe('conversationSchema', () => {
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      lastMessageId: null,
       unread: true,
       unreadMessageCount: 2,
     };
@@ -518,6 +521,7 @@ describe('conversationSchema', () => {
       lastAt: '2026-08-28T12:00:00.000Z',
       lastFromMe: false,
       lastSats: 0,
+      lastMessageId: null,
       unread: false,
       unreadMessageCount: 0,
     };
@@ -576,7 +580,11 @@ describe('conversationSchema', () => {
       lastSats: 0,
       accountId: 'acc_1',
     };
-    expect(conversationSchema.parse(row)).toEqual({ ...row, unread: false, unreadMessageCount: 0 });
+    expect(conversationSchema.parse(row)).toEqual({
+      ...row,
+      unread: false,
+      unreadMessageCount: 0,
+    });
   });
 
   it('rejects an empty accountId', () => {
@@ -1286,6 +1294,7 @@ describe('viewProfileSchema', () => {
     createdAt: 1_700_000_000,
     hasPasskey: false,
     aboutMe: null,
+    aboutMessageId: null,
     aboutMeHasPhoto: false,
   };
 

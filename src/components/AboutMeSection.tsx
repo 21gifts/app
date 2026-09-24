@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, IconButton } from '@/components/ui';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -36,6 +37,8 @@ export type AboutMeSectionProps = {
   mode: AboutMeSectionMode;
   /** Display name used to treat a name-only auto note as unfilled. */
   name?: string | null;
+  /** Forum message id for translating a filled read-only About me body. */
+  messageId?: string;
   /** Absolute URL to copy; omit or empty string hides the copy control. */
   profileUrl?: string;
   /** True when the live profile note has a photo. */
@@ -57,7 +60,7 @@ export type AboutMeSectionProps = {
  * copy-profile-link.
  *
  * @param props - About me value, owner vs public mode, optional display name,
- * optional photo loaders, optional profile URL and save, optional
+ * optional message id, photo loaders, profile URL and save, optional
  * `startEditing` to open the owner editor on mount.
  * @returns The section, or `null` in public mode when unfilled and there is no copy URL.
  */
@@ -65,6 +68,7 @@ export function AboutMeSection({
   aboutMe,
   mode,
   name,
+  messageId,
   profileUrl,
   hasPhoto,
   loadPhoto,
@@ -426,7 +430,16 @@ export function AboutMeSection({
         <div className="flex items-start gap-2">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             {textFilled && aboutMe !== null ? (
-              <LinkedText text={aboutMe} className="whitespace-pre-wrap text-sm text-app-fg" />
+              messageId !== undefined && messageId !== '' ? (
+                <TranslatableNoteBody
+                  messageId={messageId}
+                  text={aboutMe}
+                  truncate={false}
+                  className="whitespace-pre-wrap text-sm text-app-fg"
+                />
+              ) : (
+                <LinkedText text={aboutMe} className="whitespace-pre-wrap text-sm text-app-fg" />
+              )
             ) : null}
             {displayPhoto}
           </div>
@@ -451,7 +464,16 @@ export function AboutMeSection({
       ) : filled ? (
         <>
           {textFilled && aboutMe !== null ? (
-            <LinkedText text={aboutMe} className="whitespace-pre-wrap text-sm text-app-fg" />
+            messageId !== undefined && messageId !== '' ? (
+              <TranslatableNoteBody
+                messageId={messageId}
+                text={aboutMe}
+                truncate={false}
+                className="whitespace-pre-wrap text-sm text-app-fg"
+              />
+            ) : (
+              <LinkedText text={aboutMe} className="whitespace-pre-wrap text-sm text-app-fg" />
+            )
           ) : null}
           {displayPhoto}
         </>

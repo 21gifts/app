@@ -1291,9 +1291,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on feed note/reply bodies via `NoteTranslate` when the language differs from the UI locale (not on About me). The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api.
+- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and on feed note/reply bodies via `NoteTranslate`, when the language differs from the UI locale. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for `latestRateDay` on feed notes (display-only preferred fiat, no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); icon-only back to the forum; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language feed note or reply (**Translate** / Show original / Show translation); click **N posts** or **N reactions** to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. No edit controls.
+- **Actions:** Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); icon-only back to the forum; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **N posts** or **N reactions** to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. No edit controls.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -1435,6 +1435,36 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ![21.gifts member translate error](images/members-translate-error.png)
 
+### Variant: about-translate
+
+Signed-in `/members/:id` with a German About me. **Translate** is visible under the About me body.
+
+![21.gifts member about translate](images/members-about-translate.png)
+
+### Variant: about-translate-loading
+
+Same German About me after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts member about translate loading](images/members-about-translate-loading.png)
+
+### Variant: about-translate-done
+
+Same German About me after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts member about translate done](images/members-about-translate-done.png)
+
+### Variant: about-translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts member about translate hidden](images/members-about-translate-hidden.png)
+
+### Variant: about-translate-error
+
+Same German About me after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts member about translate error](images/members-about-translate-error.png)
+
 ### Variant: staff-verify
 
 Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, the same `details` / `summary` as wallet **Advanced functions** (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
@@ -1559,7 +1589,7 @@ Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi addre
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then edit the Wallet of Satoshi address, then `FundingStatusCard` (verification / 21 gifts grant), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then edit the Wallet of Satoshi address, then `FundingStatusCard` (verification / 21 gifts grant), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement + optional `notificationLevel`) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). Location save is `POST /me/location` (`setLocation`). Notification level save is `POST /me/notification-level` (`postNotificationLevel`).
 - **Actions:** Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile (current), **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; apply or read grant status on `FundingStatusCard` under the address form; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the grant section, and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Used by:** Route `/profile` (`ProfilePage`).
@@ -1629,6 +1659,36 @@ Owner card with a real bio not equal to the display name. Seed GET /me with `nam
 
 ![21.gifts profile About me filled](images/profile-about-filled.png)
 
+### Variant: translate
+
+Signed-in `/profile` with a German About me and a non-empty `aboutMessageId`. **Translate** is visible under the About me body.
+
+![21.gifts profile about translate](images/profile-about-translate.png)
+
+### Variant: translate-loading
+
+Same German About me after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts profile about translate loading](images/profile-about-translate-loading.png)
+
+### Variant: translate-done
+
+Same German About me after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts profile about translate done](images/profile-about-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts profile about translate hidden](images/profile-about-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German About me after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts profile about translate error](images/profile-about-translate-error.png)
+
 ### Variant: about-photo
 
 Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA.
@@ -1697,7 +1757,7 @@ Same owner after pressing the funding-program icon beside the role pill. One sta
 
 ## Screen: /profile/apply
 
-- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then the same four principle/truth questions as staff review against the applicant’s living-room posts. Yes submits `POST /funding/apply`. Unmet or No does not submit.
+- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then the same four principle/truth questions as staff review against the applicant’s living-room posts (post text is translatable; location and the composer are not). Yes submits `POST /funding/apply`. Unmet or No does not submit.
 - **Inputs:** Session account; `GET /forum/members/:id/posts`; `PUT /me/about`; `POST /me/location`; `POST /funding/apply`.
 - **Actions:** Fill About me, add a photo, set location, walk principles 1–3 and truth, apply or go back to `/profile`.
 - **Used by:** Route `/profile/apply` (`FundingApplyPage`).
@@ -1725,6 +1785,36 @@ About me and photo set, location empty. Copy **Next, add the place you live.**
 Profile complete. Copy **Please check whether the posts match principle 1.**
 
 ![21.gifts apply principle 1](images/profile-apply-principle-1.png)
+
+### Variant: translate
+
+Signed-in `/profile/apply` on principle 1 with a German living-room post. **Translate** is visible under the post body.
+
+![21.gifts apply translate](images/profile-apply-translate.png)
+
+### Variant: translate-loading
+
+Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts apply translate loading](images/profile-apply-translate-loading.png)
+
+### Variant: translate-done
+
+Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts apply translate done](images/profile-apply-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts apply translate hidden](images/profile-apply-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts apply translate error](images/profile-apply-translate-error.png)
 
 ### Variant: principle-2
 
@@ -1807,7 +1897,7 @@ Requirement not met. Copy **When your posts match, you can apply again.** No ale
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 500-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via **All conversations** scrolls the conversation list to the top once. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is, ₿-only when that field is null, the latest gift-day rate when the field is missing). Unpaid invoice previews still use the latest gift-day rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. List chrome back is **Back to the forum** → `/welcome`; open thread (`?c=` non-empty) chrome back is **All conversations** → `/messages`; wordmark always `/welcome`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 500-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The bubble remainder uses conversation translate; nested forum quotes stay forum notes. A list preview with a non-empty `lastMessageId` and `lastText` shows Languages **Translate** outside the row button. Gift-only previews and composer drafts do not. Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via **All conversations** scrolls the conversation list to the top once. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is, ₿-only when that field is null, the latest gift-day rate when the field is missing). Unpaid invoice previews still use the latest gift-day rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
 - **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via **All conversations** (chrome link; the list starts at the top), back to the forum. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
 - **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -1823,6 +1913,36 @@ Member list. No chooser. All inbound origins: **Bob**, official **21.gifts**, an
 Member list with an unread Direct row **Bob** (`unread: true`, `unreadMessageCount: 2`; `inbox.threadUnread`, accessible name **Bob, 2 unread**): semibold name, visible **2** with tabular-nums lining-nums, and `text-app-fg` last text. No visible word Unread. Other rows remain read/muted.
 
 ![21.gifts inbox unread](images/messages-unread.png)
+
+### Variant: translate
+
+Signed-in `/messages` list with one German conversation preview. **Translate** is visible under the last text.
+
+![21.gifts inbox translate](images/messages-translate.png)
+
+### Variant: translate-loading
+
+Same German preview after clicking **Translate** while the conversation translate POST hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts inbox translate loading](images/messages-translate-loading.png)
+
+### Variant: translate-done
+
+Same German preview after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts inbox translate done](images/messages-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts inbox translate hidden](images/messages-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German preview after the conversation translate POST fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts inbox translate error](images/messages-translate-error.png)
 
 ### Variant: contact
 
@@ -1865,6 +1985,36 @@ List fetch failed. Button **Try again**. Chooser absent.
 Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: ImagePlus, the message, and send on one row; the **Amount** field (₿ | fiat, other unit under it) on the next row. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
+
+### Variant: thread-translate
+
+Open thread with a German incoming message. **Translate** is visible under the body.
+
+![21.gifts inbox thread translate](images/messages-thread-translate.png)
+
+### Variant: thread-translate-loading
+
+Same German incoming message after clicking **Translate** while the conversation translate POST hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts inbox thread translate loading](images/messages-thread-translate-loading.png)
+
+### Variant: thread-translate-done
+
+Same German incoming message after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts inbox thread translate done](images/messages-thread-translate-done.png)
+
+### Variant: thread-translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts inbox thread translate hidden](images/messages-thread-translate-hidden.png)
+
+### Variant: thread-translate-error
+
+Same German incoming message after the conversation translate POST fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts inbox thread translate error](images/messages-thread-translate-error.png)
 
 ### Variant: sent-sats
 
@@ -1941,7 +2091,7 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), **Translate** (Languages icon) under `forum_post` and `forum_reply` user text only (not zap amounts, appointment, or proposal subjects), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
 - **Actions:** Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click any other row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchNotifications`, `fetchConversations`, `fetchModeratorGroup`, `markNotificationRead`, `markAllNotificationsRead`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -1951,6 +2101,36 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 Loaded list with at least one unread forum reply (actor **Bob**, copy **Bob replied**).
 
 ![21.gifts notifications](images/notifications.png)
+
+### Variant: translate
+
+Signed-in `/notifications` with one German forum reply. **Translate** is visible under the body.
+
+![21.gifts notifications translate](images/notifications-translate.png)
+
+### Variant: translate-loading
+
+Same German reply after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts notifications translate loading](images/notifications-translate-loading.png)
+
+### Variant: translate-done
+
+Same German reply after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts notifications translate done](images/notifications-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts notifications translate hidden](images/notifications-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German reply after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts notifications translate error](images/notifications-translate-error.png)
 
 ### Variant: empty
 
@@ -2029,8 +2209,8 @@ Staff (moderator) hub with the payout-goal widget showing **Could not load payou
 ## Screen: /moderate/hidden
 
 - **URL:** `/moderate/hidden` — signed-in hidden-notes list for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. JSON is `/forum/messages/hidden` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, a non-interactive **External** badge next to the name when the row has a `via` value, text, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no list. No un-hide control. No hidden photo/video fetch.
-- **Actions:** In-card icon back to the hub `/moderate`. Tap a hidden-note row to open `/messages/:id` (staff permalink shows the note plus who hid it and when). Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right. In-card icon back to `/moderate`. Heading **Hidden notes**. Staff (moderator) see the lead copy about a soft hide (the note and its untagged direct replies leave the living room; not a hard delete), then the hidden-note list newest-hidden first (author, a non-interactive **External** badge next to the name when the row has a `via` value, text with Languages **Translate** outside the name link, **Hidden by {name}** / **Unnamed**, created and hidden times), empty copy **No hidden notes.**, **Loading…**, or **Try again**. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no list. No un-hide control. No hidden photo/video fetch.
+- **Actions:** In-card icon back to the hub `/moderate`. Tap a hidden note's name or time to open `/messages/:id`. **Translate** (Languages icon) sits under the note text when it differs from the UI locale (staff permalink shows the note plus who hid it and when). Back to the forum. Open **Menu**. Staff **Try again** on list error. No un-hide control on this page.
 
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HiddenNotesPage`, `HiddenNotesScreen`, `SignedInChrome`, `OnboardingGate`, `listHiddenMessages`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. List only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch.
@@ -2040,6 +2220,36 @@ Staff (moderator) hub with the payout-goal widget showing **Could not load payou
 Staff (moderator) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
 
 ![21.gifts hidden notes](images/moderate-hidden.png)
+
+### Variant: translate
+
+Staff `/moderate/hidden` with one German hidden note. **Translate** is visible under the body.
+
+![21.gifts hidden notes translate](images/hidden-translate.png)
+
+### Variant: translate-loading
+
+Same German hidden note after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts hidden notes translate loading](images/hidden-translate-loading.png)
+
+### Variant: translate-done
+
+Same German hidden note after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts hidden notes translate done](images/hidden-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts hidden notes translate hidden](images/hidden-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German hidden note after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts hidden notes translate error](images/hidden-translate-error.png)
 
 ### Variant: external
 
@@ -2192,7 +2402,7 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 ## Screen: /moderate/applications/[accountId]
 
 - **URL:** `/moderate/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff walk four steps: principles 1–3 (lead, title, summary, living-room posts, **Requirement met** / **Requirement not met**), then whether the posts are true (**Yes** / **No**). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff walk four steps: principles 1–3 (lead, title, summary, living-room posts with Languages **Translate** on the post text and the applicant name left plain, **Requirement met** / **Requirement not met**), then whether the posts are true (**Yes** / **No**). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
 - **Actions:** In-card icon back to the queue. Staff **Requirement met** advances; **Requirement not met** or **No** posts reject; **Yes** on the last step posts admit. Try again. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
@@ -2202,6 +2412,36 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 Staff (founder) loaded application for **Rose** with a living-room post on principle 1. **Requirement met** / **Requirement not met**.
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
+
+### Variant: translate
+
+Staff `/moderate/applications/:accountId` with a German reviewed post. **Translate** is visible under the body.
+
+![21.gifts grant application translate](images/applications-detail-translate.png)
+
+### Variant: translate-loading
+
+Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts grant application translate loading](images/applications-detail-translate-loading.png)
+
+### Variant: translate-done
+
+Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts grant application translate done](images/applications-detail-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts grant application translate hidden](images/applications-detail-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts grant application translate error](images/applications-detail-translate-error.png)
 
 ### Variant: forbidden
 
@@ -2260,7 +2500,7 @@ Staff (founder) after **Requirement met** on principles 1–3. Copy **Do these p
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators chat group**. Moderators fetch the singleton group then the newest 20-message page and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators chat group** (never the api row name); the composer has **Add a photo** (JPEG/PNG/WebP, up to 10) and no **Amount** field (no gifts). A pasted `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card. The loaded staff-room thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. Older pages prepend near the oldest bubble. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Other signed-in visitors see heading **Moderators chat group** plus **This room is for moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages. A thread message that another message's `giftFor` points at shows that gift attached under it as a compact `role="note"` line (name, ₿ amount, preferred-fiat suffix, time) instead of as its own bubble. Every sats amount in the thread (gift-only, text+sats, and the nested line) shows the same preferred-fiat suffix the forum already shows, (a stored string as-is, ₿-only when that field is null, the latest gift-day rate when the field is missing). The open room shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with icon back **Moderation** → `/moderate` (`ProfileChromeLeft` `backHref="/moderate"`) + wordmark → `/welcome` top-left and one **Menu** top-right. No in-card back. Heading **Moderators chat group**. Moderators fetch the singleton group then the newest 20-message page and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators chat group** (never the api row name); the composer has **Add a photo** (JPEG/PNG/WebP, up to 10) and no **Amount** field (no gifts). A pasted `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card. The bubble remainder uses conversation translate; nested forum quotes stay forum notes. There is no conversation list, so no list-preview Translate. The loaded staff-room thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. Older pages prepend near the oldest bubble. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Other signed-in visitors see heading **Moderators chat group** plus **This room is for moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages. A thread message that another message's `giftFor` points at shows that gift attached under it as a compact `role="note"` line (name, ₿ amount, preferred-fiat suffix, time) instead of as its own bubble. Every sats amount in the thread (gift-only, text+sats, and the nested line) shows the same preferred-fiat suffix the forum already shows, (a stored string as-is, ₿-only when that field is null, the latest gift-day rate when the field is missing). The open room shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
 - **Actions:** Chrome icon back **Moderation** → `/moderate`; wordmark → `/welcome`. Open **Menu**. Moderators attach photos, send a reply (text and/or photos), and **Try again** on fetch error. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Leave the room open so new messages appear without a reload.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, the newest 20-message page via `fetchConversation`, `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch.
@@ -2350,6 +2590,36 @@ Moderator. Empty thread. Encoded JPEG over 1 MB → **Keep photos under 1 MB**.
 Moderator. Empty thread. Eleven files → **You can add up to 10 photos**.
 
 ![21.gifts moderator group error too many](images/moderate-group-error-too-many.png)
+
+### Variant: translate
+
+Moderator. One incoming German message. **Translate** is visible. The German text stays.
+
+![21.gifts moderator group translate](images/moderate-group-translate.png)
+
+### Variant: translate-loading
+
+Moderator. **Translate** was pressed and the request has not returned. The button is busy.
+
+![21.gifts moderator group translate loading](images/moderate-group-translate-loading.png)
+
+### Variant: translate-done
+
+Moderator. The message shows the English translation and **Show original**.
+
+![21.gifts moderator group translate done](images/moderate-group-translate-done.png)
+
+### Variant: translate-hidden
+
+Moderator. **Show original** was pressed. The German text is back, with **Show translation**.
+
+![21.gifts moderator group translate hidden](images/moderate-group-translate-hidden.png)
+
+### Variant: translate-error
+
+Moderator. Translation failed. The alert says the note could not be translated, and **Translate** is still there.
+
+![21.gifts moderator group translate error](images/moderate-group-translate-error.png)
 
 ## Screen: /moderate/handbook
 
@@ -2484,7 +2754,7 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; populated ₿ | selected fiat; About me inside the identity card — not a forum post, with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR.
+- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; populated ₿ | selected fiat; About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given + Received from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when address is blank; activity failure keeps the card with empty series. Identity still `GET /view-key/:viewKey`.
 - **Actions:** Change language (`HomeWordmark` top-left: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Unsigned empty series shows FiatPicker + `profile.chartEmpty`; signed-in empty is `profile.chartEmpty` alone. A filled series can switch scale between ₿ and the selected fiat. When unsigned, pick CHF|EUR|USD|PHP on the chart FiatPicker. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
@@ -2500,6 +2770,36 @@ Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty seri
 Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
 
 ![21.gifts public view about filled](images/view-about-filled.png)
+
+### Variant: translate
+
+Public `/view/:viewKey` with a German About me and a non-empty `aboutMessageId`. **Translate** is visible under the About me body.
+
+![21.gifts public view about translate](images/view-about-translate.png)
+
+### Variant: translate-loading
+
+Same German About me after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts public view about translate loading](images/view-about-translate-loading.png)
+
+### Variant: translate-done
+
+Same German About me after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts public view about translate done](images/view-about-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts public view about translate hidden](images/view-about-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German About me after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts public view about translate error](images/view-about-translate-error.png)
 
 ### Variant: about-photo
 

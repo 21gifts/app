@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { listHiddenMessages } from '@/lib/api';
 import type { HiddenMessage } from '@/lib/api-types';
@@ -119,30 +120,36 @@ export function HiddenNotesScreen(): ReactElement | null {
       <ul aria-label={t('moderate.listLabel')} className="flex w-full flex-col gap-3">
         {messages.map((row) => (
           <li key={row.id}>
-            <Link
-              href={`/messages/${row.id}`}
-              className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 no-underline"
-            >
-              <span className="flex w-full items-baseline justify-between gap-2">
-                {row.via !== undefined ? (
-                  <span className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
+              <Link href={`/messages/${row.id}`} className="block w-full no-underline">
+                <span className="flex w-full items-baseline justify-between gap-2">
+                  {row.via !== undefined ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-app-fg">
+                        {row.name !== '' ? row.name : t('moderate.unnamed')}
+                      </span>
+                      <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                        {t('forum.via.nostr')}
+                      </span>
+                    </span>
+                  ) : (
                     <span className="text-sm font-medium text-app-fg">
                       {row.name !== '' ? row.name : t('moderate.unnamed')}
                     </span>
-                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                      {t('forum.via.nostr')}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-sm font-medium text-app-fg">
-                    {row.name !== '' ? row.name : t('moderate.unnamed')}
-                  </span>
-                )}
-                <time dateTime={row.createdAt} className="text-xs text-app-subtle">
-                  {formatForumTime(row.createdAt, locale)}
-                </time>
-              </span>
-              {row.text !== '' ? <span className="text-sm text-app-muted">{row.text}</span> : null}
+                  )}
+                  <time dateTime={row.createdAt} className="text-xs text-app-subtle">
+                    {formatForumTime(row.createdAt, locale)}
+                  </time>
+                </span>
+              </Link>
+              {row.text !== '' ? (
+                <TranslatableNoteBody
+                  messageId={row.id}
+                  text={row.text}
+                  truncate={false}
+                  className="text-sm text-app-muted"
+                />
+              ) : null}
               <span className="flex w-full items-baseline justify-between gap-2">
                 <span className="text-sm text-app-muted">
                   {t('moderate.hiddenBy', {
@@ -153,7 +160,7 @@ export function HiddenNotesScreen(): ReactElement | null {
                   {formatForumTime(row.deletedAt, locale)}
                 </time>
               </span>
-            </Link>
+            </div>
           </li>
         ))}
       </ul>

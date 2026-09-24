@@ -161,7 +161,7 @@ describe('ViewProfileScreen', () => {
   it('shows About me text and the copy-link button when aboutMe is set', async () => {
     renderWithLocale(
       <ViewProfileScreen
-        profile={{ ...named, aboutMe: 'Hello from Ada.' }}
+        profile={{ ...named, aboutMe: 'Hello from Ada.', aboutMessageId: 'note-1' }}
         viewKey={VIEW_KEY}
         received={[]}
         donated={[]}

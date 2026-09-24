@@ -555,6 +555,7 @@ export function InboxLoader(): ReactElement | null {
               return {
                 ...row,
                 lastText: newerThanList ? last.text : row.lastText,
+                lastMessageId: newerThanList ? last.id : row.lastMessageId,
                 lastSats: newerThanList ? last.sats : row.lastSats,
                 lastFromMe: newerThanList ? last.fromMe : row.lastFromMe,
                 lastAt: newerThanList ? last.createdAt : row.lastAt,
@@ -754,6 +755,7 @@ export function InboxLoader(): ReactElement | null {
                   ? {
                       ...row,
                       lastText: gift.text,
+                      lastMessageId: gift.id,
                       lastSats: gift.sats,
                       lastFromMe: gift.fromMe,
                       lastAt: gift.createdAt,
@@ -838,6 +840,7 @@ export function InboxLoader(): ReactElement | null {
               ? {
                   ...row,
                   lastText: created.text,
+                  lastMessageId: created.id,
                   lastSats: created.sats,
                   lastAt: created.createdAt,
                   lastFromMe: true,

@@ -554,6 +554,54 @@ export async function proxyTranslateNotePost(request: Request): Promise<Response
 }
 
 /**
+ * Proxies POST `/conversations/:conversationId/messages/:messageId/translate`
+ * `{ target }` to the matching 21.gifts api path.
+ *
+ * @param request - Incoming App Router request (JSON body).
+ * @param conversationId - Conversation UUID from the dynamic route segment.
+ * @param messageId - Conversation message id from the dynamic route segment.
+ * @returns The upstream response, or 400 for invalid JSON or a missing/non-string `target`.
+ */
+export async function proxyTranslateConversationMessagePost(
+  request: Request,
+  conversationId: string,
+  messageId: string,
+): Promise<Response> {
+  let input: unknown;
+  try {
+    input = await request.json();
+  } catch {
+    return Response.json({ error: 'Invalid body' }, { status: 400 });
+  }
+  if (
+    typeof input !== 'object' ||
+    input === null ||
+    !('target' in input) ||
+    typeof input.target !== 'string'
+  ) {
+    return Response.json({ error: 'Invalid body' }, { status: 400 });
+  }
+  const { target } = input;
+  const headers = new Headers();
+  const authorization = request.headers.get('authorization');
+  if (authorization !== null) {
+    headers.set('authorization', authorization);
+  }
+  headers.set('content-type', 'application/json');
+  const forwarded = new Request(request.url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ target }),
+  });
+  return proxyApiRequest(
+    forwarded,
+    `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(
+      messageId,
+    )}/translate`,
+  );
+}
+
+/**
  * Proxies GET /messages/hidden to the 21.gifts api (app path `/forum/messages/hidden`).
  *
  * @param request - Incoming App Router request (Bearer session).

@@ -4,7 +4,7 @@ import { useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
+import { NoteTranslate, type NoteTranslateSource } from '@/components/NoteTranslate';
 
 const DEFAULT_BODY_CLASS = 'whitespace-pre-wrap text-sm text-app-fg';
 
@@ -14,6 +14,8 @@ export interface TranslatableNoteBodyProps {
   messageId: string;
   /** Raw public note or reply text. */
   text: string;
+  /** Forum-message source by default, or a containing conversation. */
+  source?: NoteTranslateSource;
   /** When true, render original and translated bodies as plain text. */
   plain?: boolean;
   /** When true, collapse long original bodies behind Show more. */
@@ -30,7 +32,7 @@ export interface TranslatableNoteBodyProps {
  * Holds translated text and the showing flag. Visible body is original XOR
  * translation — not via a parent `useEffect` after paint.
  *
- * @param props - `messageId`, `text`, optional `plain` / `truncate`
+ * @param props - `messageId`, `text`, optional `source`, `plain` / `truncate`
  *   (`truncate` applies only to the original body), optional
  *   `className` (`text-app-btn-fg` selects NoteTranslate `tone="onButton"`),
  *   optional `formatTranslated` (applied only to the visible translation).
@@ -40,6 +42,7 @@ export interface TranslatableNoteBodyProps {
 export function TranslatableNoteBody({
   messageId,
   text,
+  source,
   plain = false,
   truncate = true,
   className = DEFAULT_BODY_CLASS,
@@ -48,7 +51,9 @@ export function TranslatableNoteBody({
   const { locale } = useTranslations();
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showingTranslation, setShowingTranslation] = useState(false);
-  const identity = `${messageId}\0${text}\0${locale}`;
+  const sourceIdentity =
+    source?.kind === 'conversation' ? `${source.kind}\0${source.conversationId}` : 'message';
+  const identity = `${sourceIdentity}\0${messageId}\0${text}\0${locale}`;
   const [seenIdentity, setSeenIdentity] = useState(identity);
   if (identity !== seenIdentity) {
     setSeenIdentity(identity);
@@ -80,6 +85,7 @@ export function TranslatableNoteBody({
       <NoteTranslate
         messageId={messageId}
         text={text}
+        {...(source === undefined ? {} : { source })}
         showingTranslation={showingTranslation}
         onTranslated={(next) => {
           setTranslatedText(next);
