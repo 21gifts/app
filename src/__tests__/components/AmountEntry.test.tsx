@@ -93,7 +93,7 @@ describe('AmountEntry', () => {
     expect(screen.getByRole('group', { name: 'Bitcoin or fiat' })).toBeTruthy();
   });
 
-  it('puts the switch beside the input in a composer and hides the label', () => {
+  it('puts the switch inside the composer field and hides the label', () => {
     renderWithLocale(
       <AmountEntry
         layout="composer"
