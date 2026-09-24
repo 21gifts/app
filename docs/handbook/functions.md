@@ -2806,9 +2806,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletScreenView
 
-- **Purpose:** Presentational wallet card.
+- **Purpose:** Wallet card, and the header Back for that page. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Header Back takes one step: hide the words, close **Advanced functions**, or `history.back()`. Error shows a reason, a hint, and **Try again**.
+- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Header Back takes one step: hide the words, close **Advanced functions**, `history.back()`, or open `/welcome` when the tab has no previous page. Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen
