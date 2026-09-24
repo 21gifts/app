@@ -27,6 +27,7 @@ import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const push = vi.fn();
 
@@ -405,15 +406,17 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
   });
 
-  it('hides the Open CryptoPay QR on a smartphone user agent', () => {
+  it('shows the Open CryptoPay QR and Shop sticker on a smartphone user agent', () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     });
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
-    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
-    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
+    expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Shop sticker' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Shop sticker' }));
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
   });
 
   it('opens the shop sticker overlay from under the QR and closes it again', () => {
@@ -927,13 +930,14 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('requests the invoice on iPhone Pay without assigning the wallet href', async () => {
+  it('requests the invoice on iPhone Continue without assigning the wallet href', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     });
     const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    const locationStub = { assign, href: 'http://localhost/' };
+    vi.stubGlobal('location', locationStub);
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -943,7 +947,7 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith(
         'sess',
@@ -954,9 +958,15 @@ describe('MemberProfileScreen', () => {
       );
     });
     expect(assign).not.toHaveBeenCalled();
+    expect(locationStub.href).toBe('http://localhost/');
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    expect(assign).not.toHaveBeenCalled();
+    expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc1'));
     vi.unstubAllGlobals();
   });
 
@@ -966,7 +976,7 @@ describe('MemberProfileScreen', () => {
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     });
     const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    vi.stubGlobal('location', { assign, href: 'http://localhost/' });
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((resolve) => {
@@ -982,7 +992,7 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
@@ -998,7 +1008,7 @@ describe('MemberProfileScreen', () => {
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     });
     const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    vi.stubGlobal('location', { assign, href: 'http://localhost/' });
     let rejectInvoice!: (reason: Error) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((_, reject) => {
@@ -1014,7 +1024,7 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
     await act(async () => {
       rejectInvoice(new Error('fail'));
@@ -1030,7 +1040,7 @@ describe('MemberProfileScreen', () => {
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     });
     const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    vi.stubGlobal('location', { assign, href: 'http://localhost/' });
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((resolve) => {
@@ -1046,7 +1056,7 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Pay' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     unmount();
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });

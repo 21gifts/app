@@ -39,7 +39,6 @@ import {
 } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
-  isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
@@ -490,10 +489,7 @@ export function InboxScreen({
   }
 
   useEffect(() => {
-    /* v8 ignore next 3 -- SSR has no navigator */
-    setShowPaymentQr(
-      typeof navigator !== 'undefined' ? !isSmartphoneUserAgent(navigator.userAgent) : false,
-    );
+    setShowPaymentQr(true);
   }, []);
 
   useEffect(() => {
@@ -654,9 +650,6 @@ export function InboxScreen({
       ? null
       : (conversations.find((row) => row.id === openId) ?? null);
 
-  /* v8 ignore next 8 -- SSR has no navigator */
-  const isSmartphone =
-    typeof navigator !== 'undefined' ? isSmartphoneUserAgent(navigator.userAgent) : false;
   /* v8 ignore start -- Android vs iOS wallet href */
   const android =
     typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
@@ -1085,26 +1078,7 @@ export function InboxScreen({
             {t('inbox.errorTooMany')}
           </p>
         ) : null}
-        {invoice !== null && isSmartphone ? (
-          <div className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10">
-            <IconButton
-              type="button"
-              size="sm"
-              variant="ghost"
-              aria-label={t('forum.payBack')}
-              onClick={onPayCancel}
-              className="absolute left-2 top-2"
-            >
-              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-            {walletButton}
-            {/* v8 ignore next 3 -- waiting copy after mint */}
-            {payWaiting ? (
-              <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
-            ) : null}
-          </div>
-        ) : null}
-        {invoice !== null && !isSmartphone ? (
+        {invoice !== null ? (
           <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
             <IconButton
               type="button"

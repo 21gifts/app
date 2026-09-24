@@ -184,7 +184,7 @@ describe('PayLinkScreen', () => {
     });
   });
 
-  it('hides the QR on a phone and opens the Android wallet intent', async () => {
+  it('shows the QR on a phone and opens the Android wallet intent', async () => {
     setUserAgent(
       'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
     );
@@ -199,7 +199,7 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     const pay = await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' });
-    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     const hrefs: string[] = [];
     const previous = window.location;
     Object.defineProperty(window, 'location', {

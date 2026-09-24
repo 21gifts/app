@@ -15,7 +15,6 @@ import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import type { AmountUnit } from '@/lib/api-types';
 import { formatBitcoin, parseAmountDraft } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Remaining time as m:ss. */
@@ -59,7 +58,7 @@ export function PosScreen(): ReactElement {
   const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
-    setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
+    setShowQr(true);
   }, []);
 
   useEffect(() => {

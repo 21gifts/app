@@ -342,11 +342,6 @@ async function recordedWalletAssign(page: Page): Promise<string | undefined> {
 }
 
 async function submitPayAmount(page: Page): Promise<void> {
-  const payNow = page.getByRole('button', { name: 'Pay', exact: true });
-  if ((await payNow.count()) > 0) {
-    await payNow.click();
-    return;
-  }
   await page.getByRole('button', { name: 'Continue' }).click();
 }
 
@@ -3426,6 +3421,8 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
   await openPayInvoice(page, request);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  await expect(page.getByLabel('Amount')).toHaveCount(0);
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
