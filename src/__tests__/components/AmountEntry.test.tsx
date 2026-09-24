@@ -108,12 +108,12 @@ describe('AmountEntry', () => {
     );
     const input = screen.getByLabelText('Amount');
     const switchGroup = screen.getByRole('group', { name: 'Bitcoin or fiat' });
-    const row = input.parentElement?.parentElement;
+    const field = input.parentElement;
     expect(input).toHaveProperty('value', '21');
-    expect(row).toBe(switchGroup.parentElement?.parentElement);
-    expect(row?.className).toContain('items-center');
+    expect(field).toBe(switchGroup.parentElement?.parentElement);
+    expect(field?.className).toContain('rounded-2xl');
     expect(screen.getByText('Amount').className).toContain('sr-only');
-    expect(screen.getByText('$0.02').className).toContain('ps-24');
+    expect(screen.getByText('$0.02').className).toContain('text-xs');
   });
 
   it('omits the composer counter when the draft is empty', () => {

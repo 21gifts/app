@@ -883,7 +883,7 @@ export function InboxScreen({
             ))}
           </ul>
         ) : null}
-        <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
+        <form onSubmit={handleSubmit} className="flex w-full flex-col gap-1.5">
           <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
             {showAttach ? (
               <>
@@ -937,7 +937,7 @@ export function InboxScreen({
           {showAmount ? (
             <AmountEntry
               layout="composer"
-              className={showAttach ? 'max-w-sm ps-14' : 'max-w-sm'}
+              className={showAttach ? 'ms-14 me-14' : 'me-14'}
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}

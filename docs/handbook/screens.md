@@ -1856,7 +1856,7 @@ List fetch failed. Button **Try again**. Chooser absent.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: ImagePlus, the message, and send on one row; the **Amount** field (₿ | fiat, other unit under it) on the next row. Chooser absent.
+Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: ImagePlus, the message, and send on one row; the **Amount** field the width of the message (₿ | fiat inside the field, other unit under it). Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 

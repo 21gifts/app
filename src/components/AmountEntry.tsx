@@ -385,12 +385,46 @@ export function AmountEntry({
         <label htmlFor={fieldId} className="sr-only">
           {label}
         </label>
-        <div className="flex min-w-0 items-center gap-2">
-          {unitSwitch}
-          {amountInput}
-        </div>
+        <span className="flex min-h-11 min-w-0 items-center overflow-hidden rounded-2xl border border-app-border-strong">
+          <div className={disabled || locked ? 'pointer-events-none opacity-50' : undefined}>
+            <SegmentedControl
+              tone="gift"
+              shell="app"
+              frame="plain"
+              value={entryUnit}
+              options={[
+                { value: 'btc', label: '\u20BF' },
+                { value: 'fiat', label: fiat },
+              ]}
+              onChange={changeUnit}
+              ariaLabel={t('amount.unit')}
+            />
+          </div>
+          <span aria-hidden="true" className="ps-3 text-app-muted">
+            {prefix}
+          </span>
+          <input
+            id={fieldId}
+            aria-label={label}
+            type="text"
+            inputMode={entryUnit === 'btc' ? 'numeric' : 'decimal'}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder={shownPlaceholder}
+            value={shown}
+            disabled={disabled || locked}
+            onChange={(event) => {
+              if (!locked) {
+                draftRef.current = event.target.value;
+                onValueChange(event.target.value);
+              }
+            }}
+            className="min-w-0 flex-1 bg-transparent px-2 text-base text-app-fg outline-none"
+          />
+        </span>
         {counter !== null ? (
-          <p className="ps-24 text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
+          <p className="text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
         ) : null}
       </div>
     );

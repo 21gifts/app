@@ -34,6 +34,11 @@ export interface SegmentedControlProps<T extends string> {
   shell?: SegmentedControlShell;
   /** Extra classes on the group. */
   className?: string;
+  /**
+   * `box` draws the gift border. `plain` is only the buttons, for a composer
+   * field that already has a border. Ignored for neutral.
+   */
+  frame?: 'box' | 'plain';
 }
 
 const BADGE_CLASS =
@@ -92,6 +97,7 @@ export function SegmentedControl<T extends string>({
   tone,
   shell = 'app',
   className,
+  frame = 'box',
 }: SegmentedControlProps<T>): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
@@ -125,9 +131,12 @@ export function SegmentedControl<T extends string>({
   }
 
   const dark = shell === 'dark';
-  const track = dark
-    ? 'inline-flex overflow-hidden rounded-md border border-paper/20 text-xs'
-    : 'inline-flex overflow-hidden rounded-md border border-app-border text-xs';
+  const boxed = frame === 'box';
+  const track = !boxed
+    ? 'inline-flex overflow-hidden text-xs'
+    : dark
+      ? 'inline-flex overflow-hidden rounded-md border border-paper/20 text-xs'
+      : 'inline-flex overflow-hidden rounded-md border border-app-border text-xs';
   const selectedClass = dark ? 'bg-accent text-ink' : 'bg-app-accent text-app-accent-fg';
   const unselectedClass = dark ? 'text-paper/70' : 'text-app-muted';
 
