@@ -2288,14 +2288,14 @@ export const SCREEN_VARIANTS = [
     id: 'goal-open',
     image: 'moderate-goal-open.png',
     visual: 'state-moderate-goal-open',
-    needle: 'Official payouts by UTC day',
+    needle: 'People by UTC day',
   },
   {
     route: '/moderate',
     id: 'loading',
     image: 'moderate-loading.png',
     visual: 'state-moderate-loading',
-    needle: 'Daily payout goal',
+    needle: 'Daily funding goal',
   },
   {
     route: '/moderate',
