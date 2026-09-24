@@ -144,8 +144,8 @@ export function NoteTranslate({
     ? `${inRow ? '' : 'mt-2 '}text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50`
     : `${inRow ? '' : 'mt-2 '}text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50`;
   const errorClass = onButton
-    ? `${inRow ? 'basis-full ' : 'mt-2 '}text-sm text-app-btn-fg`
-    : `${inRow ? 'basis-full ' : 'mt-2 '}text-sm text-app-danger`;
+    ? `${inRow ? 'order-last basis-full w-full ' : 'mt-2 '}text-sm text-app-btn-fg`
+    : `${inRow ? 'order-last basis-full w-full ' : 'mt-2 '}text-sm text-app-danger`;
   const translateLabel = t('forum.translate');
   const iconClass = onButton
     ? `${inRow ? '' : 'mt-2 '}text-app-btn-fg hover:text-app-btn-fg`

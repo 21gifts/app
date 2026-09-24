@@ -217,7 +217,9 @@ describe('NoteTranslate', () => {
     renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     const classes = (await screen.findByRole('alert')).className.split(/\s+/);
+    expect(classes).toContain('order-last');
     expect(classes).toContain('basis-full');
+    expect(classes).toContain('w-full');
   });
 
   it('keeps onButton colour without stacked margin in a row', async () => {
