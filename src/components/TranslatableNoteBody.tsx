@@ -26,8 +26,9 @@ export interface TranslatableNoteBodyProps {
   /** Applied only to the visible translated body. */
   formatTranslated?: (text: string) => string;
   /**
-   * When set, the Translate control portals into this element (forum footer
-   * icon row). Default stacks the control under the body.
+   * When set, portals the Translate control into this element if it exists
+   * (forum footer icon row). If the node is missing, the control is omitted
+   * rather than stacked. Default stacks the control under the body.
    */
   controlSlotId?: string;
 }
@@ -42,8 +43,11 @@ export interface TranslatableNoteBodyProps {
  *   (`truncate` applies only to the original body), optional
  *   `className` (`text-app-btn-fg` selects NoteTranslate `tone="onButton"`),
  *   optional `formatTranslated` (applied only to the visible translation),
- *   optional `controlSlotId` to portal the control into the footer icon row.
- * @returns Original or translated body plus the translate control, or null when text is empty.
+ *   optional `controlSlotId` (portals the control into that node; omits it
+ *   when the node is missing).
+ * @returns Original or translated body plus the translate control when stacked
+ *   or the slot exists; body only when `controlSlotId` is set but the node is
+ *   missing; or null when text is empty.
  * @throws Does not throw.
  */
 export function TranslatableNoteBody({
