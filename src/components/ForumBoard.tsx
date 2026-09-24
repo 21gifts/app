@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -514,6 +515,17 @@ function fallbackCopy(text: string): boolean {
   return ok;
 }
 
+/** Scrolls the reply form up only when its bottom sits past the shell. */
+export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElement | null): void {
+  if (scroller === null || form === null) {
+    return;
+  }
+  const overflow = form.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom;
+  if (overflow > 0) {
+    scroller.scrollTop += overflow + 12;
+  }
+}
+
 /**
  * Presentational public forum: optional dismissible living-room laws hint,
  * ForumModeSelect (a closed full-width combobox showing the selected label
@@ -634,6 +646,10 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const field = replyComposerRef.current;
+    revealReplyForm(scroller, field === null ? null : field.form);
+  }, [expandedId, scroller]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -1401,7 +1417,7 @@ export function ForumBoard({
                           ? {}
                           : { onUnitChange: onReplyUnitChange })}
                       />
-                      <div className="flex items-end gap-2">
+                      <div className="flex items-center gap-2">
                         <textarea
                           ref={replyComposerRef}
                           aria-label={t('forum.replyComposerLabel')}
@@ -1409,11 +1425,11 @@ export function ForumBoard({
                           value={replyDraft}
                           onChange={(event) => onReplyDraftChange(event.target.value)}
                           maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                          rows={2}
+                          rows={1}
                           disabled={
                             replyPosting || repliesLoading || repliesError || replies === null
                           }
-                          className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+                          className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
                         />
                         <IconButton
                           type="submit"

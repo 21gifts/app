@@ -356,7 +356,13 @@ export function AmountEntry({
     </div>
   );
   const amountInput = (
-    <span className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base">
+    <span
+      className={
+        layout === 'inline'
+          ? 'flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 text-base'
+          : 'flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base'
+      }
+    >
       <span aria-hidden="true" className="text-app-muted">
         {prefix}
       </span>
