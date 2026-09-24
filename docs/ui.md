@@ -501,11 +501,11 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 
 ## Money
 
-**Two currencies, always.** Every visitor has one default fiat in settings (CHF, EUR, USD, or PHP). A value is never shown in only one currency.
+**Two currencies, when a second figure exists.** Every visitor has one default fiat in settings (CHF, EUR, USD, or PHP). A value is never shown in only one currency when a stored string or a loaded gift-day rate exists. If neither exists, the amount stays bitcoin, because there is no second number.
 
 - Defined in that default fiat: show that amount and the bitcoin counterpart. Do not repeat the fiat.
 - Not defined in that default fiat (bitcoin, or another fiat): also show the default fiat. An ask defined in another fiat shows three: the defined amount, bitcoin, and the default fiat.
-- The default-fiat figure is the string stored for that currency on the row. When that field is null or missing, use the latest gift-day rate. Do not recompute a stored string.
+- The default-fiat figure is the string stored for that currency on the row. When that field is null or missing, use the latest gift-day rate if one is loaded. If that rate is not loaded either, the amount stays bitcoin. Do not recompute a stored string.
 
 **Visitor amounts.** Always `formatBitcoin(sats, numberFormat)` from `src/lib/stats-money.ts`. Leading `₿` (U+20BF), `NumberFormatStyle` grouping (`ch` / `us` / `de`), no fraction, no extra ₿. Class: `tabular-nums lining-nums`. JSON fields remain `sats` / `totalSats`.
 
