@@ -479,23 +479,25 @@ Every control where a person types an amount uses `AmountEntry`: the gift `Segme
 
 ### Payment QR vs deep links (hard requirement)
 
-Desktop computers (MacBook and other non-phone devices) show a Bitcoin
-payment QR **and** the Wallet of Satoshi deep-link CTA. The QR exists so
-a different device can scan it.
+A smartphone shows the same payment QR as a desktop, including the
+profile, member, public view, point of sale, pay link, and inbox. The
+Shop sticker is shown wherever that profile QR is shown.
 
-Smartphones must **never** render a payment QR. On a phone the pay sheet
-uses Wallet of Satoshi deep links only (`walletofsatoshi:` on iOS,
-Android Intent on Android). A QR on the same screen the visitor would
-need to scan it with is forbidden.
+The only exception is the forum post pay sheet (`ForumBoard`, including
+the composer pay slot). There a smartphone does not mount the invoice
+`QrCode`. The wallet button still opens Wallet of Satoshi
+(`walletofsatoshi:` on iOS, Android Intent on Android). Desktop and iPad
+show that invoice QR and the same button. The amount step is Continue
+on every user agent, then the same invoice card.
 
 Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 (iPhone, iPod, or Android **with** `Mobile`). Do **not** use viewport
-width: a narrow MacBook window is still a desktop and still shows the QR.
-iPad is not a smartphone.
+width: a narrow MacBook window is still a desktop. iPad is not a
+smartphone.
 
-`ForumBoard` is the current pay sheet. Any new pay UI follows the same
-split. Mounting `QrCode` (or any payment QR) on a smartphone UA is an
-undeclared deviation and is rejected. Reviewers follow `Review.md`.
+Mounting the forum-post pay-sheet invoice QR on a smartphone UA is an
+undeclared deviation and is rejected. Hiding any other payment QR on a
+smartphone UA is also rejected. Reviewers follow `Review.md`.
 
 ### Handbook (hard requirement)
 
