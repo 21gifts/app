@@ -1935,6 +1935,46 @@ test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is
   expect((await request.post('/me/amount-unit')).status()).toBe(401);
 });
 
+test('Function: proxyMeLocalePost — POST /me/locale without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/locale')).status()).toBe(401);
+});
+
+test('Function: proxyMeFiatPost — POST /me/fiat without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/fiat')).status()).toBe(401);
+});
+
+test('Function: setAccountLocale — POST /me/locale without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/locale')).status()).toBe(401);
+});
+
+test('Function: setAccountFiat — POST /me/fiat without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/fiat')).status()).toBe(401);
+});
+
+test('Function: AccountPreferenceSync — POST /me/locale without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/locale')).status()).toBe(401);
+});
+
+test('Function: bumpLocaleGeneration — POST /me/locale without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/locale')).status()).toBe(401);
+});
+
+test('Function: localeGeneration — POST /me/locale without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/locale')).status()).toBe(401);
+});
+
+test('Function: bumpFiatGeneration — POST /me/fiat without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/fiat')).status()).toBe(401);
+});
+
+test('Function: fiatGeneration — POST /me/fiat without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/fiat')).status()).toBe(401);
+});
+
 test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({
   request,
 }) => {

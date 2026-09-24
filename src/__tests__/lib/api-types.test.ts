@@ -1120,6 +1120,19 @@ describe('accountSchema', () => {
     expect(accountSchema.parse(named)).toEqual(named);
   });
 
+  it('accepts omitted, null, and supported account preferences', () => {
+    expect(accountSchema.parse(account).locale).toBeUndefined();
+    expect(accountSchema.parse(account).fiat).toBeUndefined();
+    expect(accountSchema.parse({ ...account, locale: null, fiat: null })).toMatchObject({
+      locale: null,
+      fiat: null,
+    });
+    expect(accountSchema.parse({ ...account, locale: 'fil', fiat: 'PHP' })).toMatchObject({
+      locale: 'fil',
+      fiat: 'PHP',
+    });
+  });
+
   it('rejects a non-string name', () => {
     expect(() => accountSchema.parse({ ...account, name: 1 })).toThrow();
   });

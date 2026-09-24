@@ -207,15 +207,15 @@
 ## Function: LanguageSwitcher
 
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
-- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, unsigned `/rules`, unsigned `/messages/[id]`, and `/view/[viewKey]`). Reads current locale via `useTranslations`. No `embedded` prop.
-- **Returns / side effects:** Combobox + absolute popover listbox. Endonym option labels (English/Deutsch/Español/Filipino). On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh). Never set on first visit.
+- **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, unsigned `/rules`, unsigned `/messages/[id]`, and `/view/[viewKey]`). Reads current locale via `useTranslations` and an optional session token from storage. No `embedded` prop.
+- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure or a stale generation writes no cookie and does not refresh, while success calls `setAccount` before writing the cookie and refreshing. Without a token it does not bump or POST and writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` plus `; Secure` on HTTPS before `router.refresh()`, as before. Never set on first visit.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, unsigned `/rules`, unsigned `/messages/[id]`, `/view/[viewKey]`.
 
 ## Function: LanguagePreferenceSwitcher
 
 - **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` (default one-row `rounded-full` track, same as ThemeSwitcher) for English / Deutsch / Español / Filipino. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
-- **Inputs:** None. Reads current locale via `useTranslations`. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
-- **Returns / side effects:** Settings row matching `PushToggle` chrome. On a new locale writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` and `; Secure` on HTTPS, then `router.refresh()`. Same-locale click is a no-op (no cookie write, no refresh).
+- **Inputs:** None. Reads current locale via `useTranslations` and an optional session token from storage. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
+- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure or a stale generation writes no cookie and does not refresh, while success calls `setAccount` before writing the cookie and refreshing. Without a token it does not bump or POST and writes the locale cookie, including `Secure` on HTTPS, then refreshes as before.
 - **Used by:** `ProfileScreen`.
 
 ## Function: NumberFormatSwitcher
@@ -277,9 +277,44 @@
 ## Function: FiatPreferenceSwitcher
 
 - **Purpose:** Profile identity-card settings row: uppercase `profile.fiatCurrency` kicker plus `FiatPicker` `shell="app"` `tone="neutral"` (same chrome as ThemeSwitcher / NumberFormatSwitcher / LanguagePreferenceSwitcher; selected is `bg-app-btn`, not orange). The **only** signed-in control that writes the `fiat` cookie. Unsigned chart / stats / day FiatPickers still write that cookie and keep default `tone="gift"`.
-- **Inputs:** None. Uses `useFiatPreference` and `useTranslations`.
-- **Returns / side effects:** Settings section. `onChange` persists via the cookie.
+- **Inputs:** None. Uses `useFiatPreference`, `useTranslations`, and an optional session token from storage.
+- **Returns / side effects:** A same-fiat choice is a no-op. With a session token, a new choice first calls `bumpFiatGeneration()`, then `setAccountFiat(token, next, false)`; failure or a stale generation does not call `setFiat`, while success calls `setAccount` before `setFiat`. Without a token it does not bump or POST and only calls `setFiat`. Unsigned `FiatPicker` instances remain cookie-only.
 - **Used by:** `ProfileScreen`.
+
+## Function: AccountPreferenceSync
+
+- **Purpose:** Reconciles nullable signed-in account locale and fiat preferences with the screen and supported preference cookies once per account id.
+- **Inputs:** Hydrated auth `session` and `account`, screen locale, fiat context, preference generations, and the router.
+- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true`, mirrors stored strings locally, ignores missing keys, and discards stale responses without blocking the other preference.
+- **Used by:** `RootLayout` inside `FiatPreferenceProvider`.
+
+## Function: bumpLocaleGeneration
+
+- **Purpose:** Marks a newer explicit locale choice so older asynchronous locale work cannot overwrite it.
+- **Inputs:** None.
+- **Returns / side effects:** Increments and returns the module-local locale generation counter.
+- **Used by:** Language controls before an authenticated locale POST.
+
+## Function: localeGeneration
+
+- **Purpose:** Reads the current locale generation for stale-response guards.
+- **Inputs:** None.
+- **Returns / side effects:** Returns the module-local counter without changing it.
+- **Used by:** Language controls and `AccountPreferenceSync`.
+
+## Function: bumpFiatGeneration
+
+- **Purpose:** Marks a newer explicit fiat choice so older asynchronous fiat work cannot overwrite it.
+- **Inputs:** None.
+- **Returns / side effects:** Increments and returns the module-local fiat generation counter.
+- **Used by:** `FiatPreferenceSwitcher` before an authenticated fiat POST.
+
+## Function: fiatGeneration
+
+- **Purpose:** Reads the current fiat generation for stale-response guards.
+- **Inputs:** None.
+- **Returns / side effects:** Returns the module-local counter without changing it.
+- **Used by:** `FiatPreferenceSwitcher` and `AccountPreferenceSync`.
 
 ## Function: parseFiatCode
 
@@ -1333,7 +1368,7 @@ Integer percent for a forum goal label. Uncapped (110, 250, …). Uses `Math.flo
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. Nest is Locale → NumberFormat → FiatPreference → Theme.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync` is inside `FiatPreferenceProvider` beside `RememberWalletReturn`. Nest is Locale → NumberFormat → FiatPreference → Theme.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
@@ -3560,9 +3595,37 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Parsed owner `Account`. Throws when the response is not ok or fails `accountSchema`.
 - **Used by:** `AmountEntry`.
 
+## Function: setAccountLocale
+
+- **Purpose:** POSTs an account language preference to same-origin `/me/locale`.
+- **Inputs:** Bearer session token, locale code, and `onlyIfUnset` boolean.
+- **Returns / side effects:** Sends JSON `{ locale, onlyIfUnset }`, returns the parsed owner `Account`, and throws on an invalid or failed response.
+- **Used by:** Language controls and `AccountPreferenceSync`.
+
+## Function: setAccountFiat
+
+- **Purpose:** POSTs an account fiat preference to same-origin `/me/fiat`.
+- **Inputs:** Bearer session token, `CHF|EUR|USD|PHP`, and `onlyIfUnset` boolean.
+- **Returns / side effects:** Sends JSON `{ fiat, onlyIfUnset }`, returns the parsed owner `Account`, and throws on an invalid or failed response.
+- **Used by:** `FiatPreferenceSwitcher` and `AccountPreferenceSync`.
+
 ## Function: proxyMeAmountUnitPost
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/amount-unit` with JSON `{ unit }`.
 - **Inputs:** Incoming `Request` with Bearer session and JSON `{ unit }`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/me/amount-unit`.
+
+## Function: proxyMeLocalePost
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/locale`.
+- **Inputs:** Incoming `Request` with JSON `{ locale, onlyIfUnset }`.
+- **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored locale.
+- **Used by:** Route POST `/me/locale`.
+
+## Function: proxyMeFiatPost
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/fiat`.
+- **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
+- **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
+- **Used by:** Route POST `/me/fiat`.

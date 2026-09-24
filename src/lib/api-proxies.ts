@@ -281,6 +281,26 @@ export function proxyMeAmountUnitPost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/locale to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export function proxyMeLocalePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/locale');
+}
+
+/**
+ * Proxies POST /me/fiat to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export function proxyMeFiatPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/fiat');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
