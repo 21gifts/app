@@ -60,6 +60,24 @@ describe('WalletScreenView', () => {
     expect(screen.queryByRole('button', { name: 'I saved these words' })).toBeNull();
   });
 
+  it('hides the twelve words when Back is pressed and does not leave the page', () => {
+    const hidePhrase = vi.fn();
+    renderWithLocale(
+      <WalletScreenView
+        view="phrase"
+        status="idle"
+        error={null}
+        words={words}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={hidePhrase}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(hidePhrase).toHaveBeenCalledTimes(1);
+  });
+
   it('does not show the grid when phrase view has fewer than twelve words', () => {
     renderWithLocale(
       <WalletScreenView

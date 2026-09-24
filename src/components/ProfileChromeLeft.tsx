@@ -16,6 +16,12 @@ export interface ProfileChromeLeftProps {
    * `/wallet` passes `nav.back` when returning to a non-forum in-app page.
    */
   backLabelKey?: 'profile.back' | 'inbox.back' | 'moderate.heading' | 'nav.back';
+  /**
+   * Plain click handler. Modified clicks still follow `backHref`. Used while
+   * the wallet recovery phrase is on screen, where Back hides the words
+   * instead of leaving the page.
+   */
+  onBackClick?: () => void;
 }
 
 /**
@@ -31,6 +37,7 @@ export interface ProfileChromeLeftProps {
 export function ProfileChromeLeft({
   backHref = '/welcome',
   backLabelKey = 'profile.back',
+  onBackClick,
 }: ProfileChromeLeftProps = {}): ReactElement {
   const { t } = useTranslations();
   return (
@@ -39,6 +46,22 @@ export function ProfileChromeLeft({
         href={backHref}
         aria-label={t(backLabelKey)}
         className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+        onClick={(event) => {
+          if (onBackClick === undefined) {
+            return;
+          }
+          if (
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey ||
+            event.button !== 0
+          ) {
+            return;
+          }
+          event.preventDefault();
+          onBackClick();
+        }}
       >
         <ArrowLeft aria-hidden="true" className="h-5 w-5" />
       </Link>

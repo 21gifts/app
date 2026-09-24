@@ -2,7 +2,9 @@
 
 import type { ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
+import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { Button, Card } from '@/components/ui';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 
@@ -22,6 +24,7 @@ export function WalletScreenView({
   words,
   activate,
   showPhrase,
+  hidePhrase,
   retry,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
@@ -72,6 +75,13 @@ export function WalletScreenView({
         </>
       ) : showGrid ? (
         <>
+          <AppShellTopLeft>
+            <ProfileChromeLeft
+              backHref="/wallet"
+              backLabelKey="nav.back"
+              onBackClick={hidePhrase}
+            />
+          </AppShellTopLeft>
           <ol className="grid grid-cols-2 gap-2">
             {words.map((word, index) => (
               <li

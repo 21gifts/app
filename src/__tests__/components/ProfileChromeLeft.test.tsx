@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -40,5 +40,17 @@ describe('ProfileChromeLeft', () => {
     );
     expect(screen.queryByText('All conversations')).toBeNull();
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
+  });
+
+  it('runs onBackClick for a plain click and still follows the href otherwise', () => {
+    const onBackClick = vi.fn();
+    renderWithLocale(
+      <ProfileChromeLeft backHref="/wallet" backLabelKey="nav.back" onBackClick={onBackClick} />,
+    );
+    const back = screen.getByRole('link', { name: 'Back' });
+    fireEvent.click(back);
+    expect(onBackClick).toHaveBeenCalledTimes(1);
+    fireEvent.click(back, { metaKey: true });
+    expect(onBackClick).toHaveBeenCalledTimes(1);
   });
 });
