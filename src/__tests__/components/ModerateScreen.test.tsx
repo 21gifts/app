@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModerateScreen } from '@/components/ModerateScreen';
 import type { Account, Conversation, ModeratorProposal } from '@/lib/api-types';
@@ -257,6 +257,21 @@ describe('ModerateScreen', () => {
     expect(chart.textContent).not.toContain('9/19');
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
     expect(screen.queryByText(/Someone who receives both that day counts once/)).toBeNull();
+  });
+
+  it('shows zero on today even when the bar is empty', async () => {
+    fetchMock.mockResolvedValue(
+      statsWithDays([{ day: '2026-09-20', giftCount: 4, officialCount: 0 }]),
+    );
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    renderWithLocale(<ModerateScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('0%')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
+    const chart = screen.getByRole('img', { name: 'People by UTC day' });
+    const labels = within(chart).getAllByText('0');
+    expect(labels.some((node) => node.getAttribute('font-size') === '11')).toBe(true);
   });
 
   it('caps the bar at 100 percent when yesterday exceeds the goal', async () => {

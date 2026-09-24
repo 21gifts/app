@@ -456,7 +456,7 @@ function PayoutGoalChart(props: {
                 data-testid="payout-goal-chart-bar"
               />
             ) : null}
-            {row.count >= 30 || (isToday && row.count > 0) ? (
+            {row.count >= 30 || isToday ? (
               <text
                 x={x + barW / 2}
                 y={y - 6}
