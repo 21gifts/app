@@ -54,8 +54,9 @@ export interface NoteTranslateProps {
  * Identity is `source + messageId + text + locale`.
  *
  * @param props - `messageId`, `text`, optional `source` / `tone`,
- *   parent-owned `showingTranslation`, `onTranslated` on success, and
- *   `onToggleShowing` for Show original / Show translation.
+ *   optional `placement` (`block` under the body, or `row` in a parent
+ *   flex footer), parent-owned `showingTranslation`, `onTranslated` on
+ *   success, and `onToggleShowing` for Show original / Show translation.
  * @returns Translation control, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */

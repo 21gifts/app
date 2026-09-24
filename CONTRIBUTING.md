@@ -191,7 +191,7 @@ app/
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
-│   │   ├── NoteTranslate.tsx    # Icon-only public note/reply translation control (Languages, under the body)
+│   │   ├── NoteTranslate.tsx    # Icon-only Translate control (Languages; footer row, else under the body)
 │   │   ├── TranslatableNoteBody.tsx # Exclusive original XOR translated note body
 │   │   ├── LinkedText.tsx       # Autolink http(s) in note bodies; internal Link, external warning
 │   │   ├── ExternalLinkWarning.tsx # Confirm overlay before leaving 21.gifts
