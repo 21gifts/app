@@ -40,6 +40,7 @@ type GoogleMapsNamespace = {
 
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
+  gm_authFailure?: () => void;
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
@@ -101,6 +102,14 @@ export function PlaceField(props: {
         }
         setMapsKey(nextKey);
         const googleWindow = window as GoogleWindow;
+        // Google paints its own dialog into the frame when the key is rejected.
+        googleWindow.gm_authFailure = () => {
+          if (cancelled) {
+            return;
+          }
+          setUnavailable(true);
+          setScriptReady(false);
+        };
         if (googleWindow.google?.maps !== undefined) {
           setUnavailable(false);
           setScriptReady(true);
@@ -169,6 +178,10 @@ export function PlaceField(props: {
     void load();
     return () => {
       cancelled = true;
+      const host = window as GoogleWindow;
+      if (host.gm_authFailure !== undefined) {
+        delete host.gm_authFailure;
+      }
     };
   }, [open]);
 

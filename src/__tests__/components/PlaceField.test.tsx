@@ -12,6 +12,7 @@ afterEach(() => {
     node.remove();
   });
   delete (window as { google?: unknown }).google;
+  delete (window as { gm_authFailure?: unknown }).gm_authFailure;
 });
 
 function jsonResponse(body: unknown): Response {
@@ -363,5 +364,31 @@ describe('PlaceField', () => {
     resolveJson({ key: 'k' });
     await Promise.resolve();
     expect(screen.queryByText('The map is not available.')).toBeNull();
+  });
+
+  it('shows the unavailable copy when Google rejects the key', async () => {
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({ setCenter: vi.fn(), addListener: vi.fn() })),
+        Marker: vi.fn(() => ({
+          addListener: vi.fn(),
+          setPosition: vi.fn(),
+          getPosition: () => null,
+        })),
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
+    const view = renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Place name')).toBeTruthy();
+    const fail = (window as { gm_authFailure?: () => void }).gm_authFailure;
+    expect(fail).toBeTypeOf('function');
+    fail?.();
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    view.unmount();
+    fail?.();
   });
 });

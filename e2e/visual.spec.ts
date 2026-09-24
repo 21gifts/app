@@ -89,6 +89,29 @@ async function installBaselineMap(page: Page, options?: { click?: boolean }): Pr
 }
 
 /**
+ * Key is set and the Maps script has not finished. Release after the shot
+ * so the request does not stay open.
+ */
+async function holdMapScript(page: Page): Promise<() => void> {
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: 'e2e' }),
+    });
+  });
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/maps.googleapis.com/**', async (route) => {
+    await held;
+    await route.abort();
+  });
+  return release;
+}
+
+/**
  * Visual baselines are Linux Chromium (CI and the Playwright Docker image).
  * Behavioral e2e specs still run on macOS; these comparisons do not.
  */
@@ -5400,6 +5423,58 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-messages-id');
   });
 
+  test('state /messages/[id] place label', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Hello from Ada',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+          place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('link', { name: 'Happyland' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-place');
+  });
+
+  test('state /messages/[id] place coordinates', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Hello from Ada',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+          place: { lat: 14.6, lng: 120.98, label: null },
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('link', { name: '14.60000, 120.98000' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-place-coords');
+  });
+
   test('state /messages/[id] goal-110', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await fulfillRateDay(page);
@@ -8767,6 +8842,35 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-place');
   });
 
+  test('welcome place-coords', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-place',
+              name: 'Ada',
+              text: 'Here',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: null },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('link', { name: '14.60000, 120.98000' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-place-coords');
+  });
+
   test('welcome composer-place', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
@@ -8821,6 +8925,52 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('Stall', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-place-set');
+  });
+
+  test('welcome composer-place-pending', async ({ page }) => {
+    const release = await holdMapScript(page);
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    const name = page.getByLabel('Place name');
+    await expect(name).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await name.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-composer-place-pending', false);
+    release();
+  });
+
+  test('welcome composer-place-unlabeled', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.getByLabel('Place name')).toHaveValue('');
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-composer-place-unlabeled', false);
+  });
+
+  test('welcome composer-place-set-coords', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('14.50000, 120.90000', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-place-set-coords');
   });
 
   test('welcome composer-photos', async ({ page }) => {
@@ -9725,6 +9875,35 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-place');
   });
 
+  test('shops place-coords', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-place',
+              name: 'Ada',
+              text: 'Here\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: null },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByRole('link', { name: '14.60000, 120.98000' })).toBeVisible();
+    await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-place-coords');
+  });
+
   test('shops composer-place', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
@@ -9780,6 +9959,52 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Stall', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-shops-composer-place-set');
   });
+
+  test('shops composer-place-pending', async ({ page }) => {
+    const release = await holdMapScript(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    const name = page.getByLabel('Place name');
+    await expect(name).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await name.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-composer-place-pending', false);
+    release();
+  });
+
+  test('shops composer-place-unlabeled', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.getByLabel('Place name')).toHaveValue('');
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-composer-place-unlabeled', false);
+  });
+
+  test('shops composer-place-set-coords', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('14.50000, 120.90000', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-shops-composer-place-set-coords');
+  });
 });
 
 test.describe('map screens', () => {
@@ -9816,8 +10041,7 @@ test.describe('map screens', () => {
     });
   }
 
-  test('map default', async ({ page }) => {
-    await seedAda(page);
+  async function fulfillMapPlaces(page: Page, label: string | null): Promise<void> {
     await page.route('**/forum/messages/places', async (route) => {
       await route.fulfill({
         status: 200,
@@ -9830,50 +10054,111 @@ test.describe('map screens', () => {
               createdAt: '2026-08-28T12:00:00.000Z',
               lat: 14.6,
               lng: 120.98,
-              label: 'Happyland',
+              label,
             },
           ],
         }),
       });
     });
-    await installBaselineMap(page);
+  }
+
+  test('map default', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMapPlaces(page, 'Happyland');
     await page.goto('/map');
     await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
     await shotScreen(page, 'screen-map');
   });
 
   test('map pin', async ({ page }) => {
     await seedAda(page);
-    await page.route('**/forum/messages/places', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          places: [
-            {
-              id: 'm-pin',
-              name: 'Ada',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              lat: 14.6,
-              lng: 120.98,
-              label: 'Happyland',
-            },
-          ],
-        }),
-      });
+    await fulfillMapPlaces(page, 'Happyland');
+    await page.goto('/map?pin=m-pin');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
+      timeout: 20_000,
     });
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await shotScreen(page, 'state-map-pin');
+  });
+
+  test('map with-key', async ({ page }) => {
+    await seedAda(page);
     await installBaselineMap(page);
+    await fulfillMapPlaces(page, 'Happyland');
+    await page.goto('/map');
+    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await shotScreen(page, 'state-map-with-key');
+  });
+
+  test('map pin-with-key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillMapPlaces(page, 'Happyland');
     await page.goto('/map?pin=m-pin');
     await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
       timeout: 20_000,
     });
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await shotScreen(page, 'state-map-pin');
+    await shotScreen(page, 'state-map-pin-with-key');
+  });
+
+  test('map coords unselected', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMapPlaces(page, null);
+    await page.goto('/map');
+    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await shotScreen(page, 'state-map-coords');
+  });
+
+  test('map coords pin', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMapPlaces(page, null);
+    await page.goto('/map?pin=m-pin');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
+      timeout: 20_000,
+    });
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await shotScreen(page, 'state-map-coords-pin');
+  });
+
+  test('map coords with-key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillMapPlaces(page, null);
+    await page.goto('/map');
+    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await shotScreen(page, 'state-map-coords-with-key');
+  });
+
+  test('map coords pin-with-key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillMapPlaces(page, null);
+    await page.goto('/map?pin=m-pin');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
+      timeout: 20_000,
+    });
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await shotScreen(page, 'state-map-coords-pin-with-key');
   });
 
   test('map loading', async ({ page }) => {

@@ -34,6 +34,7 @@ afterEach(() => {
     node.remove();
   });
   delete (window as { google?: unknown }).google;
+  delete (window as { gm_authFailure?: unknown }).gm_authFailure;
   window.history.replaceState(null, '', '/');
 });
 
@@ -184,8 +185,8 @@ describe('PlacesMapScreen', () => {
     expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
   });
 
-  it('treats a null, missing, or non-string key as no map', async () => {
-    for (const body of [null, {}, { key: 1 }]) {
+  it('treats a null, missing, blank, or non-string key as no map', async () => {
+    for (const body of [null, {}, { key: 1 }, { key: '' }, { key: '   ' }]) {
       useAuthStore.setState({ session: 'tok' });
       fetchPlacesMock.mockResolvedValue([ROW]);
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body)));
@@ -215,5 +216,53 @@ describe('PlacesMapScreen', () => {
     await waitFor(() => {
       expect(map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
     });
+  });
+
+  it('does not draw after Google rejects the key before the list arrives', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    let resolvePlaces: (rows: ForumPlaceRow[]) => void = () => undefined;
+    fetchPlacesMock.mockReturnValue(
+      new Promise<ForumPlaceRow[]>((resolve) => {
+        resolvePlaces = resolve;
+      }),
+    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const Marker = vi.fn();
+    (window as { google?: unknown }).google = { maps: { Map: vi.fn(), Marker } };
+    renderWithLocale(<PlacesMapScreen />);
+    await waitFor(() => {
+      expect((window as { gm_authFailure?: () => void }).gm_authFailure).toBeTypeOf('function');
+    });
+    (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+    resolvePlaces([ROW]);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    await Promise.resolve();
+    expect(Marker).not.toHaveBeenCalled();
+    expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
+  });
+
+  it('clears the frame when Google rejects the key after the map is drawn', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW]);
+    const map = { setCenter: vi.fn() };
+    const Marker = vi.fn();
+    (window as { google?: unknown }).google = { maps: { Map: vi.fn(() => map), Marker } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: ' browser-key ' })));
+    const view = renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(Marker).toHaveBeenCalled();
+    });
+    const frame = screen.getByTestId('places-map');
+    const overlay = document.createElement('div');
+    overlay.setAttribute('data-google-error', '1');
+    frame.appendChild(overlay);
+    (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+    expect(frame.querySelector('[data-google-error]')).toBeNull();
+    const calls = Marker.mock.calls.length;
+    window.history.replaceState(null, '', '/map?pin=m-pin');
+    view.rerender(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(Marker.mock.calls.length).toBe(calls);
   });
 });

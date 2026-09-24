@@ -1037,7 +1037,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords.
 
 ### `/wallet`
 
@@ -1111,15 +1111,15 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/map`
 
-Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Map. One list of every note that has a pin (author, label or coordinates, link `/messages/{id}`). The map frame is `data-testid="places-map"`. Without `GOOGLE_MAPS_API_KEY` the frame stays empty and the list remains. Empty `map.empty`. Error `map.error` plus **Try again**.
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Map. One list of every note that has a pin (author, label or coordinates, link `/messages/{id}`). The map frame is `data-testid="places-map"`. Without a key, with a blank key, when the script fails, or when Google rejects the key, the frame stays empty and the list remains. A usable key draws the map in that frame. `?pin=` makes that row semibold. Empty `map.empty`. Error `map.error` plus **Try again**.
 
-Handbook states: default, pin, empty, loading, error.
+Handbook states: default, pin, with-key, pin-with-key, coords, coords-pin, coords-with-key, coords-pin-with-key, empty, loading, error.
 
 ### `/shops`
 
 Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → post composer under the lead. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again.
 
-Handbook states: default, empty, loading, error, place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+Handbook states: default, empty, loading, error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords.
 
 ### `/rules`
 

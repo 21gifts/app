@@ -926,6 +926,12 @@ One unpaid note on **All** with a place. The card shows a MapPin link **Happylan
 
 ![21.gifts welcome place](images/welcome-place.png)
 
+### Variant: place-coords
+
+One unpaid note on **All** whose place has no label. The card shows a MapPin link **14.60000, 120.98000** to `/map?pin=m-place`. The same link is what a member profile and your own profile show on a top-level note.
+
+![21.gifts welcome place coordinates](images/welcome-place-coords.png)
+
 ### Variant: composer-place
 
 **Add a place** is open and the map key is empty, so the panel says **The map is not available.**
@@ -949,6 +955,24 @@ One unpaid note on **All** with a place. The card shows a MapPin link **Happylan
 A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed.
 
 ![21.gifts welcome composer place set](images/welcome-composer-place-set.png)
+
+### Variant: composer-place-pending
+
+**Add a place** is open, the key has arrived, and the map script has not loaded. The place name field is visible. **Use this place** is not, and the frame is still empty. A failed script or a rejected key uses the same **The map is not available.** panel as `composer-place`.
+
+![21.gifts welcome composer place pending](images/welcome-composer-place-pending.png)
+
+### Variant: composer-place-unlabeled
+
+**Add a place** is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible.
+
+![21.gifts welcome composer place unlabeled](images/welcome-composer-place-unlabeled.png)
+
+### Variant: composer-place-set-coords
+
+A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with **Remove place**. The panel is closed.
+
+![21.gifts welcome composer place set coordinates](images/welcome-composer-place-set-coords.png)
 
 ### Variant: composer-photos
 
@@ -1182,6 +1206,12 @@ One shop note with a place. The card shows a MapPin link **Happyland** to `/map?
 
 ![21.gifts shops place](images/shops-place.png)
 
+### Variant: place-coords
+
+One shop note whose place has no label. The card shows a MapPin link **14.60000, 120.98000** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
+
+![21.gifts shops place coordinates](images/shops-place-coords.png)
+
 ### Variant: composer-place
 
 **Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.**
@@ -1206,24 +1236,78 @@ A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove 
 
 ![21.gifts shops composer place set](images/shops-composer-place-set.png)
 
+### Variant: composer-place-pending
+
+**Add a place** is open on an empty shop list, the key has arrived, and the map script has not loaded. The place name field is visible. **Use this place** is not, and the frame is still empty. A failed script or a rejected key uses the same **The map is not available.** panel as `composer-place`.
+
+![21.gifts shops composer place pending](images/shops-composer-place-pending.png)
+
+### Variant: composer-place-unlabeled
+
+**Add a place** is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible. The shop list is still empty.
+
+![21.gifts shops composer place unlabeled](images/shops-composer-place-unlabeled.png)
+
+### Variant: composer-place-set-coords
+
+A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with **Remove place**. The panel is closed. The shop list is still empty.
+
+![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
+
 ## Screen: /map
 
 - **URL:** `/map` — signed-in map of every forum note that has a pin. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Map**. A list of pins (author, label or coordinates) linking to `/messages/{id}`. The map frame stays empty when no Google key is set. Empty copy **No places yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Map**. A list of pins (author, label or coordinates) linking to `/messages/{id}`. The map frame stays empty when no Google key is set, when the key is blank, when the map script fails, or when Google rejects the key. A usable key draws the map in that same frame and does not replace the list. Selecting `?pin=` makes that row semibold. Empty copy **No places yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Open a pin, open Menu including **Map**, back to the forum, try again after an error.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `PlacesMapScreen`.
 
 ### Variant: default
 
-Heading **Map** and one pin **Ada · Happyland**.
+Heading **Map** and one pin **Ada · Happyland**. No Google key is set, so the frame stays empty.
 
 ![21.gifts map](images/map.png)
 
 ### Variant: pin
 
-`/map?pin=m-pin` selects **Ada · Happyland**. The row is semibold.
+`/map?pin=m-pin` selects **Ada · Happyland**. The row is semibold. No Google key is set, so the frame stays empty.
 
 ![21.gifts map pin](images/map-pin.png)
+
+### Variant: with-key
+
+A Google key is set. The frame shows the stable map surface and one pin on **Ada · Happyland**. The row is not selected.
+
+![21.gifts map with key](images/map-with-key.png)
+
+### Variant: pin-with-key
+
+`/map?pin=m-pin` with a Google key. The frame shows the stable map surface and one pin. **Ada · Happyland** is semibold.
+
+![21.gifts map pin with key](images/map-pin-with-key.png)
+
+### Variant: coords
+
+One pin with no label and no Google key. The row reads **Ada · 14.60000, 120.98000**. The frame stays empty.
+
+![21.gifts map coordinates](images/map-coords.png)
+
+### Variant: coords-pin
+
+`/map?pin=m-pin` selects that coordinate row. The frame stays empty.
+
+![21.gifts map coordinates pin](images/map-coords-pin.png)
+
+### Variant: coords-with-key
+
+A Google key is set and the pin has no label. The frame shows the stable map surface and one pin. The row reads **Ada · 14.60000, 120.98000** and is not selected.
+
+![21.gifts map coordinates with key](images/map-coords-with-key.png)
+
+### Variant: coords-pin-with-key
+
+`/map?pin=m-pin` with a Google key and no label. The frame shows the stable map surface and one pin. The coordinate row is semibold.
+
+![21.gifts map coordinates pin with key](images/map-coords-pin-with-key.png)
 
 ### Variant: loading
 
@@ -2655,6 +2739,18 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise ₿-only, no ` · —`), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
+
+### Variant: place
+
+Unsigned permalink of Ada's note **Hello from Ada** with a place. The card shows a MapPin link **Happyland** to `/map?pin=<id>`.
+
+![21.gifts public message place](images/messages-id-place.png)
+
+### Variant: place-coords
+
+Unsigned permalink of the same note with no place label. The MapPin link reads **14.60000, 120.98000**.
+
+![21.gifts public message place coordinates](images/messages-id-place-coords.png)
 
 ### Variant: goal-110
 
