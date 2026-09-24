@@ -53,7 +53,6 @@ import {
   shownFiatForSats,
   type FiatRateDay,
 } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -236,7 +235,7 @@ export function MemberProfileScreen({
   const [stickerOpen, setStickerOpen] = useState(false);
 
   useEffect(() => {
-    setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
+    setShowQr(true);
   }, []);
 
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);

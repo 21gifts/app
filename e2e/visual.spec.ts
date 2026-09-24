@@ -840,7 +840,7 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate');
   });
 
-  test('screen /pl', async ({ page }, testInfo) => {
+  test('screen /pl', async ({ page }) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
@@ -874,11 +874,7 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Create invoice' }).click();
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
-    }
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-pl-invoice');
   });
@@ -939,7 +935,7 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet');
     await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Activate recovery phrase' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
     await shotScreen(page, 'screen-wallet');
   });
 
@@ -961,6 +957,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
         }),
       });
     });
@@ -987,6 +984,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
         }),
       });
     });
@@ -1014,6 +1012,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
         }),
       });
     });
@@ -1044,7 +1043,9 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet?visual=error');
     await expect(
-      page.getByText('The recovery phrase could not be opened. Check this device and try again.'),
+      page.getByText(
+        'The recovery phrase could not be created or opened. Check this device and try again.',
+      ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-wallet-error');
@@ -2228,7 +2229,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-moderator-appointed', false);
   });
 
-  test('screen /profile', async ({ page }, testInfo) => {
+  test('screen /profile', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -2262,22 +2263,13 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('alice@21.gifts')).toBeVisible();
     await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('button', { name: 'Shop sticker' })).toBeVisible();
-    }
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
   });
 
-  test('state /profile sticker-open', async ({ page }, testInfo) => {
+  test('state /profile sticker-open', async ({ page }) => {
     await seedProfilePage(page);
     await openProfile(page);
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
-      await shotScreen(page, 'state-profile-sticker-open');
-      return;
-    }
     await page.getByRole('button', { name: 'Shop sticker' }).click();
     const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
     const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
@@ -4402,14 +4394,8 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-funding-reviewed-open');
   });
 
-  test('state /members sticker-open', async ({ page }, testInfo) => {
+  test('state /members sticker-open', async ({ page }) => {
     await seedShopStickerMember(page);
-    if (isMobileProject(testInfo)) {
-      // iPhone UA: no payment QR, so no Shop sticker button either
-      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
-      await shotScreen(page, 'state-members-sticker-open');
-      return;
-    }
     const dialog = await openShopStickerOverlay(page);
     await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute(
       'aria-pressed',
@@ -4418,17 +4404,12 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-sticker-open', false);
   });
 
-  test('state /members sticker-busy', async ({ page }, testInfo) => {
+  test('state /members sticker-busy', async ({ page }) => {
     await page.addInitScript(() => {
       // the PNG encode never finishes, so Download stays disabled
       HTMLCanvasElement.prototype.toBlob = function toBlob(): void {};
     });
     await seedShopStickerMember(page);
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
-      await shotScreen(page, 'state-members-sticker-busy');
-      return;
-    }
     const dialog = await openShopStickerOverlay(page);
     await dialog.getByRole('button', { name: 'PNG' }).click();
     await dialog.getByRole('button', { name: 'Download' }).click();
@@ -4436,18 +4417,13 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-sticker-busy', false);
   });
 
-  test('state /members sticker-failed', async ({ page }, testInfo) => {
+  test('state /members sticker-failed', async ({ page }) => {
     await page.addInitScript(() => {
       HTMLCanvasElement.prototype.toBlob = function toBlob(callback: BlobCallback): void {
         callback(null);
       };
     });
     await seedShopStickerMember(page);
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
-      await shotScreen(page, 'state-members-sticker-failed');
-      return;
-    }
     const dialog = await openShopStickerOverlay(page);
     await dialog.getByRole('button', { name: 'PNG' }).click();
     await dialog.getByRole('button', { name: 'Download' }).click();
@@ -6508,11 +6484,6 @@ test.describe('welcome forum variants', () => {
   }
 
   async function submitPayAmount(page: Page): Promise<void> {
-    const payNow = page.getByRole('button', { name: 'Pay', exact: true });
-    if ((await payNow.count()) > 0) {
-      await payNow.click();
-      return;
-    }
     await page.getByRole('button', { name: 'Continue' }).click();
   }
 
@@ -8485,7 +8456,7 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-moderation-unread');
   });
 
-  test('welcome pay-amount', async ({ page }, testInfo) => {
+  test('welcome pay-amount', async ({ page }) => {
     await seedAda(page);
     await stubPayInvoice(page);
     await page.route('**/gifts/stats**', async (route) => {
@@ -8538,13 +8509,8 @@ test.describe('welcome forum variants', () => {
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
     await replyCard.getByLabel('Amount').fill('21');
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('button', { name: 'Pay', exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
-    }
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await expect(
@@ -9701,7 +9667,7 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-text-sats');
   });
 
-  test('messages thread-pay-qr', async ({ page }, testInfo) => {
+  test('messages thread-pay-qr', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
@@ -9767,11 +9733,7 @@ test.describe('inbox screens', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    }
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
     await shotScreen(page, 'state-messages-thread-pay-qr');
   });
 

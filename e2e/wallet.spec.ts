@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('wallet page shows Activate for an existing member', async ({ page }) => {
+test('wallet page shows Add recovery phrase for an existing member', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -30,7 +30,7 @@ test('wallet page shows Activate for an existing member', async ({ page }) => {
   });
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Activate recovery phrase' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
 });
 
 test('Function: WalletPage — /wallet renders the wallet heading', async ({ page }) => {
@@ -72,6 +72,14 @@ test('Function: finishPasskeyReplace — finish without a session is 401', async
   expect((await request.post('/auth/passkey/replace/finish')).status()).toBe(401);
 });
 
+test('Function: startPasskeySeed — begin without a session is 401', async ({ request }) => {
+  expect((await request.post('/auth/passkey/seed/begin')).status()).toBe(401);
+});
+
+test('Function: finishPasskeySeed — finish without a session is 401', async ({ request }) => {
+  expect((await request.post('/auth/passkey/seed/finish')).status()).toBe(401);
+});
+
 test('Function: postWalletBackupSeen — backup-seen without a session is 401', async ({
   request,
 }) => {
@@ -88,6 +96,18 @@ test('Function: proxyAuthPasskeyReplaceFinishPost — finish without a session i
   request,
 }) => {
   expect((await request.post('/auth/passkey/replace/finish')).status()).toBe(401);
+});
+
+test('Function: proxyAuthPasskeySeedBeginPost — begin without a session is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/auth/passkey/seed/begin')).status()).toBe(401);
+});
+
+test('Function: proxyAuthPasskeySeedFinishPost — finish without a session is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/auth/passkey/seed/finish')).status()).toBe(401);
 });
 
 test('Function: proxyMeWalletBackupSeenPost — backup-seen without a session is 401', async ({

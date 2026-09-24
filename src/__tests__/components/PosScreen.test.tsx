@@ -164,7 +164,7 @@ describe('PosScreen', () => {
     ).toBeTruthy();
   });
 
-  it('hides the QR on a phone', async () => {
+  it('shows the QR on a phone', async () => {
     const original = navigator.userAgent;
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
@@ -173,7 +173,7 @@ describe('PosScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+    expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: original });
   });
 

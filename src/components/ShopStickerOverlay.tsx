@@ -41,8 +41,8 @@ function saveBlob(blob: Blob, fileName: string): void {
 
 /**
  * Shop-sticker overlay on a member profile: preview of the printable sticker with this member's pay QR, a
- * PDF | PNG | JPG | SVG choice, and a labeled Download. Only mounted where the profile shows its QR (never on a
- * smartphone UA).
+ * PDF | PNG | JPG | SVG choice, and a labeled Download. Mounted wherever the profile shows its QR, including
+ * on a smartphone.
  *
  * @param props - See {@link ShopStickerOverlayProps}.
  * @returns The overlay dialog.

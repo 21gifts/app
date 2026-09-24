@@ -91,7 +91,7 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(
-      screen.getByRole('button', { name: 'Activate recovery phrase' }).querySelector('svg'),
+      screen.getByRole('button', { name: 'Add recovery phrase' }).querySelector('svg'),
     ).not.toBeNull();
   });
 

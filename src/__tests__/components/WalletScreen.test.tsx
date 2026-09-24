@@ -39,7 +39,7 @@ afterEach(() => {
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
 describe('WalletScreenView', () => {
-  it('renders Activate recovery phrase', () => {
+  it('renders Add recovery phrase', () => {
     renderWithLocale(
       <WalletScreenView
         view="activate"
@@ -53,8 +53,8 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Activate recovery phrase' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Activate recovery phrase' }));
+    expect(screen.getByRole('button', { name: 'Add recovery phrase' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add recovery phrase' }));
   });
 
   it('renders Show recovery phrase', () => {
@@ -90,7 +90,7 @@ describe('WalletScreenView', () => {
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Activate recovery phrase' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add recovery phrase' })).toBeNull();
   });
 
   it('renders PRF unsupported copy', () => {
@@ -136,7 +136,7 @@ describe('WalletScreen', () => {
     phraseState.words = [];
     phraseState.error = null;
     renderWithLocale(<WalletScreen />);
-    expect(screen.getByRole('button', { name: 'Activate recovery phrase' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add recovery phrase' })).toBeTruthy();
   });
 
   it('calls retry from Try again', () => {

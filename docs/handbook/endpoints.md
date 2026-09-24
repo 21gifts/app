@@ -81,14 +81,28 @@
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/replace/begin`.
 - **Errors:** Upstream 401/400, or 502 if the api is unreachable.
-- **Used by:** `startPasskeyReplace`.
+- **Used by:** `proxyAuthPasskeyReplaceBeginPost`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /auth/passkey/replace/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/replace/finish`.
 - **Errors:** Upstream 401/400, or 502 if the api is unreachable.
-- **Used by:** `finishPasskeyReplace`.
+- **Used by:** `proxyAuthPasskeyReplaceFinishPost`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /auth/passkey/seed/begin
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/seed/begin`. Bearer session, empty body. Adds a recovery-phrase passkey without replacing the login passkey.
+- **Errors:** Upstream 401, 409 `{ error }` when the account already has a seed, other non-2xx, or 502 if the api is unreachable.
+- **Used by:** `startPasskeySeed`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /auth/passkey/seed/finish
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/seed/finish`. Bearer plus JSON `{ challengeId, credential }`. 200 is the owner account JSON itself, including `passkeyCredentialId` of the new seed passkey. No new token.
+- **Errors:** Upstream 401, 409 `{ error }` when the account already has a seed, 400, or 502 if the api is unreachable.
+- **Used by:** `finishPasskeySeed`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /gifts

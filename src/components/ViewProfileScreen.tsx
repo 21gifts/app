@@ -10,7 +10,6 @@ import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 /**
  * Public read-only identity card matching signed-in profile chrome without
@@ -40,7 +39,7 @@ export function ViewProfileScreen({
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
 
   useEffect(() => {
-    setShowQr(!isSmartphoneUserAgent(navigator.userAgent));
+    setShowQr(true);
   }, []);
 
   useEffect(() => {

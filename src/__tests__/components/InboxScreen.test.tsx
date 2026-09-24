@@ -1314,7 +1314,7 @@ describe('InboxScreen', () => {
     expect(row.querySelector('.tabular-nums')).toBeNull();
   });
 
-  it('opens Wallet of Satoshi from the smartphone pay sheet', () => {
+  it('opens Wallet of Satoshi from the smartphone pay sheet', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
@@ -1343,11 +1343,45 @@ describe('InboxScreen', () => {
         payWaiting={true}
       />,
     );
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationStub.href.toLowerCase()).toContain('lnbc21n1test');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the Android wallet intent from the pay sheet with the QR', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+    renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
+      />,
+    );
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    expect(locationStub.href).toMatch(/^intent:lightning:/);
   });
 
   it('shows the desktop invoice QR', async () => {

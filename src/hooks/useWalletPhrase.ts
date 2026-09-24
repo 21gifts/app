@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { finishPasskeyReplace, postWalletBackupSeen, startPasskeyReplace } from '@/lib/api';
+import { fetchMe, finishPasskeySeed, startPasskeySeed } from '@/lib/api';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
@@ -14,7 +14,7 @@ import {
   creationOptionsFromJSON,
   credentialToJSON,
 } from '@/lib/webauthn-browser';
-import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
@@ -62,16 +62,9 @@ function abandonStaleSession(
   token: string,
   setError: (value: WalletPhraseErrorKind | null) => void,
   setStatus: (value: WalletPhraseStatus) => void,
-  ownedMnemonic?: string | null,
 ): boolean {
   if (isCurrentSession(token)) {
     return false;
-  }
-  // Logout/login already dropped the previous tab phrase. Clear only when
-  // this ceremony still owns the RAM words so a newer session's mnemonic
-  // survives.
-  if (ownedMnemonic && peekSessionPhrase() === ownedMnemonic) {
-    clearSessionPhrase();
   }
   setError(null);
   setStatus('idle');
@@ -93,6 +86,10 @@ function visualMnemonicOverride(): string | null {
   return null;
 }
 
+function hasSeedPasskey(credentialId: string | null | undefined): boolean {
+  return typeof credentialId === 'string' && credentialId !== '';
+}
+
 async function mergePrfExtension(
   options: PublicKeyCredentialCreationOptions,
 ): Promise<PublicKeyCredentialCreationOptions> {
@@ -107,8 +104,8 @@ async function mergePrfExtension(
 }
 
 /**
- * Owns recovery-phrase show / activate state for the signed-in `/wallet`
- * screen. Derives the 12 words from WebAuthn PRF in memory only.
+ * Owns recovery-phrase add / show state for the signed-in `/wallet`
+ * screen. Derives the 12 words from WebAuthn PRF in component state only.
  *
  * @returns View, status, words, and actions.
  */
@@ -130,16 +127,16 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     }
     return null;
   });
-  const [mnemonic, setMnemonic] = useState<string | null>(
-    () => visualMnemonicOverride() ?? peekSessionPhrase(),
-  );
+  const [mnemonic, setMnemonic] = useState<string | null>(() => visualMnemonicOverride());
 
   useEffect(() => {
     const sync = (): void => {
-      setMnemonic(visualMnemonicOverride() ?? peekSessionPhrase());
+      const visual = visualMnemonicOverride();
+      if (visual) {
+        setMnemonic(visual);
+      }
     };
     window.addEventListener('21gifts:wallet-phrase', sync);
-    sync();
     return () => {
       window.removeEventListener('21gifts:wallet-phrase', sync);
     };
@@ -156,11 +153,11 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     if (showingWords) {
       return 'phrase';
     }
-    if (account?.walletRequired !== true && (account?.walletBackupSeenAt ?? null) === null) {
-      return 'activate';
+    if (hasSeedPasskey(account?.passkeyCredentialId)) {
+      return 'reveal';
     }
-    return 'reveal';
-  }, [account?.walletBackupSeenAt, account?.walletRequired, showingWords]);
+    return 'activate';
+  }, [account?.passkeyCredentialId, showingWords]);
 
   const fail = useCallback((err: unknown) => {
     const kind = classifyWebAuthnError(err);
@@ -188,9 +185,8 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     ceremonyInFlight = true;
     setStatus('busy');
     setError(null);
-    let storedMnemonic: string | undefined;
     try {
-      const begin = await startPasskeyReplace(token);
+      const begin = await startPasskeySeed(token);
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
@@ -214,11 +210,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         setStatus('error');
         return;
       }
-      const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
-      if (abandonStaleSession(token, setError, setStatus)) {
-        return;
-      }
-      let nextAccount = await finishPasskeyReplace(
+      const nextAccount = await finishPasskeySeed(
         token,
         begin.challengeId,
         credentialToJSON(credential),
@@ -226,36 +218,41 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      nextAccount = {
-        ...nextAccount,
-        passkeyCredentialId: credential.id,
-      };
+      let nextMnemonic: string;
+      try {
+        nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+      } catch (deriveErr) {
+        if (useAuthStore.getState().session === token) {
+          setAccount(nextAccount);
+        }
+        throw deriveErr;
+      }
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
       setAccount(nextAccount);
-      rememberSessionPhrase(nextMnemonic);
-      storedMnemonic = nextMnemonic;
       setMnemonic(nextMnemonic);
-      if (nextAccount.walletRequired !== true) {
-        try {
-          nextAccount = await postWalletBackupSeen(token);
-          if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
-            return;
-          }
-          setAccount({
-            ...nextAccount,
-            passkeyCredentialId: credential.id,
-          });
-        } catch (err) {
-          if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
-            return;
-          }
-          fail(err);
+      setStatus('idle');
+    } catch (err) {
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
+      try {
+        const latest = await fetchMe(token);
+        if (
+          useAuthStore.getState().session === token &&
+          latest !== null &&
+          hasSeedPasskey(latest.passkeyCredentialId)
+        ) {
+          setAccount(latest);
+          setError(null);
           setStatus('idle');
           return;
         }
+      } catch {
+        // The original failure still stands when the account cannot be reloaded.
       }
-      setStatus('idle');
-    } catch (err) {
-      if (abandonStaleSession(token, setError, setStatus, storedMnemonic)) {
+      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       fail(err);
@@ -294,7 +291,6 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      rememberSessionPhrase(nextMnemonic);
       setMnemonic(nextMnemonic);
       setStatus('idle');
     } catch (err) {

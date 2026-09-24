@@ -29,7 +29,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 7. **Primitives, not class soup.** New or migrated surfaces compose catalog parts. _Implication:_ reject raw `rounded-full bg-app-btn px-6 py-3` and raw `bg-neutral-900` outside `src/components/ui/`.
 
-8. **Do not canonize defects.** Goldens document current pixels; this file is the system. _Implication:_ do not reintroduce double ₿, an empty-chart axis, orange **text** on paper, a QR on smartphone UA, or hard-coded Inter/gray SaaS.
+8. **Do not canonize defects.** Goldens document current pixels; this file is the system. _Implication:_ do not reintroduce double ₿, an empty-chart axis, orange **text** on paper, a forum-paysheet QR on smartphone UA, or hard-coded Inter/gray SaaS.
 
 9. **Staff action stacks stay closed.** A stack of labeled moderator or founder actions on a member card is not painted as loose buttons. _Implication:_ one closed disclosure, catalog `staff.functions` ("Moderator functions" / "Moderatorenfunktionen"), the same `details` / `summary` as wallet **Advanced functions** (`wallet.advanced`), not a full-width button. Opening it reveals only the actions that viewer may use on that person. The opened disclosure is its own screenshot state, not only the closed summary. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not add a second disclosure around their own tools. The Menu row **Moderation** stays. The staff inbox origin filter stays. Role pills are identity, not actions.
 
@@ -148,7 +148,7 @@ flowchart TD
   acc -.-> X[Not: app form primary / Post / Pay (pay sheet) / filter / RULE n text / Welcome ticks]
 ```
 
-**QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). No QR on smartphone UA (`isSmartphoneUserAgent`, not viewport).
+**QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. The only omission is the forum-post pay sheet (`isSmartphoneUserAgent`, not viewport): the same invoice card as desktop, without a mounted `QrCode`.
 
 **Contrast (WCAG 2.2 AA)** against current tokens.
 
@@ -428,7 +428,7 @@ flowchart TB
 | Map                  | `Map`                         | `/map`                                                                              |
 | Point of sale        | `Banknote`                    | `/pos`                                                                              |
 | Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
-| Wallet               | `Wallet`                      | `/wallet` — Activate, or Show recovery phrase under Advanced functions              |
+| Wallet               | `Wallet`                      | `/wallet` — Add recovery phrase, or Show recovery phrase under Advanced functions   |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                            |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |
@@ -513,7 +513,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 - Do not put the amount inside the pay control.
 - Do not change `forum.pay` copy.
 
-Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; after mint the line uses the invoice amount). Pay sheet confirm sentence (`forum.payConfirm`) is one `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Amount-step CTA: iOS phone (`isSmartphoneUserAgent` and not `isAndroidUserAgent`) **Pay** (`forum.payNow`; DE **Bezahlen**) mints the invoice and keeps the amount form (no `location.assign`); Android phone (`isSmartphoneUserAgent`) stays **Continue** (`forum.payContinue`) and after mint remains on the amount form with the wallet `Button` (Intent href; no QR, no invoice card); desktop and iPad stay **Continue** (`forum.payContinue`) and after mint show the invoice card with QR. Wallet CTA is a **Pay** `Button` (`variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent) that sets `window.location.href` to the WoS href (not a custom-scheme `<a>` / `ButtonLink`). Smartphone: no QR (`isSmartphoneUserAgent`, not viewport). Desktop: QR + that Button.
+Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; after mint the line uses the invoice amount). Pay sheet confirm sentence (`forum.payConfirm`) is one `formatBitcoin` plus optional `·` `formatFiatDisplay` when the conversion is non-null. Amount-step CTA is **Continue** (`forum.payContinue`) on every user-agent. Continue only requests the invoice. After mint every user-agent sees the invoice card (confirm sentence, wallet `Button` that sets `location.href` to the Android Intent or `walletofsatoshi:`). The card mounts `QrCode` only when the user-agent is not a smartphone (`isSmartphoneUserAgent`, not viewport). Wallet CTA is a **Pay** `Button` (`variant="primary"` `size="md"` `tone="app"`; visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi” — sentence-length, **not** accent) that sets `window.location.href` to the WoS href (not a custom-scheme `<a>` / `ButtonLink`).
 
 **Fiat.** Cookie `fiat` (otherwise locale default). Switchers: Profile settings (`FiatPreferenceSwitcher`) is the only signed-in writer. `FiatPicker` remains on unsigned `AccountActivityChart` (public `/view`), unsigned `/stats`, and unsigned `/stats/[day]` (`useHydrateSession().ready && session === null`). Signed-in chart, member, and stats/day omit it; ₿|{code} scale stays. Forum notes, nested replies, and the pay sheet **display** that code only (no picker). Stats KPI shows ₿ on the first line and the selected fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`). Populated profile chart is ₿ | selected FiatCode.
 
@@ -876,16 +876,13 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Pay sheet
 
-**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `AmountEntry` (`forum.payAmountLabel`): bitcoin entry shows the preferred fiat under the field, fiat entry shows the bitcoin equivalent. A blank field is 21 sats in either unit. After mint the field is locked on the sat amount and the counter stays fiat. Alerts. `Button` primary:
+**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `AmountEntry` (`forum.payAmountLabel`): bitcoin entry shows the preferred fiat under the field, fiat entry shows the bitcoin equivalent. A blank field is 21 sats in either unit. Alerts. `Button` primary:
 
-- iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and keeps this form. It does not `window.location.assign`. After mint the amount field is disabled and the CTA becomes the wallet `Button` that sets `window.location.href` to `walletofsatoshi:` (no QR, no second invoice card).
-- Android phone (`isSmartphoneUserAgent` and `isAndroidUserAgent`): **Continue** (`forum.payContinue`). After mint, same amount form and wallet `Button`; `location.href` is the Android Intent URL.
-- Desktop / iPad (`!isSmartphoneUserAgent`): **Continue** (`forum.payContinue`). Click only requests the invoice, then the invoice card.
+- Every user-agent: **Continue** (`forum.payContinue`). Click only requests the invoice, then the invoice card.
 
-**Invoice step (desktop / iPad only).** Centered column, back, confirm sentence with one `formatBitcoin` and optional `·` plus `formatFiatDisplay` when the conversion is non-null, then:
+**Invoice step.** Centered column, back, confirm sentence with one `formatBitcoin` and optional `·` plus `formatFiatDisplay` when the conversion is non-null, then the invoice card on every user-agent:
 
-- Desktop (`!isSmartphoneUserAgent`): `QrCode` 232px on white plate (`border-app-border`) + **Pay** `Button` `variant="primary"` `size="md"` `tone="app"` with `wos-icon.png` 20×20 (`rounded-md ring-1 ring-white/30`) as `icon` (visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”). Click sets `window.location.href` to the WoS href (not a custom-scheme `<a>`).
-- Smartphone: stays on the amount form. Wallet `Button` only (`walletofsatoshi:` / Android intent). **No QR.** Detection is UA, not viewport.
+- Confirm sentence, then **Pay** `Button` `variant="primary"` `size="md"` `tone="app"` with `wos-icon.png` 20×20 (`rounded-md ring-1 ring-white/30`) as `icon` (visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”). Click sets `window.location.href` to the Android Intent URL or `walletofsatoshi:` (not a custom-scheme `<a>`). `QrCode` 232px on white plate (`border-app-border`) is mounted only when the user-agent is not a smartphone (`isSmartphoneUserAgent`, not viewport).
 
 Waiting: `text-xs text-app-muted`. Author-wallet error: `role="alert"` `text-app-danger`.
 
@@ -955,7 +952,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Member identity card
 
-**Anatomy.** Identity page column `Card` `max-w-sm` `surface={false}` (no nested `rounded-3xl`; the AppShell frame is the page panel): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) sit inside the closed **Moderator functions** disclosure, not always visible, when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR. Under the QR a labeled `Button size="sm" variant="secondary"` **Shop sticker** (`profile.shopSticker`) opens `ShopStickerOverlay`; it is never mounted on a smartphone UA.
+**Anatomy.** Identity page column `Card` `max-w-sm` `surface={false}` (no nested `rounded-3xl`; the AppShell frame is the page panel): **h1** `profile.title` at the **h1** ramp, then chart, About me (not a forum post; copy-profile-link lives inside `AboutMeSection`), optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts` (`profile.giftsHeading`; Wallet of Satoshi stays on owner `/profile`), optional role pill. Activity **Posts** / **Reactions** are labeled `Button size="sm"` toggles (`type="button"` `aria-pressed`; pressed = `variant="primary"`, otherwise `variant="secondary"`). They are not the 2-col forum `SegmentedControl` (that requires always-one-selected). Labeled staff Trust Chain actions (`MemberTrustActions`: Verify / Propose / Confirm / Appoint) sit inside the closed **Moderator functions** disclosure, not always visible, when the viewer is staff and the subject is someone else. Failed staff writes use `role="alert"` + `text-app-danger`. On-demand post/reply `ForumBoard` feeds below the card. No edit. `RequirementsOverlay` without Skip when a reply is missing a requirement. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under the QR a labeled `Button size="sm" variant="secondary"` **Shop sticker** (`profile.shopSticker`) opens `ShopStickerOverlay`, including on a smartphone.
 
 ## Screen recipes
 
@@ -1042,13 +1039,13 @@ Handbook states: place, composer-place, composer-place-map, composer-place-confi
 
 ### `/wallet`
 
-Fill `AppShell` (page frame); `topLeft={<WalletChromeLeft />}` (same arrow geometry as `ProfileChromeLeft`) `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. An account that cannot show a phrase yet: labeled **Activate recovery phrase**. After Activate, and for an account that already can: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Activate beside it).
+Fill `AppShell` (page frame); `topLeft={<WalletChromeLeft />}` (same arrow geometry as `ProfileChromeLeft`) `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"` → `Card` `surface={false}` → **h1** Wallet. Missing or empty `passkeyCredentialId`: labeled **Add recovery phrase** and a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** inside **Advanced functions**. Pressing it shows the 12-word grid and the only-backup line (no Continue). Error: `role="alert"` `text-app-danger` reason + muted hint + labeled **Try again** (no Add button beside it).
 
-Handbook states: default (activate), phrase, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
+Handbook states: default (Add recovery phrase), phrase, reveal (closed Advanced functions), reveal-open (Show recovery phrase), error, timeout, prf-unsupported.
 
 ### `/pos`
 
-Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate screen="profile"`. `Card` `surface={false}`: **h1** `pos.title`, the public `username@21.gifts` row, and on desktop and iPad the same Open CryptoPay QR as the member card (`profileQrLogo` centered). Amount field and **Create payment** when nothing is open. While a charge is open: remaining `m:ss`, the amount in ₿, **Cancel**. History lists recent rows as open, cancelled, or expired. There is no paid state. Missing username or Wallet of Satoshi address links to `/profile`.
+Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate screen="profile"`. `Card` `surface={false}`: **h1** `pos.title`, the public `username@21.gifts` row, and the same Open CryptoPay QR as the member card (`profileQrLogo` centered), including on a smartphone. Amount field and **Create payment** when nothing is open. While a charge is open: remaining `m:ss`, the amount in ₿, **Cancel**. History lists recent rows as open, cancelled, or expired. There is no paid state. Missing username or Wallet of Satoshi address links to `/profile`.
 
 ### `/profile`
 
@@ -1062,7 +1059,7 @@ Handbook states: default, photo, location, principle-1, principle-2, principle-3
 
 ### `/members/[accountId]`
 
-Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity `Card` `surface={false}` (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, optional grant-reviewed tag when `fundingReviewedAt` is a number, activity **Posts** / **Reactions** as labeled `Button sm` toggles, staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` behind the closed **Moderator functions** disclosure when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement. When a username is set and the browser is not a smartphone (`isSmartphoneUserAgent`), a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`). Smartphones and a missing username show no QR. Under the QR a labeled `Button size="sm" variant="secondary"` **Shop sticker** opens `ShopStickerOverlay`; it is never mounted on a smartphone UA (the preview is a payment QR).
+Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `MemberProfileLoader` → identity `Card` `surface={false}` (**h1** `profile.title`, chart, About me inside the card — not a forum post; copy-profile-link inside About me — optional Message, name, location (read-only; `location.unset` when empty), public `username@21.gifts`, optional role pill, optional grant-reviewed tag when `fundingReviewedAt` is a number, activity **Posts** / **Reactions** as labeled `Button sm` toggles, staff Verify / Propose / Confirm / Appoint via `MemberTrustActions` behind the closed **Moderator functions** disclosure when the viewer is staff and the subject is someone else) + on-demand post/reply feeds. Own profiles use this route too (forum author names navigate here, not `/profile`). No edit. Back is icon-only like profile. Feed posts/replies keep **Translate** via `NoteTranslate`. `RequirementsOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, no Skip) when a reply is missing a requirement. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under the QR a labeled `Button size="sm" variant="secondary"` **Shop sticker** opens `ShopStickerOverlay`, including on a smartphone (the preview is a payment QR).
 Handbook states: default (About me when set), `note-null`, missing (`view.missing`), error + labeled **Try again**, own, `overlay-address` (posts feed open, listed note expanded, Amount filled, Post → `RequirementsOverlay` **Add your Wallet of Satoshi address**, no Skip), `staff-verify`, `staff-verify-open`, `funding-reviewed`, `funding-reviewed-open`, `sticker-open`, `sticker-busy`, `sticker-failed`, `translate*` (German post in the posts feed). Overlay-address is reachable from a posts-feed reply; About me is not a replyable forum note.
 
 ### `/notifications`
@@ -1136,7 +1133,7 @@ App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitc
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` (page frame); `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). When a username is set and the browser is not a smartphone, a centered Open CryptoPay QR (`profile.giftsQr`, center mark `profileQrLogo`) sits under the address. Below: `ViewProfileClaim`.
+Fill `AppShell` (page frame); `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). When a username is set, a centered Open CryptoPay QR (`profile.giftsQr`, center mark `profileQrLogo`) sits under the address, including on a smartphone. A missing username shows no QR. Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.
@@ -1178,7 +1175,7 @@ WCAG 2.2 AA.
 - **Focus order:** unsigned chrome is Wordmark then switchers. Signed-in `ProfileChromeLeft` is back **then** wordmark, then main title → fields → primary action → Menu. Menu open: focus stays on trigger; Escape closes.
 - **`aria-label`:** required on every `IconButton`; catalog key, all four locales. Decorative glyphs `aria-hidden`.
 - **Color not the only encoding:** profile Given/Received have text labels; forum payable replies are a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off text plus selected fill, not fill-vs-outline bell.
-- **QR:** `role="img"` + catalog label (`QrCode`). Not mounted on smartphone UA.
+- **QR:** `role="img"` + catalog label (`QrCode`). QR plates stay white. The only smartphone omission is the forum pay-sheet QR (`isSmartphoneUserAgent`, not viewport).
 - **Expandable notes:** `aria-expanded`. Keyboard Enter/Space.
 - **Language listbox:** combobox/listbox.
 
@@ -1202,7 +1199,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. The only outlined copy is the shop sign inside the printed shop-sticker artwork. Signed-in links to `/welcome` except `/setup/*` (span); marketing, login, donate, and view follow it via `HomeWordmark`.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only with no ` · —`, a missing field uses the latest gift-day rate). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
-7. **QR plates stay white** in both themes, `border-app-border`. No QR on smartphone UA.
+7. **QR plates stay white** in both themes, `border-app-border`. The only smartphone omission is the forum pay-sheet QR (`isSmartphoneUserAgent`, not viewport).
 8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.

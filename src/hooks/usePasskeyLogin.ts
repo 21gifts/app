@@ -10,8 +10,8 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
-import { mnemonicFromPrfFirst, obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
+import { clearSessionPhrase } from '@/lib/tab-phrase';
+import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -180,18 +180,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       if (prfFirst === null) {
         throw new Error('wallet.prfUnsupported');
       }
-      const mnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
-      guard(runId);
       const session = await finishPasskeyRegistration(
         begin.challengeId,
         credentialToJSON(publicKeyCredential),
       );
       guard(runId);
-      rememberSessionPhrase(mnemonic);
-      setAuth(session.token, {
-        ...session.account,
-        passkeyCredentialId: session.account.passkeyCredentialId ?? publicKeyCredential.id,
-      });
+      setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');
