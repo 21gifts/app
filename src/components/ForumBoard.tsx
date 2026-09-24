@@ -95,14 +95,19 @@ export type ForumReplyFormError = ForumFormError | 'amount';
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | null;
 
 /** Roles that show a clickable tag beside the author name. */
-type ForumTaggedRole = 'founder' | 'moderator' | 'verified';
+type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
 
 /** Catalog keys for a tagged role's label and explanation. */
 const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> = {
   founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
   moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
+
+function isForumTaggedRole(role: string): role is ForumTaggedRole {
+  return role in ROLE_TAG_KEYS;
+}
 
 /**
  * Role that shows a forum tag, or `null` for basis / missing.
@@ -110,11 +115,8 @@ const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageK
  * @param role - Live account role from the api, if present.
  * @returns Tagged role or `null`.
  */
-function forumTaggedRole(role: string | undefined): ForumTaggedRole | null {
-  if (role === 'founder' || role === 'moderator' || role === 'verified') {
-    return role;
-  }
-  return null;
+function forumTaggedRole(role: string): ForumTaggedRole | null {
+  return isForumTaggedRole(role) ? role : null;
 }
 
 const COPY_RESET_MS = 1200;

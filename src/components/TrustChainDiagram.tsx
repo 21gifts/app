@@ -25,13 +25,13 @@ type NodePos = { x: number; y: number };
  * @returns The matching `forum.role.*` message key.
  */
 function roleMessageKey(role: TrustChainNode['role']): MessageKey {
-  if (role === 'founder') {
-    return 'forum.role.founder';
-  }
-  if (role === 'moderator') {
-    return 'forum.role.moderator';
-  }
-  return 'forum.role.verified';
+  const keys: Record<TrustChainNode['role'], MessageKey> = {
+    founder: 'forum.role.founder',
+    moderator: 'forum.role.moderator',
+    initiator: 'forum.role.initiator',
+    verified: 'forum.role.verified',
+  };
+  return keys[role];
 }
 
 /**

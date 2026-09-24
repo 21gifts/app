@@ -205,6 +205,22 @@ describe('TrustChainDiagram', () => {
     expect(screen.getByRole('group', { name: 'Trust Chain diagram' })).toBeTruthy();
   });
 
+  it('shows the Initiator label for an initiator node', () => {
+    renderWithLocale(
+      <TrustChainDiagram
+        chain={{
+          nodes: [
+            { id: 'f', name: 'Cyrill', role: 'founder' },
+            { id: 'i', name: 'Ivy', role: 'initiator' },
+          ],
+          edges: [{ from: 'f', to: 'i', kind: 'moderator_appoint' }],
+        }}
+      />,
+    );
+    expect(screen.getByText('Initiator')).toBeTruthy();
+    expect(screen.queryByText('Verified')).toBeNull();
+  });
+
   it('renders a zero-length self-edge without throwing', () => {
     const hypot = vi.spyOn(Math, 'hypot').mockReturnValue(0);
     try {
