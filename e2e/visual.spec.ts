@@ -794,6 +794,38 @@ async function fulfillTranslatePost(page: Page, outcome: 'ok' | 'fail' | 'hang')
   });
 }
 
+/** Intercept POST /conversations/:id/messages/:messageId/translate; other methods continue. */
+async function fulfillConversationTranslatePost(
+  page: Page,
+  outcome: 'ok' | 'fail' | 'hang',
+): Promise<void> {
+  await page.route(/\/conversations\/[^/]+\/messages\/[^/]+\/translate$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    if (outcome === 'hang') {
+      return;
+    }
+    if (outcome === 'fail') {
+      await route.fulfill({
+        status: 502,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Translate upstream failed' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        translatedText: 'Can anyone lend me a few satoshi this week?',
+        cached: false,
+      }),
+    });
+  });
+}
+
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
     await page.goto('/');
@@ -4913,6 +4945,345 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-translate-error');
   });
 
+  test('state /members about-translate', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: GERMAN_NOTE_TEXT,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-about-translate');
+  });
+
+  test('state /members about-translate-loading', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: GERMAN_NOTE_TEXT,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-about-translate-loading');
+  });
+
+  test('state /members about-translate-done', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: GERMAN_NOTE_TEXT,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-about-translate-done');
+  });
+
+  test('state /members about-translate-hidden', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: GERMAN_NOTE_TEXT,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-about-translate-hidden');
+  });
+
+  test('state /members about-translate-error', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: GERMAN_NOTE_TEXT,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-about-translate-error');
+  });
+
   test('screen /messages/[id] default', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await fulfillPublicThreadReplies(page, id);
@@ -5557,6 +5928,181 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-view-about-photo');
   });
 
+  test('state /view/[viewKey] translate', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: GERMAN_NOTE_TEXT,
+          aboutMessageId: 'm-de',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-view-about-translate');
+  });
+
+  test('state /view/[viewKey] translate-loading', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: GERMAN_NOTE_TEXT,
+          aboutMessageId: 'm-de',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-view-about-translate-loading');
+  });
+
+  test('state /view/[viewKey] translate-done', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: GERMAN_NOTE_TEXT,
+          aboutMessageId: 'm-de',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-view-about-translate-done');
+  });
+
+  test('state /view/[viewKey] translate-hidden', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: GERMAN_NOTE_TEXT,
+          aboutMessageId: 'm-de',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-view-about-translate-hidden');
+  });
+
+  test('state /view/[viewKey] translate-error', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: GERMAN_NOTE_TEXT,
+          aboutMessageId: 'm-de',
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-view-about-translate-error');
+  });
+
   test('screen /view/[viewKey] missing', async ({ page }) => {
     const missing = 'b'.repeat(64);
     await page.route(new RegExp(`/view-key/${missing}$`), async (route) => {
@@ -5805,7 +6351,7 @@ const GIVEN_RECEIVED_ACTIVITY = {
 test.describe('profile activity chart variants', () => {
   async function seedAdaProfile(
     page: Page,
-    extras?: { aboutMe?: string | null; aboutMeHasPhoto?: boolean },
+    extras?: { aboutMe?: string | null; aboutMeHasPhoto?: boolean; aboutMessageId?: string },
   ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -5824,6 +6370,7 @@ test.describe('profile activity chart variants', () => {
           viewKey: 'a'.repeat(64),
           aboutMe: extras?.aboutMe ?? null,
           aboutMeHasPhoto: extras?.aboutMeHasPhoto ?? false,
+          aboutMessageId: extras?.aboutMessageId,
           setup: null,
           missing: [],
         }),
@@ -5899,6 +6446,71 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Tell others who you are.')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
     await shotScreen(page, 'state-profile-about-filled');
+  });
+
+  test('state /profile translate', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: GERMAN_NOTE_TEXT, aboutMessageId: 'm-de' });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-about-translate');
+  });
+
+  test('state /profile translate-loading', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: GERMAN_NOTE_TEXT, aboutMessageId: 'm-de' });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await fulfillTranslatePost(page, 'hang');
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-about-translate-loading');
+  });
+
+  test('state /profile translate-done', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: GERMAN_NOTE_TEXT, aboutMessageId: 'm-de' });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await fulfillTranslatePost(page, 'ok');
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-about-translate-done');
+  });
+
+  test('state /profile translate-hidden', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: GERMAN_NOTE_TEXT, aboutMessageId: 'm-de' });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await fulfillTranslatePost(page, 'ok');
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-about-translate-hidden');
+  });
+
+  test('state /profile translate-error', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: GERMAN_NOTE_TEXT, aboutMessageId: 'm-de' });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await fulfillTranslatePost(page, 'fail');
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-about-translate-error');
   });
 
   test('profile about-photo', async ({ page }) => {
@@ -6436,6 +7048,91 @@ test.describe('profile apply screens', () => {
     await page.getByRole('button', { name: 'Requirement not met' }).click();
     await expect(page.getByText('When your posts match, you can apply again.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-unmet');
+  });
+
+  test('state /profile/apply translate', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
+    await page.goto('/profile/apply');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-apply-translate');
+  });
+
+  test('state /profile/apply translate-loading', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-apply-translate-loading');
+  });
+
+  test('state /profile/apply translate-done', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-apply-translate-done');
+  });
+
+  test('state /profile/apply translate-hidden', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-apply-translate-hidden');
+  });
+
+  test('state /profile/apply translate-error', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto('/profile/apply');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-apply-translate-error');
   });
 });
 
@@ -9574,6 +10271,171 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-error');
   });
 
+  test('state /messages translate', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-translate');
+  });
+
+  test('state /messages translate-loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'hang');
+    await page.goto('/messages');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-translate-loading');
+  });
+
+  test('state /messages translate-done', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'ok');
+    await page.goto('/messages');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-translate-done');
+  });
+
+  test('state /messages translate-hidden', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'ok');
+    await page.goto('/messages');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-translate-hidden');
+  });
+
+  test('state /messages translate-error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'fail');
+    await page.goto('/messages');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-translate-error');
+  });
+
   test('messages thread', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -9625,6 +10487,251 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await expect(page.getByText('You')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
+  });
+
+  test('state /messages thread-translate', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'cm-de',
+              name: '21.gifts',
+              text: GERMAN_NOTE_TEXT,
+              fromMe: false,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-translate');
+  });
+
+  test('state /messages thread-translate-loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'cm-de',
+              name: '21.gifts',
+              text: GERMAN_NOTE_TEXT,
+              fromMe: false,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'hang');
+    await page.goto('/messages?c=conv-21');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-translate-loading');
+  });
+
+  test('state /messages thread-translate-done', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'cm-de',
+              name: '21.gifts',
+              text: GERMAN_NOTE_TEXT,
+              fromMe: false,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'ok');
+    await page.goto('/messages?c=conv-21');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-translate-done');
+  });
+
+  test('state /messages thread-translate-hidden', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'cm-de',
+              name: '21.gifts',
+              text: GERMAN_NOTE_TEXT,
+              fromMe: false,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'ok');
+    await page.goto('/messages?c=conv-21');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-translate-hidden');
+  });
+
+  test('state /messages thread-translate-error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hi',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'cm-de',
+              name: '21.gifts',
+              text: GERMAN_NOTE_TEXT,
+              fromMe: false,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillConversationTranslatePost(page, 'fail');
+    await page.goto('/messages?c=conv-21');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-translate-error');
   });
 
   test('messages sent-sats', async ({ page }) => {
@@ -10232,6 +11339,171 @@ test.describe('notifications screens', () => {
     await shotScreen(page, 'state-notifications-error');
   });
 
+  test('state /notifications translate', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n1',
+              type: 'forum_reply',
+              parentId: 'parent-1',
+              replyId: 'reply-1',
+              name: 'Bob',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await page.goto('/notifications');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-notifications-translate');
+  });
+
+  test('state /notifications translate-loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n1',
+              type: 'forum_reply',
+              parentId: 'parent-1',
+              replyId: 'reply-1',
+              name: 'Bob',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/notifications');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-notifications-translate-loading');
+  });
+
+  test('state /notifications translate-done', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n1',
+              type: 'forum_reply',
+              parentId: 'parent-1',
+              replyId: 'reply-1',
+              name: 'Bob',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/notifications');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-notifications-translate-done');
+  });
+
+  test('state /notifications translate-hidden', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n1',
+              type: 'forum_reply',
+              parentId: 'parent-1',
+              replyId: 'reply-1',
+              name: 'Bob',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/notifications');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-notifications-translate-hidden');
+  });
+
+  test('state /notifications translate-error', async ({ page }) => {
+    await seedAda(page);
+    await page.route('**/forum/notifications', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notifications: [
+            {
+              id: 'n1',
+              type: 'forum_reply',
+              parentId: 'parent-1',
+              replyId: 'reply-1',
+              name: 'Bob',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              readAt: null,
+            },
+          ],
+          unreadCount: 1,
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto('/notifications');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-notifications-translate-error');
+  });
+
   test('notifications moderator-proposal', async ({ page }) => {
     await seedAda(page);
     await page.route('**/forum/notifications', async (route) => {
@@ -10601,6 +11873,101 @@ test.describe('moderate hidden screens', () => {
     await page.goto('/moderate/hidden');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-moderate-hidden-error');
+  });
+
+  test('state /moderate/hidden translate', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [{ ...HIDDEN, text: GERMAN_NOTE_TEXT }] }),
+      });
+    });
+    await page.goto('/moderate/hidden');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-hidden-translate');
+  });
+
+  test('state /moderate/hidden translate-loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [{ ...HIDDEN, text: GERMAN_NOTE_TEXT }] }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/moderate/hidden');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-hidden-translate-loading');
+  });
+
+  test('state /moderate/hidden translate-done', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [{ ...HIDDEN, text: GERMAN_NOTE_TEXT }] }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/moderate/hidden');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-hidden-translate-done');
+  });
+
+  test('state /moderate/hidden translate-hidden', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [{ ...HIDDEN, text: GERMAN_NOTE_TEXT }] }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/moderate/hidden');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-hidden-translate-hidden');
+  });
+
+  test('state /moderate/hidden translate-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/forum/messages/hidden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [{ ...HIDDEN, text: GERMAN_NOTE_TEXT }] }),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto('/moderate/hidden');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-hidden-translate-error');
   });
 });
 
@@ -11099,6 +12466,116 @@ test.describe('moderate applications screens', () => {
     await page.getByRole('button', { name: 'Requirement not met' }).click();
     await expect(page.getByRole('button', { name: 'Requirement not met' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-applications-accountId-deciding');
+  });
+
+  test('state /moderate/applications/[accountId] translate', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          messages: [{ ...DETAIL.messages[0], text: GERMAN_NOTE_TEXT }],
+        }),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-applications-id-translate');
+  });
+
+  test('state /moderate/applications/[accountId] translate-loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          messages: [{ ...DETAIL.messages[0], text: GERMAN_NOTE_TEXT }],
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-applications-id-translate-loading');
+  });
+
+  test('state /moderate/applications/[accountId] translate-done', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          messages: [{ ...DETAIL.messages[0], text: GERMAN_NOTE_TEXT }],
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-applications-id-translate-done');
+  });
+
+  test('state /moderate/applications/[accountId] translate-hidden', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          messages: [{ ...DETAIL.messages[0], text: GERMAN_NOTE_TEXT }],
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'ok');
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-applications-id-translate-hidden');
+  });
+
+  test('state /moderate/applications/[accountId] translate-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...DETAIL,
+          messages: [{ ...DETAIL.messages[0], text: GERMAN_NOTE_TEXT }],
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'fail');
+    await page.goto('/moderate/applications/acc_rose');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-applications-id-translate-error');
   });
 });
 

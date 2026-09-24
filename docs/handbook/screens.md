@@ -1435,6 +1435,36 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ![21.gifts member translate error](images/members-translate-error.png)
 
+### Variant: about-translate
+
+Signed-in `/members/:id` with a German About me. **Translate** is visible under the About me body.
+
+![21.gifts member about translate](images/members-about-translate.png)
+
+### Variant: about-translate-loading
+
+Same German About me after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts member about translate loading](images/members-about-translate-loading.png)
+
+### Variant: about-translate-done
+
+Same German About me after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts member about translate done](images/members-about-translate-done.png)
+
+### Variant: about-translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts member about translate hidden](images/members-about-translate-hidden.png)
+
+### Variant: about-translate-error
+
+Same German About me after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts member about translate error](images/members-about-translate-error.png)
+
 ### Variant: staff-verify
 
 Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, the same `details` / `summary` as wallet **Advanced functions** (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
@@ -1629,6 +1659,36 @@ Owner card with a real bio not equal to the display name. Seed GET /me with `nam
 
 ![21.gifts profile About me filled](images/profile-about-filled.png)
 
+### Variant: translate
+
+Signed-in `/profile` with a German About me and a non-empty `aboutMessageId`. **Translate** is visible under the About me body.
+
+![21.gifts profile about translate](images/profile-about-translate.png)
+
+### Variant: translate-loading
+
+Same German About me after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts profile about translate loading](images/profile-about-translate-loading.png)
+
+### Variant: translate-done
+
+Same German About me after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts profile about translate done](images/profile-about-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts profile about translate hidden](images/profile-about-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German About me after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts profile about translate error](images/profile-about-translate-error.png)
+
 ### Variant: about-photo
 
 Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA.
@@ -1725,6 +1785,36 @@ About me and photo set, location empty. Copy **Next, add the place you live.**
 Profile complete. Copy **Please check whether the posts match principle 1.**
 
 ![21.gifts apply principle 1](images/profile-apply-principle-1.png)
+
+### Variant: translate
+
+Signed-in `/profile/apply` on principle 1 with a German living-room post. **Translate** is visible under the post body.
+
+![21.gifts apply translate](images/profile-apply-translate.png)
+
+### Variant: translate-loading
+
+Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts apply translate loading](images/profile-apply-translate-loading.png)
+
+### Variant: translate-done
+
+Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts apply translate done](images/profile-apply-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts apply translate hidden](images/profile-apply-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts apply translate error](images/profile-apply-translate-error.png)
 
 ### Variant: principle-2
 
@@ -1824,6 +1914,36 @@ Member list with an unread Direct row **Bob** (`unread: true`, `unreadMessageCou
 
 ![21.gifts inbox unread](images/messages-unread.png)
 
+### Variant: translate
+
+Signed-in `/messages` list with one German conversation preview. **Translate** is visible under the last text.
+
+![21.gifts inbox translate](images/messages-translate.png)
+
+### Variant: translate-loading
+
+Same German preview after clicking **Translate** while the conversation translate POST hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts inbox translate loading](images/messages-translate-loading.png)
+
+### Variant: translate-done
+
+Same German preview after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts inbox translate done](images/messages-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts inbox translate hidden](images/messages-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German preview after the conversation translate POST fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts inbox translate error](images/messages-translate-error.png)
+
 ### Variant: contact
 
 Staff (moderator). Contact selected. List shows official **21.gifts**. Chooser present. No pinned Staff room / Moderators row.
@@ -1865,6 +1985,36 @@ List fetch failed. Button **Try again**. Chooser absent.
 Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: ImagePlus, the message, and send on one row; the **Amount** field (₿ | fiat, other unit under it) on the next row. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
+
+### Variant: thread-translate
+
+Open thread with a German incoming message. **Translate** is visible under the body.
+
+![21.gifts inbox thread translate](images/messages-thread-translate.png)
+
+### Variant: thread-translate-loading
+
+Same German incoming message after clicking **Translate** while the conversation translate POST hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts inbox thread translate loading](images/messages-thread-translate-loading.png)
+
+### Variant: thread-translate-done
+
+Same German incoming message after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts inbox thread translate done](images/messages-thread-translate-done.png)
+
+### Variant: thread-translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts inbox thread translate hidden](images/messages-thread-translate-hidden.png)
+
+### Variant: thread-translate-error
+
+Same German incoming message after the conversation translate POST fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts inbox thread translate error](images/messages-thread-translate-error.png)
 
 ### Variant: sent-sats
 
@@ -1951,6 +2101,36 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 Loaded list with at least one unread forum reply (actor **Bob**, copy **Bob replied**).
 
 ![21.gifts notifications](images/notifications.png)
+
+### Variant: translate
+
+Signed-in `/notifications` with one German forum reply. **Translate** is visible under the body.
+
+![21.gifts notifications translate](images/notifications-translate.png)
+
+### Variant: translate-loading
+
+Same German reply after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts notifications translate loading](images/notifications-translate-loading.png)
+
+### Variant: translate-done
+
+Same German reply after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts notifications translate done](images/notifications-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts notifications translate hidden](images/notifications-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German reply after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts notifications translate error](images/notifications-translate-error.png)
 
 ### Variant: empty
 
@@ -2040,6 +2220,36 @@ Staff (moderator) hub with the payout-goal widget showing **Could not load payou
 Staff (moderator) loaded list with at least one hidden note (author **Bob**, text **Hidden note**, **Hidden by Ada**).
 
 ![21.gifts hidden notes](images/moderate-hidden.png)
+
+### Variant: translate
+
+Staff `/moderate/hidden` with one German hidden note. **Translate** is visible under the body.
+
+![21.gifts hidden notes translate](images/hidden-translate.png)
+
+### Variant: translate-loading
+
+Same German hidden note after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts hidden notes translate loading](images/hidden-translate-loading.png)
+
+### Variant: translate-done
+
+Same German hidden note after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts hidden notes translate done](images/hidden-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts hidden notes translate hidden](images/hidden-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German hidden note after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts hidden notes translate error](images/hidden-translate-error.png)
 
 ### Variant: external
 
@@ -2202,6 +2412,36 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 Staff (founder) loaded application for **Rose** with a living-room post on principle 1. **Requirement met** / **Requirement not met**.
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
+
+### Variant: translate
+
+Staff `/moderate/applications/:accountId` with a German reviewed post. **Translate** is visible under the body.
+
+![21.gifts grant application translate](images/applications-detail-translate.png)
+
+### Variant: translate-loading
+
+Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts grant application translate loading](images/applications-detail-translate-loading.png)
+
+### Variant: translate-done
+
+Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts grant application translate done](images/applications-detail-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts grant application translate hidden](images/applications-detail-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts grant application translate error](images/applications-detail-translate-error.png)
 
 ### Variant: forbidden
 
@@ -2500,6 +2740,36 @@ Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty seri
 Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
 
 ![21.gifts public view about filled](images/view-about-filled.png)
+
+### Variant: translate
+
+Public `/view/:viewKey` with a German About me and a non-empty `aboutMessageId`. **Translate** is visible under the About me body.
+
+![21.gifts public view about translate](images/view-about-translate.png)
+
+### Variant: translate-loading
+
+Same German About me after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+
+![21.gifts public view about translate loading](images/view-about-translate-loading.png)
+
+### Variant: translate-done
+
+Same German About me after a successful translation. Translated body plus **Show original**; the German original is not shown.
+
+![21.gifts public view about translate done](images/view-about-translate-done.png)
+
+### Variant: translate-hidden
+
+After **Show original**: translated body hidden, control reads **Show translation**.
+
+![21.gifts public view about translate hidden](images/view-about-translate-hidden.png)
+
+### Variant: translate-error
+
+Same German About me after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+
+![21.gifts public view about translate error](images/view-about-translate-error.png)
 
 ### Variant: about-photo
 
