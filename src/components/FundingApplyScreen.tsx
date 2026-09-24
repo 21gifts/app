@@ -200,10 +200,12 @@ export function FundingApplyScreen(): ReactElement | null {
       if (current === null) {
         return false;
       }
+      const nextAboutId = updated.aboutMessageId;
       setAccount({
         ...current,
         aboutMe: updated.aboutMe,
         aboutMeHasPhoto: updated.aboutMeHasPhoto,
+        ...(nextAboutId === undefined || nextAboutId === '' ? {} : { aboutMessageId: nextAboutId }),
       });
     } catch (err) {
       /* v8 ignore next 3 — session gone during save */

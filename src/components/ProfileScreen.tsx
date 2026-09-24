@@ -121,10 +121,14 @@ export function ProfileScreen(): ReactElement {
               if (current === null) {
                 return false;
               }
+              const nextAboutId = updated.aboutMessageId;
               setAccount({
                 ...current,
                 aboutMe: updated.aboutMe,
                 aboutMeHasPhoto: updated.aboutMeHasPhoto,
+                ...(nextAboutId === undefined || nextAboutId === ''
+                  ? {}
+                  : { aboutMessageId: nextAboutId }),
               });
             } catch (err) {
               if (useAuthStore.getState().session !== session) {

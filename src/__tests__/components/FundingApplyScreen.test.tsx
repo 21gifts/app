@@ -181,6 +181,7 @@ describe('FundingApplyScreen', () => {
       ...account,
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: false,
+      aboutMessageId: 'note-1',
     });
     renderWithLocale(<FundingApplyScreen />);
     fireEvent.change(screen.getByRole('textbox', { name: 'About me' }), {
@@ -189,6 +190,24 @@ describe('FundingApplyScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
     expect(await screen.findByText('Next, add a photo to your About me.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(useAuthStore.getState().account?.aboutMessageId).toBe('note-1');
+  });
+
+  it('keeps the About me note id when a save sends a blank id', async () => {
+    useAuthStore.setState({ account: { ...account, aboutMessageId: 'note-1' } });
+    putAboutMock.mockResolvedValue({
+      ...account,
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: false,
+      aboutMessageId: '',
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'About me' }), {
+      target: { value: 'I build on Bitcoin' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    expect(await screen.findByText('Next, add a photo to your About me.')).toBeTruthy();
+    expect(useAuthStore.getState().account?.aboutMessageId).toBe('note-1');
   });
 
   it('sends a missing-rules save to setup', async () => {
