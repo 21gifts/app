@@ -316,11 +316,6 @@ export function AmountEntry({
 
   const shown = locked ? String(lockedSats) : value;
   const entryUnit: AmountUnit = locked ? 'btc' : shownUnit;
-  const prefix = entryUnit === 'btc' ? '\u20BF' : fiat;
-  const shownPlaceholder =
-    placeholder !== undefined && entryUnit === 'fiat' && /^\d+$/.test(placeholder)
-      ? (fiatDraftForSats(Number(placeholder), rateDay, fiat) ?? undefined)
-      : placeholder;
   let counter: string | null = null;
   if (locked) {
     const fiatAmount = satsToFiatAmount(lockedSats, rateDay, fiat);
@@ -355,37 +350,30 @@ export function AmountEntry({
       />
     </div>
   );
+  const amountClass =
+    layout === 'inline'
+      ? 'h-12 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50'
+      : 'w-full min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50';
   const amountInput = (
-    <span
-      className={
-        layout === 'inline'
-          ? 'flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 text-base'
-          : 'flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-2xl border border-app-border-strong px-4 py-2 text-base'
-      }
-    >
-      <span aria-hidden="true" className="text-app-muted">
-        {prefix}
-      </span>
-      <input
-        id={fieldId}
-        aria-label={label}
-        type="text"
-        inputMode={entryUnit === 'btc' ? 'numeric' : 'decimal'}
-        autoComplete="off"
-        autoCorrect="off"
-        spellCheck={false}
-        placeholder={shownPlaceholder}
-        value={shown}
-        disabled={disabled || locked}
-        onChange={(event) => {
-          if (!locked) {
-            draftRef.current = event.target.value;
-            onValueChange(event.target.value);
-          }
-        }}
-        className="min-w-0 flex-1 bg-transparent text-base text-app-fg outline-none"
-      />
-    </span>
+    <input
+      id={fieldId}
+      aria-label={label}
+      type="text"
+      inputMode={entryUnit === 'btc' ? 'numeric' : 'decimal'}
+      autoComplete="off"
+      autoCorrect="off"
+      spellCheck={false}
+      placeholder={placeholder}
+      value={shown}
+      disabled={disabled || locked}
+      onChange={(event) => {
+        if (!locked) {
+          draftRef.current = event.target.value;
+          onValueChange(event.target.value);
+        }
+      }}
+      className={amountClass}
+    />
   );
   if (layout === 'composer') {
     return (
