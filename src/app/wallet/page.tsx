@@ -6,8 +6,8 @@ import { WalletChromeLeft } from '@/components/WalletChromeLeft';
 import { WalletScreen } from '@/components/WalletScreen';
 
 /**
- * `/wallet` shows Activate recovery phrase when the account cannot show a
- * phrase yet, otherwise Show recovery phrase under Advanced functions.
+ * `/wallet` shows Add recovery phrase when `passkeyCredentialId` is missing
+ * or empty, otherwise Show recovery phrase under Advanced functions.
  *
  * @returns The wallet screen.
  */

@@ -2479,39 +2479,40 @@ export async function finishPasskeyAuthentication(
 }
 
 /**
- * Starts a signed-in passkey replace ceremony.
+ * Starts a signed-in passkey seed ceremony (adds a recovery-phrase passkey).
  *
  * @param sessionToken - Bearer session.
  * @returns Challenge id plus WebAuthn creation options JSON.
- * @throws Error on a non-2xx status or a body that fails validation.
+ * @throws Error on a non-2xx status (including 409 when a seed already exists)
+ * or a body that fails validation.
  */
-export async function startPasskeyReplace(sessionToken: string): Promise<PasskeyBegin> {
-  const response = await fetch('/auth/passkey/replace/begin', {
+export async function startPasskeySeed(sessionToken: string): Promise<PasskeyBegin> {
+  const response = await fetch('/auth/passkey/seed/begin', {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
   if (!response.ok) {
-    throw new Error(`Failed to start passkey replace: ${response.status}`);
+    throw new Error(`Failed to start passkey seed: ${response.status}`);
   }
   return passkeyBeginSchema.parse(await response.json());
 }
 
 /**
- * Completes passkey replace and returns the owner account. Does not mint a
+ * Completes passkey seed and returns the owner account. Does not mint a
  * new session; the existing Bearer stays valid.
  *
  * @param sessionToken - Bearer session.
- * @param challengeId - Id returned by {@link startPasskeyReplace}.
+ * @param challengeId - Id returned by {@link startPasskeySeed}.
  * @param credential - Browser attestation JSON.
- * @returns The owner {@link Account}.
+ * @returns The owner {@link Account} (not wrapped).
  * @throws Error on a non-2xx status or a body that fails validation.
  */
-export async function finishPasskeyReplace(
+export async function finishPasskeySeed(
   sessionToken: string,
   challengeId: string,
   credential: unknown,
 ): Promise<Account> {
-  const response = await fetch('/auth/passkey/replace/finish', {
+  const response = await fetch('/auth/passkey/seed/finish', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
@@ -2520,9 +2521,9 @@ export async function finishPasskeyReplace(
     body: JSON.stringify({ challengeId, credential }),
   });
   if (!response.ok) {
-    throw new Error(`Failed to finish passkey replace: ${response.status}`);
+    throw new Error(`Failed to finish passkey seed: ${response.status}`);
   }
-  return z.object({ account: accountSchema }).parse(await response.json()).account;
+  return accountSchema.parse(await response.json());
 }
 
 /**

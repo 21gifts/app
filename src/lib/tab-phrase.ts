@@ -12,8 +12,8 @@ function notifyPhraseListeners(): void {
 }
 
 /**
- * Store a derived recovery phrase in tab memory so `/wallet` can show it
- * after register or replace without persisting it.
+ * Store a derived recovery phrase in tab memory. Wallet does not read this
+ * to show the words; hide may still clear it.
  *
  * @param mnemonic - Space-separated BIP-39 words.
  */

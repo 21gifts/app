@@ -7,14 +7,15 @@ import {
   resetWalletCeremonyLock,
   useWalletPhrase,
 } from '@/hooks/useWalletPhrase';
-import { finishPasskeyReplace, postWalletBackupSeen, startPasskeyReplace } from '@/lib/api';
+import { fetchMe, finishPasskeySeed, postWalletBackupSeen, startPasskeySeed } from '@/lib/api';
 import { obtainPrfFirst, obtainPrfFirstFromGet, mnemonicFromPrfFirst } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({
-  startPasskeyReplace: vi.fn(),
-  finishPasskeyReplace: vi.fn(),
+  startPasskeySeed: vi.fn(),
+  finishPasskeySeed: vi.fn(),
+  fetchMe: vi.fn(),
   postWalletBackupSeen: vi.fn(),
 }));
 
@@ -59,6 +60,11 @@ const account = {
   aboutMeHasPhoto: false,
   setup: null as 'wallet' | 'name' | null,
   missing: [] as ('wallet' | 'name' | 'username' | 'lightning-address' | 'rules')[],
+  passkeyCredentialId: null as string | null,
+};
+
+const seededAccount = {
+  ...account,
   passkeyCredentialId: 'cred-owner',
 };
 
@@ -71,25 +77,20 @@ beforeEach(() => {
   clearSessionPhrase();
   resetWalletCeremonyLock();
   useAuthStore.setState({ session: 'tok', account });
-  vi.mocked(startPasskeyReplace)
+  vi.mocked(startPasskeySeed)
     .mockReset()
     .mockResolvedValue({
       challengeId: 'ch',
       options: { challenge: 'aa' },
     });
-  vi.mocked(finishPasskeyReplace)
+  vi.mocked(finishPasskeySeed)
     .mockReset()
     .mockResolvedValue({
       ...account,
-      walletRequired: false,
+      passkeyCredentialId: 'seed-from-api',
     });
-  vi.mocked(postWalletBackupSeen)
-    .mockReset()
-    .mockResolvedValue({
-      ...account,
-      setup: 'name',
-      walletBackupSeenAt: 1,
-    });
+  vi.mocked(fetchMe).mockReset().mockResolvedValue(null);
+  vi.mocked(postWalletBackupSeen).mockReset();
   vi.mocked(obtainPrfFirst).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
   vi.mocked(obtainPrfFirstFromGet).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
   vi.mocked(mnemonicFromPrfFirst).mockReset().mockResolvedValue(mnemonic);
@@ -118,26 +119,105 @@ describe('session phrase helpers', () => {
 });
 
 describe('useWalletPhrase', () => {
-  it('activates replace, derives words, and does not finish without PRF', async () => {
+  it('adds a seed, shows the words, and does not keep them in tab RAM', async () => {
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('activate');
     await act(async () => {
       await result.current.activate();
     });
-    expect(startPasskeyReplace).toHaveBeenCalledWith('tok');
-    expect(finishPasskeyReplace).toHaveBeenCalled();
-    expect(postWalletBackupSeen).toHaveBeenCalledWith('tok');
+    expect(startPasskeySeed).toHaveBeenCalledWith('tok');
+    expect(finishPasskeySeed).toHaveBeenCalled();
+    expect(postWalletBackupSeen).not.toHaveBeenCalled();
     expect(result.current.words).toHaveLength(12);
+    expect(peekSessionPhrase()).toBeNull();
   });
 
-  it('does not finish replace when PRF is missing', async () => {
+  it('keeps the seed account when word derivation throws', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('boom'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeySeed).toHaveBeenCalled();
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('seed-from-api');
+    expect(result.current.words).toEqual([]);
+    expect(result.current.error).toBe('generic');
+  });
+
+  it('shows the original error when reloading the account throws', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockRejectedValueOnce(new Error('network'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBe('generic');
+  });
+
+  it('does not adopt a seed when the session ends while reloading', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { ...account, passkeyCredentialId: 'seed-from-server' };
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('loads the seed from the server when finish fails after it was stored', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockResolvedValueOnce({
+      ...account,
+      passkeyCredentialId: 'seed-from-server',
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('seed-from-server');
+  });
+
+  it('does not finish seed when PRF is missing', async () => {
     vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.activate();
     });
-    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
     expect(result.current.error).toBe('prfUnsupported');
+  });
+
+  it('maps seed begin 409 to generic and does not finish', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to start passkey seed: 409'),
+    );
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('generic');
+  });
+
+  it('stores the api passkeyCredentialId even when it differs from credential.id', async () => {
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('seed-from-api');
   });
 
   it('is a no-op when the session is missing', async () => {
@@ -147,7 +227,7 @@ describe('useWalletPhrase', () => {
       await result.current.activate();
       await result.current.showPhrase();
     });
-    expect(startPasskeyReplace).not.toHaveBeenCalled();
+    expect(startPasskeySeed).not.toHaveBeenCalled();
     expect(postWalletBackupSeen).not.toHaveBeenCalled();
     expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
   });
@@ -162,7 +242,7 @@ describe('useWalletPhrase', () => {
       await result.current.activate();
     });
     expect(result.current.status).toBe('idle');
-    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
   });
 
   it('showPhrase errors when the account has no passkey credential id', async () => {
@@ -172,11 +252,35 @@ describe('useWalletPhrase', () => {
       await result.current.showPhrase();
     });
     expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(startPasskeySeed).not.toHaveBeenCalled();
     expect(result.current.error).toBe('generic');
     expect(result.current.status).toBe('error');
   });
 
-  it('showPhrase derives words from get()', async () => {
+  it('showPhrase errors when the credential id is empty', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, passkeyCredentialId: '' } });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('generic');
+  });
+
+  it('showPhrase errors when the credential id is omitted', async () => {
+    const { passkeyCredentialId: _omitted, ...withoutId } = account;
+    void _omitted;
+    useAuthStore.setState({ session: 'tok', account: withoutId });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('generic');
+  });
+
+  it('showPhrase derives words from get() and does not create or seed', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.showPhrase();
@@ -184,10 +288,14 @@ describe('useWalletPhrase', () => {
     expect(Array.from(vi.mocked(obtainPrfFirstFromGet).mock.calls[0]?.[0] ?? [])).toEqual(
       Array.from(new TextEncoder().encode('cred-owner')),
     );
+    expect(startPasskeySeed).not.toHaveBeenCalled();
+    expect(navigator.credentials.create).not.toHaveBeenCalled();
     expect(result.current.words).toHaveLength(12);
+    expect(peekSessionPhrase()).toBeNull();
   });
 
   it('showPhrase records prfUnsupported when get has no PRF', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(obtainPrfFirstFromGet).mockResolvedValueOnce(null);
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
@@ -197,6 +305,7 @@ describe('useWalletPhrase', () => {
   });
 
   it('showPhrase fail maps cancel to idle', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(obtainPrfFirstFromGet).mockRejectedValueOnce(
       Object.assign(new Error('denied'), { name: 'NotAllowedError' }),
     );
@@ -209,7 +318,7 @@ describe('useWalletPhrase', () => {
   });
 
   it('activate fail maps timeout', async () => {
-    vi.mocked(startPasskeyReplace).mockRejectedValueOnce(
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
       Object.assign(new Error('t'), { name: 'TimeoutError' }),
     );
     const { result } = renderHook(() => useWalletPhrase());
@@ -220,7 +329,7 @@ describe('useWalletPhrase', () => {
   });
 
   it('activate fail maps a non-Error throw to generic', async () => {
-    vi.mocked(startPasskeyReplace).mockRejectedValueOnce('boom');
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce('boom');
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.activate();
@@ -229,7 +338,7 @@ describe('useWalletPhrase', () => {
   });
 
   it('activate fail maps wallet.prfUnsupported', async () => {
-    vi.mocked(startPasskeyReplace).mockRejectedValueOnce(new Error('wallet.prfUnsupported'));
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new Error('wallet.prfUnsupported'));
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
       await result.current.activate();
@@ -237,7 +346,21 @@ describe('useWalletPhrase', () => {
     expect(result.current.error).toBe('prfUnsupported');
   });
 
+  it('activate NotAllowedError returns to idle without an error', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      Object.assign(new Error('denied'), { name: 'NotAllowedError' }),
+    );
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
+  });
+
   it('showPhrase fail maps prfUnsupported message', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(obtainPrfFirstFromGet).mockRejectedValueOnce(new Error('prfUnsupported'));
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
@@ -255,7 +378,7 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.activate();
     });
-    expect(finishPasskeyReplace).toHaveBeenCalled();
+    expect(finishPasskeySeed).toHaveBeenCalled();
   });
 
   it('uses the visual phrase fixture', () => {
@@ -267,24 +390,91 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toHaveLength(12);
   });
 
-  it('twelve words in memory are the phrase view even when setup is wallet', () => {
-    rememberSessionPhrase(mnemonic);
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet', walletRequired: true },
-    });
+  it('refreshes the visual phrase when the wallet event fires', () => {
+    const url = new URL(originalHref);
+    url.search = '?visual=phrase';
+    window.history.replaceState({}, '', url.toString());
     const { result } = renderHook(() => useWalletPhrase());
+    act(() => {
+      window.dispatchEvent(new Event('21gifts:wallet-phrase'));
+    });
     expect(result.current.view).toBe('phrase');
+    expect(result.current.words).toHaveLength(12);
   });
 
-  it('setup wallet with walletRequired and no words is reveal', () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: { ...account, setup: 'wallet', walletRequired: true },
+  it('ignores the wallet phrase event when no visual fixture is set', () => {
+    const { result } = renderHook(() => useWalletPhrase());
+    act(() => {
+      window.dispatchEvent(new Event('21gifts:wallet-phrase'));
     });
+    expect(result.current.words).toEqual([]);
+  });
+
+  it('does not show peekSessionPhrase words on mount', () => {
+    rememberSessionPhrase(mnemonic);
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.words).toEqual([]);
+    expect(result.current.view).toBe('activate');
+  });
+
+  it('does not pull peekSessionPhrase words from the phrase event', () => {
+    const { result } = renderHook(() => useWalletPhrase());
+    act(() => {
+      rememberSessionPhrase(mnemonic);
+    });
+    expect(result.current.words).toEqual([]);
+  });
+
+  it('view is activate when passkeyCredentialId is null', () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, passkeyCredentialId: null } });
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.view).toBe('activate');
+  });
+
+  it('view is activate when passkeyCredentialId is empty', () => {
+    useAuthStore.setState({ session: 'tok', account: { ...account, passkeyCredentialId: '' } });
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.view).toBe('activate');
+  });
+
+  it('view is activate when passkeyCredentialId is omitted', () => {
+    const { passkeyCredentialId: _omitted, ...withoutId } = account;
+    void _omitted;
+    useAuthStore.setState({ session: 'tok', account: withoutId });
+    const { result } = renderHook(() => useWalletPhrase());
+    expect(result.current.view).toBe('activate');
+  });
+
+  it('view is reveal when passkeyCredentialId is non-empty', () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('reveal');
     expect(result.current.words).toEqual([]);
+  });
+
+  it('walletBackupSeenAt and walletRequired do not change the view', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...account,
+        passkeyCredentialId: null,
+        walletRequired: true,
+        walletBackupSeenAt: 1,
+      },
+    });
+    const withoutSeed = renderHook(() => useWalletPhrase());
+    expect(withoutSeed.result.current.view).toBe('activate');
+    withoutSeed.unmount();
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...seededAccount,
+        walletRequired: false,
+        walletBackupSeenAt: null,
+      },
+    });
+    const withSeed = renderHook(() => useWalletPhrase());
+    expect(withSeed.result.current.view).toBe('reveal');
   });
 
   it('uses the visual timeout fixture', () => {
@@ -325,6 +515,7 @@ describe('useWalletPhrase', () => {
   });
 
   it('does not keep a phrase when the session ends during showPhrase', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(obtainPrfFirstFromGet).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       return new Uint8Array(32).fill(7);
@@ -338,8 +529,8 @@ describe('useWalletPhrase', () => {
     expect(result.current.status).toBe('idle');
   });
 
-  it('does not finish replace when the session ends during activate', async () => {
-    vi.mocked(startPasskeyReplace).mockImplementation(async () => {
+  it('does not finish seed when the session ends during activate', async () => {
+    vi.mocked(startPasskeySeed).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       return { challengeId: 'ch', options: { challenge: 'aa' } };
     });
@@ -347,11 +538,11 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.activate();
     });
-    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
     expect(peekSessionPhrase()).toBeNull();
   });
 
-  it('does not finish replace when the session ends after create', async () => {
+  it('does not finish seed when the session ends after create', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
@@ -366,11 +557,11 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.activate();
     });
-    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
     expect(peekSessionPhrase()).toBeNull();
   });
 
-  it('does not finish replace when the session ends after PRF first', async () => {
+  it('does not finish seed when the session ends after PRF first', async () => {
     vi.mocked(obtainPrfFirst).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       return new Uint8Array(32).fill(7);
@@ -379,11 +570,11 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.activate();
     });
-    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
     expect(peekSessionPhrase()).toBeNull();
   });
 
-  it('does not finish replace when the session ends after PRF mnemonic', async () => {
+  it('does not set words when the session ends while deriving the mnemonic', async () => {
     vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       return mnemonic;
@@ -392,14 +583,38 @@ describe('useWalletPhrase', () => {
     await act(async () => {
       await result.current.activate();
     });
-    expect(finishPasskeyReplace).not.toHaveBeenCalled();
+    expect(finishPasskeySeed).toHaveBeenCalled();
+    expect(result.current.words).toEqual([]);
+    expect(result.current.status).toBe('idle');
     expect(peekSessionPhrase()).toBeNull();
   });
 
-  it('does not keep a phrase when the session ends after finishPasskeyReplace', async () => {
-    vi.mocked(finishPasskeyReplace).mockImplementation(async () => {
+  it('does not write the seed account when the session changes while deriving the mnemonic', async () => {
+    const otherMnemonic = 'zoo yellow wood wolf window wild wide width wife winter wisdom wish';
+    vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
+      rememberSessionPhrase(otherMnemonic);
+      useAuthStore.setState({
+        session: 'tok-new',
+        account: { ...account, id: 'acc_2' },
+      });
+      return mnemonic;
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeySeed).toHaveBeenCalled();
+    expect(result.current.words).toEqual([]);
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+    expect(useAuthStore.getState().account?.id).toBe('acc_2');
+    expect(peekSessionPhrase()).toBe(otherMnemonic);
+  });
+
+  it('does not keep a phrase when the session ends after finishPasskeySeed', async () => {
+    vi.mocked(finishPasskeySeed).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
-      return { ...account, walletRequired: true };
+      return { ...account, passkeyCredentialId: 'seed-from-api' };
     });
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
@@ -409,15 +624,15 @@ describe('useWalletPhrase', () => {
     expect(result.current.words).toEqual([]);
   });
 
-  it('does not clear another session phrase when activate goes stale before remember', async () => {
+  it('does not clear another session phrase when activate goes stale after finish', async () => {
     const otherMnemonic = 'zoo yellow wood wolf window wild wide width wife winter wisdom wish';
-    vi.mocked(finishPasskeyReplace).mockImplementation(async () => {
+    vi.mocked(finishPasskeySeed).mockImplementation(async () => {
       rememberSessionPhrase(otherMnemonic);
       useAuthStore.setState({
         session: 'tok-new',
         account: { ...account, id: 'acc_2' },
       });
-      return { ...account, walletRequired: true };
+      return { ...account, passkeyCredentialId: 'seed-from-api' };
     });
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
@@ -425,27 +640,12 @@ describe('useWalletPhrase', () => {
     });
     expect(peekSessionPhrase()).toBe(otherMnemonic);
     expect(result.current.status).toBe('idle');
-  });
-
-  it('does not clear another session phrase when activate goes stale after remember', async () => {
-    const otherMnemonic = 'zoo yellow wood wolf window wild wide width wife winter wisdom wish';
-    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
-      rememberSessionPhrase(otherMnemonic);
-      useAuthStore.setState({
-        session: 'tok-new',
-        account: { ...account, id: 'acc_2' },
-      });
-      return { ...account, walletBackupSeenAt: 1 };
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.activate();
-    });
-    expect(peekSessionPhrase()).toBe(otherMnemonic);
-    expect(result.current.status).toBe('idle');
+    expect(result.current.words).toEqual([]);
+    expect(useAuthStore.getState().account?.id).toBe('acc_2');
   });
 
   it('does not keep a phrase when the session ends after mnemonic derivation', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       return mnemonic;
@@ -460,7 +660,7 @@ describe('useWalletPhrase', () => {
 
   it('runs only one activate at a time', async () => {
     let release: (() => void) | undefined;
-    vi.mocked(startPasskeyReplace).mockImplementation(
+    vi.mocked(startPasskeySeed).mockImplementation(
       () =>
         new Promise((resolve) => {
           release = () => resolve({ challengeId: 'ch', options: { challenge: 'aa' } });
@@ -473,18 +673,18 @@ describe('useWalletPhrase', () => {
       first = result.current.activate();
       second = result.current.activate();
     });
-    expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+    expect(startPasskeySeed).toHaveBeenCalledTimes(1);
     await act(async () => {
       release?.();
       await first;
       await second;
     });
-    expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+    expect(startPasskeySeed).toHaveBeenCalledTimes(1);
   });
 
   it('does not start a second ceremony after remount while the first is in flight', async () => {
     let release: (() => void) | undefined;
-    vi.mocked(startPasskeyReplace).mockImplementation(
+    vi.mocked(startPasskeySeed).mockImplementation(
       () =>
         new Promise((resolve) => {
           release = () => resolve({ challengeId: 'ch', options: { challenge: 'aa' } });
@@ -501,7 +701,7 @@ describe('useWalletPhrase', () => {
       await secondHook.result.current.activate();
       await secondHook.result.current.showPhrase();
     });
-    expect(startPasskeyReplace).toHaveBeenCalledTimes(1);
+    expect(startPasskeySeed).toHaveBeenCalledTimes(1);
     expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
     expect(postWalletBackupSeen).not.toHaveBeenCalled();
     await act(async () => {
@@ -510,65 +710,8 @@ describe('useWalletPhrase', () => {
     });
   });
 
-  it('keeps the replace credential id when backup-seen omits it', async () => {
-    vi.mocked(postWalletBackupSeen).mockResolvedValueOnce({
-      ...account,
-      setup: 'name',
-      walletBackupSeenAt: 1,
-      passkeyCredentialId: null,
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.activate();
-    });
-    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred');
-  });
-
-  it('keeps the phrase when backup-seen fails after replace', async () => {
-    vi.mocked(postWalletBackupSeen).mockRejectedValueOnce(new Error('nope'));
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.activate();
-    });
-    expect(peekSessionPhrase()).toBe(mnemonic);
-    expect(result.current.words).toHaveLength(12);
-    expect(result.current.view).toBe('phrase');
-    expect(useAuthStore.getState().account?.passkeyCredentialId).toBe('cred');
-    expect(result.current.error).toBe('generic');
-    expect(result.current.status).toBe('idle');
-  });
-
-  it('does not surface backup-seen error after logout during activate', async () => {
-    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
-      useAuthStore.setState({ session: null, account: null });
-      throw new Error('nope');
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.activate();
-    });
-    expect(result.current.error).toBeNull();
-    expect(result.current.status).toBe('idle');
-    expect(peekSessionPhrase()).toBeNull();
-  });
-
-  it('does not keep a phrase when backup-seen runs after replace then the session ends', async () => {
-    vi.mocked(postWalletBackupSeen).mockImplementation(async () => {
-      useAuthStore.setState({ session: null, account: null });
-      return { ...account, walletBackupSeenAt: 1 };
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.activate();
-    });
-    expect(finishPasskeyReplace).toHaveBeenCalled();
-    expect(postWalletBackupSeen).toHaveBeenCalled();
-    expect(peekSessionPhrase()).toBeNull();
-    expect(result.current.status).toBe('idle');
-  });
-
   it('does not surface an error when activate rejects after logout', async () => {
-    vi.mocked(startPasskeyReplace).mockImplementation(async () => {
+    vi.mocked(startPasskeySeed).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       throw new Error('aborted');
     });
@@ -581,6 +724,7 @@ describe('useWalletPhrase', () => {
   });
 
   it('does not surface an error when showPhrase rejects after logout', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(obtainPrfFirstFromGet).mockImplementation(async () => {
       useAuthStore.setState({ session: null, account: null });
       throw new Error('aborted');
@@ -591,19 +735,5 @@ describe('useWalletPhrase', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(result.current.error).toBeNull();
-  });
-
-  it('does not post backup-seen when walletRequired is true', async () => {
-    vi.mocked(finishPasskeyReplace).mockResolvedValueOnce({
-      ...account,
-      walletRequired: true,
-    });
-    const { result } = renderHook(() => useWalletPhrase());
-    await act(async () => {
-      await result.current.activate();
-    });
-    expect(postWalletBackupSeen).not.toHaveBeenCalled();
-    expect(result.current.words).toHaveLength(12);
-    expect(result.current.view).toBe('phrase');
   });
 });

@@ -12,7 +12,7 @@ const HOST = '127.0.0.1';
 
 /** @type {Map<string, object>} */
 const byToken = new Map();
-/** @type {Map<string, { type: 'register' | 'authenticate' }>} */
+/** @type {Map<string, { type: 'register' | 'authenticate' | 'replace' | 'seed', account?: object }>} */
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
@@ -181,7 +181,7 @@ function refreshMissing(account) {
  */
 function afterFieldWrite(account) {
   refreshMissing(account);
-  if (account.setup === 'wallet' && account.walletBackupSeenAt) {
+  if (account.setup === 'wallet') {
     account.setup = hasName(account)
       ? hasUsername(account)
         ? hasLightningAddress(account)
@@ -1863,6 +1863,7 @@ const server = http.createServer(async (req, res) => {
     let account;
     if (expectedType === 'register') {
       account = newAccount(null);
+      account.passkeyCredentialId = credId;
       byPasskeyCredential.set(credId, account);
     } else {
       account = byPasskeyCredential.get(credId);
@@ -1883,9 +1884,6 @@ const server = http.createServer(async (req, res) => {
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
-    }
-    if (account.walletBackupSeenAt == null) {
-      account.walletBackupSeenAt = Date.now();
     }
     afterFieldWrite(account);
     json(res, 200, account);
@@ -1960,6 +1958,70 @@ const server = http.createServer(async (req, res) => {
     }
     byPasskeyCredential.set(credId, account);
     json(res, 200, { account });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/seed/begin') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '') {
+      json(res, 409, { error: 'This account already has a recovery phrase' });
+      return;
+    }
+    const challengeId = hex(randomBytes(32));
+    const userId = hex(randomBytes(16));
+    byPasskey.set(challengeId, { type: 'seed', account });
+    json(res, 200, {
+      challengeId,
+      options: {
+        challenge: b64url(randomBytes(32)),
+        rp: { id: 'localhost', name: '21.gifts' },
+        user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        extensions: { prf: {} },
+      },
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/seed/finish') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with challengeId and credential' });
+      return;
+    }
+    const pending = byPasskey.get(parsed?.challengeId);
+    if (!pending || pending.type !== 'seed' || pending.account !== account) {
+      json(res, 400, { error: 'Unknown or expired challenge' });
+      return;
+    }
+    byPasskey.delete(parsed.challengeId);
+    const credId = parsed.credential?.id;
+    if (typeof credId !== 'string' || credId === '') {
+      json(res, 400, { error: 'Invalid passkey' });
+      return;
+    }
+    if (typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '') {
+      json(res, 409, { error: 'This account already has a recovery phrase' });
+      return;
+    }
+    byPasskeyCredential.set(credId, account);
+    account.passkeyCredentialId = credId;
+    account.walletRequired = true;
+    json(res, 200, account);
     return;
   }
 

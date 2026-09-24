@@ -408,9 +408,9 @@ const en = {
   'introduce.close': 'Close',
 
   'wallet.title': 'Wallet',
-  'wallet.activate': 'Activate recovery phrase',
-  'wallet.activateHint':
-    'Create a new passkey on this device so 21.gifts can show your 12-word recovery phrase. Your previous passkey will stop working.',
+  'wallet.addPhrase': 'Add recovery phrase',
+  'wallet.addPhraseHint':
+    'This creates a recovery phrase on this device. Your existing login passkey stays.',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
@@ -419,7 +419,7 @@ const en = {
     'This browser cannot create a recovery phrase. Try another browser or device.',
   'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
   'wallet.errorGeneric':
-    'The recovery phrase could not be opened. Check this device and try again.',
+    'The recovery phrase could not be created or opened. Check this device and try again.',
   'wallet.errorHint':
     'If this keeps happening, try another browser or the device you already used to sign in.',
 
@@ -1214,9 +1214,9 @@ const de = {
   'introduce.close': 'Schließen',
 
   'wallet.title': 'Wallet',
-  'wallet.activate': 'Wiederherstellungssatz aktivieren',
-  'wallet.activateHint':
-    'Erstellen Sie einen neuen Passkey auf diesem Gerät, damit 21.gifts Ihren 12-Wörter-Wiederherstellungssatz anzeigen kann. Der bisherige Passkey funktioniert danach nicht mehr.',
+  'wallet.addPhrase': 'Wiederherstellungssatz hinzufügen',
+  'wallet.addPhraseHint':
+    'Dadurch entsteht ein Wiederherstellungssatz auf diesem Gerät. Ihr vorhandener Anmelde-Passkey bleibt.',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
@@ -1226,7 +1226,7 @@ const de = {
   'wallet.timeout':
     'Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut.',
   'wallet.errorGeneric':
-    'Der Wiederherstellungssatz konnte nicht geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
+    'Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
   'wallet.errorHint':
     'Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben.',
 
@@ -2028,9 +2028,9 @@ const es = {
   'introduce.close': 'Cerrar',
 
   'wallet.title': 'Wallet',
-  'wallet.activate': 'Activar frase de recuperación',
-  'wallet.activateHint':
-    'Crea una passkey nueva en este dispositivo para que 21.gifts pueda mostrar tu frase de recuperación de 12 palabras. La passkey anterior dejará de funcionar.',
+  'wallet.addPhrase': 'Añadir frase de recuperación',
+  'wallet.addPhraseHint':
+    'Esto crea una frase de recuperación en este dispositivo. Tu passkey de inicio de sesión se mantiene.',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
@@ -2040,7 +2040,7 @@ const es = {
   'wallet.timeout':
     'La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo.',
   'wallet.errorGeneric':
-    'No se pudo abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
+    'No se pudo crear ni abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
   'wallet.errorHint':
     'Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión.',
 
@@ -2834,9 +2834,9 @@ const fil = {
   'introduce.close': 'Isara',
 
   'wallet.title': 'Wallet',
-  'wallet.activate': 'I-activate ang recovery phrase',
-  'wallet.activateHint':
-    'Gumawa ng bagong passkey sa device na ito para maipakita ng 21.gifts ang 12-word recovery phrase mo. Hindi na gagana ang dating passkey.',
+  'wallet.addPhrase': 'Magdagdag ng recovery phrase',
+  'wallet.addPhraseHint':
+    'Lumilikha ito ng recovery phrase sa device na ito. Mananatili ang kasalukuyang login passkey mo.',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
@@ -2845,7 +2845,7 @@ const fil = {
     'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
   'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',
   'wallet.errorGeneric':
-    'Hindi mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
+    'Hindi magawa o mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
   'wallet.errorHint':
     'Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in.',
 

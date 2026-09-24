@@ -96,6 +96,7 @@ describe('usePasskeyLogin', () => {
       result.current.register();
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(rememberSessionPhrase).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
     vi.unstubAllGlobals();
   });
@@ -112,9 +113,8 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
-    expect(rememberSessionPhrase).toHaveBeenCalledWith(
-      'abandon ability able about above absent absorb abstract absurd abuse access accident',
-    );
+    expect(finishPasskeyRegistration).toHaveBeenCalled();
+    expect(rememberSessionPhrase).not.toHaveBeenCalled();
     const createArg = vi.mocked(navigator.credentials.create).mock.calls[0]?.[0] as
       CredentialCreationOptions | undefined;
     expect(createArg?.publicKey?.extensions).toHaveProperty('prf.eval.first');

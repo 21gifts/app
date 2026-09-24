@@ -5,7 +5,7 @@ import { WalletScreenView } from '@/components/WalletScreenView';
 import { useWalletPhrase } from '@/hooks/useWalletPhrase';
 
 /**
- * Signed-in wallet screen: recovery phrase activate / reveal / phrase.
+ * Signed-in wallet screen: add recovery phrase, reveal, or phrase grid.
  *
  * @returns The wallet card.
  */

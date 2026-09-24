@@ -87,7 +87,7 @@ export function WalletScreenView({
         </>
       ) : view === 'activate' ? (
         <>
-          <p className="text-sm text-app-muted">{t('wallet.activateHint')}</p>
+          <p className="text-sm text-app-muted">{t('wallet.addPhraseHint')}</p>
           <Button
             variant="primary"
             size="lg"
@@ -99,7 +99,7 @@ export function WalletScreenView({
               busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
             }
           >
-            {t('wallet.activate')}
+            {t('wallet.addPhrase')}
           </Button>
         </>
       ) : (
