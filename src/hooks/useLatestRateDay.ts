@@ -12,12 +12,16 @@ import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
  * has a usable rate yet, or when the fetch fails. Never throws into the
  * caller. Drops the response after unmount via a cancelled flag.
  *
+ * @param enabled - When false, skip the fetch and stay `null`. Default true.
  * @returns The latest rate day, or `null` without a usable rate.
  */
-export function useLatestRateDay(): FiatRateDay | null {
+export function useLatestRateDay(enabled = true): FiatRateDay | null {
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     let cancelled = false;
     void fetchGiftStats()
       .then((stats) => {
@@ -33,7 +37,7 @@ export function useLatestRateDay(): FiatRateDay | null {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return rateDay;
 }

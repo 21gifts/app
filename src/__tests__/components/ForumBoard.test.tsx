@@ -4864,7 +4864,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText("₿21'000 senden")).toBeTruthy();
     expect(screen.queryByText('—')).toBeNull();
-    expect(screen.queryByText(/CHF/)).toBeNull();
+    expect(screen.queryByText(/^CHF /)).toBeNull();
   });
 
   it('renders reply text with the gift amount underneath', () => {

@@ -4,6 +4,14 @@ import { PosScreen } from '@/components/PosScreen';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
+  return {
+    ...actual,
+    fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  };
+});
+
 const ACCOUNT = {
   id: 'acc_1',
   linkingKey: null,
@@ -339,17 +347,19 @@ describe('PosScreen', () => {
     };
     let releaseRefresh: ((value: Response) => void) | undefined;
     let calls = 0;
+    let cancelled = false;
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          cancelled = true;
+          return jsonResponse({ charge: null });
+        }
         calls += 1;
         if (calls === 1) {
           return jsonResponse({ charge: expired, history: [expired] });
         }
-        if (init?.method === 'DELETE') {
-          return jsonResponse({ charge: null });
-        }
-        if (releaseRefresh === undefined) {
+        if (!cancelled && releaseRefresh === undefined) {
           return new Promise<Response>((resolve) => {
             releaseRefresh = resolve;
           });
@@ -362,6 +372,9 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByText('0:00 left')).toBeTruthy();
+    await waitFor(() => {
+      expect(releaseRefresh).toEqual(expect.any(Function));
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
     await act(async () => {

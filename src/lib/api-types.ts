@@ -7,6 +7,9 @@ export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
 /** One of {@link NOTIFICATION_LEVELS}. */
 export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
 
+/** Typing unit stored on an account. Missing means bitcoin. */
+export type AmountUnit = 'btc' | 'fiat';
+
 /**
  * Runtime schema for the owner `funding` object on `GET /me`.
  *
@@ -87,6 +90,11 @@ export const accountSchema = z.object({
    */
   notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
   /**
+   * Typing unit for amount fields (`btc` or `fiat`). Optional so older api
+   * bodies still parse. Missing means bitcoin in the UI.
+   */
+  amountUnit: z.enum(['btc', 'fiat']).optional(),
+  /**
    * Owner funding-program grant. Optional so mixed deploys parse. `basis` is
    * `null`; verified+ is an object (`status: 'none'` when there is no row).
    * Missing or `undefined` is the same as `null` (no funding object).
@@ -133,6 +141,8 @@ export const accountSchema = z.object({
  * `notificationLevel` is `all` (every living-room post, reply, and gift),
  * `active` (posts with gifts), or `mentions` (admin/staff posts and events
  * that involve the owner). Omitted on older api builds; treat as `all`.
+ * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
+ * builds; treat as `btc`.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
  */

@@ -33,6 +33,8 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 9. **Staff action stacks stay closed.** A stack of labeled moderator or founder actions on a member card is not painted as loose buttons. _Implication:_ one closed disclosure, catalog `staff.functions` ("Moderator functions" / "Moderatorenfunktionen"), the same `details` / `summary` as wallet **Advanced functions** (`wallet.advanced`), not a full-width button. Opening it reveals only the actions that viewer may use on that person. The opened disclosure is its own screenshot state, not only the closed summary. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not add a second disclosure around their own tools. The Menu row **Moderation** stays. The staff inbox origin filter stays. Role pills are identity, not actions.
 
+10. **Amount fields carry the unit switch.** Every typed amount uses the gift ₿ / fiat-code control, and the other unit sits under the field. The last choice is stored on the account and is the default everywhere. A signed-out pay link still shows the switch and starts at ₿. What is sent is always whole sats. _Implication:_ a new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state.
+
 ## Brand
 
 **Wordmark.** The string `21.gifts` in Outfit, weight 700, tracking `0`. Not an SVG logotype. The drawn assets are the favicon/app-icon “21” and, only inside the printed shop sticker (`src/lib/shop-sticker-artwork.ts`, see **Overlay** › Shop sticker), the outlined Outfit 700 `21.gifts` shop sign with an orange **21** — a print product, never app chrome.
@@ -694,7 +696,7 @@ transition focus-visible:border-app-fg disabled:opacity-50
 
 16px (`text-base`) so iOS Safari does not auto-zoom on focus. No `outline-none`. The global `:focus-visible` ring is the keyboard encoding. No `error` prop; screens keep external `role="alert"` siblings.
 
-Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. Prefer `Field` when a label is visible (pay amount).
+Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. An amount the person types is `AmountEntry`, not `Field`: the gift `SegmentedControl` (₿ | fiat code) and the other unit under the field.
 
 **API.** `FieldProps` input/textarea union (`multiline?: false` / `multiline: true`).
 
@@ -859,13 +861,13 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Composer
 
-**Anatomy.** Top-level forum note: **Send a post** / **Ask for money** `SegmentedControl tone="neutral"` (`forum.composePost` / `forum.composeAsk`, 2-col `!rounded-2xl`). Post is attach + textarea + Send. Ask is `ForumAskWizard` (amount → photos → text → preview with labeled **Post**; step 1 and the preview start with the One-time / Daily pill). There is no leftover Ask field on the Post messenger. Forum reply: `flex items-end gap-2` with a labeled Amount `Field` (`forum.replyAmountLabel`) before Post. Contact/inbox list: `items-end`. Inbox open thread and Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + optional Amount (`showAmount`, inbox Direct/Contact/Damus) + send (`flex items-center gap-2`); the staff room hides Amount; still previews are a row below.
+**Anatomy.** Top-level forum note: **Send a post** / **Ask for money** `SegmentedControl tone="neutral"` (`forum.composePost` / `forum.composeAsk`, 2-col `!rounded-2xl`). Post is attach + textarea + Send. Ask is `ForumAskWizard` (amount → photos → text → preview with labeled **Post**; step 1 and the preview start with the One-time / Daily pill). There is no leftover Ask field on the Post messenger. Forum reply: `flex items-end gap-2` with `AmountEntry` (`forum.replyAmountLabel`) before Post. Contact/inbox list: `items-end`. Inbox open thread and Moderators group (`showAttach`): form `flex-col gap-2`; first row is attach `IconButton` + textarea + optional `AmountEntry` (`showAmount`, inbox Direct/Contact/Damus) + send (`flex items-center gap-2`); the staff room hides the amount; still previews are a row below.
 
-- Ask wizard (forum note only, when Ask is selected): heading + `{step} of {total}` on one row (step on the right). Step 1 and the preview begin with the same neutral two-column pill (`forum.askOnce` / `forum.askDaily`, aria `forum.askCadenceLabel`). Step 1 then shows the amount `id="forum-ask-amount"` `forum.askAmountLabel` `inputMode="numeric"` (Continue disabled until `parseForumAskAmount` returns 1..10_000_000; a parsed amount shows `formatBitcoin` plus optional preferred-fiat); step 2 photos (Continue, photos optional); step 3 text; step 4 preview card with photo/text, `ForumGoalBar` at 0 collected (**Ask** plus goal ₿ and optional fiat) and labeled **Post** (the only Ask submit).
+- Ask wizard (forum note only, when Ask is selected): heading + `{step} of {total}` on one row (step on the right). Step 1 and the preview begin with the same neutral two-column pill (`forum.askOnce` / `forum.askDaily`, aria `forum.askCadenceLabel`). Step 1 then shows `AmountEntry` `id="forum-ask-amount"` `forum.askAmountLabel` (Continue disabled until the parsed sats are 1..10_000_000; bitcoin entry shows the preferred fiat under the field, fiat entry shows the bitcoin equivalent); step 2 photos (Continue, photos optional); step 3 text; step 4 preview card with photo/text, `ForumGoalBar` at 0 collected (**Ask** plus goal ₿ and optional fiat) and labeled **Post** (the only Ask submit).
 - Attach: `IconButton` lg secondary, lucide `ImagePlus`, `aria-label` attach. Forum note composer (Post path and Ask step 2), and inbox composer when `showAttach` (Moderators group; JPEG/PNG/WebP, max 10).
 - Place: `IconButton` lg secondary, lucide `MapPin`, `aria-label` `forum.addPlace`, immediately after the photo button on the forum note composer only (not replies, not inbox). Optional. Confirming a pin stores it with the note. No Google key: the panel says the map is not available and does not set a pin.
 - Textarea: `min-h-11 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base`. 16px so iOS Safari does not auto-zoom on focus. `aria-label` from catalog. `maxLength` from API constants.
-- Amount (forum reply only): `Field` `forum.replyAmountLabel`, `inputMode="numeric"`, `w-24`. Empty or `0` invoices 1 sat for non-exempt visitors.
+- Amount (forum reply only): `AmountEntry` `forum.replyAmountLabel`. Empty stays empty and invoices 1 sat for non-exempt visitors; `0` becomes 1.
 - Send/Post: Post path `IconButton` lg primary, lucide `Send`. Ask preview: labeled `Button` `forum.post`. Loading: `Loader2`.
 - Preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
 - Goal bar lives on the note card and on Ask preview, not on the Post messenger (see Note card).
@@ -874,7 +876,7 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Pay sheet
 
-**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `Field` amount. Live fiat line for the draft or default 21 sats when the conversion is non-null (preferred fiat from Profile; no picker). Alerts. `Button` primary:
+**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `AmountEntry` (`forum.payAmountLabel`): bitcoin entry shows the preferred fiat under the field, fiat entry shows the bitcoin equivalent. A blank field is 21 sats in either unit. After mint the field is locked on the sat amount and the counter stays fiat. Alerts. `Button` primary:
 
 - iPhone / iPod (`isSmartphoneUserAgent` and not `isAndroidUserAgent`): **Pay** (`forum.payNow`; DE **Bezahlen**). One tap mints the invoice and keeps this form. It does not `window.location.assign`. After mint the amount field is disabled and the CTA becomes the wallet `Button` that sets `window.location.href` to `walletofsatoshi:` (no QR, no second invoice card).
 - Android phone (`isSmartphoneUserAgent` and `isAndroidUserAgent`): **Continue** (`forum.payContinue`). After mint, same amount form and wallet `Button`; `location.href` is the Android Intent URL.

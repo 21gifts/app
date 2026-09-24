@@ -3,14 +3,18 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { AmountEntry } from '@/components/AmountEntry';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, Card, Field } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { formatBitcoin } from '@/lib/stats-money';
+import type { AmountUnit } from '@/lib/api-types';
+import { formatBitcoin, parseAmountDraft } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -38,13 +42,16 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
 export function PosScreen(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
+  const rateDay = useLatestRateDay(session !== null);
   const [state, setState] = useState<PosState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   busyRef.current = busy;
@@ -135,11 +142,12 @@ export function PosScreen(): ReactElement {
     if (session === null) {
       return;
     }
-    const amountSats = Number(amount);
-    if (!Number.isInteger(amountSats) || amountSats < 1) {
+    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+    if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
       return;
     }
+    const amountSats = parsed.sats;
     const mine = ++generation.current;
     setBusy(true);
     setError(null);
@@ -255,19 +263,14 @@ export function PosScreen(): ReactElement {
       (account?.username ?? '') !== '' &&
       (account?.lightningAddress ?? '').trim() !== '' ? (
         <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
-          <Field
+          <AmountEntry
             label={t('pos.amount')}
-            name="amount"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
             placeholder={t('pos.amountPlaceholder')}
             value={amount}
-            onChange={(event) => {
-              setAmount(event.target.value);
-            }}
+            onValueChange={setAmount}
+            onUnitChange={setShownUnit}
             disabled={busy}
+            rateDay={rateDay}
           />
           <Button type="submit" size="lg" disabled={busy}>
             {t('pos.create')}

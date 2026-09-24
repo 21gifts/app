@@ -15,8 +15,15 @@ import {
   type ForumPayInvoice,
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { shownFiatForSats } from '@/lib/stats-money';
+import {
+  fiatDraftForSats,
+  parseAmountDraft,
+  paySatsFromDraft,
+  replySatsFromDraft,
+  shownFiatForSats,
+} from '@/lib/stats-money';
 import {
   dismissForumLaws,
   fetchMessagePhoto,
@@ -30,7 +37,12 @@ import {
   postMessageInvoice,
   postMessageVideo,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type AmountUnit,
+  type ForumMessage,
+  type ForumPlacePin,
+} from '@/lib/api-types';
 import {
   DEFAULT_FORUM_FEED_MODE,
   FORUM_HOME_EVENT,
@@ -40,7 +52,7 @@ import {
   unpaidNewCount,
   visibleForumMessages,
 } from '@/lib/forum-feed';
-import { parseForumAskAmount } from '@/lib/forum-goal';
+import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
@@ -118,27 +130,6 @@ function isAuthorWalletError(err: unknown): boolean {
     return false;
   }
   return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
-}
-
-/**
- * Parses the reply-composer sats draft.
- *
- * @param raw - Amount field value.
- * @returns Whole sats (`0` becomes `1`), `'empty'` when blank, or `'invalid'`.
- */
-function parseReplySats(raw: string): number | 'empty' | 'invalid' {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    return 'empty';
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return 'invalid';
-  }
-  const sats = Number.parseInt(trimmed, 10);
-  if (!Number.isSafeInteger(sats)) {
-    return 'invalid';
-  }
-  return sats < 1 ? 1 : sats;
 }
 
 /**
@@ -328,6 +319,10 @@ export function ForumLoader({
 } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { fiat } = useFiatPreference();
+  const amountUnit = account?.amountUnit ?? 'btc';
+  const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
+  const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
   const router = useRouter();
   const scroller = useAppShellScroller();
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -348,6 +343,9 @@ export function ForumLoader({
   const [attempt, setAttempt] = useState(0);
   const [draft, setDraft] = useState('');
   const [askDraft, setAskDraft] = useState('');
+  const [askDraftUnit, setAskDraftUnit] = useState<AmountUnit>(amountUnit);
+  const askUnit = useRef(askDraftUnit);
+  askUnit.current = askDraftUnit;
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
@@ -393,6 +391,41 @@ export function ForumLoader({
   const rateDay = useLatestRateDay();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
+  useEffect(() => {
+    if (askUnit.current === amountUnit) {
+      return;
+    }
+    if (askStep === 1) {
+      return;
+    }
+    const from = askUnit.current;
+    const adopt = (): void => {
+      askUnit.current = amountUnit;
+      setAskDraftUnit(amountUnit);
+    };
+    setAskDraft((draft) => {
+      const parsed = parseAmountDraft(from, draft, rateDay, fiat);
+      /* v8 ignore next 4 -- an empty ask cannot leave step 1 */
+      if (parsed.kind === 'empty') {
+        adopt();
+        return draft;
+      }
+      /* v8 ignore next 3 -- an unparsable ask cannot leave step 1; a missing rate retries */
+      if (parsed.kind !== 'sats') {
+        return draft;
+      }
+      if (amountUnit === 'btc') {
+        adopt();
+        return String(parsed.sats);
+      }
+      const next = fiatDraftForSats(parsed.sats, rateDay, fiat);
+      if (next === null) {
+        return draft;
+      }
+      adopt();
+      return next;
+    });
+  }, [amountUnit, askStep, fiat, rateDay]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef(expandedId);
   expandedIdRef.current = expandedId;
@@ -1679,7 +1712,7 @@ export function ForumLoader({
     }
     let goalSats: number | undefined;
     if (feed !== 'shops' && composeIntent === 'ask') {
-      const parsed = parseForumAskAmount(askDraft);
+      const parsed = parseForumAskAmountInUnit(askDraft, askUnit.current, rateDay, fiat);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
       if (parsed === null) {
         setFormError('ask');
@@ -1716,20 +1749,10 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
-    const rawAmount = payDraft.trim();
-    let sats: number;
-    if (rawAmount === '') {
-      sats = DEFAULT_FORUM_PAY_SATS;
-    } else if (!/^\d+$/.test(rawAmount)) {
+    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    if (sats === 'invalid') {
       setPayError('amount');
       return;
-    } else {
-      sats = Number.parseInt(rawAmount, 10);
-      /* v8 ignore next 4 -- /^\d+$/ parseInt is non-negative; 0 and overflow are defensive */
-      if (sats <= 0 || !Number.isSafeInteger(sats)) {
-        setPayError('amount');
-        return;
-      }
     }
     const messageId = payMessageId;
     const baseline = listed.sats;
@@ -2084,7 +2107,7 @@ export function ForumLoader({
       setReplyFormError('tooLong');
       return;
     }
-    const parsed = parseReplySats(replyAmountDraft);
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
@@ -2241,6 +2264,8 @@ export function ForumLoader({
           setFormError(null);
         }}
         askDraft={askDraft}
+        askDraftUnit={askDraftUnit}
+        onAskDraftUnit={setAskDraftUnit}
         onAskDraftChange={(value) => {
           setAskDraft(value);
           setFormError(null);
@@ -2297,6 +2322,8 @@ export function ForumLoader({
           setPayWaiting(false);
           setPayBusy(false);
         }}
+        onPayUnitChange={setPayShownUnit}
+        onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
           setPayDraft(value);
           setPayError(null);

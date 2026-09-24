@@ -251,6 +251,16 @@ export function proxyMeNotificationLevelPost(request: Request): Promise<Response
 }
 
 /**
+ * Proxies POST /me/amount-unit to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ unit }`).
+ * @returns The upstream response.
+ */
+export function proxyMeAmountUnitPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/amount-unit');
+}
+
+/**
  * Proxies POST /me/lightning-address to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
