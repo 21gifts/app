@@ -429,7 +429,7 @@
 - **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`), `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading` | `nav.back`, default `profile.back`), and `onBackClick`. A plain click with `onBackClick` stays on the page; modified clicks still follow `backHref`.
 - **Inputs:** Optional `backHref`, `backLabelKey`, and `onBackClick`; catalog via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. `onBackClick` runs on an unmodified primary click. No network.
-- **Used by:** `ProfilePage`, `WalletChromeLeft`, `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` no longer mounts `ProfileChromeLeft` directly (it mounts `WalletChromeLeft`, which renders `ProfileChromeLeft`).
+- **Used by:** `ProfilePage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
 
 ## Function: resetWalletReturn
 
@@ -796,6 +796,7 @@
 - **Returns / side effects:** Portal into the shell top-left host when present; otherwise the children. Layout only.
 - **Used by:**
   - **`RulesSetup`** (chapter back + wordmark)
+  - **`WalletScreenView`** (Wallet Back and wordmark; wins over the page `topLeft`)
   - **`AppShell` unit tests** (child portal wins over the page `topLeft` prop)
 
 ## Function: PageChrome

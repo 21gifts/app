@@ -31,6 +31,7 @@ describe('ProfileChromeLeft', () => {
     );
     expect(screen.queryByText('Back to the forum')).toBeNull();
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
   });
 
   it('renders an inbox back link to /messages and wordmark to /welcome', () => {
@@ -51,6 +52,10 @@ describe('ProfileChromeLeft', () => {
     fireEvent.click(back);
     expect(onBackClick).toHaveBeenCalledTimes(1);
     fireEvent.click(back, { metaKey: true });
+    fireEvent.click(back, { ctrlKey: true });
+    fireEvent.click(back, { shiftKey: true });
+    fireEvent.click(back, { altKey: true });
+    fireEvent.click(back, { button: 1 });
     expect(onBackClick).toHaveBeenCalledTimes(1);
   });
 });

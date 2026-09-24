@@ -41,7 +41,7 @@ export function WalletScreenView({
       detailsRef.current.open = false;
       return;
     }
-    if (typeof window !== 'undefined' && window.history.length > 1) {
+    if (window.history.length > 1) {
       window.history.back();
       return;
     }
