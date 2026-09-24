@@ -186,7 +186,7 @@ describe('PayLinkScreen', () => {
     });
   });
 
-  it('shows the QR on a phone and opens the Android wallet intent', async () => {
+  it('opens the Android wallet intent without an invoice QR', async () => {
     setUserAgent(
       'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
     );
@@ -201,7 +201,7 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create invoice' }));
     const pay = await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' });
-    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
     const hrefs: string[] = [];
     const previous = window.location;
     Object.defineProperty(window, 'location', {
@@ -355,6 +355,26 @@ describe('PayLinkScreen', () => {
     mockFetch(async () => new Response('not-json', { status: 200 }));
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect((await screen.findByRole('alert')).textContent).toBe('This payment link is not valid.');
+  });
+
+  it('keeps Pay and omits the invoice QR on a smartphone till', async () => {
+    setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      return Response.json({
+        ...profile,
+        minSats: 238093,
+        maxSats: 238093,
+        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
   });
 
   it('shows an open till instead of creating another invoice', async () => {

@@ -989,7 +989,7 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate');
   });
 
-  test('screen /pl', async ({ page }) => {
+  test('screen /pl', async ({ page }, testInfo) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
@@ -1023,7 +1023,11 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Create invoice' }).click();
-    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-pl-invoice');
   });
@@ -1063,7 +1067,7 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-failed');
   });
 
-  test('screen /pl charge', async ({ page }) => {
+  test('screen /pl charge', async ({ page }, testInfo) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     // pauseAt only moves forward, so the clock starts a minute earlier and freezes on the hour.
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
@@ -1095,7 +1099,11 @@ test.describe('screen baselines', () => {
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create invoice' })).toHaveCount(0);
-    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-pl-charge');
   });

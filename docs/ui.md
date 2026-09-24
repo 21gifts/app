@@ -150,7 +150,7 @@ flowchart TD
   acc -.-> X[Not: app form primary / Post / Pay (pay sheet) / filter / RULE n text / Welcome ticks]
 ```
 
-**QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. The only omission is the forum-post pay sheet (`isSmartphoneUserAgent`, not viewport): the same invoice card as desktop, without a mounted `QrCode`.
+**QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. A specific invoice omits it (`isSmartphoneUserAgent`, not viewport): the forum-post pay sheet and the public pay link, the same card as desktop, without a mounted `QrCode`.
 
 **Contrast (WCAG 2.2 AA)** against current tokens.
 
@@ -1185,7 +1185,7 @@ WCAG 2.2 AA.
 - **Focus order:** unsigned chrome is Wordmark then switchers. Signed-in `ProfileChromeLeft` is back **then** wordmark, then main title → fields → primary action → Menu. Menu open: focus stays on trigger; Escape closes.
 - **`aria-label`:** required on every `IconButton`; catalog key, all four locales. Decorative glyphs `aria-hidden`.
 - **Color not the only encoding:** profile Given/Received have text labels; forum payable replies are a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off text plus selected fill, not fill-vs-outline bell.
-- **QR:** `role="img"` + catalog label (`QrCode`). QR plates stay white. The only smartphone omission is the forum pay-sheet QR (`isSmartphoneUserAgent`, not viewport).
+- **QR:** `role="img"` + catalog label (`QrCode`). QR plates stay white. A specific invoice omits the QR on a smartphone (`isSmartphoneUserAgent`, not viewport): the forum pay sheet and the public pay link.
 - **Expandable notes:** `aria-expanded`. Keyboard Enter/Space.
 - **Language listbox:** combobox/listbox.
 
@@ -1210,8 +1210,8 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 3. **Orange is shell-split.** Marketing: primary filled CTA + kickers + stats paint. App: gift-money **fill** only. Never orange text on paper. THE TEST bar is the only decorative orange on `/rules`.
 4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. The only outlined copy is the shop sign inside the printed shop-sticker artwork. Signed-in links to `/welcome` except `/setup/*` (span); marketing, login, donate, and view follow it via `HomeWordmark`.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
-6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
-7. **QR plates stay white** in both themes, `border-app-border`. The only smartphone omission is the forum pay-sheet QR (`isSmartphoneUserAgent`, not viewport).
+6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only with no ` · —`, a missing field uses the latest gift-day rate). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
+7. **QR plates stay white** in both themes, `border-app-border`. A specific invoice omits the QR on a smartphone (`isSmartphoneUserAgent`, not viewport): the forum pay sheet and the public pay link.
 8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
