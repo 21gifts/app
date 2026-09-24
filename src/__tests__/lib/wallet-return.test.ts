@@ -112,6 +112,21 @@ describe('tab storage', () => {
     expect(walletBackHref()).toBe('/welcome');
   });
 
+  it('ignores a sessionStorage getter that throws', () => {
+    dropSlot();
+    const storage = window.sessionStorage;
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      get() {
+        throw new Error('denied');
+      },
+    });
+    expect(walletBackHref()).toBe('/welcome');
+    expect(() => rememberWalletReturn('/map')).not.toThrow();
+    Object.defineProperty(window, 'sessionStorage', { configurable: true, value: storage });
+    dropSlot();
+  });
+
   it('ignores a storage read that throws', () => {
     dropSlot();
     const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {

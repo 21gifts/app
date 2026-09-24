@@ -65,11 +65,11 @@ function browserSlot(): ReturnSlot | null {
  * @returns A safe path, or `null`.
  */
 function readStoredPath(): string | null {
-  /* v8 ignore next 3 -- SSR has no sessionStorage */
-  if (typeof sessionStorage === 'undefined') {
-    return null;
-  }
   try {
+    /* v8 ignore next 3 -- SSR has no sessionStorage */
+    if (typeof sessionStorage === 'undefined') {
+      return null;
+    }
     const value = sessionStorage.getItem(RETURN_KEY);
     if (value !== null && isSafeWalletReturnPath(value)) {
       return value;
@@ -86,11 +86,11 @@ function readStoredPath(): string | null {
  * @param path - Safe path, or `null` to clear.
  */
 function writeStoredPath(path: string | null): void {
-  /* v8 ignore next 3 -- SSR has no sessionStorage */
-  if (typeof sessionStorage === 'undefined') {
-    return;
-  }
   try {
+    /* v8 ignore next 3 -- SSR has no sessionStorage */
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
     if (path === null) {
       sessionStorage.removeItem(RETURN_KEY);
       return;
