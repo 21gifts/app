@@ -2,7 +2,6 @@
 
 import { useRef, type ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -30,7 +29,6 @@ export function WalletScreenView({
   retry,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
-  const router = useRouter();
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
@@ -44,10 +42,10 @@ export function WalletScreenView({
       return;
     }
     if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
+      window.history.back();
       return;
     }
-    router.push(WALLET_BACK_FALLBACK);
+    window.location.assign(WALLET_BACK_FALLBACK);
   };
   const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
   const errorCopy =

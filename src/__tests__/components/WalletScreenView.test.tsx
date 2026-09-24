@@ -4,18 +4,7 @@ import { WalletScreenView } from '@/components/WalletScreenView';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-const back = vi.fn();
-const push = vi.fn();
-
-vi.mock('next/navigation', () => ({
-  useRouter: (): { back: typeof back; push: typeof push } => ({ back, push }),
-}));
-
-afterEach(() => {
-  cleanup();
-  back.mockClear();
-  push.mockClear();
-});
+afterEach(cleanup);
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
@@ -85,10 +74,11 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     fireEvent.click(screen.getByRole('link', { name: 'Back' }));
     expect(hidePhrase).toHaveBeenCalledTimes(1);
-    expect(back).not.toHaveBeenCalled();
-    expect(push).not.toHaveBeenCalled();
+    expect(historyBack).not.toHaveBeenCalled();
+    historyBack.mockRestore();
   });
 
   it('closes Advanced functions before leaving the page', () => {
@@ -109,14 +99,17 @@ describe('WalletScreenView', () => {
       throw new Error('missing details');
     }
     details.open = true;
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     fireEvent.click(screen.getByRole('link', { name: 'Back' }));
     expect(details.open).toBe(false);
-    expect(back).not.toHaveBeenCalled();
+    expect(historyBack).not.toHaveBeenCalled();
+    historyBack.mockRestore();
   });
 
   it('goes back one history step when nothing on the page is open', () => {
     const descriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
     Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     renderWithLocale(
       <WalletScreenView
         view="reveal"
@@ -130,11 +123,32 @@ describe('WalletScreenView', () => {
       />,
     );
     fireEvent.click(screen.getByRole('link', { name: 'Back' }));
-    expect(back).toHaveBeenCalledTimes(1);
-    expect(push).not.toHaveBeenCalled();
+    expect(historyBack).toHaveBeenCalledTimes(1);
+    historyBack.mockRestore();
     if (descriptor) {
       Object.defineProperty(window.history, 'length', descriptor);
     }
+  });
+
+  it('opens the forum when this tab has no previous page', () => {
+    Object.defineProperty(window.history, 'length', { configurable: true, value: 1 });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(assign).toHaveBeenCalledWith('/welcome');
+    vi.unstubAllGlobals();
   });
 
   it('does not show the grid when phrase view has fewer than twelve words', () => {
