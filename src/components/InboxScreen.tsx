@@ -366,60 +366,6 @@ function inboxAuthorProfileButton(
   );
 }
 
-/**
- * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer and a sats amount field (`showAmount` false
- * hides it; the staff room has no gifts). Members (`showFilter`
- * false) see inbound rows except `moderator_group`. Moderators
- * (`showFilter` true) see the origin control (Direct / Contact / Damus);
- * default Direct. Rows with `kind` `moderator_group` are never listed (the
- * closed staff room lives on `/moderate/group`). Origin labels come from
- * {@link Conversation} `kind` (Direct, Contact, Damus, or Moderators).
- * Outbound last-text previews use `inbox.sentPreview` as a filled chip.
- * Gift-only last rows (`lastText` empty, `lastSats` &gt; 0) show
- * `formatBitcoin(lastSats)` with the same chip vs muted split. Incoming
- * thread messages are full-width muted note cards; `fromMe` messages render
- * as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only
- * bubbles use `forum.giftReply`; text+sats show the amount under the body.
- * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
- * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
- * `showAttach` (default false for callers that omit it) adds the forum
- * ImagePlus control, still previews, and photo-only send for any caller
- * that passes true (`/messages` open threads and the staff room);
- * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
- * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
- * when the payment was made (a stored string as-is, ₿-only when that field is
- * null, the latest rate when the field is missing). Unsent
- * invoice previews still use optional `rateDay`. A message whose `giftFor` points at
- * another message renders via {@link groupThreadGifts} as a nested
- * `role="note"` line inside the parent's list item. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. The
- * open-thread heading is the counterpart name plus origin caption (no in-card
- * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
- * last-text (read inbound last-text stays muted). When the derived unread
- * message count is greater than zero, the digits sit right of the name
- * (`text-sm font-semibold tabular-nums lining-nums`) and the list button
- * `aria-label` is `inbox.threadUnread` with `{name}` and `{count}`; the
- * word Unread is not visible text. Heading and incoming author names with a
- * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
- * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
- * An open thread stays pinned to the AppShell scroller bottom while the
- * scroller is within 80px of the bottom, including when older pages prepend
- * and when stills on the loaded page finish decoding (`onLoad`). Scrolling up unsticks; further
- * prepends keep the same messages in view by compensating scrollTop. A
- * newest-id change re-sticks. An invoice pay sheet opening pins again.
- * Inside AppShell the pin waits for that scroller and does not fall back to
- * `window` while the node is missing; `window` is only the no-shell fallback.
- * Leaving a thread scrolls that scroller to the top once so the conversation
- * list is not left at the thread offset. A supplied `nearStartRef` is attached
- * to the eighth grouped bubble from the start, or the first bubble when fewer
- * than eight render, so loaders can prepend older pages without changing the
- * newest id.
- *
- * @param props - List/thread/composer state from {@link InboxLoader} or
- *   {@link ModeratorGroupScreen}.
- * @returns The inbox card.
- */
 function ConversationListItem({
   row,
   onOpen,
@@ -516,6 +462,60 @@ function ConversationListItem({
   );
 }
 
+/**
+ * Presentational signed-in inbox: conversation list or one open thread with
+ * a 500-character composer and a sats amount field (`showAmount` false
+ * hides it; the staff room has no gifts). Members (`showFilter`
+ * false) see inbound rows except `moderator_group`. Moderators
+ * (`showFilter` true) see the origin control (Direct / Contact / Damus);
+ * default Direct. Rows with `kind` `moderator_group` are never listed (the
+ * closed staff room lives on `/moderate/group`). Origin labels come from
+ * {@link Conversation} `kind` (Direct, Contact, Damus, or Moderators).
+ * Outbound last-text previews use `inbox.sentPreview` as a filled chip.
+ * Gift-only last rows (`lastText` empty, `lastSats` &gt; 0) show
+ * `formatBitcoin(lastSats)` with the same chip vs muted split. Incoming
+ * thread messages are full-width muted note cards; `fromMe` messages render
+ * as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only
+ * bubbles use `forum.giftReply`; text+sats show the amount under the body.
+ * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
+ * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
+ * `showAttach` (default false for callers that omit it) adds the forum
+ * ImagePlus control, still previews, and photo-only send for any caller
+ * that passes true (`/messages` open threads and the staff room);
+ * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
+ * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
+ * when the payment was made (a stored string as-is, ₿-only when that field is
+ * null, the latest rate when the field is missing). Unsent
+ * invoice previews still use optional `rateDay`. A message whose `giftFor` points at
+ * another message renders via {@link groupThreadGifts} as a nested
+ * `role="note"` line inside the parent's list item. An open `invoice` shows the
+ * Wallet of Satoshi / QR pay sheet. The
+ * open-thread heading is the counterpart name plus origin caption (no in-card
+ * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
+ * last-text (read inbound last-text stays muted). When the derived unread
+ * message count is greater than zero, the digits sit right of the name
+ * (`text-sm font-semibold tabular-nums lining-nums`) and the list button
+ * `aria-label` is `inbox.threadUnread` with `{name}` and `{count}`; the
+ * word Unread is not visible text. Heading and incoming author names with a
+ * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
+ * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
+ * An open thread stays pinned to the AppShell scroller bottom while the
+ * scroller is within 80px of the bottom, including when older pages prepend
+ * and when stills on the loaded page finish decoding (`onLoad`). Scrolling up unsticks; further
+ * prepends keep the same messages in view by compensating scrollTop. A
+ * newest-id change re-sticks. An invoice pay sheet opening pins again.
+ * Inside AppShell the pin waits for that scroller and does not fall back to
+ * `window` while the node is missing; `window` is only the no-shell fallback.
+ * Leaving a thread scrolls that scroller to the top once so the conversation
+ * list is not left at the thread offset. A supplied `nearStartRef` is attached
+ * to the eighth grouped bubble from the start, or the first bubble when fewer
+ * than eight render, so loaders can prepend older pages without changing the
+ * newest id.
+ *
+ * @param props - List/thread/composer state from {@link InboxLoader} or
+ *   {@link ModeratorGroupScreen}.
+ * @returns The inbox card.
+ */
 export function InboxScreen({
   conversations,
   error,

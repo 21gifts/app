@@ -733,13 +733,43 @@ test('Function: proxyTranslateConversationMessagePost — POST conversation tran
   ).toBeGreaterThanOrEqual(400);
 });
 
-test('Function: translateConversationMessage — unsigned conversation translate is rejected', async ({
-  request,
+test('Function: translateConversationMessage — Translate a conversation preview', async ({
+  page,
 }) => {
-  const res = await request.post('/conversations/[id]/messages/[messageId]/translate', {
-    data: { target: 'en' },
+  await seedAdaSession(page);
+  await page.route('**/conversations', async (route) => {
+    const url = new URL(route.request().url());
+    if (route.request().method() !== 'GET' || url.pathname !== '/conversations') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-de',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: GERMAN_NOTE_TEXT,
+            lastMessageId: 'cm-de',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: false,
+            unreadMessageCount: 0,
+          },
+        ],
+        unreadCount: 0,
+      }),
+    });
   });
-  expect(res.status()).toBeGreaterThanOrEqual(400);
+  await page.goto('/messages');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
 });
 
 test('Function: proxyConversationMessagePhotoGet — GET photo without bearer', async ({
