@@ -793,7 +793,7 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('stays bitcoin-only when the note stored no fiat', async () => {
+  it('shows the viewer fiat when the note stored no fiat', async () => {
     fetchGiftStatsMock.mockResolvedValue({
       ...EMPTY_STATS,
       spendOverTime: [
@@ -817,10 +817,7 @@ describe('PublicMessageLoader', () => {
     fetchMessage.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     expect(await screen.findByText('₿21')).toBeTruthy();
-    await waitFor(() => {
-      expect(fetchGiftStatsMock).toHaveBeenCalled();
-    });
-    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(await screen.findByText('$0.02')).toBeTruthy();
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 

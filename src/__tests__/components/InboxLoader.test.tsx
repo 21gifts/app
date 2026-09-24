@@ -964,7 +964,7 @@ describe('InboxLoader', () => {
     },
   );
 
-  it('stays bitcoin-only on a sats message that stored no fiat', async () => {
+  it('shows the viewer fiat on a sats message that stored no fiat', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
@@ -982,10 +982,7 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();
-    await waitFor(() => {
-      expect(giftStatsMock).toHaveBeenCalled();
-    });
-    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(await screen.findByText('$0.02')).toBeTruthy();
   });
 
   it('survives a failing stats fetch', async () => {

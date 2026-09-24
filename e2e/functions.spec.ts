@@ -4060,7 +4060,7 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: satsToFiatAmount — a note without stored fiat stays bitcoin-only', async ({
+test('Function: satsToFiatAmount — a note without stored fiat shows the viewer fiat', async ({
   page,
 }) => {
   await stubGiftStats(page, POPULATED_STATS);
@@ -4112,10 +4112,10 @@ test('Function: satsToFiatAmount — a note without stored fiat stays bitcoin-on
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
-  await expect(page.getByText('$0.02')).toHaveCount(0);
+  await expect(page.getByText('$0.02')).toBeVisible();
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
-  await expect(page.getByText('$0.02')).toBeVisible();
+  await expect(page.getByText('$0.02').first()).toBeVisible();
 });
 
 test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount once', async ({
