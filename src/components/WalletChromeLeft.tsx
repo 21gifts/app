@@ -5,15 +5,13 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { WALLET_BACK_FALLBACK, walletBackHref } from '@/lib/wallet-return';
 
 /**
- * Client `/wallet` chrome: back to the remembered in-app page, wordmark to
- * the forum.
+ * Page `/wallet` chrome, shown only until the card registers its own Back.
  *
- * The server render links to `/welcome`. Before paint, the href becomes the
- * path this tab remembered (`sessionStorage` plus a `globalThis` slot, so a
- * second copy of the module still sees it). Forum fallback uses
- * `profile.back`; any other path uses `nav.back`.
+ * A plain click takes one history step (`history.back()`), or opens the
+ * forum when this tab has no previous page. The href is the remembered path
+ * for a modified click. The wordmark opens the forum.
  *
- * @returns {@link ProfileChromeLeft} for the current wallet return path.
+ * @returns {@link ProfileChromeLeft} for the page-level wallet Back.
  */
 export function WalletChromeLeft(): ReactElement {
   const [href, setHref] = useState(WALLET_BACK_FALLBACK);
@@ -24,6 +22,13 @@ export function WalletChromeLeft(): ReactElement {
     <ProfileChromeLeft
       backHref={href}
       backLabelKey={href === '/welcome' ? 'profile.back' : 'nav.back'}
+      onBackClick={() => {
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        window.location.assign(WALLET_BACK_FALLBACK);
+      }}
     />
   );
 }
