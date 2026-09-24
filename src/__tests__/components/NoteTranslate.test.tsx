@@ -84,6 +84,7 @@ describe('NoteTranslate', () => {
     expect(
       (await screen.findByRole('button', { name: 'Translate' })).hasAttribute('disabled'),
     ).toBe(false);
+    expect(screen.queryByText('Translate')).toBeNull();
   });
 
   it('disables Translate while a deferred request is loading', async () => {
