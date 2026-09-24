@@ -13,13 +13,13 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 
 ### Variant: default
 
-Desktop/wide layout: section nav is visible in the header (How it works, Why, FAQ, About, Stats, Handbook, Log in). No hamburger.
+Desktop/wide layout (from 1024px): section nav is visible in the header (How it works, Happyland, Why, FAQ, About, Stats, Handbook, Log in). Happyland links to `/#happyland`, including from other marketing pages, and leaves space below the sticky header for the section heading. No hamburger.
 
 ![21.gifts home](images/root.png)
 
 ### Variant: mobile-nav
 
-Captured at desktop and mobile. On mobile the header shows the Menu button; open it to reveal the same links stacked (tapping a link closes the menu). On desktop this is the landing without the hamburger.
+Captured at desktop and mobile. Below 1024px the header shows the Menu button; open it to reveal the same links stacked, with Happyland immediately after How it works. Tapping Happyland closes the menu and scrolls to the existing photo essay. On desktop this is the landing without the hamburger.
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
@@ -173,7 +173,7 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 - **URL:** `/wallet` — signed-in recovery phrase.
 - **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. The phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: primary button **Add recovery phrase** and a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, via PRF get of that id, without `credentials.create` and without seed/begin. Pressing it shows the 12 words and the only-backup line. There is no confirmation and no **Continue** on the words.
-- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Map, Point of sale, Profile, Wallet, …). Back returns to the in-app page Wallet was opened from; a direct open (nothing remembered) goes to the forum (`/welcome`). The wordmark still opens the forum. Opening any other signed-in page shows that page. The 12 words appear only on `/wallet`, after **Show recovery phrase** or right after **Add recovery phrase**.
+- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Map, Point of sale, Profile, Wallet, …). Back returns to the in-app page this tab remembered; a tab that has not opened another page goes to the forum (`/welcome`). The wordmark still opens the forum. Opening any other signed-in page shows that page. The 12 words appear only on `/wallet`, after **Show recovery phrase** or right after **Add recovery phrase**.
 - **Calls:** `AppShell`, `WalletChromeLeft` (renders `ProfileChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
 
 ### Variant: default

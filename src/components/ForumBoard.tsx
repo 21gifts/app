@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -515,6 +516,23 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
+ * Scrolls the reply form up only when its bottom sits past the shell.
+ *
+ * @param scroller - App shell scroller, or null when the board is not inside one.
+ * @param form - Reply form, or null when no reply composer is open.
+ * @returns void
+ */
+export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElement | null): void {
+  if (scroller === null || form === null) {
+    return;
+  }
+  const overflow = form.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom;
+  if (overflow > 0) {
+    scroller.scrollTop += overflow + 12;
+  }
+}
+
+/**
  * Presentational public forum: optional dismissible living-room laws hint,
  * ForumModeSelect (a closed full-width combobox showing the selected label
  * and a chevron; unpaid count chip on the closed trigger when `unpaidNewCount`
@@ -523,7 +541,8 @@ function fallbackCopy(text: string): boolean {
  * filters above the newest-first list (new notes only; Post/Ask pill;
  * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
  * feed) or empty/loading/error, per-card expand for oldest-first replies +
- * reply composer (labeled Amount field; gift-only rows use `forum.giftReply`
+ * reply composer (amount and the bitcoin/fiat switch on one line, text and
+ * send on the next; gift-only rows use `forum.giftReply`
  * + `formatBitcoin(sats, numberFormat)`, text-plus-gift shows the amount
  * under the body), copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
@@ -633,6 +652,22 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
+  const shownReplies = replies === null ? -1 : replies.length;
+  useLayoutEffect(() => {
+    const field = replyComposerRef.current;
+    const form = field === null ? null : field.form;
+    revealReplyForm(scroller, form);
+    if (form === null || scroller === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      revealReplyForm(scroller, form);
+    });
+    observer.observe(form);
+    return () => {
+      observer.disconnect();
+    };
+  }, [expandedId, repliesLoading, scroller, shownReplies]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -1385,7 +1420,22 @@ export function ForumBoard({
                   ) : null}
                   {message.deletedAt === undefined ? (
                     <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                      <div className="flex items-end gap-2">
+                      <AmountEntry
+                        id="forum-reply-amount"
+                        layout="inline"
+                        label={t('forum.replyAmountLabel')}
+                        placeholder={t('forum.payAmountPlaceholder')}
+                        value={replyAmountDraft}
+                        disabled={
+                          replyPosting || repliesLoading || repliesError || replies === null
+                        }
+                        rateDay={rateDay}
+                        onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                        {...(onReplyUnitChange === undefined
+                          ? {}
+                          : { onUnitChange: onReplyUnitChange })}
+                      />
+                      <div className="flex items-center gap-2">
                         <textarea
                           ref={replyComposerRef}
                           aria-label={t('forum.replyComposerLabel')}
@@ -1393,25 +1443,11 @@ export function ForumBoard({
                           value={replyDraft}
                           onChange={(event) => onReplyDraftChange(event.target.value)}
                           maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                          rows={2}
+                          rows={1}
                           disabled={
                             replyPosting || repliesLoading || repliesError || replies === null
                           }
-                          className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
-                        />
-                        <AmountEntry
-                          id="forum-reply-amount"
-                          label={t('forum.replyAmountLabel')}
-                          placeholder={t('forum.payAmountPlaceholder')}
-                          value={replyAmountDraft}
-                          disabled={
-                            replyPosting || repliesLoading || repliesError || replies === null
-                          }
-                          rateDay={rateDay}
-                          onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                          {...(onReplyUnitChange === undefined
-                            ? {}
-                            : { onUnitChange: onReplyUnitChange })}
+                          className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
                         />
                         <IconButton
                           type="submit"

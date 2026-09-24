@@ -513,6 +513,8 @@ test.beforeEach(async ({ page }, testInfo) => {
  * Playwright fullPage stitches viewport chunks; sticky chrome is painted
  * into every chunk. Force document flow so each header appears once.
  * The sticky New posts pill is a viewport shot, not unstuck here.
+ * App-shell pages are always a viewport shot: the frame is one window,
+ * and a full-page capture would append scrolled overflow under it.
  *
  * @param page - Page under test.
  */
@@ -524,8 +526,12 @@ async function unstickStickyChrome(page: Page): Promise<void> {
 
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
   await unstickStickyChrome(page);
+  // The app frame is one window. A full-page capture would append the
+  // scrolled overflow as an empty band under the frame. Marketing pages
+  // have no frame chrome and still capture their full height.
+  const shell = await page.locator('[data-app-chrome]').count();
   await expect(page).toHaveScreenshot(`${arg}.png`, {
-    fullPage,
+    fullPage: fullPage && shell === 0,
     maxDiffPixelRatio: 0,
     ...SHOT,
   });

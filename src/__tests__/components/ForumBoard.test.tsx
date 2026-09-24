@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { ForumBoard, type ForumBoardProps } from '@/components/ForumBoard';
+import { ForumBoard, revealReplyForm, type ForumBoardProps } from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import {
@@ -6179,5 +6179,90 @@ describe('ForumBoard', () => {
     expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
     expect(within(replyCard).getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
     expect(within(replyCard).queryByText('Send Bitcoin')).toBeNull();
+  });
+});
+
+describe('reply form size', () => {
+  it('scrolls again when the open reply form changes size', () => {
+    const observed: Element[] = [];
+    let disconnected = false;
+    class FakeResizeObserver {
+      constructor(private readonly onResize: ResizeObserverCallback) {
+        void this.onResize;
+      }
+
+      observe(target: Element): void {
+        observed.push(target);
+        this.onResize([], this as unknown as ResizeObserver);
+      }
+
+      disconnect(): void {
+        disconnected = true;
+      }
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const view = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    expect(observed.some((node) => node instanceof HTMLFormElement)).toBe(true);
+    view.unmount();
+    expect(disconnected).toBe(true);
+    globalThis.ResizeObserver = previous;
+  });
+});
+
+describe('revealReplyForm', () => {
+  function box(bottom: number): DOMRect {
+    return {
+      bottom,
+      top: 0,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: bottom,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+  }
+
+  it('does nothing without a scroller or a form', () => {
+    const form = document.createElement('form');
+    const scroller = document.createElement('div');
+    scroller.scrollTop = 4;
+    revealReplyForm(null, form);
+    revealReplyForm(scroller, null);
+    expect(scroller.scrollTop).toBe(4);
+  });
+
+  it('scrolls only when the form hangs past the shell', () => {
+    const scroller = document.createElement('div');
+    const form = document.createElement('form');
+    scroller.getBoundingClientRect = () => box(100);
+    form.getBoundingClientRect = () => box(80);
+    revealReplyForm(scroller, form);
+    expect(scroller.scrollTop).toBe(0);
+    form.getBoundingClientRect = () => box(140);
+    revealReplyForm(scroller, form);
+    expect(scroller.scrollTop).toBe(52);
   });
 });

@@ -133,6 +133,49 @@ describe('AmountEntry', () => {
     expect(screen.getByText('Amount').className).toContain('sr-only');
   });
 
+  it('puts the amount before the unit switch on a reply line', () => {
+    renderWithLocale(
+      <AmountEntry
+        layout="inline"
+        label="Amount"
+        value="21"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    const input = screen.getByLabelText('Amount');
+    const group = screen.getByRole('group', { name: 'Bitcoin or fiat' });
+    const row = input.parentElement?.parentElement;
+    expect(row).toBe(group.parentElement?.parentElement);
+    expect(row?.className).toContain('items-center');
+    expect(screen.getByText('Amount').className).toContain('sr-only');
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    const children = Array.from(row?.children ?? []);
+    const amountIndex = children.indexOf(input.parentElement as HTMLElement);
+    const switchIndex = children.indexOf(group.parentElement as HTMLElement);
+    expect(amountIndex >= 0 && switchIndex > amountIndex).toBe(true);
+  });
+
+  it('omits the reply counter when the draft is empty', () => {
+    renderWithLocale(
+      <AmountEntry
+        layout="inline"
+        label="Amount"
+        value=""
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.getByText('Amount').className).toContain('sr-only');
+  });
+
   it('converts to fiat locally when nobody is signed in', () => {
     const onValueChange = vi.fn();
     const onUnitChange = vi.fn();
