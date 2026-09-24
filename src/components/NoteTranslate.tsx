@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Languages, Loader2 } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -10,6 +10,7 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { IconButton } from '@/components/ui/IconButton';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
 import { useAuthStore } from '@/stores/auth-store';
@@ -33,9 +34,9 @@ export interface NoteTranslateProps {
 /**
  * Offer an on-demand translation when the note differs from the active UI locale.
  *
- * Control-only: Translate, Show original, Show translation, error, and spinner.
- * Does not render `ForumNoteText` or the translated body. Identity is
- * `messageId + text + locale`.
+ * Control-only: Translate (Languages icon), Show original, Show translation,
+ * error, and spinner. Does not render `ForumNoteText` or the translated body.
+ * Identity is `messageId + text + locale`.
  *
  * @param props - `messageId` (forum UUID), `text`, optional `tone`,
  *   parent-owned `showingTranslation`, `onTranslated` on success, and
@@ -109,10 +110,11 @@ export function NoteTranslate({
   };
 
   const onButton = tone === 'onButton';
-  const controlClass = onButton
+  const toggleClass = onButton
     ? 'mt-2 text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50'
     : 'mt-2 text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50';
   const errorClass = onButton ? 'mt-2 text-sm text-app-btn-fg' : 'mt-2 text-sm text-app-danger';
+  const translateLabel = t('forum.translate');
 
   return (
     <div
@@ -124,7 +126,7 @@ export function NoteTranslate({
       {status === 'success' ? (
         <button
           type="button"
-          className={controlClass}
+          className={toggleClass}
           onClick={(event) => {
             event.stopPropagation();
             event.preventDefault();
@@ -142,18 +144,23 @@ export function NoteTranslate({
               {t('forum.translateError')}
             </p>
           ) : null}
-          <button
+          <IconButton
             type="button"
-            className={controlClass}
+            size="sm"
+            variant="ghost"
+            className={onButton ? 'mt-2 text-app-btn-fg hover:text-app-btn-fg' : 'mt-2'}
+            aria-label={translateLabel}
+            title={translateLabel}
             disabled={status === 'loading'}
             aria-busy={status === 'loading'}
             onClick={requestTranslation}
           >
             {status === 'loading' ? (
-              <Loader2 aria-hidden="true" className="mr-1 inline h-3.5 w-3.5 animate-spin" />
-            ) : null}
-            {t('forum.translate')}
-          </button>
+              <Loader2 aria-hidden="true" className="h-4 w-4 shrink-0 animate-spin" />
+            ) : (
+              <Languages aria-hidden="true" className="h-4 w-4 shrink-0" />
+            )}
+          </IconButton>
         </>
       )}
     </div>
