@@ -483,25 +483,28 @@ Every control where a person types an amount uses `AmountEntry`: the gift `Segme
 
 ### Payment QR vs deep links (hard requirement)
 
-A smartphone shows the same payment QR as a desktop, including the
-profile, member, public view, point of sale, pay link, and inbox. The
-Shop sticker is shown wherever that profile QR is shown.
+A smartphone shows the same payment QR as a desktop for the profile,
+member, public view, point of sale, and inbox. The Shop sticker is
+shown wherever that profile QR is shown.
 
-The only exception is the forum post pay sheet (`ForumBoard`, including
-the composer pay slot). There a smartphone does not mount the invoice
-`QrCode`. The wallet button still opens Wallet of Satoshi
-(`walletofsatoshi:` on iOS, Android Intent on Android). Desktop and iPad
-show that invoice QR and the same button. The amount step is Continue
-on every user agent, then the same invoice card.
+A specific invoice is different. The forum post pay sheet
+(`ForumBoard`, including the composer pay slot) and the public pay link
+(`PayLinkScreen`, the open till and **Create invoice**) do not mount
+the invoice `QrCode` on a smartphone. The wallet button still opens
+Wallet of Satoshi (`walletofsatoshi:` on iOS, Android Intent on
+Android). Desktop and iPad show that invoice QR and the same button.
+The forum amount step is Continue on every user agent, then the same
+invoice card.
 
 Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 (iPhone, iPod, or Android **with** `Mobile`). Do **not** use viewport
 width: a narrow MacBook window is still a desktop. iPad is not a
 smartphone.
 
-Mounting the forum-post pay-sheet invoice QR on a smartphone UA is an
-undeclared deviation and is rejected. Hiding any other payment QR on a
-smartphone UA is also rejected. Reviewers follow `Review.md`.
+Mounting either of those invoice QRs on a smartphone UA is an undeclared
+deviation and is rejected. Hiding a profile, member, public view, point
+of sale, or inbox QR on a smartphone UA is also rejected. Reviewers
+follow `Review.md`.
 
 ### Handbook (hard requirement)
 
