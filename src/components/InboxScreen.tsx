@@ -204,8 +204,8 @@ export interface InboxScreenProps {
   /** True while waiting for the gift row after invoice mint. */
   payWaiting?: boolean;
   /**
-   * Show the sats Amount field beside the composer. Default true; the closed
-   * staff room passes false (no gifts).
+   * Show the sats Amount field on the row under the message. Default true;
+   * the closed staff room passes false (no gifts).
    */
   showAmount?: boolean;
   /** Latest gift-day totals for unpaid invoice previews, or `null` without a usable rate. */
@@ -883,108 +883,70 @@ export function InboxScreen({
             ))}
           </ul>
         ) : null}
-        <form
-          onSubmit={handleSubmit}
-          className={showAttach ? 'flex w-full flex-col gap-2' : 'flex w-full items-end gap-2'}
-        >
-          {showAttach ? (
-            <div className="flex items-center gap-2">
-              <IconButton
-                type="button"
-                size="lg"
-                variant="secondary"
-                aria-label={t('inbox.attach')}
-                disabled={posting || messagesLoading}
-                onClick={() => {
-                  fileInputRef.current?.click();
-                }}
-              >
-                <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-              </IconButton>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                disabled={posting || messagesLoading}
-                onChange={handleFileChange}
-              />
-              <textarea
-                aria-label={t('inbox.composerLabel')}
-                placeholder={t('inbox.placeholder')}
-                value={draft}
-                onChange={(event) => onDraftChange(event.target.value)}
-                maxLength={CONTACT_MESSAGE_MAX_LENGTH}
-                rows={2}
-                disabled={posting || messagesLoading}
-                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
-              />
-              {showAmount ? (
-                <AmountEntry
-                  className="w-36"
-                  label={t('inbox.amountLabel')}
-                  placeholder={t('forum.payAmountPlaceholder')}
-                  value={amountDraft}
+        <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
+          <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
+            {showAttach ? (
+              <>
+                <IconButton
+                  type="button"
+                  size="lg"
+                  variant="secondary"
+                  aria-label={t('inbox.attach')}
                   disabled={posting || messagesLoading}
-                  rateDay={rateDay}
-                  onValueChange={onAmountDraftChange}
-                  onUnitChange={amountUnitChange}
-                />
-              ) : null}
-              <IconButton
-                type="submit"
-                size="lg"
-                variant="primary"
-                disabled={posting || messagesLoading}
-                aria-label={t('inbox.send')}
-              >
-                {posting ? (
-                  <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
-                ) : (
-                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                )}
-              </IconButton>
-            </div>
-          ) : (
-            <>
-              <textarea
-                aria-label={t('inbox.composerLabel')}
-                placeholder={t('inbox.placeholder')}
-                value={draft}
-                onChange={(event) => onDraftChange(event.target.value)}
-                maxLength={CONTACT_MESSAGE_MAX_LENGTH}
-                rows={2}
-                disabled={posting || messagesLoading}
-                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
-              />
-              {showAmount ? (
-                <AmountEntry
-                  className="w-36"
-                  label={t('inbox.amountLabel')}
-                  placeholder={t('forum.payAmountPlaceholder')}
-                  value={amountDraft}
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                </IconButton>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
                   disabled={posting || messagesLoading}
-                  rateDay={rateDay}
-                  onValueChange={onAmountDraftChange}
-                  onUnitChange={amountUnitChange}
+                  onChange={handleFileChange}
                 />
-              ) : null}
-              <IconButton
-                type="submit"
-                size="lg"
-                variant="primary"
-                disabled={posting || messagesLoading}
-                aria-label={t('inbox.send')}
-              >
-                {posting ? (
-                  <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
-                ) : (
-                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                )}
-              </IconButton>
-            </>
-          )}
+              </>
+            ) : null}
+            <textarea
+              aria-label={t('inbox.composerLabel')}
+              placeholder={t('inbox.placeholder')}
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              maxLength={CONTACT_MESSAGE_MAX_LENGTH}
+              rows={2}
+              disabled={posting || messagesLoading}
+              className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+            />
+            <IconButton
+              type="submit"
+              size="lg"
+              variant="primary"
+              disabled={posting || messagesLoading}
+              aria-label={t('inbox.send')}
+            >
+              {posting ? (
+                <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+              ) : (
+                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              )}
+            </IconButton>
+          </div>
+          {showAmount ? (
+            <AmountEntry
+              layout="composer"
+              className={showAttach ? 'max-w-sm ps-14' : 'max-w-sm'}
+              label={t('inbox.amountLabel')}
+              placeholder={t('forum.payAmountPlaceholder')}
+              value={amountDraft}
+              disabled={posting || messagesLoading}
+              rateDay={rateDay}
+              onValueChange={onAmountDraftChange}
+              onUnitChange={amountUnitChange}
+            />
+          ) : null}
           {showAttach && photoDrafts.length === 1 ? (
             <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
               {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}

@@ -6407,6 +6407,29 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
+    await page.route('**/me/amount-unit', async (route) => {
+      const posted = route.request().postDataJSON() as { unit?: unknown };
+      const unit = posted.unit === 'fiat' ? 'fiat' : 'btc';
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          forumLawsDismissed: lawsDismissed,
+          amountUnit: unit,
+        }),
+      });
+    });
   }
 
   async function stubPayInvoice(page: Page): Promise<void> {
