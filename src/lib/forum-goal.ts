@@ -110,9 +110,10 @@ function groupIntegerDigits(digits: string, grouping: string): string {
 /**
  * Format a typed or stored Ask definition amount for the goal line.
  *
- * Prefix is `$` for USD and `CODE ` otherwise. At most two fraction digits
- * in the string (including a hanging `.` or `,`) pad to two; more than two
- * keep every digit with no rounding. A single comma is the decimal mark.
+ * Prefix is `$` for USD and `₱` for PHP, tight against the amount. CHF and
+ * EUR keep `CODE `. At most two fraction digits in the string (including a
+ * hanging `.` or `,`) pad to two; more than two keep every digit with no
+ * rounding. A single comma is the decimal mark.
  * Grouping comes from {@link separatorsFor}, not `Number` and not the
  * two-decimal fiat display helper. Unusable input is `''` so the caller can omit
  * the defined-fiat part.
