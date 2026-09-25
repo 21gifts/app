@@ -1671,6 +1671,45 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && (pathName === '/me/locale' || pathName === '/me/fiat')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const locales = ['en', 'de', 'es', 'fil'];
+    const fiats = ['CHF', 'EUR', 'USD', 'PHP'];
+    if (pathName === '/me/locale') {
+      if (
+        !locales.includes(parsed?.locale) ||
+        (parsed.onlyIfUnset !== undefined && typeof parsed.onlyIfUnset !== 'boolean')
+      ) {
+        json(res, 400, { error: 'Expected a JSON body with a locale of en, de, es, or fil' });
+        return;
+      }
+      if (parsed.onlyIfUnset !== true || account.locale == null) {
+        account.locale = parsed.locale;
+      }
+    } else if (
+      !fiats.includes(parsed?.fiat) ||
+      (parsed.onlyIfUnset !== undefined && typeof parsed.onlyIfUnset !== 'boolean')
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with a fiat of CHF, EUR, USD, or PHP' });
+      return;
+    } else if (parsed.onlyIfUnset !== true || account.fiat == null) {
+      account.fiat = parsed.fiat;
+    }
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/notification-level') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

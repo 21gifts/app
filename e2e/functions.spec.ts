@@ -1964,44 +1964,110 @@ test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is
   expect((await request.post('/me/amount-unit')).status()).toBe(401);
 });
 
-test('Function: proxyMeLocalePost — POST /me/locale without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/locale')).status()).toBe(401);
+test('Function: proxyMeLocalePost — POST /me/locale stores de', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/locale', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { locale: 'de', onlyIfUnset: false },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { locale: string }).locale).toBe('de');
 });
 
-test('Function: proxyMeFiatPost — POST /me/fiat without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/fiat')).status()).toBe(401);
+test('Function: proxyMeFiatPost — POST /me/fiat stores CHF', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/fiat', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { fiat: 'CHF', onlyIfUnset: false },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { fiat: string }).fiat).toBe('CHF');
 });
 
-test('Function: setAccountLocale — POST /me/locale without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/locale')).status()).toBe(401);
+test('Function: setAccountLocale — profile language saves Deutsch', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const deutsch = page.getByRole('button', { name: 'Deutsch' });
+  await deutsch.click();
+  await expect(deutsch).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: setAccountFiat — POST /me/fiat without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/fiat')).status()).toBe(401);
+test('Function: setAccountFiat — profile currency saves CHF', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const chf = page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'CHF' });
+  await chf.click();
+  await expect(chf).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: AccountPreferenceSync — POST /me/locale without bearer is 401', async ({
-  request,
+test('Function: AccountPreferenceSync — an empty account stores the screen language', async ({
+  page,
 }) => {
-  expect((await request.post('/me/locale')).status()).toBe(401);
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        locale: null,
+        fiat: null,
+      }),
+    });
+  });
+  await page.goto('/profile');
+  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('locale=en');
 });
 
-test('Function: bumpLocaleGeneration — POST /me/locale without bearer is 401', async ({
-  request,
-}) => {
-  expect((await request.post('/me/locale')).status()).toBe(401);
+test('Function: bumpLocaleGeneration — profile language saves Español', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const espanol = page.getByRole('button', { name: 'Español' });
+  await espanol.click();
+  await expect(espanol).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: localeGeneration — POST /me/locale without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/locale')).status()).toBe(401);
+test('Function: localeGeneration — profile language saves Filipino', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const filipino = page.getByRole('button', { name: 'Filipino' });
+  await filipino.click();
+  await expect(filipino).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: bumpFiatGeneration — POST /me/fiat without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/fiat')).status()).toBe(401);
+test('Function: bumpFiatGeneration — profile currency saves EUR', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const eur = page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'EUR' });
+  await eur.click();
+  await expect(eur).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: fiatGeneration — POST /me/fiat without bearer is 401', async ({ request }) => {
-  expect((await request.post('/me/fiat')).status()).toBe(401);
+test('Function: fiatGeneration — profile currency saves PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const php = page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'PHP' });
+  await php.click();
+  await expect(php).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({
