@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   deleteMessage,
+  setMessagePlace,
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
@@ -4248,5 +4249,41 @@ describe('deleteMessage', () => {
   it('rejects network errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     await expect(deleteMessage('token', 'post')).rejects.toThrow('offline');
+  });
+});
+
+describe('setMessagePlace', () => {
+  it('patches the place pin and returns the parsed message', async () => {
+    const pin = { lat: 14.6, lng: 120.98, label: 'Happyland' };
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, place: pin },
+    });
+    await expect(setMessagePlace('token', 'a/b', pin)).resolves.toEqual({
+      ...parsedForumMessage,
+      place: pin,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/place', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ place: pin }),
+    });
+  });
+
+  it('sends place: null and accepts a body whose place is omitted', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(setMessagePlace('token', 'm1', null)).resolves.toEqual(parsedForumMessage);
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      place: null,
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setMessagePlace('token', 'm1', null)).rejects.toThrow('Could not save place');
   });
 });

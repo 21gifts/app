@@ -1146,6 +1146,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Attach button, preview, and panel. Fetches `/maps/key` when opened.
 - **Used by:** `ForumBoard` (top-level composer only).
 
+## Function: ShopPlaceControl
+
+- **Purpose:** Moderator-only place editor on a listed shop note. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
+- **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved pin, or `null` when cleared).
+- **Returns / side effects:** Compact `PlaceField` (`showPreview` false, small ghost **Add a place** / **Edit place**). `onCommit` calls `setMessagePlace`; a failed save keeps the panel open and shows `forum.placeSaveFailed`.
+- **Used by:** `ForumBoard` when `shopPlaceEdit` and `onShopPlaceUpdated` are set (`ForumLoader` `feed="shops"`).
+
 ## Function: ShopsPage
 
 - **Purpose:** Next.js page for `/shops`. Flow `AppShell` (`align="start"`) with `ProfileChromeLeft` + `SignedInChrome`, `OnboardingGate` `screen="welcome"`, and `ShopsScreen`. No `route.ts` beside the page.
@@ -2291,6 +2298,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`. For `/forum/messages/[id]`, also async route `params` with the message id.
 - **Returns / side effects:** Upstream api `Response`.
 - **Used by:** Same-origin `unlinkLightningAddress`, `deletePushSubscription` / `disablePush`, and same-origin forum moderation delete (`deleteMessage`).
+
+## Function: PATCH
+
+- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`.
+- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place`, also async route `params` with the message id.
+- **Returns / side effects:** Upstream api `Response`.
+- **Used by:** Same-origin forum staff place save (`setMessagePlace`).
 
 ## Function: AboutPage
 
@@ -3476,6 +3490,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** DELETE `/forum/messages/:id`; resolves on 204 or already-missing 404, throws on other statuses or network errors. Hide/omit semantics: the API keeps the row with `deleted_at` and omits it from GET.
 - **Used by:** `DeletePostControl`.
 
+## Function: setMessagePlace
+
+- **Purpose:** Set or clear the place pin on a forum message for a moderator session.
+- **Inputs:** sessionToken, messageId, and `place` (`ForumPlacePin`, or `null` to clear).
+- **Returns / side effects:** PATCH `/forum/messages/:id/place` with JSON `{ place }`. Resolves to the public message JSON (`place` omitted when cleared). Throws `Could not save place` on a non-2xx status.
+- **Used by:** `ShopPlaceControl`.
+
 ## Function: proxyForumMessageGet
 
 - **Purpose:** Forward an authenticated GET `/messages/:id` for the app path `/forum/messages/:id`. Staff sessions receive soft-hidden rows.
@@ -3489,6 +3510,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming Request and messageId.
 - **Returns / side effects:** Proxied DELETE `/messages/:id`, with encoded id, authorization and upstream status. Upstream 204 hides the row (`deleted_at`); the row stays and is omitted from GET.
 - **Used by:** App Router `DELETE` on `/forum/messages/[id]`.
+
+## Function: proxyMessagesPlacePatch
+
+- **Purpose:** Forward a moderator's PATCH of a message place pin to the API.
+- **Inputs:** Incoming Request (Bearer JSON `{ place }`) and messageId.
+- **Returns / side effects:** Proxied PATCH `/messages/:id/place`, with encoded id, authorization and upstream status. 200 is the public message JSON; a cleared pin omits `place`.
+- **Used by:** App Router `PATCH` on `/forum/messages/[id]/place`.
 
 ## Function: detectNoteLanguage
 

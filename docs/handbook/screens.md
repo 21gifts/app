@@ -1284,6 +1284,36 @@ A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000
 
 ![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
+### Variant: staff-place
+
+A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place**. The map panel is closed.
+
+![21.gifts shops staff place](images/shops-staff-place.png)
+
+### Variant: staff-place-set
+
+A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place**. The map panel is closed.
+
+![21.gifts shops staff place set](images/shops-staff-place-set.png)
+
+### Variant: staff-place-map
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+
+![21.gifts shops staff place map](images/shops-staff-place-map.png)
+
+### Variant: staff-place-confirm
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin, **Place name** is **Happyland**, and **Use this place** is still visible. The pin is not saved yet.
+
+![21.gifts shops staff place confirm](images/shops-staff-place-confirm.png)
+
+### Variant: staff-place-error
+
+A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
+
+![21.gifts shops staff place error](images/shops-staff-place-error.png)
+
 ## Screen: /map
 
 - **URL:** `/map` — signed-in map of every forum note that has a pin. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.

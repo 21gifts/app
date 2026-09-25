@@ -1125,9 +1125,9 @@ Handbook states: default, pin, with-key, pin-with-key, coords, coords-pin, coord
 
 ### `/shops`
 
-Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → post composer under the lead. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again.
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → post composer under the lead. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again. On `/shops` a moderator (minimum rank) gets an icon on each shop note, **Add a place** or **Edit place**, reusing the composer map panel; a failed save shows the error in the panel.
 
-Handbook states: default, empty, loading, error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords.
+Handbook states: default, empty, loading, error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, staff-place, staff-place-set, staff-place-map, staff-place-confirm, staff-place-error.
 
 ### `/rules`
 

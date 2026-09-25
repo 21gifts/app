@@ -45,6 +45,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn().mockResolvedValue(null),
   fetchPublicMessagePhoto: vi.fn().mockRejectedValue(new Error('no photo')),
+  setMessagePlace: vi.fn(),
 }));
 
 import { fetchPublicMessage } from '@/lib/api';
@@ -2917,6 +2918,177 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.queryByRole('link', { name: '#Shop' })).toBeNull();
+  });
+
+  it('shows the staff place control on a top-level note when shopPlaceEdit and onShopPlaceUpdated are set', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopPlaceEdit
+        onShopPlaceUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const card = document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+  });
+
+  it('omits the staff place control on a nested reply even when shopPlaceEdit is on', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop', replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopPlaceEdit
+        onShopPlaceUpdated={() => undefined}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-shop',
+            parentId: 'm1',
+            name: 'Bob',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-shop"]') as HTMLElement;
+    expect(within(replyCard).queryByRole('button', { name: 'Add a place' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Edit place' })).toBeNull();
+  });
+
+  it('omits the staff place button when shopPlaceEdit or onShopPlaceUpdated is missing', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    const shop = { ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop' };
+    const view = renderWithLocale(
+      <ForumBoard
+        messages={[shop]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const card = (): HTMLElement => document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card()).queryByRole('button', { name: 'Add a place' })).toBeNull();
+    view.rerender(
+      <ForumBoard
+        messages={[shop]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopPlaceEdit
+        {...modeProps('all')}
+      />,
+    );
+    expect(within(card()).queryByRole('button', { name: 'Add a place' })).toBeNull();
+    view.rerender(
+      <ForumBoard
+        messages={[shop]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onShopPlaceUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(within(card()).queryByRole('button', { name: 'Add a place' })).toBeNull();
   });
 
   it('shows shops.empty copy when emptyKey is shops.empty', () => {

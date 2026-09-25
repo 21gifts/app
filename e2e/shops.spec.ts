@@ -231,3 +231,166 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   const parsed = invoiceReq.postDataJSON() as { text?: string };
   expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');
 });
+
+async function seedAda(
+  page: import('@playwright/test').Page,
+  role: 'basis' | 'moderator' = 'basis',
+): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...E2E_ACCOUNT, role }),
+    });
+  });
+}
+
+/**
+ * Stable clickable map for the shops staff place control. Copied from the
+ * visual shops helper: live tiles are not a baseline.
+ */
+async function stubPlaceMap(page: import('@playwright/test').Page): Promise<void> {
+  await page.addInitScript((click: boolean) => {
+    class MapShim {
+      readonly el: HTMLElement;
+
+      constructor(el: HTMLElement) {
+        this.el = el;
+        el.style.position = 'relative';
+        el.style.setProperty('background-color', '#e7efe4', 'important');
+        el.style.setProperty(
+          'background-image',
+          'linear-gradient(#c9d7c6 1px, transparent 1px), linear-gradient(90deg, #c9d7c6 1px, transparent 1px)',
+          'important',
+        );
+        el.style.setProperty('background-size', '40px 40px', 'important');
+        const surface = document.createElement('div');
+        surface.dataset['e2eMap'] = 'surface';
+        surface.style.position = 'absolute';
+        surface.style.inset = '0';
+        surface.style.backgroundColor = '#e7efe4';
+        surface.style.backgroundImage =
+          'linear-gradient(#c9d7c6 1px, transparent 1px), linear-gradient(90deg, #c9d7c6 1px, transparent 1px)';
+        surface.style.backgroundSize = '40px 40px';
+        el.appendChild(surface);
+      }
+
+      setCenter(): void {}
+
+      addListener(
+        event: string,
+        handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+      ): void {
+        if (!click || event !== 'click') {
+          return;
+        }
+        this.el.addEventListener('click', () => {
+          handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+        });
+      }
+    }
+    class MarkerShim {
+      constructor(opts: { map?: MapShim }) {
+        const host = opts.map?.el;
+        if (host === undefined) {
+          return;
+        }
+        const pin = document.createElement('div');
+        pin.dataset['e2eMap'] = 'pin';
+        pin.style.position = 'absolute';
+        pin.style.left = '50%';
+        pin.style.top = '42%';
+        pin.style.width = '16px';
+        pin.style.height = '16px';
+        pin.style.margin = '-8px 0 0 -8px';
+        pin.style.borderRadius = '999px';
+        pin.style.background = '#161616';
+        pin.style.boxShadow = '0 0 0 4px #ffffff';
+        host.appendChild(pin);
+      }
+
+      setPosition(): void {}
+
+      getPosition(): null {
+        return null;
+      }
+
+      addListener(): void {}
+    }
+    (window as unknown as { google?: unknown }).google = {
+      maps: { Map: MapShim, Marker: MarkerShim },
+    };
+  }, true);
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: 'e2e' }),
+    });
+  });
+}
+
+const STAFF_SHOP_NOTE = {
+  id: 'm-staff',
+  name: 'Ada',
+  text: 'Cafe Luna\n\n#21GiftsShop',
+  createdAt: '2026-08-28T12:00:00.000Z',
+  sats: 0,
+  payable: false,
+  hasPhoto: false,
+  role: 'basis',
+};
+
+test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/place'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      const body = route.request().postDataJSON() as {
+        place?: { lat: number; lng: number; label: string | null };
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...STAFF_SHOP_NOTE, place: body.place }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await expect(note.getByText('Cafe Luna')).toBeVisible();
+  await note.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await note.getByLabel('Place name').fill('Happyland');
+  const patched = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' &&
+      new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/place'),
+  );
+  await note.getByRole('button', { name: 'Use this place' }).click();
+  const placeReq = await patched;
+  expect(placeReq.postDataJSON()).toEqual({
+    place: { lat: 14.5, lng: 120.9, label: 'Happyland' },
+  });
+  await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
+
+  await seedAda(page, 'basis');
+  await fulfillForumMessages(page, [
+    { ...STAFF_SHOP_NOTE, place: { lat: 14.6, lng: 120.98, label: 'Happyland' } },
+  ]);
+  await page.goto('/shops');
+  await expect(
+    page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit place' }),
+  ).toHaveCount(0);
+});
