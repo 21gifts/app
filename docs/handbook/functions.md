@@ -1069,7 +1069,7 @@ Integer percent of a fiat Ask from decimal strings. Uncapped. Scales collected a
 
 ## Function: formatDefinedGoalAmount
 
-Defined Ask amount for the goal line. Prefix `$` for USD, otherwise `CODE `. At most two fraction digits pad to two (`200` → `PHP 200.00`). More than two keep every digit (`10.125` → `PHP 10.125`). One comma is the decimal mark. Grouping uses the visitor number format. Not the two-decimal snapshot formatter.
+Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, otherwise `CODE `. At most two fraction digits pad to two (`200` → `₱200.00`). More than two keep every digit (`10.125` → `₱10.125`). One comma is the decimal mark. Grouping uses the visitor number format. Not the two-decimal snapshot formatter.
 
 - **Purpose:** Show `goalAmount` exactly, not the two-decimal snapshot of the same currency.
 - **Inputs:** `amount` string, fiat `code`, number-format `style`.
@@ -1822,7 +1822,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: formatFiatDisplay
 
-- **Purpose:** Formats an API fiat amount string for stats display using the visitor grouping style. `null` becomes `—` (U+2014). USD uses a dollar symbol; CHF/EUR/PHP prefix the code (`CHF 1'425.00`).
+- **Purpose:** Formats an API fiat amount string for stats display using the visitor grouping style. `null` becomes `—` (U+2014). USD uses `$` and PHP uses `₱`; CHF and EUR prefix the code (`CHF 1'425.00`).
 - **Inputs:** `amount` (`string | null`), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
 - **Returns / side effects:** Display string such as `$1'425.00` / `CHF 1'425.00`. No `Intl.NumberFormat`. No network.
 - **Used by:** `StatsDashboard`, `GiftDayTable`, `DayLoader`.

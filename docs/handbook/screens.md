@@ -524,7 +524,7 @@ On **All**: a top-level note defined as **$1.50**, with frozen **₿1'000** and 
 
 ### Variant: goal-php
 
-On **All**: a top-level note defined as **PHP 200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**.
+On **All**: a top-level note defined as **₱200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**.
 
 ![21.gifts welcome goal php](images/welcome-goal-php.png)
 

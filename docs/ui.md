@@ -234,7 +234,7 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 **`formatBitcoin`.** `src/lib/stats-money.ts`: leading U+20BF `₿`, style-grouped via `NumberFormatStyle`, no space, no fraction. Default Swiss `₿1'500`. JSON stays `sats` / `totalSats`. Render in a `span` with `tabular-nums lining-nums`. Do not replace U+20BF with lucide `Bitcoin`. Do not put a second ₿ beside the string. Product phrase **Wallet of Satoshi** unchanged (catalog exception / proper name).
 
-Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `PHP 80.00` (null → em dash; Swiss grouping default). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: stats and profile fiat ticks use `formatFiatTick` (USD selected may still call `formatUsdTick` as a wrapper; `$0`, `$1.43`, `$1'425`). Visitor styles `us` / `de` change grouping, not the currency. Toggle anatomy in §10.
+Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00` (null → em dash; Swiss grouping default). USD wrapper `formatUsdDisplay` still used for the stats KPI when USD is selected. Axis ticks: stats and profile fiat ticks use `formatFiatTick` (USD selected may still call `formatUsdTick` as a wrapper; `$0`, `$1.43`, `$1'425`). Visitor styles `us` / `de` change grouping, not the currency. Toggle anatomy in §10.
 
 **Link type.** Marketing inline links: `text-accent underline underline-offset-2`. App inline links (rules, contact): `text-app-fg underline underline-offset-2 font-medium`. Do not make app body links orange (fails on paper; also not a gift CTA).
 

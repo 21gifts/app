@@ -113,20 +113,20 @@ describe('formatDefinedGoalAmount', () => {
   });
 
   it('pads at most two fraction digits and keeps more than two', () => {
-    expect(formatDefinedGoalAmount('200', 'PHP', 'ch')).toBe('PHP 200.00');
-    expect(formatDefinedGoalAmount('10.1', 'PHP', 'ch')).toBe('PHP 10.10');
-    expect(formatDefinedGoalAmount('10.125', 'PHP', 'ch')).toBe('PHP 10.125');
-    expect(formatDefinedGoalAmount('10.1200', 'PHP', 'ch')).toBe('PHP 10.1200');
+    expect(formatDefinedGoalAmount('200', 'PHP', 'ch')).toBe('₱200.00');
+    expect(formatDefinedGoalAmount('10.1', 'PHP', 'ch')).toBe('₱10.10');
+    expect(formatDefinedGoalAmount('10.125', 'PHP', 'ch')).toBe('₱10.125');
+    expect(formatDefinedGoalAmount('10.1200', 'PHP', 'ch')).toBe('₱10.1200');
   });
 
   it('treats a single comma as the decimal mark, including a hanging separator', () => {
-    expect(formatDefinedGoalAmount('10,125', 'PHP', 'ch')).toBe('PHP 10.125');
-    expect(formatDefinedGoalAmount('10,', 'PHP', 'ch')).toBe('PHP 10.00');
-    expect(formatDefinedGoalAmount('10.', 'PHP', 'ch')).toBe('PHP 10.00');
+    expect(formatDefinedGoalAmount('10,125', 'PHP', 'ch')).toBe('₱10.125');
+    expect(formatDefinedGoalAmount('10,', 'PHP', 'ch')).toBe('₱10.00');
+    expect(formatDefinedGoalAmount('10.', 'PHP', 'ch')).toBe('₱10.00');
   });
 
   it('groups with the visitor style and prefixes USD with $', () => {
-    expect(formatDefinedGoalAmount('1200', 'PHP', 'ch')).toBe("PHP 1'200.00");
+    expect(formatDefinedGoalAmount('1200', 'PHP', 'ch')).toBe("₱1'200.00");
     expect(formatDefinedGoalAmount('1200', 'USD', 'us')).toBe('$1,200.00');
     expect(formatDefinedGoalAmount('1200', 'EUR', 'de')).toBe('EUR 1.200,00');
   });

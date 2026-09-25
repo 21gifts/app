@@ -4175,7 +4175,7 @@ test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount on
     });
   });
   await page.goto('/welcome');
-  await expect(page.getByText('PHP 200.00')).toBeVisible();
+  await expect(page.getByText('₱200.00')).toBeVisible();
   await expect(page.getByText("₿1'000")).toBeVisible();
   await expect(page.getByText('$3.50')).toBeVisible();
 });

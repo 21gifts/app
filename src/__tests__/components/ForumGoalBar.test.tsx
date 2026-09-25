@@ -103,7 +103,7 @@ describe('ForumGoalBar', () => {
         goalAmountUsd="1.00"
       />,
     );
-    expect(screen.getByText('PHP 10.125')).toBeTruthy();
+    expect(screen.getByText('₱10.125')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('$1.00')).toBeTruthy();
   });
@@ -119,7 +119,7 @@ describe('ForumGoalBar', () => {
         goalAmountUsd={null}
       />,
     );
-    expect(screen.getByText('PHP 10.125')).toBeTruthy();
+    expect(screen.getByText('₱10.125')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('$21.00')).toBeTruthy();
   });

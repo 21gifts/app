@@ -7900,7 +7900,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
-    await expect(page.getByText('PHP 200.00')).toBeVisible();
+    await expect(page.getByText('₱200.00')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();

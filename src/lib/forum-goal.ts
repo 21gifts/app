@@ -1,5 +1,5 @@
 import { separatorsFor, type NumberFormatStyle } from '@/lib/number-format';
-import { parseAmountDraft, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+import { fiatPrefix, parseAmountDraft, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 
 /** Maximum whole-sat ask a member may set on a top-level note. */
 export const FORUM_GOAL_SATS_MAX = 10_000_000;
@@ -146,7 +146,7 @@ export function formatDefinedGoalAmount(
   const fraction = sep === -1 ? '' : normalized.slice(sep + 1);
   const displayFraction = fraction.length <= 2 ? fraction.padEnd(2, '0') : fraction;
   const { grouping, decimal } = separatorsFor(style);
-  const prefix = code === 'USD' ? '$' : `${code} `;
+  const prefix = fiatPrefix(code);
   return `${prefix}${groupIntegerDigits(whole, grouping)}${decimal}${displayFraction}`;
 }
 
