@@ -8740,6 +8740,70 @@ describe('forum feed pages', () => {
     expect(replace).toHaveBeenCalledWith('/login');
   });
 
+  it('renders nothing for shops without a session', () => {
+    useAuthStore.setState({ session: null, account });
+    const { container } = renderWithLocale(<ForumLoader feed="shops" />);
+    expect(container.firstChild).toBeNull();
+    expect(publicListMock).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when the public page cannot load', async () => {
+    useAuthStore.setState({ session: null, account });
+    publicListMock.mockRejectedValue(new Error('down'));
+    renderWithLocale(<ForumLoader />);
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+  });
+
+  it('keeps a signed-out note when the photo, reactions, and next page fail', async () => {
+    useAuthStore.setState({ session: null, account });
+    const note: ForumMessage = {
+      ...SAMPLE,
+      id: 'pub-2',
+      text: 'Public photo',
+      sats: 21,
+      payable: true,
+      hasPhoto: true,
+      photoCount: 1,
+      replyCount: 1,
+    };
+    publicListMock.mockImplementation(async (args?: { cursor?: string | null }) => {
+      if (args?.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
+        throw new Error('later');
+      }
+      return { messages: [note], nextCursor: 'cur' };
+    });
+    publicPhotoMock.mockRejectedValue(new Error('missing'));
+    publicRepliesMock.mockRejectedValue(new Error('reactions'));
+    renderWithLocale(<ForumLoader />);
+    expect(await screen.findByText('Public photo')).toBeTruthy();
+    await waitFor(() => {
+      expect(publicPhotoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(await screen.findByText('Could not load reactions. Please try again.')).toBeTruthy();
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await waitFor(() => {
+      expect(publicListMock.mock.calls.some((call) => call[0]?.cursor === 'cur')).toBe(true);
+    });
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends login when the session drops off a non-active mode', async () => {
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, text: 'Paid note', sats: 21 }], 'cur'));
+    renderWithLocale(<ForumLoader />);
+    expect(await screen.findByText('Paid note')).toBeTruthy();
+    chooseForumMode(/^All$/);
+    useAuthStore.setState({ session: null, account });
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/login');
+    });
+  });
+
   it('requests the first active page on mount without using the legacy one-argument call', async () => {
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {

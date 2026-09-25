@@ -1216,9 +1216,8 @@ export function ForumLoader({
   }
 
   const showModeratorAppointed = (): void => {
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- the appointment pill is only loaded for a signed-in session */
+    if (session === null) return;
     const id = moderatorAppointedId;
     /* v8 ignore next 3 -- pill is omitted when the id is null */
     if (id === null) {
