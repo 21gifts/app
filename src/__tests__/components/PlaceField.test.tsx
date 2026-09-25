@@ -216,7 +216,8 @@ describe('PlaceField', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
       'The place could not be saved. Please try again.',
     );
     expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
