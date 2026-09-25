@@ -203,6 +203,9 @@ export function PlaceField(props: {
   }, [open]);
 
   useEffect(() => {
+    if (authFailedRef.current) {
+      return;
+    }
     if (!open || unavailable || mapsKey === null || !scriptReady) {
       return;
     }
@@ -217,6 +220,10 @@ export function PlaceField(props: {
     }
     const saved = props.place;
     const map = new maps.Map(el, { center: saved ?? START_CENTER, zoom: 2 });
+    if (authFailedRef.current) {
+      el.replaceChildren();
+      return;
+    }
     markerRef.current = null;
     setMarkerPos(saved === null ? null : { lat: saved.lat, lng: saved.lng });
     setLabelDraft(saved?.label ?? '');

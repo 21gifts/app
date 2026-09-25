@@ -436,4 +436,51 @@ describe('PlaceField', () => {
     expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
     expect(Map.mock.calls.length).toBe(drawn);
   });
+
+  it('stops drawing when Google rejects the key while the map is constructed', async () => {
+    const geo = vi.fn();
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: geo } });
+    const addListener = vi.fn();
+    const Marker = vi.fn(() => ({
+      addListener: vi.fn(),
+      setPosition: vi.fn(),
+      getPosition: () => null,
+    }));
+    const Map = vi.fn(() => {
+      (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+      return { setCenter: vi.fn(), addListener };
+    });
+    (window as { google?: unknown }).google = { maps: { Map, Marker } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    const view = renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(Map).toHaveBeenCalled();
+    });
+    expect(addListener).not.toHaveBeenCalled();
+    expect(Marker).not.toHaveBeenCalled();
+    expect(geo).not.toHaveBeenCalled();
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    view.unmount();
+    const saved = { lat: 14.6, lng: 120.98, label: 'Happyland' };
+    const MarkerSaved = vi.fn(() => ({
+      addListener: vi.fn(),
+      setPosition: vi.fn(),
+      getPosition: () => null,
+    }));
+    const MapSaved = vi.fn(() => {
+      (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+      return { setCenter: vi.fn(), addListener: vi.fn() };
+    });
+    (window as { google?: unknown }).google = { maps: { Map: MapSaved, Marker: MarkerSaved } };
+    renderWithLocale(<PlaceField place={saved} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(MapSaved).toHaveBeenCalled();
+    });
+    expect(MarkerSaved).not.toHaveBeenCalled();
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+  });
 });
