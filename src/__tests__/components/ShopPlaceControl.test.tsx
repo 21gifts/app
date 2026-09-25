@@ -146,7 +146,7 @@ describe('ShopPlaceControl', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain(
       'The place could not be saved. Please try again.',

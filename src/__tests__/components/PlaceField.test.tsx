@@ -201,6 +201,27 @@ describe('PlaceField', () => {
     });
   });
 
+  it('keeps the unavailable panel open when removing a pin fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const onCommit = vi.fn().mockRejectedValue(new Error('denied'));
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 1, lng: 2, label: 'Stall' }}
+        disabled={false}
+        showPreview={false}
+        ariaLabel="Edit place"
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The place could not be saved. Please try again.',
+    );
+    expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
+  });
+
   it('closes the place panel while a post is in flight', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(
@@ -560,7 +581,7 @@ describe('PlaceField', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain(
       'The place could not be saved. Please try again.',
