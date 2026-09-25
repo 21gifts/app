@@ -8768,11 +8768,21 @@ describe('forum feed pages', () => {
     };
     publicListMock.mockImplementation(async (args?: { cursor?: string | null }) => {
       if (args?.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
-        throw new Error('later');
+        return {
+          messages: [{ ...note, id: 'pub-3', text: 'Next public' }],
+          nextCursor: null,
+        };
       }
       return { messages: [note], nextCursor: 'cur' };
     });
-    publicPhotoMock.mockRejectedValue(new Error('missing'));
+    let photoCalls = 0;
+    publicPhotoMock.mockImplementation(() => {
+      photoCalls += 1;
+      if (photoCalls === 1) {
+        throw new Error('missing');
+      }
+      return Promise.resolve(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    });
     publicRepliesMock.mockRejectedValue(new Error('reactions'));
     renderWithLocale(<ForumLoader />);
     expect(await screen.findByText('Public photo')).toBeTruthy();
@@ -8787,10 +8797,57 @@ describe('forum feed pages', () => {
     act(() => {
       FakeIntersectionObserver.instances[0]?.trigger();
     });
+    expect(await screen.findByText('Next public')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('keeps the public page when the next page fails', async () => {
+    useAuthStore.setState({ session: null, account });
+    const note: ForumMessage = {
+      ...SAMPLE,
+      id: 'pub-4',
+      text: 'Stay public',
+      sats: 21,
+      payable: true,
+    };
+    publicListMock.mockImplementation(async (args?: { cursor?: string | null }) => {
+      if (args?.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
+        throw new Error('later');
+      }
+      return { messages: [note], nextCursor: 'cur' };
+    });
+    renderWithLocale(<ForumLoader />);
+    expect(await screen.findByText('Stay public')).toBeTruthy();
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
     await waitFor(() => {
       expect(publicListMock.mock.calls.some((call) => call[0]?.cursor === 'cur')).toBe(true);
     });
+    expect(screen.getByText('Stay public')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('drops a public error that arrives after the view is gone', async () => {
+    useAuthStore.setState({ session: null, account });
+    let rejectPage: (err: Error) => void = () => undefined;
+    publicListMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectPage = reject;
+        }),
+    );
+    const { unmount } = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(publicListMock).toHaveBeenCalled();
+    });
+    unmount();
+    rejectPage(new Error('late'));
+    await Promise.resolve();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
 
   it('sends login when the session drops off a non-active mode', async () => {
