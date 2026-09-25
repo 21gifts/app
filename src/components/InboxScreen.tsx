@@ -467,7 +467,8 @@ function ConversationListItem({
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 8000-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room has no gifts). An open invoice hides that amount
- * row too: the pay sheet states the amount once. Members (`showFilter`
+ * row too: the pay sheet states the amount once, as bitcoin plus the
+ * default fiat from the latest gift-day rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
