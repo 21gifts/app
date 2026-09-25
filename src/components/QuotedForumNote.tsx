@@ -127,7 +127,7 @@ function QuotedForumNote({
           <img
             src={photoUrl}
             alt={t('forum.photoAlt', { name: note.name })}
-            className="mt-2 max-h-80 w-full rounded-xl object-contain"
+            className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
           />
         ) : null}
       </Link>

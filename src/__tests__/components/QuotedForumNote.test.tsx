@@ -489,6 +489,17 @@ describe('ForumQuotedBody', () => {
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Cyrill')).toBeTruthy();
     });
+    expect(screen.getByAltText('Photo from Cyrill').className.split(/\s+/)).toEqual(
+      expect.arrayContaining([
+        'block',
+        'h-auto',
+        'max-h-80',
+        'w-full',
+        'shrink-0',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
     expect(fetchPhoto).toHaveBeenCalledWith(QUOTED_ID);
     expect(URL.createObjectURL).toHaveBeenCalled();
   });
