@@ -65,7 +65,6 @@ import {
   type ForumGoalCurrency,
   type ViewProfile,
 } from '@/lib/api-types';
-import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import type { Locale } from '@/lib/locale';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 import { shortLinkPath } from '@/lib/short-link';
