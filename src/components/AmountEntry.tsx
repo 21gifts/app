@@ -302,8 +302,7 @@ export function AmountEntry({
           tag === 'INPUT' ||
           tag === 'TEXTAREA' ||
           tag === 'SELECT' ||
-          target.isContentEditable ||
-          target.getAttribute('contenteditable') === 'true'
+          target.contentEditable === 'true'
         ) {
           return;
         }
