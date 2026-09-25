@@ -18,7 +18,6 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
-import { NoteTranslate } from '@/components/NoteTranslate';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
@@ -375,19 +374,8 @@ function ConversationListItem({
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const previewKey = `${row.lastMessageId ?? ''}\0${row.lastText}`;
-  const [seenPreview, setSeenPreview] = useState(previewKey);
-  const [translated, setTranslated] = useState<string | null>(null);
-  const [showing, setShowing] = useState(false);
-  if (previewKey !== seenPreview) {
-    setSeenPreview(previewKey);
-    setTranslated(null);
-    setShowing(false);
-  }
-  const previewText = showing && translated !== null ? translated : row.lastText;
   const unreadMessageCount =
     row.unreadMessageCount > 0 ? row.unreadMessageCount : row.unread ? 1 : 0;
-  const previewMessageId = row.lastMessageId;
   return (
     <li>
       <button
@@ -435,7 +423,7 @@ function ConversationListItem({
                   : listPreviewClass(false)
             }
           >
-            {row.lastFromMe ? t('inbox.sentPreview', { text: previewText }) : previewText}
+            {row.lastFromMe ? t('inbox.sentPreview', { text: row.lastText }) : row.lastText}
           </span>
         ) : row.lastSats > 0 ? (
           <span className={listPreviewClass(row.lastFromMe)}>
@@ -444,21 +432,6 @@ function ConversationListItem({
           </span>
         ) : null}
       </button>
-      {typeof previewMessageId === 'string' && previewMessageId !== '' && row.lastText !== '' ? (
-        <NoteTranslate
-          messageId={previewMessageId}
-          text={row.lastText}
-          source={{ kind: 'conversation', conversationId: row.id }}
-          showingTranslation={showing}
-          onTranslated={(next) => {
-            setTranslated(next);
-            setShowing(true);
-          }}
-          onToggleShowing={() => {
-            setShowing((current) => !current);
-          }}
-        />
-      ) : null}
     </li>
   );
 }
