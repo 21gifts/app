@@ -243,14 +243,14 @@
 ## Endpoint: POST /me/locale
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/locale`. JSON body `{ locale, onlyIfUnset }` returns the owner Account. `onlyIfUnset: true` does not overwrite a stored locale.
-- **Errors:** Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Errors:** 401 when the bearer is missing or blank, before the proxy. Upstream 401, 400 invalid body, or 502 if the api is unreachable.
 - **Used by:** `setAccountLocale`.
 - **Auth:** Bearer; Owner-Account.
 
 ## Endpoint: POST /me/fiat
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/fiat`. JSON body `{ fiat, onlyIfUnset }` returns the owner Account. `onlyIfUnset: true` does not overwrite a stored fiat value.
-- **Errors:** Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Errors:** 401 when the bearer is missing or blank, before the proxy. Upstream 401, 400 invalid body, or 502 if the api is unreachable.
 - **Used by:** `setAccountFiat`.
 - **Auth:** Bearer; Owner-Account.
 

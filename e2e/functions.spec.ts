@@ -416,6 +416,35 @@ async function seedAdaSession(
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
+  await page.route(/\/me\/(?:locale|fiat)$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    const body = route.request().postDataJSON() as { locale?: unknown; fiat?: unknown };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role,
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        locale: typeof body.locale === 'string' ? body.locale : null,
+        fiat: typeof body.fiat === 'string' ? body.fiat : null,
+      }),
+    });
+  });
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
