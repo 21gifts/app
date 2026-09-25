@@ -1308,6 +1308,12 @@ A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** 
 
 ![21.gifts shops staff place edit](images/shops-staff-place-edit.png)
 
+### Variant: staff-place-edit-error
+
+A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. **Remove place** and **Use this place** stay.
+
+![21.gifts shops staff place edit error](images/shops-staff-place-edit-error.png)
+
 ### Variant: staff-place-edit-unavailable
 
 A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open and the map key is missing. The panel says **The map is not available.** and shows **Remove place**. There is no map frame and no **Use this place**.

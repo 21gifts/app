@@ -2568,6 +2568,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:staff-place-edit-error",
+    "label": "/shops staff-place-edit-error",
+    "visual": "state-shops-staff-place-edit-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:staff-place-edit-unavailable",
     "label": "/shops staff-place-edit-unavailable",
     "visual": "state-shops-staff-place-edit-unavailable",
