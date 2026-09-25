@@ -79,10 +79,7 @@ describe('ShopPlaceControl', () => {
   it('hides on a reply', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(
-      <ShopPlaceControl
-        message={{ ...shopMessage, parentId: 'm1' }}
-        onUpdated={vi.fn()}
-      />,
+      <ShopPlaceControl message={{ ...shopMessage, parentId: 'm1' }} onUpdated={vi.fn()} />,
     );
     expect(screen.queryByRole('button')).toBeNull();
   });

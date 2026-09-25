@@ -344,9 +344,7 @@ const STAFF_SHOP_NOTE = {
   role: 'basis',
 };
 
-test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', async ({
-  page,
-}) => {
+test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', async ({ page }) => {
   await stubPlaceMap(page);
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
