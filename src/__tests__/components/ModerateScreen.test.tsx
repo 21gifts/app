@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModerateScreen } from '@/components/ModerateScreen';
 import type { Account, Conversation, ModeratorProposal } from '@/lib/api-types';
@@ -67,13 +67,16 @@ const EMPTY_STATS: GiftStats = {
   },
 };
 
-function statsWithDays(days: { day: string; giftCount: number }[]): GiftStats {
+function statsWithDays(
+  days: { day: string; giftCount: number; officialCount?: number }[],
+): GiftStats {
   return {
     ...EMPTY_STATS,
     giftCount: days.reduce((sum, row) => sum + row.giftCount, 0),
     spendOverTime: days.map((row) => ({
       day: row.day,
       giftCount: row.giftCount,
+      officialCount: row.officialCount ?? row.giftCount,
       sats: 0,
       cumulativeSats: 0,
       btc: '0.00000000',
@@ -230,7 +233,7 @@ describe('ModerateScreen', () => {
     fetchMock.mockResolvedValue(
       statsWithDays([
         { day: '2026-08-24', giftCount: 36 },
-        { day: '2026-09-19', giftCount: 12 },
+        { day: '2026-09-19', giftCount: 40, officialCount: 12 },
         { day: '2026-09-20', giftCount: 9 },
       ]),
     );
@@ -240,14 +243,35 @@ describe('ModerateScreen', () => {
       expect(screen.getByText('12%')).toBeTruthy();
     });
     expect(screen.getByText('yesterday 12 of 100')).toBeTruthy();
-    expect(screen.getByText('100 payouts a day').parentElement).toBe(
+    expect(screen.getByText('100 people a day').parentElement).toBe(
       screen.getByText('yesterday 12 of 100').parentElement,
     );
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.getByText(/Official means 21.gifts itself paid/)).toBeTruthy();
+    expect(screen.getByText(/Someone who receives both that day counts once/)).toBeTruthy();
+    expect(screen.getByText('9')).toBeTruthy();
     expect(screen.getByText('36')).toBeTruthy();
+    expect(screen.queryByText('12', { exact: true })).toBeNull();
+    const chart = screen.getByRole('img', { name: 'People by UTC day' });
+    expect(chart.textContent).toContain('9/20');
+    expect(chart.textContent).toContain('8/22');
+    expect(chart.textContent).not.toContain('9/19');
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.queryByText(/Official means 21.gifts itself paid/)).toBeNull();
+    expect(screen.queryByText(/Someone who receives both that day counts once/)).toBeNull();
+  });
+
+  it('shows zero on today even when the bar is empty', async () => {
+    fetchMock.mockResolvedValue(
+      statsWithDays([{ day: '2026-09-20', giftCount: 4, officialCount: 0 }]),
+    );
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    renderWithLocale(<ModerateScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('0%')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
+    const chart = screen.getByRole('img', { name: 'People by UTC day' });
+    const labels = within(chart).getAllByText('0');
+    expect(labels.some((node) => node.getAttribute('font-size') === '11')).toBe(true);
   });
 
   it('caps the bar at 100 percent when yesterday exceeds the goal', async () => {
@@ -275,12 +299,13 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('treats a missing giftCount as zero', async () => {
+  it('shows retry when a spend day omits officialCount', async () => {
     fetchMock.mockResolvedValue({
       ...EMPTY_STATS,
       spendOverTime: [
         {
           day: '2026-09-19',
+          giftCount: 40,
           sats: 1,
           cumulativeSats: 1,
           btc: '0.00000001',
@@ -299,10 +324,13 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<ModerateScreen />);
     await waitFor(() => {
-      expect(screen.getByText('0%')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Could not load payouts. Please try again.',
+      );
     });
-    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.getByText('Official payouts by UTC day')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.queryByText('40%')).toBeNull();
+    expect(screen.queryByText('0%')).toBeNull();
   });
 
   it('opens an empty chart when there are no gifts', async () => {
@@ -312,7 +340,7 @@ describe('ModerateScreen', () => {
       expect(screen.getByText('0%')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.getByText('Official payouts by UTC day')).toBeTruthy();
+    expect(screen.getByText('People by UTC day')).toBeTruthy();
   });
 
   it('ignores a stale stats resolve after unmount', async () => {

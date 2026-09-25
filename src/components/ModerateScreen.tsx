@@ -39,23 +39,31 @@ function previousUtcDay(day: string): string {
 }
 
 /**
- * Yesterday's official payout count from a stats series.
+ * Person count on `yesterday` from `officialCount`. First matching day wins.
+ * A missing day is 0. Any omitted `officialCount` is unusable (`null`).
  *
  * @param series - `spendOverTime` oldest-first.
  * @param yesterday - UTC day to look up.
- * @returns Gift count that day, or 0 when the day is missing.
+ * @returns Person count, 0 when the day is missing, or `null` when any point
+ *   omits `officialCount`.
  */
-function countOnDay(series: GiftStats['spendOverTime'], yesterday: string): number {
+function countOnDay(series: GiftStats['spendOverTime'], yesterday: string): number | null {
+  let first: number | undefined;
   for (const point of series) {
-    if (point.day === yesterday) {
-      return point.giftCount ?? 0;
+    if (point.officialCount === undefined) {
+      return null;
+    }
+    if (first === undefined && point.day === yesterday) {
+      first = point.officialCount;
     }
   }
-  return 0;
+  return first === undefined ? 0 : first;
 }
 
 /**
- * Last `CHART_DAYS` UTC days ending on `today`, with counts from `series`.
+ * Last `CHART_DAYS` UTC days ending on `today`, with person counts from `series`.
+ *
+ * Last write wins when a day appears twice. Days without a point stay 0.
  *
  * @param series - `spendOverTime` oldest-first.
  * @param today - UTC day of the clock.
@@ -67,7 +75,7 @@ function chartRows(
 ): { day: string; count: number }[] {
   const byDay = new Map<string, number>();
   for (const point of series) {
-    byDay.set(point.day, point.giftCount ?? 0);
+    byDay.set(point.day, point.officialCount as number);
   }
   const todayMs = Date.parse(`${today}T00:00:00.000Z`);
   const rows: { day: string; count: number }[] = [];
@@ -268,18 +276,19 @@ function PayoutGoalWidget(props: {
   const shell =
     'flex w-full flex-col gap-3 rounded-3xl border border-app-border-strong bg-app-card-muted p-4';
   const labeled = { role: 'group' as const, 'aria-label': t('moderate.goal.widgetLabel') };
+  const errorPanel = (
+    <div className={`${shell} items-center`} {...labeled}>
+      <p role="alert" className="text-center text-sm text-app-danger">
+        {t('moderate.goal.error')}
+      </p>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        {t('moderate.goal.retry')}
+      </Button>
+    </div>
+  );
 
   if (error && stats === null) {
-    return (
-      <div className={`${shell} items-center`} {...labeled}>
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('moderate.goal.error')}
-        </p>
-        <Button variant="secondary" size="sm" onClick={onRetry}>
-          {t('moderate.goal.retry')}
-        </Button>
-      </div>
-    );
+    return errorPanel;
   }
 
   if (stats === null) {
@@ -293,8 +302,11 @@ function PayoutGoalWidget(props: {
   const today = utcDayFromMs(Date.now());
   const yesterday = previousUtcDay(today);
   const count = countOnDay(stats.spendOverTime, yesterday);
-  const percent = Math.min(100, Math.round((count / PAYOUT_GOAL) * 100));
+  if (count === null) {
+    return errorPanel;
+  }
   const rows = chartRows(stats.spendOverTime, today);
+  const percent = Math.min(100, Math.round((count / PAYOUT_GOAL) * 100));
 
   return (
     <div className={shell} {...labeled}>
@@ -367,7 +379,7 @@ function PayoutGoalWidget(props: {
 }
 
 /**
- * Count bars for one UTC-day window against the 100-payout goal.
+ * Count bars for one UTC-day window against the daily person goal.
  *
  * @param props - Chart rows and today's UTC day (drawn lighter).
  * @returns SVG figure.
@@ -390,7 +402,7 @@ function PayoutGoalChart(props: {
   const n = rows.length;
   const slot = innerW / Math.max(n, 1);
   const barW = slot * 0.64;
-  const labelAt = new Set([0, Math.floor((n - 1) / 2), n - 2]);
+  const labelAt = new Set([0, Math.floor((n - 1) / 2), n - 1]);
 
   return (
     <svg
@@ -444,7 +456,7 @@ function PayoutGoalChart(props: {
                 data-testid="payout-goal-chart-bar"
               />
             ) : null}
-            {row.count >= 30 ? (
+            {row.count >= 30 || isToday ? (
               <text
                 x={x + barW / 2}
                 y={y - 6}

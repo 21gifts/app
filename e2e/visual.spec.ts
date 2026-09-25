@@ -11560,6 +11560,7 @@ test.describe('moderate screens', () => {
       return {
         day,
         giftCount,
+        officialCount: giftCount,
         sats: 0,
         cumulativeSats: 0,
         btc: '0.00000000',
@@ -11723,7 +11724,7 @@ test.describe('moderate screens', () => {
     await page.goto('/moderate');
     await expect(page.getByText('12%')).toBeVisible();
     await page.getByRole('button', { name: /Goal/ }).click();
-    await expect(page.getByText('Official payouts by UTC day')).toBeVisible();
+    await expect(page.getByText('People by UTC day')).toBeVisible();
     await shotScreen(page, 'state-moderate-goal-open');
   });
 
@@ -11732,7 +11733,7 @@ test.describe('moderate screens', () => {
     await page.route('**/gifts/stats', () => new Promise(() => undefined));
     await page.goto('/moderate');
     await expect(
-      page.getByRole('group', { name: 'Daily payout goal' }).getByText('Loading…'),
+      page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-loading');
   });

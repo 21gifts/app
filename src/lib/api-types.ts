@@ -251,6 +251,7 @@ export const giftStatsFxSchema = z.object({
 export const spendDaySchema = z.object({
   day: z.string(),
   giftCount: z.number().int().nonnegative().optional(),
+  officialCount: z.number().int().nonnegative().optional(),
   sats: z.number().int().nonnegative(),
   cumulativeSats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,
