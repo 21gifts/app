@@ -263,6 +263,52 @@ describe('ForumQuotedBody', () => {
     expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
   });
 
+  it('passes marks on a nested note in each body', () => {
+    const marked = {
+      ...quotedNote,
+      accountId: 'acc-cyrill',
+      text: 'hi @ada',
+      hasPhoto: false,
+      photoCount: 0,
+      mentions: [{ username: 'ada', accountId: 'acc-ada' }],
+    };
+    const { unmount } = renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[marked]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    unmount();
+    const plain = renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[marked]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    plain.unmount();
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[marked]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+  });
+
   it('links a nested 21.gifts author without opening the quote', async () => {
     const onActivate = vi.fn();
     renderWithLocale(

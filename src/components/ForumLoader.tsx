@@ -1260,10 +1260,8 @@ export function ForumLoader({
     replyParentId: string | null = null,
     postAfterPay = false,
   ): void => {
-    /* v8 ignore next 2 -- pay polling starts only after a signed-in invoice */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- pay polling starts only after a signed-in invoice */
+    if (session === null) return;
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -1576,10 +1574,8 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
-    /* v8 ignore next 2 -- a created note is only applied for a signed-in post */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- a created note is only applied for a signed-in post */
+    if (session === null) return;
     composeFeePaidRef.current = false;
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
@@ -1667,10 +1663,8 @@ export function ForumLoader({
     askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): Promise<void> => {
-    /* v8 ignore next 2 -- the composer is hidden without a session */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- the composer is hidden without a session */
+    if (session === null) return;
     setPosting(true);
     setFormError(null);
     let awaitingPay = false;
@@ -1821,10 +1815,8 @@ export function ForumLoader({
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
-    /* v8 ignore next 2 -- the pay sheet is not offered without a session */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- the pay sheet is not offered without a session */
+    if (session === null) return;
     /* v8 ignore next 3 -- button is disabled when no sheet is open */
     if (payMessageId === null || payBusy) {
       return;
