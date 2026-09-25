@@ -1454,6 +1454,7 @@ describe('InboxScreen', () => {
     );
     expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));

@@ -104,6 +104,12 @@ function readCharge(value: unknown, now: number): PayCharge | null {
   return { amountSats, expiresAt };
 }
 
+/**
+ * Outer width of the invoice QR plate: 232px modules, `p-4`, and a 1px border.
+ * Pay uses this width so it lines up with the plate instead of the page column.
+ */
+const INVOICE_QR_PLATE_WIDTH = 'w-[16.625rem]';
+
 /** Open Wallet of Satoshi on this invoice. */
 function openWallet(invoice: string, android: boolean): void {
   window.location.href = android
@@ -434,7 +440,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
               {profile.name}
             </h1>
             {paymentActive && activeSats !== null ? (
-              <div className="flex w-full flex-col gap-3">
+              <div className="flex w-full flex-col items-center gap-3">
                 {chargeLive && charge !== null ? (
                   <p className="text-center text-sm text-app-subtle">
                     {t('pay.timeLeft', { time: formatLeft(remaining) })}
@@ -453,36 +459,36 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                     {t('pay.failed')}
                   </p>
                 ) : null}
-                {invoice !== null && showInvoiceQr ? (
-                  <div className="flex w-full justify-center">
+                <div className={`flex max-w-full flex-col gap-3 ${INVOICE_QR_PLATE_WIDTH}`}>
+                  {invoice !== null && showInvoiceQr ? (
                     <QrCode value={invoice} label={t('pay.invoiceQr')} />
-                  </div>
-                ) : null}
-                <Button
-                  type="button"
-                  className="w-full"
-                  aria-label={t('forum.payOpenWalletAria')}
-                  disabled={posting || (invoice === null && formError !== 'failed')}
-                  icon={
-                    <img
-                      src="/wos-icon.png"
-                      alt=""
-                      width={20}
-                      height={20}
-                      aria-hidden="true"
-                      className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                    />
-                  }
-                  onClick={() => {
-                    if (invoice !== null) {
-                      openWallet(invoice, android);
-                      return;
+                  ) : null}
+                  <Button
+                    type="button"
+                    className="w-full"
+                    aria-label={t('forum.payOpenWalletAria')}
+                    disabled={posting || (invoice === null && formError !== 'failed')}
+                    icon={
+                      <img
+                        src="/wos-icon.png"
+                        alt=""
+                        width={20}
+                        height={20}
+                        aria-hidden="true"
+                        className="h-5 w-5 rounded-md ring-1 ring-white/30"
+                      />
                     }
-                    setMintNonce((nonce) => nonce + 1);
-                  }}
-                >
-                  {t('forum.payOpenWallet')}
-                </Button>
+                    onClick={() => {
+                      if (invoice !== null) {
+                        openWallet(invoice, android);
+                        return;
+                      }
+                      setMintNonce((nonce) => nonce + 1);
+                    }}
+                  >
+                    {t('forum.payOpenWallet')}
+                  </Button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">

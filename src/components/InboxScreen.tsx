@@ -466,7 +466,8 @@ function ConversationListItem({
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 8000-character composer and a sats amount field (`showAmount` false
- * hides it; the staff room has no gifts). Members (`showFilter`
+ * hides it; the staff room has no gifts). An open invoice hides that amount
+ * row too: the pay sheet states the amount once. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
@@ -984,7 +985,11 @@ export function InboxScreen({
           </ul>
         ) : null}
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
-          <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
+          <div
+            className={
+              showAmount && invoice === null ? 'flex items-end gap-2' : 'flex items-center gap-2'
+            }
+          >
             {showAttach ? (
               <>
                 <IconButton
@@ -1034,7 +1039,7 @@ export function InboxScreen({
               )}
             </IconButton>
           </div>
-          {showAmount ? (
+          {showAmount && invoice === null ? (
             <AmountEntry
               layout="composer"
               className={showAttach ? 'max-w-sm ps-14' : 'max-w-sm'}

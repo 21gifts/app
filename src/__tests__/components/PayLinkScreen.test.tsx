@@ -84,6 +84,7 @@ describe('PayLinkScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     const pay = screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    expect(pay.parentElement?.className).toContain('w-[16.625rem]');
     const hrefs: string[] = [];
     const previous = window.location;
     Object.defineProperty(window, 'location', {
