@@ -1836,7 +1836,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: formatFiatTick
 
-- **Purpose:** Formats a parsed fiat chart-axis value with grouping and a currency prefix. USD matches `formatUsdTick`; other codes are `CHF 0` / `CHF 1.43` / `CHF 1'425`.
+- **Purpose:** Formats a parsed fiat chart-axis value with grouping and a currency prefix. USD uses `$` (same as `formatUsdTick`) and PHP uses `₱`; CHF and EUR keep the code (`CHF 0` / `CHF 1.43` / `CHF 1'425`).
 - **Inputs:** `amount` number (layout scale only), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
 - **Returns / side effects:** Axis label. Values under 10 keep trimmed decimals and use the style decimal separator. Does not itself map a null series to `—` — `StatsDashboard` does that when every selected cumulative is `null`. `AccountActivityChart` maps all-null CHF/EUR/PHP to `—` itself.
 - **Used by:** `StatsDashboard` over-time fiat scale, `AccountActivityChart` (profile fiat scale).
