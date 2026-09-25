@@ -285,7 +285,7 @@
 
 - **Purpose:** Reconciles nullable signed-in account locale and fiat preferences with the screen and supported preference cookies once per account id.
 - **Inputs:** Hydrated auth `session` and `account`, screen locale, fiat context, preference generations, and the router.
-- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, mirrors a stored fiat into its cookie even when the visible code already matches, ignores missing keys, and discards a stale response without replacing the other preference.
+- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
 - **Used by:** `RootLayout` inside `FiatPreferenceProvider`.
 
 ## Function: bumpLocaleGeneration

@@ -33,7 +33,13 @@ async function persistFiat(
       if (fiatGeneration() !== generation) {
         return;
       }
-      useAuthStore.getState().setAccount(updated);
+      const current = useAuthStore.getState().account;
+      if (current !== null && current.id !== updated.id) {
+        return;
+      }
+      if (current !== null) {
+        useAuthStore.getState().setAccount({ ...current, fiat: updated.fiat });
+      }
     } catch {
       return;
     }

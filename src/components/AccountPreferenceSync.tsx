@@ -51,40 +51,44 @@ function supportedFiat(value: string | undefined): FiatCode | null {
 }
 
 /**
- * Keeps one hydrated preference and leaves the other field on the account
- * that is current when the response arrives.
+ * Returns the signed-in account when it is still the one this sync started for.
+ *
+ * @param accountId - Account id captured when the sync began.
+ * @returns That account, or `null` after logout or a different sign-in.
+ */
+function signedInAccount(accountId: string): Account | null {
+  const current = useAuthStore.getState();
+  if (current.session === null || current.account === null || current.account.id !== accountId) {
+    return null;
+  }
+  return current.account;
+}
+
+/**
+ * Writes one hydrated preference onto the account that is current now.
  *
  * @param updated - Owner account returned by the preference route.
  * @param field - Preference this response is allowed to write.
- * @param replaceWhole - Whether the other preference is still the baseline.
- * @param setAccount - Auth-store writer.
+ * @returns Whether the signed-in account is still the one that was synced.
  */
-function rememberPreference(
-  updated: Account,
-  field: 'locale' | 'fiat',
-  replaceWhole: boolean,
-  setAccount: (account: Account) => void,
-): void {
-  if (replaceWhole) {
-    setAccount(updated);
-    return;
+function rememberField(updated: Account, field: 'locale' | 'fiat'): boolean {
+  const current = signedInAccount(updated.id);
+  if (current === null) {
+    return false;
   }
-  const current = useAuthStore.getState().account;
-  if (current === null || current.id !== updated.id) {
-    return;
+  if (current[field] !== updated[field]) {
+    useAuthStore.getState().setAccount({ ...current, [field]: updated[field] });
   }
-  if (current[field] === updated[field]) {
-    return;
-  }
-  setAccount({ ...current, [field]: updated[field] });
+  return true;
 }
 
 /**
  * Reconciles signed-in language and currency preferences with the account.
  * Missing account keys are left alone for compatibility with older api
  * responses. Each account id runs at most once for this page lifetime.
- * The generation baseline is the first effect for this session, including
- * runs before hydration finishes.
+ * The generation baseline is captured once while signed out and again on
+ * logout. Later signed-out renders do not move it. A late response merges
+ * only its own field and stops if the session is gone.
  *
  * @returns `null`.
  */
@@ -92,20 +96,24 @@ export function AccountPreferenceSync(): null {
   const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const setAccount = useAuthStore((state) => state.setAccount);
   const { locale: screenLocale } = useTranslations();
   const { fiat, setFiat } = useFiatPreference();
   const router = useRouter();
   const localeBaseline = useRef<number | null>(null);
   const fiatBaseline = useRef<number | null>(null);
+  const sawSession = useRef(false);
 
   useEffect(() => {
     if (session === null) {
       syncedAccountIds.clear();
-      localeBaseline.current = localeGeneration();
-      fiatBaseline.current = fiatGeneration();
+      if (sawSession.current || localeBaseline.current === null) {
+        localeBaseline.current = localeGeneration();
+        fiatBaseline.current = fiatGeneration();
+      }
+      sawSession.current = false;
       return;
     }
+    sawSession.current = true;
     if (localeBaseline.current === null) {
       localeBaseline.current = localeGeneration();
     }
@@ -125,13 +133,21 @@ export function AccountPreferenceSync(): null {
 
     void (async (): Promise<void> => {
       await Promise.resolve();
+      if (signedInAccount(account.id) === null) {
+        return;
+      }
       let effectiveLocale = screenLocale;
 
       if (account.locale === null && localeGeneration() === localeAtRunStart) {
         try {
           const updated = await setAccountLocale(session, screenLocale, true);
+          if (signedInAccount(account.id) === null) {
+            return;
+          }
           if (localeGeneration() === localeAtRunStart) {
-            rememberPreference(updated, 'locale', fiatGeneration() === fiatAtRunStart, setAccount);
+            if (!rememberField(updated, 'locale')) {
+              return;
+            }
             if (typeof updated.locale === 'string') {
               effectiveLocale = updated.locale;
               if (readPreferenceCookie(LOCALE_COOKIE) !== updated.locale) {
@@ -154,15 +170,20 @@ export function AccountPreferenceSync(): null {
         }
       }
 
+      if (signedInAccount(account.id) === null) {
+        return;
+      }
       if (account.fiat === null && fiatGeneration() === fiatAtRunStart) {
         const nextFiat =
           supportedFiat(readPreferenceCookie(FIAT_COOKIE)) ?? defaultFiatForLocale(effectiveLocale);
         try {
           const updated = await setAccountFiat(session, nextFiat, true);
-          if (fiatGeneration() !== fiatAtRunStart) {
+          if (signedInAccount(account.id) === null || fiatGeneration() !== fiatAtRunStart) {
             return;
           }
-          rememberPreference(updated, 'fiat', localeGeneration() === localeAtRunStart, setAccount);
+          if (!rememberField(updated, 'fiat')) {
+            return;
+          }
           if (
             typeof updated.fiat === 'string' &&
             readPreferenceCookie(FIAT_COOKIE) !== updated.fiat
@@ -180,7 +201,7 @@ export function AccountPreferenceSync(): null {
         setFiat(account.fiat);
       }
     })();
-  }, [ready, session, account, setAccount, screenLocale, fiat, setFiat, router]);
+  }, [ready, session, account, screenLocale, fiat, setFiat, router]);
 
   return null;
 }

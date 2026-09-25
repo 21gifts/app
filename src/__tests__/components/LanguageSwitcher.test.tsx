@@ -327,7 +327,7 @@ describe('LanguageSwitcher', () => {
   it('waits for the signed-in account locale update before writing the cookie', async () => {
     vi.mocked(setAccountLocale).mockReset();
     const original = account('language_switcher_original', 'en');
-    const updated = account('language_switcher_updated', 'de');
+    const updated = account('language_switcher_original', 'de');
     useAuthStore.setState({ account: original });
     saveSession('tok');
     let resolveRequest!: (value: Account) => void;
@@ -353,7 +353,8 @@ describe('LanguageSwitcher', () => {
 
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
     expect(refresh).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().account).toBe(updated);
+    expect(useAuthStore.getState().account?.locale).toBe('de');
+    expect(useAuthStore.getState().account?.id).toBe(original.id);
   });
 
   it('keeps signed-in locale state unchanged when the account update rejects', async () => {
@@ -397,5 +398,24 @@ describe('LanguageSwitcher', () => {
     expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=de`);
     expect(refresh).not.toHaveBeenCalled();
     expect(useAuthStore.getState().account).toBe(original);
+  });
+
+  it('does not apply a locale response for a different account', async () => {
+    vi.mocked(setAccountLocale).mockReset();
+    const original = account('language_switcher_keep', 'en');
+    useAuthStore.setState({ account: original });
+    saveSession('tok');
+    vi.mocked(setAccountLocale).mockResolvedValue(account('language_switcher_other', 'de'));
+
+    renderWithLocale(<LanguageSwitcher tone="light" />);
+    fireEvent.click(screen.getByLabelText('Language'));
+    fireEvent.click(screen.getByRole('option', { name: 'Deutsch' }));
+
+    await waitFor(() => {
+      expect(setAccountLocale).toHaveBeenCalledWith('tok', 'de', false);
+    });
+    expect(useAuthStore.getState().account).toBe(original);
+    expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=de`);
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

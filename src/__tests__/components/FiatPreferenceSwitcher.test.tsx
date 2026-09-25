@@ -80,7 +80,7 @@ describe('FiatPreferenceSwitcher', () => {
   it('waits for the signed-in account fiat update before pressing and persisting CHF', async () => {
     vi.mocked(setAccountFiat).mockReset();
     const original = account('fiat_preference_original', 'USD');
-    const updated = account('fiat_preference_updated', 'CHF');
+    const updated = account('fiat_preference_original', 'CHF');
     useAuthStore.setState({ account: original });
     saveSession('tok');
     let resolveRequest!: (value: Account) => void;
@@ -105,7 +105,8 @@ describe('FiatPreferenceSwitcher', () => {
 
     expect(document.cookie).toContain(`${FIAT_COOKIE}=CHF`);
     expect(screen.getByRole('button', { name: 'CHF' }).getAttribute('aria-pressed')).toBe('true');
-    expect(useAuthStore.getState().account).toBe(updated);
+    expect(useAuthStore.getState().account?.fiat).toBe('CHF');
+    expect(useAuthStore.getState().account?.id).toBe(original.id);
   });
 
   it('keeps signed-in fiat state unchanged when the account update rejects', async () => {
@@ -147,5 +148,22 @@ describe('FiatPreferenceSwitcher', () => {
     expect(document.cookie).not.toContain(`${FIAT_COOKIE}=CHF`);
     expect(screen.getByRole('button', { name: 'CHF' }).getAttribute('aria-pressed')).toBe('false');
     expect(useAuthStore.getState().account).toBe(original);
+  });
+
+  it('does not apply a fiat response for a different account', async () => {
+    vi.mocked(setAccountFiat).mockReset();
+    const original = account('fiat_preference_keep', 'USD');
+    useAuthStore.setState({ account: original });
+    saveSession('tok');
+    vi.mocked(setAccountFiat).mockResolvedValue(account('fiat_preference_other', 'CHF'));
+
+    renderWithLocale(<FiatPreferenceSwitcher />, 'en', 'ch', 'USD');
+    fireEvent.click(screen.getByRole('button', { name: 'CHF' }));
+
+    await waitFor(() => {
+      expect(setAccountFiat).toHaveBeenCalledWith('tok', 'CHF', false);
+    });
+    expect(useAuthStore.getState().account).toBe(original);
+    expect(document.cookie).not.toContain(`${FIAT_COOKIE}=CHF`);
   });
 });

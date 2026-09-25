@@ -74,6 +74,14 @@ function FiatGenerationBumper(): null {
   return null;
 }
 
+function LogoutOnEffect(): null {
+  useEffect(() => {
+    useAuthStore.getState().clearAuth();
+  }, []);
+
+  return null;
+}
+
 function FiatCookieWriter(props: { value: string }): null {
   const { value } = props;
   useEffect(() => {
@@ -179,7 +187,7 @@ describe('AccountPreferenceSync', () => {
 
       await waitFor(() => {
         expect(mockSetAccountLocale).toHaveBeenCalledWith('s', 'en', true);
-        expect(useAuthStore.getState().account).toBe(updated);
+        expect(useAuthStore.getState().account?.locale).toBe('de');
         expect(cookie('locale')).toBe('de');
         expect(refresh).toHaveBeenCalledTimes(1);
       });
@@ -203,7 +211,7 @@ describe('AccountPreferenceSync', () => {
 
     await waitFor(() => {
       expect(mockSetAccountLocale).toHaveBeenCalledTimes(1);
-      expect(useAuthStore.getState().account).toBe(updated);
+      expect(useAuthStore.getState().account?.locale).toBe('de');
     });
 
     expect(refresh).not.toHaveBeenCalled();
@@ -217,8 +225,8 @@ describe('AccountPreferenceSync', () => {
 
     await waitFor(() => {
       expect(mockSetAccountLocale).toHaveBeenCalledTimes(1);
-      expect(useAuthStore.getState().account).toBe(updated);
     });
+    expect(useAuthStore.getState().account?.locale).toBeNull();
 
     expect(cookie('locale')).toBeUndefined();
     expect(refresh).not.toHaveBeenCalled();
@@ -422,7 +430,7 @@ describe('AccountPreferenceSync', () => {
     renderSync(account('acc_16', { fiat: null }));
 
     await waitFor(() => {
-      expect(useAuthStore.getState().account).toBe(updated);
+      expect(useAuthStore.getState().account?.fiat).toBe('USD');
     });
 
     expect(screen.getByTestId('fiat').textContent).toBe('USD');
@@ -436,9 +444,10 @@ describe('AccountPreferenceSync', () => {
     renderSync(account('acc_17', { fiat: null }));
 
     await waitFor(() => {
-      expect(useAuthStore.getState().account).toBe(updated);
+      expect(mockSetAccountFiat).toHaveBeenCalledTimes(1);
     });
 
+    expect(useAuthStore.getState().account?.fiat).toBeNull();
     expect(screen.getByTestId('fiat').textContent).toBe('USD');
     expect(cookie('fiat')).toBeUndefined();
   });
@@ -723,5 +732,115 @@ describe('AccountPreferenceSync', () => {
     await flushEffect();
 
     expect(useAuthStore.getState().account).toBe(explicit);
+  });
+
+  it('does not restore an account after logout while hydration is in flight', async () => {
+    let releaseLocale: (value: Account) => void = () => {};
+    mockSetAccountLocale.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseLocale = resolve;
+        }),
+    );
+
+    renderSync(account('acc_out', { locale: null, fiat: null }));
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalled();
+    });
+
+    act(() => {
+      useAuthStore.getState().clearAuth();
+    });
+    await act(async () => {
+      releaseLocale(account('acc_out', { locale: 'en', fiat: 'USD' }));
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+    expect(cookie('locale')).toBeUndefined();
+  });
+
+  it('does not treat a choice made while signed out of the store as the baseline', async () => {
+    renderSync(null, null);
+    await flushEffect();
+
+    act(() => {
+      bumpLocaleGeneration();
+      useAuthStore.setState({
+        session: null,
+        account: account('acc_base', { locale: null }),
+        wrongAccount: false,
+      });
+    });
+    await flushEffect();
+
+    act(() => {
+      useAuthStore.setState({
+        session: 's',
+        account: account('acc_base', { locale: null }),
+        wrongAccount: false,
+      });
+    });
+    await flushEffect();
+
+    expect(mockSetAccountLocale).not.toHaveBeenCalled();
+  });
+
+  it('does not post fiat after logout during the locale cookie refresh', async () => {
+    refresh.mockImplementation(() => {
+      useAuthStore.getState().clearAuth();
+    });
+
+    renderSync(account('acc_mid', { locale: 'de', fiat: null }));
+
+    await waitFor(() => {
+      expect(refresh).toHaveBeenCalled();
+    });
+    await flushEffect();
+
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not apply a fiat response for a different account', async () => {
+    mockSetAccountFiat.mockResolvedValue(account('acc_other_fiat', { locale: 'en', fiat: 'EUR' }));
+
+    renderSync(account('acc_fiat_id', { locale: 'en', fiat: null }));
+
+    await waitFor(() => {
+      expect(mockSetAccountFiat).toHaveBeenCalled();
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account?.id).toBe('acc_fiat_id');
+    expect(useAuthStore.getState().account?.fiat).toBeNull();
+    expect(cookie('fiat')).toBeUndefined();
+  });
+
+  it('does not post after logout before the first preference request', async () => {
+    renderSync(account('acc_yield', { locale: null, fiat: null }), 's', <LogoutOnEffect />);
+    await flushEffect();
+
+    expect(mockSetAccountLocale).not.toHaveBeenCalled();
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('does not apply a locale response for a different account', async () => {
+    mockSetAccountLocale.mockResolvedValue(account('acc_other_locale', { locale: 'de' }));
+
+    renderSync(account('acc_loc_id', { locale: null }));
+
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalled();
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account?.id).toBe('acc_loc_id');
+    expect(useAuthStore.getState().account?.locale).toBeNull();
+    expect(cookie('locale')).toBeUndefined();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

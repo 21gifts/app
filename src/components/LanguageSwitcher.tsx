@@ -84,7 +84,13 @@ async function persistLocale(next: Locale, current: Locale, refresh: () => void)
       if (localeGeneration() !== generation) {
         return;
       }
-      useAuthStore.getState().setAccount(updated);
+      const current = useAuthStore.getState().account;
+      if (current !== null && current.id !== updated.id) {
+        return;
+      }
+      if (current !== null) {
+        useAuthStore.getState().setAccount({ ...current, locale: updated.locale });
+      }
     } catch {
       return;
     }
