@@ -1698,36 +1698,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/messages:translate",
-    "label": "/messages translate",
-    "visual": "state-messages-translate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages:translate-loading",
-    "label": "/messages translate-loading",
-    "visual": "state-messages-translate-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages:translate-done",
-    "label": "/messages translate-done",
-    "visual": "state-messages-translate-done",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages:translate-hidden",
-    "label": "/messages translate-hidden",
-    "visual": "state-messages-translate-hidden",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages:translate-error",
-    "label": "/messages translate-error",
-    "visual": "state-messages-translate-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages:contact",
     "label": "/messages contact",
     "visual": "state-messages-contact",

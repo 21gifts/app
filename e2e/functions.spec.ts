@@ -762,7 +762,7 @@ test('Function: proxyTranslateConversationMessagePost — POST conversation tran
   ).toBeGreaterThanOrEqual(400);
 });
 
-test('Function: translateConversationMessage — Translate a conversation preview', async ({
+test('Function: translateConversationMessage — Translate an open conversation', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -794,7 +794,28 @@ test('Function: translateConversationMessage — Translate a conversation previe
       }),
     });
   });
+  await page.route(/\/conversations\/conv-de(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'cm-de',
+            name: 'Bob',
+            text: GERMAN_NOTE_TEXT,
+            fromMe: false,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
   await page.goto('/messages');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+  await page.goto('/messages?c=conv-de');
   await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
   await page.getByRole('button', { name: 'Translate' }).click();
   await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
