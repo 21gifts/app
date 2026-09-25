@@ -66,6 +66,9 @@ export function AccountPreferenceSync(): null {
   const router = useRouter();
 
   useEffect(() => {
+    if (session === null) {
+      syncedAccountIds.clear();
+    }
     if (!ready || session === null || account === null) {
       return;
     }
@@ -81,11 +84,10 @@ export function AccountPreferenceSync(): null {
       await Promise.resolve();
       let effectiveLocale = screenLocale;
 
-      if (account.locale === null) {
-        const generation = localeGeneration();
+      if (account.locale === null && localeGeneration() === localeAtRunStart) {
         try {
           const updated = await setAccountLocale(session, screenLocale, true);
-          if (localeGeneration() === generation) {
+          if (localeGeneration() === localeAtRunStart) {
             setAccount(updated);
             if (typeof updated.locale === 'string') {
               effectiveLocale = updated.locale;
@@ -109,13 +111,12 @@ export function AccountPreferenceSync(): null {
         }
       }
 
-      if (account.fiat === null) {
+      if (account.fiat === null && fiatGeneration() === fiatAtRunStart) {
         const nextFiat =
           supportedFiat(readPreferenceCookie(FIAT_COOKIE)) ?? defaultFiatForLocale(effectiveLocale);
-        const generation = fiatGeneration();
         try {
           const updated = await setAccountFiat(session, nextFiat, true);
-          if (fiatGeneration() !== generation) {
+          if (fiatGeneration() !== fiatAtRunStart) {
             return;
           }
           setAccount(updated);

@@ -66,6 +66,14 @@ function LocaleGenerationBumper(): null {
   return null;
 }
 
+function FiatGenerationBumper(): null {
+  useEffect(() => {
+    bumpFiatGeneration();
+  }, []);
+
+  return null;
+}
+
 function FiatCookieWriter(props: { value: string }): null {
   const { value } = props;
   useEffect(() => {
@@ -269,6 +277,52 @@ describe('AccountPreferenceSync', () => {
     expect(cookie('locale')).toBeUndefined();
     expect(refresh).not.toHaveBeenCalled();
     expect(mockSetAccountLocale).not.toHaveBeenCalled();
+  });
+
+  it('does not fill an empty locale after its generation changes', async () => {
+    renderSync(account('acc_empty_locale', { locale: null }), 's', <LocaleGenerationBumper />);
+
+    await flushEffect();
+
+    expect(mockSetAccountLocale).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('does not fill an empty fiat after its generation changes', async () => {
+    renderSync(
+      account('acc_empty_fiat', { locale: 'en', fiat: null }),
+      's',
+      <FiatGenerationBumper />,
+    );
+
+    await flushEffect();
+
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+  });
+
+  it('syncs the same account again after logout', async () => {
+    renderSync(account('acc_logout', { locale: 'de' }));
+    await waitFor(() => {
+      expect(cookie('locale')).toBe('de');
+    });
+
+    act(() => {
+      useAuthStore.setState({ session: null, account: null, wrongAccount: false });
+    });
+    document.cookie = 'locale=; Path=/; Max-Age=0';
+    refresh.mockClear();
+
+    act(() => {
+      useAuthStore.setState({
+        session: 's',
+        account: account('acc_logout', { locale: 'es' }),
+        wrongAccount: false,
+      });
+    });
+
+    await waitFor(() => {
+      expect(cookie('locale')).toBe('es');
+    });
   });
 
   it('ignores a stale locale response and stores the later fiat response', async () => {
