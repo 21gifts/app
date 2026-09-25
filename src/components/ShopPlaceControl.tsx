@@ -57,7 +57,10 @@ export function ShopPlaceControl({
         buttonSize="sm"
         buttonVariant="ghost"
         ariaLabel={hasPlace ? t('forum.editPlace') : t('forum.addPlace')}
-        onChange={() => undefined}
+        onChange={
+          /* v8 ignore next -- PlaceField calls onChange only when onCommit is omitted; this control always commits */
+          () => undefined
+        }
         onCommit={async (next) => {
           const updated = await setMessagePlace(token, message.id, next);
           onUpdated(message.id, updated.place ?? null);
