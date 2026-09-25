@@ -22,10 +22,13 @@ async function installBaselineMap(page: Page, options?: { click?: boolean }): Pr
       constructor(el: HTMLElement) {
         this.el = el;
         el.style.position = 'relative';
-        el.style.backgroundColor = '#e7efe4';
-        el.style.backgroundImage =
-          'linear-gradient(#c9d7c6 1px, transparent 1px), linear-gradient(90deg, #c9d7c6 1px, transparent 1px)';
-        el.style.backgroundSize = '40px 40px';
+        el.style.setProperty('background-color', '#e7efe4', 'important');
+        el.style.setProperty(
+          'background-image',
+          'linear-gradient(#c9d7c6 1px, transparent 1px), linear-gradient(90deg, #c9d7c6 1px, transparent 1px)',
+          'important',
+        );
+        el.style.setProperty('background-size', '40px 40px', 'important');
         const surface = document.createElement('div');
         surface.dataset['e2eMap'] = 'surface';
         surface.style.position = 'absolute';
@@ -8898,6 +8901,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await frame.scrollIntoViewIfNeeded();
+    await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-welcome-composer-place-map', false);
   });
 
@@ -9931,6 +9935,7 @@ test.describe('shops screens', () => {
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await frame.scrollIntoViewIfNeeded();
+    await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-shops-composer-place-map', false);
   });
 
