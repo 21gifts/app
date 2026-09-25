@@ -1,5 +1,8 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/components/NoteTranslate', () => ({
+  NoteTranslate: () => <button type="button">Translate</button>,
+}));
 import { NotificationsScreen } from '@/components/NotificationsScreen';
 import type { Notification } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
