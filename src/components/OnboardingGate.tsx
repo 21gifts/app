@@ -29,6 +29,12 @@ interface OnboardingGateProps {
   screen: OnboardingScreen;
   /** Visible UI when this is the correct screen. */
   children: ReactNode;
+  /**
+   * Living room only. Other `screen="welcome"` routes (shops, map, inbox,
+   * notifications, trust, contact, moderation) still send a signed-out
+   * visitor to `/login`.
+   */
+  allowGuest?: boolean;
 }
 
 /**
@@ -39,7 +45,11 @@ interface OnboardingGateProps {
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
  */
-export function OnboardingGate({ screen, children }: OnboardingGateProps): ReactElement {
+export function OnboardingGate({
+  screen,
+  children,
+  allowGuest = false,
+}: OnboardingGateProps): ReactElement {
   const { ready } = useHydrateSession();
   const router = useRouter();
   const { cancel } = usePasskeyLogin();
@@ -57,6 +67,9 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
       return;
     }
     if (account === null) {
+      if (screen === 'welcome' && allowGuest) {
+        return;
+      }
       router.replace('/login');
       return;
     }
@@ -78,7 +91,7 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
     if (target !== PATH[screen]) {
       router.replace(target);
     }
-  }, [account, cancel, ready, router, screen]);
+  }, [account, allowGuest, cancel, ready, router, screen]);
 
   if (!ready) {
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
@@ -100,6 +113,9 @@ export function OnboardingGate({ screen, children }: OnboardingGateProps): React
       }
     }
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
+  }
+  if (screen === 'welcome' && allowGuest && account === null) {
+    return <>{children}</>;
   }
   if (account !== null && nextOnboardingPath(account) === PATH[screen]) {
     return <>{children}</>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type KeyboardEvent, type MouseEvent, type ReactElement } from 'react';
-import { LinkedText } from '@/components/LinkedText';
+import { LinkedText, type TextMention } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { forumTextPreview } from '@/lib/forum-text-preview';
 
@@ -13,6 +13,8 @@ export interface ForumNoteTextProps {
   className: string;
   /** When true, forward plain rendering to {@link LinkedText} (no autolinks). */
   plain?: boolean;
+  /** Member marks. Omitted when the author name is not a member button. */
+  mentions?: readonly TextMention[];
 }
 
 /**
@@ -26,6 +28,7 @@ export function ForumNoteText({
   text,
   className,
   plain = false,
+  mentions,
 }: ForumNoteTextProps): ReactElement | null {
   const { t } = useTranslations();
   const [expanded, setExpanded] = useState(false);
@@ -36,7 +39,14 @@ export function ForumNoteText({
   }
 
   if (!truncated || expanded) {
-    return <LinkedText text={text} className={className} {...(plain ? { plain: true } : {})} />;
+    return (
+      <LinkedText
+        text={text}
+        className={className}
+        {...(plain ? { plain: true } : {})}
+        {...(mentions === undefined ? {} : { mentions })}
+      />
+    );
   }
 
   return (
@@ -44,6 +54,7 @@ export function ForumNoteText({
       text={preview}
       className={className}
       {...(plain ? { plain: true } : {})}
+      {...(mentions === undefined ? {} : { mentions })}
       suffix={
         <>
           …{' '}

@@ -1801,6 +1801,7 @@ describe('ForumBoard', () => {
     );
     const preview = document.querySelector('form video');
     expect(preview?.getAttribute('src')).toBe('blob:v');
+    expect(screen.queryByRole('button', { name: 'Full screen' })).toBeNull();
     expect(preview?.hasAttribute('playsinline')).toBe(true);
     expect(preview?.getAttribute('preload')).toBe('metadata');
     const remove = screen.getByRole('button', { name: 'Remove video' });
@@ -3671,7 +3672,45 @@ describe('ForumBoard', () => {
     expect(video).toBeTruthy();
     expect(video?.getAttribute('src')).toBe('/messages/vid-webm/video.webm');
     expect(video?.hasAttribute('controls')).toBe(true);
+    expect(video?.getAttribute('controlsList')).toContain('nofullscreen');
     expect(video?.hasAttribute('playsinline')).toBe(true);
+    const requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(video, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(requestFullscreen).toHaveBeenCalledTimes(1);
+    const exitFullscreen = vi.fn().mockResolvedValue(undefined);
+    document.exitFullscreen = exitFullscreen;
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => video,
+    });
+    document.dispatchEvent(new Event('fullscreenchange'));
+    fireEvent.click(screen.getByRole('button', { name: 'Leave full screen' }));
+    expect(exitFullscreen).toHaveBeenCalledTimes(1);
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => null,
+    });
+    document.dispatchEvent(new Event('fullscreenchange'));
+    const webkitEnterFullscreen = vi.fn();
+    Object.defineProperty(video, 'requestFullscreen', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(video, 'webkitEnterFullscreen', {
+      configurable: true,
+      value: webkitEnterFullscreen,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(webkitEnterFullscreen).toHaveBeenCalledTimes(1);
+    Object.defineProperty(video, 'webkitEnterFullscreen', {
+      configurable: true,
+      value: undefined,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
     expect(video?.getAttribute('preload')).toBe('metadata');
     const tokens = (video?.className ?? '').split(/\s+/);
     expect(tokens).toEqual(

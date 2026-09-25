@@ -13,6 +13,7 @@ const NOTIFICATION_TITLE_KEY = {
   zap: 'notifications.zap',
   moderator_appointed: 'notifications.moderatorAppointed',
   moderator_proposal: 'notifications.moderatorProposal',
+  forum_mention: 'notifications.mention',
 } as const;
 
 function NotificationRow({
@@ -26,7 +27,10 @@ function NotificationRow({
   const unread = row.readAt === null;
   const nameOnlyPost = row.type === 'forum_post' && row.text.trim() === row.name.trim();
   const bodyLine =
-    row.type === 'zap' || row.type === 'moderator_appointed' || row.type === 'moderator_proposal'
+    row.type === 'zap' ||
+    row.type === 'moderator_appointed' ||
+    row.type === 'moderator_proposal' ||
+    row.type === 'forum_mention'
       ? row.text
       : nameOnlyPost
         ? ''

@@ -219,13 +219,24 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('sends a logged-out visitor from welcome to login', () => {
+  it('renders welcome children for a logged-out visitor', () => {
     renderWithLocale(
-      <OnboardingGate screen="welcome">
+      <OnboardingGate screen="welcome" allowGuest>
         <p>welcome-ui</p>
       </OnboardingGate>,
     );
+    expect(screen.getByText('welcome-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('still sends a logged-out visitor from a welcome-gated shop to login', () => {
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>shop-ui</p>
+      </OnboardingGate>,
+    );
     expect(replace).toHaveBeenCalledWith('/login');
+    expect(screen.queryByText('shop-ui')).toBeNull();
   });
 
   it('renders name children when the account still needs a name', async () => {

@@ -110,6 +110,17 @@ const PROPOSAL_ROW: Notification = {
 };
 const PROPOSAL_TEXT: Notification = { ...PROPOSAL_ROW, id: 'n11', text: 'Rose' };
 
+const MENTION: Notification = {
+  id: 'n12',
+  type: 'forum_mention',
+  parentId: 'parent-12',
+  replyId: 'reply-12',
+  name: 'Ada',
+  text: 'hello @you',
+  createdAt: '2026-08-22T12:00:00.000Z',
+  readAt: null,
+};
+
 describe('NotificationsScreen', () => {
   it('shows original German post and reply text without translate controls', () => {
     const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
@@ -390,5 +401,19 @@ describe('NotificationsScreen', () => {
     expect(row.textContent).toContain('Rose');
     fireEvent.click(row);
     expect(onOpen).toHaveBeenCalledWith(PROPOSAL_TEXT);
+  });
+
+  it('titles a mark with the actor and keeps the post text', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[MENTION]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /Ada marked you/ });
+    expect(row.textContent).toContain('hello @you');
   });
 });

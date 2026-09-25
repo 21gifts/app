@@ -1,4 +1,8 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+const push = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push } => ({ push }),
+}));
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LinkedText } from '@/components/LinkedText';
@@ -38,6 +42,23 @@ beforeEach(() => {
 });
 
 describe('LinkedText', () => {
+  it('links a resolved @username and leaves other marks as text', () => {
+    push.mockReset();
+    renderWithLocale(
+      <LinkedText
+        text="Hi @Ada, not user@ada, and @nope."
+        className="text-sm"
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    const mark = screen.getByRole('button', { name: 'View profile' });
+    expect(mark.textContent).toBe('@Ada');
+    fireEvent.click(mark);
+    expect(push).toHaveBeenCalledWith('/members/acc-ada');
+    expect(screen.getByText(/user@ada/)).toBeTruthy();
+    expect(screen.getByText(/@nope/)).toBeTruthy();
+  });
+
   it('renders plain text without a link', () => {
     renderWithLocale(<LinkedText text="just a note" className="text-sm" />);
     expect(screen.getByText('just a note')).toBeTruthy();

@@ -163,19 +163,33 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
+function fundingParticipationLabel(
+  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
+  locale: string,
+  admittedAt: number,
+  reviewerName: string | null | undefined,
+): string {
+  const name = (reviewerName ?? '').trim();
+  const date = formatForumTimeFromMs(admittedAt, locale);
+  if (name !== '') {
+    return t('funding.participatesSinceBy', { date, name });
+  }
+  return t('funding.participatesSince', { date });
+}
+
 function FundingProgramMark({
   admittedAt,
+  reviewerName = null,
   expanded,
   onToggle,
 }: {
   admittedAt: number;
+  reviewerName?: string | null;
   expanded: boolean;
   onToggle: () => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
-  const label = t('funding.participatesSince', {
-    date: formatForumTimeFromMs(admittedAt, locale),
-  });
+  const label = fundingParticipationLabel(t, locale, admittedAt, reviewerName);
   return (
     <IconButton
       size="sm"
@@ -1323,6 +1337,7 @@ export function MemberProfileScreen({
             {typeof fundingReviewedAt === 'number' ? (
               <FundingProgramMark
                 admittedAt={fundingReviewedAt}
+                reviewerName={listedProfile.fundingReviewedByName}
                 expanded={fundingHintOpen}
                 onToggle={() => setFundingHintOpen((open) => !open)}
               />
@@ -1336,9 +1351,12 @@ export function MemberProfileScreen({
         ) : null}
         {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
           <p role="status" className="text-center text-xs text-app-muted">
-            {t('funding.participatesSince', {
-              date: formatForumTimeFromMs(fundingReviewedAt, locale),
-            })}
+            {fundingParticipationLabel(
+              t,
+              locale,
+              fundingReviewedAt,
+              listedProfile.fundingReviewedByName,
+            )}
           </p>
         ) : null}
         {giftsBlock}
@@ -1419,6 +1437,7 @@ export function MemberProfileScreen({
               {typeof fundingReviewedAt === 'number' ? (
                 <FundingProgramMark
                   admittedAt={fundingReviewedAt}
+                  reviewerName={listedProfile.fundingReviewedByName}
                   expanded={fundingHintOpen}
                   onToggle={() => setFundingHintOpen((open) => !open)}
                 />
@@ -1431,9 +1450,12 @@ export function MemberProfileScreen({
             ) : null}
             {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
               <p role="status" className="text-center text-xs text-app-muted">
-                {t('funding.participatesSince', {
-                  date: formatForumTimeFromMs(fundingReviewedAt, locale),
-                })}
+                {fundingParticipationLabel(
+                  t,
+                  locale,
+                  fundingReviewedAt,
+                  listedProfile.fundingReviewedByName,
+                )}
               </p>
             ) : null}
           </div>

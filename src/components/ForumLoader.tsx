@@ -29,8 +29,12 @@ import {
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
+  fetchPublicForumMessages,
   fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchPublicReplies,
   fetchReplies,
+  PublicForumUnauthorizedError,
   markNotificationRead,
   postMessage,
   fetchComposeTarget,
@@ -753,7 +757,10 @@ export function ForumLoader({
   }, []);
 
   useEffect(() => {
-    if (session === null || nearEndElement === null || nextCursor === null) {
+    if ((session === null && feed === 'shops') || nearEndElement === null || nextCursor === null) {
+      return;
+    }
+    if (session === null && feedMode !== 'active') {
       return;
     }
     let cancelled = false;
@@ -768,10 +775,10 @@ export function ForumLoader({
       loadingMoreRef.current = true;
       void (async () => {
         try {
-          const page = await fetchMessages(
-            activeSession,
-            forumPageArgs(activeMode, { cursor: activeCursor }),
-          );
+          const page =
+            activeSession === null
+              ? await fetchPublicForumMessages({ limit: FORUM_PAGE_LIMIT, cursor: activeCursor })
+              : await fetchMessages(activeSession, forumPageArgs(activeMode, { cursor: activeCursor }));
           if (
             cancelled ||
             generation !== paginationGeneration.current ||
@@ -790,10 +797,14 @@ export function ForumLoader({
           );
           nextCursorRef.current = page.nextCursor;
           setNextCursor(page.nextCursor);
-          if (appended.some((message) => message.payable === false)) {
+          if (activeSession !== null && appended.some((message) => message.payable === false)) {
             startPayablePoll(activeSession);
           }
-        } catch {
+        } catch (err) {
+          if (!cancelled && activeSession === null && err instanceof PublicForumUnauthorizedError) {
+            router.replace('/login');
+            return;
+          }
           // Keep the current pages and cursor so a later intersection may retry.
         } finally {
           if (!cancelled && generation === paginationGeneration.current) {
@@ -808,7 +819,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-  }, [feedHashtag, feedMode, nearEndElement, nextCursor, session]);
+  }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, router, session]);
 
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
@@ -830,7 +841,11 @@ export function ForumLoader({
   }, [posting, preparing, payBusy, payWaiting, payMessageId, replyPosting]);
 
   useEffect(() => {
-    if (session === null) {
+    if (session === null && feed === 'shops') {
+      return;
+    }
+    if (session === null && feedMode !== 'active') {
+      router.replace('/login');
       return;
     }
     let cancelled = false;
@@ -846,7 +861,24 @@ export function ForumLoader({
     setError(false);
     replaceInFlightRef.current = true;
     void (async () => {
-      const result = await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
+      const result =
+        session === null
+          ? await (async (): Promise<'ok' | 'error' | 'aborted'> => {
+              try {
+                const next = await fetchPublicForumMessages({ limit: FORUM_PAGE_LIMIT });
+                if (cancelled) {
+                  return 'aborted';
+                }
+                setMessages(next.messages.filter((row) => !deletedIds.current.has(row.id)));
+                nextCursorRef.current = next.nextCursor;
+                setNextCursor(next.nextCursor);
+                setNewPostsAvailable(false);
+                return 'ok';
+              } catch {
+                return cancelled ? 'aborted' : 'error';
+              }
+            })()
+          : await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
       if (!cancelled && result === 'requirements') {
         router.replace('/setup/rules');
         return;
@@ -871,7 +903,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
     };
     /* router.replace is used on 409; next/navigation's identity is not stable */
-  }, [attempt, feedMode, session]);
+  }, [attempt, feed, feedMode, router, session]);
 
   useEffect(() => {
     if (session === null) {
@@ -980,7 +1012,7 @@ export function ForumLoader({
   }, [newPostsAvailable, session, showNewPosts, scroller]);
 
   useEffect(() => {
-    if (session === null || photoIdsKey === '') {
+    if (photoIdsKey === '' || (session === null && feed === 'shops')) {
       return;
     }
     const listed = messagesRef.current;
@@ -1011,13 +1043,19 @@ export function ForumLoader({
         /* v8 ignore stop */
         let blob: Blob;
         try {
-          blob = await fetchMessagePhoto(session, photo.id, photo.index);
+          blob =
+            session === null
+              ? await fetchPublicMessagePhoto(photo.id, photo.index)
+              : await fetchMessagePhoto(session, photo.id, photo.index);
         } catch {
           if (cancelled) {
             return;
           }
           try {
-            blob = await fetchMessagePhoto(session, photo.id, photo.index);
+            blob =
+              session === null
+                ? await fetchPublicMessagePhoto(photo.id, photo.index)
+                : await fetchMessagePhoto(session, photo.id, photo.index);
           } catch {
             if (cancelled) {
               return;
@@ -1048,7 +1086,7 @@ export function ForumLoader({
     return () => {
       cancelled = true;
     };
-  }, [photoIdsKey, session]);
+  }, [feed, photoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -1069,8 +1107,7 @@ export function ForumLoader({
   }, []);
 
   useEffect(() => {
-    /* v8 ignore next 3 -- render already returned null without a session */
-    if (session === null) {
+    if (session === null && feed === 'shops') {
       return;
     }
     if (expandedId === null) {
@@ -1087,7 +1124,10 @@ export function ForumLoader({
     }
     void (async () => {
       try {
-        const next = await fetchReplies(session, expandedId);
+        const next =
+          session === null
+            ? await fetchPublicReplies(expandedId)
+            : await fetchReplies(session, expandedId);
         if (!cancelled) {
           for (const row of next) {
             replyParentById.current.set(row.id, expandedId);
@@ -1120,7 +1160,7 @@ export function ForumLoader({
     return () => {
       cancelled = true;
     };
-  }, [session, expandedId, repliesAttempt]);
+  }, [feed, session, expandedId, repliesAttempt]);
 
   useEffect(() => {
     setUnpaidSeenAt(loadUnpaidSeenAt());
@@ -1134,7 +1174,7 @@ export function ForumLoader({
     setUnpaidSeenAt(iso);
   }, [feed, feedMode, messages]);
 
-  const lawsVisible = account?.forumLawsDismissed !== true;
+  const lawsVisible = account !== null && account.forumLawsDismissed !== true;
 
   const onDismissLaws = (): void => {
     const snapshot = useAuthStore.getState();
@@ -1167,11 +1207,14 @@ export function ForumLoader({
     })();
   };
 
-  if (session === null) {
+  if (session === null && feed === 'shops') {
     return null;
   }
 
   const showModeratorAppointed = (): void => {
+    if (session === null) {
+      return;
+    }
     const id = moderatorAppointedId;
     /* v8 ignore next 3 -- pill is omitted when the id is null */
     if (id === null) {
@@ -1213,6 +1256,9 @@ export function ForumLoader({
     replyParentId: string | null = null,
     postAfterPay = false,
   ): void => {
+    if (session === null) {
+      return;
+    }
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
     /* v8 ignore next 3 -- bumpPayPollGeneration always assigns a controller */
@@ -1525,6 +1571,9 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
+    if (session === null) {
+      return;
+    }
     composeFeePaidRef.current = false;
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
@@ -1612,6 +1661,9 @@ export function ForumLoader({
     askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): Promise<void> => {
+    if (session === null) {
+      return;
+    }
     setPosting(true);
     setFormError(null);
     let awaitingPay = false;
@@ -1762,6 +1814,9 @@ export function ForumLoader({
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
+    if (session === null) {
+      return;
+    }
     /* v8 ignore next 3 -- button is disabled when no sheet is open */
     if (payMessageId === null || payBusy) {
       return;
@@ -1841,6 +1896,10 @@ export function ForumLoader({
 
   const onModeChange = (next: ForumFeedMode): void => {
     if (next === feedMode) {
+      return;
+    }
+    if (session === null) {
+      router.replace('/login');
       return;
     }
     const listedParent =
@@ -1952,6 +2011,9 @@ export function ForumLoader({
     parentBaseline: number,
     isRetry: boolean,
   ): Promise<void> => {
+    if (session === null) {
+      return;
+    }
     setReplyPosting(true);
     setReplyFormError(null);
     try {
@@ -1992,6 +2054,9 @@ export function ForumLoader({
     baselineSats: number,
     isRetry: boolean,
   ): Promise<void> => {
+    if (session === null) {
+      return;
+    }
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
@@ -2060,6 +2125,9 @@ export function ForumLoader({
     sats: number,
     isRetry: boolean,
   ): Promise<void> => {
+    if (session === null) {
+      return;
+    }
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
     if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
@@ -2210,6 +2278,7 @@ export function ForumLoader({
         />
       ) : null}
       <ForumBoard
+        readOnly={session === null}
         messages={listed}
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         {...(feed === 'shops' ? { modeSelector: false as const } : {})}

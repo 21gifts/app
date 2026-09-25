@@ -9,10 +9,17 @@
 
 ## Function: PosScreen
 
-- **Purpose:** Signed-in till. Loads `GET /pos/charge`, shows the public address and the same Open CryptoPay QR as the profile card, including on a smartphone, and either an amount form or the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status.
-- **Inputs:** None. Reads the auth store session and account.
-- **Returns / side effects:** React element. Calls `fetchPosState`, `createPosCharge`, and `cancelPosCharge`.
+- **Purpose:** Signed-in till on `/pos`. Renders `PosTill`.
+- **Inputs:** None.
+- **Returns / side effects:** The till card.
 - **Used by:** `/pos`.
+
+## Function: PosTill
+
+- **Purpose:** The till card. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, a keypad amount (decimal from the number format), and the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status. On this commit the same card also sits under the recovery card on `/wallet`.
+- **Inputs:** None. Reads the auth store.
+- **Returns / side effects:** React element. Calls `fetchPosState`, `createPosCharge`, and `cancelPosCharge`.
+- **Used by:** `PosScreen`, `WalletScreenView`.
 
 ## Function: fetchPosState
 
@@ -733,7 +740,7 @@
 
 ## Function: AmountEntry
 
-- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
+- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (till only) replaces the input with a non-focusable amount and an always-visible 3-column keypad; other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
 - **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`).
 - **Returns / side effects:** A labeled input, the switch, and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
 - **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosScreen`.
@@ -1082,6 +1089,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** The shell scroller (`HTMLElement` or null) and the reply `<form>` (or null).
 - **Returns / side effects:** Void. Mutates `scrollTop` only when the form hangs past the scroller. No network.
 - **Used by:** `ForumBoard` after an expanded reply composer is laid out.
+
+## Function: ForumVideo
+
+- **Purpose:** Playable note video. Keeps `controls` and `playsInline`, sets `controlsList="nofullscreen"`, and draws one fullscreen button (Maximize / Minimize) on the picture. Click calls `requestFullscreen`, or `webkitEnterFullscreen` when that API is missing. Composer and ask previews do not use it.
+- **Inputs:** Native video attributes.
+- **Returns / side effects:** The video and the button. No network.
+- **Used by:** `ForumBoard` feed video, `PublicMessageLoader` public note video.
 
 ## Function: ForumBoard
 
@@ -1586,6 +1600,20 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `Account` or `null` on 401. Throws `WrongAccountError` on 403 with the duplicate-account api string. Other non-2xx throw the generic fetch-account error.
 - **Used by:** `useHydrateSession`.
+
+## Function: fetchPublicForumMessages
+
+- **Purpose:** `GET /forum/messages?mode=active` with no Authorization header. Same page size (20) and cursor as the signed-in feed. HTTP 401 throws `PublicForumUnauthorizedError`.
+- **Inputs:** Optional `limit` and `cursor`.
+- **Returns / side effects:** `{ messages, nextCursor }`.
+- **Used by:** `ForumLoader` when the living room has no session.
+
+## Function: PublicForumUnauthorizedError
+
+- **Purpose:** Error for a 401 from the public active page. The first page shows the existing load error. A later page sends the visitor to `/login`.
+- **Inputs:** None.
+- **Returns / side effects:** An `Error` whose name is `PublicForumUnauthorizedError`.
+- **Used by:** `fetchPublicForumMessages`, `ForumLoader`.
 
 ## Function: fetchMessages
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
@@ -61,6 +61,7 @@ function loadGoogleMaps(key: string): Promise<void> {
  */
 export function PlacesMapScreen(): ReactElement {
   const { t } = useTranslations();
+  const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const [places, setPlaces] = useState<ForumPlaceRow[] | null>(null);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
@@ -212,13 +213,35 @@ export function PlacesMapScreen(): ReactElement {
             const selected = place.id === pinId;
             return (
               <li key={place.id}>
-                <a
-                  href={`/messages/${place.id}`}
-                  data-selected={selected ? 'true' : 'false'}
-                  className={`text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
-                >
-                  {place.name} · {label}
-                </a>
+                {typeof place.accountId === 'string' && place.accountId !== '' ? (
+                  <span
+                    data-selected={selected ? 'true' : 'false'}
+                    className={`text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                  >
+                    <button
+                      type="button"
+                      aria-label={t('forum.authorProfile')}
+                      className="underline underline-offset-2"
+                      onClick={() => {
+                        router.push(`/members/${place.accountId}`);
+                      }}
+                    >
+                      {place.name}
+                    </button>
+                    {' · '}
+                    <a href={`/messages/${place.id}`} className="underline">
+                      {label}
+                    </a>
+                  </span>
+                ) : (
+                  <a
+                    href={`/messages/${place.id}`}
+                    data-selected={selected ? 'true' : 'false'}
+                    className={`text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                  >
+                    {place.name} · {label}
+                  </a>
+                )}
               </li>
             );
           })}

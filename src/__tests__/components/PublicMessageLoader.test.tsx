@@ -622,6 +622,8 @@ describe('PublicMessageLoader', () => {
     const video = document.querySelector('video');
     expect(video?.getAttribute('src')).toBe(`/messages/${MESSAGE_ID}/video.webm`);
     expect(video?.hasAttribute('controls')).toBe(true);
+    expect(video?.getAttribute('controlsList')).toContain('nofullscreen');
+    expect(screen.getByRole('button', { name: 'Full screen' })).toBeTruthy();
     const tokens = (video?.getAttribute('class') ?? '').split(/\s+/);
     expect(tokens).toEqual(
       expect.arrayContaining([

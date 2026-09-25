@@ -367,6 +367,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'signed-out',
+    image: 'welcome-signed-out.png',
+    visual: 'screen-welcome-signed-out',
+    needle: 'state /welcome signed-out',
+  },
+  {
+    route: '/welcome',
+    id: 'mention',
+    image: 'welcome-mention.png',
+    visual: 'state-welcome-mention',
+    needle: 'state /welcome mention',
+  },
+  {
+    route: '/welcome',
     id: 'laws',
     image: 'welcome-laws.png',
     visual: 'state-welcome-laws',

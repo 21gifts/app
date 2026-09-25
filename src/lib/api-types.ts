@@ -489,6 +489,7 @@ export const forumPlacesResponseSchema = z.object({
       id: z.string().min(1),
       name: z.string().min(1),
       createdAt: z.string().min(1),
+      accountId: z.string().min(1).optional(),
     }),
   ),
 });
@@ -496,7 +497,12 @@ export const forumPlacesResponseSchema = z.object({
 /**
  * One live top-level forum pin, including the note id and author name.
  */
-export type ForumPlaceRow = ForumPlacePin & { id: string; name: string; createdAt: string };
+export type ForumPlaceRow = ForumPlacePin & {
+  id: string;
+  name: string;
+  createdAt: string;
+  accountId?: string;
+};
 
 /**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
@@ -568,6 +574,15 @@ export const forumMessageSchema = z
       })
       .optional(),
     place: forumPlacePinSchema.optional(),
+    /** Present on a signed-in payload when the body marks members. Omitted with no session. */
+    mentions: z
+      .array(
+        z.object({
+          username: z.string().min(1),
+          accountId: z.string().min(1),
+        }),
+      )
+      .optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
@@ -602,6 +617,8 @@ export const forumListSchema = z.object({
  */
 export const hiddenMessageSchema = z.object({
   id: z.string().min(1),
+  /** Set for a 21.gifts author. Omitted on an external row. */
+  accountId: z.string().min(1).optional(),
   name: z.string(),
   text: z.string(),
   createdAt: z.string().datetime({ offset: true }),
@@ -822,7 +839,14 @@ export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
  */
 export const notificationSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['forum_post', 'forum_reply', 'zap', 'moderator_appointed', 'moderator_proposal']),
+  type: z.enum([
+    'forum_post',
+    'forum_reply',
+    'zap',
+    'moderator_appointed',
+    'moderator_proposal',
+    'forum_mention',
+  ]),
   parentId: z.string().min(1),
   replyId: z.string().min(1),
   name: z.string(),
@@ -938,6 +962,11 @@ export const memberProfileSchema = z.object({
    * Optional so mixed deploys parse; `null` when not admitted.
    */
   fundingReviewedAt: z.number().nullable().optional(),
+  /**
+   * Display name of the staff member who admitted them. Optional so an older
+   * payload still parses; `null` when unnamed.
+   */
+  fundingReviewedByName: z.string().nullable().optional(),
 });
 
 /**

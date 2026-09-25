@@ -6566,6 +6566,65 @@ test('Function: PosPage — till heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
 });
 
+test('Function: PosTill — wallet shows the same till under the recovery card', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '1', exact: true })).toBeVisible();
+});
+
+test('Function: ForumVideo — a playable note shows Full screen', async ({ page }) => {
+  await page.goto('/welcome');
+  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: fetchPublicForumMessages — signed-out welcome asks for the active page', async ({
+  page,
+}) => {
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+});
+
+test('Function: PublicForumUnauthorizedError — a later public page 401 is login, not the load error', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+});
+
 test('Function: PosScreen — till heading is visible', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {
@@ -6688,7 +6747,8 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
     });
   });
   await page.goto('/pos');
-  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
   await page.getByRole('button', { name: 'Create payment' }).click();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });

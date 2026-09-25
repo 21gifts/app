@@ -32,6 +32,13 @@ const ACCOUNT = {
   missing: [],
 };
 
+async function pressAmount(draft: string): Promise<void> {
+  await screen.findByLabelText('Amount');
+  for (const ch of draft) {
+    fireEvent.click(screen.getByRole('button', { name: ch, exact: true }));
+  }
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -90,6 +97,9 @@ describe('PosScreen', () => {
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.getByText('alice@21.gifts').className).toContain('text-center');
+    expect(screen.getByRole('button', { name: '1', exact: true })).toBeTruthy();
   });
 
   it('creates a charge and then cancels it', async () => {
@@ -111,7 +121,7 @@ describe('PosScreen', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
-    fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
+    await pressAmount('21');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(screen.getAllByText('₿21').length).toBeGreaterThan(0);
@@ -135,7 +145,7 @@ describe('PosScreen', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
-    fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
+    await pressAmount('21');
     const callsAtForm = fetchMock.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     await waitFor(() => {
@@ -166,7 +176,7 @@ describe('PosScreen', () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
-    fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '1.5' } });
+    await pressAmount('1.5');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect((await screen.findByRole('alert')).textContent).toContain('Enter a whole number.');
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -181,7 +191,7 @@ describe('PosScreen', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
-    fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
+    await pressAmount('21');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain('outside the wallet range');
@@ -238,7 +248,7 @@ describe('PosScreen', () => {
         }),
       );
       renderWithLocale(<PosScreen />);
-      fireEvent.change(await screen.findByLabelText('Amount'), { target: { value: '21' } });
+      await pressAmount('21');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
       expect((await screen.findByRole('alert')).textContent?.toLowerCase()).toContain(
         needle.toLowerCase(),

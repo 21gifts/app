@@ -256,6 +256,7 @@ describe('ForumAskWizard', () => {
       />,
     );
     expect(document.querySelector('video')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Full screen' })).toBeNull();
     rerender(
       <ForumAskWizard
         step={4}

@@ -911,4 +911,130 @@ describe('AmountEntry', () => {
     );
     expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '0');
   });
+
+  it('edits a till keypad without an input', () => {
+    const Harness = (): ReactElement => {
+      const [value, setValue] = useState('');
+      return (
+        <>
+          <AmountEntry
+            keypad
+            label="Amount"
+            placeholder="0"
+            value={value}
+            onValueChange={setValue}
+            rateDay={DAY}
+          />
+          <input aria-label="Other" />
+        </>
+      );
+    };
+    renderWithLocale(<Harness />, 'en', 'ch', 'USD');
+    const display = screen.getByLabelText('Amount');
+    expect(display.tagName).toBe('P');
+    expect(screen.queryByRole('textbox', { name: 'Amount' })).toBeNull();
+    expect(display.textContent).toBe('0');
+    fireEvent.click(screen.getByRole('button', { name: '0', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: '2', exact: true }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('2');
+    fireEvent.click(screen.getByRole('button', { name: '.', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: '5', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: '0', exact: true }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
+    fireEvent.click(screen.getByRole('button', { name: '.', exact: true }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.5');
+    fireEvent.keyDown(window, { key: '0' });
+    for (const digit of '123456') {
+      fireEvent.keyDown(window, { key: digit });
+    }
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.50123456');
+    fireEvent.keyDown(window, { key: '9' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.50123456');
+    fireEvent.keyDown(window, { key: '.' });
+    fireEvent.keyDown(window, { key: ',' });
+    fireEvent.keyDown(window, { key: 'Decimal' });
+    fireEvent.keyDown(window, { key: 'Unidentified', code: 'NumpadDecimal' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.50123456');
+    fireEvent.keyDown(window, { key: 'Backspace' });
+    fireEvent.keyDown(window, { key: 'Delete' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
+    fireEvent.keyDown(window, { key: 'a' });
+    fireEvent.keyDown(window, { key: '3', metaKey: true });
+    fireEvent.keyDown(window, { key: '3', ctrlKey: true });
+    fireEvent.keyDown(window, { key: '3', altKey: true });
+    fireEvent.keyDown(screen.getByLabelText('Other'), { key: '3' });
+    const area = document.createElement('textarea');
+    const select = document.createElement('select');
+    const editable = document.createElement('div');
+    editable.contentEditable = 'true';
+    document.body.append(area, select, editable);
+    fireEvent.keyDown(area, { key: '3' });
+    fireEvent.keyDown(select, { key: '3' });
+    fireEvent.keyDown(editable, { key: '3' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('0');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('0');
+  });
+
+  it('does not change a disabled or locked keypad', () => {
+    const { rerender } = renderWithLocale(
+      <AmountEntry
+        keypad
+        disabled
+        label="Amount"
+        placeholder="0"
+        value=""
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1', exact: true }));
+    fireEvent.keyDown(window, { key: '1' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('0');
+    rerender(
+      <AmountEntry
+        keypad
+        lockedSats={21}
+        label="Amount"
+        value=""
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1', exact: true }));
+    fireEvent.keyDown(window, { key: '1' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('21');
+  });
+
+  it('rewrites a fiat keypad draft with the number-format decimal', () => {
+    const Harness = (): ReactElement => {
+      const [value, setValue] = useState('21');
+      return (
+        <AmountEntry keypad label="Amount" value={value} onValueChange={setValue} rateDay={DAY} />
+      );
+    };
+    renderWithLocale(<Harness />, 'en', 'de', 'USD');
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('0,021');
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('21');
+    cleanup();
+    renderWithLocale(<Harness />, 'en', 'ch', 'USD');
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('0.021');
+  });
 });
