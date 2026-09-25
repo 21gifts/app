@@ -10672,6 +10672,85 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place-confirm', false);
   });
 
+  test('shops staff-place-unlabeled', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    const confirm = note.getByRole('button', { name: 'Use this place' });
+    await expect(note.getByLabel('Place name')).toHaveValue('');
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
+  });
+
+  test('shops staff-place-set-coords', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    const noteBody = {
+      id: 'm-staff',
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+    };
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [noteBody] }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        const body = route.request().postDataJSON() as { place?: unknown };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...noteBody, place: body.place }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await note.getByRole('button', { name: 'Use this place' }).click();
+    await expect(note.getByRole('link', { name: '14.50000, 120.90000' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
+    await shotScreen(page, 'state-shops-staff-place-set-coords');
+  });
+
   test('shops staff-place-error', async ({ page }) => {
     await stubPlaceMap(page);
     await seedAda(page, 'moderator');

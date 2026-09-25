@@ -1338,6 +1338,18 @@ A moderator session. **Add a place** on the Cafe Luna note is open with a map. A
 
 ![21.gifts shops staff place confirm](images/shops-staff-place-confirm.png)
 
+### Variant: staff-place-unlabeled
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible.
+
+![21.gifts shops staff place unlabeled](images/shops-staff-place-unlabeled.png)
+
+### Variant: staff-place-set-coords
+
+A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place**. The map panel is closed.
+
+![21.gifts shops staff place set coordinates](images/shops-staff-place-set-coords.png)
+
 ### Variant: staff-place-error
 
 A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.

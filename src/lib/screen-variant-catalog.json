@@ -2598,6 +2598,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:staff-place-unlabeled",
+    "label": "/shops staff-place-unlabeled",
+    "visual": "state-shops-staff-place-unlabeled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-set-coords",
+    "label": "/shops staff-place-set-coords",
+    "visual": "state-shops-staff-place-set-coords",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:staff-place-error",
     "label": "/shops staff-place-error",
     "visual": "state-shops-staff-place-error",

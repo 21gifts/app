@@ -3104,6 +3104,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'staff-place-unlabeled',
+    image: 'shops-staff-place-unlabeled.png',
+    visual: 'state-shops-staff-place-unlabeled',
+    needle: "shotScreen(page, 'state-shops-staff-place-unlabeled', false)",
+  },
+  {
+    route: '/shops',
+    id: 'staff-place-set-coords',
+    image: 'shops-staff-place-set-coords.png',
+    visual: 'state-shops-staff-place-set-coords',
+    needle: "shotScreen(page, 'state-shops-staff-place-set-coords')",
+  },
+  {
+    route: '/shops',
     id: 'staff-place-error',
     image: 'shops-staff-place-error.png',
     visual: 'state-shops-staff-place-error',
