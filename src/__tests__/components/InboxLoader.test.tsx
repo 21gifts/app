@@ -964,7 +964,7 @@ describe('InboxLoader', () => {
     },
   );
 
-  it('shows a fiat suffix on a sats message when gift stats resolve', async () => {
+  it('shows the viewer fiat on a sats message that stored no fiat', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
@@ -981,10 +981,8 @@ describe('InboxLoader', () => {
     } as never);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
-    await waitFor(() => {
-      expect(screen.getByText('$0.02')).toBeTruthy();
-    });
-    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    expect(await screen.findByText('$0.02')).toBeTruthy();
   });
 
   it('survives a failing stats fetch', async () => {

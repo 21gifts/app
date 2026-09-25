@@ -81,7 +81,6 @@ import {
   startPasskeySeed,
   unlinkLightningAddress,
 } from '@/lib/api';
-import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 
 const account = {
@@ -1897,16 +1896,32 @@ describe('postMessage', () => {
     });
   });
 
-  it('includes goalSats when provided on a top-level note', async () => {
+  it('includes goalCurrency and goalAmount when both are provided on a top-level note', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
-    await postMessage('sess', { text: 'Hello from Ada', goalSats: 21000 });
+    await postMessage('sess', { text: 'Hello from Ada', goalCurrency: 'BTC', goalAmount: '21000' });
+    const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body).toEqual({
+      text: 'Hello from Ada',
+      goalCurrency: 'BTC',
+      goalAmount: '21000',
+    });
+    expect(Object.prototype.hasOwnProperty.call(body, 'goalSats')).toBe(false);
+  });
+
+  it('keeps a comma in goalAmount', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', { text: 'Hello from Ada', goalCurrency: 'USD', goalAmount: '10,5' });
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
-      goalSats: 21000,
+      goalCurrency: 'USD',
+      goalAmount: '10,5',
     });
   });
 
-  it('omits goalSats when not provided', async () => {
+  it('omits ask fields when not provided', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     await postMessage('sess', { text: 'Hello from Ada' });
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
@@ -1920,19 +1935,32 @@ describe('postMessage', () => {
     ).toBe(false);
   });
 
-  it('omits goalSats on a reply even when passed', async () => {
+  it('omits both ask fields on a reply even when both are passed', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
-    await postMessage('sess', { text: 'Hello from Ada', inReplyTo: 'parent', goalSats: 21000 });
+    await postMessage('sess', {
+      text: 'Hello from Ada',
+      inReplyTo: 'parent',
+      goalCurrency: 'BTC',
+      goalAmount: '21000',
+    });
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
       inReplyTo: 'parent',
     });
   });
 
-  it('omits goalSats above FORUM_GOAL_SATS_MAX', async () => {
+  it('omits both ask fields when only goalCurrency is set or goalAmount is empty', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
-    await postMessage('sess', { text: 'Hello from Ada', goalSats: FORUM_GOAL_SATS_MAX + 1 });
+    await postMessage('sess', { text: 'Hello from Ada', goalCurrency: 'BTC' });
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+    });
+    await postMessage('sess', { text: 'Hello from Ada', goalCurrency: 'BTC', goalAmount: '' });
+    expect(JSON.parse((fetchMock.mock.calls[1]?.[1] as RequestInit).body as string)).toEqual({
+      text: 'Hello from Ada',
+    });
+    await postMessage('sess', { text: 'Hello from Ada', goalCurrency: 'USD', goalAmount: '   ' });
+    expect(JSON.parse((fetchMock.mock.calls[2]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
     });
   });
@@ -2158,7 +2186,7 @@ describe('postMessageVideo', () => {
     expect(form.get('poster')).toBeNull();
   });
 
-  it('sets goalSats on the form when provided', async () => {
+  it('sets goalCurrency and goalAmount on the form when both are provided', async () => {
     const created = {
       ...forumMessage,
       hasVideo: true,
@@ -2166,13 +2194,20 @@ describe('postMessageVideo', () => {
     };
     const fetchMock = stubFetch({ ok: true, status: 200, body: created });
     const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
-    await postMessageVideo('sess', { text: 'clip', video, goalSats: 21000 });
+    await postMessageVideo('sess', {
+      text: 'clip',
+      video,
+      goalCurrency: 'BTC',
+      goalAmount: '21000',
+    });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const form = init.body as FormData;
-    expect(form.get('goalSats')).toBe('21000');
+    expect(form.get('goalCurrency')).toBe('BTC');
+    expect(form.get('goalAmount')).toBe('21000');
+    expect(form.get('goalSats')).toBeNull();
   });
 
-  it('omits goalSats from the form when not provided', async () => {
+  it('omits ask fields from the form when not provided', async () => {
     const created = {
       ...forumMessage,
       hasVideo: true,
@@ -2183,10 +2218,12 @@ describe('postMessageVideo', () => {
     await postMessageVideo('sess', { text: 'clip', video });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const form = init.body as FormData;
+    expect(form.get('goalCurrency')).toBeNull();
+    expect(form.get('goalAmount')).toBeNull();
     expect(form.get('goalSats')).toBeNull();
   });
 
-  it('omits goalSats from the form when above FORUM_GOAL_SATS_MAX', async () => {
+  it('omits both ask fields from the form when goalAmount is empty', async () => {
     const created = {
       ...forumMessage,
       hasVideo: true,
@@ -2194,9 +2231,11 @@ describe('postMessageVideo', () => {
     };
     const fetchMock = stubFetch({ ok: true, status: 200, body: created });
     const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
-    await postMessageVideo('sess', { text: 'clip', video, goalSats: FORUM_GOAL_SATS_MAX + 1 });
+    await postMessageVideo('sess', { text: 'clip', video, goalCurrency: 'BTC', goalAmount: '' });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const form = init.body as FormData;
+    expect(form.get('goalCurrency')).toBeNull();
+    expect(form.get('goalAmount')).toBeNull();
     expect(form.get('goalSats')).toBeNull();
   });
 

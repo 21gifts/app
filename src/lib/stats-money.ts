@@ -54,8 +54,20 @@ export function defaultFiatForLocale(locale: Locale): FiatCode {
   }
 }
 
-function fiatPrefix(code: FiatCode): string {
-  return code === 'USD' ? '$' : `${code} `;
+/**
+ * Amount prefix. `$` and `₱` sit tight like `₿`; CHF and EUR keep the code.
+ *
+ * @param code - Fiat code (`CHF`, `EUR`, `USD`, or `PHP`).
+ * @returns `'$'`, `'₱'`, `'CHF '`, or `'EUR '`.
+ */
+export function fiatPrefix(code: FiatCode): string {
+  if (code === 'USD') {
+    return '$';
+  }
+  if (code === 'PHP') {
+    return '₱';
+  }
+  return `${code} `;
 }
 
 /**

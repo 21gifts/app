@@ -62,9 +62,9 @@ import {
   type PasskeySession,
   type TrustActionResult,
   type TrustChain,
+  type ForumGoalCurrency,
   type ViewProfile,
 } from '@/lib/api-types';
-import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import type { Locale } from '@/lib/locale';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 import { shortLinkPath } from '@/lib/short-link';
@@ -1602,14 +1602,41 @@ type ForumPostStill = {
 };
 
 /**
+ * Ask fields for a top-level note. Both must be present; replies omit them.
+ * `goalAmount` is the trimmed draft (a comma stays a comma).
+ *
+ * @param inReplyTo - Parent id when posting a reply.
+ * @param goalCurrency - Typed Ask unit, or omitted.
+ * @param goalAmount - Typed Ask amount, or omitted.
+ * @returns Both fields, or `null` when they must not be sent.
+ */
+function forumAskGoalFields(
+  inReplyTo: string | undefined,
+  goalCurrency: ForumGoalCurrency | undefined,
+  goalAmount: string | undefined,
+): { goalCurrency: ForumGoalCurrency; goalAmount: string } | null {
+  if (inReplyTo !== undefined) {
+    return null;
+  }
+  if (goalCurrency === undefined || goalAmount === undefined) {
+    return null;
+  }
+  const amount = goalAmount.trim();
+  if (amount === '') {
+    return null;
+  }
+  return { goalCurrency, goalAmount: amount };
+}
+
+/**
  * Posts a new public forum message (text and/or up to ten photos), or a reply.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param input - Trimmed text, optional legacy `photo`, optional `photos`,
  * optional `inReplyTo` parent id (thread composer only; omit for top-level
- * notes), optional `goalSats` (positive int on a top-level note; omitted
- * on replies and when unset), and optional `place` pin (omit when unset;
- * replies must not send it).
+ * notes), optional `goalCurrency` plus `goalAmount` (top-level Ask; omitted
+ * on replies and when either is unset; never `goalSats`), and optional
+ * `place` pin (omit when unset; replies must not send it).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
@@ -1623,7 +1650,8 @@ export async function postMessage(
     photo?: ForumPostStill;
     photos?: ForumPostStill[];
     inReplyTo?: string;
-    goalSats?: number;
+    goalCurrency?: ForumGoalCurrency;
+    goalAmount?: string;
     place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
@@ -1642,14 +1670,7 @@ export async function postMessage(
   }));
   const inReplyTo =
     input.inReplyTo !== undefined && input.inReplyTo !== '' ? input.inReplyTo : undefined;
-  const goalSats =
-    inReplyTo === undefined &&
-    input.goalSats !== undefined &&
-    Number.isSafeInteger(input.goalSats) &&
-    input.goalSats >= 1 &&
-    input.goalSats <= FORUM_GOAL_SATS_MAX
-      ? input.goalSats
-      : undefined;
+  const askGoal = forumAskGoalFields(inReplyTo, input.goalCurrency, input.goalAmount);
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
@@ -1660,7 +1681,7 @@ export async function postMessage(
       text: input.text,
       ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
       ...(inReplyTo !== undefined ? { inReplyTo } : {}),
-      ...(goalSats !== undefined ? { goalSats } : {}),
+      ...(askGoal === null ? {} : askGoal),
       ...(inReplyTo === undefined && input.place !== undefined ? { place: input.place } : {}),
     }),
   });
@@ -1695,9 +1716,10 @@ export async function postMessage(
  * Posts a forum message with a video file (multipart) and optional poster.
  *
  * @param sessionToken - Bearer session.
- * @param input - Text, video file, optional JPEG poster, optional `goalSats`
- * (positive int; omitted from the form when unset), and optional `place`
- * pin (omit when unset; form fields only when set).
+ * @param input - Text, video file, optional JPEG poster, optional
+ * `goalCurrency` plus `goalAmount` (omitted from the form when either is
+ * unset; never `goalSats`), and optional `place` pin (omit when unset;
+ * form fields only when set).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
@@ -1709,7 +1731,8 @@ export async function postMessageVideo(
     text: string;
     video: File;
     poster?: Blob;
-    goalSats?: number;
+    goalCurrency?: ForumGoalCurrency;
+    goalAmount?: string;
     place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
@@ -1719,13 +1742,10 @@ export async function postMessageVideo(
   if (input.poster !== undefined) {
     form.set('poster', input.poster, 'poster.jpg');
   }
-  if (
-    input.goalSats !== undefined &&
-    Number.isSafeInteger(input.goalSats) &&
-    input.goalSats >= 1 &&
-    input.goalSats <= FORUM_GOAL_SATS_MAX
-  ) {
-    form.set('goalSats', String(input.goalSats));
+  const askGoal = forumAskGoalFields(undefined, input.goalCurrency, input.goalAmount);
+  if (askGoal !== null) {
+    form.set('goalCurrency', askGoal.goalCurrency);
+    form.set('goalAmount', askGoal.goalAmount);
   }
   if (input.place !== undefined) {
     form.set('placeLat', String(input.place.lat));

@@ -2675,6 +2675,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('110%')).toBeTruthy();
+    expect(screen.queryByText('$21.00')).toBeNull();
   });
 
   it('does not render ForumGoalBar on a reply with goalSats', () => {
@@ -4827,7 +4828,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('appends preferred fiat on a gift-only reply when conversion exists', () => {
+  it('shows the live viewer fiat on a gift-only reply when no fiat was stored', () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -4954,7 +4955,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('₿21')).toBeTruthy();
   });
 
-  it('appends preferred fiat under a text reply gift when conversion exists', () => {
+  it('shows the live viewer fiat on a text reply gift when no fiat was stored', () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}

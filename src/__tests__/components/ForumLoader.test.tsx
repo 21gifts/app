@@ -474,7 +474,11 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        goalCurrency: 'BTC',
+        goalAmount: '21000',
+      });
     });
     fetchSpy.mockRestore();
     delete (window as { google?: unknown }).google;
@@ -652,7 +656,53 @@ describe('ForumLoader', () => {
     delete (window as { google?: unknown }).google;
   });
 
-  it('posts a valid Ask amount as goalSats', async () => {
+  it('posts an ask defined in the account fiat', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      ...EMPTY_STATS,
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          cumulativeSats: 100_000_000,
+          btc: '1.00000000',
+          cumulativeBtc: '1.00000000',
+          usd: '100000.00',
+          cumulativeUsd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+          cumulativeChf: '80000.00',
+          cumulativeEur: '90000.00',
+          cumulativePhp: '5600000.00',
+        },
+      ],
+    });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        goalCurrency: 'USD',
+        goalAmount: '1',
+      });
+    });
+  });
+
+  it('posts a valid Ask amount as goalCurrency and goalAmount', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     renderWithLocale(<ForumLoader />);
@@ -670,7 +720,11 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        goalCurrency: 'BTC',
+        goalAmount: '21000',
+      });
     });
   });
 
@@ -743,7 +797,7 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('How much?')).toBeNull();
   });
 
-  it('omits goalSats when Ask is empty', async () => {
+  it('omits ask fields when Ask is empty', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue(SAMPLE);
     renderWithLocale(<ForumLoader />);
@@ -793,7 +847,11 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        goalCurrency: 'BTC',
+        goalAmount: '21000',
+      });
     });
     expect(screen.getByRole('button', { name: 'Send a post' })).toBeTruthy();
     expect(screen.queryByLabelText('Ask')).toBeNull();
@@ -1717,7 +1775,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('posts a video with a valid Ask amount as goalSats', async () => {
+  it('posts a video with a valid Ask amount as goalCurrency and goalAmount', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     isVideoMock.mockReturnValue(true);
     const poster = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
@@ -1759,7 +1817,8 @@ describe('ForumLoader', () => {
         text: 'clip',
         video: file,
         poster,
-        goalSats: 21000,
+        goalCurrency: 'BTC',
+        goalAmount: '21000',
       });
       expect(postMock).not.toHaveBeenCalled();
     });
@@ -3113,7 +3172,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('POSTs a basis Ask with goalSats after the compose fee confirms', async () => {
+  it('POSTs a basis Ask with goalCurrency and goalAmount after the compose fee confirms', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
@@ -3159,7 +3218,11 @@ describe('ForumLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello', goalSats: 21000 });
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        goalCurrency: 'BTC',
+        goalAmount: '21000',
+      });
     });
     await waitFor(() => {
       expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
@@ -4696,6 +4759,53 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('copies payment snapshots when the payable poll updates a fiat ask', async () => {
+    vi.useFakeTimers();
+    const asking: ForumMessage = {
+      id: 'm-ask',
+      name: 'Ada',
+      text: 'Half a dollar',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      goalSats: 1000,
+      goalCurrency: 'USD',
+      goalAmount: '1.50',
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    const withUsd: ForumMessage = { ...asking, amountUsd: '0.75' };
+    const withChf: ForumMessage = { ...withUsd, amountChf: '0.60' };
+    const withEur: ForumMessage = { ...withChf, amountEur: '0.70' };
+    const withPhp: ForumMessage = { ...withEur, amountPhp: '40.00', payable: true };
+    fetchMock
+      .mockResolvedValueOnce(forumPage([asking]))
+      .mockResolvedValueOnce(forumPage([withUsd]))
+      .mockResolvedValueOnce(forumPage([withChf]))
+      .mockResolvedValueOnce(forumPage([withEur]))
+      .mockResolvedValueOnce(forumPage([withPhp]));
+
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('0%')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByText('50%')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(8000);
+    });
+    expect(screen.getByText('50%')).toBeTruthy();
   });
 
   it('enables Send Bitcoin after payable poll upgrades an unsigned post', async () => {

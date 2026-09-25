@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { NoteTranslate } from '@/components/NoteTranslate';
 import { Button, Card } from '@/components/ui';
 import type { Notification } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
@@ -24,15 +23,6 @@ function NotificationRow({
   onOpen: (notification: Notification) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
-  const [translated, setTranslated] = useState<string | null>(null);
-  const [showing, setShowing] = useState(false);
-  const previewKey = `${row.replyId}\0${row.text}`;
-  const [seenPreview, setSeenPreview] = useState(previewKey);
-  if (previewKey !== seenPreview) {
-    setSeenPreview(previewKey);
-    setTranslated(null);
-    setShowing(false);
-  }
   const unread = row.readAt === null;
   const nameOnlyPost = row.type === 'forum_post' && row.text.trim() === row.name.trim();
   const bodyLine =
@@ -43,12 +33,6 @@ function NotificationRow({
         : row.text !== ''
           ? row.text
           : t(row.type === 'forum_post' ? 'notifications.photoPost' : 'notifications.photoOnly');
-  const translateBody =
-    (row.type === 'forum_post' || row.type === 'forum_reply') &&
-    !nameOnlyPost &&
-    row.text !== '' &&
-    row.replyId !== '';
-  const visibleBody = showing && translated !== null ? translated : bodyLine;
   return (
     <li>
       <button
@@ -74,24 +58,10 @@ function NotificationRow({
         </span>
         {bodyLine !== '' ? (
           <span className={unread ? 'text-sm font-semibold text-app-fg' : 'text-sm text-app-muted'}>
-            {visibleBody}
+            {bodyLine}
           </span>
         ) : null}
       </button>
-      {translateBody ? (
-        <NoteTranslate
-          messageId={row.replyId}
-          text={row.text}
-          showingTranslation={showing}
-          onTranslated={(next) => {
-            setTranslated(next);
-            setShowing(true);
-          }}
-          onToggleShowing={() => {
-            setShowing((current) => !current);
-          }}
-        />
-      ) : null}
     </li>
   );
 }

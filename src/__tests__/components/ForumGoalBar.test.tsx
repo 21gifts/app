@@ -50,12 +50,124 @@ describe('ForumGoalBar', () => {
     expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
   });
 
-  it('shows the asked bitcoin amount and fiat counterpart', () => {
+  it('shows the visitor fiat beside a legacy bitcoin ask', () => {
     renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} rateDay={RATE_DAY} />);
     expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
     expect(screen.getByText('$21.00')).toBeTruthy();
     expect(screen.getByText('110%')).toBeTruthy();
+  });
+
+  it('shows bitcoin and the viewer snapshot on a BTC ask without a second defined fiat', () => {
+    renderWithLocale(
+      <ForumGoalBar
+        sats={23100}
+        goalSats={21000}
+        goalCurrency="BTC"
+        goalAmountUsd="21.00"
+        rateDay={RATE_DAY}
+      />,
+    );
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText('$21.00')).toBeTruthy();
+    expect(screen.queryByText('CHF')).toBeNull();
+    expect(screen.queryByText(/EUR|PHP/)).toBeNull();
+  });
+
+  it('shows the defined USD amount and fiat percent, not the snapshot or sats percent', () => {
+    renderWithLocale(
+      <ForumGoalBar
+        sats={21000}
+        goalSats={21000}
+        goalCurrency="USD"
+        goalAmount="200"
+        goalAmountUsd="1.99"
+        amountUsd="100.00"
+      />,
+    );
+    expect(screen.getByText('$200.00')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.queryByText('$1.99')).toBeNull();
+    expect(screen.getByText('50%')).toBeTruthy();
+    expect(screen.queryByText('100%')).toBeNull();
+  });
+
+  it('shows PHP defined amount, bitcoin, and the USD snapshot', () => {
+    renderWithLocale(
+      <ForumGoalBar
+        sats={0}
+        goalSats={21000}
+        goalCurrency="PHP"
+        goalAmount="10.125"
+        goalAmountUsd="1.00"
+      />,
+    );
+    expect(screen.getByText('₱10.125')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText('$1.00')).toBeTruthy();
+  });
+
+  it('uses the live viewer rate when the USD snapshot is missing on a PHP ask', () => {
+    renderWithLocale(
+      <ForumGoalBar
+        sats={0}
+        goalSats={21000}
+        rateDay={RATE_DAY}
+        goalCurrency="PHP"
+        goalAmount="10.125"
+        goalAmountUsd={null}
+      />,
+    );
+    expect(screen.getByText('₱10.125')).toBeTruthy();
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText('$21.00')).toBeTruthy();
+  });
+
+  it('shows 0% when the defined amount is zero', () => {
+    renderWithLocale(
+      <ForumGoalBar
+        sats={21000}
+        goalSats={21000}
+        goalCurrency="USD"
+        goalAmount="0"
+        amountUsd="1.00"
+      />,
+    );
+    expect(screen.getByText('0%')).toBeTruthy();
+  });
+
+  it('shows 0% when the USD collected snapshot is missing, not the sats percent', () => {
+    renderWithLocale(
+      <ForumGoalBar
+        sats={21000}
+        goalSats={21000}
+        goalCurrency="USD"
+        goalAmount="10"
+        amountUsd={null}
+      />,
+    );
+    expect(screen.getByText('0%')).toBeTruthy();
+    expect(screen.queryByText('100%')).toBeNull();
+  });
+
+  it('shows an uncapped 250% fiat label with overflow fill', () => {
+    const { container } = renderWithLocale(
+      <ForumGoalBar
+        sats={21000}
+        goalSats={21000}
+        goalCurrency="USD"
+        goalAmount="10"
+        amountUsd="25.00"
+      />,
+    );
+    expect(screen.getByText('250%')).toBeTruthy();
+    const img = screen.getByRole('img', { name: 'Goal progress 250 percent' });
+    expect(img.getAttribute('viewBox')).toBe('0 0 200 8');
+    const overflow = container.querySelector('[class*="fill-app-success"]');
+    expect(overflow).not.toBeNull();
+    expect(overflow?.getAttribute('x')).toBe('100');
+    expect(overflow?.getAttribute('width')).toBe('100');
   });
 
   it('shows 110% with overflow fill', () => {
