@@ -206,6 +206,31 @@ describe('NoteTranslate', () => {
     expect(screen.getByRole('button', { name: 'Show original' })).toBeTruthy();
   });
 
+  it('drops stacked margin when placement is row', async () => {
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
+    const translate = await screen.findByRole('button', { name: 'Translate' });
+    expect(translate.className.split(/\s+/)).not.toContain('mt-2');
+  });
+
+  it('puts the error on its own flex line when placement is row', async () => {
+    vi.mocked(translateNote).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    const classes = (await screen.findByRole('alert')).className.split(/\s+/);
+    expect(classes).toContain('order-last');
+    expect(classes).toContain('basis-full');
+    expect(classes).toContain('w-full');
+  });
+
+  it('keeps onButton colour without stacked margin in a row', async () => {
+    renderWithLocale(
+      <NoteTranslate messageId={NOTE_ID} text={german} tone="onButton" placement="row" />,
+    );
+    const translate = await screen.findByRole('button', { name: 'Translate' });
+    expect(translate.className).toContain('text-app-btn-fg');
+    expect(translate.className.split(/\s+/)).not.toContain('mt-2');
+  });
+
   it('uses button foreground classes when tone is onButton', async () => {
     renderWithLocale(<NoteTranslate messageId={NOTE_ID} tone="onButton" text={german} />);
     const translate = await screen.findByRole('button', { name: 'Translate' });

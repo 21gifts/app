@@ -185,7 +185,8 @@ function QuotedForumNote({
  *   including `via === 'nostr'`; `translate={false}` keeps
  *   nostr nested bodies `plain`), optional `formatTranslated`
  *   (applied to the visible remainder translation after the quote/short-link
- *   strip), and an optional click handler for the nested card.
+ *   strip), optional `controlSlotId` (forwarded to TranslatableNoteBody for
+ *   the footer icon row), and an optional click handler for the nested card.
  * @returns The stripped paragraph (replaced by the translation while shown
  *   when `translate` is true), nested post cards, and translation control;
  *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
@@ -206,6 +207,7 @@ export function ForumQuotedBody({
   conversationId,
   formatTranslated,
   onActivate,
+  controlSlotId,
 }: {
   text: string;
   knownNotes: readonly ForumMessage[];
@@ -218,6 +220,8 @@ export function ForumQuotedBody({
   conversationId?: string;
   formatTranslated?: (text: string) => string;
   onActivate?: (event: { stopPropagation: () => void }) => void;
+  /** When set, forwarded to TranslatableNoteBody, which portals NoteTranslate into this element (footer icon row). */
+  controlSlotId?: string;
 }): ReactElement | null {
   const quoteIds = useMemo(() => {
     const exclude = excludeId.toLowerCase();
@@ -351,6 +355,7 @@ export function ForumQuotedBody({
             {...(conversationId !== undefined && conversationId !== ''
               ? { source: { kind: 'conversation' as const, conversationId } }
               : {})}
+            {...(controlSlotId === undefined ? {} : { controlSlotId })}
           />
         ) : truncate ? (
           <ForumNoteText text={displayText} className={className} />

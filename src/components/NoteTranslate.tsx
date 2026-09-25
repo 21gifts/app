@@ -39,6 +39,11 @@ export interface NoteTranslateProps {
   onTranslated?: (translatedText: string) => void;
   /** Called when the visitor toggles Show original / Show translation. */
   onToggleShowing?: () => void;
+  /**
+   * `block` stacks under the body. `row` uses `display: contents` so the
+   * icon sits in a parent footer flex row.
+   */
+  placement?: 'block' | 'row';
 }
 
 /**
@@ -49,8 +54,9 @@ export interface NoteTranslateProps {
  * Identity is `source + messageId + text + locale`.
  *
  * @param props - `messageId`, `text`, optional `source` / `tone`,
- *   parent-owned `showingTranslation`, `onTranslated` on success, and
- *   `onToggleShowing` for Show original / Show translation.
+ *   optional `placement` (`block` under the body, or `row` in a parent
+ *   flex footer), parent-owned `showingTranslation`, `onTranslated` on
+ *   success, and `onToggleShowing` for Show original / Show translation.
  * @returns Translation control, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */
@@ -62,6 +68,7 @@ export function NoteTranslate({
   showingTranslation = false,
   onTranslated,
   onToggleShowing,
+  placement = 'block',
 }: NoteTranslateProps): ReactElement | null {
   const { locale, t } = useTranslations();
   const session = useAuthStore((state) => state.session);
@@ -132,14 +139,23 @@ export function NoteTranslate({
   };
 
   const onButton = tone === 'onButton';
+  const inRow = placement === 'row';
   const toggleClass = onButton
-    ? 'mt-2 text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50'
-    : 'mt-2 text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50';
-  const errorClass = onButton ? 'mt-2 text-sm text-app-btn-fg' : 'mt-2 text-sm text-app-danger';
+    ? `${inRow ? '' : 'mt-2 '}text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50`
+    : `${inRow ? '' : 'mt-2 '}text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50`;
+  const errorClass = onButton
+    ? `${inRow ? 'order-last basis-full w-full ' : 'mt-2 '}text-sm text-app-btn-fg`
+    : `${inRow ? 'order-last basis-full w-full ' : 'mt-2 '}text-sm text-app-danger`;
   const translateLabel = t('forum.translate');
+  const iconClass = onButton
+    ? `${inRow ? '' : 'mt-2 '}text-app-btn-fg hover:text-app-btn-fg`
+    : inRow
+      ? ''
+      : 'mt-2';
 
   return (
     <div
+      className={inRow ? 'contents' : undefined}
       onClick={(event) => {
         event.stopPropagation();
       }}
@@ -170,7 +186,7 @@ export function NoteTranslate({
             type="button"
             size="sm"
             variant="ghost"
-            className={onButton ? 'mt-2 text-app-btn-fg hover:text-app-btn-fg' : 'mt-2'}
+            className={iconClass === '' ? undefined : iconClass}
             aria-label={translateLabel}
             title={translateLabel}
             disabled={status === 'loading'}

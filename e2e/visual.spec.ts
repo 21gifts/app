@@ -742,7 +742,7 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
 
 const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 
-/** One paid German Ada note so Active shows Translate under the body. */
+/** One paid German Ada note so Active shows Translate in the footer icon row. */
 async function fulfillGermanPaidAdaNote(page: Page): Promise<void> {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -1851,7 +1851,18 @@ test.describe('onboarding screens', () => {
     await page.getByText(/Good morning everyone especially to our sponsor/).click();
     await expect(page.getByText('just for information:')).toBeVisible();
     await expect(page.getByText('A Quick Technical Note')).toBeVisible();
-    await expect(page.getByAltText('Photo from Cyrill')).toBeVisible();
+    const quotedPhoto = page.getByAltText('Photo from Cyrill');
+    await expect(quotedPhoto).toBeVisible();
+    await expect
+      .poll(() =>
+        quotedPhoto.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth >= 100),
+      )
+      .toBe(true);
+    const parentName = page.getByText('Riana Rosello').first();
+    await parentName.evaluate((el: HTMLElement) => {
+      el.scrollIntoView({ block: 'start' });
+    });
+    await expect(parentName).toBeInViewport();
     await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
     await shotScreen(page, 'state-welcome-quoted-note');
   });
