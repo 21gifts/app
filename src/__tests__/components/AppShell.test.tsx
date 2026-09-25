@@ -96,7 +96,7 @@ describe('AppShell', () => {
     expect(inner?.className).toContain('flex-col');
     expect(inner?.className).toContain('min-h-full');
     expect(inner?.className).toContain('items-center');
-    expect(inner?.className).toContain('justify-[safe_center]');
+    expect(inner?.className.split(/\s+/)).toContain('shell-safe-center');
     expect(inner?.className.split(/\s+/)).not.toContain('justify-center');
     expect(inner?.className).not.toContain('pt-24');
   });

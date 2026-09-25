@@ -42,6 +42,18 @@ describe('ForumPhotoGallery', () => {
     expect(scrollerTokens).not.toContain('flex-col');
     const firstSlide = (photos[0]?.parentElement?.className ?? '').split(/\s+/);
     const lastSlide = (photos[1]?.parentElement?.className ?? '').split(/\s+/);
+    const still = (photos[0]?.className ?? '').split(/\s+/);
+    expect(still).toEqual(
+      expect.arrayContaining([
+        'block',
+        'h-auto',
+        'max-h-80',
+        'w-full',
+        'shrink-0',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
     expect(firstSlide).toEqual(
       expect.arrayContaining(['w-[88%]', 'min-w-[88%]', 'shrink-0', 'snap-start']),
     );

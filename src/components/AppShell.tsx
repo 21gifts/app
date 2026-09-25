@@ -118,7 +118,7 @@ export function AppShell({
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
           <div ref={setScrollerEl} className="min-h-0 w-full flex-1 overflow-y-auto">
             {align === 'center' ? (
-              <div className="flex min-h-full flex-col items-center justify-[safe_center] px-8 py-6">
+              <div className="shell-safe-center flex min-h-full flex-col items-center px-8 py-6">
                 {children}
               </div>
             ) : (

@@ -39,6 +39,12 @@ html {
   touch-action: manipulation;
 }
 
+/* `center` first so an engine that drops `safe` still centers. */
+.shell-safe-center {
+  justify-content: center;
+  justify-content: safe center;
+}
+
 html.dark {
   color-scheme: dark;
   --color-app-bg: #0a090c;

@@ -3499,6 +3499,7 @@ describe('ForumBoard', () => {
         'max-w-full',
         'rounded-xl',
         'object-contain',
+        'shrink-0',
       ]),
     );
     expect(tokens).not.toContain('w-full');
