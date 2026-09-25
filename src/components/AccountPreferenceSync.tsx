@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { setAccountFiat, setAccountLocale } from '@/lib/api';
+import type { Account } from '@/lib/api-types';
 import { LOCALE_COOKIE, type Locale } from '@/lib/locale';
 import { fiatGeneration, localeGeneration } from '@/lib/preference-generation';
 import { defaultFiatForLocale, FIAT_CODES, FIAT_COOKIE, type FiatCode } from '@/lib/stats-money';
@@ -50,9 +51,40 @@ function supportedFiat(value: string | undefined): FiatCode | null {
 }
 
 /**
+ * Keeps one hydrated preference and leaves the other field on the account
+ * that is current when the response arrives.
+ *
+ * @param updated - Owner account returned by the preference route.
+ * @param field - Preference this response is allowed to write.
+ * @param replaceWhole - Whether the other preference is still the baseline.
+ * @param setAccount - Auth-store writer.
+ */
+function rememberPreference(
+  updated: Account,
+  field: 'locale' | 'fiat',
+  replaceWhole: boolean,
+  setAccount: (account: Account) => void,
+): void {
+  if (replaceWhole) {
+    setAccount(updated);
+    return;
+  }
+  const current = useAuthStore.getState().account;
+  if (current === null || current.id !== updated.id) {
+    return;
+  }
+  if (current[field] === updated[field]) {
+    return;
+  }
+  setAccount({ ...current, [field]: updated[field] });
+}
+
+/**
  * Reconciles signed-in language and currency preferences with the account.
  * Missing account keys are left alone for compatibility with older api
  * responses. Each account id runs at most once for this page lifetime.
+ * The generation baseline is the first effect for this session, including
+ * runs before hydration finishes.
  *
  * @returns `null`.
  */
@@ -64,12 +96,23 @@ export function AccountPreferenceSync(): null {
   const { locale: screenLocale } = useTranslations();
   const { fiat, setFiat } = useFiatPreference();
   const router = useRouter();
+  const localeBaseline = useRef<number | null>(null);
+  const fiatBaseline = useRef<number | null>(null);
 
   useEffect(() => {
     if (session === null) {
       syncedAccountIds.clear();
+      localeBaseline.current = localeGeneration();
+      fiatBaseline.current = fiatGeneration();
+      return;
     }
-    if (!ready || session === null || account === null) {
+    if (localeBaseline.current === null) {
+      localeBaseline.current = localeGeneration();
+    }
+    if (fiatBaseline.current === null) {
+      fiatBaseline.current = fiatGeneration();
+    }
+    if (!ready || account === null) {
       return;
     }
     if (syncedAccountIds.has(account.id)) {
@@ -77,8 +120,8 @@ export function AccountPreferenceSync(): null {
     }
     syncedAccountIds.add(account.id);
 
-    const localeAtRunStart = localeGeneration();
-    const fiatAtRunStart = fiatGeneration();
+    const localeAtRunStart = localeBaseline.current;
+    const fiatAtRunStart = fiatBaseline.current;
 
     void (async (): Promise<void> => {
       await Promise.resolve();
@@ -88,7 +131,7 @@ export function AccountPreferenceSync(): null {
         try {
           const updated = await setAccountLocale(session, screenLocale, true);
           if (localeGeneration() === localeAtRunStart) {
-            setAccount(updated);
+            rememberPreference(updated, 'locale', fiatGeneration() === fiatAtRunStart, setAccount);
             if (typeof updated.locale === 'string') {
               effectiveLocale = updated.locale;
               if (readPreferenceCookie(LOCALE_COOKIE) !== updated.locale) {
@@ -119,8 +162,11 @@ export function AccountPreferenceSync(): null {
           if (fiatGeneration() !== fiatAtRunStart) {
             return;
           }
-          setAccount(updated);
-          if (typeof updated.fiat === 'string' && updated.fiat !== fiat) {
+          rememberPreference(updated, 'fiat', localeGeneration() === localeAtRunStart, setAccount);
+          if (
+            typeof updated.fiat === 'string' &&
+            readPreferenceCookie(FIAT_COOKIE) !== updated.fiat
+          ) {
             setFiat(updated.fiat);
           }
         } catch {

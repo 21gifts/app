@@ -338,7 +338,8 @@ describe('AccountPreferenceSync', () => {
 
     await waitFor(() => {
       expect(mockSetAccountFiat).toHaveBeenCalledWith('s', 'USD', true);
-      expect(useAuthStore.getState().account).toBe(fiatResponse);
+      expect(useAuthStore.getState().account?.fiat).toBe('USD');
+      expect(useAuthStore.getState().account?.locale).toBeNull();
     });
 
     expect(cookie('locale')).toBeUndefined();
@@ -425,7 +426,7 @@ describe('AccountPreferenceSync', () => {
     });
 
     expect(screen.getByTestId('fiat').textContent).toBe('USD');
-    expect(cookie('fiat')).toBeUndefined();
+    expect(cookie('fiat')).toBe('USD');
   });
 
   it('stores a null fiat response without changing the fiat context', async () => {
@@ -520,5 +521,207 @@ describe('AccountPreferenceSync', () => {
     await flushEffect();
 
     expect(mockSetAccountLocale).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fill an empty locale chosen before the account was ready', async () => {
+    flag.ready = false;
+    const view = renderSync(
+      account('acc_early_locale', { locale: null }),
+      's',
+      <LocaleGenerationBumper />,
+    );
+    await flushEffect();
+    expect(mockSetAccountLocale).not.toHaveBeenCalled();
+
+    flag.ready = true;
+    view.rerender(
+      <>
+        <AccountPreferenceSync />
+        <LocaleGenerationBumper />
+        <Probe />
+      </>,
+    );
+    await flushEffect();
+
+    expect(mockSetAccountLocale).not.toHaveBeenCalled();
+  });
+
+  it('does not fill an empty fiat chosen before the account was ready', async () => {
+    flag.ready = false;
+    const view = renderSync(
+      account('acc_early_fiat', { locale: 'en', fiat: null }),
+      's',
+      <FiatGenerationBumper />,
+    );
+    await flushEffect();
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+
+    flag.ready = true;
+    view.rerender(
+      <>
+        <AccountPreferenceSync />
+        <FiatGenerationBumper />
+        <Probe />
+      </>,
+    );
+    await flushEffect();
+
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+  });
+
+  it('fills an empty locale once the account is ready when nothing was chosen', async () => {
+    flag.ready = false;
+    const updated = account('acc_late', { locale: 'en' });
+    mockSetAccountLocale.mockResolvedValue(updated);
+    const view = renderSync(account('acc_late', { locale: null }));
+    await flushEffect();
+    expect(mockSetAccountLocale).not.toHaveBeenCalled();
+
+    flag.ready = true;
+    view.rerender(
+      <>
+        <AccountPreferenceSync />
+        <Probe />
+      </>,
+    );
+
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalledWith('s', 'en', true);
+    });
+  });
+
+  it('keeps an explicit fiat when a late locale hydration returns', async () => {
+    let releaseLocale: (value: Account) => void = () => {};
+    mockSetAccountLocale.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseLocale = resolve;
+        }),
+    );
+
+    renderSync(account('acc_cross', { locale: null, fiat: null }));
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalledWith('s', 'en', true);
+    });
+
+    act(() => {
+      bumpFiatGeneration();
+      useAuthStore.getState().setAccount(account('acc_cross', { locale: null, fiat: 'PHP' }));
+    });
+    await act(async () => {
+      releaseLocale(account('acc_cross', { locale: 'en', fiat: null }));
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account?.locale).toBe('en');
+    expect(useAuthStore.getState().account?.fiat).toBe('PHP');
+    expect(mockSetAccountFiat).not.toHaveBeenCalled();
+  });
+
+  it('keeps an explicit locale when a late fiat hydration returns', async () => {
+    let releaseFiat: (value: Account) => void = () => {};
+    mockSetAccountFiat.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseFiat = resolve;
+        }),
+    );
+
+    renderSync(account('acc_cross_fiat', { locale: 'de', fiat: null }));
+    await waitFor(() => {
+      expect(mockSetAccountFiat).toHaveBeenCalled();
+    });
+
+    act(() => {
+      bumpLocaleGeneration();
+      useAuthStore.getState().setAccount(account('acc_cross_fiat', { locale: 'es', fiat: null }));
+    });
+    await act(async () => {
+      releaseFiat(account('acc_cross_fiat', { locale: 'de', fiat: 'CHF' }));
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account?.locale).toBe('es');
+    expect(useAuthStore.getState().account?.fiat).toBe('CHF');
+  });
+
+  it('drops a late preference when the signed-in account is gone', async () => {
+    let releaseLocale: (value: Account) => void = () => {};
+    mockSetAccountLocale.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseLocale = resolve;
+        }),
+    );
+
+    renderSync(account('acc_gone', { locale: null, fiat: null }));
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalled();
+    });
+
+    act(() => {
+      bumpFiatGeneration();
+      useAuthStore.setState({ session: 's', account: null, wrongAccount: false });
+    });
+    await act(async () => {
+      releaseLocale(account('acc_gone', { locale: 'en', fiat: null }));
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('drops a late preference when the account id changed', async () => {
+    let releaseLocale: (value: Account) => void = () => {};
+    mockSetAccountLocale.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseLocale = resolve;
+        }),
+    );
+
+    renderSync(account('acc_old', { locale: null, fiat: null }));
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalled();
+    });
+
+    const replacement = account('acc_new', { locale: 'es', fiat: 'EUR' });
+    act(() => {
+      bumpFiatGeneration();
+      useAuthStore.getState().setAccount(replacement);
+    });
+    await act(async () => {
+      releaseLocale(account('acc_old', { locale: 'en', fiat: null }));
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account).toBe(replacement);
+  });
+
+  it('leaves the account untouched when the late field already matches', async () => {
+    let releaseLocale: (value: Account) => void = () => {};
+    mockSetAccountLocale.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseLocale = resolve;
+        }),
+    );
+
+    renderSync(account('acc_same', { locale: null, fiat: null }));
+    await waitFor(() => {
+      expect(mockSetAccountLocale).toHaveBeenCalled();
+    });
+
+    const explicit = account('acc_same', { locale: 'en', fiat: 'PHP' });
+    act(() => {
+      bumpFiatGeneration();
+      useAuthStore.getState().setAccount(explicit);
+    });
+    await act(async () => {
+      releaseLocale(account('acc_same', { locale: 'en', fiat: null }));
+    });
+    await flushEffect();
+
+    expect(useAuthStore.getState().account).toBe(explicit);
   });
 });
