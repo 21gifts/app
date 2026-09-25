@@ -3048,6 +3048,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'staff-place-unavailable',
+    image: 'shops-staff-place-unavailable.png',
+    visual: 'state-shops-staff-place-unavailable',
+    needle: "shotScreen(page, 'state-shops-staff-place-unavailable')",
+  },
+  {
+    route: '/shops',
     id: 'staff-place-set',
     image: 'shops-staff-place-set.png',
     visual: 'state-shops-staff-place-set',

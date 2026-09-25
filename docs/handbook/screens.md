@@ -1290,6 +1290,12 @@ A moderator session. One Cafe Luna shop note with no pin. The note footer shows 
 
 ![21.gifts shops staff place](images/shops-staff-place.png)
 
+### Variant: staff-place-unavailable
+
+A moderator session. **Add a place** on the Cafe Luna note is open and the map key is missing. The panel says **The map is not available.** There is no map frame and no **Use this place**.
+
+![21.gifts shops staff place unavailable](images/shops-staff-place-unavailable.png)
+
 ### Variant: staff-place-set
 
 A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place**. The map panel is closed.

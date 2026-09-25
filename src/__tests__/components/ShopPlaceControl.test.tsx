@@ -135,6 +135,21 @@ describe('ShopPlaceControl', () => {
     expect(onUpdated).toHaveBeenCalledWith('shop1', pin);
   });
 
+  it('stops clicks and keys on the place control from reaching the card', () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ShopPlaceControl message={shopMessage} onUpdated={vi.fn()} />);
+    const wrap = screen.getByRole('button', { name: 'Add a place' }).parentElement?.parentElement;
+    expect(wrap).toBeTruthy();
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const key = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' });
+    const stopClick = vi.spyOn(click, 'stopPropagation');
+    const stopKey = vi.spyOn(key, 'stopPropagation');
+    fireEvent(wrap!, click);
+    fireEvent(wrap!, key);
+    expect(stopClick).toHaveBeenCalled();
+    expect(stopKey).toHaveBeenCalled();
+  });
+
   it('does not call onUpdated and shows the alert when save fails', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(setMessagePlace).mockRejectedValue(new Error('Could not save place'));

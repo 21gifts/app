@@ -392,3 +392,34 @@ test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', 
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit place' }),
   ).toHaveCount(0);
 });
+
+test('Function: setMessagePlace — moderator save shows the pin', async ({ page }) => {
+  await stubPlaceMap(page);
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/place'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      expect(route.request().headers().authorization?.startsWith('Bearer ')).toBe(true);
+      const body = route.request().postDataJSON() as {
+        place?: { lat: number; lng: number; label: string | null };
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...STAFF_SHOP_NOTE, place: body.place }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await note.getByLabel('Place name').fill('Happyland');
+  await note.getByRole('button', { name: 'Use this place' }).click();
+  await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
+});

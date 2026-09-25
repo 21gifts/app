@@ -10368,6 +10368,37 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place');
   });
 
+  test('shops staff-place-unavailable', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    const unavailable = note.getByText('The map is not available.');
+    await expect(unavailable).toBeVisible();
+    await unavailable.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-unavailable');
+  });
+
   test('shops staff-place-set', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -10549,7 +10580,9 @@ test.describe('shops screens', () => {
     await expect(note.getByRole('alert')).toHaveText(
       'The place could not be saved. Please try again.',
     );
-    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    const usePlace = note.getByRole('button', { name: 'Use this place' });
+    await expect(usePlace).toBeVisible();
+    await usePlace.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-error');
   });
 });

@@ -8597,10 +8597,6 @@ test('Function: proxyMessagesPlacePatch — unauthenticated place patch is forwa
   expect(response.status()).toBe(401);
 });
 
-test('Function: setMessagePlace — unauthenticated place patch is denied', async ({ request }) => {
-  expect((await request.patch('/forum/messages/[id]/place')).status()).toBe(401);
-});
-
 test('Function: PATCH — PATCH /forum/messages/[id]/place without bearer is 401', async ({
   request,
 }) => {
