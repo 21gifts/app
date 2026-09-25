@@ -40,6 +40,7 @@ import {
 } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
+  isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
@@ -364,9 +365,13 @@ function inboxAuthorProfileButton(
 function ConversationListItem({
   row,
   onOpen,
+  rateDay,
+  fiat,
 }: {
   row: Conversation;
   onOpen: (id: string) => void;
+  rateDay: FiatRateDay | null;
+  fiat: FiatCode;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -435,6 +440,7 @@ function ConversationListItem({
         ) : row.lastSats > 0 ? (
           <span className={listPreviewClass(row.lastFromMe)}>
             {formatBitcoin(row.lastSats, numberFormat)}
+            {preferredFiatSuffix(row.lastSats, rateDay, fiat, numberFormat)}
           </span>
         ) : null}
       </button>
@@ -460,7 +466,9 @@ function ConversationListItem({
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 8000-character composer and a sats amount field (`showAmount` false
- * hides it; the staff room has no gifts). Members (`showFilter`
+ * hides it; the staff room has no gifts). An open invoice hides that amount
+ * row too: the pay sheet states the amount once, as bitcoin plus the
+ * default fiat from the latest gift-day rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
@@ -468,7 +476,8 @@ function ConversationListItem({
  * {@link Conversation} `kind` (Direct, Contact, Damus, or Moderators).
  * Outbound last-text previews use `inbox.sentPreview` as a filled chip.
  * Gift-only last rows (`lastText` empty, `lastSats` &gt; 0) show
- * `formatBitcoin(lastSats)` with the same chip vs muted split. Incoming
+ * `formatBitcoin(lastSats)` plus the preferred-fiat suffix from the latest
+ * rate, with the same chip vs muted split. Incoming
  * thread messages are full-width muted note cards; `fromMe` messages render
  * as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only
  * bubbles use `forum.giftReply`; text+sats show the amount under the body.
@@ -484,7 +493,8 @@ function ConversationListItem({
  * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. The
+ * Wallet of Satoshi pay sheet. Desktop and iPad also show the invoice QR. A
+ * smartphone does not (`isSmartphoneUserAgent`, not viewport). The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
@@ -581,7 +591,7 @@ export function InboxScreen({
   }
 
   useEffect(() => {
-    setShowPaymentQr(true);
+    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
 
   useEffect(() => {
@@ -976,7 +986,11 @@ export function InboxScreen({
           </ul>
         ) : null}
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
-          <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
+          <div
+            className={
+              showAmount && invoice === null ? 'flex items-end gap-2' : 'flex items-center gap-2'
+            }
+          >
             {showAttach ? (
               <>
                 <IconButton
@@ -1026,7 +1040,7 @@ export function InboxScreen({
               )}
             </IconButton>
           </div>
-          {showAmount ? (
+          {showAmount && invoice === null ? (
             <AmountEntry
               layout="composer"
               className={showAttach ? 'max-w-sm ps-14' : 'max-w-sm'}
@@ -1210,7 +1224,13 @@ export function InboxScreen({
         ) : (
           <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
             {filtered.map((row) => (
-              <ConversationListItem key={row.id} row={row} onOpen={onOpen} />
+              <ConversationListItem
+                key={row.id}
+                row={row}
+                onOpen={onOpen}
+                rateDay={rateDay ?? null}
+                fiat={fiat}
+              />
             ))}
           </ul>
         )}

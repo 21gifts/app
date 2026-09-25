@@ -989,8 +989,12 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-donate');
   });
 
-  test('screen /pl', async ({ page }) => {
+  test('screen /pl', async ({ page }, testInfo) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    // pauseAt only moves forward, so the confirmed payment freezes at 5:00 left.
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
       async (route) => {
@@ -1011,19 +1015,32 @@ test.describe('screen baselines', () => {
             username: 'ada',
             minSats: 1,
             maxSats: 100000000,
+            charge: null,
           }),
         });
       },
     );
     await page.goto(`/pl?lightning=${lnurl}`);
-    await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await shotScreen(page, 'screen-pl');
-    await page.getByRole('button', { name: 'Create invoice' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
     await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
-    await page.getByRole('button', { name: 'Create invoice' }).click();
-    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-pl-invoice');
   });
@@ -1036,6 +1053,7 @@ test.describe('screen baselines', () => {
 
   test('screen /pl failed', async ({ page }) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
       async (route) => {
@@ -1056,11 +1074,89 @@ test.describe('screen baselines', () => {
       },
     );
     await page.goto(`/pl?lightning=${lnurl}&fail=1`);
-    await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await page.getByLabel('Amount').fill('21');
-    await page.getByRole('button', { name: 'Create invoice' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-pl-failed');
+  });
+
+  test('screen /pl charge', async ({ page }, testInfo) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    // pauseAt only moves forward, so the clock starts a minute earlier and freezes on the hour.
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        if (route.request().url().includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 238093 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 238093,
+            maxSats: 238093,
+            charge: { amountSats: 238093, expiresAt: '2026-09-24T12:05:00.000Z' },
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-pl-charge');
+  });
+
+  test('screen /pl charge-failed', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        if (route.request().url().includes('/invoice')) {
+          await route.fulfill({ status: 502, contentType: 'application/json', body: '{}' });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 238093,
+            maxSats: 238093,
+            charge: { amountSats: 238093, expiresAt: '2026-09-24T12:05:00.000Z' },
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-pl-charge-failed');
   });
 
   test('screen /wallet', async ({ page }) => {
@@ -2561,6 +2657,7 @@ test.describe('onboarding screens', () => {
   });
 
   test('pos open', async ({ page }) => {
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
       Date.now = () => fixed;
@@ -2612,6 +2709,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-open');
@@ -2845,6 +2943,7 @@ test.describe('onboarding screens', () => {
   });
 
   test('pos cancel failed', async ({ page }) => {
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
       Date.now = () => fixed;
@@ -2901,10 +3000,12 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
+    await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
   test('pos refresh failed', async ({ page }) => {
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
       Date.now = () => fixed;
@@ -2961,6 +3062,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-refresh-failed');
   });
@@ -7557,6 +7659,7 @@ test.describe('welcome forum variants', () => {
   }
 
   async function openPaySheet(page: Page): Promise<void> {
+    await fulfillRateDay(page);
     await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
@@ -7567,6 +7670,7 @@ test.describe('welcome forum variants', () => {
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByText('$0.02').first()).toBeVisible();
   }
 
   for (const state of ['moderation', 'delete-confirm', 'deleting', 'delete-error'] as const) {
@@ -11332,7 +11436,8 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-text-sats');
   });
 
-  test('messages thread-pay-qr', async ({ page }) => {
+  test('messages thread-pay-qr', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
@@ -11398,7 +11503,12 @@ test.describe('inbox screens', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-messages-thread-pay-qr');
   });
 

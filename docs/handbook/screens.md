@@ -283,25 +283,25 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading. Under it, an **Amount** field and **Create invoice**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. A bad link shows **This payment link is not valid.** and no form.
-- **Actions:** Type a whole number and press **Create invoice**. An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success replaces that button with **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). Desktop and smartphone both show the Bitcoin invoice QR. A failed mint keeps the form and shows **Could not create the invoice.** Change language from the header.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
 
-The person's name, the amount field, and **Create invoice**. No QR yet.
+Scanned pay link with no open payment (`charge` null or absent). The shop sticker, the person's name, the amount field, and **Continue**. No countdown, no **Pay**, and no invoice QR.
 
 ![21.gifts pay link](images/pl.png)
 
 ### Variant: invoice
 
-The amount is kept and **Create invoice** is gone. Desktop and smartphone both show the Bitcoin invoice QR and **Pay**.
+After **Continue**, the same active payment as an open till: the shop sticker, five minutes left, the locked sat amount, the viewer's default fiat beside it, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows the countdown and **Pay**, not the QR.
 
 ![21.gifts pay link invoice](images/pl-invoice.png)
 
 ### Variant: amount-invalid
 
-**Create invoice** with an empty or non-whole amount shows **Enter a whole number.** The form stays.
+**Continue** with an empty or non-whole amount shows **Enter a whole number.** The form stays. No **Pay**.
 
 ![21.gifts pay link amount invalid](images/pl-amount-invalid.png)
 
@@ -316,6 +316,18 @@ The gift glyph and **This payment link is not valid.** No amount field.
 The form stays, and **Could not create the invoice.** is shown under it.
 
 ![21.gifts pay link failed](images/pl-failed.png)
+
+### Variant: charge
+
+The open till: the shop sticker's storefront above the name, then time left, the sat amount, the viewer's default fiat beside it, and **Pay**. Desktop also shows the Bitcoin invoice QR. A smartphone does not. No gift glyph and no amount field.
+
+![21.gifts pay link charge](images/pl-charge.png)
+
+### Variant: charge-failed
+
+Open till, mint failed. The shop sticker, time left, the sat amount, the viewer's default fiat beside it, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
+
+![21.gifts pay link charge failed](images/pl-charge-failed.png)
 
 ## Screen: /setup/name
 
@@ -429,7 +441,7 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — when `account.setup` is null (name and address may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, address, and rules. The phrase is not on that path.
-- **What the user sees:** Chrome is the page-frame header (wordmark + Menu inside the rounded sheet). Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes plus unpaid moderator notes plus top-level notes with `goalSats` > 0, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden), timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait); note and reply bodies longer than 280 characters show a collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay labeled. Offered when the note language differs from the UI locale.
+- **What the user sees:** Chrome is the page-frame header (wordmark + Menu inside the rounded sheet). Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}**, dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes plus unpaid moderator notes plus top-level notes with `goalSats` > 0, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name (when `accountId` is set) that opens `/members/:id`, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden), timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait); note and reply bodies longer than 280 characters show a collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a top-left back control and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, Wallet of Satoshi address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Calls:** `PageChrome`, `AppShell`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`.
 
@@ -868,7 +880,7 @@ Same German note after a successful translation. Translated body plus **Show ori
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts welcome translate hidden](images/welcome-translate-hidden.png)
 
@@ -1131,13 +1143,13 @@ Payable reply after **Show reactions**, Gift opened, amount filled, not submitte
 
 ### Variant: pay-qr
 
-Payable reply, Gift amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same invoice card is shown, without a mounted `QrCode`; the wallet **Pay** button remains, with **Waiting for payment…** under it and a top-left back control. The preferred-fiat line is on **pay-amount** (rate stub); these invoice-step shots use the empty stats mock and have no gift-day rate in that mock, so the fiat figure cannot be computed.
+Payable reply, Gift amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same invoice card is shown, without a mounted `QrCode`; the wallet **Pay** button remains, with **Waiting for payment…** under it and a top-left back control. The invoice step shows the sat amount and the default fiat from the latest gift-day rate.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the same invoice card is shown without a mounted `QrCode`; the **Pay** button with the Wallet of Satoshi icon remains, with **Waiting for payment…** under it and a top-left back control. The preferred-fiat line is on **pay-amount** (rate stub); these invoice-step shots use the empty stats mock and have no gift-day rate in that mock, so the fiat figure cannot be computed. On desktop this scenario shows the QR invoice card.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the same invoice card is shown without a mounted `QrCode`; the **Pay** button with the Wallet of Satoshi icon remains, with **Waiting for payment…** under it and a top-left back control. The invoice step shows the sat amount and the default fiat from the latest gift-day rate. On desktop this scenario shows the QR invoice card.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
@@ -1533,7 +1545,7 @@ Same German post after a successful translation. Translated body plus **Show ori
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts member translate hidden](images/members-translate-hidden.png)
 
@@ -1563,7 +1575,7 @@ Same German About me after a successful translation. Translated body plus **Show
 
 ### Variant: about-translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts member about translate hidden](images/members-about-translate-hidden.png)
 
@@ -1631,7 +1643,7 @@ Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Hea
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, and **Cancel** stay up. The amount form is gone. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
@@ -1673,13 +1685,13 @@ The till request failed. Alert **Point of sale is unavailable.**
 
 ### Variant: cancel-failed
 
-Open charge of ₿21 with 5:00 left. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
+Open charge of ₿21 with 5:00 left and the default fiat under the sat amount. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale cancel failed](images/pos-cancel-failed.png)
 
 ### Variant: refresh-failed
 
-The open charge has already run out (0:00). Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
+The open charge has already run out (0:00). The sat amount and the default fiat stay. Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale refresh failed](images/pos-refresh-failed.png)
 
@@ -1787,7 +1799,7 @@ Same German About me after a successful translation. Translated body plus **Show
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts profile about translate hidden](images/profile-about-translate-hidden.png)
 
@@ -1914,7 +1926,7 @@ Same German post after a successful translation. Translated body plus **Show ori
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts apply translate hidden](images/profile-apply-translate-hidden.png)
 
@@ -2042,7 +2054,7 @@ Same German preview after a successful translation. Translated body plus **Show 
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts inbox translate hidden](images/messages-translate-hidden.png)
 
@@ -2114,7 +2126,7 @@ Same German incoming message after a successful translation. Translated body plu
 
 ### Variant: thread-translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts inbox thread translate hidden](images/messages-thread-translate-hidden.png)
 
@@ -2144,7 +2156,7 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 
 ### Variant: thread-pay-qr
 
-Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop and smartphone both show the Bitcoin payment QR plus the wallet **Pay** button. **Waiting for payment…** is acceptable while the pay poll hangs.
+Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
 
@@ -2319,7 +2331,7 @@ Same German hidden note after a successful translation. Translated body plus **S
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts hidden notes translate hidden](images/hidden-translate-hidden.png)
 
@@ -2511,7 +2523,7 @@ Same German post after a successful translation. Translated body plus **Show ori
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts grant application translate hidden](images/applications-detail-translate-hidden.png)
 
@@ -2721,7 +2733,7 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the gift-day rate. The pay sheet and an unpaid invoice preview still use the gift-day rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay labeled. Offered when the note language differs from the UI locale.
+- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): Wordmark → `/`, light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (back + wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the gift-day rate. The pay sheet and an unpaid invoice preview still use the gift-day rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
 - **Inputs:** Dynamic route `id` (UUID). After hydrate: staff (moderator/founder) load `GET /forum/messages/:id` (`fetchForumMessage`) and Bearer replies; everyone else uses same-origin `GET /public-messages/:id` (`fetchPublicMessage`) and `GET /public-messages/:id/replies`. If the opened note has `parentId`, a second GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Opening a hidden reply UUID as staff still shows the parent, live replies, AND the opened hidden reply (merged if Bearer replies omit it). Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` or signed-in `fetchMessagePhoto` (via `PublicMessageThread`) → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags. Unsigned/non-staff hidden ids stay `view.missing`.
 - **Actions:** Change language (unsigned), or open **Menu** / **Back to the forum** (signed-in). Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in **Back to the forum** → `/welcome` (`profile.back`) in chrome and below the thread, plus the per-note actions above (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 
@@ -2730,7 +2742,7 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 
 ### Variant: default
 
-Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate), optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate; no ` · —` when that rate is unusable), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
@@ -2814,7 +2826,7 @@ After successful translation: **Show original**; the German original is not show
 
 ### Variant: translate-hidden
 
-After **Show original**: control reads **Show translation**.
+After **Show original**: the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts public message translate hidden](images/messages-id-translate-hidden.png)
 
@@ -2887,7 +2899,7 @@ Same German About me after a successful translation. Translated body plus **Show
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, control reads **Show translation**.
+After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
 
 ![21.gifts public view about translate hidden](images/view-about-translate-hidden.png)
 

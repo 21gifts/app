@@ -1295,6 +1295,39 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
+  it('shows the default fiat on a gift-only last-sats list preview', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...DIRECT, lastText: '', lastSats: 21, lastFromMe: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+      />,
+    );
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
   });
 
   it('styles an unread inbound row with a semibold name and foreground lastText', () => {
@@ -1419,7 +1452,9 @@ describe('InboxScreen', () => {
         payWaiting={true}
       />,
     );
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
@@ -1428,7 +1463,7 @@ describe('InboxScreen', () => {
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the Android wallet intent from the pay sheet with the QR', async () => {
+  it('opens the Android wallet intent from the pay sheet without the QR', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value:
@@ -1455,7 +1490,8 @@ describe('InboxScreen', () => {
         invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
       />,
     );
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationStub.href).toMatch(/^intent:lightning:/);
   });
@@ -1594,7 +1630,7 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $5.00`);
   });
 
-  it('shows the live viewer fiat when stored fiat is null', () => {
+  it('uses the live rate on a nested gift when stored fiat is null', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = {
       ...MESSAGE,

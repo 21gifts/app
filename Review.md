@@ -20,15 +20,19 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Shown amounts
+
+Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the latest gift-day rate. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
+
 ## Payment QR vs deep links
 
-Reject the PR when the forum-post pay sheet mounts its invoice QR on a
-smartphone user-agent, or when any other payment QR (profile, member,
-public view, point of sale, pay link, inbox) is hidden on a smartphone.
-Detection is `isSmartphoneUserAgent`, not viewport width. On that pay
-sheet the phone opens Wallet of Satoshi and shows no QR; everywhere else
-the phone matches the desktop. See CONTRIBUTING.md “Payment QR vs deep
-links”.
+Reject the PR when the forum-post pay sheet, the inbox pay sheet, or the
+public pay-link invoice mounts its invoice QR on a smartphone
+user-agent, or when a profile, member, public view, or point of sale QR
+is hidden on a smartphone. Detection is `isSmartphoneUserAgent`, not
+viewport width. On those invoice screens the phone opens Wallet of
+Satoshi and shows no QR. Everywhere else the phone matches the desktop.
+See CONTRIBUTING.md “Payment QR vs deep links”.
 
 ## Completeness gates
 

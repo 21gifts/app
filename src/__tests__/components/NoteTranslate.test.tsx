@@ -204,12 +204,28 @@ describe('NoteTranslate', () => {
     });
     expect(screen.queryByText(translated)).toBeNull();
     expect(screen.getByRole('button', { name: 'Show original' })).toBeTruthy();
+    expect(screen.queryByText('Show original')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show original' }).querySelector('svg')).toBeTruthy();
   });
 
   it('drops stacked margin when placement is row', async () => {
-    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    renderWithLocale(
+      <NoteTranslate
+        messageId={NOTE_ID}
+        text={german}
+        placement="row"
+        showingTranslation
+        onToggleShowing={() => undefined}
+      />,
+    );
     const translate = await screen.findByRole('button', { name: 'Translate' });
     expect(translate.className.split(/\s+/)).not.toContain('mt-2');
+    fireEvent.click(translate);
+    const toggle = await screen.findByRole('button', { name: 'Show original' });
+    expect(toggle.className.split(/\s+/)).not.toContain('mt-2');
+    expect(toggle.querySelector('svg')).toBeTruthy();
+    expect(screen.queryByText('Show original')).toBeNull();
   });
 
   it('puts the error on its own flex line when placement is row', async () => {

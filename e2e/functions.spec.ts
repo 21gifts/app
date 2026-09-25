@@ -4926,7 +4926,7 @@ test('Function: PayLinkScreen — public pay page names the person', async ({ pa
   });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create invoice' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: PayLinkPage — missing lightning stays on the pay page', async ({ page }) => {

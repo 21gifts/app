@@ -167,7 +167,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'pl.png',
     visual: 'screen-pl',
-    needle: 'Create invoice',
+    needle: 'Continue',
   },
   {
     route: '/pl',
@@ -195,6 +195,20 @@ export const SCREEN_VARIANTS = [
     id: 'failed',
     image: 'pl-failed.png',
     visual: 'state-pl-failed',
+    needle: 'Could not create the invoice.',
+  },
+  {
+    route: '/pl',
+    id: 'charge',
+    image: 'pl-charge.png',
+    visual: 'state-pl-charge',
+    needle: '5:00 left',
+  },
+  {
+    route: '/pl',
+    id: 'charge-failed',
+    image: 'pl-charge-failed.png',
+    visual: 'state-pl-charge-failed',
     needle: 'Could not create the invoice.',
   },
   {

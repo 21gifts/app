@@ -150,7 +150,7 @@ flowchart TD
   acc -.-> X[Not: app form primary / Post / Pay (pay sheet) / filter / RULE n text / Welcome ticks]
 ```
 
-**QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. The only omission is the forum-post pay sheet (`isSmartphoneUserAgent`, not viewport): the same invoice card as desktop, without a mounted `QrCode`.
+**QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. A specific invoice omits it (`isSmartphoneUserAgent`, not viewport): the forum-post pay sheet, the inbox pay sheet, and the public pay link, the same card as desktop, without a mounted `QrCode`.
 
 **Contrast (WCAG 2.2 AA)** against current tokens.
 
@@ -463,7 +463,7 @@ flowchart LR
 
 ## Iconography
 
-**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, and handbook images.
+**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, the shop-sticker storefront on every valid pay link, and handbook images.
 
 **Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills.
 
@@ -475,11 +475,13 @@ flowchart LR
 | 16    | 16  | `h-4 w-4`     | Button leading icon, Field-adjacent, pay-sheet back |
 | 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back              |
 | 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                 |
-| 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG                        |
+| 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG; pay-link shop sticker |
 
 **Decorative vs control.** Decorative: `aria-hidden="true"` (gift-and-Bitcoin SVG on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button.
 
-**Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome.
+**Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome. On `/pl` it appears only when the link is not valid.
+
+**Pay-link shop glyph.** The shop sticker's storefront, the same paths the printable sticker paints (awning, counter, goods, 21.gifts sign). Not the Open CryptoPay mark from the QR centre, and not a lucide store icon. `h-12 w-12`, `aria-hidden`, on every valid `/pl` (the amount step and the active payment). Colours stay `#F99602`, `#000000`, and `#FFFFFF`.
 
 **React control glyph.** Lucide **`Reply`**. Accessible name is catalog `forum.react` = **“React”** (DE **Reagieren**). Icon-only on every top-level note (`parentId` unset). Click expands the reply composer when the card is collapsed and focuses the reply textarea when it is already expanded. Nested replies have no React control.
 
@@ -515,7 +517,7 @@ Do not use a colored placeholder, a camera badge, or a progress ring.
 [ ₿21 ]  [ React ]  [ Copy ]  [ N reactions ]
 ```
 
-- Amount: ₿ via `formatBitcoin`, then `·` plus the visitor's default fiat — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). A stored string is shown as-is. A null or missing field uses the last gift-day rate, so the amount is not bitcoin alone while a rate exists. The posted Ask line follows the same pair rule.
+- Amount: ₿ via `formatBitcoin`, then `·` plus the visitor's default fiat — button that toggles expand (`aria-expanded`; accessible name is the visible ₿ text, not `forum.expand` / `forum.collapse`). A stored string is shown as-is. A null or missing field uses the last gift-day rate, so the amount is not bitcoin alone while a rate exists (no ` · —` when that rate is unusable). Unsent previews (pay sheet, unpaid invoice, Ask wizard, goal bar) omit the stored amount and use the latest gift-day rate. The posted Ask line follows the same pair rule.
 - React (posts only): `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Reply` 16px, `aria-label={t('forum.react')}` (**React**). Tests locate it with `getByRole('button', { name: /^React$/ })`.
 - Pay (replies only): `IconButton` `variant="ghost"` `size="sm"` (24px painted glyph, 44px hit slop — §10), lucide `Gift` 16px, `aria-label={t('forum.pay')}` (**Send Bitcoin**, frozen). Disabled while `payBusy`.
 - Do not put the amount inside the pay control.
@@ -551,7 +553,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 
 **Notifications** list rows are full-row links/buttons with visible text (not icon-only).
 
-Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay labeled underline text.
+Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay the same Languages icon. The accessible name is the only label; no visible text.
 
 **Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`). Member profile **Message** is a labeled `Button` (`profile.message`), not icon-only. Member profile **Shop sticker** is a labeled `Button size="sm" variant="secondary"` (`profile.shopSticker`), not icon-only; its overlay closes with the icon-only ghost `IconButton` like every overlay. **Moderator functions** is the same `details` / `summary` as wallet **Advanced functions**, not a `Button`.
 
@@ -1183,7 +1185,7 @@ WCAG 2.2 AA.
 - **Focus order:** unsigned chrome is Wordmark then switchers. Signed-in `ProfileChromeLeft` is back **then** wordmark, then main title → fields → primary action → Menu. Menu open: focus stays on trigger; Escape closes.
 - **`aria-label`:** required on every `IconButton`; catalog key, all four locales. Decorative glyphs `aria-hidden`.
 - **Color not the only encoding:** profile Given/Received have text labels; forum payable replies are a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off text plus selected fill, not fill-vs-outline bell.
-- **QR:** `role="img"` + catalog label (`QrCode`). QR plates stay white. The only smartphone omission is the forum pay-sheet QR (`isSmartphoneUserAgent`, not viewport).
+- **QR:** `role="img"` + catalog label (`QrCode`). QR plates stay white. A specific invoice omits the QR on a smartphone (`isSmartphoneUserAgent`, not viewport): the forum pay sheet, the inbox pay sheet, and the public pay link.
 - **Expandable notes:** `aria-expanded`. Keyboard Enter/Space.
 - **Language listbox:** combobox/listbox.
 
@@ -1208,8 +1210,8 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 3. **Orange is shell-split.** Marketing: primary filled CTA + kickers + stats paint. App: gift-money **fill** only. Never orange text on paper. THE TEST bar is the only decorative orange on `/rules`.
 4. **Wordmark is text chrome** `21.gifts`, not an SVG logotype. The only outlined copy is the shop sign inside the printed shop-sticker artwork. Signed-in links to `/welcome` except `/setup/*` (span); marketing, login, donate, and view follow it via `HomeWordmark`.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
-6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
-7. **QR plates stay white** in both themes, `border-app-border`. The only smartphone omission is the forum pay-sheet QR (`isSmartphoneUserAgent`, not viewport).
+6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, the latest gift-day rate when that field is missing or null, no ` · —` when that rate is unusable). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
+7. **QR plates stay white** in both themes, `border-app-border`. A specific invoice omits the QR on a smartphone (`isSmartphoneUserAgent`, not viewport): the forum pay sheet, the inbox pay sheet, and the public pay link.
 8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.

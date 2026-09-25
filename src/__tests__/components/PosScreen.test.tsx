@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PosScreen } from '@/components/PosScreen';
+import { fetchGiftStats } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -49,6 +50,39 @@ afterEach(() => {
 });
 
 describe('PosScreen', () => {
+  it('shows the default fiat under an open charge when a gift day exists', async () => {
+    vi.mocked(fetchGiftStats).mockResolvedValueOnce({
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        },
+      ],
+    } as never);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          charge: {
+            id: 'c1',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+          history: [],
+        }),
+      ),
+    );
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByText('$0.02')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
+  });
+
   it('shows the amount form when nothing is open', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
@@ -81,6 +115,7 @@ describe('PosScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(screen.getAllByText('₿21').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$0.02')).toBeNull();
     fetchMock.mockImplementation(async () => jsonResponse({ charge: null, history: [] }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => {
