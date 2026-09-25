@@ -8701,6 +8701,8 @@ describe('forum feed pages', () => {
       ...SAMPLE,
       id: 'pub-1',
       text: 'Public page',
+      sats: 21,
+      payable: true,
       hasPhoto: true,
       photoCount: 1,
       replyCount: 1,
