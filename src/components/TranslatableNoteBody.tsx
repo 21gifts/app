@@ -96,7 +96,12 @@ export function TranslatableNoteBody({
       {...mentionProp}
     />
   ) : (
-    <LinkedText text={text} className={className} {...(plain ? { plain: true } : {})} {...mentionProp} />
+    <LinkedText
+      text={text}
+      className={className}
+      {...(plain ? { plain: true } : {})}
+      {...mentionProp}
+    />
   );
   const visible =
     showingTranslation && translatedText !== null ? (

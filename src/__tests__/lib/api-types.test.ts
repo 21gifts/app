@@ -218,8 +218,7 @@ describe('memberProfileSchema', () => {
       memberProfileSchema.parse({ ...profile, fundingReviewedByName: null }).fundingReviewedByName,
     ).toBeNull();
     expect(
-      memberProfileSchema.parse({ ...profile, fundingReviewedByName: 'Ada' })
-        .fundingReviewedByName,
+      memberProfileSchema.parse({ ...profile, fundingReviewedByName: 'Ada' }).fundingReviewedByName,
     ).toBe('Ada');
   });
 

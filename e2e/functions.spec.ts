@@ -7377,6 +7377,18 @@ test('Function: PublicMessageThread — signed-in permalink shows Copy link to t
   page,
 }) => {
   const id = '11111111-1111-4111-8111-111111111111';
+  const signedNote = {
+    id,
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis',
+    replyCount: 0,
+    accountId: 'acc_e2e',
+  };
   await seedAdaSession(page);
   await page.route(`**/forum/messages/${id}/replies`, async (route) => {
     await route.fulfill({
@@ -7396,17 +7408,18 @@ test('Function: PublicMessageThread — signed-in permalink shows Copy link to t
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        id,
-        name: 'Ada',
-        text: 'Hello from Ada',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-        role: 'basis',
-        replyCount: 0,
-      }),
+      body: JSON.stringify(signedNote),
+    });
+  });
+  await page.route(`**/forum/messages/${id}`, async (route) => {
+    if (route.request().url().includes('/replies')) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(signedNote),
     });
   });
   await page.goto(`/messages/${id}`);
@@ -9299,6 +9312,13 @@ test('Function: ForumQuotedBody — welcome reply shows the nested post', async 
       body: JSON.stringify(quotedNote),
     });
   });
+  await page.route(`**/forum/messages/${QUOTED_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quotedNote),
+    });
+  });
   await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -9436,6 +9456,13 @@ test('Function: splitNoteLinks — welcome note autolinks an internal url and st
     '/trust-chain',
   );
   await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quotedNote),
+    });
+  });
+  await page.route(`**/forum/messages/${QUOTED_ID}`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -41,7 +41,9 @@ function MentionButton({ accountId, text }: { accountId: string; text: string })
 }
 
 function mentionNodes(value: string, mentions: readonly TextMention[]): ReactNode {
-  const byName = new Map(mentions.map((mention) => [mention.username.toLowerCase(), mention.accountId]));
+  const byName = new Map(
+    mentions.map((mention) => [mention.username.toLowerCase(), mention.accountId]),
+  );
   const nodes: ReactNode[] = [];
   let buf = '';
   let index = 0;
@@ -65,7 +67,9 @@ function mentionNodes(value: string, mentions: readonly TextMention[]): ReactNod
       const accountId = token === '' ? undefined : byName.get(token.toLowerCase());
       if (accountId !== undefined) {
         flush();
-        nodes.push(<MentionButton key={`m-${String(i)}`} accountId={accountId} text={value.slice(i, end)} />);
+        nodes.push(
+          <MentionButton key={`m-${String(i)}`} accountId={accountId} text={value.slice(i, end)} />,
+        );
         i = end;
         continue;
       }

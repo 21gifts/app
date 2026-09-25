@@ -9,7 +9,12 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { fetchForumMessage, fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
+import {
+  fetchForumMessage,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchShortLink,
+} from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import type { ForumMessage } from '@/lib/api-types';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';

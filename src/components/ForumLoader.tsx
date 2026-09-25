@@ -778,7 +778,10 @@ export function ForumLoader({
           const page =
             activeSession === null
               ? await fetchPublicForumMessages({ limit: FORUM_PAGE_LIMIT, cursor: activeCursor })
-              : await fetchMessages(activeSession, forumPageArgs(activeMode, { cursor: activeCursor }));
+              : await fetchMessages(
+                  activeSession,
+                  forumPageArgs(activeMode, { cursor: activeCursor }),
+                );
           if (
             cancelled ||
             generation !== paginationGeneration.current ||
