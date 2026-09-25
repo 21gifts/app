@@ -10426,8 +10426,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await expect(note.getByRole('button', { name: 'Remove place' })).toBeVisible();
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(remove).toBeVisible();
     await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit', false);
   });
 
