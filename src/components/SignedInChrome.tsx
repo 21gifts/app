@@ -20,24 +20,48 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
-import { formatBitcoin } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Bitcoin amount plus the visitor's default fiat when a gift-day rate exists. */
+function formatMenuAmount(
+  sats: number,
+  rateDay: FiatRateDay | null,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): string {
+  const bitcoin = formatBitcoin(sats, numberFormat);
+  const fiatAmount = satsToFiatAmount(sats, rateDay, fiat);
+  if (fiatAmount === null) {
+    return bitcoin;
+  }
+  return `${bitcoin} · ${formatFiatDisplay(fiatAmount, fiat, numberFormat)}`;
+}
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Shops, Map, Point of sale, Profile with same-line given/received amounts only when that
- * side is non-zero, Wallet, living-room rules, Trust Chain, staff-only Moderation
+ * side is non-zero, each with the default fiat when a gift-day rate exists, Wallet, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
  * notifications with an
@@ -55,8 +79,10 @@ import { useAuthStore } from '@/stores/auth-store';
 export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
+  const rateDay = useLatestRateDay(session !== null);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
@@ -106,8 +132,8 @@ export function SignedInChrome(): ReactElement {
     void resyncPushSubscription(session).catch(() => undefined);
   }, [session]);
 
-  const givenAmount = formatBitcoin(donatedSats, numberFormat);
-  const receivedAmount = formatBitcoin(receivedSats, numberFormat);
+  const givenAmount = formatMenuAmount(donatedSats, rateDay, fiat, numberFormat);
+  const receivedAmount = formatMenuAmount(receivedSats, rateDay, fiat, numberFormat);
   const showGiven = donatedSats > 0;
   const showReceived = receivedSats > 0;
   const showTotalsCluster = loading || showGiven || showReceived;

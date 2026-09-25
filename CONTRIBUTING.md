@@ -481,27 +481,39 @@ A stack of labeled moderator or founder actions on a member card is not shown as
 
 Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
+### Shown amounts (hard requirement)
+
+Every place that shows a bitcoin amount also shows that amount in the visitor's default fiat.
+
+Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
+
+The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the latest gift-day rate (`useLatestRateDay`). A missing or unusable rate is the only reason the fiat line is absent. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `Review.md`.
+
 ### Payment QR vs deep links (hard requirement)
 
-A smartphone shows the same payment QR as a desktop, including the
-profile, member, public view, point of sale, pay link, and inbox. The
-Shop sticker is shown wherever that profile QR is shown.
+A smartphone shows the same payment QR as a desktop for the profile,
+member, public view, and point of sale. The Shop sticker is
+shown wherever that profile QR is shown.
 
-The only exception is the forum post pay sheet (`ForumBoard`, including
-the composer pay slot). There a smartphone does not mount the invoice
-`QrCode`. The wallet button still opens Wallet of Satoshi
-(`walletofsatoshi:` on iOS, Android Intent on Android). Desktop and iPad
-show that invoice QR and the same button. The amount step is Continue
-on every user agent, then the same invoice card.
+A specific invoice is different. Paying one on a smartphone is the
+wallet deep link only. The forum post pay sheet (`ForumBoard`, including
+the composer pay slot), the inbox pay sheet (`InboxScreen`), and the
+public pay link (`PayLinkScreen`, the open till and **Continue**) do not
+mount the invoice `QrCode` on a smartphone. The wallet button still opens
+Wallet of Satoshi (`walletofsatoshi:` on iOS, Android Intent on
+Android). Desktop and iPad show that invoice QR and the same button.
+The forum amount step is Continue on every user agent, then the same
+invoice card.
 
 Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 (iPhone, iPod, or Android **with** `Mobile`). Do **not** use viewport
 width: a narrow MacBook window is still a desktop. iPad is not a
 smartphone.
 
-Mounting the forum-post pay-sheet invoice QR on a smartphone UA is an
-undeclared deviation and is rejected. Hiding any other payment QR on a
-smartphone UA is also rejected. Reviewers follow `Review.md`.
+Mounting any of those invoice QRs on a smartphone UA is an undeclared
+deviation and is rejected. Hiding a profile, member, public view, or
+point of sale QR on a smartphone UA is also rejected. Reviewers
+follow `Review.md`.
 
 ### Handbook (hard requirement)
 

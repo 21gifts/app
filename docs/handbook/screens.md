@@ -283,25 +283,25 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading. Under it, an **Amount** field and **Create invoice**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. A bad link shows **This payment link is not valid.** and no form.
-- **Actions:** Type a whole number and press **Create invoice**. An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success replaces that button with **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). Desktop and smartphone both show the Bitcoin invoice QR. A failed mint keeps the form and shows **Could not create the invoice.** Change language from the header.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
 
-The person's name, the amount field, and **Create invoice**. No QR yet.
+Scanned pay link with no open payment (`charge` null or absent). The shop sticker, the person's name, the amount field, and **Continue**. No countdown, no **Pay**, and no invoice QR.
 
 ![21.gifts pay link](images/pl.png)
 
 ### Variant: invoice
 
-The amount is kept and **Create invoice** is gone. Desktop and smartphone both show the Bitcoin invoice QR and **Pay**.
+After **Continue**, the same active payment as an open till: the shop sticker, five minutes left, the locked sat amount, the viewer's default fiat beside it, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows the countdown and **Pay**, not the QR.
 
 ![21.gifts pay link invoice](images/pl-invoice.png)
 
 ### Variant: amount-invalid
 
-**Create invoice** with an empty or non-whole amount shows **Enter a whole number.** The form stays.
+**Continue** with an empty or non-whole amount shows **Enter a whole number.** The form stays. No **Pay**.
 
 ![21.gifts pay link amount invalid](images/pl-amount-invalid.png)
 
@@ -316,6 +316,18 @@ The gift glyph and **This payment link is not valid.** No amount field.
 The form stays, and **Could not create the invoice.** is shown under it.
 
 ![21.gifts pay link failed](images/pl-failed.png)
+
+### Variant: charge
+
+The open till: the shop sticker's storefront above the name, then time left, the sat amount, the viewer's default fiat beside it, and **Pay**. Desktop also shows the Bitcoin invoice QR. A smartphone does not. No gift glyph and no amount field.
+
+![21.gifts pay link charge](images/pl-charge.png)
+
+### Variant: charge-failed
+
+Open till, mint failed. The shop sticker, time left, the sat amount, the viewer's default fiat beside it, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
+
+![21.gifts pay link charge failed](images/pl-charge-failed.png)
 
 ## Screen: /setup/name
 
@@ -1131,13 +1143,13 @@ Payable reply after **Show reactions**, Gift opened, amount filled, not submitte
 
 ### Variant: pay-qr
 
-Payable reply, Gift amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same invoice card is shown, without a mounted `QrCode`; the wallet **Pay** button remains, with **Waiting for payment…** under it and a top-left back control. The preferred-fiat line is on **pay-amount** (rate stub); these invoice-step shots use the empty stats mock and have no gift-day rate in that mock, so the fiat figure cannot be computed.
+Payable reply, Gift amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a top-left back control, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same invoice card is shown, without a mounted `QrCode`; the wallet **Pay** button remains, with **Waiting for payment…** under it and a top-left back control. The invoice step shows the sat amount and the default fiat from the latest gift-day rate.
 
 ![21.gifts welcome pay QR](images/welcome-pay-qr.png)
 
 ### Variant: pay-smartphone
 
-Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the same invoice card is shown without a mounted `QrCode`; the **Pay** button with the Wallet of Satoshi icon remains, with **Waiting for payment…** under it and a top-left back control. The preferred-fiat line is on **pay-amount** (rate stub); these invoice-step shots use the empty stats mock and have no gift-day rate in that mock, so the fiat figure cannot be computed. On desktop this scenario shows the QR invoice card.
+Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the same invoice card is shown without a mounted `QrCode`; the **Pay** button with the Wallet of Satoshi icon remains, with **Waiting for payment…** under it and a top-left back control. The invoice step shows the sat amount and the default fiat from the latest gift-day rate. On desktop this scenario shows the QR invoice card.
 
 ![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
 
@@ -1631,7 +1643,7 @@ Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Hea
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, amount, and **Cancel** stay up. The amount form is gone. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
@@ -1673,13 +1685,13 @@ The till request failed. Alert **Point of sale is unavailable.**
 
 ### Variant: cancel-failed
 
-Open charge of ₿21 with 5:00 left. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
+Open charge of ₿21 with 5:00 left and the default fiat under the sat amount. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale cancel failed](images/pos-cancel-failed.png)
 
 ### Variant: refresh-failed
 
-The open charge has already run out (0:00). Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
+The open charge has already run out (0:00). The sat amount and the default fiat stay. Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale refresh failed](images/pos-refresh-failed.png)
 
@@ -2144,7 +2156,7 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 
 ### Variant: thread-pay-qr
 
-Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop and smartphone both show the Bitcoin payment QR plus the wallet **Pay** button. **Waiting for payment…** is acceptable while the pay poll hangs.
+Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
 
@@ -2730,7 +2742,7 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 
 ### Variant: default
 
-Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate), optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate; no ` · —` when that rate is unusable), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
