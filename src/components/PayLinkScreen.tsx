@@ -195,7 +195,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment form that creates one exact-amount BOLT11 invoice.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome, validation state, and invoice QR when created.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -420,7 +420,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   return (
     <PageChrome topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
       <Card maxWidth="xl" surface={false}>
-        {profile !== null && !invalid ? <ShopStickerIcon /> : <GiftGlyph />}
+        {invalid ? <GiftGlyph /> : profile !== null ? <ShopStickerIcon /> : null}
 
         {invalid ? (
           <p role="alert" className="text-sm text-app-danger">

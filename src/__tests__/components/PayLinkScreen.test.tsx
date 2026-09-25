@@ -47,6 +47,8 @@ describe('PayLinkScreen', () => {
     });
     renderWithLocale(<PayLinkScreen lightning="" />);
     expect((await screen.findByRole('alert')).textContent).toBe('This payment link is not valid.');
+    expect(document.querySelector('path[d^="M12 32v24"]')).not.toBeNull();
+    expect(document.querySelector('path[d^="M199.3 516.4"]')).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
 
