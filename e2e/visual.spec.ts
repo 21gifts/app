@@ -10399,6 +10399,38 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place-set');
   });
 
+  test('shops staff-place-edit', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await expect(note.getByRole('button', { name: 'Remove place' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await shotScreen(page, 'state-shops-staff-place-edit', false);
+  });
+
   test('shops staff-place-map', async ({ page }) => {
     await stubPlaceMap(page);
     await seedAda(page, 'moderator');

@@ -181,6 +181,26 @@ describe('PlaceField', () => {
     expect(screen.queryByLabelText('Place name')).toBeNull();
   });
 
+  it('removes a saved pin when the map is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const onCommit = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 1, lng: 2, label: 'Stall' }}
+        disabled={false}
+        showPreview={false}
+        ariaLabel="Edit place"
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    await waitFor(() => {
+      expect(onCommit).toHaveBeenCalledWith(null);
+    });
+  });
+
   it('closes the place panel while a post is in flight', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(

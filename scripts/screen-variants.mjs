@@ -3055,6 +3055,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'staff-place-edit',
+    image: 'shops-staff-place-edit.png',
+    visual: 'state-shops-staff-place-edit',
+    needle: "shotScreen(page, 'state-shops-staff-place-edit', false)",
+  },
+  {
+    route: '/shops',
     id: 'staff-place-map',
     image: 'shops-staff-place-map.png',
     visual: 'state-shops-staff-place-map',

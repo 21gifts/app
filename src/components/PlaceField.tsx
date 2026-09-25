@@ -284,7 +284,15 @@ export function PlaceField(props: {
         },
       );
     }
-  }, [open, unavailable, mapsKey, scriptReady, props.place]);
+  }, [
+    open,
+    unavailable,
+    mapsKey,
+    scriptReady,
+    props.place?.lat,
+    props.place?.lng,
+    props.place?.label,
+  ]);
 
   const previewText =
     props.place === null
@@ -349,7 +357,29 @@ export function PlaceField(props: {
       {open && !props.disabled && (unavailable || mapsKey !== null) ? (
         <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
           {unavailable ? (
-            <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
+            <>
+              <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
+              {saveError ? (
+                <p role="alert" className="mt-3 text-sm text-app-danger">
+                  {t('forum.placeSaveFailed')}
+                </p>
+              ) : null}
+              {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="mt-3"
+                  aria-label={t('forum.placeRemove')}
+                  disabled={props.disabled || saving}
+                  onClick={() => {
+                    void commit(null);
+                  }}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              ) : null}
+            </>
           ) : (
             <>
               <div ref={mapElRef} className="h-64 w-full rounded-xl" />

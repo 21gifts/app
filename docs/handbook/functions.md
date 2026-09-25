@@ -1141,10 +1141,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control on the top-level forum composer. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin.
-- **Inputs:** `place`, `disabled`, `onChange`.
-- **Returns / side effects:** Attach button, preview, and panel. Fetches `/maps/key` when opened.
-- **Used by:** `ForumBoard` (top-level composer only).
+- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin.
+- **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
+- **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
+- **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
 
 ## Function: ShopPlaceControl
 

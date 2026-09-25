@@ -1296,6 +1296,12 @@ A moderator session. The Cafe Luna note has place **Happyland**. The card shows 
 
 ![21.gifts shops staff place set](images/shops-staff-place-set.png)
 
+### Variant: staff-place-edit
+
+A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open. The map frame is visible and **Remove place** is visible. The pin is not changed yet.
+
+![21.gifts shops staff place edit](images/shops-staff-place-edit.png)
+
 ### Variant: staff-place-map
 
 A moderator session. **Add a place** on the Cafe Luna note is open with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
