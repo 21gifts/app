@@ -21,7 +21,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /** Translation API source for a painted prose body. */
 export type NoteTranslateSource =
-  { kind: 'message' } | { kind: 'conversation'; conversationId: string };
+  | { kind: 'message' }
+  | { kind: 'conversation'; conversationId: string };
 
 /** Props for the public forum-note translation control. */
 export interface NoteTranslateProps {
@@ -140,13 +141,13 @@ export function NoteTranslate({
 
   const onButton = tone === 'onButton';
   const inRow = placement === 'row';
-  const toggleClass = onButton
-    ? `${inRow ? '' : 'mt-2 '}text-xs font-medium text-app-btn-fg underline underline-offset-2 disabled:opacity-50`
-    : `${inRow ? '' : 'mt-2 '}text-xs font-medium text-app-muted underline underline-offset-2 disabled:opacity-50`;
   const errorClass = onButton
     ? `${inRow ? 'order-last basis-full w-full ' : 'mt-2 '}text-sm text-app-btn-fg`
     : `${inRow ? 'order-last basis-full w-full ' : 'mt-2 '}text-sm text-app-danger`;
   const translateLabel = t('forum.translate');
+  const toggleLabel = showingTranslation
+    ? t('forum.translateShowOriginal')
+    : t('forum.translateShowTranslation');
   const iconClass = onButton
     ? `${inRow ? '' : 'mt-2 '}text-app-btn-fg hover:text-app-btn-fg`
     : inRow
@@ -162,19 +163,21 @@ export function NoteTranslate({
       onKeyDown={stopKeyDown}
     >
       {status === 'success' ? (
-        <button
+        <IconButton
           type="button"
-          className={toggleClass}
+          size="sm"
+          variant="ghost"
+          className={iconClass === '' ? undefined : iconClass}
+          aria-label={toggleLabel}
+          title={toggleLabel}
           onClick={(event) => {
             event.stopPropagation();
             event.preventDefault();
             onToggleShowing?.();
           }}
         >
-          {showingTranslation
-            ? t('forum.translateShowOriginal')
-            : t('forum.translateShowTranslation')}
-        </button>
+          <Languages aria-hidden="true" className="h-4 w-4 shrink-0" />
+        </IconButton>
       ) : (
         <>
           {status === 'error' ? (

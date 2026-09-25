@@ -204,6 +204,8 @@ describe('NoteTranslate', () => {
     });
     expect(screen.queryByText(translated)).toBeNull();
     expect(screen.getByRole('button', { name: 'Show original' })).toBeTruthy();
+    expect(screen.queryByText('Show original')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show original' }).querySelector('svg')).toBeTruthy();
   });
 
   it('drops stacked margin when placement is row', async () => {
