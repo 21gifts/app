@@ -3094,9 +3094,9 @@ describe('postConversationMessage', () => {
   });
 
   it('throws the api error on a 400', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Text must be 1–500 characters' } });
+    stubFetch({ ok: false, status: 400, body: { error: 'Text must be 1–8000 characters' } });
     await expect(postConversationMessage('sess', 'c1', '')).rejects.toThrow(
-      'Text must be 1–500 characters',
+      'Text must be 1–8000 characters',
     );
   });
 

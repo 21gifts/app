@@ -466,7 +466,7 @@
 
 ## Endpoint: POST /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed when at least one photo is present (Moderators group and `/messages` Direct/Contact/Damus). Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–8000 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed when at least one photo is present (Moderators group and `/messages` Direct/Contact/Damus). Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationMessage` in the inbox composer and in `ModeratorGroupScreen`.
 - **Auth:** Bearer.

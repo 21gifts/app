@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForumAskWizard } from '@/components/ForumAskWizard';
+import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
@@ -121,9 +122,16 @@ describe('ForumAskWizard', () => {
 
   it('caps the text step at composerMaxLength', () => {
     renderWithLocale(
-      <ForumAskWizard step={3} onStepChange={() => undefined} {...idle} composerMaxLength={486} />,
+      <ForumAskWizard
+        step={3}
+        onStepChange={() => undefined}
+        {...idle}
+        composerMaxLength={FORUM_MESSAGE_MAX_LENGTH - 14}
+      />,
     );
-    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe('486');
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe(
+      String(FORUM_MESSAGE_MAX_LENGTH - 14),
+    );
   });
 
   it('picks files and previews one photo, many photos, and video', () => {

@@ -448,7 +448,7 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 /**
  * Trimmed forum body length accepted by `POST /messages` (api `MESSAGE_MAX_LENGTH`).
  */
-export const FORUM_MESSAGE_MAX_LENGTH = 500;
+export const FORUM_MESSAGE_MAX_LENGTH = 8000;
 
 /**
  * Runtime schema for an optional forum place pin.
@@ -637,7 +637,7 @@ export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;
 /**
  * Trimmed contact body length accepted by `POST /contact` (api `MESSAGE_MAX_LENGTH`).
  */
-export const CONTACT_MESSAGE_MAX_LENGTH = 500;
+export const CONTACT_MESSAGE_MAX_LENGTH = 8000;
 
 /**
  * Runtime schema for one in-app contact message from `POST /contact`.

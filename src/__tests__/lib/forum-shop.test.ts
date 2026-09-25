@@ -45,8 +45,8 @@ describe('forum-shop', () => {
       expect(ensureShopHashtag('')).toBe('#21GiftsShop');
     });
 
-    it('appends the hashtag even when the body is 500 characters', () => {
-      expect(ensureShopHashtag('a'.repeat(500)).length).toBeGreaterThan(500);
+    it('appends the hashtag even when the body is 8000 characters', () => {
+      expect(ensureShopHashtag('a'.repeat(8000)).length).toBeGreaterThan(8000);
     });
   });
 });

@@ -397,13 +397,13 @@ describe('fundingDecisionResultSchema', () => {
 
 describe('FORUM_MESSAGE_MAX_LENGTH', () => {
   it('matches the api POST /messages cap', () => {
-    expect(FORUM_MESSAGE_MAX_LENGTH).toBe(500);
+    expect(FORUM_MESSAGE_MAX_LENGTH).toBe(8000);
   });
 });
 
 describe('CONTACT_MESSAGE_MAX_LENGTH', () => {
   it('matches the api POST /contact cap', () => {
-    expect(CONTACT_MESSAGE_MAX_LENGTH).toBe(500);
+    expect(CONTACT_MESSAGE_MAX_LENGTH).toBe(8000);
   });
 });
 

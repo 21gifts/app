@@ -2018,7 +2018,7 @@ export function ForumLoader({
       }
       if (expandedIdRef.current === parentId) {
         setReplyFormError(
-          err instanceof Error && /1[-–]500 characters/i.test(err.message)
+          err instanceof Error && /1[-–]8000 characters/i.test(err.message)
             ? 'tooLong'
             : isRateLimitError(err)
               ? 'rateLimit'
