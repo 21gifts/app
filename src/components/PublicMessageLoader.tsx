@@ -1,5 +1,6 @@
 'use client';
 
+import { MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -159,6 +160,15 @@ function PublicThreadCard({
             truncate={false}
           />
         )
+      ) : null}
+      {note.parentId === undefined && note.place !== undefined ? (
+        <Link
+          href={`/map?pin=${encodeURIComponent(note.id)}`}
+          className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
+        >
+          <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {note.place.label ?? `${note.place.lat.toFixed(5)}, ${note.place.lng.toFixed(5)}`}
+        </Link>
       ) : null}
       <p
         className={

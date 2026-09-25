@@ -1037,7 +1037,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords.
 
 ### `/wallet`
 
@@ -1111,15 +1111,15 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboa
 
 ### `/map`
 
-Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Map. One list of every note that has a pin (author, label or coordinates, link `/messages/{id}`). The map frame is `data-testid="places-map"`. Without `GOOGLE_MAPS_API_KEY` the frame stays empty and the list remains. Empty `map.empty`. Error `map.error` plus **Try again**.
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Map. One list of every note that has a pin (author, label or coordinates, link `/messages/{id}`). The map frame is `data-testid="places-map"`. Without a key, with a blank key, when the script fails, or when Google rejects the key, the frame stays empty and the list remains. A usable key draws the map in that frame. `?pin=` makes that row semibold. Empty `map.empty`. Error `map.error` plus **Try again**.
 
-Handbook states: default, pin, empty, loading, error.
+Handbook states: default, pin, with-key, pin-with-key, coords, coords-pin, coords-with-key, coords-pin-with-key, empty, loading, error.
 
 ### `/shops`
 
 Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → post composer under the lead. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again.
 
-Handbook states: default, empty, loading, error, place, composer-place, composer-place-map, composer-place-confirm, composer-place-set.
+Handbook states: default, empty, loading, error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords.
 
 ### `/rules`
 
@@ -1131,7 +1131,7 @@ Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `Onbo
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only, a missing field uses the latest gift-day rate; number format from the cookie, otherwise the locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, a MapPin link when the top-level note has a place (label, or coordinates when the label is null; not on replies), amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, `null` is ₿-only, a missing field uses the latest gift-day rate; number format from the cookie, otherwise the locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 

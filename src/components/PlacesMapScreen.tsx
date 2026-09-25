@@ -22,6 +22,7 @@ type GoogleMapsNamespace = {
 
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
+  gm_authFailure?: () => void;
 };
 
 /**
@@ -67,6 +68,19 @@ export function PlacesMapScreen(): ReactElement {
   const [attempt, setAttempt] = useState(0);
   const pinId = useSearchParams().get('pin');
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const authFailedRef = useRef(false);
+
+  useEffect(() => {
+    const host = window as GoogleWindow;
+    // A rejected key would paint Google's dialog into the frame. Clear it.
+    host.gm_authFailure = () => {
+      authFailedRef.current = true;
+      frameRef.current?.replaceChildren();
+    };
+    return () => {
+      delete host.gm_authFailure;
+    };
+  }, []);
 
   useEffect(() => {
     if (session === null) {
@@ -83,7 +97,8 @@ export function PlacesMapScreen(): ReactElement {
             'key' in keyBody &&
             typeof keyBody.key === 'string'
           ) {
-            return keyBody.key;
+            const trimmed = keyBody.key.trim();
+            return trimmed === '' ? null : trimmed;
           }
           return null;
         })
@@ -119,9 +134,13 @@ export function PlacesMapScreen(): ReactElement {
     }
     let cancelled = false;
     const draw = async (): Promise<void> => {
+      if (authFailedRef.current) {
+        return;
+      }
       try {
         await loadGoogleMaps(mapsKey);
-        if (cancelled) {
+        if (cancelled || authFailedRef.current) {
+          frame.replaceChildren();
           return;
         }
         const maps = (window as GoogleWindow).google?.maps;
@@ -137,6 +156,10 @@ export function PlacesMapScreen(): ReactElement {
           center: { lat: focus.lat, lng: focus.lng },
           zoom: 14,
         });
+        if (authFailedRef.current) {
+          frame.replaceChildren();
+          return;
+        }
         for (const row of places) {
           new maps.Marker({ position: { lat: row.lat, lng: row.lng }, map });
         }
