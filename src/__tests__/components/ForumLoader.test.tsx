@@ -8798,10 +8798,38 @@ describe('forum feed pages', () => {
     renderWithLocale(<ForumLoader />);
     expect(await screen.findByText('Paid note')).toBeTruthy();
     chooseForumMode(/^All$/);
+    await waitFor(() => {
+      expect(
+        FakeIntersectionObserver.instances.some((observer) => observer.observed.length > 0),
+      ).toBe(true);
+    });
     useAuthStore.setState({ session: null, account });
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/login');
     });
+  });
+
+  it('drops a public page that arrives after the view is gone', async () => {
+    useAuthStore.setState({ session: null, account });
+    let resolvePage: (page: { messages: ForumMessage[]; nextCursor: null }) => void = () =>
+      undefined;
+    publicListMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePage = resolve;
+        }),
+    );
+    const { unmount } = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(publicListMock).toHaveBeenCalled();
+    });
+    unmount();
+    resolvePage({
+      messages: [{ ...SAMPLE, text: 'Late page', sats: 21 }],
+      nextCursor: null,
+    });
+    await Promise.resolve();
+    expect(screen.queryByText('Late page')).toBeNull();
   });
 
   it('requests the first active page on mount without using the legacy one-argument call', async () => {
