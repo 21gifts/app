@@ -20,6 +20,8 @@ import {
   proxyPosPost,
   proxyMeForumLawsDismissedPost,
   proxyMeAmountUnitPost,
+  proxyMeFiatPost,
+  proxyMeLocalePost,
   proxyMeNotificationLevelPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
@@ -274,6 +276,20 @@ describe('api proxy wrappers', () => {
     await proxyMeAmountUnitPost(new Request('http://localhost/me/amount-unit', { method: 'POST' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/amount-unit');
+  });
+
+  it('proxyMeLocalePost hits POST /me/locale', async () => {
+    const fetchMock = stubApi();
+    await proxyMeLocalePost(new Request('http://localhost/me/locale', { method: 'POST' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/locale');
+  });
+
+  it('proxyMeFiatPost hits POST /me/fiat', async () => {
+    const fetchMock = stubApi();
+    await proxyMeFiatPost(new Request('http://localhost/me/fiat', { method: 'POST' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/fiat');
   });
 
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {

@@ -32,8 +32,8 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with a language switcher (wordmark `/` when unsigned, `/welcome` when a session is hydrated), Legal Notice (Switzerland) and Privacy Policy (no analytics; no cookies unless the visitor chooses a language — then a `locale` cookie — or a light/dark appearance — then a `theme` cookie; System appearance clears `theme`; or a number-format style — then a `numberFormat` cookie, absent = Swiss `10'000.23`; session in localStorage; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
-- **Actions:** Change language. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with a language switcher (wordmark `/` when unsigned, `/welcome` when a session is hydrated), Legal Notice (Switzerland) and Privacy Policy (no analytics; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default

@@ -3,6 +3,7 @@ import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
+import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
@@ -146,6 +147,7 @@ export default async function RootLayout({
           <NumberFormatProvider initial={numberFormat}>
             <FiatPreferenceProvider initial={fiat}>
               <ThemeProvider>
+                <AccountPreferenceSync />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />
                 </Suspense>

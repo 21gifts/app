@@ -99,6 +99,10 @@ export const accountSchema = z.object({
    * bodies still parse. Missing means bitcoin in the UI.
    */
   amountUnit: z.enum(['btc', 'fiat']).optional(),
+  /** Stored UI language. Missing means an older api; `null` means unset. */
+  locale: z.enum(['en', 'de', 'es', 'fil']).nullable().optional(),
+  /** Stored preferred currency. Missing means an older api; `null` means unset. */
+  fiat: z.enum(['CHF', 'EUR', 'USD', 'PHP']).nullable().optional(),
   /**
    * Owner funding-program grant. Optional so mixed deploys parse. `basis` is
    * `null`; verified+ is an object (`status: 'none'` when there is no row).
@@ -150,6 +154,9 @@ export const accountSchema = z.object({
  * that involve the owner). Omitted on older api builds; treat as `all`.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
  * builds; treat as `btc`.
+ * `locale` is the stored UI language and `fiat` is the stored preferred
+ * currency. For either field, omitted means an older api response that must
+ * not be synchronized, while `null` means the account preference is unset.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
  */
