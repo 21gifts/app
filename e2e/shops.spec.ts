@@ -404,7 +404,7 @@ test('Function: setMessagePlace — moderator save shows the pin', async ({ page
         await route.continue();
         return;
       }
-      expect(route.request().headers().authorization?.startsWith('Bearer ')).toBe(true);
+      expect(route.request().headers()['authorization']?.startsWith('Bearer ')).toBe(true);
       const body = route.request().postDataJSON() as {
         place?: { lat: number; lng: number; label: string | null };
       };
