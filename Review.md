@@ -20,6 +20,10 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Shown amounts
+
+Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the latest gift-day rate. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
+
 ## Payment QR vs deep links
 
 Reject the PR when the forum-post pay sheet or the public pay-link

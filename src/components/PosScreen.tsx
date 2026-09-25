@@ -14,7 +14,12 @@ import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import type { AmountUnit } from '@/lib/api-types';
-import { formatBitcoin, parseAmountDraft } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  parseAmountDraft,
+  satsToFiatAmount,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Remaining time as m:ss. */
@@ -110,6 +115,7 @@ export function PosScreen(): ReactElement {
   const qr = openCryptoPayQrValue(username, host);
   const charge = state?.charge ?? null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
+  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
 
   useEffect(() => {
     if (
@@ -246,6 +252,11 @@ export function PosScreen(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(charge.amountSats, numberFormat)}
           </p>
+          {chargeFiat === null ? null : (
+            <p className="text-center text-sm text-app-subtle">
+              {formatFiatDisplay(chargeFiat, fiat, numberFormat)}
+            </p>
+          )}
           <Button
             type="button"
             size="lg"

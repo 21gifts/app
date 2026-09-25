@@ -54,6 +54,19 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+const rateDayState = vi.hoisted(() => ({
+  current: null as null | {
+    sats: number;
+    usd: string;
+    chf: string;
+    eur: string;
+    php: string;
+  },
+}));
+
+vi.mock('@/hooks/useLatestRateDay', () => ({
+  useLatestRateDay: (): typeof rateDayState.current => rateDayState.current,
+}));
 vi.mock('@/hooks/useAccountTotals', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks/useAccountTotals')>();
   return {
@@ -147,6 +160,7 @@ beforeEach(() => {
   vi.mocked(shouldOfferIosInstall).mockReturnValue(false);
   vi.mocked(isStandaloneDisplay).mockReturnValue(false);
   vi.mocked(isInAppBrowser).mockReturnValue(false);
+  rateDayState.current = null;
   vi.mocked(useAccountTotals).mockImplementation(useAccountTotalsActual);
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
@@ -486,8 +500,27 @@ describe('SignedInChrome', () => {
     expectMenuOpen();
     expect(screen.getByLabelText('Given ₿1')).toBeTruthy();
     expect(screen.queryByLabelText(/Received/)).toBeNull();
-    const profile = screen.getByRole('link', { name: /Profile/ });
-    expect(profile.textContent?.includes('·')).toBe(false);
+  });
+
+  it('shows the default fiat beside a non-zero menu total', () => {
+    rateDayState.current = {
+      sats: 100_000_000,
+      usd: '100000000.00',
+      chf: '80000000.00',
+      eur: '90000000.00',
+      php: '5600000000.00',
+    };
+    vi.mocked(useAccountTotals).mockReturnValue({
+      donatedSats: 1,
+      receivedSats: 0,
+      donateOverTime: [],
+      receiveOverTime: [],
+      loading: false,
+    });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    expect(screen.getByLabelText('Given ₿1 · $1.00')).toBeTruthy();
   });
 
   it('shows given and received with a middle dot when both sides are non-zero', () => {

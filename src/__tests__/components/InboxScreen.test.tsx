@@ -1295,6 +1295,39 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
+  it('shows the default fiat on a gift-only last-sats list preview', () => {
+    renderWithLocale(
+      <InboxScreen
+        conversations={[{ ...DIRECT, lastText: '', lastSats: 21, lastFromMe: true }]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+      />,
+    );
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
   });
 
   it('styles an unread inbound row with a semibold name and foreground lastText', () => {
@@ -1594,7 +1627,7 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $5.00`);
   });
 
-  it('shows the live viewer fiat when stored fiat is null', () => {
+  it('uses the live rate on a nested gift when stored fiat is null', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = {
       ...MESSAGE,

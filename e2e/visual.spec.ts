@@ -991,6 +991,7 @@ test.describe('screen baselines', () => {
 
   test('screen /pl', async ({ page }, testInfo) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
     // pauseAt only moves forward, so the confirmed payment freezes at 5:00 left.
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
     await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
@@ -1034,6 +1035,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     } else {
@@ -1051,6 +1053,7 @@ test.describe('screen baselines', () => {
 
   test('screen /pl failed', async ({ page }) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
       async (route) => {
@@ -1075,11 +1078,13 @@ test.describe('screen baselines', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-pl-failed');
   });
 
   test('screen /pl charge', async ({ page }, testInfo) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
     // pauseAt only moves forward, so the clock starts a minute earlier and freezes on the hour.
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
     await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
@@ -1109,6 +1114,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$238.09')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
@@ -1121,6 +1127,7 @@ test.describe('screen baselines', () => {
 
   test('screen /pl charge-failed', async ({ page }) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
     await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
     await page.route(
@@ -1145,6 +1152,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$238.09')).toBeVisible();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
@@ -2649,6 +2657,7 @@ test.describe('onboarding screens', () => {
   });
 
   test('pos open', async ({ page }) => {
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
       Date.now = () => fixed;
@@ -2700,6 +2709,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-open');
@@ -2933,6 +2943,7 @@ test.describe('onboarding screens', () => {
   });
 
   test('pos cancel failed', async ({ page }) => {
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
       Date.now = () => fixed;
@@ -2989,10 +3000,12 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
+    await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
   test('pos refresh failed', async ({ page }) => {
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
       Date.now = () => fixed;
@@ -3049,6 +3062,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-refresh-failed');
   });
@@ -7645,6 +7659,7 @@ test.describe('welcome forum variants', () => {
   }
 
   async function openPaySheet(page: Page): Promise<void> {
+    await fulfillRateDay(page);
     await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
@@ -7655,6 +7670,7 @@ test.describe('welcome forum variants', () => {
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByText('$0.02').first()).toBeVisible();
   }
 
   for (const state of ['moderation', 'delete-confirm', 'deleting', 'delete-error'] as const) {
@@ -11421,6 +11437,7 @@ test.describe('inbox screens', () => {
   });
 
   test('messages thread-pay-qr', async ({ page }) => {
+    await fulfillRateDay(page);
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
@@ -11487,6 +11504,7 @@ test.describe('inbox screens', () => {
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-messages-thread-pay-qr');
   });
 

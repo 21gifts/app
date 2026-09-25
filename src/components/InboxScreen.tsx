@@ -364,9 +364,13 @@ function inboxAuthorProfileButton(
 function ConversationListItem({
   row,
   onOpen,
+  rateDay,
+  fiat,
 }: {
   row: Conversation;
   onOpen: (id: string) => void;
+  rateDay: FiatRateDay | null;
+  fiat: FiatCode;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -435,6 +439,7 @@ function ConversationListItem({
         ) : row.lastSats > 0 ? (
           <span className={listPreviewClass(row.lastFromMe)}>
             {formatBitcoin(row.lastSats, numberFormat)}
+            {preferredFiatSuffix(row.lastSats, rateDay, fiat, numberFormat)}
           </span>
         ) : null}
       </button>
@@ -468,7 +473,8 @@ function ConversationListItem({
  * {@link Conversation} `kind` (Direct, Contact, Damus, or Moderators).
  * Outbound last-text previews use `inbox.sentPreview` as a filled chip.
  * Gift-only last rows (`lastText` empty, `lastSats` &gt; 0) show
- * `formatBitcoin(lastSats)` with the same chip vs muted split. Incoming
+ * `formatBitcoin(lastSats)` plus the preferred-fiat suffix from the latest
+ * rate, with the same chip vs muted split. Incoming
  * thread messages are full-width muted note cards; `fromMe` messages render
  * as filled `app-btn` bubbles on the right labelled `inbox.you`. Gift-only
  * bubbles use `forum.giftReply`; text+sats show the amount under the body.
@@ -1210,7 +1216,13 @@ export function InboxScreen({
         ) : (
           <ul aria-label={t('inbox.listLabel')} className="flex w-full flex-col gap-3">
             {filtered.map((row) => (
-              <ConversationListItem key={row.id} row={row} onOpen={onOpen} />
+              <ConversationListItem
+                key={row.id}
+                row={row}
+                onOpen={onOpen}
+                rateDay={rateDay ?? null}
+                fiat={fiat}
+              />
             ))}
           </ul>
         )}
