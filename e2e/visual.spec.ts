@@ -10761,6 +10761,35 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-unread');
   });
 
+  test('state /messages translate', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await shotScreen(page, 'state-messages-translate');
+  });
+
   test('messages contact', async ({ page }) => {
     await seedAda(page, 'moderator');
     await mockThreeConversations(page);

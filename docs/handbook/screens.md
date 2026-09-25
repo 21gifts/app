@@ -2034,6 +2034,12 @@ Member list with an unread Direct row **Bob** (`unread: true`, `unreadMessageCou
 
 ![21.gifts inbox unread](images/messages-unread.png)
 
+### Variant: translate
+
+Signed-in `/messages` list with one German conversation preview. The list does not offer Translate.
+
+![21.gifts inbox, German preview](images/messages-translate.png)
+
 ### Variant: contact
 
 Staff (moderator). Contact selected. List shows official **21.gifts**. Chooser present. No pinned Staff room / Moderators row.

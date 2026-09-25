@@ -2054,6 +2054,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'translate',
+    image: 'messages-translate.png',
+    visual: 'state-messages-translate',
+    needle: 'Kann mir jemand diese Woche ein paar Satoshi leihen?',
+  },
+  {
+    route: '/messages',
     id: 'contact',
     image: 'messages-contact.png',
     visual: 'state-messages-contact',
