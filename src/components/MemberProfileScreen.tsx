@@ -850,7 +850,7 @@ export function MemberProfileScreen({
         return;
       }
       setReplyFormError(
-        err instanceof Error && /1[-–]500 characters/i.test(err.message)
+        err instanceof Error && /1[-–]8000 characters/i.test(err.message)
           ? 'tooLong'
           : isRateLimitError(err)
             ? 'rateLimit'
@@ -1361,6 +1361,11 @@ export function MemberProfileScreen({
             mode="public"
             aboutMe={profile.aboutMe}
             name={profile.name}
+            {...(profile.aboutMe !== null &&
+            profile.profileMessage !== null &&
+            profile.profileMessage.id !== ''
+              ? { messageId: profile.profileMessage.id }
+              : {})}
             hasPhoto={profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true}
             {...(profileMessagePhotoId !== undefined
               ? {

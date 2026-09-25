@@ -8,21 +8,28 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
 import { DEFAULT_NUMBER_FORMAT } from '@/lib/number-format';
-import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
+import {
+  fetchTranslateAvailable,
+  translateConversationMessage,
+  translateNote,
+} from '@/lib/note-translate';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/note-translate', () => ({
   fetchTranslateAvailable: vi.fn(),
+  translateConversationMessage: vi.fn(),
   translateNote: vi.fn(),
 }));
 
 const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 const NOTE_ID = '3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a';
+const CONVERSATION_ID = '4b4b4b4b-4b4b-44b4-84b4-4b4b4b4b4b4b';
 const translated = 'Can anyone lend me a few satoshi this week?';
 
 beforeEach(() => {
   vi.mocked(fetchTranslateAvailable).mockReset();
+  vi.mocked(translateConversationMessage).mockReset();
   vi.mocked(translateNote).mockReset();
   vi.mocked(fetchTranslateAvailable).mockResolvedValue(true);
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
@@ -114,9 +121,69 @@ describe('NoteTranslate', () => {
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(translateNote).toHaveBeenCalledWith(NOTE_ID, 'en', 'tok');
+    expect(translateConversationMessage).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(onTranslated).toHaveBeenCalledWith(translated);
     });
+  });
+
+  it('uses the conversation source with a signed-in session and returns only its text', async () => {
+    useAuthStore.setState({ session: 'tok', account: null, wrongAccount: false });
+    vi.mocked(translateConversationMessage).mockResolvedValue({
+      translatedText: translated,
+      cached: true,
+    });
+    const onTranslated = vi.fn();
+    renderWithLocale(
+      <NoteTranslate
+        messageId={NOTE_ID}
+        text={german}
+        source={{ kind: 'conversation', conversationId: CONVERSATION_ID }}
+        onTranslated={onTranslated}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(translateConversationMessage).toHaveBeenCalledWith(
+      CONVERSATION_ID,
+      NOTE_ID,
+      'en',
+      'tok',
+    );
+    expect(translateNote).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(onTranslated).toHaveBeenCalledWith(translated);
+    });
+  });
+
+  it('uses an empty conversation session when signed out', async () => {
+    vi.mocked(translateConversationMessage).mockResolvedValue({
+      translatedText: translated,
+      cached: false,
+    });
+    renderWithLocale(
+      <NoteTranslate
+        messageId={NOTE_ID}
+        text={german}
+        source={{ kind: 'conversation', conversationId: CONVERSATION_ID }}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(translateConversationMessage).toHaveBeenCalledWith(CONVERSATION_ID, NOTE_ID, 'en', '');
+  });
+
+  it('shows the shared translation error for a failed conversation request', async () => {
+    vi.mocked(translateConversationMessage).mockRejectedValue(new Error('offline'));
+    renderWithLocale(
+      <NoteTranslate
+        messageId={NOTE_ID}
+        text={german}
+        source={{ kind: 'conversation', conversationId: CONVERSATION_ID }}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not translate this note. Please try again.',
+    );
   });
 
   it('does not render the translated body', async () => {
@@ -137,6 +204,31 @@ describe('NoteTranslate', () => {
     });
     expect(screen.queryByText(translated)).toBeNull();
     expect(screen.getByRole('button', { name: 'Show original' })).toBeTruthy();
+  });
+
+  it('drops stacked margin when placement is row', async () => {
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
+    const translate = await screen.findByRole('button', { name: 'Translate' });
+    expect(translate.className.split(/\s+/)).not.toContain('mt-2');
+  });
+
+  it('puts the error on its own flex line when placement is row', async () => {
+    vi.mocked(translateNote).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} placement="row" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    const classes = (await screen.findByRole('alert')).className.split(/\s+/);
+    expect(classes).toContain('order-last');
+    expect(classes).toContain('basis-full');
+    expect(classes).toContain('w-full');
+  });
+
+  it('keeps onButton colour without stacked margin in a row', async () => {
+    renderWithLocale(
+      <NoteTranslate messageId={NOTE_ID} text={german} tone="onButton" placement="row" />,
+    );
+    const translate = await screen.findByRole('button', { name: 'Translate' });
+    expect(translate.className).toContain('text-app-btn-fg');
+    expect(translate.className.split(/\s+/)).not.toContain('mt-2');
   });
 
   it('uses button foreground classes when tone is onButton', async () => {

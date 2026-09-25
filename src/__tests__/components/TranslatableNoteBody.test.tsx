@@ -8,20 +8,27 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
 import { DEFAULT_NUMBER_FORMAT } from '@/lib/number-format';
-import { fetchTranslateAvailable, translateNote } from '@/lib/note-translate';
+import {
+  fetchTranslateAvailable,
+  translateConversationMessage,
+  translateNote,
+} from '@/lib/note-translate';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/note-translate', () => ({
   fetchTranslateAvailable: vi.fn(),
+  translateConversationMessage: vi.fn(),
   translateNote: vi.fn(),
 }));
 
 const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 const NOTE_ID = '3a3a3a3a-3a3a-43a3-83a3-3a3a3a3a3a3a';
+const CONVERSATION_ID = '4b4b4b4b-4b4b-44b4-84b4-4b4b4b4b4b4b';
 const translated = 'Can anyone lend me a few satoshi this week?';
 
 beforeEach(() => {
   vi.mocked(fetchTranslateAvailable).mockReset();
+  vi.mocked(translateConversationMessage).mockReset();
   vi.mocked(translateNote).mockReset();
   vi.mocked(fetchTranslateAvailable).mockResolvedValue(true);
 });
@@ -45,7 +52,7 @@ describe('TranslatableNoteBody', () => {
       />,
     );
     expect(await screen.findByText(german)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByText('Can anyone lend me a few sats this week?')).toBeTruthy();
     expect(screen.queryByText(translated)).toBeNull();
     expect(screen.queryByText(german)).toBeNull();
@@ -60,6 +67,25 @@ describe('TranslatableNoteBody', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByText(translated)).toBeTruthy();
     expect(screen.queryByText(german)).toBeNull();
+  });
+
+  it('forwards a conversation source and shows its translated text', async () => {
+    vi.mocked(translateConversationMessage).mockResolvedValue({
+      translatedText: translated,
+      cached: false,
+    });
+    renderWithLocale(
+      <TranslatableNoteBody
+        messageId={NOTE_ID}
+        text={german}
+        truncate={false}
+        source={{ kind: 'conversation', conversationId: CONVERSATION_ID }}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText(translated)).toBeTruthy();
+    expect(translateConversationMessage).toHaveBeenCalledWith(CONVERSATION_ID, NOTE_ID, 'en', '');
+    expect(translateNote).not.toHaveBeenCalled();
   });
 
   it('shows a successful translation and toggles original and translation', async () => {
@@ -81,7 +107,7 @@ describe('TranslatableNoteBody', () => {
     vi.mocked(translateNote).mockResolvedValue(translated);
     renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} truncate={false} />);
     expect(await screen.findByText(german)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByText(translated)).toBeTruthy();
     expect(screen.queryByText(german)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
@@ -113,6 +139,40 @@ describe('TranslatableNoteBody', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
     expect(await screen.findByText('See https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+  });
+
+  it('portals Translate into controlSlotId', async () => {
+    const slot = document.createElement('div');
+    slot.id = `note-translate-${NOTE_ID}`;
+    document.body.appendChild(slot);
+    try {
+      renderWithLocale(
+        <TranslatableNoteBody
+          messageId={NOTE_ID}
+          text={german}
+          truncate={false}
+          controlSlotId={slot.id}
+        />,
+      );
+      const button = await screen.findByRole('button', { name: 'Translate' });
+      expect(slot.contains(button)).toBe(true);
+    } finally {
+      slot.remove();
+    }
+  });
+
+  it('omits Translate when controlSlotId is set but the slot is missing', async () => {
+    renderWithLocale(
+      <TranslatableNoteBody
+        messageId={NOTE_ID}
+        text={german}
+        truncate={false}
+        controlSlotId="note-translate-missing"
+      />,
+    );
+    await Promise.resolve();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    expect(screen.getByText(german)).toBeTruthy();
   });
 
   it('uses button foreground classes when className is on-button', async () => {

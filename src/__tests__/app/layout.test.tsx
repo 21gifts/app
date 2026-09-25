@@ -8,6 +8,7 @@ vi.mock('next/font/google', () => ({
 }));
 
 import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
+import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
@@ -201,13 +202,14 @@ describe('RootLayout', () => {
     expect(themeProvider.type).toBe(ThemeProvider);
     const themeChildren = themeProvider.props.children as ReactNode[];
     expect(Array.isArray(themeChildren)).toBe(true);
-    const suspense = themeChildren[0] as ReactElement<{
+    expect((themeChildren[0] as ReactElement).type).toBe(AccountPreferenceSync);
+    const suspense = themeChildren[1] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    expect(themeChildren[1]).toBe('content');
+    expect(themeChildren[2]).toBe('content');
   });
 });

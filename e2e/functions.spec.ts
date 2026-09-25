@@ -416,6 +416,35 @@ async function seedAdaSession(
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
+  await page.route(/\/me\/(?:locale|fiat)$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    const body = route.request().postDataJSON() as { locale?: unknown; fiat?: unknown };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role,
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        locale: typeof body.locale === 'string' ? body.locale : null,
+        fiat: typeof body.fiat === 'string' ? body.fiat : null,
+      }),
+    });
+  });
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -719,6 +748,57 @@ test('Function: proxyConversationReadPost — POST /conversations/[id]/read with
   expect(
     (await request.post('/conversations/[id]/read', { data: {} })).status(),
   ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyTranslateConversationMessagePost — POST conversation translate without bearer', async ({
+  request,
+}) => {
+  expect(
+    (
+      await request.post('/conversations/[id]/messages/[messageId]/translate', {
+        data: { target: 'en' },
+      })
+    ).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: translateConversationMessage — Translate a conversation preview', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route('**/conversations', async (route) => {
+    const url = new URL(route.request().url());
+    if (route.request().method() !== 'GET' || url.pathname !== '/conversations') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-de',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: GERMAN_NOTE_TEXT,
+            lastMessageId: 'cm-de',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: false,
+            unreadMessageCount: 0,
+          },
+        ],
+        unreadCount: 0,
+      }),
+    });
+  });
+  await page.goto('/messages');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await page.getByRole('button', { name: 'Translate' }).click();
+  await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+  await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
 });
 
 test('Function: proxyConversationMessagePhotoGet — GET photo without bearer', async ({
@@ -1882,6 +1962,112 @@ test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is
   request,
 }) => {
   expect((await request.post('/me/amount-unit')).status()).toBe(401);
+});
+
+test('Function: proxyMeLocalePost — POST /me/locale stores de', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/locale', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { locale: 'de', onlyIfUnset: false },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { locale: string }).locale).toBe('de');
+});
+
+test('Function: proxyMeFiatPost — POST /me/fiat stores CHF', async ({ request }) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/me/fiat', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { fiat: 'CHF', onlyIfUnset: false },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { fiat: string }).fiat).toBe('CHF');
+});
+
+test('Function: setAccountLocale — profile language saves Deutsch', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const deutsch = page.getByRole('button', { name: 'Deutsch' });
+  await deutsch.click();
+  await expect(deutsch).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: setAccountFiat — profile currency saves CHF', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const chf = page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'CHF' });
+  await chf.click();
+  await expect(chf).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: AccountPreferenceSync — an empty account stores the screen language', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        locale: null,
+        fiat: null,
+      }),
+    });
+  });
+  await page.goto('/profile');
+  await expect.poll(() => page.evaluate(() => document.cookie)).toContain('locale=en');
+});
+
+test('Function: bumpLocaleGeneration — profile language saves Español', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const espanol = page.getByRole('button', { name: 'Español' });
+  await espanol.click();
+  await expect(espanol).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: localeGeneration — profile language saves Filipino', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const filipino = page.getByRole('button', { name: 'Filipino' });
+  await filipino.click();
+  await expect(filipino).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: bumpFiatGeneration — profile currency saves EUR', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const eur = page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'EUR' });
+  await eur.click();
+  await expect(eur).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: fiatGeneration — profile currency saves PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const php = page
+    .getByRole('group', { name: 'Fiat currency' })
+    .getByRole('button', { name: 'PHP' });
+  await php.click();
+  await expect(php).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agreement', async ({

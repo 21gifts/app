@@ -307,6 +307,19 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
   });
 
+  it('passes the About me message id into the readable bio', () => {
+    const account = useAuthStore.getState().account;
+    useAuthStore.setState({
+      session: 'tok',
+      account:
+        account === null
+          ? null
+          : { ...account, aboutMe: 'Hello from Ada.', aboutMessageId: 'note-1' },
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByText('Hello from Ada.')).toBeTruthy();
+  });
+
   it('shows the empty About me prompt and copy-link button when aboutMe is null', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByText('Tell others who you are.')).toBeTruthy();
@@ -328,6 +341,47 @@ describe('ProfileScreen', () => {
     });
     expect(useAuthStore.getState().account?.aboutMe).toBe('Hello');
     expect(useAuthStore.getState().account?.aboutMeHasPhoto).toBe(false);
+  });
+
+  it('stores the About me note id returned by a save and clears it when the response is null', async () => {
+    const account = useAuthStore.getState().account as Account;
+    vi.mocked(putAboutMe).mockResolvedValue({
+      ...account,
+      aboutMe: 'Hello',
+      aboutMessageId: 'note-1',
+    });
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.aboutMessageId).toBe('note-1');
+    });
+    vi.mocked(putAboutMe).mockResolvedValue({
+      ...account,
+      aboutMe: 'Gone',
+      aboutMessageId: null,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Gone' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.aboutMessageId).toBeNull();
+    });
+  });
+
+  it('keeps the stored About me note id when a save omits it or sends a blank id', async () => {
+    const account = useAuthStore.getState().account as Account;
+    useAuthStore.setState({ account: { ...account, aboutMessageId: 'note-1' } });
+    vi.mocked(putAboutMe).mockResolvedValue({ ...account, aboutMe: 'Hello', aboutMessageId: '' });
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.aboutMe).toBe('Hello');
+    });
+    expect(useAuthStore.getState().account?.aboutMessageId).toBe('note-1');
   });
 
   it('saves About me with an attached JPEG and writes aboutMeHasPhoto onto the store', async () => {

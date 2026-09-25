@@ -572,12 +572,14 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        composerMaxLength={486}
+        composerMaxLength={FORUM_MESSAGE_MAX_LENGTH - 14}
         {...idleProps}
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe('486');
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe(
+      String(FORUM_MESSAGE_MAX_LENGTH - 14),
+    );
   });
 
   it('hides the composer and mode control when composerHidden', () => {
@@ -2520,7 +2522,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
   });
 
   it('shows formError request alert', () => {
@@ -4330,7 +4332,7 @@ describe('ForumBoard', () => {
     expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
     expect(within(replyCard).queryByRole('button', { name: 'Moderator functions' })).toBeNull();
     expect(within(replyCard).queryByTestId('staff-functions')).toBeNull();
-    expect(copyButton.parentElement?.className).toBe('mt-2');
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-center gap-5');
   });
 
   it('shows the flex row class when a payable reply also has the copy control', () => {
@@ -4369,7 +4371,7 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-payable"]') as HTMLElement;
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
-    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-center gap-5');
   });
 
   it('shows the flex row class when a deletable reply also has the copy control', () => {
@@ -4429,7 +4431,7 @@ describe('ForumBoard', () => {
     const replyCard = document.querySelector('[data-reply-id="r-deletable"]') as HTMLElement;
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).getByRole('button', { name: 'Delete reaction' })).toBeTruthy();
-    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-center gap-5');
   });
 
   it('keeps the flex row class for a viewer without the trash when the board was given onDeleted', () => {
@@ -4470,7 +4472,7 @@ describe('ForumBoard', () => {
     const copyButton = within(replyCard).getByRole('button', { name: 'Copy link to this reply' });
     expect(within(replyCard).queryByRole('button', { name: 'Delete reaction' })).toBeNull();
     expect(within(replyCard).queryByTestId('staff-functions')).toBeNull();
-    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-start gap-5');
+    expect(copyButton.parentElement?.className).toBe('mt-2 flex flex-wrap items-center gap-5');
   });
 
   it('does not toggle the note card when clicking the reply copy control', () => {
@@ -5077,7 +5079,7 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
 
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>

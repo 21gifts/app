@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
+import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { fetchMemberPosts, postFundingApply, putAboutMe } from '@/lib/api';
 import type { Account, ForumMessage } from '@/lib/api-types';
@@ -199,10 +200,12 @@ export function FundingApplyScreen(): ReactElement | null {
       if (current === null) {
         return false;
       }
+      const nextAboutId = updated.aboutMessageId;
       setAccount({
         ...current,
         aboutMe: updated.aboutMe,
         aboutMeHasPhoto: updated.aboutMeHasPhoto,
+        ...(nextAboutId === undefined || nextAboutId === '' ? {} : { aboutMessageId: nextAboutId }),
       });
     } catch (err) {
       /* v8 ignore next 3 — session gone during save */
@@ -237,6 +240,9 @@ export function FundingApplyScreen(): ReactElement | null {
             mode="owner"
             aboutMe={account.aboutMe}
             name={account.name}
+            {...(typeof account.aboutMessageId === 'string' && account.aboutMessageId !== ''
+              ? { messageId: account.aboutMessageId }
+              : {})}
             hasPhoto={account.aboutMeHasPhoto === true}
             startEditing
             onSave={saveAbout}
@@ -347,7 +353,12 @@ export function FundingApplyScreen(): ReactElement | null {
                     </time>
                   </span>
                   {row.text !== '' ? (
-                    <span className="text-sm text-app-muted">{row.text}</span>
+                    <TranslatableNoteBody
+                      messageId={row.id}
+                      text={row.text}
+                      truncate={false}
+                      className="text-sm text-app-muted"
+                    />
                   ) : null}
                 </div>
               </li>

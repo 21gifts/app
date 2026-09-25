@@ -4,12 +4,13 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { ForumLoader } from '@/components/ForumLoader';
-import type {
-  Account,
-  ForumMessage,
-  GiftStats,
-  Notification,
-  NotificationList,
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type Account,
+  type ForumMessage,
+  type GiftStats,
+  type Notification,
+  type NotificationList,
 } from '@/lib/api-types';
 import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
@@ -1660,7 +1661,7 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('does not post when the trimmed draft is longer than 500 characters', async () => {
+  it('does not post when the trimmed draft is longer than 8000 characters', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -1668,10 +1669,10 @@ describe('ForumLoader', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Your message'), {
-      target: { value: `${'a'.repeat(501)}` },
+      target: { value: `${'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1)}` },
     });
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
 
@@ -5433,7 +5434,7 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toContain('All');
   });
 
-  it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
+  it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
@@ -5447,14 +5448,14 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reaction'), {
-      target: { value: 'x'.repeat(500) },
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
-    expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    expect(screen.getByRole('alert').textContent).toMatch(/8000/);
     expect(composeTargetMock).not.toHaveBeenCalled();
   });
 
-  it('rejects a 403 compose-pay whose prefix would exceed 500 characters', async () => {
+  it('rejects a 403 compose-pay whose prefix would exceed 8000 characters', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'verified', forumLawsDismissed: true, hasPosted: true },
@@ -5472,11 +5473,11 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reaction'), {
-      target: { value: 'x'.repeat(500) },
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/500/);
+      expect(screen.getByRole('alert').textContent).toMatch(/8000/);
     });
     expect(composeTargetMock).not.toHaveBeenCalled();
   });
@@ -5855,10 +5856,10 @@ describe('ForumLoader', () => {
   });
 
   it('maps a too-long paid-reply invoice error', async () => {
-    invoiceMock.mockRejectedValue(new Error('text must be 1–500 characters'));
+    invoiceMock.mockRejectedValue(new Error('text must be 1–8000 characters'));
     await expandForeignAndPayReply('Hi Bob', '21');
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+      expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     });
   });
 

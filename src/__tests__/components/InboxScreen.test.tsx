@@ -46,6 +46,15 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
 }));
 
+vi.mock('@/lib/note-translate', () => ({
+  fetchTranslateAvailable: vi.fn().mockResolvedValue(true),
+  translateNote: vi.fn(),
+  translateConversationMessage: vi.fn().mockResolvedValue({
+    translatedText: 'Can anyone lend me a few satoshi this week?',
+    cached: false,
+  }),
+}));
+
 beforeEach(() => {
   push.mockClear();
   locationStub.href = 'http://localhost/';
@@ -364,6 +373,73 @@ describe('InboxScreen', () => {
     fireEvent.click(within(emptyGroup).getByRole('button', { name: 'Damus' }));
     expect(screen.getByText('No Damus messages yet.')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Conversation type' })).toBeTruthy();
+  });
+
+  it('translates a foreign list preview and clears it when the text changes', async () => {
+    const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    const row: Conversation = { ...THREAD, lastText: german, lastMessageId: 'msg-1' };
+    const props = {
+      error: false,
+      loading: false,
+      onRetry: () => undefined,
+      openId: null,
+      onOpen: () => undefined,
+      messages: null,
+      messagesLoading: false,
+      messagesError: false,
+      onRetryMessages: () => undefined,
+      draft: '',
+      onDraftChange: () => undefined,
+      onPost: () => undefined,
+      posting: false,
+      formError: null,
+      showFilter: false,
+    };
+    const { rerender } = renderWithLocale(<InboxScreen {...props} conversations={[row]} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
+    expect(screen.getByText(german)).toBeTruthy();
+    rerender(
+      <InboxScreen
+        {...props}
+        conversations={[{ ...row, lastText: 'Andere Nachricht bitte helfen' }]}
+      />,
+    );
+    expect(screen.getByText('Andere Nachricht bitte helfen')).toBeTruthy();
+  });
+
+  it('does not offer Translate when the list preview has no message id', () => {
+    const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    const props = {
+      error: false,
+      loading: false,
+      onRetry: () => undefined,
+      openId: null,
+      onOpen: () => undefined,
+      messages: null,
+      messagesLoading: false,
+      messagesError: false,
+      onRetryMessages: () => undefined,
+      draft: '',
+      onDraftChange: () => undefined,
+      onPost: () => undefined,
+      posting: false,
+      formError: null,
+      showFilter: false,
+    };
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...props} conversations={[{ ...THREAD, lastText: german }]} />,
+    );
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    rerender(
+      <InboxScreen
+        {...props}
+        conversations={[{ ...THREAD, lastText: german, lastMessageId: '' }]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
   });
 
   it('lists threads and opens one', () => {
@@ -822,7 +898,7 @@ describe('InboxScreen', () => {
         showFilter={false}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.queryByText('Send')).toBeNull();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);

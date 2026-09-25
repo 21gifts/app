@@ -65,8 +65,10 @@ import {
   type ViewProfile,
 } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
+import type { Locale } from '@/lib/locale';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 import { shortLinkPath } from '@/lib/short-link';
+import type { FiatCode } from '@/lib/stats-money';
 
 /**
  * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
@@ -692,6 +694,64 @@ export async function setAmountUnit(session: string, unit: AmountUnit): Promise<
   });
   if (!response.ok) {
     throw new Error('Could not save amount unit.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets the signed-in account language.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param locale - Supported UI language.
+ * @param onlyIfUnset - Whether an existing account value must win.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function setAccountLocale(
+  session: string,
+  locale: Locale,
+  onlyIfUnset: boolean,
+): Promise<Account> {
+  const response = await fetch('/me/locale', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ locale, onlyIfUnset }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save language.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets the signed-in account preferred currency.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param fiat - Supported fiat code.
+ * @param onlyIfUnset - Whether an existing account value must win.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function setAccountFiat(
+  session: string,
+  fiat: FiatCode,
+  onlyIfUnset: boolean,
+): Promise<Account> {
+  const response = await fetch('/me/fiat', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ fiat, onlyIfUnset }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save currency.');
   }
   return accountSchema.parse(await response.json());
 }

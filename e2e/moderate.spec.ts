@@ -94,6 +94,7 @@ test('Function: ModerateScreen — payout goal expands', async ({ page }) => {
       return {
         day,
         giftCount,
+        officialCount: giftCount,
         sats: 0,
         cumulativeSats: 0,
         btc: '0.00000000',
@@ -137,7 +138,7 @@ test('Function: ModerateScreen — payout goal expands', async ({ page }) => {
   await page.goto('/moderate');
   await expect(page.getByText('12%')).toBeVisible();
   await page.getByRole('button', { name: /Goal/ }).click();
-  await expect(page.getByText('Official payouts by UTC day')).toBeVisible();
+  await expect(page.getByText('People by UTC day')).toBeVisible();
 });
 
 test('Function: ModerateScreen — payout goal loading', async ({ page }) => {
@@ -145,7 +146,7 @@ test('Function: ModerateScreen — payout goal loading', async ({ page }) => {
   await page.route('**/gifts/stats', () => new Promise(() => undefined));
   await page.goto('/moderate');
   await expect(
-    page.getByRole('group', { name: 'Daily payout goal' }).getByText('Loading…'),
+    page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
   ).toBeVisible();
 });
 
@@ -370,6 +371,7 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
         spendOverTime: [
           {
             day: '2026-08-28',
+            officialCount: 0,
             sats: 6158,
             cumulativeSats: 6158,
             btc: '0.00006158',

@@ -108,7 +108,7 @@ describe('AmountEntry', () => {
     );
     const input = screen.getByLabelText('Amount');
     const switchGroup = screen.getByRole('group', { name: 'Bitcoin or fiat' });
-    const row = input.parentElement?.parentElement;
+    const row = input.parentElement;
     expect(input).toHaveProperty('value', '21');
     expect(row).toBe(switchGroup.parentElement?.parentElement);
     expect(row?.className).toContain('items-center');
@@ -148,13 +148,14 @@ describe('AmountEntry', () => {
     );
     const input = screen.getByLabelText('Amount');
     const group = screen.getByRole('group', { name: 'Bitcoin or fiat' });
-    const row = input.parentElement?.parentElement;
+    const row = input.parentElement;
     expect(row).toBe(group.parentElement?.parentElement);
     expect(row?.className).toContain('items-center');
+    expect(input.className).toContain('h-12');
     expect(screen.getByText('Amount').className).toContain('sr-only');
     expect(screen.getByText('$0.02')).toBeTruthy();
     const children = Array.from(row?.children ?? []);
-    const amountIndex = children.indexOf(input.parentElement as HTMLElement);
+    const amountIndex = children.indexOf(input);
     const switchIndex = children.indexOf(group.parentElement as HTMLElement);
     expect(amountIndex >= 0 && switchIndex > amountIndex).toBe(true);
   });
@@ -855,7 +856,7 @@ describe('AmountEntry', () => {
     expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
   });
 
-  it('shows a sat placeholder as fiat while fiat is the typing unit', () => {
+  it('keeps a numeric placeholder unchanged while fiat is the typing unit', () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, amountUnit: 'fiat' },
@@ -873,7 +874,12 @@ describe('AmountEntry', () => {
       'ch',
       'USD',
     );
-    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '0.021');
+    const input = screen.getByLabelText('Amount');
+    expect(input).toHaveProperty('placeholder', '21');
+    expect(input.className).toContain('bg-app-card');
+    expect(input.className).toContain('tabular-nums');
+    expect(input.previousElementSibling?.getAttribute('aria-hidden')).not.toBe('true');
+    expect(input.nextElementSibling?.getAttribute('aria-hidden')).not.toBe('true');
     rerender(
       <AmountEntry
         label="Amount"
@@ -883,7 +889,7 @@ describe('AmountEntry', () => {
         rateDay={null}
       />,
     );
-    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '');
+    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '21');
     rerender(
       <AmountEntry
         label="Amount"
@@ -894,5 +900,15 @@ describe('AmountEntry', () => {
       />,
     );
     expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', 'soon');
+    rerender(
+      <AmountEntry
+        label="Amount"
+        value=""
+        placeholder="0"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+    );
+    expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '0');
   });
 });

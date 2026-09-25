@@ -834,6 +834,17 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText(`/members/${profile.id}`)).toBeNull();
   });
 
+  it('shows About me through the profile note id', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, aboutMe: 'Hello from my profile note.', profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText('Hello from my profile note.')).toBeTruthy();
+  });
+
   it('shows Message for another member with a profileMessage', () => {
     renderWithLocale(
       <MemberProfileScreen
@@ -2065,7 +2076,7 @@ describe('MemberProfileScreen', () => {
       target: { value: 'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toMatch(/500 characters/i);
+    expect(screen.getByRole('alert').textContent).toMatch(/8000 characters/i);
     expect(postMessage).not.toHaveBeenCalled();
   });
 
@@ -2119,7 +2130,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('maps a compose-pay length error onto the reply error', async () => {
-    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -2135,7 +2146,7 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
+  it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -2145,10 +2156,10 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reaction'), {
-      target: { value: 'x'.repeat(500) },
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    expect(screen.getByRole('alert').textContent).toMatch(/8000/);
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
 
@@ -2531,7 +2542,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('maps an over-long invoice comment onto the reply length error', async () => {
-    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -2543,7 +2554,7 @@ describe('MemberProfileScreen', () => {
     fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/500 characters/i);
+      expect(screen.getByRole('alert').textContent).toMatch(/8000 characters/i);
     });
   });
 

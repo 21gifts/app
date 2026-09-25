@@ -63,6 +63,8 @@ import {
   postMessageInvoice,
   postMessageVideo,
   postNotificationLevel,
+  setAccountFiat,
+  setAccountLocale,
   setAmountUnit,
   postPushSubscription,
   postWalletBackupSeen,
@@ -861,6 +863,60 @@ describe('setAmountUnit', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setAmountUnit('sess', 'btc')).rejects.toThrow();
+  });
+});
+
+describe('setAccountLocale', () => {
+  it('posts the locale and onlyIfUnset flag and returns the validated account', async () => {
+    const updated = { ...account, locale: 'de' as const };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(setAccountLocale('sess', 'de', true)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/locale', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ locale: 'de', onlyIfUnset: true }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setAccountLocale('sess', 'en', false)).rejects.toThrow('Could not save language.');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setAccountLocale('sess', 'en', false)).rejects.toThrow();
+  });
+});
+
+describe('setAccountFiat', () => {
+  it('posts the fiat and onlyIfUnset flag and returns the validated account', async () => {
+    const updated = { ...account, fiat: 'EUR' as const };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(setAccountFiat('sess', 'EUR', true)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/fiat', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fiat: 'EUR', onlyIfUnset: true }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setAccountFiat('sess', 'CHF', false)).rejects.toThrow('Could not save currency.');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(setAccountFiat('sess', 'CHF', false)).rejects.toThrow();
   });
 });
 
@@ -3094,9 +3150,9 @@ describe('postConversationMessage', () => {
   });
 
   it('throws the api error on a 400', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Text must be 1–500 characters' } });
+    stubFetch({ ok: false, status: 400, body: { error: 'Text must be 1–8000 characters' } });
     await expect(postConversationMessage('sess', 'c1', '')).rejects.toThrow(
-      'Text must be 1–500 characters',
+      'Text must be 1–8000 characters',
     );
   });
 

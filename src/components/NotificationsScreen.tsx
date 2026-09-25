@@ -1,7 +1,8 @@
 'use client';
 
-import { type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { NoteTranslate } from '@/components/NoteTranslate';
 import { Button, Card } from '@/components/ui';
 import type { Notification } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
@@ -14,6 +15,86 @@ const NOTIFICATION_TITLE_KEY = {
   moderator_appointed: 'notifications.moderatorAppointed',
   moderator_proposal: 'notifications.moderatorProposal',
 } as const;
+
+function NotificationRow({
+  row,
+  onOpen,
+}: {
+  row: Notification;
+  onOpen: (notification: Notification) => void;
+}): ReactElement {
+  const { t, locale } = useTranslations();
+  const [translated, setTranslated] = useState<string | null>(null);
+  const [showing, setShowing] = useState(false);
+  const previewKey = `${row.replyId}\0${row.text}`;
+  const [seenPreview, setSeenPreview] = useState(previewKey);
+  if (previewKey !== seenPreview) {
+    setSeenPreview(previewKey);
+    setTranslated(null);
+    setShowing(false);
+  }
+  const unread = row.readAt === null;
+  const nameOnlyPost = row.type === 'forum_post' && row.text.trim() === row.name.trim();
+  const bodyLine =
+    row.type === 'zap' || row.type === 'moderator_appointed' || row.type === 'moderator_proposal'
+      ? row.text
+      : nameOnlyPost
+        ? ''
+        : row.text !== ''
+          ? row.text
+          : t(row.type === 'forum_post' ? 'notifications.photoPost' : 'notifications.photoOnly');
+  const translateBody =
+    (row.type === 'forum_post' || row.type === 'forum_reply') &&
+    !nameOnlyPost &&
+    row.text !== '' &&
+    row.replyId !== '';
+  const visibleBody = showing && translated !== null ? translated : bodyLine;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => {
+          onOpen(row);
+        }}
+        className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
+      >
+        <span className="flex w-full items-baseline justify-between gap-2">
+          <span
+            className={
+              unread ? 'text-sm font-semibold text-app-fg' : 'text-sm font-medium text-app-fg'
+            }
+          >
+            {row.type === 'moderator_appointed'
+              ? t(NOTIFICATION_TITLE_KEY[row.type])
+              : t(NOTIFICATION_TITLE_KEY[row.type], { name: row.name })}
+          </span>
+          <time dateTime={row.createdAt} className="text-xs text-app-subtle">
+            {formatForumTime(row.createdAt, locale)}
+          </time>
+        </span>
+        {bodyLine !== '' ? (
+          <span className={unread ? 'text-sm font-semibold text-app-fg' : 'text-sm text-app-muted'}>
+            {visibleBody}
+          </span>
+        ) : null}
+      </button>
+      {translateBody ? (
+        <NoteTranslate
+          messageId={row.replyId}
+          text={row.text}
+          showingTranslation={showing}
+          onTranslated={(next) => {
+            setTranslated(next);
+            setShowing(true);
+          }}
+          onToggleShowing={() => {
+            setShowing((current) => !current);
+          }}
+        />
+      ) : null}
+    </li>
+  );
+}
 
 /** Props for {@link NotificationsScreen}. */
 export interface NotificationsScreenProps {
@@ -44,7 +125,7 @@ export function NotificationsScreen({
   onRetry,
   onOpen,
 }: NotificationsScreenProps): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
 
   let body: ReactElement;
   if (loading && notifications === null) {
@@ -86,61 +167,9 @@ export function NotificationsScreen({
           {t('notifications.heading')}
         </h1>
         <ul aria-label={t('notifications.listLabel')} className="flex w-full flex-col gap-3">
-          {notifications.map((row) => {
-            const unread = row.readAt === null;
-            const nameOnlyPost = row.type === 'forum_post' && row.text.trim() === row.name.trim();
-            const bodyLine =
-              row.type === 'zap' ||
-              row.type === 'moderator_appointed' ||
-              row.type === 'moderator_proposal'
-                ? row.text
-                : nameOnlyPost
-                  ? ''
-                  : row.text !== ''
-                    ? row.text
-                    : t(
-                        row.type === 'forum_post'
-                          ? 'notifications.photoPost'
-                          : 'notifications.photoOnly',
-                      );
-            return (
-              <li key={row.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpen(row);
-                  }}
-                  className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-left transition hover:bg-app-hover"
-                >
-                  <span className="flex w-full items-baseline justify-between gap-2">
-                    <span
-                      className={
-                        unread
-                          ? 'text-sm font-semibold text-app-fg'
-                          : 'text-sm font-medium text-app-fg'
-                      }
-                    >
-                      {row.type === 'moderator_appointed'
-                        ? t(NOTIFICATION_TITLE_KEY[row.type])
-                        : t(NOTIFICATION_TITLE_KEY[row.type], { name: row.name })}
-                    </span>
-                    <time dateTime={row.createdAt} className="text-xs text-app-subtle">
-                      {formatForumTime(row.createdAt, locale)}
-                    </time>
-                  </span>
-                  {bodyLine !== '' ? (
-                    <span
-                      className={
-                        unread ? 'text-sm font-semibold text-app-fg' : 'text-sm text-app-muted'
-                      }
-                    >
-                      {bodyLine}
-                    </span>
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
+          {notifications.map((row) => (
+            <NotificationRow key={row.id} row={row} onOpen={onOpen} />
+          ))}
         </ul>
       </>
     );

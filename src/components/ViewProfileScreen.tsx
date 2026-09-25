@@ -59,6 +59,9 @@ export function ViewProfileScreen({
         mode="public"
         aboutMe={profile.aboutMe}
         name={profile.name}
+        {...(typeof profile.aboutMessageId === 'string' && profile.aboutMessageId !== ''
+          ? { messageId: profile.aboutMessageId }
+          : {})}
         hasPhoto={profile.aboutMeHasPhoto === true}
         loadPhoto={() => fetchViewAboutMePhoto(viewKey)}
         /* v8 ignore next -- SSR first paint: origin empty so no copy URL */

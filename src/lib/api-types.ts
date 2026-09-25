@@ -53,6 +53,11 @@ export const accountSchema = z.object({
   viewKey: z.string().regex(/^[0-9a-f]{64}$/),
   /** About me note, or `null` when unfilled (name-only auto notes). */
   aboutMe: z.string().nullable(),
+  /**
+   * Forum message id for a filled About me note. Optional so older api bodies
+   * still parse; missing means null. Set only when `aboutMe` is non-null.
+   */
+  aboutMessageId: z.string().nullable().optional(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
   /** Next onboarding step from the api, or `null` when onboarding is done. */
@@ -94,6 +99,10 @@ export const accountSchema = z.object({
    * bodies still parse. Missing means bitcoin in the UI.
    */
   amountUnit: z.enum(['btc', 'fiat']).optional(),
+  /** Stored UI language. Missing means an older api; `null` means unset. */
+  locale: z.enum(['en', 'de', 'es', 'fil']).nullable().optional(),
+  /** Stored preferred currency. Missing means an older api; `null` means unset. */
+  fiat: z.enum(['CHF', 'EUR', 'USD', 'PHP']).nullable().optional(),
   /**
    * Owner funding-program grant. Optional so mixed deploys parse. `basis` is
    * `null`; verified+ is an object (`status: 'none'` when there is no row).
@@ -123,6 +132,8 @@ export const accountSchema = z.object({
  * never rendered as visible text in the signed-in profile UI).
  * `aboutMe` is the profile card note, or `null` until the giver writes one
  * (name-only auto notes from the api are `null`).
+ * `aboutMessageId` is the forum message id for that note when `aboutMe` is
+ * set, or `null`. Omitted on older api builds; treat missing as null.
  * `aboutMeHasPhoto` is true when the live profile note has a photo (optional
  * on older api bodies; defaults to false).
  * `setup` is the next onboarding screen (`name`, `username`,
@@ -143,6 +154,9 @@ export const accountSchema = z.object({
  * that involve the owner). Omitted on older api builds; treat as `all`.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
  * builds; treat as `btc`.
+ * `locale` is the stored UI language and `fiat` is the stored preferred
+ * currency. For either field, omitted means an older api response that must
+ * not be synchronized, while `null` means the account preference is unset.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
  */
@@ -175,6 +189,11 @@ export const viewProfileSchema = z.object({
   hasPasskey: z.boolean(),
   /** About me note, or `null` when unfilled. */
   aboutMe: z.string().nullable(),
+  /**
+   * Forum message id for a filled About me note. Optional so older api bodies
+   * still parse; missing means null. Set only when `aboutMe` is non-null.
+   */
+  aboutMessageId: z.string().nullable().optional(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
 });
@@ -239,6 +258,7 @@ export const giftStatsFxSchema = z.object({
 export const spendDaySchema = z.object({
   day: z.string(),
   giftCount: z.number().int().nonnegative().optional(),
+  officialCount: z.number().int().nonnegative().optional(),
   sats: z.number().int().nonnegative(),
   cumulativeSats: z.number().int().nonnegative(),
   btc: btcAmountStringSchema,
@@ -435,7 +455,7 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 /**
  * Trimmed forum body length accepted by `POST /messages` (api `MESSAGE_MAX_LENGTH`).
  */
-export const FORUM_MESSAGE_MAX_LENGTH = 500;
+export const FORUM_MESSAGE_MAX_LENGTH = 8000;
 
 /**
  * Runtime schema for an optional forum place pin.
@@ -624,7 +644,7 @@ export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;
 /**
  * Trimmed contact body length accepted by `POST /contact` (api `MESSAGE_MAX_LENGTH`).
  */
-export const CONTACT_MESSAGE_MAX_LENGTH = 500;
+export const CONTACT_MESSAGE_MAX_LENGTH = 8000;
 
 /**
  * Runtime schema for one in-app contact message from `POST /contact`.
@@ -668,6 +688,11 @@ export const conversationSchema = z.object({
   lastAt: z.string().datetime({ offset: true }),
   lastFromMe: z.boolean(),
   lastSats: z.number().int().nonnegative(),
+  /**
+   * Id of the last message. Optional so older api bodies still parse; missing
+   * means null.
+   */
+  lastMessageId: z.string().nullable().optional(),
   /** Optional 21.gifts counterpart id on list rows. */
   accountId: z.string().min(1).optional(),
   unread: z.boolean().default(false),

@@ -614,7 +614,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('maps an explicit-amount length error onto the reply error', async () => {
-    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
@@ -653,7 +653,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('maps a compose-pay length error onto the reply error', async () => {
-    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
@@ -664,15 +664,15 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('rejects a compose-pay reply that exceeds 500 characters with the prefix', async () => {
+  it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), {
-      target: { value: 'x'.repeat(500) },
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('alert').textContent).toMatch(/500/);
+    expect(screen.getByRole('alert').textContent).toMatch(/8000/);
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
 
@@ -1580,7 +1580,7 @@ describe('PublicMessageThread', () => {
 
   it('maps an over-long invoice comment onto the reply length error', async () => {
     signIn();
-    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–500 characters'));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });

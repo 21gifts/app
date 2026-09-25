@@ -66,7 +66,7 @@ describe('ContactScreen', () => {
         formError="tooLong"
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
   });
 
   it('shows formError request alert', () => {

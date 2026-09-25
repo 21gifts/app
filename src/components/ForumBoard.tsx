@@ -1058,6 +1058,7 @@ export function ForumBoard({
                         text={displayText}
                         truncate={truncate}
                         className="whitespace-pre-wrap text-sm text-app-fg"
+                        controlSlotId={`note-translate-${message.id}`}
                         {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
                       />
                     ) : (
@@ -1068,6 +1069,7 @@ export function ForumBoard({
                         rateDay={rateDay ?? null}
                         fiat={fiat}
                         truncate={truncate}
+                        controlSlotId={`note-translate-${message.id}`}
                         {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
                         onActivate={(event) => {
                           event.stopPropagation();
@@ -1109,6 +1111,7 @@ export function ForumBoard({
                   <span>{formatBitcoin(message.sats, numberFormat)}</span>
                   {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                 </button>
+                <div id={`note-translate-${message.id}`} className="contents" />
                 {message.parentId === undefined && message.deletedAt === undefined ? (
                   <IconButton
                     type="button"
@@ -1319,6 +1322,7 @@ export function ForumBoard({
                                     text={reply.text}
                                     truncate={truncate}
                                     className="whitespace-pre-wrap text-sm text-app-fg"
+                                    controlSlotId={`note-translate-${reply.id}`}
                                   />
                                 ) : (
                                   <ForumQuotedBody
@@ -1328,6 +1332,7 @@ export function ForumBoard({
                                     rateDay={rateDay ?? null}
                                     fiat={fiat}
                                     truncate={truncate}
+                                    controlSlotId={`note-translate-${reply.id}`}
                                     onActivate={(event) => {
                                       event.stopPropagation();
                                     }}
@@ -1347,14 +1352,8 @@ export function ForumBoard({
                                 )}
                               </p>
                             ) : null}
-                            <div
-                              className={
-                                reply.deletedAt === undefined &&
-                                (reply.payable || onDeleted !== undefined)
-                                  ? 'mt-2 flex flex-wrap items-start gap-5'
-                                  : 'mt-2'
-                              }
-                            >
+                            <div className="mt-2 flex flex-wrap items-center gap-5">
+                              <div id={`note-translate-${reply.id}`} className="contents" />
                               {reply.deletedAt === undefined && reply.payable ? (
                                 <IconButton
                                   type="button"

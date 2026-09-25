@@ -419,6 +419,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const conversationTranslateMatch =
+    /^\/conversations\/([^/]+)\/messages\/([^/]+)\/translate$/.exec(pathName);
+  if (method === 'POST' && conversationTranslateMatch) {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const target = parsed?.target;
+    if (target !== 'en' && target !== 'de' && target !== 'es' && target !== 'fil') {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    const messageId = decodeURIComponent(conversationTranslateMatch[2] ?? '');
+    let source = '';
+    for (const thread of conversations) {
+      const message = thread.messages.find((row) => row.id === messageId);
+      if (typeof message?.text === 'string' && message.text.trim() !== '') {
+        source = message.text;
+        break;
+      }
+    }
+    if (source.trim() === '' && messageId === 'cm-de') {
+      source = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+    }
+    if (source.trim() === '') {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const translated = source.includes('Kann mir jemand')
+      ? 'Can anyone lend me a few satoshi this week?'
+      : '[' + (target === 'fil' ? 'TL' : target.toUpperCase()) + '] ' + source;
+    json(res, 200, { translatedText: translated, cached: false });
+    return;
+  }
+
   if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -544,9 +586,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const text = rawText.trim();
-    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
+    if ((text.length < 1 && !hasPhoto) || text.length > 8000) {
       json(res, 400, {
-        error: 'Text must be 1–500 characters or include a photo',
+        error: 'Text must be 1–8000 characters or include a photo',
       });
       return;
     }
@@ -628,8 +670,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const text = parsed.text.trim();
-    if (text.length < 1 || text.length > 500) {
-      json(res, 400, { error: 'Text must be 1–500 characters' });
+    if (text.length < 1 || text.length > 8000) {
+      json(res, 400, { error: 'Text must be 1–8000 characters' });
       return;
     }
     const created = {
@@ -926,8 +968,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const text = rawText.trim();
-    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
-      json(res, 400, { error: 'Text must be 1–500 characters' });
+    if ((text.length < 1 && !hasPhoto) || text.length > 8000) {
+      json(res, 400, { error: 'Text must be 1–8000 characters' });
       return;
     }
     const photoCount = photosList.length > 0 ? photosList.length : hasPhoto ? 1 : 0;
@@ -1625,6 +1667,45 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.amountUnit = parsed.unit;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && (pathName === '/me/locale' || pathName === '/me/fiat')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const locales = ['en', 'de', 'es', 'fil'];
+    const fiats = ['CHF', 'EUR', 'USD', 'PHP'];
+    if (pathName === '/me/locale') {
+      if (
+        !locales.includes(parsed?.locale) ||
+        (parsed.onlyIfUnset !== undefined && typeof parsed.onlyIfUnset !== 'boolean')
+      ) {
+        json(res, 400, { error: 'Expected a JSON body with a locale of en, de, es, or fil' });
+        return;
+      }
+      if (parsed.onlyIfUnset !== true || account.locale == null) {
+        account.locale = parsed.locale;
+      }
+    } else if (
+      !fiats.includes(parsed?.fiat) ||
+      (parsed.onlyIfUnset !== undefined && typeof parsed.onlyIfUnset !== 'boolean')
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with a fiat of CHF, EUR, USD, or PHP' });
+      return;
+    } else if (parsed.onlyIfUnset !== true || account.fiat == null) {
+      account.fiat = parsed.fiat;
+    }
     json(res, 200, account);
     return;
   }

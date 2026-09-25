@@ -240,6 +240,20 @@
 - **Used by:** `setAmountUnit`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/locale
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/locale`. JSON body `{ locale, onlyIfUnset }` returns the owner Account. `onlyIfUnset: true` does not overwrite a stored locale.
+- **Errors:** 401 when the bearer is missing or blank, before the proxy. Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Used by:** `setAccountLocale`.
+- **Auth:** Bearer; Owner-Account.
+
+## Endpoint: POST /me/fiat
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/fiat`. JSON body `{ fiat, onlyIfUnset }` returns the owner Account. `onlyIfUnset: true` does not overwrite a stored fiat value.
+- **Errors:** 401 when the bearer is missing or blank, before the proxy. Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Used by:** `setAccountFiat`.
+- **Auth:** Bearer; Owner-Account.
+
 ## Endpoint: POST /me/rules-agreement
 
 - **Purpose:** Same-origin proxy to record living-room rules agreement on the signed-in account (`rulesAgreedAt`).
@@ -466,7 +480,7 @@
 
 ## Endpoint: POST /conversations/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–500 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed when at least one photo is present (Moderators group and `/messages` Direct/Contact/Damus). Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id` with `{ text }` (1–8000 characters) and optional `{ photo, photos }` (JPEG/PNG/WebP, at most 10). Empty text is allowed when at least one photo is present (Moderators group and `/messages` Direct/Contact/Damus). Staff replies on official threads still send as the platform account on the api, but JSON `fromMe`, `name`, and `accountId` follow the actor. The created message has required `fromMe`, `hasPhoto`, `photoCount`, and optional `accountId` (sender).
 - **Errors:** Upstream 400/401/404/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationMessage` in the inbox composer and in `ModeratorGroupScreen`.
 - **Auth:** Bearer.
@@ -645,3 +659,10 @@
 - **Errors:** 400 invalid body, 404 unknown/hidden note, 503 not configured, 502 upstream.
 - **Used by:** `translateNote` from `NoteTranslate`.
 - **Auth:** Public for a live note (Bearer forwarded for a hidden staff permalink).
+
+## Endpoint: POST /conversations/[id]/messages/[messageId]/translate
+
+- **Purpose:** Same-origin proxy of api `POST /conversations/:id/messages/:messageId/translate`. Body `{ target }`. The api translates the stored conversation message and returns `{ translatedText, cached }`.
+- **Errors:** 400 invalid body, 401 without a session, 404 when the thread or message is missing, 503 not configured, 502 upstream.
+- **Used by:** `translateConversationMessage` from `NoteTranslate` on inbox and moderator-room prose.
+- **Auth:** Forwards Bearer authorization. The api requires a participant session.

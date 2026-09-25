@@ -20,6 +20,8 @@ import {
   proxyPosPost,
   proxyMeForumLawsDismissedPost,
   proxyMeAmountUnitPost,
+  proxyMeFiatPost,
+  proxyMeLocalePost,
   proxyMeNotificationLevelPost,
   proxyMeLightningAddressDelete,
   proxyMeLightningAddressPost,
@@ -62,6 +64,7 @@ import {
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
   proxyTranslateAvailableGet,
+  proxyTranslateConversationMessagePost,
   proxyTranslateNotePost,
   proxyViewActivityGet,
   proxyTrustAppointModeratorPost,
@@ -273,6 +276,20 @@ describe('api proxy wrappers', () => {
     await proxyMeAmountUnitPost(new Request('http://localhost/me/amount-unit', { method: 'POST' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/amount-unit');
+  });
+
+  it('proxyMeLocalePost hits POST /me/locale', async () => {
+    const fetchMock = stubApi();
+    await proxyMeLocalePost(new Request('http://localhost/me/locale', { method: 'POST' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/locale');
+  });
+
+  it('proxyMeFiatPost hits POST /me/fiat', async () => {
+    const fetchMock = stubApi();
+    await proxyMeFiatPost(new Request('http://localhost/me/fiat', { method: 'POST' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/fiat');
   });
 
   it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {
@@ -885,5 +902,56 @@ describe('api proxy wrappers', () => {
     if (headers.get('content-length') !== null) {
       expect(headers.get('content-length')).toBe(String(JSON.stringify({ target: 'en' }).length));
     }
+  });
+
+  it('proxyTranslateConversationMessagePost returns 400 on invalid JSON', async () => {
+    const fetchMock = stubApi();
+    const response = await proxyTranslateConversationMessagePost(
+      new Request('http://localhost/conversations/c1/messages/m1/translate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: 'not-json',
+      }),
+      'c1',
+      'm1',
+    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid body' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('proxyTranslateConversationMessagePost returns 400 when target is missing', async () => {
+    const fetchMock = stubApi();
+    const response = await proxyTranslateConversationMessagePost(
+      new Request('http://localhost/conversations/c1/messages/m1/translate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ target: 1 }),
+      }),
+      'c1',
+      'm1',
+    );
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('proxyTranslateConversationMessagePost forwards target and Authorization', async () => {
+    const fetchMock = stubApi();
+    await proxyTranslateConversationMessagePost(
+      new Request('http://localhost/conversations/c1/messages/m1/translate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer tok' },
+        body: JSON.stringify({ target: 'de' }),
+      }),
+      'c 1',
+      'm/1',
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const called = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(called.pathname).toBe('/conversations/c%201/messages/m%2F1/translate');
+    expect(JSON.parse(new TextDecoder().decode(init.body as ArrayBuffer))).toEqual({
+      target: 'de',
+    });
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer tok');
   });
 });

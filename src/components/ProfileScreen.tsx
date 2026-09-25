@@ -101,6 +101,9 @@ export function ProfileScreen(): ReactElement {
           mode="owner"
           aboutMe={account.aboutMe}
           name={account.name}
+          {...(typeof account.aboutMessageId === 'string' && account.aboutMessageId !== ''
+            ? { messageId: account.aboutMessageId }
+            : {})}
           hasPhoto={account.aboutMeHasPhoto === true}
           loadPhoto={() => fetchAboutMePhoto(session)}
           /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
@@ -118,10 +121,14 @@ export function ProfileScreen(): ReactElement {
               if (current === null) {
                 return false;
               }
+              const nextAboutId = updated.aboutMessageId;
               setAccount({
                 ...current,
                 aboutMe: updated.aboutMe,
                 aboutMeHasPhoto: updated.aboutMeHasPhoto,
+                ...(nextAboutId === undefined || nextAboutId === ''
+                  ? {}
+                  : { aboutMessageId: nextAboutId }),
               });
             } catch (err) {
               if (useAuthStore.getState().session !== session) {

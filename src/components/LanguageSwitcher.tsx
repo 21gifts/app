@@ -10,7 +10,11 @@ import {
   type ReactElement,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { setAccountLocale } from '@/lib/api';
 import { LOCALES, LOCALE_COOKIE, type Locale } from '@/lib/locale';
+import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
+import { loadSession } from '@/lib/session-storage';
+import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Native-language label for a locale option (not routed through the catalog).
@@ -68,9 +72,28 @@ function localeAt(index: number): Locale {
  * @param current - Locale currently active in the tree.
  * @param refresh - App Router refresh callback.
  */
-function persistLocale(next: Locale, current: Locale, refresh: () => void): void {
+async function persistLocale(next: Locale, current: Locale, refresh: () => void): Promise<void> {
   if (next === current) {
     return;
+  }
+  const session = loadSession();
+  if (session !== null) {
+    const generation = bumpLocaleGeneration();
+    try {
+      const updated = await setAccountLocale(session, next, false);
+      if (localeGeneration() !== generation) {
+        return;
+      }
+      const current = useAuthStore.getState().account;
+      if (current !== null && current.id !== updated.id) {
+        return;
+      }
+      if (current !== null) {
+        useAuthStore.getState().setAccount({ ...current, locale: updated.locale });
+      }
+    } catch {
+      return;
+    }
   }
   const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
   document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
@@ -142,7 +165,7 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         setOpen(false);
-        persistLocale(highlight, locale, () => {
+        void persistLocale(highlight, locale, () => {
           router.refresh();
         });
       }
@@ -186,7 +209,7 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
 
   const selectLocale = (code: Locale): void => {
     setOpen(false);
-    persistLocale(code, locale, () => {
+    void persistLocale(code, locale, () => {
       router.refresh();
     });
     triggerRef.current?.focus();
