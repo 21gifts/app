@@ -67,6 +67,19 @@ describe('PlacesMapScreen', () => {
     ).toBe('false');
   });
 
+  it('links a 21.gifts author and keeps an external name as text', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, accountId: 'acc-ada' }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(<PlacesMapScreen />);
+    const author = await screen.findByRole('link', { name: 'View profile' });
+    expect(author.getAttribute('href')).toBe('/members/acc-ada');
+    expect(author.textContent).toBe('Ada');
+    expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
+      '/messages/m-pin',
+    );
+  });
+
   it('shows the empty state', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([]);

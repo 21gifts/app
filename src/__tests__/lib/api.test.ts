@@ -1452,6 +1452,11 @@ describe('fetchPublicForumMessages', () => {
     expect(init?.headers).toBeUndefined();
     await fetchPublicForumMessages({ cursor: '' });
     await fetchPublicForumMessages({ cursor: null });
+    stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [],
+      nextCursor: null,
+    });
   });
 
   it('throws PublicForumUnauthorizedError on 401 and a load error otherwise', async () => {

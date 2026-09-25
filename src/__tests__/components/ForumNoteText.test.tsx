@@ -43,6 +43,19 @@ describe('ForumNoteText', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('passes stored marks through short and collapsed text', () => {
+    const mentions = [{ username: 'ada', accountId: 'acc-ada' }];
+    const { unmount } = renderWithLocale(
+      <ForumNoteText text="Hi @Ada" className="body" mentions={mentions} />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    unmount();
+    renderWithLocale(
+      <ForumNoteText text={`${'a'.repeat(280)} @Ada`} className="body" mentions={mentions} />,
+    );
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+  });
+
   it('collapses long text with an ellipsis and Show more', () => {
     const { container } = renderWithLocale(
       <ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" />,

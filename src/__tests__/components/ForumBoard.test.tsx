@@ -220,6 +220,61 @@ function modeProps(
 }
 
 describe('ForumBoard', () => {
+  it('passes stored marks on a note and on a reaction', () => {
+    const marks = [{ username: 'bob', accountId: 'acc-bob' }];
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            accountId: 'acc-ada',
+            mentions: marks,
+            text: 'hi @bob',
+          },
+          {
+            ...SAMPLE,
+            id: 'm-nostr',
+            via: 'nostr',
+            accountId: 'acc-ada',
+            mentions: marks,
+            text: 'nostr @bob',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            accountId: 'acc-bob',
+            mentions: marks,
+            text: 'reply @bob',
+          },
+          {
+            ...SAMPLE,
+            id: 'r2',
+            via: 'nostr',
+            accountId: 'acc-bob',
+            mentions: marks,
+            text: 'nostr reply @bob',
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'View profile' }).length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain('nostr @bob');
+    expect(document.body.textContent).toContain('nostr reply @bob');
+  });
+
   it('collapses a long note behind Show more without toggling replies', () => {
     const onToggleExpand = vi.fn();
     const text = `${'a'.repeat(280)} TAILWORD`;

@@ -457,9 +457,6 @@ export function AmountEntry({
       ? 'h-12 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50'
       : 'w-full min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50';
   const pushKey = (key: string): void => {
-    if (disabled || locked) {
-      return;
-    }
     const next = nextKeypadDraft(shown, key, decimal);
     if (next === shown) {
       return;

@@ -75,6 +75,7 @@ import {
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
+  PublicForumUnauthorizedError,
   markNotificationRead,
   fetchComposeTarget,
   postMessage,
@@ -8692,6 +8693,45 @@ describe('forum feed pages', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('loads a signed-out page, its photo and reactions, then sends another mode to login', async () => {
+    useAuthStore.setState({ session: null, account });
+    const note: ForumMessage = {
+      ...SAMPLE,
+      id: 'pub-1',
+      text: 'Public page',
+      hasPhoto: true,
+      photoCount: 1,
+      replyCount: 1,
+    };
+    publicListMock.mockResolvedValueOnce({ messages: [note], nextCursor: 'cur' });
+    publicListMock.mockRejectedValueOnce(new PublicForumUnauthorizedError());
+    publicPhotoMock.mockRejectedValueOnce(new Error('missing'));
+    publicRepliesMock.mockResolvedValue([
+      { ...SAMPLE, id: 'r-pub', text: 'A public reply', parentId: 'pub-1' },
+    ]);
+    renderWithLocale(<ForumLoader />);
+    await screen.findByText('Public page');
+    await waitFor(() => {
+      expect(publicPhotoMock).toHaveBeenCalledWith('pub-1', 0);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await screen.findByText('A public reply');
+    await waitFor(() => {
+      expect(publicRepliesMock).toHaveBeenCalledWith('pub-1');
+    });
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/login');
+    });
+    chooseForumMode(/^All$/);
+    expect(replace).toHaveBeenCalledWith('/login');
   });
 
   it('requests the first active page on mount without using the legacy one-argument call', async () => {

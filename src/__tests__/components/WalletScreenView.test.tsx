@@ -244,6 +244,45 @@ describe('WalletScreenView', () => {
     ).not.toBeNull();
   });
 
+  it('points at the profile when the account has no username', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: '',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Set a username first.' }).getAttribute('href')).toBe(
+      '/profile',
+    );
+  });
+
   it('shows the till address and a link to set an amount', () => {
     useAuthStore.setState({
       session: 'tok',

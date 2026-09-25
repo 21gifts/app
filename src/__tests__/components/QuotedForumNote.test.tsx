@@ -214,6 +214,24 @@ describe('ForumQuotedBody', () => {
     },
   );
 
+  it('links a nested 21.gifts author without opening the quote', async () => {
+    const onActivate = vi.fn();
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[{ ...quotedNote, accountId: 'acc-cyrill', text: 'Nested' }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        onActivate={onActivate}
+      />,
+    );
+    const author = await screen.findByRole('link', { name: 'View profile' });
+    expect(author.getAttribute('href')).toBe('/members/acc-cyrill');
+    fireEvent.click(author);
+    expect(onActivate).not.toHaveBeenCalled();
+  });
+
   it('translates a non-nostr nested caption using its forum id and keeps links active', async () => {
     fetchAvailable.mockResolvedValue(true);
     translate.mockResolvedValue('Translated nested caption');

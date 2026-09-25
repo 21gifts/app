@@ -143,6 +143,18 @@ describe('HiddenNotesScreen', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
+  it('links a member author and keeps a blank id as text', async () => {
+    listMock.mockResolvedValue([
+      { ...HIDDEN, accountId: 'acc-bob' },
+      { ...HIDDEN, id: 'h-blank', name: '', accountId: '' },
+    ]);
+    renderWithLocale(<HiddenNotesScreen />);
+    const author = await screen.findByRole('link', { name: 'View profile' });
+    expect(author.getAttribute('href')).toBe('/members/acc-bob');
+    expect(author.textContent).toBe('Bob');
+    expect(screen.getByText('Unnamed')).toBeTruthy();
+  });
+
   it('shows empty copy', async () => {
     listMock.mockResolvedValue([]);
     renderWithLocale(<HiddenNotesScreen />);

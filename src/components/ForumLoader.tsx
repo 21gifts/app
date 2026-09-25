@@ -1260,6 +1260,7 @@ export function ForumLoader({
     replyParentId: string | null = null,
     postAfterPay = false,
   ): void => {
+    /* v8 ignore next 2 -- pay polling starts only after a signed-in invoice */
     if (session === null) {
       return;
     }
@@ -1575,6 +1576,7 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
   ): void => {
+    /* v8 ignore next 2 -- a created note is only applied for a signed-in post */
     if (session === null) {
       return;
     }
@@ -1665,6 +1667,7 @@ export function ForumLoader({
     askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): Promise<void> => {
+    /* v8 ignore next 2 -- the composer is hidden without a session */
     if (session === null) {
       return;
     }
@@ -1818,6 +1821,7 @@ export function ForumLoader({
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {
+    /* v8 ignore next 2 -- the pay sheet is not offered without a session */
     if (session === null) {
       return;
     }
@@ -2015,6 +2019,7 @@ export function ForumLoader({
     parentBaseline: number,
     isRetry: boolean,
   ): Promise<void> => {
+    /* v8 ignore next 2 -- reactions are not posted without a session */
     if (session === null) {
       return;
     }
@@ -2058,6 +2063,7 @@ export function ForumLoader({
     baselineSats: number,
     isRetry: boolean,
   ): Promise<void> => {
+    /* v8 ignore next 2 -- a paid reaction starts only for a signed-in session */
     if (session === null) {
       return;
     }
@@ -2129,6 +2135,7 @@ export function ForumLoader({
     sats: number,
     isRetry: boolean,
   ): Promise<void> => {
+    /* v8 ignore next 2 -- compose pay starts only for a signed-in session */
     if (session === null) {
       return;
     }

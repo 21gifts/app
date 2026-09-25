@@ -59,6 +59,19 @@ describe('LinkedText', () => {
     expect(screen.getByText(/@nope/)).toBeTruthy();
   });
 
+  it('links a mark at the start of the text', () => {
+    push.mockReset();
+    renderWithLocale(
+      <LinkedText
+        text="@Ada hello"
+        className="text-sm"
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc-ada');
+  });
+
   it('renders plain text without a link', () => {
     renderWithLocale(<LinkedText text="just a note" className="text-sm" />);
     expect(screen.getByText('just a note')).toBeTruthy();
