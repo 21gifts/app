@@ -934,14 +934,14 @@ describe('AmountEntry', () => {
     expect(display.tagName).toBe('P');
     expect(screen.queryByRole('textbox', { name: 'Amount' })).toBeNull();
     expect(display.textContent).toBe('0');
-    fireEvent.click(screen.getByRole('button', { name: '0', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: '2', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^0$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^2$/ }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2');
-    fireEvent.click(screen.getByRole('button', { name: '.', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: '5', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: '0', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^\.$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^5$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^0$/ }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
-    fireEvent.click(screen.getByRole('button', { name: '.', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^\.$/ }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2.5');
@@ -1002,7 +1002,7 @@ describe('AmountEntry', () => {
       'ch',
       'USD',
     );
-    fireEvent.click(screen.getByRole('button', { name: '1', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^1$/ }));
     fireEvent.keyDown(window, { key: '1' });
     expect(screen.getByLabelText('Amount').textContent).toBe('0');
     rerender(
@@ -1015,7 +1015,7 @@ describe('AmountEntry', () => {
         rateDay={DAY}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^1$/ }));
     fireEvent.keyDown(window, { key: '1' });
     expect(screen.getByLabelText('Amount').textContent).toBe('21');
   });

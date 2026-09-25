@@ -1337,7 +1337,7 @@ export function MemberProfileScreen({
             {typeof fundingReviewedAt === 'number' ? (
               <FundingProgramMark
                 admittedAt={fundingReviewedAt}
-                reviewerName={listedProfile.fundingReviewedByName}
+                reviewerName={listedProfile.fundingReviewedByName ?? null}
                 expanded={fundingHintOpen}
                 onToggle={() => setFundingHintOpen((open) => !open)}
               />
@@ -1437,7 +1437,7 @@ export function MemberProfileScreen({
               {typeof fundingReviewedAt === 'number' ? (
                 <FundingProgramMark
                   admittedAt={fundingReviewedAt}
-                  reviewerName={listedProfile.fundingReviewedByName}
+                  reviewerName={listedProfile.fundingReviewedByName ?? null}
                   expanded={fundingHintOpen}
                   onToggle={() => setFundingHintOpen((open) => !open)}
                 />

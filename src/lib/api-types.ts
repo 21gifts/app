@@ -501,7 +501,7 @@ export type ForumPlaceRow = ForumPlacePin & {
   id: string;
   name: string;
   createdAt: string;
-  accountId?: string;
+  accountId?: string | undefined;
 };
 
 /**

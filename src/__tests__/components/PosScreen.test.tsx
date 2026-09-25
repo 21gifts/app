@@ -35,7 +35,9 @@ const ACCOUNT = {
 async function pressAmount(draft: string): Promise<void> {
   await screen.findByLabelText('Amount');
   for (const ch of draft) {
-    fireEvent.click(screen.getByRole('button', { name: ch, exact: true }));
+    fireEvent.click(
+      screen.getByRole('button', { name: ch === '.' ? /^\.$/ : new RegExp(`^${ch}$`) }),
+    );
   }
 }
 
@@ -99,7 +101,7 @@ describe('PosScreen', () => {
     expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.getByText('alice@21.gifts').className).toContain('text-center');
-    expect(screen.getByRole('button', { name: '1', exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^1$/ })).toBeTruthy();
   });
 
   it('creates a charge and then cancels it', async () => {
