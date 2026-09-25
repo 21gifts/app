@@ -500,8 +500,19 @@ describe('PublicMessageLoader', () => {
     });
     expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:public');
-    expect(screen.getByAltText('Photo from Ada').className).toContain('rounded-xl');
-    expect(screen.getByAltText('Photo from Ada').className).not.toContain('rounded-2xl');
+    const still = screen.getByAltText('Photo from Ada').className.split(/\s+/);
+    expect(still).toEqual(
+      expect.arrayContaining([
+        'block',
+        'h-auto',
+        'max-h-80',
+        'w-full',
+        'shrink-0',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
+    expect(still).not.toContain('rounded-2xl');
   });
 
   it('loads a photo blob URL when photoCount is omitted on a hasPhoto note', async () => {
@@ -611,12 +622,15 @@ describe('PublicMessageLoader', () => {
     const tokens = (video?.getAttribute('class') ?? '').split(/\s+/);
     expect(tokens).toEqual(
       expect.arrayContaining([
+        'mx-auto',
         'h-auto',
         'w-auto',
         'max-h-80',
         'max-w-full',
         'rounded-xl',
         'object-contain',
+        'block',
+        'shrink-0',
       ]),
     );
     expect(tokens).not.toContain('rounded-2xl');

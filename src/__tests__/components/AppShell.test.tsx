@@ -81,6 +81,13 @@ describe('AppShell', () => {
     );
     const main = container.querySelector('main');
     expect(main?.className).not.toContain('justify-center');
+    expect(main?.className).not.toContain('items-center');
+    const frame = main?.querySelector(':scope > section');
+    expect(frame?.className).toContain('basis-0');
+    expect(frame?.className).toContain('self-stretch');
+    expect(frame?.className).toContain('grow');
+    expect(frame?.className).toContain('shrink');
+    expect(frame?.className.split(/\s+/)).not.toContain('flex-1');
     const scroller = main?.querySelector('.overflow-y-auto');
     expect(scroller?.className).not.toContain('items-center');
     expect(scroller?.className).not.toContain('justify-center');
@@ -89,7 +96,8 @@ describe('AppShell', () => {
     expect(inner?.className).toContain('flex-col');
     expect(inner?.className).toContain('min-h-full');
     expect(inner?.className).toContain('items-center');
-    expect(inner?.className).toContain('justify-center');
+    expect(inner?.className.split(/\s+/)).toContain('shell-safe-center');
+    expect(inner?.className.split(/\s+/)).not.toContain('justify-center');
     expect(inner?.className).not.toContain('pt-24');
   });
 

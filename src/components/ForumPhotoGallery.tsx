@@ -110,7 +110,7 @@ export function ForumPhotoGallery({
               <img
                 src={url}
                 alt={alt}
-                className="max-h-80 w-full rounded-xl object-contain"
+                className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
                 data-photo-index={index}
               />
             </div>
