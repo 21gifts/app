@@ -3443,7 +3443,7 @@ test.describe('onboarding screens', () => {
               id: '44444444-4444-4444-8444-444444444444',
               accountId: memberId,
               name: 'Carol',
-              text: 'Goal defined in dollars',
+              text: 'The goal is defined in dollars.',
               createdAt: '2026-08-02T10:00:00.000Z',
               sats: 0,
               goalSats: 1000,
@@ -3463,9 +3463,12 @@ test.describe('onboarding screens', () => {
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await page.getByText('Goal defined in dollars').scrollIntoViewIfNeeded();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await page.getByText('The goal is defined in dollars.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-fiat');
   });
 
@@ -5591,6 +5594,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] goal-fiat', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
     await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
@@ -5599,7 +5603,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id,
           name: 'Ada',
-          text: 'Goal defined in dollars',
+          text: 'The goal is defined in dollars.',
           createdAt: '2026-08-28T12:00:00.000Z',
           sats: 0,
           goalSats: 1000,
@@ -5613,9 +5617,12 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/messages/${id}`);
+    await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-fiat');
   });
 
@@ -7841,6 +7848,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome goal-fiat', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -7850,7 +7858,7 @@ test.describe('welcome forum variants', () => {
             {
               id: 'm-goal-fiat',
               name: 'Ada',
-              text: 'Goal defined in dollars',
+              text: 'The goal is defined in dollars.',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               goalSats: 1000,
@@ -7866,14 +7874,18 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
+    await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-fiat');
   });
 
   test('state /welcome goal-php', async ({ page }) => {
     await seedAda(page);
+    await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -7883,7 +7895,7 @@ test.describe('welcome forum variants', () => {
             {
               id: 'm-goal-php',
               name: 'Ada',
-              text: 'Goal defined in pesos',
+              text: 'The goal is defined in pesos.',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               goalSats: 1000,
@@ -7900,10 +7912,13 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
+    await expect(page.getByText('The goal is defined in pesos.')).toBeVisible();
     await expect(page.getByText('₱200.00')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-php');
   });
 

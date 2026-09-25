@@ -518,13 +518,13 @@ On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask
 
 ### Variant: goal-fiat
 
-On **All**: a top-level note defined as **$1.50**, with frozen **₿1'000** and no second dollar amount, because the viewer's currency is the definition currency. Label **0%**.
+On **All**: a top-level English note defined as **$1.50**, with frozen **₿1'000** and no second dollar amount, because the viewer's currency is the definition currency. Label **0%**. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts welcome goal fiat](images/welcome-goal-fiat.png)
 
 ### Variant: goal-php
 
-On **All**: a top-level note defined as **₱200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**.
+On **All**: a top-level English note defined as **₱200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts welcome goal php](images/welcome-goal-php.png)
 
@@ -1425,7 +1425,7 @@ Identity card; posts pressed; profile note hidden; the listed post has `sats: 23
 
 ### Variant: posts-open-goal-fiat
 
-Identity card; posts pressed; the listed post is defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount.
+Identity card; posts pressed; the listed English post is defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts member posts open with fiat goal](images/members-posts-open-goal-fiat.png)
 
@@ -2784,7 +2784,7 @@ Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 210
 
 ### Variant: goal-fiat
 
-Unsigned permalink of a note defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. No composer Ask.
+Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**. No composer Ask.
 
 ![21.gifts public message fiat goal](images/messages-id-goal-fiat.png)
 
