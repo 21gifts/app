@@ -10464,6 +10464,90 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place-edit', false);
   });
 
+  test('shops staff-place-edit-unavailable', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    const unavailable = note.getByText('The map is not available.');
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(unavailable).toBeVisible();
+    await expect(remove).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await remove.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
+  });
+
+  test('shops staff-place-edit-unavailable-error', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unavailable' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await note.getByRole('button', { name: 'Remove place' }).click();
+    const alert = note.getByRole('alert');
+    await expect(alert).toHaveText('The place could not be saved. Please try again.');
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(remove).toBeVisible();
+    await remove.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit-unavailable-error');
+  });
+
   test('shops staff-place-map', async ({ page }) => {
     await stubPlaceMap(page);
     await seedAda(page, 'moderator');

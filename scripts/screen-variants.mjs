@@ -3069,6 +3069,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'staff-place-edit-unavailable',
+    image: 'shops-staff-place-edit-unavailable.png',
+    visual: 'state-shops-staff-place-edit-unavailable',
+    needle: "shotScreen(page, 'state-shops-staff-place-edit-unavailable')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-place-edit-unavailable-error',
+    image: 'shops-staff-place-edit-unavailable-error.png',
+    visual: 'state-shops-staff-place-edit-unavailable-error',
+    needle: "shotScreen(page, 'state-shops-staff-place-edit-unavailable-error')",
+  },
+  {
+    route: '/shops',
     id: 'staff-place-map',
     image: 'shops-staff-place-map.png',
     visual: 'state-shops-staff-place-map',
