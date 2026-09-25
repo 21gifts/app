@@ -127,7 +127,7 @@ function ChargeFiat(props: { amountSats: number }): ReactElement | null {
   );
 }
 
-/** Gift outline with a Bitcoin symbol, for a pay link that has no open till. */
+/** Gift outline with a Bitcoin symbol, only when the pay link is not valid. */
 function GiftGlyph(): ReactElement {
   return (
     <svg
