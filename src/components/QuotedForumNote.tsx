@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText, type TextMention } from '@/components/LinkedText';
@@ -59,7 +58,6 @@ function QuotedForumNote({
   onActivate?: (event: { stopPropagation: () => void }) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
-  const router = useRouter();
   const { numberFormat } = useNumberFormat();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
@@ -116,18 +114,16 @@ function QuotedForumNote({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="flex flex-wrap items-center gap-2">
           {memberAuthor ? (
-            <button
-              type="button"
+            <Link
+              href={`/members/${note.accountId}`}
               aria-label={t('forum.authorProfile')}
               className="text-sm font-medium text-app-fg underline underline-offset-2"
               onClick={(event) => {
-                event.preventDefault();
                 event.stopPropagation();
-                router.push(`/members/${note.accountId}`);
               }}
             >
               {note.name}
-            </button>
+            </Link>
           ) : (
             <Link href={`/messages/${note.id}`} className="text-sm font-medium text-app-fg">
               {note.name}

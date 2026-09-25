@@ -974,6 +974,12 @@ describe('AmountEntry', () => {
     fireEvent.keyDown(select, { key: '3' });
     fireEvent.keyDown(editable, { key: '3' });
     expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
+    const plain = document.createElement('div');
+    document.body.append(plain);
+    fireEvent.keyDown(plain, { key: '7' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.5012347');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));

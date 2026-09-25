@@ -2,7 +2,6 @@
 
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
@@ -25,7 +24,6 @@ import { useAuthStore } from '@/stores/auth-store';
  */
 export function HiddenNotesScreen(): ReactElement | null {
   const { t, locale } = useTranslations();
-  const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
@@ -127,17 +125,13 @@ export function HiddenNotesScreen(): ReactElement | null {
                 {row.via === undefined &&
                 typeof row.accountId === 'string' &&
                 row.accountId !== '' ? (
-                  <button
-                    type="button"
+                  <Link
+                    href={`/members/${row.accountId}`}
                     aria-label={t('forum.authorProfile')}
                     className="text-sm font-medium text-app-fg underline underline-offset-2"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      router.push(`/members/${row.accountId}`);
-                    }}
                   >
                     {row.name !== '' ? row.name : t('moderate.unnamed')}
-                  </button>
+                  </Link>
                 ) : null}
                 <Link href={`/messages/${row.id}`} className="block min-w-0 flex-1 no-underline">
                   <span className="flex w-full items-baseline justify-between gap-2">

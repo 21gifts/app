@@ -204,7 +204,7 @@ describe('PublicMessageLoader', () => {
         missing: [],
       },
     });
-    fetchMessage.mockResolvedValue(sample);
+    fetchMessageBearer.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Back to the forum' })).toBeTruthy();
@@ -963,7 +963,7 @@ describe('PublicMessageLoader', () => {
         missing: [],
       },
     });
-    fetchMessage.mockResolvedValue({
+    fetchMessageBearer.mockResolvedValue({
       ...sample,
       name: 'Carol',
       accountId: 'acc_carol',
@@ -998,7 +998,7 @@ describe('PublicMessageLoader', () => {
         missing: [],
       },
     });
-    fetchMessage.mockResolvedValue(sample);
+    fetchMessageBearer.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
@@ -1038,7 +1038,7 @@ describe('PublicMessageLoader', () => {
         missing: [],
       },
     });
-    fetchMessage.mockImplementation(async (messageId: string) => {
+    fetchMessageBearer.mockImplementation(async (_session: string, messageId: string) => {
       if (messageId === replyId) {
         return reply;
       }

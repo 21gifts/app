@@ -3687,14 +3687,18 @@ describe('ForumBoard', () => {
       configurable: true,
       get: () => video,
     });
-    document.dispatchEvent(new Event('fullscreenchange'));
+    act(() => {
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Leave full screen' }));
     expect(exitFullscreen).toHaveBeenCalledTimes(1);
     Object.defineProperty(document, 'fullscreenElement', {
       configurable: true,
       get: () => null,
     });
-    document.dispatchEvent(new Event('fullscreenchange'));
+    act(() => {
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
     const webkitEnterFullscreen = vi.fn();
     Object.defineProperty(video, 'requestFullscreen', {
       configurable: true,

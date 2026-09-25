@@ -33,7 +33,11 @@ vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
   setMessagePlace: vi.fn(),
   fetchMessages: vi.fn(),
+  fetchPublicForumMessages: vi.fn(),
   fetchPublicMessage: vi.fn(),
+  fetchPublicMessagePhoto: vi.fn(),
+  fetchPublicReplies: vi.fn(),
+  PublicForumUnauthorizedError: class PublicForumUnauthorizedError extends Error {},
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   fetchComposeTarget: vi.fn(),
@@ -66,7 +70,10 @@ import {
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
+  fetchPublicForumMessages,
   fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchPublicReplies,
   fetchReplies,
   markNotificationRead,
   fetchComposeTarget,
@@ -82,6 +89,9 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 
 const fetchMock = vi.mocked(fetchMessages);
+const publicListMock = vi.mocked(fetchPublicForumMessages);
+const publicPhotoMock = vi.mocked(fetchPublicMessagePhoto);
+const publicRepliesMock = vi.mocked(fetchPublicReplies);
 const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
@@ -264,6 +274,9 @@ async function revealAll(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks();
   fetchMock.mockResolvedValue(forumPage([]));
+  publicListMock.mockResolvedValue({ messages: [], nextCursor: null });
+  publicPhotoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+  publicRepliesMock.mockResolvedValue([]);
   composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0 });
   invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
   fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
@@ -335,10 +348,14 @@ const NO_RATE_SHOWN = {
 };
 
 describe('ForumLoader', () => {
-  it('renders nothing when there is no session', () => {
+  it('shows the public living room without the laws hint when there is no session', async () => {
     useAuthStore.setState({ session: null, account });
-    const { container } = renderWithLocale(<ForumLoader />);
-    expect(container.firstChild).toBeNull();
+    renderWithLocale(<ForumLoader />);
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(publicListMock).toHaveBeenCalled();
   });
 
   it('renders the board when the session has no account yet', async () => {

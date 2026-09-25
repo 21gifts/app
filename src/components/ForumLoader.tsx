@@ -822,7 +822,8 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-  }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, router, session]);
+    /* router.replace is used on 401; next/navigation's identity is not stable */
+  }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
     refreshMessagesRef.current();
@@ -906,7 +907,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
     };
     /* router.replace is used on 409; next/navigation's identity is not stable */
-  }, [attempt, feed, feedMode, router, session]);
+  }, [attempt, feed, feedMode, session]);
 
   useEffect(() => {
     if (session === null) {
@@ -1177,7 +1178,7 @@ export function ForumLoader({
     setUnpaidSeenAt(iso);
   }, [feed, feedMode, messages]);
 
-  const lawsVisible = account !== null && account.forumLawsDismissed !== true;
+  const lawsVisible = session !== null && account !== null && account.forumLawsDismissed !== true;
 
   const onDismissLaws = (): void => {
     const snapshot = useAuthStore.getState();
