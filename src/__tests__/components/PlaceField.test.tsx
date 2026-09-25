@@ -367,9 +367,10 @@ describe('PlaceField', () => {
   });
 
   it('shows the unavailable copy when Google rejects the key', async () => {
+    const Map = vi.fn(() => ({ setCenter: vi.fn(), addListener: vi.fn() }));
     (window as { google?: unknown }).google = {
       maps: {
-        Map: vi.fn(() => ({ setCenter: vi.fn(), addListener: vi.fn() })),
+        Map,
         Marker: vi.fn(() => ({
           addListener: vi.fn(),
           setPosition: vi.fn(),
@@ -382,12 +383,22 @@ describe('PlaceField', () => {
     const view = renderWithLocale(
       <PlaceField place={null} disabled={false} onChange={() => undefined} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const toggle = screen.getByRole('button', { name: 'Add a place' });
+    fireEvent.click(toggle);
     expect(await screen.findByLabelText('Place name')).toBeTruthy();
+    await waitFor(() => {
+      expect(Map).toHaveBeenCalled();
+    });
+    const drawn = Map.mock.calls.length;
     const fail = (window as { gm_authFailure?: () => void }).gm_authFailure;
     expect(fail).toBeTypeOf('function');
     fail?.();
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    expect(screen.queryByLabelText('Place name')).toBeNull();
+    expect(Map.mock.calls.length).toBe(drawn);
     view.unmount();
     fail?.();
   });

@@ -265,4 +265,43 @@ describe('PlacesMapScreen', () => {
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     expect(Marker.mock.calls.length).toBe(calls);
   });
+
+  it('does not construct a map when Google rejects the key as the script loads', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const Map = vi.fn(() => ({ setCenter: vi.fn() }));
+    const Marker = vi.fn();
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    const script = await waitFor(() => {
+      const node = document.querySelector('script[data-google-maps="1"]');
+      expect(node).toBeTruthy();
+      return node as HTMLScriptElement;
+    });
+    (window as { google?: unknown }).google = { maps: { Map, Marker } };
+    (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+    script.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+    expect(Map).not.toHaveBeenCalled();
+    expect(Marker).not.toHaveBeenCalled();
+  });
+
+  it('does not add markers when Google rejects the key while constructing the map', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW]);
+    const Marker = vi.fn();
+    const Map = vi.fn(() => {
+      (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+      return { setCenter: vi.fn() };
+    });
+    (window as { google?: unknown }).google = { maps: { Map, Marker } };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(Map).toHaveBeenCalled();
+    });
+    expect(Marker).not.toHaveBeenCalled();
+  });
 });

@@ -65,6 +65,7 @@ export function PlaceField(props: {
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
+  const authFailedRef = useRef(false);
 
   useEffect(() => {
     if (props.disabled) {
@@ -102,17 +103,29 @@ export function PlaceField(props: {
         }
         setMapsKey(nextKey);
         const googleWindow = window as GoogleWindow;
-        // Google paints its own dialog into the frame when the key is rejected.
-        googleWindow.gm_authFailure = () => {
+        // A rejected key stays rejected. Google still defines `google.maps`.
+        const rejectKey = (): void => {
+          authFailedRef.current = true;
           if (cancelled) {
             return;
           }
           setUnavailable(true);
           setScriptReady(false);
         };
-        if (googleWindow.google?.maps !== undefined) {
+        const acceptKey = (): void => {
+          if (cancelled || authFailedRef.current) {
+            if (!cancelled && authFailedRef.current) {
+              setUnavailable(true);
+              setScriptReady(false);
+            }
+            return;
+          }
           setUnavailable(false);
           setScriptReady(true);
+        };
+        googleWindow.gm_authFailure = rejectKey;
+        if (googleWindow.google?.maps !== undefined) {
+          acceptKey();
           return;
         }
         const existing = document.querySelector('script[data-gmaps="weekly"]');
@@ -120,7 +133,7 @@ export function PlaceField(props: {
           if (cancelled) {
             return;
           }
-          if (googleWindow.google?.maps === undefined) {
+          if (googleWindow.google?.maps === undefined || authFailedRef.current) {
             if (existing instanceof HTMLScriptElement) {
               existing.dataset['gmapsState'] = 'error';
             }
@@ -128,8 +141,7 @@ export function PlaceField(props: {
             setScriptReady(false);
             return;
           }
-          setUnavailable(false);
-          setScriptReady(true);
+          acceptKey();
         };
         const onError = (): void => {
           if (cancelled) {
@@ -142,7 +154,7 @@ export function PlaceField(props: {
           setScriptReady(false);
         };
         if (existing instanceof HTMLScriptElement) {
-          if (existing.dataset['gmapsState'] === 'error') {
+          if (existing.dataset['gmapsState'] === 'error' || authFailedRef.current) {
             setUnavailable(true);
             setScriptReady(false);
             return;
@@ -150,6 +162,11 @@ export function PlaceField(props: {
           setUnavailable(false);
           existing.addEventListener('load', onLoad);
           existing.addEventListener('error', onError);
+          return;
+        }
+        if (authFailedRef.current) {
+          setUnavailable(true);
+          setScriptReady(false);
           return;
         }
         setUnavailable(false);
@@ -178,10 +195,10 @@ export function PlaceField(props: {
     void load();
     return () => {
       cancelled = true;
-      const host = window as GoogleWindow;
-      if (host.gm_authFailure !== undefined) {
-        delete host.gm_authFailure;
-      }
+      // Keep the rejection if Google calls back after the panel closes.
+      (window as GoogleWindow).gm_authFailure = () => {
+        authFailedRef.current = true;
+      };
     };
   }, [open]);
 

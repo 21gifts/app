@@ -139,7 +139,8 @@ export function PlacesMapScreen(): ReactElement {
       }
       try {
         await loadGoogleMaps(mapsKey);
-        if (cancelled) {
+        if (cancelled || authFailedRef.current) {
+          frame.replaceChildren();
           return;
         }
         const maps = (window as GoogleWindow).google?.maps;
@@ -155,6 +156,10 @@ export function PlacesMapScreen(): ReactElement {
           center: { lat: focus.lat, lng: focus.lng },
           zoom: 14,
         });
+        if (authFailedRef.current) {
+          frame.replaceChildren();
+          return;
+        }
         for (const row of places) {
           new maps.Marker({ position: { lat: row.lat, lng: row.lng }, map });
         }
