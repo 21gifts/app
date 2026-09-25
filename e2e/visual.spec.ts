@@ -2187,6 +2187,16 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${QUOTED_ID}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(quotedNote),
+        });
+      },
+    );
     await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -5982,23 +5992,34 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
+    const signedNote = {
+      id,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          id,
-          name: 'Ada',
-          text: 'Hello from Ada',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 0,
-          payable: false,
-          hasPhoto: false,
-          role: 'basis',
-          replyCount: 0,
-        }),
+        body: JSON.stringify(signedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(signedNote),
+        });
+      },
+    );
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
@@ -12103,6 +12124,16 @@ test.describe('inbox screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${QUOTED_ID}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(quotedNote),
+        });
+      },
+    );
     await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -13823,6 +13854,16 @@ test.describe('moderate group screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${QUOTED_ID}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(quotedNote),
+        });
+      },
+    );
     await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
       await route.fulfill({
         status: 200,
