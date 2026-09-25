@@ -1820,6 +1820,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `true` when this mount should start with the overlay dismissed, then clears the flag. Close (X) does not set the flag.
 - **Used by:** `SignedInChrome`.
 
+## Function: fiatPrefix
+
+- **Purpose:** Amount prefix for a fiat code. `$` and `₱` sit tight against the number, the same way `₿` does. CHF and EUR keep the code and a trailing space (`CHF `, `EUR `).
+- **Inputs:** `code` (`FiatCode`: CHF, EUR, USD, or PHP).
+- **Returns / side effects:** `'$'`, `'₱'`, `'CHF '`, or `'EUR '`. No grouping and no network.
+- **Used by:** `formatFiatDisplay`, `formatFiatTick`, and `formatDefinedGoalAmount`.
+
 ## Function: formatFiatDisplay
 
 - **Purpose:** Formats an API fiat amount string for stats display using the visitor grouping style. `null` becomes `—` (U+2014). USD uses `$` and PHP uses `₱`; CHF and EUR prefix the code (`CHF 1'425.00`).
