@@ -584,6 +584,7 @@ describe('PublicMessageLoader', () => {
     const tokens = (video?.getAttribute('class') ?? '').split(/\s+/);
     expect(tokens).toEqual(
       expect.arrayContaining([
+        'mx-auto',
         'h-auto',
         'w-auto',
         'max-h-80',
