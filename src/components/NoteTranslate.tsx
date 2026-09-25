@@ -21,8 +21,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /** Translation API source for a painted prose body. */
 export type NoteTranslateSource =
-  | { kind: 'message' }
-  | { kind: 'conversation'; conversationId: string };
+  { kind: 'message' } | { kind: 'conversation'; conversationId: string };
 
 /** Props for the public forum-note translation control. */
 export interface NoteTranslateProps {
