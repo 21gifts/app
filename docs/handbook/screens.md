@@ -522,6 +522,12 @@ On **All**: a top-level note defined as **$1.50**, with frozen **₿1'000** and 
 
 ![21.gifts welcome goal fiat](images/welcome-goal-fiat.png)
 
+### Variant: goal-php
+
+On **All**: a top-level note defined as **PHP 200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**.
+
+![21.gifts welcome goal php](images/welcome-goal-php.png)
+
 ### Variant: ask-amount
 
 **Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step.

@@ -7872,6 +7872,41 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-goal-fiat');
   });
 
+  test('state /welcome goal-php', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-php',
+              name: 'Ada',
+              text: 'Goal defined in pesos',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              goalSats: 1000,
+              goalCurrency: 'PHP',
+              goalAmount: '200.00',
+              goalAmountUsd: '1.50',
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByText('PHP 200.00')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText('0%')).toBeVisible();
+    await shotScreen(page, 'state-welcome-goal-php');
+  });
+
   test('state /welcome ask-amount', async ({ page }) => {
     await seedAda(page);
     await fulfillRateDay(page);

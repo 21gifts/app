@@ -451,6 +451,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'goal-php',
+    image: 'welcome-goal-php.png',
+    visual: 'state-welcome-goal-php',
+    needle: 'state /welcome goal-php',
+  },
+  {
+    route: '/welcome',
     id: 'ask-amount',
     image: 'welcome-ask-amount.png',
     visual: 'state-welcome-ask-amount',
