@@ -11436,7 +11436,7 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-text-sats');
   });
 
-  test('messages thread-pay-qr', async ({ page }) => {
+  test('messages thread-pay-qr', async ({ page }, testInfo) => {
     await fulfillRateDay(page);
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -11503,7 +11503,11 @@ test.describe('inbox screens', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    }
     await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-messages-thread-pay-qr');
   });

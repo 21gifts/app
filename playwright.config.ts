@@ -8,7 +8,7 @@ const MOBILE_VIEWPORT = { width: 375, height: 812 };
 
 /**
  * iPhone UA so a specific invoice omits its payment QR
- * (`isSmartphoneUserAgent`): the forum pay sheet and the public pay link.
+ * (`isSmartphoneUserAgent`): the forum pay sheet, the inbox pay sheet, and the public pay link.
  * Other screens show the same QR as desktop.
  */
 const IPHONE_UA =

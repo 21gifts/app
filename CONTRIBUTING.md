@@ -492,13 +492,14 @@ The figure is the fiat string stored on that payment when the payment recorded o
 ### Payment QR vs deep links (hard requirement)
 
 A smartphone shows the same payment QR as a desktop for the profile,
-member, public view, point of sale, and inbox. The Shop sticker is
+member, public view, and point of sale. The Shop sticker is
 shown wherever that profile QR is shown.
 
-A specific invoice is different. The forum post pay sheet
-(`ForumBoard`, including the composer pay slot) and the public pay link
-(`PayLinkScreen`, the open till and **Continue**) do not mount
-the invoice `QrCode` on a smartphone. The wallet button still opens
+A specific invoice is different. Paying one on a smartphone is the
+wallet deep link only. The forum post pay sheet (`ForumBoard`, including
+the composer pay slot), the inbox pay sheet (`InboxScreen`), and the
+public pay link (`PayLinkScreen`, the open till and **Continue**) do not
+mount the invoice `QrCode` on a smartphone. The wallet button still opens
 Wallet of Satoshi (`walletofsatoshi:` on iOS, Android Intent on
 Android). Desktop and iPad show that invoice QR and the same button.
 The forum amount step is Continue on every user agent, then the same
@@ -509,9 +510,9 @@ Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 width: a narrow MacBook window is still a desktop. iPad is not a
 smartphone.
 
-Mounting either of those invoice QRs on a smartphone UA is an undeclared
-deviation and is rejected. Hiding a profile, member, public view, point
-of sale, or inbox QR on a smartphone UA is also rejected. Reviewers
+Mounting any of those invoice QRs on a smartphone UA is an undeclared
+deviation and is rejected. Hiding a profile, member, public view, or
+point of sale QR on a smartphone UA is also rejected. Reviewers
 follow `Review.md`.
 
 ### Handbook (hard requirement)

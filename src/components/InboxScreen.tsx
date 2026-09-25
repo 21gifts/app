@@ -40,6 +40,7 @@ import {
 } from '@/lib/stats-money';
 import {
   isAndroidUserAgent,
+  isSmartphoneUserAgent,
   walletOfSatoshiHref,
   walletOfSatoshiIntentHref,
 } from '@/lib/wos-deep-link';
@@ -490,7 +491,8 @@ function ConversationListItem({
  * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
- * Wallet of Satoshi / QR pay sheet. The
+ * Wallet of Satoshi pay sheet. Desktop and iPad also show the invoice QR. A
+ * smartphone does not (`isSmartphoneUserAgent`, not viewport). The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
@@ -587,7 +589,7 @@ export function InboxScreen({
   }
 
   useEffect(() => {
-    setShowPaymentQr(true);
+    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
 
   useEffect(() => {

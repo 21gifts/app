@@ -26,13 +26,13 @@ Reject the PR when a shown bitcoin amount has no equivalent in the visitor's def
 
 ## Payment QR vs deep links
 
-Reject the PR when the forum-post pay sheet or the public pay-link
-invoice mounts its invoice QR on a smartphone user-agent, or when a
-profile, member, public view, point of sale, or inbox QR is hidden on a
-smartphone. Detection is `isSmartphoneUserAgent`, not viewport width.
-On those invoice screens the phone opens Wallet of Satoshi and shows no
-QR. Everywhere else the phone matches the desktop. See CONTRIBUTING.md
-“Payment QR vs deep links”.
+Reject the PR when the forum-post pay sheet, the inbox pay sheet, or the
+public pay-link invoice mounts its invoice QR on a smartphone
+user-agent, or when a profile, member, public view, or point of sale QR
+is hidden on a smartphone. Detection is `isSmartphoneUserAgent`, not
+viewport width. On those invoice screens the phone opens Wallet of
+Satoshi and shows no QR. Everywhere else the phone matches the desktop.
+See CONTRIBUTING.md “Payment QR vs deep links”.
 
 ## Completeness gates
 

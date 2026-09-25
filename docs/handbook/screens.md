@@ -2156,7 +2156,7 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 
 ### Variant: thread-pay-qr
 
-Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop and smartphone both show the Bitcoin payment QR plus the wallet **Pay** button. **Waiting for payment…** is acceptable while the pay poll hangs.
+Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
 

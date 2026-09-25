@@ -1452,7 +1452,8 @@ describe('InboxScreen', () => {
         payWaiting={true}
       />,
     );
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
@@ -1461,7 +1462,7 @@ describe('InboxScreen', () => {
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the Android wallet intent from the pay sheet with the QR', async () => {
+  it('opens the Android wallet intent from the pay sheet without the QR', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
       value:
@@ -1488,7 +1489,8 @@ describe('InboxScreen', () => {
         invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
       />,
     );
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationStub.href).toMatch(/^intent:lightning:/);
   });

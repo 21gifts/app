@@ -2003,7 +2003,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Detects a smartphone so the pay sheet can hide the payment QR. True for iPhone, iPod, and Android with `Mobile`; false for iPad, Android tablet (no `Mobile`), and desktop. Viewport width is irrelevant.
 - **Inputs:** `userAgent` string (`navigator.userAgent`).
 - **Returns / side effects:** `true` iff the UA is a smartphone. No side effects.
-- **Used by:** `ForumBoard` to hide the payment QR.
+- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` to hide a specific invoice QR.
 
 ## Function: isInAppBrowser
 
