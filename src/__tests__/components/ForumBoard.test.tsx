@@ -1419,6 +1419,17 @@ describe('ForumBoard', () => {
     );
     expect(document.querySelector('p.whitespace-pre-wrap')).toBeNull();
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+    expect(screen.getByAltText('Photo from Ada').className.split(/\s+/)).toEqual(
+      expect.arrayContaining([
+        'block',
+        'h-auto',
+        'max-h-80',
+        'w-full',
+        'shrink-0',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
     expect(screen.getByRole('listitem').getAttribute('data-message-id')).toBe('m-photo');
   });
 
