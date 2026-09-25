@@ -2175,7 +2175,7 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), **Translate** (Languages icon) under `forum_post` and `forum_reply` user text only (not zap amounts, appointment, or proposal subjects), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
 - **Actions:** Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click any other row to open the public forum note `/messages/{parentId}` (mark that notification read). Back to the forum. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchNotifications`, `fetchConversations`, `fetchModeratorGroup`, `markNotificationRead`, `markAllNotificationsRead`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
@@ -2185,36 +2185,6 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 Loaded list with at least one unread forum reply (actor **Bob**, copy **Bob replied**).
 
 ![21.gifts notifications](images/notifications.png)
-
-### Variant: translate
-
-Signed-in `/notifications` with one German forum reply. **Translate** is visible under the body.
-
-![21.gifts notifications translate](images/notifications-translate.png)
-
-### Variant: translate-loading
-
-Same German reply after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
-
-![21.gifts notifications translate loading](images/notifications-translate-loading.png)
-
-### Variant: translate-done
-
-Same German reply after a successful translation. Translated body plus **Show original**; the German original is not shown.
-
-![21.gifts notifications translate done](images/notifications-translate-done.png)
-
-### Variant: translate-hidden
-
-After **Show original**: translated body hidden, control reads **Show translation**.
-
-![21.gifts notifications translate hidden](images/notifications-translate-hidden.png)
-
-### Variant: translate-error
-
-Same German reply after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
-
-![21.gifts notifications translate error](images/notifications-translate-error.png)
 
 ### Variant: empty
 

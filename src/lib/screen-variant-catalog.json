@@ -1842,36 +1842,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/notifications:translate",
-    "label": "/notifications translate",
-    "visual": "state-notifications-translate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/notifications:translate-loading",
-    "label": "/notifications translate-loading",
-    "visual": "state-notifications-translate-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/notifications:translate-done",
-    "label": "/notifications translate-done",
-    "visual": "state-notifications-translate-done",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/notifications:translate-hidden",
-    "label": "/notifications translate-hidden",
-    "visual": "state-notifications-translate-hidden",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/notifications:translate-error",
-    "label": "/notifications translate-error",
-    "visual": "state-notifications-translate-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/notifications:empty",
     "label": "/notifications empty",
     "visual": "state-notifications-empty",

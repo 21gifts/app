@@ -545,7 +545,7 @@ The labeled vs icon-only table is the **binding** rule. Reviewers follow this ta
 
 **Notifications** list rows are full-row links/buttons with visible text (not icon-only).
 
-Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, notifications, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay labeled underline text.
+Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay labeled underline text.
 
 **Member profile** has no edit. Back is icon-only like profile (`ProfileChromeLeft`). Member profile **Message** is a labeled `Button` (`profile.message`), not icon-only. Member profile **Shop sticker** is a labeled `Button size="sm" variant="secondary"` (`profile.shopSticker`), not icon-only; its overlay closes with the icon-only ghost `IconButton` like every overlay. **Moderator functions** is the same `details` / `summary` as wallet **Advanced functions**, not a `Button`.
 
@@ -950,7 +950,7 @@ Global. 2px `app-focus`, offset 2px. On ink, ring is paper; on paper, ring is `#
 
 ### Notifications list
 
-**Anatomy.** `Card maxWidth="xl"` `surface={false}` + **h1** `notifications.heading` at the **h1** ramp. List of posts, replies, and payments as full-width buttons, with Languages **Translate** (`aria-label` `forum.translate`) outside the row button under `forum_post` and `forum_reply` user text only (not zap amounts, appointment, or proposal subjects) (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`): actor title (`{name} posted` / `{name} replied` / `{name} sent bitcoin`) + time. Unread: semibold `text-app-fg`. Read: actor `font-medium`, body `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only post body: `notifications.photoPost` (**Photo**). Photo-only reply body: `notifications.photoOnly` (**Photo reaction**). Zap body is the stored amount. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
+**Anatomy.** `Card maxWidth="xl"` `surface={false}` + **h1** `notifications.heading` at the **h1** ramp. List of posts, replies, and payments as full-width buttons (`w-full` `rounded-2xl border border-app-border bg-app-card-muted px-4 py-3`): actor title (`{name} posted` / `{name} replied` / `{name} sent bitcoin`) + time. Unread: semibold `text-app-fg`. Read: actor `font-medium`, body `text-app-muted`. Time: `text-xs text-app-subtle`. Photo-only post body: `notifications.photoPost` (**Photo**). Photo-only reply body: `notifications.photoOnly` (**Photo reaction**). Zap body is the stored amount. Empty: `notifications.empty`. Loading: `notifications.loading`. Error: `role="alert"` `text-app-danger` + labeled **Try again** (`Button` secondary). Click row → `/messages/{parentId}`. No composer.
 
 ### Member identity card
 
