@@ -572,12 +572,14 @@ describe('ForumBoard', () => {
         onPost={() => undefined}
         onRetry={() => undefined}
         formError={null}
-        composerMaxLength={486}
+        composerMaxLength={FORUM_MESSAGE_MAX_LENGTH - 14}
         {...idleProps}
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe('486');
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe(
+      String(FORUM_MESSAGE_MAX_LENGTH - 14),
+    );
   });
 
   it('hides the composer and mode control when composerHidden', () => {
@@ -2520,7 +2522,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
   });
 
   it('shows formError request alert', () => {
@@ -5077,7 +5079,7 @@ describe('ForumBoard', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
 
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>

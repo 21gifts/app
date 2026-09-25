@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactLoader } from '@/components/ContactLoader';
-import type { Account, ContactMessage } from '@/lib/api-types';
+import { CONTACT_MESSAGE_MAX_LENGTH, type Account, type ContactMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -89,13 +89,13 @@ describe('ContactLoader', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('does not post when the trimmed draft is longer than 500 characters', () => {
+  it('does not post when the trimmed draft is longer than 8000 characters', () => {
     renderWithLocale(<ContactLoader />);
     fireEvent.change(screen.getByLabelText('Your message'), {
-      target: { value: `${'a'.repeat(501)}` },
+      target: { value: `${'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1)}` },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
 

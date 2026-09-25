@@ -464,7 +464,7 @@ function ConversationListItem({
 
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
- * a 500-character composer and a sats amount field (`showAmount` false
+ * a 8000-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room has no gifts). Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);

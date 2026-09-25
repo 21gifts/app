@@ -1,7 +1,12 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModeratorGroupScreen } from '@/components/ModeratorGroupScreen';
-import type { Account, Conversation, ConversationMessage } from '@/lib/api-types';
+import {
+  CONTACT_MESSAGE_MAX_LENGTH,
+  type Account,
+  type Conversation,
+  type ConversationMessage,
+} from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -319,9 +324,11 @@ describe('ModeratorGroupScreen', () => {
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'a'.repeat(501) } });
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1) },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Follow up')).toBeTruthy();

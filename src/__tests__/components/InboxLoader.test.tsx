@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InboxLoader } from '@/components/InboxLoader';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import type { Account, Conversation, ConversationMessage } from '@/lib/api-types';
+import {
+  CONTACT_MESSAGE_MAX_LENGTH,
+  type Account,
+  type Conversation,
+  type ConversationMessage,
+} from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -440,9 +445,11 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'a'.repeat(501) } });
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1) },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
 

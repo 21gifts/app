@@ -898,7 +898,7 @@ describe('InboxScreen', () => {
         showFilter={false}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('Keep it to 500 characters');
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     expect(screen.queryByText('Send')).toBeNull();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);

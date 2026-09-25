@@ -586,9 +586,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const text = rawText.trim();
-    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
+    if ((text.length < 1 && !hasPhoto) || text.length > 8000) {
       json(res, 400, {
-        error: 'Text must be 1–500 characters or include a photo',
+        error: 'Text must be 1–8000 characters or include a photo',
       });
       return;
     }
@@ -670,8 +670,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const text = parsed.text.trim();
-    if (text.length < 1 || text.length > 500) {
-      json(res, 400, { error: 'Text must be 1–500 characters' });
+    if (text.length < 1 || text.length > 8000) {
+      json(res, 400, { error: 'Text must be 1–8000 characters' });
       return;
     }
     const created = {
@@ -968,8 +968,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const text = rawText.trim();
-    if ((text.length < 1 && !hasPhoto) || text.length > 500) {
-      json(res, 400, { error: 'Text must be 1–500 characters' });
+    if ((text.length < 1 && !hasPhoto) || text.length > 8000) {
+      json(res, 400, { error: 'Text must be 1–8000 characters' });
       return;
     }
     const photoCount = photosList.length > 0 ? photosList.length : hasPhoto ? 1 : 0;
