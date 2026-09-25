@@ -1,6 +1,11 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: () => void } => ({ push: () => undefined }),
+}));
+
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 

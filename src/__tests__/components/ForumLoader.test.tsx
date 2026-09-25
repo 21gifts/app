@@ -8705,9 +8705,13 @@ describe('forum feed pages', () => {
       photoCount: 1,
       replyCount: 1,
     };
-    publicListMock.mockResolvedValueOnce({ messages: [note], nextCursor: 'cur' });
-    publicListMock.mockRejectedValueOnce(new PublicForumUnauthorizedError());
-    publicPhotoMock.mockRejectedValueOnce(new Error('missing'));
+    publicListMock.mockImplementation(async (args?: { cursor?: string | null }) => {
+      if (args?.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
+        throw new PublicForumUnauthorizedError();
+      }
+      return { messages: [note], nextCursor: 'cur' };
+    });
+    publicPhotoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     publicRepliesMock.mockResolvedValue([
       { ...SAMPLE, id: 'r-pub', text: 'A public reply', parentId: 'pub-1' },
     ]);
