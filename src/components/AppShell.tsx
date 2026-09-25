@@ -101,9 +101,9 @@ export function AppShell({
   return (
     <AppShellContext.Provider value={ctx}>
       <main
-        className={`relative flex h-[var(--app-height)] flex-col items-center overscroll-y-none px-6 py-4${extra}`}
+        className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-6 py-4${extra}`}
       >
-        <section className="flex min-h-0 w-full flex-1 flex-col overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm">
+        <section className="flex min-h-0 w-full flex-col grow shrink basis-0 self-stretch overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm">
           <div
             data-app-chrome
             className="relative z-40 flex flex-none items-center justify-between gap-2 px-8 pt-6 pb-2"
@@ -118,7 +118,7 @@ export function AppShell({
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
           <div ref={setScrollerEl} className="min-h-0 w-full flex-1 overflow-y-auto">
             {align === 'center' ? (
-              <div className="flex min-h-full flex-col items-center justify-center px-8 py-6">
+              <div className="flex min-h-full flex-col items-center justify-[safe_center] px-8 py-6">
                 {children}
               </div>
             ) : (

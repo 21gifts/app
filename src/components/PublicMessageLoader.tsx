@@ -122,7 +122,7 @@ function PublicThreadCard({
           controls
           playsInline
           preload="metadata"
-          className="mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
+          className="mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
           onError={() => {
             setVideoFailed(true);
           }}
@@ -132,7 +132,7 @@ function PublicThreadCard({
         <img
           src={photoUrl}
           alt={t('forum.photoAlt', { name: note.name })}
-          className="max-h-80 w-full rounded-xl object-contain"
+          className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
         />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
         <ForumPhotoGallery

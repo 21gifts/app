@@ -1027,7 +1027,7 @@ export function ForumBoard({
                     controls
                     playsInline
                     preload="metadata"
-                    className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full rounded-xl object-contain"
+                    className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
                     onClick={stopCardToggle}
                     onError={() => {
                       setDeadVideoIds((prev) => new Set(prev).add(message.id));
@@ -1038,7 +1038,7 @@ export function ForumBoard({
                   <img
                     src={photoUrl}
                     alt={t('forum.photoAlt', { name: message.name })}
-                    className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                    className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
                     onClick={stopCardToggle}
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
