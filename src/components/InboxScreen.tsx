@@ -918,7 +918,7 @@ export function InboxScreen({
                         key={`${message.id}:${index}`}
                         src={url}
                         alt={t('inbox.photoAlt', { name: message.name })}
-                        className="mt-2 max-h-80 w-full rounded-xl object-contain"
+                        className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
                         onLoad={pinIfStuck}
                       />
                     );

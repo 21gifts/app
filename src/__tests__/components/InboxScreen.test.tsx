@@ -2630,7 +2630,18 @@ describe('InboxScreen', () => {
         photoUrls={{ 'm1:0': 'blob:inbox-photo' }}
       />,
     );
-    expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+    const still = screen.getByAltText('Photo from Ada').className.split(/\s+/);
+    expect(still).toEqual(
+      expect.arrayContaining([
+        'block',
+        'h-auto',
+        'max-h-80',
+        'w-full',
+        'shrink-0',
+        'rounded-xl',
+        'object-contain',
+      ]),
+    );
   });
 
   it('renders a thread photo when hasPhoto is true and photoCount is 0', () => {
