@@ -101,6 +101,7 @@ describe('PayLinkScreen', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.getByText(/left/)).toBeTruthy();
   });
 
   it('keeps the form when the invoice request fails', async () => {
@@ -548,6 +549,30 @@ describe('PayLinkScreen', () => {
       { timeout: 4000 },
     );
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+  });
+
+  it('returns to the amount form when a confirmed payment runs out', async () => {
+    const start = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(start);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('5:00 left')).toBeTruthy();
+    vi.spyOn(Date, 'now').mockReturnValue(start + 5 * 60 * 1000 + 1);
+    await waitFor(
+      () => {
+        expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+      },
+      { timeout: 4000 },
+    );
+    expect(screen.queryByText(/left/)).toBeNull();
   });
 
   it('enables Continue when the till expires while minting', async () => {

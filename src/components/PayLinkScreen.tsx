@@ -172,7 +172,10 @@ function shopStroke(part: ShopStickerPictogramPart): {
   return { stroke: part.stroke.color, strokeWidth: part.stroke.width };
 }
 
-/** Shop-sticker storefront, shown while a till charge is open. */
+/** Five minutes, the same lock as an open till. */
+const PAYMENT_TTL_MS = 5 * 60 * 1000;
+
+/** Shop-sticker storefront, shown on a real pay link. */
 function ShopStickerIcon(): ReactElement {
   return (
     <svg
@@ -208,6 +211,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
+  const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
   const postingRef = useRef(false);
@@ -227,6 +231,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setProfile(null);
     setInvoice(null);
     setMintedSats(null);
+    setMintedExpiresAt(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -271,9 +276,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const charge = profile?.charge ?? null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
   const chargeLive = charge !== null && remaining > 0;
+  const mintedRemaining = mintedExpiresAt === null ? 0 : Date.parse(mintedExpiresAt) - now;
+  const mintedLive = invoice !== null && mintedExpiresAt !== null && mintedRemaining > 0;
 
   useEffect(() => {
-    if (charge === null) {
+    if (charge === null && mintedExpiresAt === null) {
       return;
     }
     const timer = setInterval(() => {
@@ -282,7 +289,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     return () => {
       clearInterval(timer);
     };
-  }, [charge]);
+  }, [charge, mintedExpiresAt]);
 
   useEffect(() => {
     if (charge !== null && !chargeLive) {
@@ -292,6 +299,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setPosting(false);
     }
   }, [charge, chargeLive]);
+
+  useEffect(() => {
+    if (invoice === null || mintedExpiresAt === null || Date.parse(mintedExpiresAt) > now) {
+      return;
+    }
+    setInvoice(null);
+    setMintedSats(null);
+    setMintedExpiresAt(null);
+    setFormError(null);
+    postingRef.current = false;
+    setPosting(false);
+  }, [invoice, mintedExpiresAt, now]);
 
   useEffect(() => {
     if (!chargeLive || profile === null || charge === null) {
@@ -382,6 +401,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       }
       setInvoice(result.pr);
       setMintedSats(result.amountSats);
+      setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
@@ -418,6 +438,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 {chargeLive && charge !== null ? (
                   <p className="text-center text-sm text-app-subtle">
                     {t('pay.timeLeft', { time: formatLeft(remaining) })}
+                  </p>
+                ) : mintedLive ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {t('pay.timeLeft', { time: formatLeft(mintedRemaining) })}
                   </p>
                 ) : null}
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">

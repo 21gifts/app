@@ -991,6 +991,9 @@ test.describe('screen baselines', () => {
 
   test('screen /pl', async ({ page }, testInfo) => {
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    // pauseAt only moves forward, so the confirmed payment freezes at 5:00 left.
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
       async (route) => {
@@ -1030,6 +1033,7 @@ test.describe('screen baselines', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await expect(page.getByText('5:00 left')).toBeVisible();
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     } else {
