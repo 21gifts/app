@@ -284,7 +284,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
 - **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success leaves that form and shows the active payment: the locked sat amount and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -295,7 +295,7 @@ Scanned pay link with no open payment (`charge` null or absent). The shop sticke
 
 ### Variant: invoice
 
-After **Continue**, the same active payment as an open till: the shop sticker, five minutes left, the locked sat amount, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows the countdown and **Pay**, not the QR.
+After **Continue**, the same active payment as an open till: the shop sticker, five minutes left, the locked sat amount, the viewer's default fiat beside it, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows the countdown and **Pay**, not the QR.
 
 ![21.gifts pay link invoice](images/pl-invoice.png)
 
@@ -319,13 +319,13 @@ The form stays, and **Could not create the invoice.** is shown under it.
 
 ### Variant: charge
 
-The open till: the shop sticker's storefront above the name, then time left, the sat amount, and **Pay**. Desktop also shows the Bitcoin invoice QR. A smartphone does not. No gift glyph and no amount field.
+The open till: the shop sticker's storefront above the name, then time left, the sat amount, the viewer's default fiat beside it, and **Pay**. Desktop also shows the Bitcoin invoice QR. A smartphone does not. No gift glyph and no amount field.
 
 ![21.gifts pay link charge](images/pl-charge.png)
 
 ### Variant: charge-failed
 
-Open till, mint failed. The shop sticker, time left, the sat amount, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
+Open till, mint failed. The shop sticker, time left, the sat amount, the viewer's default fiat beside it, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
 
 ![21.gifts pay link charge failed](images/pl-charge-failed.png)
 

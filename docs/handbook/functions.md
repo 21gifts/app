@@ -1382,7 +1382,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard` and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `InboxScreen`, `PosScreen`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosScreen`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
 
 ## Function: RootLayout
 
@@ -2212,7 +2212,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats and **Pay**, no amount field). **Pay** is the width of the invoice QR plate, centered, not the page column. Desktop shows the invoice QR. A smartphone does not (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
+- **Returns / side effects:** Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the gift-day rate is usable, and **Pay**, no amount field). **Pay** is the width of the invoice QR plate, centered, not the page column. Desktop shows the invoice QR. A smartphone does not (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage
