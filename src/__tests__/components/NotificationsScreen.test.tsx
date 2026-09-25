@@ -112,7 +112,10 @@ describe('NotificationsScreen', () => {
     const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
     renderWithLocale(
       <NotificationsScreen
-        notifications={[{ ...POST, text: german }, { ...UNREAD, text: german }]}
+        notifications={[
+          { ...POST, text: german },
+          { ...UNREAD, text: german },
+        ]}
         error={false}
         loading={false}
         onRetry={() => undefined}
