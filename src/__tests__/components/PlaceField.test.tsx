@@ -401,5 +401,39 @@ describe('PlaceField', () => {
     expect(Map.mock.calls.length).toBe(drawn);
     view.unmount();
     fail?.();
+    (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+  });
+
+  it('stays unavailable when a rejected key is opened with no map script', async () => {
+    const Map = vi.fn(() => ({ setCenter: vi.fn(), addListener: vi.fn() }));
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map,
+        Marker: vi.fn(() => ({
+          addListener: vi.fn(),
+          setPosition: vi.fn(),
+          getPosition: () => null,
+        })),
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    const toggle = screen.getByRole('button', { name: 'Add a place' });
+    fireEvent.click(toggle);
+    expect(await screen.findByLabelText('Place name')).toBeTruthy();
+    await waitFor(() => {
+      expect(Map).toHaveBeenCalled();
+    });
+    const drawn = Map.mock.calls.length;
+    (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    delete (window as { google?: unknown }).google;
+    document.querySelector('script[data-gmaps="weekly"]')?.remove();
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
+    expect(Map.mock.calls.length).toBe(drawn);
   });
 });
