@@ -924,6 +924,45 @@ describe('forumMessageSchema', () => {
     expect(() => forumMessageSchema.parse({ ...base, goalSats: 1.5 })).toThrow();
   });
 
+  it('leaves missing goal currency keys undefined', () => {
+    const parsed = forumMessageSchema.parse(base);
+    expect(parsed.goalCurrency).toBeUndefined();
+    expect(parsed.goalAmount).toBeUndefined();
+    expect(parsed.goalAmountUsd).toBeUndefined();
+    expect(parsed.goalAmountChf).toBeUndefined();
+    expect(parsed.goalAmountEur).toBeUndefined();
+    expect(parsed.goalAmountPhp).toBeUndefined();
+  });
+
+  it('parses goalCurrency BTC and goalAmount 10.125', () => {
+    const parsed = forumMessageSchema.parse({
+      ...base,
+      goalCurrency: 'BTC',
+      goalAmount: '10.125',
+    });
+    expect(parsed.goalCurrency).toBe('BTC');
+    expect(parsed.goalAmount).toBe('10.125');
+  });
+
+  it('rejects goalAmount nope, a comma, and more than eight fraction digits', () => {
+    expect(() => forumMessageSchema.parse({ ...base, goalAmount: 'nope' })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, goalAmount: '10,5' })).toThrow();
+    expect(() => forumMessageSchema.parse({ ...base, goalAmount: '10.123456789' })).toThrow();
+  });
+
+  it('keeps goalAmountUsd 1.00 and null and rejects 1.5', () => {
+    expect(forumMessageSchema.parse({ ...base, goalAmountUsd: '1.00' }).goalAmountUsd).toBe('1.00');
+    expect(forumMessageSchema.parse({ ...base, goalAmountUsd: null }).goalAmountUsd).toBeNull();
+    expect(() => forumMessageSchema.parse({ ...base, goalAmountUsd: '1.5' })).toThrow();
+  });
+
+  it('still parses a legacy ask that only has goalSats', () => {
+    const parsed = forumMessageSchema.parse({ ...base, goalSats: 21000 });
+    expect(parsed.goalSats).toBe(21000);
+    expect(parsed.goalCurrency).toBeUndefined();
+    expect(parsed.goalAmount).toBeUndefined();
+  });
+
   it('accepts an empty text when hasPhoto is true', () => {
     const photoOnly = { ...base, text: '', hasPhoto: true };
     expect(forumMessageSchema.parse(photoOnly)).toEqual({

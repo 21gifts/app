@@ -181,7 +181,21 @@ function PublicThreadCard({
         {fiatSuffix}
       </p>
       {note.parentId === undefined && typeof note.goalSats === 'number' && note.goalSats > 0 ? (
-        <ForumGoalBar sats={note.sats} goalSats={note.goalSats} rateDay={rateDay} />
+        <ForumGoalBar
+          sats={note.sats}
+          goalSats={note.goalSats}
+          rateDay={rateDay}
+          goalCurrency={note.goalCurrency}
+          goalAmount={note.goalAmount}
+          goalAmountUsd={note.goalAmountUsd}
+          goalAmountChf={note.goalAmountChf}
+          goalAmountEur={note.goalAmountEur}
+          goalAmountPhp={note.goalAmountPhp}
+          amountUsd={note.amountUsd}
+          amountChf={note.amountChf}
+          amountEur={note.amountEur}
+          amountPhp={note.amountPhp}
+        />
       ) : null}
     </Card>
   );

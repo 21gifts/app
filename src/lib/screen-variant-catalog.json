@@ -318,6 +318,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:goal-fiat",
+    "label": "/welcome goal-fiat",
+    "visual": "state-welcome-goal-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:goal-php",
+    "label": "/welcome goal-php",
+    "visual": "state-welcome-goal-php",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-amount",
     "label": "/welcome ask-amount",
     "visual": "state-welcome-ask-amount",
@@ -405,6 +417,12 @@
     "id": "/welcome:ask-text-filled",
     "label": "/welcome ask-text-filled",
     "visual": "state-welcome-ask-text-filled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-fiat",
+    "label": "/welcome ask-preview-fiat",
+    "visual": "state-welcome-ask-preview-fiat",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1029,6 +1047,12 @@
     "id": "/members/[accountId]:posts-open-goal-110",
     "label": "/members/[accountId] posts-open-goal-110",
     "visual": "state-members-posts-open-goal-110",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-goal-fiat",
+    "label": "/members/[accountId] posts-open-goal-fiat",
+    "visual": "state-members-posts-open-goal-fiat",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2319,6 +2343,12 @@
     "id": "/messages/[id]:goal-110",
     "label": "/messages/[id] goal-110",
     "visual": "state-messages-id-goal-110",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:goal-fiat",
+    "label": "/messages/[id] goal-fiat",
+    "visual": "state-messages-id-goal-fiat",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

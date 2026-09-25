@@ -1097,6 +1097,16 @@ export function ForumBoard({
                   sats={message.sats}
                   goalSats={message.goalSats}
                   rateDay={rateDay ?? null}
+                  goalCurrency={message.goalCurrency}
+                  goalAmount={message.goalAmount}
+                  goalAmountUsd={message.goalAmountUsd}
+                  goalAmountChf={message.goalAmountChf}
+                  goalAmountEur={message.goalAmountEur}
+                  goalAmountPhp={message.goalAmountPhp}
+                  amountUsd={message.amountUsd}
+                  amountChf={message.amountChf}
+                  amountEur={message.amountEur}
+                  amountPhp={message.amountPhp}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">

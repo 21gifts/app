@@ -444,6 +444,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'goal-fiat',
+    image: 'welcome-goal-fiat.png',
+    visual: 'state-welcome-goal-fiat',
+    needle: 'state /welcome goal-fiat',
+  },
+  {
+    route: '/welcome',
+    id: 'goal-php',
+    image: 'welcome-goal-php.png',
+    visual: 'state-welcome-goal-php',
+    needle: 'state /welcome goal-php',
+  },
+  {
+    route: '/welcome',
     id: 'ask-amount',
     image: 'welcome-ask-amount.png',
     visual: 'state-welcome-ask-amount',
@@ -546,6 +560,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-ask-text-filled.png',
     visual: 'state-welcome-ask-text-filled',
     needle: 'state /welcome ask-text-filled',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-preview-fiat',
+    image: 'welcome-ask-preview-fiat.png',
+    visual: 'state-welcome-ask-preview-fiat',
+    needle: 'state /welcome ask-preview-fiat',
   },
   {
     route: '/welcome',
@@ -1274,6 +1295,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-goal-110.png',
     visual: 'state-members-posts-open-goal-110',
     needle: 'state /members posts-open-goal-110',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-goal-fiat',
+    image: 'members-posts-open-goal-fiat.png',
+    visual: 'state-members-posts-open-goal-fiat',
+    needle: 'state /members posts-open-goal-fiat',
   },
   {
     route: '/members/[accountId]',
@@ -2779,6 +2807,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-goal-110.png',
     visual: 'state-messages-id-goal-110',
     needle: '110%',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'goal-fiat',
+    image: 'messages-id-goal-fiat.png',
+    visual: 'state-messages-id-goal-fiat',
+    needle: 'state /messages/[id] goal-fiat',
   },
   {
     route: '/messages/[id]',

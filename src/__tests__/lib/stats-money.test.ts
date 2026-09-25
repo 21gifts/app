@@ -52,10 +52,10 @@ describe('formatFiatDisplay', () => {
     expect(formatFiatDisplay('1425.00', 'USD')).toBe("$1'425.00");
   });
 
-  it('prefixes CHF EUR and PHP with the currency code', () => {
+  it('prefixes CHF and EUR with the code and PHP with the peso sign', () => {
     expect(formatFiatDisplay('1425.00', 'CHF')).toBe("CHF 1'425.00");
     expect(formatFiatDisplay('1.43', 'EUR')).toBe('EUR 1.43');
-    expect(formatFiatDisplay('50.00', 'PHP')).toBe('PHP 50.00');
+    expect(formatFiatDisplay('50.00', 'PHP')).toBe('₱50.00');
   });
 
   it('renders null as an em dash', () => {
@@ -109,7 +109,7 @@ describe('formatFiatTick', () => {
     expect(formatFiatTick(1.43, 'CHF')).toBe('CHF 1.43');
     expect(formatFiatTick(1425, 'CHF')).toBe("CHF 1'425");
     expect(formatFiatTick(1.43, 'EUR')).toBe('EUR 1.43');
-    expect(formatFiatTick(80000, 'PHP')).toBe("PHP 80'000");
+    expect(formatFiatTick(80000, 'PHP')).toBe("₱80'000");
   });
 });
 

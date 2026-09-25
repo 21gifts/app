@@ -348,7 +348,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('$0.04')).toBeNull();
   });
 
-  it('shows a fiat suffix on the nested post when conversion is available', async () => {
+  it('shows the live viewer fiat on a nested post that stored no fiat', async () => {
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}

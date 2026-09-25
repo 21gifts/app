@@ -324,7 +324,14 @@ export function ForumAskWizard({
               </ul>
             ) : null}
             {parsedAsk !== null ? (
-              <ForumGoalBar sats={0} goalSats={parsedAsk} rateDay={rateDay} />
+              <ForumGoalBar
+                sats={0}
+                goalSats={parsedAsk}
+                rateDay={rateDay}
+                preview
+                goalCurrency={draftUnit === 'fiat' ? fiat : 'BTC'}
+                goalAmount={askDraft.trim()}
+              />
             ) : null}
           </div>
           <Button

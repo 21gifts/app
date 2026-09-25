@@ -36,18 +36,23 @@ function fiatSuffixMarkup(
 }
 
 /**
- * Preferred-fiat suffix next to a ₿ amount. A stored string is shown as-is.
- * A present `null` is ₿-only. A missing field uses the live rate and is
- * ₿-only only when that conversion is unusable.
+ * Preferred-fiat suffix next to a ₿ amount.
+ *
+ * A shown amount is never one currency when a stored string or a usable rate
+ * exists. Bitcoin is not the visitor's default fiat, so this suffix is that
+ * fiat beside it. A stored string for that currency is shown as-is. A null
+ * or missing field uses the gift-day rate when one is loaded. Returns null,
+ * so the amount stays bitcoin, only when neither a stored string nor a
+ * usable rate exists.
  *
  * @param sats - Whole sats.
- * @param rateDay - Latest gift-day totals, or `null`. Used when `stored` is
- *   omitted or the selected stored field is absent.
- * @param fiat - Visitor preference.
+ * @param rateDay - Latest gift-day totals, or `null`. Used when `stored`
+ *   has no string for `fiat`.
+ * @param fiat - Visitor's default fiat.
  * @param numberFormat - Grouping style.
- * @param stored - Fiat stored when that payment was made. Omitted keeps the
- *   live rate. A present `null` field is ₿-only; a string is formatted as-is.
- * @returns ` · ` plus formatted fiat, or `null`.
+ * @param stored - Fiat stored when that payment was made. A string wins.
+ *   Null or a missing field falls through to `rateDay`.
+ * @returns ` · ` plus formatted fiat, or `null` when no figure exists.
  */
 export function preferredFiatSuffix(
   sats: number,
@@ -58,10 +63,7 @@ export function preferredFiatSuffix(
 ): ReactElement | null {
   if (stored !== undefined) {
     const amount = stored[STORED_FIAT_FIELD[fiat]];
-    if (amount === null) {
-      return null;
-    }
-    if (amount !== undefined) {
+    if (typeof amount === 'string') {
       return fiatSuffixMarkup(amount, fiat, numberFormat);
     }
   }

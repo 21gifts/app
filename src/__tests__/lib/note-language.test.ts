@@ -14,6 +14,8 @@ describe('detectNoteLanguage', () => {
     'Caption waiting for the photo to load.',
     'Post to moderate',
     'Visible again note',
+    'The goal is defined in dollars.',
+    'The goal is defined in pesos.',
   ])('detects English fixture %j', (text) => {
     expect(detectNoteLanguage(text)).toBe('en');
   });
@@ -73,6 +75,8 @@ describe('shouldOfferNoteTranslate', () => {
     'Caption waiting for the photo to load.',
     'Post to moderate',
     'Visible again note',
+    'The goal is defined in dollars.',
+    'The goal is defined in pesos.',
   ])('does not offer English fixture %j in the English UI', (text) => {
     expect(shouldOfferNoteTranslate(text, 'en')).toBe(false);
   });

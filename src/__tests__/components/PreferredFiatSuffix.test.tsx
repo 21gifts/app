@@ -50,15 +50,15 @@ describe('preferredFiatSuffix', () => {
     expect(container.querySelector('[aria-hidden="true"]')?.textContent).toBe(' · ');
   });
 
-  it('renders no fiat when the stored field is null', () => {
+  it('uses the live rate when the stored field is null', () => {
     const { container } = render(
       <p>{preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountUsd: null })}</p>,
     );
-    expect(container.textContent).toBe('');
-    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(container.querySelector('[aria-hidden="true"]')?.textContent).toBe(' · ');
   });
 
-  it('uses the rate day when the stored field for that fiat is omitted', () => {
+  it('uses the live rate when stored is passed without the viewer field', () => {
     const { container } = render(
       <p>
         {preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountChf: '5.00' })}

@@ -258,8 +258,11 @@ describe('PublicMessageLoader', () => {
     fetchMessage.mockResolvedValue({ ...sample, sats: 23100, goalSats: 21000 });
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
+      expect(screen.getByText('Ask')).toBeTruthy();
+      expect(screen.getByText("₿21'000")).toBeTruthy();
       expect(screen.getByText('110%')).toBeTruthy();
     });
+    expect(screen.queryByText('$21.00')).toBeNull();
   });
 
   it('does not show the goal bar on a reply even when goalSats is set', async () => {
@@ -790,7 +793,7 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('shows a locale-default fiat equivalent next to ₿', async () => {
+  it('shows the viewer fiat when the note stored no fiat', async () => {
     fetchGiftStatsMock.mockResolvedValue({
       ...EMPTY_STATS,
       spendOverTime: [
@@ -813,10 +816,8 @@ describe('PublicMessageLoader', () => {
     });
     fetchMessage.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
-    await waitFor(() => {
-      expect(screen.getByText('$0.02')).toBeTruthy();
-    });
-    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    expect(await screen.findByText('$0.02')).toBeTruthy();
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 

@@ -4060,7 +4060,7 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: satsToFiatAmount — forum note shows a USD equivalent next to ₿', async ({
+test('Function: satsToFiatAmount — a note without stored fiat shows the viewer fiat', async ({
   page,
 }) => {
   await stubGiftStats(page, POPULATED_STATS);
@@ -4113,6 +4113,202 @@ test('Function: satsToFiatAmount — forum note shows a USD equivalent next to �
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
   await expect(page.getByText('$0.02')).toBeVisible();
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await page.getByLabel('Ask').fill('21');
+  await expect(page.getByText('$0.02').first()).toBeVisible();
+});
+
+test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount once', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        hasPosted: true,
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-php',
+            name: 'Ada',
+            text: 'The train fare is in pesos.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 1000,
+            goalCurrency: 'PHP',
+            goalAmount: '200',
+            goalAmountUsd: '3.50',
+            goalAmountChf: null,
+            goalAmountEur: null,
+            goalAmountPhp: '200.00',
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('₱200.00')).toBeVisible();
+  await expect(page.getByText("₿1'000")).toBeVisible();
+  await expect(page.getByText('$3.50')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+});
+
+test('Function: fiatPrefix — francs keep the code and pesos use the sign', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        hasPosted: true,
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-chf',
+            name: 'Ada',
+            text: 'The goal is defined in francs.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 1000,
+            goalCurrency: 'CHF',
+            goalAmount: '10.00',
+            goalAmountUsd: '11.00',
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+          {
+            id: 'm-php',
+            name: 'Ada',
+            text: 'The goal is defined in pesos.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 0,
+            goalSats: 1000,
+            goalCurrency: 'PHP',
+            goalAmount: '200.00',
+            goalAmountUsd: '1.50',
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('CHF 10.00')).toBeVisible();
+  await expect(page.getByText('₱200.00')).toBeVisible();
+  await expect(page.getByText('PHP 200.00')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+});
+
+test('Function: forumFiatGoalPercent — a fiat ask percent uses the payment sum', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        hasPosted: true,
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-half',
+            name: 'Ada',
+            text: 'Half of a dollar ask',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 999999,
+            goalSats: 1000,
+            goalCurrency: 'USD',
+            goalAmount: '1.50',
+            amountUsd: '0.75',
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('50%')).toBeVisible();
+  await expect(page.getByText('$1.50')).toBeVisible();
 });
 
 test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 sats', async ({
@@ -4192,6 +4388,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(replyCard.getByLabel('Amount')).toBeVisible();
+  await replyCard.getByLabel('Amount').fill('21');
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
   await expect(page.getByText('$0.02').first()).toBeVisible();
 });

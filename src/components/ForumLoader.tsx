@@ -40,6 +40,7 @@ import {
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type AmountUnit,
+  type ForumGoalCurrency,
   type ForumMessage,
   type ForumPlacePin,
 } from '@/lib/api-types';
@@ -255,8 +256,9 @@ function appendMessages(
 }
 
 /**
- * Updates sats/payable on ids already in `prev`. Does not insert unseen ids
- * (those wait behind the New posts pill while the visitor is scrolled down).
+ * Updates sats, payable, and the four payment snapshots on ids already in
+ * `prev`. Does not insert unseen ids (those wait behind the New posts pill
+ * while the visitor is scrolled down).
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the payable poll GET.
@@ -270,10 +272,26 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
   const byId = new Map(next.map((message) => [message.id, message]));
   return prev.map((row) => {
     const fresh = byId.get(row.id);
-    if (fresh === undefined || (fresh.payable === row.payable && fresh.sats === row.sats)) {
+    if (
+      fresh === undefined ||
+      (fresh.payable === row.payable &&
+        fresh.sats === row.sats &&
+        fresh.amountUsd === row.amountUsd &&
+        fresh.amountChf === row.amountChf &&
+        fresh.amountEur === row.amountEur &&
+        fresh.amountPhp === row.amountPhp)
+    ) {
       return row;
     }
-    return { ...row, payable: fresh.payable, sats: fresh.sats };
+    return {
+      ...row,
+      payable: fresh.payable,
+      sats: fresh.sats,
+      amountUsd: fresh.amountUsd,
+      amountChf: fresh.amountChf,
+      amountEur: fresh.amountEur,
+      amountPhp: fresh.amountPhp,
+    };
   });
 }
 
@@ -447,7 +465,9 @@ export function ForumLoader({
   const pendingComposeTextRef = useRef<string | null>(null);
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
-  const pendingComposeGoalRef = useRef<number | undefined>(undefined);
+  const pendingComposeGoalRef = useRef<
+    { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined
+  >(undefined);
   const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
   const composeFeePaidRef = useRef(false);
   const payPollGeneration = useRef(0);
@@ -1260,7 +1280,7 @@ export function ForumLoader({
                 const caption = pendingComposeTextRef.current ?? '';
                 const photos = pendingComposePhotosRef.current;
                 const video = pendingComposeVideoRef.current;
-                const goalSats = pendingComposeGoalRef.current;
+                const askGoal = pendingComposeGoalRef.current;
                 const pendingPlace = pendingComposePlaceRef.current;
                 const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
                 try {
@@ -1271,7 +1291,7 @@ export function ForumLoader({
                           video: video.file,
                           poster: video.poster,
                           /* v8 ignore next -- Ask plus a video clip is the photo path in tests */
-                          ...(goalSats !== undefined ? { goalSats } : {}),
+                          ...(askGoal !== undefined ? askGoal : {}),
                           ...placeFields,
                         })
                       : await postMessage(session, {
@@ -1286,7 +1306,7 @@ export function ForumLoader({
                                   ...(takenAt === undefined ? {} : { takenAt }),
                                 })),
                               }),
-                          ...(goalSats !== undefined ? { goalSats } : {}),
+                          ...(askGoal !== undefined ? askGoal : {}),
                           ...placeFields,
                         });
                   applyCreatedNote(created, photos, video);
@@ -1588,7 +1608,7 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
-    goalSats: number | undefined,
+    askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): Promise<void> => {
     setPosting(true);
@@ -1601,7 +1621,7 @@ export function ForumLoader({
         !composeFeePaidRef.current
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
-        const postAfterPay = hasMedia || goalSats !== undefined || pendingPlace !== null;
+        const postAfterPay = hasMedia || askGoal !== undefined || pendingPlace !== null;
         pendingComposePlaceRef.current = pendingPlace;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
@@ -1622,8 +1642,8 @@ export function ForumLoader({
         pendingComposeTextRef.current = trimmed;
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
-        pendingComposeGoalRef.current = goalSats;
-        startPayPoll(target.messageId, target.sats, goalSats === undefined, null, postAfterPay);
+        pendingComposeGoalRef.current = askGoal;
+        startPayPoll(target.messageId, target.sats, askGoal === undefined, null, postAfterPay);
         pendingPostRef.current = null;
         setDraft('');
         if (!hasMedia) {
@@ -1640,7 +1660,7 @@ export function ForumLoader({
               text: trimmed,
               video: pendingVideo.file,
               poster: pendingVideo.poster,
-              ...(goalSats !== undefined ? { goalSats } : {}),
+              ...(askGoal !== undefined ? askGoal : {}),
               ...placeFields,
             })
           : await postMessage(session, {
@@ -1654,7 +1674,7 @@ export function ForumLoader({
                       ...(takenAt === undefined ? {} : { takenAt }),
                     })),
                   }),
-              ...(goalSats !== undefined ? { goalSats } : {}),
+              ...(askGoal !== undefined ? askGoal : {}),
               ...placeFields,
             });
       applyCreatedNote(created, pendingPhotos, pendingVideo);
@@ -1668,7 +1688,7 @@ export function ForumLoader({
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
-            startNotePost(trimmed, pendingPhotos, pendingVideo, true, goalSats, pendingPlace);
+            startNotePost(trimmed, pendingPhotos, pendingVideo, true, askGoal, pendingPlace);
             return Promise.resolve();
           };
           return;
@@ -1691,12 +1711,12 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
-    goalSats: number | undefined,
+    askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): void => {
     if (notePostInFlightRef.current) return;
     notePostInFlightRef.current = true;
-    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry, goalSats, pendingPlace);
+    void runNotePost(trimmed, pendingPhotos, pendingVideo, isRetry, askGoal, pendingPlace);
   };
 
   const onPost = (): void => {
@@ -1710,7 +1730,7 @@ export function ForumLoader({
       setFormError('tooLong');
       return;
     }
-    let goalSats: number | undefined;
+    let askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined;
     if (feed !== 'shops' && composeIntent === 'ask') {
       const parsed = parseForumAskAmountInUnit(askDraft, askUnit.current, rateDay, fiat);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
@@ -1718,7 +1738,10 @@ export function ForumLoader({
         setFormError('ask');
         return;
       }
-      goalSats = parsed;
+      askGoal = {
+        goalCurrency: askUnit.current === 'btc' ? 'BTC' : fiat,
+        goalAmount: askDraft.trim(),
+      };
     }
     const missing = account?.missing ?? [];
     const pendingPlace = placeDraft;
@@ -1726,7 +1749,7 @@ export function ForumLoader({
       const pendingPhotos = photoDrafts;
       const pendingVideo = videoDraft;
       pendingPostRef.current = () => {
-        startNotePost(body, pendingPhotos, pendingVideo, true, goalSats, pendingPlace);
+        startNotePost(body, pendingPhotos, pendingVideo, true, askGoal, pendingPlace);
         return Promise.resolve();
       };
       return;
@@ -1734,7 +1757,7 @@ export function ForumLoader({
     pickGeneration.current += 1;
     const pendingPhotos = photoDrafts;
     const pendingVideo = videoDraft;
-    startNotePost(body, pendingPhotos, pendingVideo, false, goalSats, pendingPlace);
+    startNotePost(body, pendingPhotos, pendingVideo, false, askGoal, pendingPlace);
   };
 
   const onPaySubmit = (): void | Promise<ForumPayInvoice | null> => {

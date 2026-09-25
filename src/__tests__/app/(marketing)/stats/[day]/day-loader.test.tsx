@@ -192,7 +192,7 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'PHP');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · PHP 27.00')).toBeTruthy();
+      expect(screen.getByText('1 gift · ₿500 · ₱27.00')).toBeTruthy();
     });
   });
 

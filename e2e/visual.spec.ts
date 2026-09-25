@@ -1974,6 +1974,7 @@ test.describe('onboarding screens', () => {
     });
     await expect(parentName).toBeInViewport();
     await expect(page.getByText(QUOTED_NOTE_URL)).not.toBeVisible();
+    await page.getByText('Riana Rosello').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-quoted-note');
   });
 
@@ -3388,8 +3389,87 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await page.getByText('Goal note at one hundred ten percent').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-110');
+  });
+
+  test('state /members posts-open-goal-fiat', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'The goal is defined in dollars.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              goalSats: 1000,
+              goalCurrency: 'USD',
+              goalAmount: '1.50',
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
+    await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await page.getByText('The goal is defined in dollars.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-goal-fiat');
   });
 
   test('state /members posts-open-photos', async ({ page }) => {
@@ -5508,7 +5588,42 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await shotScreen(page, 'state-messages-id-goal-110');
+  });
+
+  test('state /messages/[id] goal-fiat', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'The goal is defined in dollars.',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          goalSats: 1000,
+          goalCurrency: 'USD',
+          goalAmount: '1.50',
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
+    await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-goal-fiat');
   });
 
   test('state /messages/[id] photos', async ({ page }) => {
@@ -7727,7 +7842,84 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-110');
+  });
+
+  test('state /welcome goal-fiat', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-fiat',
+              name: 'Ada',
+              text: 'The goal is defined in dollars.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              goalSats: 1000,
+              goalCurrency: 'USD',
+              goalAmount: '1.50',
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
+    await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-goal-fiat');
+  });
+
+  test('state /welcome goal-php', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-php',
+              name: 'Ada',
+              text: 'The goal is defined in pesos.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              goalSats: 1000,
+              goalCurrency: 'PHP',
+              goalAmount: '200.00',
+              goalAmountUsd: '1.50',
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByText('The goal is defined in pesos.')).toBeVisible();
+    await expect(page.getByText('₱200.00')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.getByText('0%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-goal-php');
   });
 
   test('state /welcome ask-amount', async ({ page }) => {
@@ -7881,6 +8073,22 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-preview');
   });
 
+  test('state /welcome ask-preview-fiat', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await openAskPreview(page, {
+      fiat: true,
+      photo: 'card',
+      text: 'Need help with a train ticket',
+    });
+    await expect(page.getByText('$1.00')).toBeVisible();
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await page.getByRole('button', { name: /^Post$/ }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-ask-preview-fiat');
+  });
+
   async function beginAsk(page: Page, daily = false): Promise<void> {
     await page.getByRole('button', { name: 'Ask for money' }).click();
     if (daily) {
@@ -8026,10 +8234,21 @@ test.describe('welcome forum variants', () => {
       text?: string;
       photo?: 'card' | 'one' | 'several' | 'none';
       video?: boolean;
+      fiat?: boolean;
     },
   ): Promise<void> {
     await beginAsk(page, options.daily === true);
-    await askAmount(page);
+    if (options.fiat === true) {
+      await page.getByLabel('Ask').fill('1000');
+      await page
+        .getByRole('group', { name: 'Bitcoin or fiat' })
+        .getByRole('button', { name: 'USD' })
+        .click();
+      await expect(page.getByLabel('Ask')).toHaveValue('1.00');
+      await page.getByRole('button', { name: 'Continue' }).click();
+    } else {
+      await askAmount(page);
+    }
     if (options.video === true) {
       await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
       await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
@@ -12730,6 +12949,10 @@ test.describe('moderate group screens', () => {
       giftFor?: string;
       hasPhoto?: boolean;
       photoCount?: number;
+      amountUsd?: string;
+      amountChf?: string;
+      amountEur?: string;
+      amountPhp?: string;
     }>,
   ): Promise<void> {
     await page.route(/\/conversations\/conv-mod(?:\?|$)/, async (route) => {
@@ -12805,6 +13028,10 @@ test.describe('moderate group screens', () => {
         createdAt: '2026-08-28T15:01:00.000Z',
         fromMe: false,
         sats: 6158,
+        amountUsd: '5.00',
+        amountChf: '4.00',
+        amountEur: '4.50',
+        amountPhp: '280.00',
         giftFor: 'm1',
       },
     ]);
