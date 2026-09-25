@@ -283,19 +283,19 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). With no open payment, the welcome gift-and-Bitcoin glyph sits above the person's name, which is the only heading, then an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When `GET /pay/:username` returns an unexpired `charge`, or after **Continue** mints an invoice, the amount field and **Continue** go away. An open till replaces the gift glyph with the shop sticker's storefront and shows time left. Either active payment shows the sat amount, the viewer's fiat when a gift-day rate exists, and **Pay**. Desktop also shows the Bitcoin invoice QR. A smartphone (`isSmartphoneUserAgent`, not viewport) does not, whether or not a payment is active. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: the sat amount, the viewer's fiat when a gift-day rate exists, and **Pay**. An open till also shows time left. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
 - **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success leaves that form and shows the active payment: the locked sat amount and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
 
-Scanned pay link with no open payment (`charge` null or absent). The gift glyph, the person's name, the amount field, and **Continue**. No countdown, no **Pay**, and no invoice QR.
+Scanned pay link with no open payment (`charge` null or absent). The shop sticker, the person's name, the amount field, and **Continue**. No countdown, no **Pay**, and no invoice QR.
 
 ![21.gifts pay link](images/pl.png)
 
 ### Variant: invoice
 
-After **Continue**. The amount field is gone. The locked sat amount and **Pay**. Desktop shows the Bitcoin invoice QR. A smartphone shows only **Pay**.
+After **Continue**, the same active payment as an open till, without a countdown: the shop sticker, the locked sat amount, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows only **Pay**.
 
 ![21.gifts pay link invoice](images/pl-invoice.png)
 

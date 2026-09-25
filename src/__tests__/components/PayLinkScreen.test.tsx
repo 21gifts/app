@@ -54,8 +54,8 @@ describe('PayLinkScreen', () => {
     mockFetch(async () => Response.json(profile));
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
-    expect(document.querySelector('path[d^="M12 32v24"]')).not.toBeNull();
-    expect(document.querySelector('path[d^="M199.3 516.4"]')).toBeNull();
+    expect(document.querySelector('path[d^="M199.3 516.4"]')).not.toBeNull();
+    expect(document.querySelector('path[d^="M12 32v24"]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });

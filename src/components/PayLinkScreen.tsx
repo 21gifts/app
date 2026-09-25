@@ -394,10 +394,13 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     }
   };
 
+  const activeSats = chargeLive && charge !== null ? charge.amountSats : mintedSats;
+  const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
+
   return (
     <PageChrome topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
       <Card maxWidth="xl" surface={false}>
-        {chargeLive ? <ShopStickerIcon /> : <GiftGlyph />}
+        {profile !== null && !invalid ? <ShopStickerIcon /> : <GiftGlyph />}
 
         {invalid ? (
           <p role="alert" className="text-sm text-app-danger">
@@ -410,15 +413,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
               {profile.name}
             </h1>
-            {chargeLive && charge !== null ? (
+            {paymentActive && activeSats !== null ? (
               <div className="flex w-full flex-col gap-3">
-                <p className="text-center text-sm text-app-subtle">
-                  {t('pay.timeLeft', { time: formatLeft(remaining) })}
-                </p>
+                {chargeLive && charge !== null ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {t('pay.timeLeft', { time: formatLeft(remaining) })}
+                  </p>
+                ) : null}
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
-                  {formatBitcoin(charge.amountSats, numberFormat)}
+                  {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={charge.amountSats} />
+                <ChargeFiat amountSats={activeSats} />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}
@@ -450,38 +455,6 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                       return;
                     }
                     setMintNonce((nonce) => nonce + 1);
-                  }}
-                >
-                  {t('forum.payOpenWallet')}
-                </Button>
-              </div>
-            ) : invoice !== null && mintedSats !== null ? (
-              <div className="flex w-full flex-col gap-3">
-                <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
-                  {formatBitcoin(mintedSats, numberFormat)}
-                </p>
-                <ChargeFiat amountSats={mintedSats} />
-                {showInvoiceQr ? (
-                  <div className="flex w-full justify-center">
-                    <QrCode value={invoice} label={t('pay.invoiceQr')} />
-                  </div>
-                ) : null}
-                <Button
-                  type="button"
-                  className="w-full"
-                  aria-label={t('forum.payOpenWalletAria')}
-                  icon={
-                    <img
-                      src="/wos-icon.png"
-                      alt=""
-                      width={20}
-                      height={20}
-                      aria-hidden="true"
-                      className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                    />
-                  }
-                  onClick={() => {
-                    openWallet(invoice, android);
                   }}
                 >
                   {t('forum.payOpenWallet')}
