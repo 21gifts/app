@@ -423,6 +423,7 @@ const en = {
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
   'wallet.advanced': 'Advanced functions',
+  'wallet.setAmount': 'Set an amount',
   'wallet.prfUnsupported':
     'This browser cannot create a recovery phrase. Try another browser or device.',
   'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
@@ -1243,6 +1244,7 @@ const de = {
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
   'wallet.advanced': 'Erweiterte Funktionen',
+  'wallet.setAmount': 'Betrag festlegen',
   'wallet.prfUnsupported':
     'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
   'wallet.timeout':
@@ -2074,6 +2076,7 @@ const es = {
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
   'wallet.advanced': 'Funciones avanzadas',
+  'wallet.setAmount': 'Fijar un importe',
   'wallet.prfUnsupported':
     'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
   'wallet.timeout':
@@ -2897,6 +2900,7 @@ const fil = {
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
   'wallet.advanced': 'Mga advanced na function',
+  'wallet.setAmount': 'Magtakda ng halaga',
   'wallet.prfUnsupported':
     'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
   'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',

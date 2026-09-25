@@ -1188,7 +1188,7 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet');
     await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
-    await page.getByRole('button', { name: 'Create payment' }).scrollIntoViewIfNeeded();
+    await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'screen-wallet');
   });
 

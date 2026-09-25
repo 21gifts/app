@@ -2,9 +2,13 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  useAuthStore.setState({ session: null, account: null });
+});
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
@@ -238,5 +242,45 @@ describe('WalletScreenView', () => {
     expect(
       screen.getByRole('button', { name: 'Show recovery phrase' }).querySelector('svg'),
     ).not.toBeNull();
+  });
+
+  it('shows the till address and a link to set an amount', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('ada@21.gifts')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Set an amount' }).getAttribute('href')).toBe('/pos');
+    expect(screen.queryByRole('heading', { name: 'Point of sale' })).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 });

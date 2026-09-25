@@ -1,14 +1,64 @@
 'use client';
 
-import { useRef, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
-import { PosTill } from '@/components/PosScreen';
+import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
-import { Button, Card } from '@/components/ui';
+import { Button, ButtonLink, Card } from '@/components/ui';
+import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { WALLET_BACK_FALLBACK } from '@/lib/wallet-return';
+import { useAuthStore } from '@/stores/auth-store';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
+
+/**
+ * Receive handle from the till: the same 21.gifts address and Open CryptoPay
+ * QR, plus a link that opens `/pos` to set an amount. No keypad and no charge.
+ *
+ * @returns The receive block under the recovery card.
+ */
+function WalletReceive(): ReactElement {
+  const { t } = useTranslations();
+  const account = useAuthStore((state) => state.account);
+  const [showQr, setShowQr] = useState(false);
+  useEffect(() => {
+    setShowQr(true);
+  }, []);
+  /* v8 ignore next -- this client screen always runs in a browser */
+  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const username = account?.username ?? null;
+  const address = giftsLightningAddress(username, host);
+  const qr = openCryptoPayQrValue(username, host);
+  return (
+    <Card surface={false}>
+      {address !== null ? (
+        <div className="flex flex-col items-stretch gap-3">
+          <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+            {t('profile.giftsHeading')}
+          </p>
+          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
+          {showQr && qr !== null ? (
+            <div className="flex justify-center">
+              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+            </div>
+          ) : null}
+        </div>
+      ) : account !== null && (account.username ?? '') === '' ? (
+        <p className="text-center text-sm text-app-fg">
+          <Link href="/profile" className="underline">
+            {t('pos.needUsername')}
+          </Link>
+        </p>
+      ) : null}
+      <ButtonLink href="/pos" size="lg">
+        {t('wallet.setAmount')}
+      </ButtonLink>
+    </Card>
+  );
+}
 
 /** Props for {@link WalletScreenView} — the public {@link UseWalletPhraseResult}. */
 export type WalletScreenViewProps = UseWalletPhraseResult;
@@ -141,7 +191,7 @@ export function WalletScreenView({
           </details>
         )}
       </Card>
-      <PosTill />
+      <WalletReceive />
     </div>
   );
 }

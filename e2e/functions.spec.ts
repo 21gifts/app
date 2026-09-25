@@ -6566,7 +6566,7 @@ test('Function: PosPage — till heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
 });
 
-test('Function: PosTill — wallet shows the same till under the recovery card', async ({ page }) => {
+test('Function: PosTill — wallet links to the till instead of mounting it', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -6602,8 +6602,9 @@ test('Function: PosTill — wallet shows the same till under the recovery card',
   });
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '1', exact: true })).toBeVisible();
+  await expect(page.getByText('ada@21.gifts')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveAttribute('href', '/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toHaveCount(0);
 });
 
 test('Function: ForumVideo — a playable note shows Full screen', async ({ page }) => {

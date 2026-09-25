@@ -16,10 +16,10 @@
 
 ## Function: PosTill
 
-- **Purpose:** The till card. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, a keypad amount (decimal from the number format), and the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status. On this commit the same card also sits under the recovery card on `/wallet`.
+- **Purpose:** The till card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, a keypad amount (decimal from the number format), and the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status. The wallet does not mount this card.
 - **Inputs:** None. Reads the auth store.
 - **Returns / side effects:** React element. Calls `fetchPosState`, `createPosCharge`, and `cancelPosCharge`.
-- **Used by:** `PosScreen`, `WalletScreenView`.
+- **Used by:** `PosScreen`.
 
 ## Function: fetchPosState
 
@@ -2919,7 +2919,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Wallet card, and the header Back for that page. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`.
 - **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Header Back takes one step: hide the words, close **Advanced functions**, `history.back()`, or open `/welcome` when the tab has no previous page. Error shows a reason, a hint, and **Try again**.
+- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Under that card: the centered 21.gifts address and Open CryptoPay QR used by `/pos`, then **Set an amount** linking to `/pos`. No keypad and no charge. Header Back takes one step: hide the words, close **Advanced functions**, `history.back()`, or open `/welcome` when the tab has no previous page. Error shows a reason, a hint, and **Try again**.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreen

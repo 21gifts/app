@@ -298,7 +298,8 @@ export function PosTill(): ReactElement {
 }
 
 /**
- * `/pos` till. The same card sits under the recovery phrase on `/wallet`.
+ * `/pos` till. The wallet page does not reuse this card. It shows the address
+ * and QR, then links here to set an amount.
  *
  * @returns The point-of-sale card.
  */
