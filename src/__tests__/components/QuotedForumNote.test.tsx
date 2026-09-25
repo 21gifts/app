@@ -24,7 +24,12 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: () => void } => ({ push: () => undefined }),
+}));
+
 vi.mock('@/lib/api', () => ({
+  fetchForumMessage: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchShortLink: vi.fn(),
@@ -36,7 +41,13 @@ vi.mock('@/lib/note-translate', () => ({
   translateNote: vi.fn(),
 }));
 
-import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
+import {
+  fetchForumMessage,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchShortLink,
+} from '@/lib/api';
+import { useAuthStore } from '@/stores/auth-store';
 import {
   fetchTranslateAvailable,
   translateConversationMessage,
@@ -44,6 +55,7 @@ import {
 } from '@/lib/note-translate';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
+const fetchForum = vi.mocked(fetchForumMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchShort = vi.mocked(fetchShortLink);
 const fetchAvailable = vi.mocked(fetchTranslateAvailable);
@@ -87,6 +99,7 @@ const parentNote: ForumMessage = {
 
 beforeEach(() => {
   fetchMessage.mockReset();
+  fetchForum.mockReset();
   fetchPhoto.mockReset();
   fetchShort.mockReset();
   fetchShort.mockResolvedValue(null);
@@ -112,6 +125,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ session: null, account: null });
   vi.restoreAllMocks();
 });
 
@@ -213,6 +227,41 @@ describe('ForumQuotedBody', () => {
       expect(translateConversation).not.toHaveBeenCalled();
     },
   );
+
+  it('loads a missing quote with the session and passes marks through', async () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    fetchForum.mockResolvedValue({ ...quotedNote, text: 'Nested' });
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`hello @ada ${QUOTED_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchForum).toHaveBeenCalledWith('tok', QUOTED_ID);
+    });
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    cleanup();
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <ForumQuotedBody
+        text="hello @ada"
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+  });
 
   it('links a nested 21.gifts author without opening the quote', async () => {
     const onActivate = vi.fn();

@@ -59,6 +59,18 @@ describe('LinkedText', () => {
     expect(screen.getByText(/@nope/)).toBeTruthy();
   });
 
+  it('leaves a bare @ as text', () => {
+    renderWithLocale(
+      <LinkedText
+        text="ping @"
+        className="text-sm"
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    expect(screen.getByText('ping @')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+  });
+
   it('links a mark at the start of the text', () => {
     push.mockReset();
     renderWithLocale(

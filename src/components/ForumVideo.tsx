@@ -33,10 +33,8 @@ export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactE
 
   const enter = (): void => {
     const video = videoRef.current;
-    /* v8 ignore next 2 -- the button is only rendered with the video */
-    if (video === null) {
-      return;
-    }
+    /* v8 ignore next -- the button is only rendered with the video */
+    if (video === null) return;
     if (document.fullscreenElement === video) {
       void document.exitFullscreen();
       return;

@@ -252,7 +252,7 @@ describe('WalletScreenView', () => {
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
-        username: '',
+        username: null,
         location: null,
         lightningAddress: null,
         lightningAddressVerified: false,

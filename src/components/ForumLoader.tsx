@@ -2019,10 +2019,8 @@ export function ForumLoader({
     parentBaseline: number,
     isRetry: boolean,
   ): Promise<void> => {
-    /* v8 ignore next 2 -- reactions are not posted without a session */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- reactions are not posted without a session */
+    if (session === null) return;
     setReplyPosting(true);
     setReplyFormError(null);
     try {
@@ -2063,10 +2061,8 @@ export function ForumLoader({
     baselineSats: number,
     isRetry: boolean,
   ): Promise<void> => {
-    /* v8 ignore next 2 -- a paid reaction starts only for a signed-in session */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- a paid reaction starts only for a signed-in session */
+    if (session === null) return;
     setReplyPosting(true);
     setReplyFormError(null);
     const generation = payPollGeneration.current;
@@ -2135,10 +2131,8 @@ export function ForumLoader({
     sats: number,
     isRetry: boolean,
   ): Promise<void> => {
-    /* v8 ignore next 2 -- compose pay starts only for a signed-in session */
-    if (session === null) {
-      return;
-    }
+    /* v8 ignore next -- compose pay starts only for a signed-in session */
+    if (session === null) return;
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
     if (trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');

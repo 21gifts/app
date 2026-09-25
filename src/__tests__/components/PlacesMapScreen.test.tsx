@@ -68,13 +68,19 @@ describe('PlacesMapScreen', () => {
   });
 
   it('links a 21.gifts author and keeps an external name as text', async () => {
+    window.history.replaceState(null, '', '/map?pin=m-pin');
     useAuthStore.setState({ session: 'tok' });
-    fetchPlacesMock.mockResolvedValue([{ ...ROW, accountId: 'acc-ada' }]);
+    fetchPlacesMock.mockResolvedValue([
+      { ...ROW, accountId: 'acc-ada' },
+      { ...ROW, id: 'm-2', accountId: 'acc-ada', label: 'Other' },
+    ]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     renderWithLocale(<PlacesMapScreen />);
-    const author = await screen.findByRole('link', { name: 'View profile' });
-    expect(author.getAttribute('href')).toBe('/members/acc-ada');
-    expect(author.textContent).toBe('Ada');
+    const authors = await screen.findAllByRole('link', { name: 'View profile' });
+    expect(authors[0]?.getAttribute('href')).toBe('/members/acc-ada');
+    expect(authors[0]?.textContent).toBe('Ada');
+    expect(authors[0]?.parentElement?.getAttribute('data-selected')).toBe('true');
+    expect(authors[1]?.parentElement?.getAttribute('data-selected')).toBe('false');
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
       '/messages/m-pin',
     );

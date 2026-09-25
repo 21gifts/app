@@ -46,7 +46,7 @@ function WalletReceive(): ReactElement {
             </div>
           ) : null}
         </div>
-      ) : account !== null && (account.username ?? '') === '' ? (
+      ) : account !== null ? (
         <p className="text-center text-sm text-app-fg">
           <Link href="/profile" className="underline">
             {t('pos.needUsername')}

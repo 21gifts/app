@@ -1024,6 +1024,10 @@ describe('AmountEntry', () => {
     fireEvent.click(screen.getByRole('button', { name: /^1$/ }));
     fireEvent.keyDown(window, { key: '1' });
     expect(screen.getByLabelText('Amount').textContent).toBe('21');
+    rerender(
+      <AmountEntry keypad label="Amount" value="" onValueChange={() => undefined} rateDay={DAY} />,
+    );
+    expect(screen.getByLabelText('Amount').textContent).toBe('');
   });
 
   it('rewrites a fiat keypad draft with the number-format decimal', () => {
