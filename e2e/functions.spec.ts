@@ -4156,7 +4156,7 @@ test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount on
           {
             id: 'm-php',
             name: 'Ada',
-            text: 'Train fare in pesos',
+            text: 'The train fare is in pesos.',
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 0,
             goalSats: 1000,
@@ -4178,6 +4178,79 @@ test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount on
   await expect(page.getByText('₱200.00')).toBeVisible();
   await expect(page.getByText("₿1'000")).toBeVisible();
   await expect(page.getByText('$3.50')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+});
+
+test('Function: fiatPrefix — francs keep the code and pesos use the sign', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        hasPosted: true,
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-chf',
+            name: 'Ada',
+            text: 'The goal is defined in francs.',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 1000,
+            goalCurrency: 'CHF',
+            goalAmount: '10.00',
+            goalAmountUsd: '11.00',
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+          {
+            id: 'm-php',
+            name: 'Ada',
+            text: 'The goal is defined in pesos.',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 0,
+            goalSats: 1000,
+            goalCurrency: 'PHP',
+            goalAmount: '200.00',
+            goalAmountUsd: '1.50',
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('CHF 10.00')).toBeVisible();
+  await expect(page.getByText('₱200.00')).toBeVisible();
+  await expect(page.getByText('PHP 200.00')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
 });
 
 test('Function: forumFiatGoalPercent — a fiat ask percent uses the payment sum', async ({
