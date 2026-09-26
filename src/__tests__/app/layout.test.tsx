@@ -10,6 +10,7 @@ vi.mock('next/font/google', () => ({
 import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
+import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
@@ -213,7 +214,8 @@ describe('RootLayout', () => {
       ? body.props.children
       : [body.props.children];
     expect(bodyChildren[0]?.type).toBe(AppHeightSync);
-    const localeProvider = bodyChildren[1] as ReactElement<{
+    expect(bodyChildren[1]?.type).toBe(ScrollSurfaceGuard);
+    const localeProvider = bodyChildren[2] as ReactElement<{
       children: ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
     }>;
     expect(localeProvider.type).toBe(LocaleProvider);
