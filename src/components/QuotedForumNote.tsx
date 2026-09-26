@@ -127,9 +127,7 @@ function QuotedForumNote({
               {note.name}
             </Link>
           ) : (
-            <Link href={`/messages/${note.id}`} className="text-sm font-medium text-app-fg">
-              {note.name}
-            </Link>
+            <span className="text-sm font-medium text-app-fg">{note.name}</span>
           )}
           {badgeLabel !== null ? (
             <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
