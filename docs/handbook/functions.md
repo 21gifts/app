@@ -3239,7 +3239,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplicationsScreen
 
-- **Purpose:** Client queue of open 21 gifts grant applications. Staff (founder or moderator) fetch `fetchFundingApplications` and show applicant name (link `/grants/applications/{id}`), applied time, empty / Loading… / error+Try again. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`.
+- **Purpose:** Client queue of open 21 gifts grant applications. Staff (founder or moderator) fetch `fetchFundingApplications` and show applicant name (link `/grants/applications/{id}`), applied time, empty / Loading… / error+Try again. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/grants`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when the role is founder or moderator.
 - **Used by:** `FundingApplicationsPage`.

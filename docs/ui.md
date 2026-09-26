@@ -1097,7 +1097,7 @@ Handbook states: default hub, forbidden, goal-open, loading, error.
 
 ### `/grants/applications`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Open applications**. Staff list pending grant applications (name → `/grants/applications/{id}`, applied time). Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. `/moderate/applications` redirects here.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → in-card icon back to `/grants` → **h1** **Open applications**. Staff list pending grant applications (name → `/grants/applications/{id}`, applied time). Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. `/moderate/applications` redirects here.
 
 Handbook states: default, forbidden, empty, loading, error.
 

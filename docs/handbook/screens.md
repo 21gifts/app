@@ -2553,9 +2553,9 @@ Opening `/moderate/applications/[accountId]` lands on the grants review.
 
 ## Screen: /grants/applications
 
-- **URL:** `/grants/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/moderate`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Staff rows: applicant name (link `/grants/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
-- **Actions:** In-card icon back to hub. Open an applicant to `/grants/applications/{id}`. Staff **Try again** on list error. Open Menu. Back to the forum.
+- **URL:** `/grants/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/grants`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/grants`. Heading **Open applications**. Staff rows: applicant name (link `/grants/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu includes **Grants**.
+- **Actions:** In-card icon back to `/grants`. Open an applicant to `/grants/applications/{id}`. Staff **Try again** on list error. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationsPage`, `FundingApplicationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplications`.
 - **Auth:** Bearer; list only for founder|moderator.
 

@@ -150,10 +150,10 @@ app/
 │   │   │   └── apply/page.tsx   # GET /profile/apply — redirect to /grants/apply
 │   │   ├── grants/
 │   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
-│   │   │   ├── apply/page.tsx   # GET /grants/apply — one-question grant apply
+│   │   │   ├── apply/page.tsx   # GET /grants/apply — principles question, then truth
 │   │   │   └── applications/
 │   │   │       ├── page.tsx     # GET /grants/applications — grant queue
-│   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — one-question review
+│   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
 │   │   ├── wallet/
 │   │   │   └── page.tsx         # GET /wallet — Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
 │   │   ├── auth/passkey/replace/
@@ -215,7 +215,7 @@ app/
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm/reject queue
 │   │   ├── FundingApplicationsScreen.tsx # Signed-in /grants/applications grant queue
-│   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /grants/applications/:id one-question review
+│   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /grants/applications/:id principles, then truth
 │   │   ├── FundingStatusCard.tsx # Grant status on /grants
 │   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
 │   │   ├── ModerateHandbookScreen.tsx # Signed-in /moderate/handbook staff chapters

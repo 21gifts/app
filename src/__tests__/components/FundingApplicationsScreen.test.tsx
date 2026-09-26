@@ -78,7 +78,9 @@ describe('FundingApplicationsScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByRole('list')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.getByRole('link', { name: 'Back to grants' }).getAttribute('href')).toBe(
+      '/grants',
+    );
     expect(listMock).not.toHaveBeenCalled();
   });
 
