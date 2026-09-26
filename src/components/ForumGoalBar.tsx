@@ -11,6 +11,7 @@ import { formatDefinedGoalAmount, forumFiatGoalPercent, forumGoalPercent } from 
 import {
   formatBitcoin,
   formatFiatDisplay,
+  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -113,6 +114,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
  * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
  * @param goalRepayable - Credit ask; shows `forum.askRepay` under the label.
+ * @param goalTermDays - Repayment days. With `goalRepayable`, also shows 0% interest and the daily plan.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -223,6 +225,8 @@ export function ForumGoalBar({
           goalAmount={goalAmount}
           goalSats={goalSats}
           days={goalTermDays}
+          rateDay={rateDay}
+          fiat={fiat}
         />
       ) : null}
       <div className="flex items-center gap-2">
@@ -261,11 +265,15 @@ function CreditPlanLines({
   goalAmount,
   goalSats,
   days,
+  rateDay,
+  fiat,
 }: {
   goalCurrency: ForumGoalCurrency | undefined;
   goalAmount: string | undefined;
   goalSats: number;
   days: number;
+  rateDay: FiatRateDay | null;
+  fiat: FiatCode;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -277,7 +285,12 @@ function CreditPlanLines({
   }
   const format = (value: bigint): string => {
     if (bitcoin) {
-      return formatBitcoin(Number(value), numberFormat);
+      const btc = formatBitcoin(Number(value), numberFormat);
+      const priced = satsToFiatAmount(Number(value), rateDay, fiat);
+      if (priced === null) {
+        return btc;
+      }
+      return `${btc} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
     }
     const whole = value / 100n;
     const frac = (value % 100n).toString().padStart(2, '0');

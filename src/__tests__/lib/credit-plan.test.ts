@@ -13,6 +13,8 @@ describe('credit plan', () => {
   });
 
   it('splits an even fiat amount, an uneven fiat amount, and sats', () => {
+    expect(creditSmallestUnits('10,5', false)).toBe(1050n);
+    expect(creditSmallestUnits('10.125', false)).toBe(1013n);
     expect(creditSmallestUnits('30.00', false)).toBe(3000n);
     expect(creditSmallestUnits('1000', false)).toBe(100000n);
     expect(creditSmallestUnits('21000', true)).toBe(21000n);

@@ -212,10 +212,16 @@ describe('ForumGoalBar', () => {
 
   it('shows the interest-free daily plan for a bitcoin credit and a dollar credit', () => {
     const { rerender } = renderWithLocale(
-      <ForumGoalBar sats={0} goalSats={3000} goalRepayable goalTermDays={30} />,
+      <ForumGoalBar
+        sats={0}
+        goalSats={3000}
+        goalRepayable
+        goalTermDays={30}
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
     );
     expect(screen.getByText(/Interest 0%/)).toBeTruthy();
-    expect(screen.getByText(/₿100 per day for 30 days/)).toBeTruthy();
+    expect(screen.getByText(/₿100 · \$0\.10 per day for 30 days/)).toBeTruthy();
     rerender(
       <ForumGoalBar
         sats={0}

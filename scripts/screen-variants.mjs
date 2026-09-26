@@ -479,6 +479,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-credit-amount-fiat',
+    image: 'welcome-ask-credit-amount-fiat.png',
+    visual: 'state-welcome-ask-credit-amount-fiat',
+    needle: 'state /welcome ask-credit-amount-fiat',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-amount-daily',
+    image: 'welcome-ask-credit-amount-daily.png',
+    visual: 'state-welcome-ask-credit-amount-daily',
+    needle: 'state /welcome ask-credit-amount-daily',
+  },
+  {
+    route: '/welcome',
     id: 'ask-credit-currency-btc',
     image: 'welcome-ask-credit-currency-btc.png',
     visual: 'state-welcome-ask-credit-currency-btc',
@@ -567,6 +581,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-ask-credit-preview.png',
     visual: 'state-welcome-ask-credit-preview',
     needle: 'state /welcome ask-credit-preview',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-preview-daily',
+    image: 'welcome-ask-credit-preview-daily.png',
+    visual: 'state-welcome-ask-credit-preview-daily',
+    needle: 'state /welcome ask-credit-preview-daily',
   },
   {
     route: '/welcome',

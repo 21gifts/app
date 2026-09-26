@@ -348,6 +348,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-credit-amount-fiat",
+    "label": "/welcome ask-credit-amount-fiat",
+    "visual": "state-welcome-ask-credit-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-amount-daily",
+    "label": "/welcome ask-credit-amount-daily",
+    "visual": "state-welcome-ask-credit-amount-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-credit-currency-btc",
     "label": "/welcome ask-credit-currency-btc",
     "visual": "state-welcome-ask-credit-currency-btc",
@@ -423,6 +435,12 @@
     "id": "/welcome:ask-credit-preview",
     "label": "/welcome ask-credit-preview",
     "visual": "state-welcome-ask-credit-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview-daily",
+    "label": "/welcome ask-credit-preview-daily",
+    "visual": "state-welcome-ask-credit-preview-daily",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

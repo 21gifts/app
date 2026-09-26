@@ -8122,6 +8122,40 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-credit-amount');
   });
 
+  test('state /welcome ask-credit-amount-fiat', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Credit' }).click();
+    await page.getByLabel('Ask').fill('1000');
+    await page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await expect(page.getByLabel('Ask')).toHaveValue('1.00');
+    await expect(page.getByText('1 of 9')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-credit-amount-fiat');
+  });
+
+  test('state /welcome ask-credit-amount-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Credit' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await page.getByLabel('Ask').fill('21000');
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('1 of 9')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-credit-amount-daily');
+  });
+
   test('state /welcome ask-credit-currency-btc', async ({ page }) => {
     await seedAda(page);
     await fulfillRateDay(page);
@@ -8370,8 +8404,34 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByText('To be repaid.')).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toBeVisible();
-    await expect(page.getByText(/₿700 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview');
+  });
+
+  test('state /welcome ask-credit-preview-daily', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByRole('button', { name: 'Credit' }).click();
+    await page.getByRole('button', { name: 'Daily' }).click();
+    await page.getByLabel('Ask').fill('21000');
+    for (let i = 0; i < 4; i += 1) {
+      await page.getByRole('button', { name: 'Continue' }).click();
+    }
+    await page.getByRole('button', { name: 'I want to take this credit.' }).click();
+    await page.getByRole('button', { name: 'I can repay this.' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Your message').fill('Need help with a train ticket');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByText('9 of 9')).toBeVisible();
+    await shotScreen(page, 'state-welcome-ask-credit-preview-daily');
   });
 
   test('state /welcome ask-credit-preview-fiat', async ({ page }) => {

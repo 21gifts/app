@@ -546,6 +546,18 @@ Credit, step **1 of 9**. **Ask for money** is selected. **Credit** is pressed un
 
 ![21.gifts welcome ask credit amount](images/welcome-ask-credit-amount.png)
 
+### Variant: ask-credit-amount-fiat
+
+Credit, step **1 of 9**, with the amount switch on **USD**. **Credit** and **One-time** are pressed. **1000** was typed in bitcoin, then the switch moved to fiat, so the field shows **1.00** and **₿1'000** under it. **Continue** is enabled.
+
+![21.gifts welcome ask credit amount fiat](images/welcome-ask-credit-amount-fiat.png)
+
+### Variant: ask-credit-amount-daily
+
+Credit, step **1 of 9**, with **Daily** pressed and **Credit** pressed. **21000** is typed in bitcoin. **Continue** is enabled. One-time / Daily is still not stored.
+
+![21.gifts welcome ask credit amount daily](images/welcome-ask-credit-amount-daily.png)
+
 ### Variant: ask-credit-currency-btc
 
 Credit, step **2 of 9**. Heading **How the amount is fixed**. The screen says: **This credit is fixed in bitcoin. Payments stay in bitcoin, with no conversion.** Then: **A rising bitcoin price can hurt you significantly, because you bear the full price movement.** The button is **Continue**. There is no checkbox.
@@ -572,7 +584,7 @@ Credit, step **3 of 9**, with **Custom** pressed. Heading **How long is the cred
 
 ### Variant: ask-credit-plan-btc
 
-Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How repayment works**. The screen says: **Repayment is due every day. It starts the day after the credit has been paid in full. If it takes 10 days for the credit to be given, repayment starts on day 11.** Then: **Interest 0%. Only interest-free credits are offered for now.** Then: **To repay per day: ₿700 per day for 30 days.** The button is **Continue**. Any remainder that does not divide evenly is added to the last day. There is no checkbox.
+Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How repayment works**. The screen says: **Repayment is due every day. It starts the day after the credit has been paid in full. If it takes 10 days for the credit to be given, repayment starts on day 11.** Then: **Interest 0%. Only interest-free credits are offered for now.** Then: **To repay per day: ₿700 · $0.70 per day for 30 days.** The button is **Continue**. Any remainder that does not divide evenly is added to the last day. There is no checkbox.
 
 ![21.gifts welcome ask credit plan btc](images/welcome-ask-credit-plan-btc.png)
 
@@ -584,7 +596,7 @@ Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading 
 
 ### Variant: ask-credit-confirm-want
 
-Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The daily rule with the day-11 example. **Interest 0%. Only interest-free credits are offered for now.** **To repay per day: ₿700 per day for 30 days.** The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000 · $21.00.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The daily rule with the day-11 example. **Interest 0%. Only interest-free credits are offered for now.** **To repay per day: ₿700 · $0.70 per day for 30 days.** The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
 
@@ -620,9 +632,15 @@ Credit, step **8 of 9**. Heading **Write a message**. The message can be empty; 
 
 ### Variant: ask-credit-preview
 
-Credit, step **9 of 9**, bitcoin, after the message **Need help with a train ticket**. Heading **Preview**. **One-time** and **Credit** are pressed. The card shows the author, the message, and the goal bar at **0%**: **Ask ₿21'000**, **To be repaid.**, **Interest 0%. Only interest-free credits are offered for now.**, and **To repay per day: ₿700 per day for 30 days.** **Post** is the only submit. It sends `goalRepayable: true` and `goalTermDays: 30` with the ask amount. The counter reads **9 of 9**.
+Credit, step **9 of 9**, bitcoin, after the message **Need help with a train ticket**. Heading **Preview**. **One-time** and **Credit** are pressed. The card shows the author, the message, and the goal bar at **0%**: **Ask ₿21'000**, **To be repaid.**, **Interest 0%. Only interest-free credits are offered for now.**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** **Post** is the only submit. It sends `goalRepayable: true` and `goalTermDays: 30` with the ask amount. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit preview](images/welcome-ask-credit-preview.png)
+
+### Variant: ask-credit-preview-daily
+
+Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same bitcoin ask and message. The goal bar still shows **To be repaid.**, interest **0%**, and the daily bitcoin plan with the visitor's fiat. **Post** is the only submit. One-time / Daily is not stored.
+
+![21.gifts welcome ask credit preview daily](images/welcome-ask-credit-preview-daily.png)
 
 ### Variant: ask-credit-preview-fiat
 

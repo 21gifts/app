@@ -372,6 +372,22 @@ describe('ForumAskWizard', () => {
     expect(screen.getByText('To be repaid.')).toBeTruthy();
   });
 
+  it('returns to the amount step when Credit is chosen on the preview', () => {
+    const onStepChange = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        askObligation="donation"
+        draft="Hello"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    expect(onStepChange).toHaveBeenCalledWith(1);
+  });
+
   it('does not show To be repaid on a donation preview', () => {
     renderWithLocale(
       <ForumAskWizard
@@ -405,6 +421,7 @@ describe('ForumAskWizard', () => {
         askDraft="21000"
         askObligation="credit"
         onCreditTermDays={onCreditTermDays}
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));

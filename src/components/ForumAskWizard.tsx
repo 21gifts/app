@@ -19,6 +19,7 @@ import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import {
   formatBitcoin,
   formatFiatDisplay,
+  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -39,9 +40,10 @@ export type ForumAskCadence = 'once' | 'daily';
 export type ForumAskObligation = 'donation' | 'credit';
 
 /**
- * Four-step Ask composer: amount, photos, text, then a preview with Post.
- * The One-time / Daily pill is on the amount step and again on the preview.
- * The Donation / Credit pill sits under it on those same steps.
+ * Ask composer. A donation is four steps (amount, photos, text, preview).
+ * A credit is nine: amount, currency, term, plan, two confirmations, photos,
+ * text, preview. The One-time / Daily pill and the Donation / Credit pill
+ * are on the amount step and again on the preview.
  *
  * @param props - Drafts, media, and step callbacks from {@link ForumLoader}.
  * @returns The wizard.
@@ -113,10 +115,14 @@ export function ForumAskWizard({
   const currencyCode: ForumGoalCurrency = bitcoinAsk ? 'BTC' : fiat;
   const plan = creditPlanFor(askDraft, bitcoinAsk, termDays);
   const planText =
-    plan === null ? '' : creditPlanText(plan, bitcoinAsk, currencyCode, numberFormat, t);
+    plan === null
+      ? ''
+      : creditPlanText(plan, bitcoinAsk, currencyCode, numberFormat, rateDay, fiat, t);
   const owedUnits = creditSmallestUnits(askDraft, bitcoinAsk);
   const owedText =
-    owedUnits === null ? '' : formatPlanUnits(owedUnits, bitcoinAsk, currencyCode, numberFormat);
+    owedUnits === null
+      ? ''
+      : formatPlanUnits(owedUnits, bitcoinAsk, currencyCode, numberFormat, rateDay, fiat);
   useEffect(() => {
     onCreditTermDays?.(askObligation === 'credit' ? termDays : null);
   }, [askObligation, onCreditTermDays, termDays]);
@@ -200,8 +206,9 @@ export function ForumAskWizard({
             ]}
             onChange={(value) => {
               onAskObligationChange(value);
-              if (value === 'donation') {
-                setCreditPhase('amount');
+              setCreditPhase('amount');
+              if (value === 'credit' && step !== 1) {
+                onStepChange(1);
               }
             }}
             ariaLabel={t('forum.askObligationLabel')}
@@ -508,9 +515,16 @@ function formatPlanUnits(
   bitcoin: boolean,
   code: ForumGoalCurrency,
   style: Parameters<typeof formatBitcoin>[1],
+  rateDay: FiatRateDay | null,
+  visitorFiat: FiatCode,
 ): string {
   if (bitcoin || code === 'BTC') {
-    return formatBitcoin(Number(units), style);
+    const btc = formatBitcoin(Number(units), style);
+    const priced = satsToFiatAmount(Number(units), rateDay, visitorFiat);
+    if (priced === null) {
+      return btc;
+    }
+    return `${btc} · ${formatFiatDisplay(priced, visitorFiat, style)}`;
   }
   const whole = units / 100n;
   const frac = (units % 100n).toString().padStart(2, '0');
@@ -522,19 +536,21 @@ function creditPlanText(
   bitcoin: boolean,
   code: ForumGoalCurrency,
   style: Parameters<typeof formatBitcoin>[1],
+  rateDay: FiatRateDay | null,
+  visitorFiat: FiatCode,
   t: (
     key: 'forum.creditPlanEven' | 'forum.creditPlanLast',
     values: Record<string, string | number>,
   ) => string,
 ): string {
-  const amount = formatPlanUnits(plan.perDay, bitcoin, code, style);
+  const amount = formatPlanUnits(plan.perDay, bitcoin, code, style, rateDay, visitorFiat);
   if (plan.remainder === 0n) {
     return t('forum.creditPlanEven', { amount, days: plan.days });
   }
   return t('forum.creditPlanLast', {
     amount,
     earlier: plan.days - 1,
-    last: formatPlanUnits(plan.last, bitcoin, code, style),
+    last: formatPlanUnits(plan.last, bitcoin, code, style, rateDay, visitorFiat),
   });
 }
 
