@@ -34,7 +34,7 @@ describe('ForumNoteText', () => {
   });
 
   it('does not autolink a truncated url prefix', () => {
-    const href = `https://example.com/${'a'.repeat(300)}`;
+    const href = `https://example.com/${'a'.repeat(541)}`;
     renderWithLocale(<ForumNoteText text={href} className="body" />);
     expect(screen.queryByRole('link')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
@@ -48,6 +48,19 @@ describe('ForumNoteText', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('renders text at the full limit without Show more', () => {
+    const text = 'a'.repeat(560);
+    const { container } = renderWithLocale(<ForumNoteText text={text} className="body" />);
+    expect(container.querySelector('p')?.textContent).toBe(text);
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('collapses text just over the full limit behind Show more', () => {
+    renderWithLocale(<ForumNoteText text={`${'a'.repeat(561)} TAILWORD`} className="body" />);
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText(/TAILWORD/)).toBeNull();
+  });
+
   it('passes stored marks through short and collapsed text', () => {
     const mentions = [{ username: 'ada', accountId: 'acc-ada' }];
     const { unmount } = renderWithLocale(
@@ -56,14 +69,14 @@ describe('ForumNoteText', () => {
     expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
     unmount();
     renderWithLocale(
-      <ForumNoteText text={`${'a'.repeat(280)} @Ada`} className="body" mentions={mentions} />,
+      <ForumNoteText text={`${'a'.repeat(560)} @Ada`} className="body" mentions={mentions} />,
     );
     expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
   });
 
   it('collapses long text with an ellipsis and Show more', () => {
     const { container } = renderWithLocale(
-      <ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" />,
+      <ForumNoteText text={`${'a'.repeat(560)} TAILWORD`} className="body" />,
     );
     expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
     expect(screen.queryByText(/TAILWORD/)).toBeNull();
@@ -73,7 +86,7 @@ describe('ForumNoteText', () => {
   it('paints Show more with button foreground when the body is onButton', () => {
     renderWithLocale(
       <ForumNoteText
-        text={`${'a'.repeat(280)} TAILWORD`}
+        text={`${'a'.repeat(560)} TAILWORD`}
         className="mt-2 whitespace-pre-wrap text-sm text-app-btn-fg"
       />,
     );
@@ -85,7 +98,7 @@ describe('ForumNoteText', () => {
   it('does not treat a substring of text-app-btn-fg as button foreground', () => {
     renderWithLocale(
       <ForumNoteText
-        text={`${'a'.repeat(280)} TAILWORD`}
+        text={`${'a'.repeat(560)} TAILWORD`}
         className="mt-2 whitespace-pre-wrap text-sm text-app-btn-fg/70"
       />,
     );
@@ -95,16 +108,24 @@ describe('ForumNoteText', () => {
   });
 
   it('uses the German Show more label', () => {
-    renderWithLocale(<ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" />, 'de');
+    renderWithLocale(<ForumNoteText text={`${'a'.repeat(560)} TAILWORD`} className="body" />, 'de');
     expect(screen.getByRole('button', { name: 'Mehr anzeigen' })).toBeTruthy();
   });
 
   it('expands long text in place without Show less', () => {
-    renderWithLocale(<ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" />);
+    renderWithLocale(<ForumNoteText text={`${'a'.repeat(560)} TAILWORD`} className="body" />);
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     expect(screen.getByText(/TAILWORD/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Show less/i })).toBeNull();
+  });
+
+  it('shows the full body without Show more when forceExpanded', () => {
+    renderWithLocale(
+      <ForumNoteText text={`${'a'.repeat(560)} TAILWORD`} className="body" forceExpanded />,
+    );
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
   it('renders a short url as plain text when plain', () => {
@@ -114,7 +135,7 @@ describe('ForumNoteText', () => {
   });
 
   it('does not autolink a truncated url when plain, including after Show more', () => {
-    const href = `https://example.com/${'a'.repeat(300)}`;
+    const href = `https://example.com/${'a'.repeat(541)}`;
     renderWithLocale(<ForumNoteText plain text={href} className="body" />);
     expect(screen.queryByRole('link')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
@@ -128,7 +149,7 @@ describe('ForumNoteText', () => {
     function Parent(): ReactElement {
       return (
         <div onClick={onClick} onKeyDown={onKeyDown}>
-          <ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" />
+          <ForumNoteText text={`${'a'.repeat(560)} TAILWORD`} className="body" />
         </div>
       );
     }
