@@ -264,6 +264,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('passes marks on a nested note in each body', () => {
+    useAuthStore.setState({ session: 'tok', account: null });
     const marked = {
       ...quotedNote,
       accountId: 'acc-cyrill',
