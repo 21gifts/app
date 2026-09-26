@@ -388,6 +388,26 @@ describe('ForumAskWizard', () => {
     expect(onStepChange).toHaveBeenCalledWith(1);
   });
 
+  it('keeps the credit preview when Credit is pressed again', () => {
+    const onStepChange = vi.fn();
+    const onAskObligationChange = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        askObligation="credit"
+        draft="Hello"
+        onAskObligationChange={onAskObligationChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    expect(onStepChange).not.toHaveBeenCalled();
+    expect(onAskObligationChange).not.toHaveBeenCalled();
+    expect(screen.getByText('9 of 9')).toBeTruthy();
+  });
+
   it('does not show To be repaid on a donation preview', () => {
     renderWithLocale(
       <ForumAskWizard

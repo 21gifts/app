@@ -205,6 +205,9 @@ export function ForumAskWizard({
               { value: 'credit', label: t('forum.askCredit') },
             ]}
             onChange={(value) => {
+              if (value === askObligation) {
+                return;
+              }
               onAskObligationChange(value);
               setCreditPhase('amount');
               if (value === 'credit' && step !== 1) {
