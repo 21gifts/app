@@ -127,7 +127,10 @@ function chartDayLabel(day: string, locale: string): string {
  * `/moderate/handbook`. Other signed-in visitors see a short forbidden message
  * and no tools list. Does not fetch hidden notes, proposals, or
  * the group thread; unread for Open proposals and Moderators chat group comes
- * from {@link useUnreadCount}. Renders nothing without a session.
+ * from {@link useUnreadCount}. When the payout-goal chart is open, a
+ * secondary ButtonLink under the chart foot goes to `/moderate/payouts`; it is
+ * not in the toggle and is hidden on the loading and error stand-ins. Renders
+ * nothing without a session.
  *
  * @returns The moderation hub card, forbidden copy, or `null` without a session.
  */
@@ -254,6 +257,7 @@ export function ModerateScreen(): ReactElement | null {
 
 /**
  * Staff payout-goal panel: yesterday versus 100, expanding to a 30-day chart.
+ * The payout-per-person ButtonLink sits only in the open chart.
  *
  * @param props - Catalog, locale, stats load state, and expand/retry handlers.
  * @returns The widget, or a loading/error stand-in.
@@ -367,6 +371,11 @@ function PayoutGoalWidget(props: {
           <p className="text-center text-xs text-app-muted">
             {t('moderate.goal.chartFoot', { goal: PAYOUT_GOAL })}
           </p>
+          <div className="flex w-full flex-col items-center gap-3">
+            <ButtonLink href="/moderate/payouts" variant="secondary" size="lg">
+              {t('moderate.payouts.link')}
+            </ButtonLink>
+          </div>
         </div>
       ) : null}
     </div>

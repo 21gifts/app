@@ -252,6 +252,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:signed-out",
+    "label": "/welcome signed-out",
+    "visual": "screen-welcome-signed-out",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:mention",
+    "label": "/welcome mention",
+    "visual": "state-welcome-mention",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:laws",
     "label": "/welcome laws",
     "visual": "state-welcome-laws",
@@ -2115,6 +2127,36 @@
     "id": "/moderate:error",
     "label": "/moderate error",
     "visual": "state-moderate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/payouts:default",
+    "label": "/moderate/payouts default",
+    "visual": "screen-moderate-payouts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/payouts:empty",
+    "label": "/moderate/payouts empty",
+    "visual": "state-moderate-payouts-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/payouts:forbidden",
+    "label": "/moderate/payouts forbidden",
+    "visual": "state-moderate-payouts-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/payouts:loading",
+    "label": "/moderate/payouts loading",
+    "visual": "state-moderate-payouts-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/payouts:error",
+    "label": "/moderate/payouts error",
+    "visual": "state-moderate-payouts-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

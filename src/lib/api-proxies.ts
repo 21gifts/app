@@ -451,6 +451,16 @@ export async function proxyFundingApplicationsGet(request: Request): Promise<Res
 }
 
 /**
+ * Proxies GET /funding/payout-days to the 21.gifts api (staff Bearer).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyFundingPayoutDaysGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/payout-days');
+}
+
+/**
  * Proxies GET /funding/applications/:accountId to the 21.gifts api (staff Bearer).
  *
  * @param request - Incoming App Router request (Bearer session).

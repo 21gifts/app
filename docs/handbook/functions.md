@@ -1503,6 +1503,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingApplyScreen`.
 
+## Function: fetchFundingPayoutDays
+
+- **Purpose:** GET `/funding/payout-days` (same-origin Bearer proxy of api `GET /funding/payout-days`) and parse `fundingPayoutDaysResponseSchema`. Next.js forbids a `route.ts` beside `/moderate/payouts`, so the proxy lives at this path. Seven UTC days, oldest first, and one row per person.
+- **Inputs:** Bearer `sessionToken`.
+- **Returns / side effects:** `{ days, rows }`. Throws visitor copy `Could not load the payout table. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `FundingPayoutsScreen`.
+
 ## Function: fetchFundingApplications
 
 - **Purpose:** GET `/funding/applications` (same-origin Bearer proxy of api `GET /funding/applications`) and parse `fundingApplicationsResponseSchema.applications`. Next.js forbids a `route.ts` beside `/grants/applications`, so the proxy lives at this path.
@@ -2446,6 +2453,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/funding/apply`.
 
+## Function: proxyFundingPayoutDaysGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /funding/payout-days`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/funding/payout-days`.
+
 ## Function: proxyFundingApplicationsGet
 
 - **Purpose:** Same-origin Bearer proxy helper for api `GET /funding/applications`. Forwards the incoming Authorization header.
@@ -3271,6 +3285,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/messages/hidden` only when the role is at least moderator.
 - **Used by:** `HiddenNotesPage`.
+
+## Function: PayoutsPage
+
+- **Purpose:** Next.js page for `/moderate/payouts` (signed-in staff payout-per-person table). HTML `/moderate/payouts` is the table, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingPayoutsScreen`. JSON lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The payout table inside fill AppShell.
+- **Used by:** Route `/moderate/payouts`.
+
+## Function: FundingPayoutsScreen
+
+- **Purpose:** Client table of daily-grant payouts for seven UTC days. Staff (moderator) fetch `fetchFundingPayoutDays` and show a lead, a three-color legend, and name plus seven cells (black not entitled, white entitled but not collected, green payout received). Today is the rightmost column. A row with `accountId` links the name to `/members/{id}`. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. Moderator stipends and welcome gifts are not in this table.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
+- **Used by:** `PayoutsPage`.
 
 ## Function: ProposalsPage
 

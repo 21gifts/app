@@ -13565,7 +13565,96 @@ test.describe('moderate screens', () => {
     await expect(page.getByText('12%')).toBeVisible();
     await page.getByRole('button', { name: /Goal/ }).click();
     await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
+      'href',
+      '/moderate/payouts',
+    );
     await shotScreen(page, 'state-moderate-goal-open');
+  });
+
+  test('moderate payouts', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/payout-days', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          days: [
+            '2026-09-20',
+            '2026-09-21',
+            '2026-09-22',
+            '2026-09-23',
+            '2026-09-24',
+            '2026-09-25',
+            '2026-09-26',
+          ],
+          rows: [
+            {
+              accountId: 'acc_ada',
+              name: 'Ada',
+              days: ['blocked', 'missed', 'paid', 'blocked', 'blocked', 'blocked', 'blocked'],
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/payouts');
+    await expect(page.getByRole('heading', { name: 'Payout per person' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada' })).toBeVisible();
+    await shotScreen(page, 'screen-moderate-payouts');
+  });
+
+  test('moderate payouts empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/payout-days', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          days: [
+            '2026-09-20',
+            '2026-09-21',
+            '2026-09-22',
+            '2026-09-23',
+            '2026-09-24',
+            '2026-09-25',
+            '2026-09-26',
+          ],
+          rows: [],
+        }),
+      });
+    });
+    await page.goto('/moderate/payouts');
+    await expect(page.getByText('Nobody was entitled in these seven days.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-payouts-empty');
+  });
+
+  test('moderate payouts forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/payouts');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-payouts-forbidden');
+  });
+
+  test('moderate payouts loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/payout-days', () => new Promise(() => undefined));
+    await page.goto('/moderate/payouts');
+    await expect(page.getByRole('heading', { name: 'Payout per person' })).toBeVisible();
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-moderate-payouts-loading');
+  });
+
+  test('moderate payouts error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/payout-days', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/moderate/payouts');
+    await expect(
+      page.getByText('Could not load the payout table. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-payouts-error');
   });
 
   test('moderate loading', async ({ page }) => {
