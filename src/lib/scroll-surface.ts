@@ -20,27 +20,38 @@ function isScrollingOverflow(value: string): boolean {
  * @returns Nothing.
  */
 function fitTextarea(el: HTMLTextAreaElement): void {
-  el.style.setProperty('overflow', 'hidden', 'important');
-  // An empty field already fits. Forcing a pixel height shifts the composer.
+  el.style.setProperty('overflow', 'clip', 'important');
+  // An empty field already fits. A leftover pixel height would keep it tall.
   if (!el.value.includes('\n') && el.scrollHeight <= el.clientHeight + 4) {
+    if (el.style.height !== '') {
+      el.style.removeProperty('height');
+    }
     return;
   }
   el.style.height = 'auto';
-  el.style.height = `${el.scrollHeight}px`;
+  const next = `${el.scrollHeight}px`;
+  if (el.style.height !== next) {
+    el.style.height = next;
+  }
 }
 
 /**
- * The scrollport that is allowed to scroll right now.
+ * The scrollport that may scroll. Nested ports: the inner one, not the
+ * ancestor that happened to bind last. Siblings: the most recently bound.
  *
- * @returns The newest bound element, or `null` when none is bound.
+ * @returns That element, or `null` when none is bound.
  */
 function activeScrollport(): HTMLElement | null {
-  return stack.at(-1) ?? null;
+  const innermost = stack.filter(
+    (el) => !stack.some((other) => other !== el && el.contains(other)),
+  );
+  return innermost.at(-1) ?? null;
 }
 
 /**
  * Leave exactly one scrollport unlocked and force every other scrolling
- * element to clip. Textareas grow to their text instead of scrolling.
+ * element to clip. `clip` is not a scroll container. Textareas grow to
+ * their text instead of scrolling, and shrink again when the text does.
  *
  * @returns Nothing.
  */
@@ -48,18 +59,20 @@ export function syncScrollSurfaces(): void {
   const active = activeScrollport();
   const ports = document.querySelectorAll('[data-scrollport]');
   for (const node of ports) {
-    if (!(node instanceof HTMLElement)) {
+    if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {
       continue;
     }
     if (node === active) {
+      node.setAttribute('data-scroll-active', '');
       node.removeAttribute('data-scroll-locked');
     } else {
+      node.removeAttribute('data-scroll-active');
       node.setAttribute('data-scroll-locked', '');
     }
   }
   const nodes = document.body.querySelectorAll('*');
   for (const node of nodes) {
-    if (!(node instanceof HTMLElement)) {
+    if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {
       continue;
     }
     if (node instanceof HTMLTextAreaElement) {
@@ -86,7 +99,7 @@ export function syncScrollSurfaces(): void {
     if (!scrolling) {
       continue;
     }
-    node.style.setProperty('overflow', 'hidden', 'important');
+    node.style.setProperty('overflow', 'clip', 'important');
   }
 }
 

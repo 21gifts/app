@@ -105,8 +105,8 @@ for (const file of walk(SRC)) {
       failures.push(`${rel}: expected exactly one overflow:auto rule on [data-scrollport]`);
     }
     if (
-      !/html,\s*\nbody\s*\{[^}]*overflow:\s*hidden/s.test(text) &&
-      !/html,\s*body\s*\{[^}]*overflow:\s*hidden/s.test(text)
+      !/html,\s*\nbody\s*\{[^}]*overflow:\s*clip/s.test(text) &&
+      !/html,\s*body\s*\{[^}]*overflow:\s*clip/s.test(text)
     ) {
       failures.push(`${rel}: html and body must be overflow:hidden`);
     }

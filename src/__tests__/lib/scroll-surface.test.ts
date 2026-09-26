@@ -67,8 +67,8 @@ describe('scroll surface', () => {
     const plain = document.createElement('div');
     document.body.appendChild(plain);
     syncScrollSurfaces();
-    expect(stray.style.overflow).toBe('hidden');
-    expect(field.style.overflow).toBe('hidden');
+    expect(stray.style.overflow).toBe('clip');
+    expect(field.style.overflow).toBe('clip');
     expect(field.style.height).toBe('');
     const wide = document.createElement('textarea');
     wide.value = 'one long line';
@@ -82,8 +82,12 @@ describe('scroll surface', () => {
     Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 80 });
     syncScrollSurfaces();
     expect(field.style.height).toBe('80px');
+    field.value = '';
+    Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 20 });
+    syncScrollSurfaces();
+    expect(field.style.height).toBe('');
     expect(input.style.overflow).toBe('auto');
-    expect(svg.style.overflow).toBe('auto');
+    expect(svg.style.overflow).toBe('clip');
     expect(plain.style.overflow).toBe('');
   });
 
@@ -92,6 +96,6 @@ describe('scroll surface', () => {
     stray.style.overflowX = 'overlay';
     document.body.appendChild(stray);
     syncScrollSurfaces();
-    expect(stray.style.overflow).toBe('hidden');
+    expect(stray.style.overflow).toBe('clip');
   });
 });

@@ -7101,7 +7101,7 @@ test('Function: syncScrollSurfaces — a scrolling box added at runtime is clipp
     .poll(() =>
       page.evaluate(() => getComputedStyle(document.getElementById('stray-scroll')!).overflowY),
     )
-    .toBe('hidden');
+    .toBe('clip');
 });
 
 test('Function: ScrollSurfaceGuard — typing in a textarea does not make the field scroll', async ({

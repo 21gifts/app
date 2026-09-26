@@ -44,16 +44,18 @@ html {
 html,
 body {
   height: var(--app-height);
-  overflow: hidden !important;
+  overflow: clip !important;
 }
 
-[data-scrollport]:not([data-scroll-locked]) {
-  overflow: auto !important;
+/* Hidden until the effect marks the one active port. Absence of the lock
+   is not permission to scroll: several ports exist before that effect. */
+[data-scrollport] {
+  overflow: clip !important;
   overscroll-behavior: none;
 }
 
-[data-scrollport][data-scroll-locked] {
-  overflow: hidden !important;
+[data-scrollport][data-scroll-active] {
+  overflow: auto !important;
 }
 
 /* `center` first so an engine that drops `safe` still centers. */

@@ -5,6 +5,21 @@ import { Scrollport } from '@/components/ui/Scrollport';
 afterEach(cleanup);
 
 describe('Scrollport', () => {
+  it('keeps the inner port active when both mount together', () => {
+    render(
+      <Scrollport>
+        <p>Page</p>
+        <Scrollport>
+          <p>Dialog</p>
+        </Scrollport>
+      </Scrollport>,
+    );
+    const ports = document.querySelectorAll('[data-scrollport]');
+    expect(ports).toHaveLength(2);
+    expect(ports[0]?.hasAttribute('data-scroll-active')).toBe(false);
+    expect(ports[1]?.hasAttribute('data-scroll-active')).toBe(true);
+  });
+
   it('locks an ancestor scrollport and unlocks it on unmount', () => {
     const { rerender, unmount } = render(
       <Scrollport>

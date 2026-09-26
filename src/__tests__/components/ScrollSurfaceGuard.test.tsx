@@ -25,8 +25,8 @@ describe('ScrollSurfaceGuard', () => {
         resolve();
       });
     });
-    expect(stray.style.overflow).toBe('hidden');
-    expect(again.style.overflow).toBe('hidden');
+    expect(stray.style.overflow).toBe('clip');
+    expect(again.style.overflow).toBe('clip');
   });
 
   it('grows a textarea on input and stops watching after unmount', async () => {
@@ -38,7 +38,7 @@ describe('ScrollSurfaceGuard', () => {
     Object.defineProperty(field, 'clientHeight', { configurable: true, value: 20 });
     Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 90 });
     fireEvent.input(field);
-    expect(field.style.overflow).toBe('hidden');
+    expect(field.style.overflow).toBe('clip');
     expect(field.style.height).toBe('90px');
     const ignored = document.createElement('div');
     ignored.dataset['stray'] = '1';

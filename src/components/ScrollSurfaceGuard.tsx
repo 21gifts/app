@@ -12,22 +12,21 @@ import { syncScrollSurfaces } from '@/lib/scroll-surface';
  */
 export function ScrollSurfaceGuard(): ReactElement | null {
   useLayoutEffect(() => {
-    let frame = 0;
-    const run = (): void => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        syncScrollSurfaces();
+    const observe = (): void => {
+      observer.observe(document.body, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['class', 'style'],
       });
     };
-    syncScrollSurfaces();
-    const observer = new MutationObserver(run);
-    observer.observe(document.body, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['class', 'style'],
+    const observer = new MutationObserver(() => {
+      observer.disconnect();
+      syncScrollSurfaces();
+      observe();
     });
+    syncScrollSurfaces();
+    observe();
     const onInput = (event: Event): void => {
       if (event.target instanceof HTMLTextAreaElement) {
         syncScrollSurfaces();
@@ -35,7 +34,6 @@ export function ScrollSurfaceGuard(): ReactElement | null {
     };
     document.addEventListener('input', onInput);
     return () => {
-      cancelAnimationFrame(frame);
       observer.disconnect();
       document.removeEventListener('input', onInput);
     };
