@@ -29,7 +29,7 @@ export function resetWalletCeremonyLock(): void {
   ceremonyInFlight = false;
 }
 
-/** Fixture words for visual `/wallet:phrase` (not live PRF). */
+/** Fixture words for `/wallet/phrase?visual=phrase` (not live PRF). */
 export const WALLET_VISUAL_FIXTURE_MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 

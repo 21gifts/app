@@ -126,12 +126,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:phrase",
-    "label": "/wallet phrase",
-    "visual": "state-wallet-phrase",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/wallet:reveal",
     "label": "/wallet reveal",
     "visual": "state-wallet-reveal",
@@ -144,20 +138,32 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:error",
-    "label": "/wallet error",
+    "id": "/wallet/phrase:default",
+    "label": "/wallet/phrase default",
+    "visual": "screen-wallet-phrase",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/phrase:phrase",
+    "label": "/wallet/phrase phrase",
+    "visual": "state-wallet-phrase",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/phrase:error",
+    "label": "/wallet/phrase error",
     "visual": "state-wallet-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:timeout",
-    "label": "/wallet timeout",
+    "id": "/wallet/phrase:timeout",
+    "label": "/wallet/phrase timeout",
     "visual": "state-wallet-timeout",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:prf-unsupported",
-    "label": "/wallet prf-unsupported",
+    "id": "/wallet/phrase:prf-unsupported",
+    "label": "/wallet/phrase prf-unsupported",
     "visual": "state-wallet-prf-unsupported",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
@@ -249,6 +255,18 @@
     "id": "/welcome:default",
     "label": "/welcome default",
     "visual": "screen-welcome",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:signed-out",
+    "label": "/welcome signed-out",
+    "visual": "screen-welcome-signed-out",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:mention",
+    "label": "/welcome mention",
+    "visual": "state-welcome-mention",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -978,26 +996,32 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:bad-amount",
-    "label": "/pos bad-amount",
+    "id": "/pos/amount:default",
+    "label": "/pos/amount default",
+    "visual": "screen-pos-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos/amount:bad-amount",
+    "label": "/pos/amount bad-amount",
     "visual": "state-pos-bad-amount",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:create-outside",
-    "label": "/pos create-outside",
+    "id": "/pos/amount:create-outside",
+    "label": "/pos/amount create-outside",
     "visual": "state-pos-create-outside",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:create-already",
-    "label": "/pos create-already",
+    "id": "/pos/amount:create-already",
+    "label": "/pos/amount create-already",
     "visual": "state-pos-create-already",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:create-failed",
-    "label": "/pos create-failed",
+    "id": "/pos/amount:create-failed",
+    "label": "/pos/amount create-failed",
     "visual": "state-pos-create-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
