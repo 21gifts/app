@@ -20,9 +20,13 @@ function isScrollingOverflow(value: string): boolean {
  * @returns Nothing.
  */
 function fitTextarea(el: HTMLTextAreaElement): void {
+  el.style.overflow = 'hidden';
+  // An empty field already fits. Forcing a pixel height shifts the composer.
+  if (!el.value.includes('\n') && el.scrollHeight <= el.clientHeight + 4) {
+    return;
+  }
   el.style.height = 'auto';
   el.style.height = `${el.scrollHeight}px`;
-  el.style.overflow = 'hidden';
 }
 
 /**

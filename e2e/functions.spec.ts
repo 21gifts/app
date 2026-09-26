@@ -7090,18 +7090,18 @@ test('Function: syncScrollSurfaces — a scrolling box added at runtime is clipp
   page,
 }) => {
   await page.goto('/login');
-  const overflow = await page.evaluate(() => {
+  await page.evaluate(() => {
     const stray = document.createElement('div');
+    stray.id = 'stray-scroll';
     stray.style.overflow = 'auto';
     stray.textContent = 'stray';
     document.body.appendChild(stray);
-    return new Promise<string>((resolve) => {
-      requestAnimationFrame(() => {
-        resolve(getComputedStyle(stray).overflowY);
-      });
-    });
   });
-  expect(overflow).toBe('hidden');
+  await expect
+    .poll(() =>
+      page.evaluate(() => getComputedStyle(document.getElementById('stray-scroll')!).overflowY),
+    )
+    .toBe('hidden');
 });
 
 test('Function: ScrollSurfaceGuard — typing in a textarea does not make the field scroll', async ({
@@ -7303,7 +7303,7 @@ test('Function: resolveAppHeight — document has --app-height', async ({ page }
   expect(value).not.toBe('');
 });
 
-test('Function: resolveAppHeight — short keyboard visualViewport does not shrink the page frame', async ({
+test('Function: resolveAppHeight — short keyboard visualViewport sizes the page frame', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -7364,8 +7364,8 @@ test('Function: resolveAppHeight — short keyboard visualViewport does not shri
   });
   expect(measured.short).toBeGreaterThan(0);
   expect(measured.short).toBeLessThan(measured.inner);
-  expect(measured.appHeight).toBe(`${measured.inner}px`);
-  expect(measured.mainHeight).toBe(measured.inner);
+  expect(measured.appHeight).toBe(`${measured.short}px`);
+  expect(measured.mainHeight).toBe(measured.short);
 });
 
 test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {

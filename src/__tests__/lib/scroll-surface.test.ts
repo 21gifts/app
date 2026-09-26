@@ -44,7 +44,6 @@ describe('scroll surface', () => {
     stray.style.overflow = 'scroll';
     document.body.appendChild(stray);
     const field = document.createElement('textarea');
-    field.value = 'one\ntwo\nthree';
     document.body.appendChild(field);
     const input = document.createElement('input');
     input.style.overflow = 'auto';
@@ -62,7 +61,19 @@ describe('scroll surface', () => {
     syncScrollSurfaces();
     expect(stray.style.overflow).toBe('hidden');
     expect(field.style.overflow).toBe('hidden');
-    expect(field.style.height).toBe(`${field.scrollHeight}px`);
+    expect(field.style.height).toBe('');
+    const wide = document.createElement('textarea');
+    wide.value = 'one long line';
+    document.body.appendChild(wide);
+    Object.defineProperty(wide, 'clientHeight', { configurable: true, value: 20 });
+    Object.defineProperty(wide, 'scrollHeight', { configurable: true, value: 70 });
+    syncScrollSurfaces();
+    expect(wide.style.height).toBe('70px');
+    field.value = 'one\ntwo\nthree';
+    Object.defineProperty(field, 'clientHeight', { configurable: true, value: 20 });
+    Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 80 });
+    syncScrollSurfaces();
+    expect(field.style.height).toBe('80px');
     expect(input.style.overflow).toBe('auto');
     expect(svg.style.overflow).toBe('auto');
     expect(plain.style.overflow).toBe('');

@@ -634,14 +634,42 @@ async function unstickStickyChrome(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Marketing pages scroll inside one port, so the document is viewport-tall.
+ * Stretch that port to its content before a full-page shot, or the capture
+ * is only the window.
+ *
+ * @param page - Page under test.
+ */
+async function expandScrollportForFullShot(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      return;
+    }
+    const height = Math.max(port.scrollHeight, document.documentElement.clientHeight);
+    port.style.overflow = 'visible';
+    port.style.flex = 'none';
+    port.style.height = `${height}px`;
+    document.documentElement.style.overflow = 'visible';
+    document.body.style.overflow = 'visible';
+    document.documentElement.style.height = `${height}px`;
+    document.body.style.height = `${height}px`;
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
   await unstickStickyChrome(page);
   // The app frame is one window. A full-page capture would append the
   // scrolled overflow as an empty band under the frame. Marketing pages
   // have no frame chrome and still capture their full height.
   const shell = await page.locator('[data-app-chrome]').count();
+  const captureFullPage = fullPage && shell === 0;
+  if (captureFullPage) {
+    await expandScrollportForFullShot(page);
+  }
   await expect(page).toHaveScreenshot(`${arg}.png`, {
-    fullPage: fullPage && shell === 0,
+    fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
     ...SHOT,
   });
