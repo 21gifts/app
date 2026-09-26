@@ -14039,18 +14039,7 @@ test.describe('stats variant baselines', () => {
 });
 
 test('screen /sunday-rest', async ({ page }) => {
-  await page.clock.install();
-  await page.goto('/sunday-rest');
-  const manila = new Date(Date.now() + 8 * 3600000);
-  if (manila.getUTCDay() !== 0) {
-    const untilSunday =
-      (7 - manila.getUTCDay()) * 86400000 -
-      (manila.getUTCHours() * 3600000 +
-        manila.getUTCMinutes() * 60000 +
-        manila.getUTCSeconds() * 1000 +
-        manila.getUTCMilliseconds());
-    await page.clock.fastForward(untilSunday + 1000);
-  }
+  await page.goto('http://localhost:3002/sunday-rest');
   await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toBeVisible();
   await shotScreen(page, 'screen-sunday-rest');
 });

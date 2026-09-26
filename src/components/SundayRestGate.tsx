@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
+import { Wordmark } from '@/components/ui/Wordmark';
 import { isSundayRest } from '@/lib/sunday-rest';
 
 /**
@@ -23,10 +24,11 @@ export function SundayRestGate({
 }): ReactElement {
   const [paused, setPaused] = useState(isSundayRest(serverNow));
   useEffect(() => {
-    // Advance the server's clock monotonically, ignoring device timezone/clock changes.
-    const baseline = performance.now();
+    // Anchor to server time, but include time spent with the device asleep.
+    // The API remains authoritative if a visitor changes their device clock.
+    const baseline = Date.now();
     const check = (): void => {
-      const resting = isSundayRest(serverNow + performance.now() - baseline);
+      const resting = isSundayRest(serverNow + Date.now() - baseline);
       if (!resting && isSundayRest(serverNow)) {
         window.location.reload();
         return;
@@ -34,7 +36,7 @@ export function SundayRestGate({
       setPaused(resting);
     };
     check();
-    const timer = setInterval(check, 250);
+    const timer = setInterval(check, 1000);
     window.addEventListener('focus', check);
     window.addEventListener('pageshow', check);
     document.addEventListener('visibilitychange', check);
@@ -49,7 +51,9 @@ export function SundayRestGate({
   return (
     <main className="flex min-h-dvh items-center justify-center bg-app-bg px-6 py-16 text-app-fg">
       <section className="mx-auto max-w-xl text-center" aria-labelledby="sunday-title">
-        <p className="mb-8 text-lg font-semibold">21.gifts</p>
+        <p className="mb-8">
+          <Wordmark />
+        </p>
         <h1 id="sunday-title" className="text-3xl font-semibold">
           {title}
         </h1>

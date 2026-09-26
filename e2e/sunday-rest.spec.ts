@@ -1,46 +1,56 @@
 import { test, expect } from '@playwright/test';
-import { isSundayRest } from '../src/lib/sunday-rest';
 
-test('Function: middleware — weekday API traffic or Sunday rejection', async ({ request }) => {
-  const response = await request.get('/healthz');
-  expect(response.status()).toBe(isSundayRest(Date.now()) ? 503 : 200);
+const sundayOrigin = 'http://localhost:3002';
+
+test('Function: middleware — Sunday cannot be bypassed with a direct write or data request', async ({
+  request,
+}) => {
+  for (const method of ['GET', 'POST', 'DELETE']) {
+    const response = await request.fetch(`${sundayOrigin}/me`, { method });
+    expect(response.status()).toBe(503);
+    expect(await response.json()).toMatchObject({ error: 'SUNDAY_REST' });
+  }
+  expect((await request.get(`${sundayOrigin}/healthz`)).status()).toBe(200);
 });
-test('Function: sundayRetryAfter — scheduled HTTP retry delay', async ({ request }) => {
-  const response = await request.get('/healthz');
-  if (isSundayRest(Date.now())) {
-    expect(Number(response.headers()['retry-after'])).toBeGreaterThan(0);
-    expect(response.headers()['cache-control']).toContain('no-store');
-  } else expect(response.status()).toBe(200);
+test('Function: sundayRetryAfter — scheduled HTTP retry delay and cache controls', async ({
+  request,
+}) => {
+  const response = await request.get(`${sundayOrigin}/me`);
+  expect(Number(response.headers()['retry-after'])).toBeGreaterThan(0);
+  expect(response.headers()['cache-control']).toContain('no-store');
 });
-test('Function: SundayRestPage — direct rest destination', async ({ page }) => {
+test('Function: SundayRestPage — direct Sunday destination and weekday redirect', async ({
+  page,
+}) => {
+  await page.goto(`${sundayOrigin}/sunday-rest`);
+  await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toBeVisible();
+  await expect(page.getByRole('button')).toHaveCount(0);
   await page.goto('/sunday-rest');
-  if (isSundayRest(Date.now()))
-    await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toBeVisible();
-  else await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/');
 });
 test('Function: SundayRestGate — an open window rests and resumes', async ({ page }) => {
-  test.skip(isSundayRest(Date.now()), 'Server already resting; opening case covered above');
-  await page.clock.install();
+  await page.clock.install({ time: new Date('2026-09-24T12:00:00Z') });
   await page.goto('/');
-  const manila = new Date(Date.now() + 8 * 3600000);
-  const untilSunday =
-    ((7 - manila.getUTCDay()) % 7) * 86400000 -
-    (manila.getUTCHours() * 3600000 +
-      manila.getUTCMinutes() * 60000 +
-      manila.getUTCSeconds() * 1000 +
-      manila.getUTCMilliseconds());
-  await page.clock.fastForward(untilSunday + 1000);
+  // Server is anchored to Thursday noon UTC. Three days reaches Sunday afternoon in Manila.
+  await page.clock.fastForward(3 * 86400000);
   await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toBeVisible();
   await expect(page.getByRole('button')).toHaveCount(0);
   await page.clock.fastForward(86400000);
   await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toHaveCount(0);
 });
-test('Function: isSundayRest — server policy ignores the browser timezone', async ({ browser }) => {
-  const context = await browser.newContext({ timezoneId: 'America/Los_Angeles' });
+test('Function: isSundayRest — server policy ignores browser timezone and local clock', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    timezoneId: 'America/Los_Angeles',
+    locale: 'de-DE',
+    extraHTTPHeaders: { 'Accept-Language': 'de' },
+  });
   const page = await context.newPage();
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toHaveCount(
-    isSundayRest(Date.now()) ? 1 : 0,
-  );
+  await page.clock.install({ time: new Date('2026-09-28T12:00:00Z') });
+  await page.goto(`${sundayOrigin}/about`);
+  await expect(page.getByRole('heading', { name: 'Christus ist auferstanden!' })).toBeVisible();
+  await expect(page.getByText(/Lasst die Arbeit und das Einkaufen ruhen/)).toBeVisible();
+  await expect(page.getByRole('link')).toHaveCount(0);
   await context.close();
 });

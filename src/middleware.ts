@@ -7,6 +7,7 @@ import { isSundayRest, sundayRetryAfter } from '@/lib/sunday-rest';
  * @returns A non-cacheable rest error or the next application response.
  */
 export function middleware(request: NextRequest): NextResponse {
+  if (request.nextUrl.pathname === '/healthz') return NextResponse.next();
   const now = Date.now();
   const document =
     request.method === 'GET' &&
@@ -32,6 +33,7 @@ export function middleware(request: NextRequest): NextResponse {
 
 /** Static resources remain available so the rest page can render. */
 export const config = {
+  runtime: 'nodejs',
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|favicon.svg|apple-touch-icon.png|manifest.webmanifest|sw.js).*)',
   ],

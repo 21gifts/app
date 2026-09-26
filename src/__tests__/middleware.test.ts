@@ -31,3 +31,10 @@ describe('Sunday web boundary', () => {
     expect(response.headers.get('Cache-Control')).toBe('no-store');
   });
 });
+
+it('keeps the process health probe available during rest', () => {
+  vi.useFakeTimers().setSystemTime(new Date('2026-09-27T04:00:00Z'));
+  expect(
+    middleware(new NextRequest('https://21.gifts/healthz')).headers.get('x-middleware-next'),
+  ).toBe('1');
+});
