@@ -1485,7 +1485,7 @@ Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** s
 
 ### Variant: sunday
 
-Device-local Sunday. The shop composer is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
+Device-local Sunday. The **Post** / **Map** / **Table** pill stays. The shop composer is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
 
 ![21.gifts shops sunday](images/shops-sunday.png)
 
