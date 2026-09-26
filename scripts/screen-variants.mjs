@@ -1669,13 +1669,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants',
-    id: 'funding-none',
-    image: 'profile-funding-none.png',
-    visual: 'state-profile-funding-none',
-    needle: 'Apply for the 21 gifts grant',
-  },
-  {
-    route: '/grants',
     id: 'funding-pending',
     image: 'profile-funding-pending.png',
     visual: 'state-profile-funding-pending',

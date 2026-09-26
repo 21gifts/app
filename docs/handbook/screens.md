@@ -1936,12 +1936,6 @@ Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus
 
 ![21.gifts profile funding not verified](images/profile-funding-not-verified.png)
 
-### Variant: funding-none
-
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, and link **Apply for the 21 gifts grant** to `/grants/apply`. No date and no conviction titles.
-
-![21.gifts profile funding none](images/profile-funding-none.png)
-
 ### Variant: funding-pending
 
 Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.**

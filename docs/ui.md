@@ -1066,7 +1066,7 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, plus, for a moderator or founder, a secondary **Open applications** `ButtonLink` to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
-Handbook states: not-verified, none, pending, trial, admitted, funding-program-open, open-applications.
+Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
 
 ### `/grants/apply`
 

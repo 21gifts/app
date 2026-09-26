@@ -7079,7 +7079,6 @@ test.describe('profile funding states', () => {
       ),
     ).toBeVisible();
     await shotScreen(page, 'screen-grants');
-    await shotScreen(page, 'state-profile-funding-none');
   });
 
   test('profile funding pending', async ({ page }) => {
