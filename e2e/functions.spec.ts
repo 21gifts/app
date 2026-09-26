@@ -6636,9 +6636,12 @@ test('Function: ForumVideo — a playable note shows Full screen', async ({ page
       }),
     });
   });
-  await page.route('**/messages/m-clip/video.mp4', () => {
-    // A failed decode removes the player. Leave the clip pending so the button stays.
-    return new Promise(() => undefined);
+  await page.route('**/messages/m-clip/video.mp4', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'video/mp4',
+      path: 'e2e/fixtures/tiny.mp4',
+    });
   });
   await page.goto('/welcome');
   await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
@@ -6647,8 +6650,40 @@ test('Function: ForumVideo — a playable note shows Full screen', async ({ page
 test('Function: fetchPublicForumMessages — signed-out welcome asks for the active page', async ({
   page,
 }) => {
+  let sawActive = false;
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    const url = new URL(route.request().url());
+    if (
+      route.request().method() === 'GET' &&
+      url.searchParams.get('mode') === 'active' &&
+      route.request().headers().authorization === undefined
+    ) {
+      sawActive = true;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-active',
+            name: 'Ada',
+            text: 'Active without a session',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+        nextCursor: null,
+      }),
+    });
+  });
   await page.goto('/welcome');
-  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+  await expect(page.getByText('Active without a session')).toBeVisible();
+  expect(sawActive).toBe(true);
 });
 
 test('Function: PublicForumUnauthorizedError — a later public page 401 is login, not the load error', async ({
