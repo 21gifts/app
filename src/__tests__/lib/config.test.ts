@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
-import { getApiUrl, getAppVersion } from '@/lib/config';
+import { getApiUrl, getAppVersion, getE2eNow } from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
 const ORIGINAL_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 
 afterEach(() => {
   if (ORIGINAL === undefined) {
@@ -15,6 +16,11 @@ afterEach(() => {
     delete process.env.NEXT_PUBLIC_APP_VERSION;
   } else {
     process.env.NEXT_PUBLIC_APP_VERSION = ORIGINAL_APP_VERSION;
+  }
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
   }
 });
 
@@ -59,5 +65,22 @@ describe('getAppVersion', () => {
   it('does not slice a long decimal run number', () => {
     process.env.NEXT_PUBLIC_APP_VERSION = '123456789';
     expect(getAppVersion()).toBe('123456789');
+  });
+});
+
+describe('getE2eNow', () => {
+  it('returns the pinned instant', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    expect(getE2eNow()).toBe('2026-01-07T12:00:00.000Z');
+  });
+
+  it('returns null when unset', () => {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    expect(getE2eNow()).toBeNull();
+  });
+
+  it('returns null when empty', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '';
+    expect(getE2eNow()).toBeNull();
   });
 });

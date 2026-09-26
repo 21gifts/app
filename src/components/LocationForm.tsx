@@ -118,8 +118,8 @@ export function LocationForm({
         {t('location.heading')}
       </p>
 
-      {editing ? (
-        <SundayWritingGate>
+      <SundayWritingGate>
+        {editing ? (
           <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
             <div className="flex items-center gap-2">
               <input
@@ -157,46 +157,46 @@ export function LocationForm({
               </IconButton>
             </div>
           </form>
-        </SundayWritingGate>
-      ) : set ? (
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{location}</p>
-          <IconButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={busy}
-            aria-label={t('location.edit')}
-            onClick={startEdit}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          <IconButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={busy}
-            aria-label={t('location.clear')}
-            onClick={handleClear}
-          >
-            <Trash2 aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm text-app-muted">{t('location.unset')}</p>
-          <IconButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={busy}
-            aria-label={t('location.edit')}
-            onClick={startEdit}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        </div>
-      )}
+        ) : set ? (
+          <div className="flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{location}</p>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={busy}
+              aria-label={t('location.edit')}
+              onClick={startEdit}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={busy}
+              aria-label={t('location.clear')}
+              onClick={handleClear}
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-sm text-app-muted">{t('location.unset')}</p>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={busy}
+              aria-label={t('location.edit')}
+              onClick={startEdit}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
+        )}
+      </SundayWritingGate>
 
       {error ? (
         <p role="alert" className="text-center text-sm text-app-danger">

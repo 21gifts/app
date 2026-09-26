@@ -451,6 +451,12 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: sunday
+
+Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.
+
+![21.gifts welcome sunday](images/welcome-sunday.png)
+
 ### Variant: signed-out
 
 No session. Heading **Welcome**, wordmark, **Log in**, no member menu. Each note still shows its bitcoin amount. The active list is the public page. No composer.
@@ -2903,6 +2909,12 @@ Staff (founder) Reject POST in flight. **No** disabled with a spinner; applicati
 Moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
 
 ![21.gifts moderator group](images/moderate-group.png)
+
+### Variant: sunday
+
+Device-local Sunday. The moderator thread is not loaded and the composer is gone. The sentence **The moderator chat is paused on Sunday.** stands in their place.
+
+![21.gifts moderator group sunday](images/moderate-group-sunday.png)
 
 ### Variant: stipend
 

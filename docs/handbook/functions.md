@@ -1771,7 +1771,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: SundayWritingGate
 
-- **Purpose:** On the device's local Sunday, replaces public write controls or a forum zap control with a sentence. Otherwise renders the children. The head CSS hides the field before paint once `data-local-sunday="1"` is set.
+- **Purpose:** On the device's local Sunday, replaces public write controls or a forum zap control with a sentence. Otherwise renders the children. The rules in `globals.css` hide the field before paint once `data-local-sunday="1"` is set. Weekday wrappers use `display: contents`.
 - **Inputs:** `children`, and optional `notice` (`write` or `zap`).
 - **Returns / side effects:** The sentence or the children. No network.
 - **Used by:** forum composers, profile editors, grant and trust actions, and forum pay controls.
@@ -2061,6 +2061,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Decimal deploy run number string, or `dev`. Throws if unset/empty. Does not go through `entrypoint.sh`. Does not truncate.
 - **Used by:** `SignedInChrome`.
 
+## Function: getE2eNow
+
+- **Purpose:** Reads the optional Playwright clock `NEXT_PUBLIC_E2E_NOW`. Production leaves it unset.
+- **Inputs:** None.
+- **Returns / side effects:** The pinned instant, or `null` when unset or empty. Does not throw and does not invent a time. The head script then uses the device clock.
+- **Used by:** `RootLayout` for the `e2e-now` meta tag.
+
 ## Function: getCatalog
 
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
@@ -2169,7 +2176,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: setName
 
 - **Purpose:** POST `/me/name`.
-- **Inputs:** `sessionToken`, `name`.
+- **Inputs:** `sessionToken`, `name`, and optional `sundayWrite` (`enforce` default, or `setup` to omit `Time-Zone` during onboarding).
 - **Returns / side effects:** Updated `Account`.
 - **Used by:** `NameForm`.
 
@@ -2232,7 +2239,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: setUsername
 
 - **Purpose:** POST `/me/username` with the unique LUD-16 local-part.
-- **Inputs:** `sessionToken`, `username`.
+- **Inputs:** `sessionToken`, `username`, and optional `sundayWrite` (`enforce` default, or `setup` to omit `Time-Zone` during onboarding).
 - **Returns / side effects:** Updated `Account`. Throws `'username-taken'` on 409, `'username-invalid'` on 400, `'username-request'` on other failures.
 - **Used by:** `UsernameForm`.
 
@@ -2316,7 +2323,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: setLightningAddress
 
 - **Purpose:** POST `/me/lightning-address`.
-- **Inputs:** `sessionToken`, `address`.
+- **Inputs:** `sessionToken`, `address`, and optional `sundayWrite` (`enforce` default, or `setup` to omit `Time-Zone` during onboarding).
 - **Returns / side effects:** Updated `Account`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged; any other 400 is rewritten to a visitor-facing save error. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
 - **Used by:** `LightningAddressForm`.
 

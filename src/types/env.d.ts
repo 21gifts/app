@@ -26,6 +26,12 @@ declare global {
        */
       NEXT_PUBLIC_APP_VERSION?: string;
       /**
+       * Optional Playwright instant (`YYYY-MM-DDTHH:mm:ss.sssZ`).
+       * Read exclusively through `getE2eNow()` in `src/lib/config.ts`.
+       * Unset in production. Tests assign `NEXT_PUBLIC_E2E_NOW`.
+       */
+      NEXT_PUBLIC_E2E_NOW?: string;
+      /**
        * Docker build-arg / CI deploy run number consumed by `next.config.ts`
        * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
        */

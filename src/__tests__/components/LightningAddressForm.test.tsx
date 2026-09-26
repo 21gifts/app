@@ -175,7 +175,7 @@ describe('LightningAddressForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('me@walletofsatoshi.com')).toBeTruthy();
-    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com');
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com', 'setup');
   });
 
   it('links an address and updates the store', async () => {
@@ -189,7 +189,7 @@ describe('LightningAddressForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('me@walletofsatoshi.com')).toBeTruthy();
-    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com');
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com', 'setup');
     expect(useAuthStore.getState().account).toEqual(updated);
     expect(screen.queryByPlaceholderText(PLACEHOLDER)).toBeNull();
   });
@@ -224,7 +224,7 @@ describe('LightningAddressForm', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('That Wallet of Satoshi address could not be found');
-    expect(setLightningAddress).toHaveBeenCalledWith('sess', PLACEHOLDER);
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', PLACEHOLDER, 'setup');
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
   });
 
@@ -409,7 +409,7 @@ describe('LightningAddressForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByText('new@walletofsatoshi.com')).toBeTruthy();
-    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'new@walletofsatoshi.com');
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'new@walletofsatoshi.com', 'enforce');
   });
 
   it('cancels an edit and returns to the display view', () => {

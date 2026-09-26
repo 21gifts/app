@@ -15,13 +15,6 @@ export function isLocalSunday(nowMs: number, timeZone?: string): boolean {
 }
 
 /**
- * Weekday wrappers use `display: contents` so they do not change layout.
- * On the device Sunday the field is hidden and the notice is shown.
- */
-export const SUNDAY_WRITE_CSS =
-  '.sunday-write-field{display:contents}html[data-local-sunday="1"] .sunday-write-field{display:none!important}html:not([data-local-sunday="1"]) .sunday-write-notice{display:none!important}';
-
-/**
  * Sets `documentElement.dataset.localSunday` before paint.
  * Instant is sessionStorage `e2e-now`, else `meta[name=e2e-now]`, else the clock.
  * Weekday uses the device zone (no `timeZone` option).

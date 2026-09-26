@@ -4418,3 +4418,29 @@ describe('setMessageShopAccount', () => {
     );
   });
 });
+
+describe('sunday write header', () => {
+  it('omits Time-Zone during setup and sends the device zone on a profile edit', async () => {
+    vi.stubGlobal('window', {});
+    vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+      () =>
+        ({
+          resolvedOptions: () => ({ timeZone: 'Europe/Zurich' }),
+        }) as Intl.DateTimeFormat,
+    );
+    const named = { ...account, name: 'Ada' };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: named });
+    await setName('sess', 'Ada', 'setup');
+    await setUsername('sess', 'ada', 'setup');
+    await setLightningAddress('sess', 'ada@walletofsatoshi.com', 'setup');
+    await setName('sess', 'Ada', 'enforce');
+    const headersOf = (index: number): Record<string, string> => {
+      const init = fetchMock.mock.calls[index]?.[1] as { headers: Record<string, string> };
+      return init.headers;
+    };
+    expect(headersOf(0)).not.toHaveProperty('Time-Zone');
+    expect(headersOf(1)).not.toHaveProperty('Time-Zone');
+    expect(headersOf(2)).not.toHaveProperty('Time-Zone');
+    expect(headersOf(3)['Time-Zone']).toBe('Europe/Zurich');
+  });
+});

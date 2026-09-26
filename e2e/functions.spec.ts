@@ -660,6 +660,14 @@ test('Function: getAppVersion — signed-in Menu shows Version dev', async ({ pa
   await expect(page.getByText('Version dev')).toBeVisible();
 });
 
+test('Function: getE2eNow — the document pins the test clock', async ({ page }) => {
+  await page.goto('/welcome');
+  await expect(page.locator('meta[name="e2e-now"]')).toHaveAttribute(
+    'content',
+    '2026-01-07T12:00:00.000Z',
+  );
+});
+
 test('Function: proxyApiRequest — POST passkey register begin is 200', async ({ request }) => {
   const res = await request.post('/auth/passkey/register/begin');
   expect(res.status()).toBe(200);

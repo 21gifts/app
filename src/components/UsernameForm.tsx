@@ -43,7 +43,11 @@ export function UsernameForm({
     setBusy(true);
     setError(null);
     try {
-      const account = await setUsername(session, value);
+      const account = await setUsername(
+        session,
+        value,
+        variant === 'onboarding' ? 'setup' : 'enforce',
+      );
       /* v8 ignore next 3 -- unmount/logout while the POST is in flight */
       if (useAuthStore.getState().session !== session) {
         return;

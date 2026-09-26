@@ -127,6 +127,19 @@ export function deviceTimeZoneHeader(): Record<string, string> {
   }
 }
 
+/**
+ * Header for a public write. Setup omits it so onboarding is not refused.
+ *
+ * @param mode - `setup` for onboarding saves; `enforce` for profile edits.
+ * @returns The `Time-Zone` header, or an empty object during setup.
+ */
+function sundayWriteHeaders(mode: 'enforce' | 'setup'): Record<string, string> {
+  if (mode === 'setup') {
+    return {};
+  }
+  return deviceTimeZoneHeader();
+}
+
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
 
@@ -219,18 +232,23 @@ async function throwIfWrongAccount(response: Response): Promise<void> {
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param name - The display name as typed.
+ * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
  * @throws Error when the api rejects the name (400) — the api error string
  * when present, otherwise a fallback — on any other non-2xx status, or when
  * the body fails {@link accountSchema} validation.
  */
-export async function setName(sessionToken: string, name: string): Promise<Account> {
+export async function setName(
+  sessionToken: string,
+  name: string,
+  sundayWrite: 'enforce' | 'setup' = 'enforce',
+): Promise<Account> {
   const response = await fetch('/me/name', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
-      ...deviceTimeZoneHeader(),
+      ...sundayWriteHeaders(sundayWrite),
     },
     body: JSON.stringify({ name }),
   });
@@ -570,16 +588,21 @@ export async function fetchMemberReplies(
  *
  * @param sessionToken - Bearer session.
  * @param username - Handle (`a-z0-9-_.`).
+ * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
  * @throws Error with visitor-facing copy on 400/409 or other failures.
  */
-export async function setUsername(sessionToken: string, username: string): Promise<Account> {
+export async function setUsername(
+  sessionToken: string,
+  username: string,
+  sundayWrite: 'enforce' | 'setup' = 'enforce',
+): Promise<Account> {
   const response = await fetch('/me/username', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
-      ...deviceTimeZoneHeader(),
+      ...sundayWriteHeaders(sundayWrite),
     },
     body: JSON.stringify({ username }),
   });
@@ -600,18 +623,23 @@ export async function setUsername(sessionToken: string, username: string): Promi
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param address - The `name@domain.tld` Lightning Address to store.
+ * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
  * @throws Error when the api rejects the address (400) — rewritten to
  * visitor-facing copy — on any other non-2xx status, or when the body fails
  * {@link accountSchema} validation.
  */
-export async function setLightningAddress(sessionToken: string, address: string): Promise<Account> {
+export async function setLightningAddress(
+  sessionToken: string,
+  address: string,
+  sundayWrite: 'enforce' | 'setup' = 'enforce',
+): Promise<Account> {
   const response = await fetch('/me/lightning-address', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
-      ...deviceTimeZoneHeader(),
+      ...sundayWriteHeaders(sundayWrite),
     },
     body: JSON.stringify({ address }),
   });

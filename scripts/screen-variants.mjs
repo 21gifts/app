@@ -367,6 +367,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'sunday',
+    image: 'welcome-sunday.png',
+    visual: 'state-welcome-sunday',
+    needle: 'Writing is paused on Sunday.',
+  },
+  {
+    route: '/welcome',
     id: 'signed-out',
     image: 'welcome-signed-out.png',
     visual: 'screen-welcome-signed-out',
@@ -2863,6 +2870,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group.png',
     visual: 'screen-moderate-group',
     needle: 'Hello mods',
+  },
+  {
+    route: '/moderate/group',
+    id: 'sunday',
+    image: 'moderate-group-sunday.png',
+    visual: 'state-moderate-group-sunday',
+    needle: 'The moderator chat is paused on Sunday.',
   },
   {
     route: '/moderate/group',
