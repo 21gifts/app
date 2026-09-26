@@ -2878,6 +2878,44 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-profile');
   });
 
+  test('state /profile sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await stubOwnMember(page);
+    await openProfile(page);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
+    await shotScreen(page, 'state-profile-sunday');
+  });
+
   test('state /profile sticker-open', async ({ page }) => {
     await seedProfilePage(page);
     await openProfile(page);
@@ -5137,6 +5175,61 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-staff-verify-open', false);
   });
 
+  test('state /members sunday', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByText('Moderator functions').click();
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
+    await shotScreen(page, 'state-members-accountId-sunday', false);
+  });
+
   test('state /members funding-reviewed', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
@@ -6350,6 +6443,72 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
     await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
     await shotScreen(page, 'state-messages-id-signed-in');
+  });
+
+  test('state /messages sunday', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    const signedNote = {
+      id,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(signedNote),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(signedNote),
+        });
+      },
+    );
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeHidden();
+    await shotScreen(page, 'state-messages-id-sunday');
   });
 
   test('state /messages/[id] hidden', async ({ page }) => {
@@ -7822,6 +7981,17 @@ test.describe('profile apply screens', () => {
       page.getByText('First, write a short About me so people can get to know you.'),
     ).toBeVisible();
     await shotScreen(page, 'screen-grants-apply');
+  });
+
+  test('state /grants/apply sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedApply(page);
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeHidden();
+    await shotScreen(page, 'state-grants-apply-sunday');
   });
 
   test('profile apply photo', async ({ page }) => {
@@ -11317,6 +11487,37 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'screen-shops');
   });
 
+  test('state /shops sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await shotScreen(page, 'state-shops-sunday');
+  });
+
   test('shops empty', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
@@ -14088,6 +14289,19 @@ test.describe('moderate proposals screens', () => {
     await shotScreen(page, 'screen-moderate-proposals');
   });
 
+  test('state /moderate/proposals sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedAda(page, 'founder');
+    await stubProposals(page, [PROPOSAL]);
+    await page.goto('/moderate/proposals');
+    await expect(page.getByText('Rose')).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-proposals-sunday');
+  });
+
   test('moderate proposals forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await stubProposals(page);
@@ -14388,6 +14602,25 @@ test.describe('moderate applications screens', () => {
     );
     await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
     await shotScreen(page, 'screen-grants-applications-accountId');
+  });
+
+  test('state /grants/applications sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/grants/applications/acc_rose');
+    await expect(page.getByText('Living-room note.')).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-applications-accountId-sunday');
   });
 
   test('grants application truth', async ({ page }) => {
