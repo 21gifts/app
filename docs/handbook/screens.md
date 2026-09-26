@@ -1919,14 +1919,14 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard` (verification / 21 gifts grant). A moderator also sees a secondary large **Open applications** link to `/grants/applications`. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator also sees a secondary large **Open applications** link to `/grants/applications`. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
 - **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications**.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy, an **About** link, and **Apply for the 21 gifts grant**.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, and **Apply for the 21 gifts grant**.
 
 ![21.gifts grants](images/grants.png)
 
@@ -1938,7 +1938,7 @@ Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus
 
 ### Variant: funding-none
 
-Verified owner with `funding.status` **none**. Heading **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, and link **Apply for the 21 gifts grant** to `/grants/apply`. No date and no conviction titles.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, and link **Apply for the 21 gifts grant** to `/grants/apply`. No date and no conviction titles.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
 

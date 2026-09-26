@@ -78,7 +78,7 @@ describe('FundingStatusCard', () => {
       account: { ...account, role: 'basis', funding: null },
     });
     renderWithLocale(<FundingStatusCard />);
-    expect(screen.getByText('21 gifts grant')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '21 gifts grant', level: 1 })).toBeTruthy();
     expect(screen.getByText('You are not verified yet.')).toBeTruthy();
     expect(
       screen.getByText(

@@ -3274,7 +3274,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner grant section on `/grants`, not on the profile. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): copy that admitted members receive the daily gift, an **About** link to `/about`, and **Apply for the 21 gifts grant** as a `ButtonLink` to `/grants/apply` for `none`/`rejected` (no date, no denial sentence, and no conviction titles); pending; one-day trial; or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
+- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): copy that admitted members receive the daily gift, an **About** link to `/about`, and **Apply for the 21 gifts grant** as a `ButtonLink` to `/grants/apply` for `none`/`rejected` (no date, no denial sentence, and no conviction titles); pending; one-day trial; or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session or account. Apply is a link; it does not POST.
 - **Used by:** `GrantsScreen`.
