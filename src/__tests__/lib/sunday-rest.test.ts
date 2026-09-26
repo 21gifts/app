@@ -35,6 +35,7 @@ describe('SUNDAY_BOOTSTRAP_SCRIPT', () => {
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('e2e-now');
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('weekday');
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('visibilitychange');
+    expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('DOMContentLoaded');
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('setHours');
     const css = readFileSync('src/app/globals.css', 'utf8');
     expect(css).toContain('.sunday-write-field');
