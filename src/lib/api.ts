@@ -111,6 +111,35 @@ export function isWrongAccountError(error: unknown): boolean {
   );
 }
 
+/** Device IANA zone for the Sunday write check. Empty when the runtime has none. */
+export function deviceTimeZoneHeader(): Record<string, string> {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (typeof zone !== 'string' || zone.trim() === '') {
+      return {};
+    }
+    return { 'Time-Zone': zone };
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Header for a public write. Setup omits it so onboarding is not refused.
+ *
+ * @param mode - `setup` for onboarding saves; `enforce` for profile edits.
+ * @returns The `Time-Zone` header, or an empty object during setup.
+ */
+function sundayWriteHeaders(mode: 'enforce' | 'setup'): Record<string, string> {
+  if (mode === 'setup') {
+    return {};
+  }
+  return deviceTimeZoneHeader();
+}
+
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
 
@@ -203,17 +232,23 @@ async function throwIfWrongAccount(response: Response): Promise<void> {
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param name - The display name as typed.
+ * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
  * @throws Error when the api rejects the name (400) — the api error string
  * when present, otherwise a fallback — on any other non-2xx status, or when
  * the body fails {@link accountSchema} validation.
  */
-export async function setName(sessionToken: string, name: string): Promise<Account> {
+export async function setName(
+  sessionToken: string,
+  name: string,
+  sundayWrite: 'enforce' | 'setup' = 'enforce',
+): Promise<Account> {
   const response = await fetch('/me/name', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...sundayWriteHeaders(sundayWrite),
     },
     body: JSON.stringify({ name }),
   });
@@ -244,6 +279,7 @@ export async function setLocation(sessionToken: string, location: string): Promi
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({ location }),
   });
@@ -279,6 +315,7 @@ export async function putAboutMe(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({
       text,
@@ -551,15 +588,21 @@ export async function fetchMemberReplies(
  *
  * @param sessionToken - Bearer session.
  * @param username - Handle (`a-z0-9-_.`).
+ * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
  * @throws Error with visitor-facing copy on 400/409 or other failures.
  */
-export async function setUsername(sessionToken: string, username: string): Promise<Account> {
+export async function setUsername(
+  sessionToken: string,
+  username: string,
+  sundayWrite: 'enforce' | 'setup' = 'enforce',
+): Promise<Account> {
   const response = await fetch('/me/username', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...sundayWriteHeaders(sundayWrite),
     },
     body: JSON.stringify({ username }),
   });
@@ -580,17 +623,23 @@ export async function setUsername(sessionToken: string, username: string): Promi
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param address - The `name@domain.tld` Lightning Address to store.
+ * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
  * @throws Error when the api rejects the address (400) — rewritten to
  * visitor-facing copy — on any other non-2xx status, or when the body fails
  * {@link accountSchema} validation.
  */
-export async function setLightningAddress(sessionToken: string, address: string): Promise<Account> {
+export async function setLightningAddress(
+  sessionToken: string,
+  address: string,
+  sundayWrite: 'enforce' | 'setup' = 'enforce',
+): Promise<Account> {
   const response = await fetch('/me/lightning-address', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...sundayWriteHeaders(sundayWrite),
     },
     body: JSON.stringify({ address }),
   });
@@ -620,7 +669,7 @@ export async function setLightningAddress(sessionToken: string, address: string)
 export async function unlinkLightningAddress(sessionToken: string): Promise<Account> {
   const response = await fetch('/me/lightning-address', {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${sessionToken}` },
+    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
   if (!response.ok) {
     throw new Error('Could not remove your Wallet of Satoshi address');
@@ -906,6 +955,7 @@ async function postTrustAction(
       headers: {
         Authorization: `Bearer ${sessionToken}`,
         'Content-Type': 'application/json',
+        ...deviceTimeZoneHeader(),
       },
       body: JSON.stringify({ accountId }),
     });
@@ -1044,6 +1094,7 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
       headers: {
         Authorization: `Bearer ${sessionToken}`,
         'Content-Type': 'application/json',
+        ...deviceTimeZoneHeader(),
       },
       body: JSON.stringify({}),
     });
@@ -1143,6 +1194,7 @@ async function postFundingAction(
       headers: {
         Authorization: `Bearer ${sessionToken}`,
         'Content-Type': 'application/json',
+        ...deviceTimeZoneHeader(),
       },
       body: JSON.stringify({ accountId }),
     });
@@ -1744,6 +1796,7 @@ export async function postMessage(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({
       text: input.text,
@@ -1838,7 +1891,7 @@ export async function postMessageVideo(
   }
   const response = await fetch('/forum/messages', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${sessionToken}` },
+    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     body: form,
   });
   if (response.status === 400 || response.status === 429) {
@@ -1931,6 +1984,7 @@ export async function postMessageInvoice(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({
       sats,
@@ -2043,7 +2097,7 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
 export async function fetchModeratorGroup(sessionToken: string): Promise<Conversation> {
   try {
     const response = await fetch('/conversations/moderator-group', {
-      headers: { Authorization: `Bearer ${sessionToken}` },
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     });
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
@@ -2093,7 +2147,7 @@ export async function fetchConversation(
     }
     const url = `/conversations/${encodeURIComponent(id)}?${query.toString()}`;
     const init: RequestInit = {
-      headers: { Authorization: `Bearer ${sessionToken}` },
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     };
     if (opts?.signal !== undefined) {
       init.signal = opts.signal;
@@ -2218,6 +2272,7 @@ export async function postConversationMessage(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({
       text,
@@ -2318,7 +2373,7 @@ export async function markConversationRead(sessionToken: string, id: string): Pr
   try {
     const response = await fetch(`/conversations/${encodeURIComponent(id)}/read`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}` },
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     });
     if (!response.ok) {
       throw new Error('Could not mark conversation as read');
@@ -2717,7 +2772,7 @@ export async function postWalletBackupSeen(sessionToken: string): Promise<Accoun
 export async function deleteMessage(sessionToken: string, messageId: string): Promise<void> {
   const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${sessionToken}` },
+    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
   if (response.status !== 204 && response.status !== 404) {
     throw new Error('Message deletion failed');
@@ -2744,6 +2799,7 @@ export async function setMessagePlace(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({ place }),
   });
@@ -2774,6 +2830,7 @@ export async function setMessageShopAccount(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({ username }),
   });

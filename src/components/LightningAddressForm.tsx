@@ -3,6 +3,7 @@
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useId, useState, type FormEvent, type ReactElement } from 'react';
 import { AppShellFooter } from '@/components/AppShell';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import {
@@ -175,7 +176,11 @@ export function LightningAddressForm(
       setError({ type: 'notZap' });
       return;
     }
-    void run((token) => setLightningAddress(token, trimmed), { notifySaved: true });
+    void run(
+      (token) =>
+        setLightningAddress(token, trimmed, variant === 'onboarding' ? 'setup' : 'enforce'),
+      { notifySaved: true },
+    );
   };
 
   const submitIcon = busy ? (
@@ -249,77 +254,83 @@ export function LightningAddressForm(
       </p>
 
       {!linked || editing ? (
-        <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
-          {!linked ? <p className="text-center text-sm text-app-muted">{t('la.prompt')}</p> : null}
-          <div className="flex items-center gap-2">
-            <input
-              type="email"
-              inputMode="email"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="you@walletofsatoshi.com"
-              aria-label={t('la.aria')}
-              value={draft}
-              onChange={(event) => {
-                onDraftChange(event.target.value);
-              }}
-              disabled={busy}
-              className={`min-w-0 flex-1 ${inputClass}`}
-            />
-            <IconButton
-              type="submit"
-              variant="primary"
-              disabled={continueDisabled}
-              aria-label={editing ? t('la.save') : t('la.link')}
-            >
-              {submitIcon}
-            </IconButton>
-            {editing ? (
-              <IconButton
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setEditing(false);
-                  setError(null);
-                  setBlockedAddress(null);
+        <SundayWritingGate>
+          <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
+            {!linked ? (
+              <p className="text-center text-sm text-app-muted">{t('la.prompt')}</p>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="you@walletofsatoshi.com"
+                aria-label={t('la.aria')}
+                value={draft}
+                onChange={(event) => {
+                  onDraftChange(event.target.value);
                 }}
                 disabled={busy}
-                aria-label={t('la.cancel')}
+                className={`min-w-0 flex-1 ${inputClass}`}
+              />
+              <IconButton
+                type="submit"
+                variant="primary"
+                disabled={continueDisabled}
+                aria-label={editing ? t('la.save') : t('la.link')}
               >
-                <X aria-hidden="true" className="h-4 w-4" />
+                {submitIcon}
               </IconButton>
-            ) : null}
-          </div>
-        </form>
+              {editing ? (
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setEditing(false);
+                    setError(null);
+                    setBlockedAddress(null);
+                  }}
+                  disabled={busy}
+                  aria-label={t('la.cancel')}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              ) : null}
+            </div>
+          </form>
+        </SundayWritingGate>
       ) : (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate font-mono text-sm text-app-fg">{address}</p>
-          <IconButton
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              /* v8 ignore next — display branch only mounts when hasLightningAddress; address is non-null */
-              setDraft(address ?? '');
-              setEditing(true);
-              setError(null);
-              setBlockedAddress(null);
-            }}
-            disabled={busy}
-            aria-label={t('la.edit')}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          <IconButton
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              void run(unlinkLightningAddress);
-            }}
-            disabled={busy}
-            aria-label={t('la.unlink')}
-          >
-            <Trash2 aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
+          <SundayWritingGate>
+            <IconButton
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                /* v8 ignore next — display branch only mounts when hasLightningAddress; address is non-null */
+                setDraft(address ?? '');
+                setEditing(true);
+                setError(null);
+                setBlockedAddress(null);
+              }}
+              disabled={busy}
+              aria-label={t('la.edit')}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+            <IconButton
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                void run(unlinkLightningAddress);
+              }}
+              disabled={busy}
+              aria-label={t('la.unlink')}
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </SundayWritingGate>
         </div>
       )}
 

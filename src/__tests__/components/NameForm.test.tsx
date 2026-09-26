@@ -136,7 +136,7 @@ describe('NameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('Ada')).toBeTruthy();
-    expect(setName).toHaveBeenCalledWith('sess', 'Ada');
+    expect(setName).toHaveBeenCalledWith('sess', 'Ada', 'setup');
     expect(useAuthStore.getState().account).toEqual(namedAccount);
     expect(screen.queryByPlaceholderText('Your name')).toBeNull();
   });
@@ -149,7 +149,7 @@ describe('NameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     expect(await screen.findByText('Ada')).toBeTruthy();
-    expect(setName).toHaveBeenCalledWith('sess', 'Ada');
+    expect(setName).toHaveBeenCalledWith('sess', 'Ada', 'setup');
   });
 
   it('shows the api error message when saving fails', async () => {
@@ -198,7 +198,7 @@ describe('NameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByText('Bob')).toBeTruthy();
-    expect(setName).toHaveBeenCalledWith('sess', 'Bob');
+    expect(setName).toHaveBeenCalledWith('sess', 'Bob', 'enforce');
   });
 
   it('shows the request error on the profile edit form', async () => {

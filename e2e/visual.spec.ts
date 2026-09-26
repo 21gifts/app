@@ -1782,6 +1782,36 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('state /welcome sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Your message' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-sunday');
+  });
+
   test('state /welcome signed-out', async ({ page }) => {
     await page.route(/\/forum\/messages/, async (route) => {
       await route.fulfill({
@@ -14547,6 +14577,16 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByText('Hello mods')).toBeVisible();
     await shotScreen(page, 'screen-moderate-group');
+  });
+
+  test('state /moderate/group sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedAda(page, 'moderator');
+    await page.goto('/moderate/group');
+    await expect(page.getByText('The moderator chat is paused on Sunday.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-sunday');
   });
 
   test('moderate group stipend', async ({ page }) => {

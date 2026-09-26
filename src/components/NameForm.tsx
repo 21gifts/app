@@ -3,6 +3,7 @@
 import { Check, Loader2, Pencil, X } from 'lucide-react';
 import { useId, useState, type FormEvent, type ReactElement } from 'react';
 import { AppShellFooter } from '@/components/AppShell';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setName, skipSetup } from '@/lib/api';
@@ -86,7 +87,7 @@ export function NameForm(
       return;
     }
     void runGuarded(
-      (token) => setName(token, trimmed),
+      (token) => setName(token, trimmed, variant === 'onboarding' ? 'setup' : 'enforce'),
       (updated) => {
         const current = useAuthStore.getState().account;
         if (current === null) {
@@ -189,69 +190,75 @@ export function NameForm(
       </p>
 
       {!named || editing ? (
-        <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
-          {!named ? <p className="text-center text-sm text-app-muted">{t('name.prompt')}</p> : null}
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              autoComplete="name"
-              spellCheck={false}
-              placeholder={t('name.placeholder')}
-              aria-label={t('name.aria')}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              disabled={busy}
-              className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
-            />
-            <IconButton
-              type="submit"
-              variant="primary"
-              size="md"
-              disabled={busy}
-              aria-label={editing ? t('name.save') : t('name.saveName')}
-            >
-              {submitIcon}
-            </IconButton>
-            {editing ? (
+        <SundayWritingGate>
+          <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
+            {!named ? (
+              <p className="text-center text-sm text-app-muted">{t('name.prompt')}</p>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                autoComplete="name"
+                spellCheck={false}
+                placeholder={t('name.placeholder')}
+                aria-label={t('name.aria')}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                disabled={busy}
+                className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
+              />
               <IconButton
-                type="button"
-                variant="secondary"
+                type="submit"
+                variant="primary"
                 size="md"
                 disabled={busy}
-                aria-label={t('name.cancel')}
-                onClick={() => {
-                  setEditing(false);
-                  setError(null);
-                }}
+                aria-label={editing ? t('name.save') : t('name.saveName')}
               >
-                <X aria-hidden="true" className="h-4 w-4" />
+                {submitIcon}
               </IconButton>
-            ) : null}
-          </div>
-        </form>
+              {editing ? (
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={busy}
+                  aria-label={t('name.cancel')}
+                  onClick={() => {
+                    setEditing(false);
+                    setError(null);
+                  }}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              ) : null}
+            </div>
+          </form>
+        </SundayWritingGate>
       ) : (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{name}</p>
-          <IconButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={busy}
-            aria-label={t('name.edit')}
-            onClick={() => {
-              /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
-              setDraft(name ?? '');
-              setEditing(true);
-              setError(null);
-            }}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
+          <SundayWritingGate>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={busy}
+              aria-label={t('name.edit')}
+              onClick={() => {
+                /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
+                setDraft(name ?? '');
+                setEditing(true);
+                setError(null);
+              }}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </SundayWritingGate>
         </div>
       )}
 
       {error !== null ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
+        <p role="alert" className="sunday-write-field text-center text-sm text-app-danger">
           {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
         </p>
       ) : null}

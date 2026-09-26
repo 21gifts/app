@@ -11,6 +11,7 @@ import {
   type ReactElement,
 } from 'react';
 import { LinkedText } from '@/components/LinkedText';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, IconButton } from '@/components/ui';
@@ -334,98 +335,100 @@ export function AboutMeSection({
       ) : null}
 
       {mode === 'owner' && editing ? (
-        <div className="flex flex-col items-stretch gap-3">
-          <div className="flex items-start gap-2">
-            <IconButton
-              type="button"
-              variant="secondary"
-              size="md"
-              disabled={saving || preparingPhoto}
-              aria-label={t('profile.about.attach')}
-              title={t('profile.about.attach')}
-              onClick={() => {
-                fileInputRef.current?.click();
-              }}
-            >
-              <ImagePlus aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              disabled={saving}
-              onChange={handleFileChange}
-            />
-            <label htmlFor={textareaId} className="sr-only">
-              {t('profile.about.heading')}
-            </label>
-            <textarea
-              id={textareaId}
-              value={draft}
-              maxLength={ABOUT_ME_MAX_LENGTH}
-              disabled={saving}
-              onChange={(event) => setDraft(event.target.value)}
-              className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
-            />
-            <IconButton
-              type="button"
-              variant="primary"
-              size="md"
-              disabled={saving || preparingPhoto}
-              aria-label={t('profile.about.save')}
-              title={t('profile.about.save')}
-              onClick={() => {
-                void saveEdit();
-              }}
-            >
-              {saving ? (
-                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check aria-hidden="true" className="h-4 w-4" />
-              )}
-            </IconButton>
-            <IconButton
-              type="button"
-              variant="secondary"
-              size="md"
-              disabled={saving}
-              aria-label={t('profile.about.cancel')}
-              title={t('profile.about.cancel')}
-              onClick={cancelEdit}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          </div>
-          {photoDraft !== null || keptPhoto ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {previewSrc !== null ? (
-                // eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto
-                <img
-                  src={previewSrc}
-                  alt={t('profile.about.previewAlt')}
-                  className="h-20 w-20 rounded-lg object-cover"
-                />
-              ) : null}
+        <SundayWritingGate>
+          <div className="flex flex-col items-stretch gap-3">
+            <div className="flex items-start gap-2">
               <IconButton
                 type="button"
                 variant="secondary"
                 size="md"
                 disabled={saving || preparingPhoto}
-                aria-label={t('profile.about.removePhoto')}
-                title={t('profile.about.removePhoto')}
-                onClick={removePhoto}
+                aria-label={t('profile.about.attach')}
+                title={t('profile.about.attach')}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+              >
+                <ImagePlus aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={saving}
+                onChange={handleFileChange}
+              />
+              <label htmlFor={textareaId} className="sr-only">
+                {t('profile.about.heading')}
+              </label>
+              <textarea
+                id={textareaId}
+                value={draft}
+                maxLength={ABOUT_ME_MAX_LENGTH}
+                disabled={saving}
+                onChange={(event) => setDraft(event.target.value)}
+                className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
+              />
+              <IconButton
+                type="button"
+                variant="primary"
+                size="md"
+                disabled={saving || preparingPhoto}
+                aria-label={t('profile.about.save')}
+                title={t('profile.about.save')}
+                onClick={() => {
+                  void saveEdit();
+                }}
+              >
+                {saving ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check aria-hidden="true" className="h-4 w-4" />
+                )}
+              </IconButton>
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={saving}
+                aria-label={t('profile.about.cancel')}
+                title={t('profile.about.cancel')}
+                onClick={cancelEdit}
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </IconButton>
             </div>
-          ) : null}
-          {error !== null ? (
-            <p role="alert" className="text-center text-sm text-app-danger">
-              {error}
-            </p>
-          ) : null}
-        </div>
+            {photoDraft !== null || keptPhoto ? (
+              <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+                {previewSrc !== null ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto
+                  <img
+                    src={previewSrc}
+                    alt={t('profile.about.previewAlt')}
+                    className="h-20 w-20 rounded-lg object-cover"
+                  />
+                ) : null}
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.removePhoto')}
+                  title={t('profile.about.removePhoto')}
+                  onClick={removePhoto}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+            ) : null}
+            {error !== null ? (
+              <p role="alert" className="text-center text-sm text-app-danger">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        </SundayWritingGate>
       ) : mode === 'owner' && filled ? (
         <div className="flex items-start gap-2">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -443,23 +446,27 @@ export function AboutMeSection({
             ) : null}
             {displayPhoto}
           </div>
-          <IconButton
-            type="button"
-            variant="secondary"
-            size="md"
-            aria-label={t('profile.about.edit')}
-            title={t('profile.about.edit')}
-            onClick={startEdit}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
+          <SundayWritingGate>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              aria-label={t('profile.about.edit')}
+              title={t('profile.about.edit')}
+              onClick={startEdit}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </SundayWritingGate>
         </div>
       ) : mode === 'owner' ? (
         <div className="flex flex-col items-stretch gap-3">
           <p className="text-center text-sm text-app-muted">{t('profile.about.empty')}</p>
-          <Button type="button" variant="secondary" size="sm" onClick={startEdit}>
-            {t('profile.about.write')}
-          </Button>
+          <SundayWritingGate>
+            <Button type="button" variant="secondary" size="sm" onClick={startEdit}>
+              {t('profile.about.write')}
+            </Button>
+          </SundayWritingGate>
         </div>
       ) : filled ? (
         <>

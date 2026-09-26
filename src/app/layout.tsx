@@ -14,6 +14,8 @@ import { getRequestFiat } from '@/lib/request-fiat';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getRequestNumberFormat } from '@/lib/request-number-format';
 import { getCatalog } from '@/lib/messages';
+import { getE2eNow } from '@/lib/config';
+import { SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
@@ -129,11 +131,14 @@ export default async function RootLayout({
   const locale = await getRequestLocale();
   const numberFormat = await getRequestNumberFormat();
   const fiat = await getRequestFiat(locale);
+  const e2eNow = getE2eNow();
   return (
     <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        {e2eNow !== null ? <meta name="e2e-now" content={e2eNow} /> : null}
+        <script dangerouslySetInnerHTML={{ __html: SUNDAY_BOOTSTRAP_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

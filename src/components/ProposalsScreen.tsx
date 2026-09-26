@@ -3,6 +3,7 @@
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { fetchTrustProposals, postTrustConfirm, postTrustReject } from '@/lib/api';
@@ -199,40 +200,42 @@ export function ProposalsScreen(): ReactElement | null {
                         name: personLabel(row.proposedBy.name, unnamed),
                       })}
                     </span>
-                    {selfProposed ? (
-                      <p className="text-sm text-app-muted">{t('trustChain.waitingConfirm')}</p>
-                    ) : (
+                    <SundayWritingGate>
+                      {selfProposed ? (
+                        <p className="text-sm text-app-muted">{t('trustChain.waitingConfirm')}</p>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={actionBusy}
+                          icon={
+                            confirming ? (
+                              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                            ) : undefined
+                          }
+                          onClick={() => {
+                            runAction('confirm', row.subject.id);
+                          }}
+                        >
+                          {t('trustChain.action.confirm')}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="secondary"
                         disabled={actionBusy}
                         icon={
-                          confirming ? (
+                          rejecting ? (
                             <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                           ) : undefined
                         }
                         onClick={() => {
-                          runAction('confirm', row.subject.id);
+                          runAction('reject', row.subject.id);
                         }}
                       >
-                        {t('trustChain.action.confirm')}
+                        {t('trustChain.action.reject')}
                       </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={actionBusy}
-                      icon={
-                        rejecting ? (
-                          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                        ) : undefined
-                      }
-                      onClick={() => {
-                        runAction('reject', row.subject.id);
-                      }}
-                    >
-                      {t('trustChain.action.reject')}
-                    </Button>
+                    </SundayWritingGate>
                   </div>
                 </li>
               );
