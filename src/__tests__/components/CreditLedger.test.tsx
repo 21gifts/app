@@ -12,7 +12,13 @@ afterEach(() => {
 function ledger(body: unknown): void {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
+    vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes('/gifts/stats')) {
+        return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify(body), { status: 200 });
+    }),
   );
 }
 

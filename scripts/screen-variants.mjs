@@ -514,6 +514,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'goal-credit-open',
+    image: 'welcome-goal-credit-open.png',
+    visual: 'state-welcome-goal-credit-open',
+    needle: 'state /welcome goal-credit-open',
+  },
+  {
+    route: '/welcome',
     id: 'ask-credit-amount',
     image: 'welcome-ask-credit-amount.png',
     visual: 'state-welcome-ask-credit-amount',

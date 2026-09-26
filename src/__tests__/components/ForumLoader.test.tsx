@@ -43,6 +43,7 @@ vi.mock('@/lib/api', () => ({
   postMessageVideo: vi.fn(),
   fetchComposeTarget: vi.fn(),
   postMessageInvoice: vi.fn(),
+  postRepaymentInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
@@ -81,6 +82,7 @@ import {
   fetchComposeTarget,
   postMessage,
   postMessageInvoice,
+  postRepaymentInvoice,
   postMessageVideo,
   setLightningAddress,
   setMessagePlace,
@@ -101,6 +103,7 @@ const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
+const repayMock = vi.mocked(postRepaymentInvoice);
 const composeTargetMock = vi.mocked(fetchComposeTarget);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
 const photoMock = vi.mocked(fetchMessagePhoto);
@@ -9403,5 +9406,32 @@ describe('forum feed pages', () => {
     expect(screen.queryByText('Fresh page one')).toBeNull();
     expect(screen.getByText('Older page')).toBeTruthy();
     expect(fetchMock).toHaveBeenLastCalledWith('sess', { mode: 'active', limit: 20 });
+  });
+
+  it('pays today repayment and opens requirements when the author is missing one', async () => {
+    repayMock.mockResolvedValueOnce({ pr: 'lnbc21n1repay', amountSats: 21 });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          accountId: 'acc_1',
+          sats: 21000,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+        },
+      ]),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(screen.getByText(/rules/i)).toBeTruthy();
+    });
   });
 });

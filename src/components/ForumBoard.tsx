@@ -1281,7 +1281,7 @@ export function ForumBoard({
                   goalRepayable={message.goalRepayable}
                   goalTermDays={message.goalTermDays}
                   messageId={message.id}
-                  ledgerCollapsed={!composerHidden}
+                  ledgerCollapsed={truncate}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">

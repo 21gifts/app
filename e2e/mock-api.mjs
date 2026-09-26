@@ -652,7 +652,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    json(res, 200, { invoice: 'lnbc1', paymentHash: 'aa'.repeat(32) });
+    json(res, 200, { pr: 'lnbc1', amountSats: 21 });
     return;
   }
 

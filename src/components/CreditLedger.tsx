@@ -3,6 +3,9 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -19,6 +22,8 @@ import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-mon
 export function CreditLedger({ messageId }: { messageId: string }): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat: visitorFiat } = useFiatPreference();
+  const rateDay = useLatestRateDay();
   const [ledger, setLedger] = useState<RepaymentLedger | null>(null);
   useEffect(() => {
     let cancel = false;
@@ -52,9 +57,14 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
                   {giverLabel(giver.name, giver.username, giver.accountId)}
                 </span>
                 <span className="shrink-0 text-sm tabular-nums text-app-fg">
-                  {fiat !== null && giver.givenAmount !== null
-                    ? formatFiatDisplay(giver.givenAmount, fiat, numberFormat)
-                    : formatBitcoin(giver.givenSats, numberFormat)}
+                  {fiat !== null && giver.givenAmount !== null ? (
+                    formatFiatDisplay(giver.givenAmount, fiat, numberFormat)
+                  ) : (
+                    <>
+                      {formatBitcoin(giver.givenSats, numberFormat)}
+                      {preferredFiatSuffix(giver.givenSats, rateDay, visitorFiat, numberFormat)}
+                    </>
+                  )}
                 </span>
               </li>
             ))}
@@ -65,6 +75,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
             {t('forum.creditUnassigned', {
               amount: formatBitcoin(ledger.unassignedSats, numberFormat),
             })}
+            {preferredFiatSuffix(ledger.unassignedSats, rateDay, visitorFiat, numberFormat)}
           </p>
         ) : null}
       </section>
@@ -81,7 +92,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
           {groupsOf(ledger.repayments).map((group) => (
             <div key={group.dayIndex}>
               <p className="text-xs font-medium text-app-fg">
-                {group.dueOn === null
+                {ledger.fundedAt === null || group.dueOn === null
                   ? t('forum.creditDay', { day: String(group.dayIndex + 1) })
                   : formatUtcDay(group.dueOn, locale)}
               </p>
@@ -96,7 +107,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
                     </span>
                     <span className="flex shrink-0 items-baseline gap-2">
                       <span className="text-sm tabular-nums text-app-fg">
-                        {rowAmount(row, fiat, numberFormat)}
+                        {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
                       </span>
                       <span
                         className={`shrink-0 text-right text-xs font-medium ${statusClass(row.status)}`}
@@ -143,7 +154,7 @@ function statusClass(status: RepaymentLine['status']): string {
     return 'text-app-success';
   }
   if (status === 'due') {
-    return 'text-app-accent';
+    return 'text-app-fg';
   }
   return 'text-app-muted';
 }
@@ -151,13 +162,35 @@ function statusClass(status: RepaymentLine['status']): string {
 function rowAmount(
   row: RepaymentLine,
   fiat: FiatCode | null,
+  visitorFiat: FiatCode,
+  rateDay: ReturnType<typeof useLatestRateDay>,
   numberFormat: NumberFormatStyle,
-): string {
+): ReactElement | null {
   if (fiat !== null && row.amount !== null) {
     const priced = formatFiatDisplay(row.amount, fiat, numberFormat);
-    return row.sats === null ? priced : `${priced} · ${formatBitcoin(row.sats, numberFormat)}`;
+    if (row.sats === null) {
+      return <>{priced}</>;
+    }
+    return (
+      <>
+        {priced}
+        <span aria-hidden="true"> · </span>
+        {formatBitcoin(row.sats, numberFormat)}
+        {visitorFiat === fiat
+          ? null
+          : preferredFiatSuffix(row.sats, rateDay, visitorFiat, numberFormat)}
+      </>
+    );
   }
-  return formatBitcoin(row.sats ?? 0, numberFormat);
+  if (row.sats === null) {
+    return null;
+  }
+  return (
+    <>
+      {formatBitcoin(row.sats, numberFormat)}
+      {preferredFiatSuffix(row.sats, rateDay, visitorFiat, numberFormat)}
+    </>
+  );
 }
 
 function formatUtcDay(dueOn: string, locale: string): string {

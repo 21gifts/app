@@ -471,6 +471,7 @@ export function ForumLoader({
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
   const pendingComposeTextRef = useRef<string | null>(null);
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
@@ -683,6 +684,51 @@ export function ForumLoader({
     }
     setOverlayRequirement(next);
     return true;
+  };
+
+  startRepaymentRef.current = (messageId: string): void => {
+    if (session === null) {
+      return;
+    }
+    bumpPayPollGeneration();
+    setPayMessageId(messageId);
+    setPayHost('card');
+    setPayDraft('');
+    setPayInvoice(null);
+    setPayWaiting(false);
+    setPayError(null);
+    setPayBusy(true);
+    void postRepaymentInvoice(session, messageId)
+      .then((invoice) => {
+        setPayInvoice({
+          messageId,
+          pr: invoice.pr,
+          amountSats: invoice.amountSats,
+        });
+      })
+      .catch((err: unknown) => {
+        if (err instanceof MissingRequirementsError) {
+          if (openOverlayForMissing(err.missing)) {
+            pendingPostRef.current = () => {
+              startRepaymentRef.current(messageId);
+              return Promise.resolve();
+            };
+            return;
+          }
+          setPayError('request');
+          return;
+        }
+        setPayError(
+          isRateLimitError(err)
+            ? 'rateLimit'
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
+        );
+      })
+      .finally(() => {
+        setPayBusy(false);
+      });
   };
 
   const refreshMessages = (): boolean => {
@@ -2510,28 +2556,7 @@ export function ForumLoader({
         }}
         viewerAccountId={account?.id ?? null}
         onRepay={(messageId) => {
-          if (session === null) {
-            return;
-          }
-          setPayBusy(true);
-          setPayError(null);
-          void postRepaymentInvoice(session, messageId)
-            .then((invoice) => {
-              setPayMessageId(messageId);
-              setPayHost('card');
-              setPayInvoice({
-                messageId,
-                pr: invoice.pr,
-                amountSats: invoice.amountSats,
-              });
-              setPayWaiting(false);
-            })
-            .catch(() => {
-              setPayError('request');
-            })
-            .finally(() => {
-              setPayBusy(false);
-            });
+          startRepaymentRef.current(messageId);
         }}
         onPayUnitChange={setPayShownUnit}
         onReplyUnitChange={setReplyShownUnit}
