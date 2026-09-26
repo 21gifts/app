@@ -6656,7 +6656,7 @@ test('Function: fetchPublicForumMessages — signed-out welcome asks for the act
     if (
       route.request().method() === 'GET' &&
       url.searchParams.get('mode') === 'active' &&
-      route.request().headers().authorization === undefined
+      route.request().headers()['authorization'] === undefined
     ) {
       sawActive = true;
     }
