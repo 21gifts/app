@@ -302,7 +302,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
 /**
  * Client loader for the public forum on `/welcome`. Also used on `/shops` with
  * `feed="shops"` (hashtag filter, no laws hint, compose appends `#21GiftsShop`,
- * staff place editor on listed shop notes).
+ * staff place editor and staff account editor on listed shop notes).
  *
  * Reads the session and account from the auth store, fetches the first page of
  * 20 messages for the current mode with a cancelled-flag pattern matching

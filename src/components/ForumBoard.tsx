@@ -580,7 +580,9 @@ export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElem
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shops staff
  * place editor after copy and before staff Delete when `shopPlaceEdit` and
- * `onShopPlaceUpdated` are set (top-level notes only), staff Delete omitted
+ * `onShopPlaceUpdated` are set, then the shops account editor when
+ * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
+ * staff Delete omitted
  * when `deletedAt` is set, optional inline photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
