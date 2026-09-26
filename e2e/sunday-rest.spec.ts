@@ -31,12 +31,18 @@ test('Function: SundayRestPage — direct Sunday destination and weekday redirec
 test('Function: SundayRestGate — an open window rests and resumes', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-24T12:00:00Z') });
   await page.goto('/');
+  // A working client interaction proves hydration finished before advancing time.
+  const language = page.getByRole('combobox', { name: 'Language' });
+  await language.click();
+  await expect(language).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Escape');
   // Server is anchored to Thursday noon UTC. Three days reaches Sunday afternoon in Manila.
   await page.clock.fastForward(3 * 86400000);
   await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toBeVisible();
   await expect(page.getByRole('button')).toHaveCount(0);
   await page.clock.fastForward(86400000);
   await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toHaveCount(0);
+  await expect(language).toBeVisible();
 });
 test('Function: isSundayRest — server policy ignores browser timezone and local clock', async ({
   browser,
