@@ -16,6 +16,7 @@ import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
+import { SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
 vi.mock('@/lib/request-locale', () => ({
@@ -152,15 +153,45 @@ describe('RootLayout', () => {
     const scripts = Array.isArray(head.props.children)
       ? head.props.children
       : [head.props.children];
-    expect(scripts).toHaveLength(3);
-    expect(scripts[0]?.type).toBe('script');
-    expect(scripts[0]?.props.dangerouslySetInnerHTML.__html).toBe(APP_HEIGHT_BOOTSTRAP_SCRIPT);
-    expect(scripts[1]?.type).toBe('script');
-    expect(scripts[1]?.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
-    expect(scripts[2]?.type).toBe('script');
-    expect(scripts[2]?.props.type).toBe('application/ld+json');
-    expect(scripts[2]?.props.dangerouslySetInnerHTML.__html).toContain('21gifts');
-    expect(scripts[2]?.props.dangerouslySetInnerHTML.__html).toContain('@graph');
+    const scriptNodes = scripts.filter(
+      (child) => child !== null && child !== undefined && child.type === 'script',
+    );
+    expect(scriptNodes).toHaveLength(4);
+    expect(scriptNodes[0]?.props.dangerouslySetInnerHTML.__html).toBe(APP_HEIGHT_BOOTSTRAP_SCRIPT);
+    expect(scriptNodes[1]?.props.dangerouslySetInnerHTML.__html).toBe(THEME_BOOTSTRAP_SCRIPT);
+    expect(scriptNodes[2]?.props.dangerouslySetInnerHTML.__html).toBe(SUNDAY_BOOTSTRAP_SCRIPT);
+    expect(scriptNodes[3]?.props.type).toBe('application/ld+json');
+    expect(scriptNodes[3]?.props.dangerouslySetInnerHTML.__html).toContain('21gifts');
+    expect(scriptNodes[3]?.props.dangerouslySetInnerHTML.__html).toContain('@graph');
+  });
+
+  it('emits the e2e clock meta when NEXT_PUBLIC_E2E_NOW is set', async () => {
+    const previous = process.env['NEXT_PUBLIC_E2E_NOW'];
+    process.env['NEXT_PUBLIC_E2E_NOW'] = '2026-01-07T12:00:00.000Z';
+    try {
+      const tree = await RootLayout({ children: 'content' });
+      const htmlProps = tree.props as { children: ReactElement[] };
+      const children = Array.isArray(htmlProps.children)
+        ? htmlProps.children
+        : [htmlProps.children];
+      const head = children.find((child) => child.type === 'head') as ReactElement<{
+        children: ReactElement<{ name?: string; content?: string }>[];
+      }>;
+      const nodes = Array.isArray(head.props.children)
+        ? head.props.children
+        : [head.props.children];
+      const meta = nodes.find(
+        (child) => child !== null && child !== undefined && child.type === 'meta',
+      );
+      expect(meta?.props.name).toBe('e2e-now');
+      expect(meta?.props.content).toBe('2026-01-07T12:00:00.000Z');
+    } finally {
+      if (previous === undefined) {
+        delete process.env['NEXT_PUBLIC_E2E_NOW'];
+      } else {
+        process.env['NEXT_PUBLIC_E2E_NOW'] = previous;
+      }
+    }
   });
 
   it('wraps children LocaleProvider → NumberFormatProvider → FiatPreferenceProvider → ThemeProvider with AppHeightSync first on body', async () => {

@@ -1755,6 +1755,34 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Display string such as `₿1'500` or `₿0`.
 - **Used by:** `ForumBoard`, `SignedInChrome`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`.
 
+## Function: isLocalSunday
+
+- **Purpose:** True when `nowMs` falls on Sunday in an IANA zone, or in the runtime zone when `timeZone` is omitted. An invalid zone returns false. Does not use one fixed zone for every visitor.
+- **Inputs:** `nowMs` epoch milliseconds and optional `timeZone`.
+- **Returns / side effects:** boolean. No I/O.
+- **Used by:** tests. The painted Sunday flag comes from `SUNDAY_BOOTSTRAP_SCRIPT`.
+
+## Function: useLocalSunday
+
+- **Purpose:** Reads `documentElement.dataset.localSunday` after the head script sets it. Server render, and the client before that flag, are false, so weekday tests keep their fields.
+- **Inputs:** none.
+- **Returns / side effects:** boolean. Subscribes to attribute changes on `documentElement`.
+- **Used by:** `SundayWritingGate`, `ModeratorGroupScreen`.
+
+## Function: SundayWritingGate
+
+- **Purpose:** On the device's local Sunday, replaces public write controls or a forum zap control with a sentence. Otherwise renders the children. The head CSS hides the field before paint once `data-local-sunday="1"` is set.
+- **Inputs:** `children`, and optional `notice` (`write` or `zap`).
+- **Returns / side effects:** The sentence or the children. No network.
+- **Used by:** forum composers, profile editors, grant and trust actions, and forum pay controls.
+
+## Function: deviceTimeZoneHeader
+
+- **Purpose:** Returns a `Time-Zone` header for the runtime IANA zone so the API can apply the same Sunday rule. Empty in Node (no `window`), when the zone is blank, or when `Intl` throws.
+- **Inputs:** none.
+- **Returns / side effects:** `{ 'Time-Zone': zone }` or `{}`. No I/O.
+- **Used by:** public write and forum-invoice fetches in `api.ts`.
+
 ## Function: formatForumTime
 
 - **Purpose:** Formats a forum message timestamp as medium date + short time in the runtime local timezone via `Intl.DateTimeFormat`, or returns the original ISO string when the instant is invalid.

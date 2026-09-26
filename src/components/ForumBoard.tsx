@@ -27,6 +27,7 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
@@ -1214,19 +1215,21 @@ export function ForumBoard({
                 message.payable &&
                 message.deletedAt === undefined &&
                 !readOnly ? (
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    aria-label={t('forum.pay')}
-                    disabled={payBusy}
-                    onClick={(event) => {
-                      stopCardToggle(event);
-                      onPayOpen(message.id);
-                    }}
-                  >
-                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                  </IconButton>
+                  <SundayWritingGate notice="zap">
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      aria-label={t('forum.pay')}
+                      disabled={payBusy}
+                      onClick={(event) => {
+                        stopCardToggle(event);
+                        onPayOpen(message.id);
+                      }}
+                    >
+                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    </IconButton>
+                  </SundayWritingGate>
                 ) : null}
                 <IconButton
                   type="button"
@@ -1274,21 +1277,23 @@ export function ForumBoard({
               </div>
 
               {payMessageId === message.id && payHost !== 'composer' ? (
-                <ForumPaySheet
-                  messageId={message.id}
-                  payDraft={payDraft}
-                  payBusy={payBusy}
-                  payError={payError}
-                  payInvoice={payInvoice}
-                  payWaiting={payWaiting}
-                  onPayDraftChange={onPayDraftChange}
-                  {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-                  onPaySubmit={onPaySubmit}
-                  onPayCancel={onPayCancel}
-                  rateDay={rateDay}
-                  showPaymentQr={showPaymentQr}
-                  onInteract={stopCardToggle}
-                />
+                <SundayWritingGate notice="zap">
+                  <ForumPaySheet
+                    messageId={message.id}
+                    payDraft={payDraft}
+                    payBusy={payBusy}
+                    payError={payError}
+                    payInvoice={payInvoice}
+                    payWaiting={payWaiting}
+                    onPayDraftChange={onPayDraftChange}
+                    {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+                    onPaySubmit={onPaySubmit}
+                    onPayCancel={onPayCancel}
+                    rateDay={rateDay}
+                    showPaymentQr={showPaymentQr}
+                    onInteract={stopCardToggle}
+                  />
+                </SundayWritingGate>
               ) : null}
 
               {expanded ? (
@@ -1459,19 +1464,21 @@ export function ForumBoard({
                             <div className="mt-2 flex flex-wrap items-center gap-5">
                               <div id={`note-translate-${reply.id}`} className="contents" />
                               {reply.deletedAt === undefined && reply.payable && !readOnly ? (
-                                <IconButton
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  aria-label={t('forum.pay')}
-                                  disabled={payBusy}
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    onPayOpen(reply.id);
-                                  }}
-                                >
-                                  <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                                </IconButton>
+                                <SundayWritingGate notice="zap">
+                                  <IconButton
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    aria-label={t('forum.pay')}
+                                    disabled={payBusy}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      onPayOpen(reply.id);
+                                    }}
+                                  >
+                                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                  </IconButton>
+                                </SundayWritingGate>
                               ) : null}
                               <IconButton
                                 type="button"
@@ -1500,21 +1507,23 @@ export function ForumBoard({
                               ) : null}
                             </div>
                             {payMessageId === reply.id && payHost !== 'composer' ? (
-                              <ForumPaySheet
-                                messageId={reply.id}
-                                payDraft={payDraft}
-                                payBusy={payBusy}
-                                payError={payError}
-                                payInvoice={payInvoice}
-                                payWaiting={payWaiting}
-                                onPayDraftChange={onPayDraftChange}
-                                {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-                                onPaySubmit={onPaySubmit}
-                                onPayCancel={onPayCancel}
-                                rateDay={rateDay}
-                                showPaymentQr={showPaymentQr}
-                                onInteract={stopCardToggle}
-                              />
+                              <SundayWritingGate notice="zap">
+                                <ForumPaySheet
+                                  messageId={reply.id}
+                                  payDraft={payDraft}
+                                  payBusy={payBusy}
+                                  payError={payError}
+                                  payInvoice={payInvoice}
+                                  payWaiting={payWaiting}
+                                  onPayDraftChange={onPayDraftChange}
+                                  {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+                                  onPaySubmit={onPaySubmit}
+                                  onPayCancel={onPayCancel}
+                                  rateDay={rateDay}
+                                  showPaymentQr={showPaymentQr}
+                                  onInteract={stopCardToggle}
+                                />
+                              </SundayWritingGate>
                             ) : null}
                           </li>
                         );
@@ -1522,81 +1531,83 @@ export function ForumBoard({
                     </ul>
                   ) : null}
                   {!readOnly && message.deletedAt === undefined ? (
-                    <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                      <AmountEntry
-                        id="forum-reply-amount"
-                        layout="inline"
-                        label={t('forum.replyAmountLabel')}
-                        placeholder={t('forum.payAmountPlaceholder')}
-                        value={replyAmountDraft}
-                        disabled={
-                          replyPosting || repliesLoading || repliesError || replies === null
-                        }
-                        rateDay={rateDay}
-                        onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                        {...(onReplyUnitChange === undefined
-                          ? {}
-                          : { onUnitChange: onReplyUnitChange })}
-                      />
-                      <div className="flex items-center gap-2">
-                        <textarea
-                          ref={replyComposerRef}
-                          aria-label={t('forum.replyComposerLabel')}
-                          placeholder={t('forum.replyPlaceholder')}
-                          value={replyDraft}
-                          onChange={(event) => onReplyDraftChange(event.target.value)}
-                          maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                          rows={1}
+                    <SundayWritingGate>
+                      <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                        <AmountEntry
+                          id="forum-reply-amount"
+                          layout="inline"
+                          label={t('forum.replyAmountLabel')}
+                          placeholder={t('forum.payAmountPlaceholder')}
+                          value={replyAmountDraft}
                           disabled={
                             replyPosting || repliesLoading || repliesError || replies === null
                           }
-                          className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                          rateDay={rateDay}
+                          onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                          {...(onReplyUnitChange === undefined
+                            ? {}
+                            : { onUnitChange: onReplyUnitChange })}
                         />
-                        <IconButton
-                          type="submit"
-                          size="lg"
-                          variant="primary"
-                          disabled={
-                            replyPosting || repliesLoading || repliesError || replies === null
-                          }
-                          aria-label={t('forum.post')}
-                        >
-                          {replyPosting ? (
-                            <Loader2
-                              aria-hidden="true"
-                              className="block h-5 w-5 shrink-0 animate-spin"
-                            />
-                          ) : (
-                            <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                          )}
-                        </IconButton>
-                      </div>
-                      {replyFormError === 'empty' ? (
-                        <p role="alert" className="text-center text-sm text-app-danger">
-                          {t('forum.errorEmpty')}
-                        </p>
-                      ) : null}
-                      {replyFormError === 'amount' ? (
-                        <p role="alert" className="text-center text-sm text-app-danger">
-                          {t('forum.errorReplyPayment')}
-                        </p>
-                      ) : null}
-                      {replyFormError === 'tooLong' ? (
-                        <p role="alert" className="text-center text-sm text-app-danger">
-                          {t('forum.errorTooLong')}
-                        </p>
-                      ) : null}
-                      {replyFormError === 'request' ? (
-                        <p role="alert" className="text-center text-sm text-app-danger">
-                          {t('forum.errorRequest')}
-                        </p>
-                      ) : null}
-                      {replyFormError === 'rateLimit' ? (
-                        <p role="alert" className="text-center text-sm text-app-danger">
-                          {t('forum.errorRateLimit')}
-                        </p>
-                      ) : null}
-                    </form>
+                        <div className="flex items-center gap-2">
+                          <textarea
+                            ref={replyComposerRef}
+                            aria-label={t('forum.replyComposerLabel')}
+                            placeholder={t('forum.replyPlaceholder')}
+                            value={replyDraft}
+                            onChange={(event) => onReplyDraftChange(event.target.value)}
+                            maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                            rows={1}
+                            disabled={
+                              replyPosting || repliesLoading || repliesError || replies === null
+                            }
+                            className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                          />
+                          <IconButton
+                            type="submit"
+                            size="lg"
+                            variant="primary"
+                            disabled={
+                              replyPosting || repliesLoading || repliesError || replies === null
+                            }
+                            aria-label={t('forum.post')}
+                          >
+                            {replyPosting ? (
+                              <Loader2
+                                aria-hidden="true"
+                                className="block h-5 w-5 shrink-0 animate-spin"
+                              />
+                            ) : (
+                              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                            )}
+                          </IconButton>
+                        </div>
+                        {replyFormError === 'empty' ? (
+                          <p role="alert" className="text-center text-sm text-app-danger">
+                            {t('forum.errorEmpty')}
+                          </p>
+                        ) : null}
+                        {replyFormError === 'amount' ? (
+                          <p role="alert" className="text-center text-sm text-app-danger">
+                            {t('forum.errorReplyPayment')}
+                          </p>
+                        ) : null}
+                        {replyFormError === 'tooLong' ? (
+                          <p role="alert" className="text-center text-sm text-app-danger">
+                            {t('forum.errorTooLong')}
+                          </p>
+                        ) : null}
+                        {replyFormError === 'request' ? (
+                          <p role="alert" className="text-center text-sm text-app-danger">
+                            {t('forum.errorRequest')}
+                          </p>
+                        ) : null}
+                        {replyFormError === 'rateLimit' ? (
+                          <p role="alert" className="text-center text-sm text-app-danger">
+                            {t('forum.errorRateLimit')}
+                          </p>
+                        ) : null}
+                      </form>
+                    </SundayWritingGate>
                   ) : null}
                 </div>
               ) : null}
@@ -1722,156 +1733,160 @@ export function ForumBoard({
       ) : null}
 
       {!hideCompose && allowAsk && composeIntent === 'ask' ? (
-        <ForumAskWizard
-          step={askStep}
-          onStepChange={(next) => {
-            onAskStepChange?.(next);
-          }}
-          askCadence={askCadence}
-          onAskCadenceChange={onAskCadenceChange}
-          askObligation={askObligation}
-          onAskObligationChange={onAskObligationChange}
-          {...(onCreditTermDays === undefined ? {} : { onCreditTermDays })}
-          askDraft={askDraft}
-          {...(askDraftUnit === undefined ? {} : { askDraftUnit })}
-          {...(onAskDraftUnit === undefined ? {} : { onAskDraftUnit })}
-          onAskDraftChange={onAskDraftChange}
-          draft={draft}
-          onDraftChange={onDraftChange}
-          posting={posting}
-          photoDrafts={photoDrafts}
-          videoDraft={videoDraft}
-          onPickFiles={onPickFiles}
-          onRemovePhoto={onRemovePhoto}
-          onClearPhoto={onClearPhoto}
-          authorName={authorName}
-          onPost={onPost}
-          rateDay={rateDay ?? null}
-          composerMaxLength={composerMaxLength}
-        />
+        <SundayWritingGate>
+          <ForumAskWizard
+            step={askStep}
+            onStepChange={(next) => {
+              onAskStepChange?.(next);
+            }}
+            askCadence={askCadence}
+            onAskCadenceChange={onAskCadenceChange}
+            askObligation={askObligation}
+            onAskObligationChange={onAskObligationChange}
+            {...(onCreditTermDays === undefined ? {} : { onCreditTermDays })}
+            askDraft={askDraft}
+            {...(askDraftUnit === undefined ? {} : { askDraftUnit })}
+            {...(onAskDraftUnit === undefined ? {} : { onAskDraftUnit })}
+            onAskDraftChange={onAskDraftChange}
+            draft={draft}
+            onDraftChange={onDraftChange}
+            posting={posting}
+            photoDrafts={photoDrafts}
+            videoDraft={videoDraft}
+            onPickFiles={onPickFiles}
+            onRemovePhoto={onRemovePhoto}
+            onClearPhoto={onClearPhoto}
+            authorName={authorName}
+            onPost={onPost}
+            rateDay={rateDay ?? null}
+            composerMaxLength={composerMaxLength}
+          />
+        </SundayWritingGate>
       ) : null}
 
       {!hideCompose && (!allowAsk || composeIntent === 'post') ? (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <IconButton
-              type="button"
-              size="lg"
-              variant="secondary"
-              aria-label={t('forum.attach')}
-              disabled={posting}
-              onClick={() => {
-                fileInputRef.current?.click();
-              }}
-            >
-              <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-            </IconButton>
-            {onPlaceDraftChange !== undefined ? (
-              <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
-            ) : null}
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
-              className="hidden"
-              disabled={posting}
-              onChange={handleFileChange}
-            />
-            <textarea
-              ref={composerRef}
-              aria-label={t('forum.composerLabel')}
-              placeholder={t('forum.placeholder')}
-              value={draft}
-              onChange={(event) => onDraftChange(event.target.value)}
-              maxLength={composerMaxLength}
-              rows={2}
-              disabled={posting}
-              className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
-            />
-            <IconButton
-              type="submit"
-              size="lg"
-              variant="primary"
-              disabled={posting}
-              aria-label={t('forum.post')}
-            >
-              {posting ? (
-                <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
-              ) : (
-                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-              )}
-            </IconButton>
-          </div>
-          {videoDraft !== null ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-              <video
-                src={videoDraft.previewUrl}
-                className="h-20 w-20 rounded-lg object-cover"
-                muted
-                playsInline
-                preload="metadata"
-              />
+        <SundayWritingGate>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
               <IconButton
                 type="button"
-                size="sm"
+                size="lg"
                 variant="secondary"
-                onClick={onClearPhoto}
+                aria-label={t('forum.attach')}
                 disabled={posting}
-                aria-label={t('forum.removeVideo')}
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-            </div>
-          ) : null}
-          {photoDrafts.length === 1 ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
-              <img
-                src={photoDrafts[0]!.previewUrl}
-                alt={t('forum.previewAlt')}
-                className="h-20 w-20 rounded-lg object-cover"
-              />
-              <IconButton
-                type="button"
-                size="sm"
-                variant="secondary"
                 onClick={() => {
-                  onRemovePhoto(0);
+                  fileInputRef.current?.click();
                 }}
-                disabled={posting}
-                aria-label={t('forum.removePhoto')}
               >
-                <X aria-hidden="true" className="h-4 w-4" />
+                <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              </IconButton>
+              {onPlaceDraftChange !== undefined ? (
+                <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
+              ) : null}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+                className="hidden"
+                disabled={posting}
+                onChange={handleFileChange}
+              />
+              <textarea
+                ref={composerRef}
+                aria-label={t('forum.composerLabel')}
+                placeholder={t('forum.placeholder')}
+                value={draft}
+                onChange={(event) => onDraftChange(event.target.value)}
+                maxLength={composerMaxLength}
+                rows={2}
+                disabled={posting}
+                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+              />
+              <IconButton
+                type="submit"
+                size="lg"
+                variant="primary"
+                disabled={posting}
+                aria-label={t('forum.post')}
+              >
+                {posting ? (
+                  <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
+                ) : (
+                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                )}
               </IconButton>
             </div>
-          ) : photoDrafts.length > 1 ? (
-            <ul className="flex flex-wrap items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {photoDrafts.map((photo, index) => (
-                <li key={`${photo.previewUrl}:${index}`} className="flex items-start gap-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
-                  <img
-                    src={photo.previewUrl}
-                    alt={t('forum.previewAlt')}
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      onRemovePhoto(index);
-                    }}
-                    disabled={posting}
-                    aria-label={t('forum.removePhoto')}
-                  >
-                    <X aria-hidden="true" className="h-4 w-4" />
-                  </IconButton>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </form>
+            {videoDraft !== null ? (
+              <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+                <video
+                  src={videoDraft.previewUrl}
+                  className="h-20 w-20 rounded-lg object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={onClearPhoto}
+                  disabled={posting}
+                  aria-label={t('forum.removeVideo')}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+            ) : null}
+            {photoDrafts.length === 1 ? (
+              <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+                <img
+                  src={photoDrafts[0]!.previewUrl}
+                  alt={t('forum.previewAlt')}
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    onRemovePhoto(0);
+                  }}
+                  disabled={posting}
+                  aria-label={t('forum.removePhoto')}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+            ) : photoDrafts.length > 1 ? (
+              <ul className="flex flex-wrap items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+                {photoDrafts.map((photo, index) => (
+                  <li key={`${photo.previewUrl}:${index}`} className="flex items-start gap-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview from prepareForumPhoto */}
+                    <img
+                      src={photo.previewUrl}
+                      alt={t('forum.previewAlt')}
+                      className="h-20 w-20 rounded-lg object-cover"
+                    />
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        onRemovePhoto(index);
+                      }}
+                      disabled={posting}
+                      aria-label={t('forum.removePhoto')}
+                    >
+                      <X aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </form>
+        </SundayWritingGate>
       ) : null}
 
       {payInvoice !== null &&
@@ -1880,65 +1895,69 @@ export function ForumBoard({
           payMessageId !== null &&
           !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
           !(replies !== null && replies.some((row) => row.id === payMessageId)))) ? (
-        <ForumPaySheet
-          messageId={payInvoice.messageId}
-          payDraft={payDraft}
-          payBusy={payBusy}
-          payError={payError}
-          payInvoice={payInvoice}
-          payWaiting={payWaiting}
-          onPayDraftChange={onPayDraftChange}
-          {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-          onPaySubmit={onPaySubmit}
-          onPayCancel={onPayCancel}
-          rateDay={rateDay}
-          showPaymentQr={showPaymentQr}
-          onInteract={(event) => {
-            event.stopPropagation();
-          }}
-        />
+        <SundayWritingGate notice="zap">
+          <ForumPaySheet
+            messageId={payInvoice.messageId}
+            payDraft={payDraft}
+            payBusy={payBusy}
+            payError={payError}
+            payInvoice={payInvoice}
+            payWaiting={payWaiting}
+            onPayDraftChange={onPayDraftChange}
+            {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+            onPaySubmit={onPaySubmit}
+            onPayCancel={onPayCancel}
+            rateDay={rateDay}
+            showPaymentQr={showPaymentQr}
+            onInteract={(event) => {
+              event.stopPropagation();
+            }}
+          />
+        </SundayWritingGate>
       ) : null}
 
-      {!hideCompose && formError === 'empty' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorEmpty')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'tooLong' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorTooLong')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'request' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorRequest')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'rateLimit' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorRateLimit')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'unsupported' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorUnsupported')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'tooLarge' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorTooLarge')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'tooMany' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorTooMany')}
-        </p>
-      ) : null}
-      {!hideCompose && formError === 'ask' ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.errorAskAmount')}
-        </p>
-      ) : null}
+      <div className="sunday-write-field">
+        {!hideCompose && formError === 'empty' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorEmpty')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'tooLong' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorTooLong')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'request' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorRequest')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'rateLimit' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorRateLimit')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'unsupported' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorUnsupported')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'tooLarge' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorTooLarge')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'tooMany' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorTooMany')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'ask' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.errorAskAmount')}
+          </p>
+        ) : null}
+      </div>
 
       {middle}
       {error && messages !== null ? errorBlock : null}
