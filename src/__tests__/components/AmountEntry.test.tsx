@@ -912,6 +912,49 @@ describe('AmountEntry', () => {
     expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '0');
   });
 
+  it('ticks once when a keypad key changes the amount', () => {
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    const Harness = (): ReactElement => {
+      const [value, setValue] = useState('');
+      return (
+        <AmountEntry
+          keypad
+          label="Amount"
+          placeholder="0"
+          value={value}
+          onValueChange={setValue}
+          rateDay={DAY}
+        />
+      );
+    };
+    renderWithLocale(<Harness />, 'en', 'ch', 'USD');
+    Reflect.deleteProperty(navigator, 'vibrate');
+    fireEvent.click(screen.getByRole('button', { name: /^1$/ }));
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    fireEvent.click(screen.getByRole('button', { name: /^2$/ }));
+    expect(vibrate).toHaveBeenCalledWith(10);
+    vibrate.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /^\.$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^\.$/ }));
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    vibrate.mockClear();
+    const reduced = window.matchMedia;
+    window.matchMedia = (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^5$/ }));
+    expect(vibrate).not.toHaveBeenCalled();
+    window.matchMedia = reduced;
+  });
+
   it('edits a till keypad without an input', () => {
     const Harness = (): ReactElement => {
       const [value, setValue] = useState('');
@@ -933,6 +976,7 @@ describe('AmountEntry', () => {
     const display = screen.getByLabelText('Amount');
     expect(display.tagName).toBe('P');
     expect(screen.queryByText('Amount')).toBeNull();
+    expect(screen.getByRole('button', { name: '1' }).className).toContain('active:scale-95');
     expect(screen.queryByRole('textbox', { name: 'Amount' })).toBeNull();
     expect(display.textContent).toBe('0');
     fireEvent.click(screen.getByRole('button', { name: /^0$/ }));

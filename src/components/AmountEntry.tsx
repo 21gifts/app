@@ -463,6 +463,13 @@ export function AmountEntry({
     }
     draftRef.current = next;
     onValueChange(next);
+    if (typeof navigator.vibrate !== 'function') {
+      return;
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+    navigator.vibrate(10);
   };
   if (keypad) {
     const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', decimal, '0'];
@@ -482,7 +489,7 @@ export function AmountEntry({
               variant="secondary"
               size="sm"
               type="button"
-              className="w-full"
+              className="w-full active:scale-95 active:brightness-95"
               disabled={disabled || locked}
               aria-label={digit}
               onClick={() => {
@@ -496,7 +503,7 @@ export function AmountEntry({
             variant="secondary"
             size="sm"
             type="button"
-            className="w-full"
+            className="w-full active:scale-95 active:brightness-95"
             disabled={disabled || locked}
             aria-label={t('pos.keypadDelete')}
             onClick={() => {
