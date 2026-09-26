@@ -252,6 +252,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:signed-out",
+    "label": "/welcome signed-out",
+    "visual": "screen-welcome-signed-out",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:mention",
+    "label": "/welcome mention",
+    "visual": "state-welcome-mention",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:laws",
     "label": "/welcome laws",
     "visual": "state-welcome-laws",
@@ -2541,6 +2553,12 @@
     "id": "/messages/[id]:goal-credit",
     "label": "/messages/[id] goal-credit",
     "visual": "state-messages-id-goal-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:credit-ledger",
+    "label": "/messages/[id] credit-ledger",
+    "visual": "state-messages-id-credit-ledger",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

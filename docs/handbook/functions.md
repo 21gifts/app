@@ -2985,6 +2985,27 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ messageId, sats }` of the payable platform profile note, or throws collapsed copy.
 - **Used by:** `ForumLoader`, `PublicMessageThread`, `MemberProfileScreen`.
 
+## Function: getRepayment
+
+- **Purpose:** GET `/messages/:id/repayment` with no session. The public ledger of who gave what and each Lightning repayment.
+- **Inputs:** Credit note id.
+- **Returns / side effects:** The ledger, or null when the response is not ok or the body does not match.
+- **Used by:** `CreditLedger`.
+
+## Function: CreditLedger
+
+- **Purpose:** Show the givers and the repayment plan under a posted credit. Nothing renders until the ledger loads, and a failed read stays blank.
+- **Inputs:** Credit note id.
+- **Returns / side effects:** The Given and Paid back lists, or null. Fetches once per id.
+- **Used by:** `ForumGoalBar`.
+
+## Function: proxyMessagesRepaymentGet
+
+- **Purpose:** Same-origin proxy for `GET /messages/:id/repayment`.
+- **Inputs:** App Router `Request` and the message id.
+- **Returns / side effects:** Forwards to the api. No session is required.
+- **Used by:** `src/app/messages/[id]/repayment/route.ts`.
+
 ## Function: postRepaymentInvoice
 
 - **Purpose:** POST `/messages/:id/repayment` with no body. The author receives a BOLT11 for the next giver share.

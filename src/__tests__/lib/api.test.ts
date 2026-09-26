@@ -65,6 +65,7 @@ import {
   postMessage,
   fetchComposeTarget,
   postMessageInvoice,
+  getRepayment,
   postRepaymentInvoice,
   postMessageVideo,
   postNotificationLevel,
@@ -1722,6 +1723,49 @@ describe('fetchComposeTarget', () => {
   it('throws when the success body is null', async () => {
     stubFetch({ ok: true, status: 200, body: null });
     await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
+  });
+});
+
+const LEDGER = {
+  currency: 'BTC',
+  fundedAt: '2026-09-26T12:00:00.000Z',
+  termDays: 1,
+  daysDue: 1,
+  daysPaid: 0,
+  unassignedSats: 0,
+  givers: [
+    {
+      accountId: '11111111-1111-4111-8111-111111111111',
+      name: 'Bea',
+      username: 'bea',
+      givenSats: 21,
+      givenAmount: null,
+    },
+  ],
+  repayments: [
+    {
+      dayIndex: 0,
+      dueOn: '2026-09-27',
+      accountId: '11111111-1111-4111-8111-111111111111',
+      name: 'Bea',
+      username: 'bea',
+      amount: null,
+      sats: 21,
+      status: 'due',
+      via: 'lightning',
+    },
+  ],
+  next: { dayIndex: 0, sats: 21, recipientAccountId: '11111111-1111-4111-8111-111111111111' },
+};
+
+describe('getRepayment', () => {
+  it('returns the public ledger and null when it is missing or unusable', async () => {
+    stubFetch({ ok: true, status: 200, body: LEDGER });
+    await expect(getRepayment('m1')).resolves.toEqual(LEDGER);
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(getRepayment('m1')).resolves.toBeNull();
+    stubFetch({ ok: true, status: 200, body: { currency: 'nope' } });
+    await expect(getRepayment('m1')).resolves.toBeNull();
   });
 });
 

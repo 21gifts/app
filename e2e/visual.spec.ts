@@ -3773,6 +3773,9 @@ test.describe('onboarding screens', () => {
 
   test('state /members posts-open-goal-credit', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -6016,6 +6019,9 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] goal-credit', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
     await fulfillRateDay(page);
     await fulfillPublicThreadReplies(page, id);
     await page.route(`**/public-messages/${id}`, async (route) => {
@@ -6046,6 +6052,105 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
     await shotScreen(page, 'state-messages-id-goal-credit');
+  });
+
+  test('state /messages/[id] credit-ledger', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Goal note to be repaid',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 21,
+          goalSats: 21,
+          goalRepayable: true,
+          goalTermDays: 2,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: '2026-09-26T12:00:00.000Z',
+          termDays: 2,
+          daysDue: 1,
+          daysPaid: 0,
+          unassignedSats: 0,
+          givers: [
+            {
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              givenSats: 20,
+              givenAmount: null,
+            },
+            {
+              accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+              name: 'Cara',
+              username: 'cara',
+              givenSats: 1,
+              givenAmount: null,
+            },
+          ],
+          repayments: [
+            {
+              dayIndex: 0,
+              dueOn: '2026-09-27',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'due',
+              via: 'lightning',
+            },
+            {
+              dayIndex: 1,
+              dueOn: '2026-09-28',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'scheduled',
+              via: 'lightning',
+            },
+            {
+              dayIndex: 1,
+              dueOn: '2026-09-28',
+              accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+              name: 'Cara',
+              username: 'cara',
+              amount: null,
+              sats: 1,
+              status: 'scheduled',
+              via: 'lightning',
+            },
+          ],
+          next: null,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
+    await expect(page.getByLabel('Given').getByText('Cara @cara')).toBeVisible();
+    await expect(page.getByLabel('Paid back')).toBeVisible();
+    await expect(page.getByText('Due')).toBeVisible();
+    await expect(page.getByText(/Each share is one Lightning payment/)).toBeVisible();
+    await shotScreen(page, 'state-messages-id-credit-ledger');
   });
 
   test('state /messages/[id] photos', async ({ page }) => {
@@ -8416,6 +8521,9 @@ test.describe('welcome forum variants', () => {
   });
 
   test('state /welcome goal-credit', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
     await seedAda(page);
     await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
