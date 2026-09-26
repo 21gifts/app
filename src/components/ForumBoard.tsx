@@ -1280,6 +1280,7 @@ export function ForumBoard({
                   amountPhp={message.amountPhp}
                   goalRepayable={message.goalRepayable}
                   goalTermDays={message.goalTermDays}
+                  messageId={message.id}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">

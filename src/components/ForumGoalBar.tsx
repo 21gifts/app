@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactElement } from 'react';
+import { CreditLedger } from '@/components/CreditLedger';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -134,6 +135,7 @@ export function ForumGoalBar({
   preview = false,
   goalRepayable,
   goalTermDays,
+  messageId,
 }: {
   sats: number;
   goalSats: number;
@@ -151,6 +153,8 @@ export function ForumGoalBar({
   preview?: boolean | undefined;
   goalRepayable?: true | undefined;
   goalTermDays?: number | undefined;
+  /** Set on a posted credit so the public ledger can load. Omitted in the wizard. */
+  messageId?: string | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -256,6 +260,9 @@ export function ForumGoalBar({
           {t('forum.goalPercent', { percent: percentLabel })}
         </span>
       </div>
+      {goalRepayable === true && messageId !== undefined ? (
+        <CreditLedger messageId={messageId} />
+      ) : null}
     </div>
   );
 }

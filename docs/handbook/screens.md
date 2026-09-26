@@ -3334,6 +3334,12 @@ Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`
 
 ![21.gifts public message credit goal](images/messages-id-goal-credit.png)
 
+### Variant: credit-ledger
+
+Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** says each share is one Lightning payment, then 27 Sep 2026 UTC with Bea's ₿10 **Due**, and 28 Sep 2026 UTC with Bea's ₿10 and Cara's ₿1 **Scheduled**.
+
+![21.gifts public message credit ledger](images/messages-id-credit-ledger.png)
+
 ### Variant: photos
 
 Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` is a horizontal snap row (`data-scroll-x`, 88% peek) with a `1/2` chip and dots.

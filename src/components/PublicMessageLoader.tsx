@@ -197,6 +197,7 @@ function PublicThreadCard({
           amountPhp={note.amountPhp}
           goalRepayable={note.goalRepayable}
           goalTermDays={note.goalTermDays}
+          messageId={note.id}
         />
       ) : null}
     </Card>
