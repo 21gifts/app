@@ -1,11 +1,13 @@
-/** x.com timeline analog: visible characters before Show more. */
+/** Collapsed preview length; Show more starts only above twice this. */
 export const FORUM_TEXT_PREVIEW_LIMIT = 280;
+/** Longest body that stays whole: twice the collapsed preview. */
+export const FORUM_TEXT_FULL_LIMIT = FORUM_TEXT_PREVIEW_LIMIT * 2;
 
 /**
  * Collapse a forum note or reply body to a preview (UTF-16 `.length`).
  *
  * @param text - Full note or reply body.
- * @param limit - Visible character count before Show more. Defaults to {@link FORUM_TEXT_PREVIEW_LIMIT}.
+ * @param limit - Collapsed preview length; the body stays whole through `limit * 2`. Defaults to {@link FORUM_TEXT_PREVIEW_LIMIT}.
  * @returns Preview string (no ellipsis) and whether the body was truncated.
  * @throws Does not throw.
  */
@@ -13,7 +15,7 @@ export function forumTextPreview(
   text: string,
   limit: number = FORUM_TEXT_PREVIEW_LIMIT,
 ): { preview: string; truncated: boolean } {
-  if (text.length <= limit) {
+  if (text.length <= limit * 2) {
     return { preview: text, truncated: false };
   }
   let preview = text.slice(0, limit);

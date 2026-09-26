@@ -194,17 +194,17 @@ describe('TranslatableNoteBody', () => {
     );
   });
 
-  it('truncates a long translation behind Show more', async () => {
+  it('shows a long translation in full without Show more', async () => {
     const longTranslated = `${'a'.repeat(280)} TRANSTAIL`;
     vi.mocked(translateNote).mockResolvedValue(longTranslated);
     renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={german} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
-    expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
-    expect(screen.queryByText(/TRANSTAIL/)).toBeNull();
+    expect(await screen.findByText(/TRANSTAIL/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
     expect(translateNote).toHaveBeenCalledWith(NOTE_ID, 'en', null);
   });
 
-  it('paints Show more with button foreground on a long on-button translation', async () => {
+  it('paints a long on-button translation with button foreground and no Show more', async () => {
     const longTranslated = `${'a'.repeat(280)} TRANSTAIL`;
     vi.mocked(translateNote).mockResolvedValue(longTranslated);
     renderWithLocale(
@@ -215,10 +215,64 @@ describe('TranslatableNoteBody', () => {
       />,
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
-    const more = await screen.findByRole('button', { name: 'Show more' });
-    const classes = more.className.split(/\s+/);
-    expect(classes).toContain('text-app-btn-fg');
-    expect(classes).not.toContain('text-app-fg');
+    const body = await screen.findByText(/TRANSTAIL/);
+    expect(body.closest('p')?.className).toContain('text-app-btn-fg');
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('expands a long original on Translate and keeps it expanded after Show original', async () => {
+    const longGerman = `${'Bitte hilf mir in Not. '.repeat(25)}ORIGTAIL`;
+    const longTranslated = `${'b'.repeat(280)} TRANSTAIL`;
+    let resolveTranslation: ((text: string) => void) | undefined;
+    vi.mocked(translateNote).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={longGerman} />);
+    expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText(/ORIGTAIL/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }));
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(screen.getByText(/ORIGTAIL/)).toBeTruthy();
+    await act(async () => {
+      resolveTranslation?.(longTranslated);
+    });
+    expect(screen.getByText(/TRANSTAIL/)).toBeTruthy();
+    expect(screen.queryByText(/ORIGTAIL/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
+    expect(screen.getByText(/ORIGTAIL/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('keeps a long original expanded when translation fails', async () => {
+    const longGerman = `${'Bitte hilf mir in Not. '.repeat(25)}ORIGTAIL`;
+    vi.mocked(translateNote).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={longGerman} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText(/ORIGTAIL/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not translate this note. Please try again.',
+    );
+  });
+
+  it('clears read-full when the note identity changes', async () => {
+    const longGerman = `${'Bitte hilf mir in Not. '.repeat(25)}ORIGTAIL`;
+    const otherLongGerman = `${'Kann mir jemand diese Woche helfen. '.repeat(20)}OTHERTAIL`;
+    vi.mocked(translateNote).mockResolvedValue(`${'b'.repeat(280)} TRANSTAIL`);
+    const { rerender } = renderWithLocale(
+      <TranslatableNoteBody messageId={NOTE_ID} text={longGerman} />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(await screen.findByText(/TRANSTAIL/)).toBeTruthy();
+    rerender(<TranslatableNoteBody messageId={NOTE_ID} text={otherLongGerman} />);
+    expect(screen.queryByText(/TRANSTAIL/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText(/OTHERTAIL/)).toBeNull();
   });
 
   it('shows an error and retries successfully', async () => {
