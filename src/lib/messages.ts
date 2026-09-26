@@ -369,7 +369,9 @@ const en = {
   'forum.creditBitcoinRisk':
     'A rising bitcoin price can hurt you significantly, because you bear the full price movement.',
   'forum.creditInFiat':
-    'This credit is defined in {currency}. The amount owed is fixed in {currency}. Payments are made in bitcoin and are converted into {currency} at the moment of each payment.',
+    'This credit is fixed in {currency}. Payments are bitcoin and stay bitcoin. Each payment is only priced in {currency} at the rate when it is made. Nothing is exchanged.',
+  'forum.creditFiatRisk':
+    'You receive the amount in bitcoin. If the bitcoin price falls before you spend it on what you planned, you bear the full price risk.',
   'forum.creditCurrency.USD': 'US dollars',
   'forum.creditCurrency.CHF': 'Swiss francs',
   'forum.creditCurrency.EUR': 'euros',
@@ -1218,7 +1220,9 @@ const de = {
   'forum.creditBitcoinRisk':
     'Ein steigender Bitcoin-Kurs kann sich bedeutend negativ auf dich auswirken, da du die vollen Kursschwankungen trägst.',
   'forum.creditInFiat':
-    'Dieser Kredit wird in {currency} definiert. Der geschuldete Betrag ist in {currency} festgelegt. Die Zahlungen erfolgen in Bitcoin und werden im Moment jeder Zahlung in {currency} umgerechnet.',
+    'Dieser Kredit ist in {currency} festgelegt. Die Zahlungen sind Bitcoin und bleiben Bitcoin. Jede Zahlung wird nur zum Kurs in diesem Moment in {currency} umgerechnet. Es wird nichts gewechselt.',
+  'forum.creditFiatRisk':
+    'Du erhältst den Betrag in Bitcoin. Fällt der Bitcoin-Kurs, bevor du ihn für deine geplanten Ausgaben ausgegeben hast, trägst du das volle Kursrisiko.',
   'forum.creditCurrency.USD': 'US-Dollar',
   'forum.creditCurrency.CHF': 'Schweizer Franken',
   'forum.creditCurrency.EUR': 'Euro',
@@ -2080,7 +2084,9 @@ const es = {
   'forum.creditBitcoinRisk':
     'Un precio del bitcoin al alza puede perjudicarte de forma importante, porque asumes toda la fluctuación del precio.',
   'forum.creditInFiat':
-    'Este crédito se define en {currency}. La cantidad adeudada queda fijada en {currency}. Los pagos se hacen en bitcoin y se convierten a {currency} en el momento de cada pago.',
+    'Este crédito queda fijado en {currency}. Los pagos son bitcoin y siguen siendo bitcoin. Cada pago solo se calcula en {currency} al tipo de cambio de ese momento. No se cambia nada.',
+  'forum.creditFiatRisk':
+    'Recibes el importe en bitcoin. Si el precio del bitcoin baja antes de que lo gastes en lo que planeaste, asumes todo el riesgo del precio.',
   'forum.creditCurrency.USD': 'dólares estadounidenses',
   'forum.creditCurrency.CHF': 'francos suizos',
   'forum.creditCurrency.EUR': 'euros',
@@ -2932,7 +2938,9 @@ const fil = {
   'forum.creditBitcoinRisk':
     'Ang tumataas na presyo ng bitcoin ay maaaring makaapekto nang masama sa iyo, dahil ikaw ang dadala ng buong pagbabago ng presyo.',
   'forum.creditInFiat':
-    'Ang pautang na ito ay nakatakda sa {currency}. Ang utang ay nakapirmi sa {currency}. Ang bayad ay sa bitcoin at iko-convert sa {currency} sa sandali ng bawat bayad.',
+    'Ang pautang na ito ay nakapirmi sa {currency}. Ang bayad ay bitcoin at nananatiling bitcoin. Ang bawat bayad ay kinakalkula lamang sa {currency} sa halaga ng sandaling iyon. Walang ipinapalit.',
+  'forum.creditFiatRisk':
+    'Tatanggapin mo ang halaga sa bitcoin. Kung bumaba ang presyo ng bitcoin bago mo ito gastusin sa planong gastos, ikaw ang dadala ng buong panganib sa presyo.',
   'forum.creditCurrency.USD': 'dolyar ng US',
   'forum.creditCurrency.CHF': 'Swiss franc',
   'forum.creditCurrency.EUR': 'euro',

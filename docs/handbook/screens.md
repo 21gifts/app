@@ -548,7 +548,7 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ### Variant: ask-credit-currency-fiat
 
-**Ask for money**, **Credit** pressed, amount switch on **USD**, **1000** typed. The screen says the credit is defined in US dollars, the debt stays in that currency, and each bitcoin payment is converted at the moment it is paid.
+**Ask for money**, **Credit** pressed, amount switch on **USD**, **1000** typed. The screen says the credit is fixed in US dollars, payments stay bitcoin, and each payment is only priced in dollars at the rate when it is made. Nothing is exchanged. It also says the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it.
 
 ![21.gifts welcome ask credit currency fiat](images/welcome-ask-credit-currency-fiat.png)
 

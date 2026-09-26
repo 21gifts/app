@@ -8132,7 +8132,10 @@ test.describe('welcome forum variants', () => {
       .click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText(/US dollars/)).toBeVisible();
+    await expect(page.getByText(/fixed in US dollars/)).toBeVisible();
+    await expect(page.getByText(/stay bitcoin/)).toBeVisible();
+    await expect(page.getByText(/Nothing is exchanged/)).toBeVisible();
+    await expect(page.getByText(/price falls/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-currency-fiat');
   });
 

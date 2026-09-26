@@ -609,7 +609,7 @@ function CreditPhasePanel({
       {phase === 'currency' ? (
         <div className="flex flex-col gap-2 text-sm text-app-fg">
           <p>{currencySentence}</p>
-          {bitcoinAsk ? <p>{t('forum.creditBitcoinRisk')}</p> : null}
+          {bitcoinAsk ? <p>{t('forum.creditBitcoinRisk')}</p> : <p>{t('forum.creditFiatRisk')}</p>}
         </div>
       ) : null}
       {phase === 'term' ? (
@@ -656,7 +656,7 @@ function CreditPhasePanel({
         <div className="flex flex-col gap-2 text-sm text-app-fg">
           <p>{t('forum.creditAmountOwed', { amount: owedText })}</p>
           <p>{currencySentence}</p>
-          {bitcoinAsk ? <p>{t('forum.creditBitcoinRisk')}</p> : null}
+          {bitcoinAsk ? <p>{t('forum.creditBitcoinRisk')}</p> : <p>{t('forum.creditFiatRisk')}</p>}
           <p>
             {t('forum.creditTermSummary', {
               term: creditTermLabel(termPreset, customDays, t),

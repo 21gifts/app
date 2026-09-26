@@ -461,12 +461,15 @@ describe('ForumAskWizard', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/US dollars/)).toBeTruthy();
+    expect(screen.getByText(/stay bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/Nothing is exchanged/)).toBeTruthy();
+    expect(screen.getByText(/price falls/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
-    expect(screen.getByText(/defined in US dollars/)).toBeTruthy();
+    expect(screen.getByText(/fixed in US dollars/)).toBeTruthy();
+    expect(screen.getByText(/price falls/)).toBeTruthy();
     expect(screen.queryByText(/rising bitcoin price/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     cleanup();
