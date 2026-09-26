@@ -1028,7 +1028,7 @@
 
 Four-step Ask composer on `/welcome`: amount (step 1 starts with the One-time / Daily pill and a Donation / Credit pill under it), photos, text, then a preview card that shows the same pills and `ForumGoalBar` at 0 collected versus the ask. The heading and **{step} of 4** share one row (step on the right). The labeled **Post** on step 4 is the only Ask submit.
 
-- **Purpose:** Walk **Ask for money** so Continue on the amount step still requires a local 1..10_000_000-sat parse. The amount step and the preview each start with a One-time / Daily `SegmentedControl` (`tone="neutral"`, two columns, `rounded-2xl`). A Donation / Credit pill sits under One-time / Daily, same classes, Donation pressed by default. The photo and text steps do not show either pill. Default cadence is once. One-time / Daily is not posted. The post itself sends `goalCurrency` and `goalAmount`. Only Credit is posted as `goalRepayable` true. A fiat-draft preview shows the typed amount plus local Bitcoin and no third currency; a Bitcoin-draft preview shows Bitcoin plus the last gift-day rate.
+- **Purpose:** Walk **Ask for money** so Continue on the amount step still requires a local 1..10_000_000-sat parse. The amount step and the preview each start with a One-time / Daily `SegmentedControl` (`tone="neutral"`, two columns, `rounded-2xl`). A Donation / Credit pill sits under One-time / Daily, same classes, Donation pressed by default. The photo and text steps do not show either pill. Default cadence is once. One-time / Daily is not posted. The post itself sends `goalCurrency` and `goalAmount`. Only Credit is posted as `goalRepayable` true, together with `goalTermDays`. A donation stays on the four steps. A credit, after the amount, explains that the debt is fixed in the selected currency (bitcoin uses its own sentence, with no conversion), then offers 30 days, 1 year, 2 years, or a custom whole number of days from 1 to 3650, then states that repayment is daily and starts the day after the credit is paid in full, shows interest 0%, shows the daily amount, and requires two confirmations before the photo step. The credit counter reads n of 9. The daily amount is the total split across the days, and any remainder is added to the last day. A fiat-draft preview shows the typed amount plus local Bitcoin and no third currency; a Bitcoin-draft preview shows Bitcoin plus the last gift-day rate.
 - **Inputs:** `step` / `onStepChange`, `askDraft` / `onAskDraftChange`, `draft` / `onDraftChange`, `posting`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `authorName`, `onPost`, optional `rateDay` (Bitcoin-draft preview counterpart of the typed ask), optional `composerMaxLength` (default `FORUM_MESSAGE_MAX_LENGTH`, 8000), optional `askCadence` (`'once'` | `'daily'`, default once) and `onAskCadenceChange`, optional `askObligation` (`'donation'` | `'credit'`, default donation) and `onAskObligationChange`.
 - **Returns / side effects:** React tree. The One-time / Daily pill and the Donation / Credit pill are on step 1 and step 4. Continue on step 1 stays disabled until the parsed sats are 1..10_000_000. Continue on step 2 goes to step 3 with photos optional. Step 4 **Post** stays disabled without text, photo, or video, then calls `onPost`. No network.
 - **Used by:** `ForumBoard` when `composeIntent` is `ask`.
@@ -1039,6 +1039,27 @@ Four-step Ask composer on `/welcome`: amount (step 1 starts with the One-time / 
 - **Inputs:** `raw` string.
 - **Returns / side effects:** Integer 1..10_000_000, or `null` when empty, non-digits, 0, or above the max.
 - **Used by:** `ForumAskWizard`, `ForumLoader`.
+
+## Function: parseCreditTermDays
+
+- **Purpose:** Days a credit is repaid over. Presets are 30, 365, and 730. Custom is a typed whole number.
+- **Inputs:** Preset `30` | `365` | `730` | `'custom'`, and the raw custom field.
+- **Returns / side effects:** Day count from 1 to 3650, or `null` when custom is empty, not digits, or out of range. No I/O.
+- **Used by:** `ForumAskWizard`.
+
+## Function: creditSmallestUnits
+
+- **Purpose:** Smallest units of a typed credit. Bitcoin is whole sats. Fiat is cents.
+- **Inputs:** Amount draft and whether that draft is bitcoin.
+- **Returns / side effects:** Non-negative bigint, or `null` when the draft is not that shape. No I/O.
+- **Used by:** `ForumAskWizard`, `ForumGoalBar`.
+
+## Function: splitCreditPlan
+
+- **Purpose:** Split a credit into equal daily units. Any remainder is added to the last day so the days sum to the debt.
+- **Inputs:** Total sats or cents, and a day count from 1 to 3650.
+- **Returns / side effects:** `{ perDay, last, days, remainder }`, or `null` when the day count is outside that range. No I/O.
+- **Used by:** `ForumAskWizard`, `ForumGoalBar`.
 
 ## Function: ForumGoalBar
 

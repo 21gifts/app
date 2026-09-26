@@ -209,4 +209,49 @@ describe('ForumGoalBar', () => {
     expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.queryByText('To be repaid.')).toBeNull();
   });
+
+  it('shows the interest-free daily plan for a bitcoin credit and a dollar credit', () => {
+    const { rerender } = renderWithLocale(
+      <ForumGoalBar sats={0} goalSats={3000} goalRepayable goalTermDays={30} />,
+    );
+    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.getByText(/₿100 per day for 30 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={3000}
+        goalRepayable
+        goalTermDays={30}
+        goalCurrency="BTC"
+        goalAmount="3000"
+      />,
+    );
+    expect(screen.getByText(/₿100 per day for 30 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={1}
+        goalRepayable
+        goalTermDays={30}
+        goalCurrency="USD"
+        goalAmount="1000"
+      />,
+    );
+    expect(screen.getByText(/\$33\.33 per day for 29 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={1}
+        goalRepayable
+        goalTermDays={30}
+        goalCurrency="USD"
+        goalAmount="nope"
+      />,
+    );
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
+    rerender(
+      <ForumGoalBar sats={0} goalSats={1} goalRepayable goalTermDays={30} goalCurrency="USD" />,
+    );
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
+  });
 });

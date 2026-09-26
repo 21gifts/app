@@ -2244,12 +2244,14 @@ describe('postMessageVideo', () => {
       goalCurrency: 'BTC',
       goalAmount: '21000',
       goalRepayable: true,
+      goalTermDays: 30,
     });
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const form = init.body as FormData;
     expect(form.get('goalCurrency')).toBe('BTC');
     expect(form.get('goalAmount')).toBe('21000');
     expect(form.get('goalRepayable')).toBe('true');
+    expect(form.get('goalTermDays')).toBe('30');
   });
 
   it('omits ask fields from the form when not provided', async () => {

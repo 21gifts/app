@@ -342,6 +342,60 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-credit-currency-btc",
+    "label": "/welcome ask-credit-currency-btc",
+    "visual": "state-welcome-ask-credit-currency-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-currency-fiat",
+    "label": "/welcome ask-credit-currency-fiat",
+    "visual": "state-welcome-ask-credit-currency-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-term",
+    "label": "/welcome ask-credit-term",
+    "visual": "state-welcome-ask-credit-term",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-term-custom",
+    "label": "/welcome ask-credit-term-custom",
+    "visual": "state-welcome-ask-credit-term-custom",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-plan-btc",
+    "label": "/welcome ask-credit-plan-btc",
+    "visual": "state-welcome-ask-credit-plan-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-plan-fiat",
+    "label": "/welcome ask-credit-plan-fiat",
+    "visual": "state-welcome-ask-credit-plan-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-want",
+    "label": "/welcome ask-credit-confirm-want",
+    "visual": "state-welcome-ask-credit-confirm-want",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-can-btc",
+    "label": "/welcome ask-credit-confirm-can-btc",
+    "visual": "state-welcome-ask-credit-confirm-can-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-can-fiat",
+    "label": "/welcome ask-credit-confirm-can-fiat",
+    "visual": "state-welcome-ask-credit-confirm-can-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-amount",
     "label": "/welcome ask-amount",
     "visual": "state-welcome-ask-amount",

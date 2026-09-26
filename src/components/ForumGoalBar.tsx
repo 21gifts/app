@@ -6,6 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { FORUM_GOAL_AMOUNT_RE, type ForumGoalCurrency } from '@/lib/api-types';
+import { creditSmallestUnits, splitCreditPlan } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount, forumFiatGoalPercent, forumGoalPercent } from '@/lib/forum-goal';
 import {
   formatBitcoin,
@@ -130,6 +131,7 @@ export function ForumGoalBar({
   amountPhp,
   preview = false,
   goalRepayable,
+  goalTermDays,
 }: {
   sats: number;
   goalSats: number;
@@ -146,6 +148,7 @@ export function ForumGoalBar({
   amountPhp?: string | null | undefined;
   preview?: boolean | undefined;
   goalRepayable?: true | undefined;
+  goalTermDays?: number | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -214,6 +217,14 @@ export function ForumGoalBar({
       {goalRepayable === true ? (
         <p className="text-xs font-medium text-app-muted">{t('forum.askRepay')}</p>
       ) : null}
+      {goalRepayable === true && typeof goalTermDays === 'number' ? (
+        <CreditPlanLines
+          goalCurrency={goalCurrency}
+          goalAmount={goalAmount}
+          goalSats={goalSats}
+          days={goalTermDays}
+        />
+      ) : null}
       <div className="flex items-center gap-2">
         <svg
           viewBox={`0 0 ${viewWidth} 8`}
@@ -241,6 +252,49 @@ export function ForumGoalBar({
           {t('forum.goalPercent', { percent: percentLabel })}
         </span>
       </div>
+    </div>
+  );
+}
+
+function CreditPlanLines({
+  goalCurrency,
+  goalAmount,
+  goalSats,
+  days,
+}: {
+  goalCurrency: ForumGoalCurrency | undefined;
+  goalAmount: string | undefined;
+  goalSats: number;
+  days: number;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  const bitcoin = goalCurrency === undefined || goalCurrency === 'BTC';
+  const units = creditSmallestUnits(bitcoin ? String(goalSats) : (goalAmount ?? ''), bitcoin);
+  const split = units === null ? null : splitCreditPlan(units, days);
+  if (split === null) {
+    return null;
+  }
+  const format = (value: bigint): string => {
+    if (bitcoin) {
+      return formatBitcoin(Number(value), numberFormat);
+    }
+    const whole = value / 100n;
+    const frac = (value % 100n).toString().padStart(2, '0');
+    return formatFiatDisplay(`${whole.toString()}.${frac}`, goalCurrency as FiatCode, numberFormat);
+  };
+  const plan =
+    split.remainder === 0n
+      ? t('forum.creditPlanEven', { amount: format(split.perDay), days: split.days })
+      : t('forum.creditPlanLast', {
+          amount: format(split.perDay),
+          earlier: split.days - 1,
+          last: format(split.last),
+        });
+  return (
+    <div className="text-xs text-app-muted">
+      <p>{t('forum.creditInterest')}</p>
+      <p>{t('forum.creditDaily', { plan })}</p>
     </div>
   );
 }

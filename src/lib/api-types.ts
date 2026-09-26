@@ -544,6 +544,7 @@ export const forumMessageSchema = z
     goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
     goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
     goalRepayable: z.literal(true).optional(),
+    goalTermDays: z.number().int().min(1).max(3650).optional(),
     goalAmountUsd: fiatAmountSchema.optional(),
     goalAmountChf: fiatAmountSchema.optional(),
     goalAmountEur: fiatAmountSchema.optional(),

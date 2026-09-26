@@ -744,6 +744,14 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
     fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/defined in bitcoin/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -754,6 +762,7 @@ describe('ForumLoader', () => {
         goalCurrency: 'BTC',
         goalAmount: '21000',
         goalRepayable: true,
+        goalTermDays: 30,
       });
     });
   });

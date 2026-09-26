@@ -1617,7 +1617,13 @@ function forumAskGoalFields(
   goalCurrency: ForumGoalCurrency | undefined,
   goalAmount: string | undefined,
   goalRepayable?: true,
-): { goalCurrency: ForumGoalCurrency; goalAmount: string; goalRepayable?: true } | null {
+  goalTermDays?: number,
+): {
+  goalCurrency: ForumGoalCurrency;
+  goalAmount: string;
+  goalRepayable?: true;
+  goalTermDays?: number;
+} | null {
   if (inReplyTo !== undefined) {
     return null;
   }
@@ -1632,6 +1638,7 @@ function forumAskGoalFields(
     goalCurrency,
     goalAmount: amount,
     ...(goalRepayable === true ? { goalRepayable: true as const } : {}),
+    ...(goalRepayable === true && typeof goalTermDays === 'number' ? { goalTermDays } : {}),
   };
 }
 
@@ -1661,6 +1668,7 @@ export async function postMessage(
     goalCurrency?: ForumGoalCurrency;
     goalAmount?: string;
     goalRepayable?: true;
+    goalTermDays?: number;
     place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
@@ -1684,6 +1692,7 @@ export async function postMessage(
     input.goalCurrency,
     input.goalAmount,
     input.goalRepayable,
+    input.goalTermDays,
   );
   const response = await fetch('/forum/messages', {
     method: 'POST',
@@ -1748,6 +1757,7 @@ export async function postMessageVideo(
     goalCurrency?: ForumGoalCurrency;
     goalAmount?: string;
     goalRepayable?: true;
+    goalTermDays?: number;
     place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
@@ -1762,12 +1772,16 @@ export async function postMessageVideo(
     input.goalCurrency,
     input.goalAmount,
     input.goalRepayable,
+    input.goalTermDays,
   );
   if (askGoal !== null) {
     form.set('goalCurrency', askGoal.goalCurrency);
     form.set('goalAmount', askGoal.goalAmount);
     if (askGoal.goalRepayable === true) {
       form.set('goalRepayable', 'true');
+    }
+    if (typeof askGoal.goalTermDays === 'number') {
+      form.set('goalTermDays', String(askGoal.goalTermDays));
     }
   }
   if (input.place !== undefined) {

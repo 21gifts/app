@@ -540,6 +540,60 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ![21.gifts welcome goal php](images/welcome-goal-php.png)
 
+### Variant: ask-credit-currency-btc
+
+**Ask for money**, **Credit** pressed, **21000** bitcoin. The next screen says the credit is defined in bitcoin, the amount owed stays in bitcoin, and payments are not converted.
+
+![21.gifts welcome ask credit currency btc](images/welcome-ask-credit-currency-btc.png)
+
+### Variant: ask-credit-currency-fiat
+
+**Ask for money**, **Credit** pressed, amount switch on **USD**, **1000** typed. The screen says the credit is defined in US dollars, the debt stays in that currency, and each bitcoin payment is converted at the moment it is paid.
+
+![21.gifts welcome ask credit currency fiat](images/welcome-ask-credit-currency-fiat.png)
+
+### Variant: ask-credit-term
+
+Term step for a bitcoin credit. **30 days** is pressed. **1 year**, **2 years**, and **Custom** are the other choices.
+
+![21.gifts welcome ask credit term](images/welcome-ask-credit-term.png)
+
+### Variant: ask-credit-term-custom
+
+**Custom** pressed and **45** typed in **Number of days**.
+
+![21.gifts welcome ask credit term custom](images/welcome-ask-credit-term-custom.png)
+
+### Variant: ask-credit-plan-btc
+
+The plan says repayment is due every day and starts the day after the credit is fully paid, with the 10-day example. Interest is **0%**. The daily bitcoin amount is shown.
+
+![21.gifts welcome ask credit plan btc](images/welcome-ask-credit-plan-btc.png)
+
+### Variant: ask-credit-plan-fiat
+
+Same plan for a **1000** US-dollar credit. Interest is **0%**. The daily dollar amount is shown.
+
+![21.gifts welcome ask credit plan fiat](images/welcome-ask-credit-plan-fiat.png)
+
+### Variant: ask-credit-confirm-want
+
+Checkbox **I want to take this credit.** Continue stays disabled until it is checked.
+
+![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
+
+### Variant: ask-credit-confirm-can-btc
+
+Checkbox that the author can repay the bitcoin plan. Continue stays disabled until it is checked.
+
+![21.gifts welcome ask credit confirm can btc](images/welcome-ask-credit-confirm-can-btc.png)
+
+### Variant: ask-credit-confirm-can-fiat
+
+Same confirmation for the US-dollar plan, with the daily dollar amount in the sentence.
+
+![21.gifts welcome ask credit confirm can fiat](images/welcome-ask-credit-confirm-can-fiat.png)
+
 ### Variant: ask-amount
 
 **Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed), a **Donation** / **Credit** pill under it (**Donation** pressed by default), and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step. Only **Credit** is posted as `goalRepayable` true.
