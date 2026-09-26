@@ -416,6 +416,17 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Repayment term: 1 year/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: '2 years' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Repayment term: 2 years/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
     expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
     fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '10' } });
@@ -423,11 +434,15 @@ describe('ForumAskWizard', () => {
     expect(screen.getByText(/Interest 0%/)).toBeTruthy();
     expect(screen.getByText(/day 11/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
-    fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Amount owed: ₿21'000/)).toBeTruthy();
+    expect(screen.getByText(/defined in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/Repayment term: 10 days/)).toBeTruthy();
+    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'I want to take this credit.' }));
+    expect(screen.getByText(/I can repay the amount owed on this plan/)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'I can repay this.' }));
     expect(onStepChange).toHaveBeenCalledWith(2);
     expect(onCreditTermDays).toHaveBeenCalledWith(10);
 
@@ -445,6 +460,12 @@ describe('ForumAskWizard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/US dollars/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
+    expect(screen.getByText(/defined in US dollars/)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
     cleanup();
     const back = vi.fn();
     renderWithLocale(

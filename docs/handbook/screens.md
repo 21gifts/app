@@ -578,19 +578,19 @@ Same plan for a **1000** US-dollar credit. Interest is **0%**. The daily dollar 
 
 ### Variant: ask-credit-confirm-want
 
-Checkbox **I want to take this credit.** Continue stays disabled until it is checked.
+The screen repeats the amount owed, the bitcoin definition, the term, the daily rule with the day-11 example, interest **0%**, and the daily amount. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
 
 ### Variant: ask-credit-confirm-can-btc
 
-Checkbox that the author can repay the bitcoin plan. Continue stays disabled until it is checked.
+The sentence states the bitcoin plan. The button **I can repay this.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm can btc](images/welcome-ask-credit-confirm-can-btc.png)
 
 ### Variant: ask-credit-confirm-can-fiat
 
-Same confirmation for the US-dollar plan, with the daily dollar amount in the sentence.
+Same confirmation for the US-dollar plan, with the daily dollar amount in the sentence. The button is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm can fiat](images/welcome-ask-credit-confirm-can-fiat.png)
 

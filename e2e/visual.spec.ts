@@ -8214,7 +8214,13 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText('I want to take this credit.')).toBeVisible();
+    await expect(page.getByText(/Amount owed: ₿21'000/)).toBeVisible();
+    await expect(page.getByText(/defined in bitcoin/)).toBeVisible();
+    await expect(page.getByText(/Repayment term: 30 days/)).toBeVisible();
+    await expect(page.getByText(/day 11/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'I want to take this credit.' })).toBeVisible();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-confirm-want');
   });
 
@@ -8229,9 +8235,10 @@ test.describe('welcome forum variants', () => {
     for (let i = 0; i < 4; i += 1) {
       await page.getByRole('button', { name: 'Continue' }).click();
     }
-    await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText(/I can repay/)).toBeVisible();
+    await page.getByRole('button', { name: 'I want to take this credit.' }).click();
+    await expect(page.getByText(/I can repay the amount owed on this plan/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'I can repay this.' })).toBeVisible();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-confirm-can-btc');
   });
 
@@ -8250,10 +8257,10 @@ test.describe('welcome forum variants', () => {
     for (let i = 0; i < 4; i += 1) {
       await page.getByRole('button', { name: 'Continue' }).click();
     }
-    await page.getByRole('checkbox').check();
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText(/I can repay/)).toBeVisible();
+    await page.getByRole('button', { name: 'I want to take this credit.' }).click();
+    await expect(page.getByText(/I can repay the amount owed on this plan/)).toBeVisible();
     await expect(page.getByText(/\$\d/)).toBeVisible();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-confirm-can-fiat');
   });
 

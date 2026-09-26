@@ -108,21 +108,18 @@ export function ForumAskWizard({
   const [creditPhase, setCreditPhase] = useState<CreditAskPhase>('amount');
   const [termPreset, setTermPreset] = useState<CreditTermPreset>(30);
   const [customDays, setCustomDays] = useState('');
-  const [confirmWant, setConfirmWant] = useState(false);
-  const [confirmCan, setConfirmCan] = useState(false);
   const termDays = parseCreditTermDays(termPreset, customDays);
   const bitcoinAsk = draftUnit !== 'fiat';
   const currencyCode: ForumGoalCurrency = bitcoinAsk ? 'BTC' : fiat;
   const plan = creditPlanFor(askDraft, bitcoinAsk, termDays);
   const planText =
     plan === null ? '' : creditPlanText(plan, bitcoinAsk, currencyCode, numberFormat, t);
+  const owedUnits = creditSmallestUnits(askDraft, bitcoinAsk);
+  const owedText =
+    owedUnits === null ? '' : formatPlanUnits(owedUnits, bitcoinAsk, currencyCode, numberFormat);
   useEffect(() => {
     onCreditTermDays?.(askObligation === 'credit' ? termDays : null);
   }, [askObligation, onCreditTermDays, termDays]);
-  const clearConfirms = (): void => {
-    setConfirmWant(false);
-    setConfirmCan(false);
-  };
   const creditInside = askObligation === 'credit' && step === 1 && creditPhase !== 'amount';
   const stepTitle = creditInside
     ? t(
@@ -221,20 +218,11 @@ export function ForumAskWizard({
           termPreset={termPreset}
           customDays={customDays}
           planText={planText}
-          confirmWant={confirmWant}
-          confirmCan={confirmCan}
+          owedText={owedText}
           posting={posting}
           canContinue={termDays !== null && plan !== null}
-          onTermPreset={(value) => {
-            setTermPreset(value);
-            clearConfirms();
-          }}
-          onCustomDays={(value) => {
-            setCustomDays(value);
-            clearConfirms();
-          }}
-          onConfirmWant={setConfirmWant}
-          onConfirmCan={setConfirmCan}
+          onTermPreset={setTermPreset}
+          onCustomDays={setCustomDays}
           onContinue={() => {
             if (creditPhase === 'currency') {
               setCreditPhase('term');
@@ -242,9 +230,9 @@ export function ForumAskWizard({
               setCreditPhase('plan');
             } else if (creditPhase === 'plan') {
               setCreditPhase('confirmWant');
-            } else if (creditPhase === 'confirmWant' && confirmWant) {
+            } else if (creditPhase === 'confirmWant') {
               setCreditPhase('confirmCan');
-            } else if (creditPhase === 'confirmCan' && confirmCan && termDays !== null) {
+            } else if (creditPhase === 'confirmCan' && termDays !== null) {
               onStepChange(2);
             }
           }}
@@ -257,18 +245,8 @@ export function ForumAskWizard({
             label={t('forum.askAmountLabel')}
             value={askDraft}
             valueUnit={draftUnit}
-            onValueChange={(value) => {
-              onAskDraftChange(value);
-              clearConfirms();
-            }}
-            {...(onAskDraftUnit === undefined
-              ? {}
-              : {
-                  onUnitChange: (unit: AmountUnit) => {
-                    onAskDraftUnit(unit);
-                    clearConfirms();
-                  },
-                })}
+            onValueChange={onAskDraftChange}
+            {...(onAskDraftUnit === undefined ? {} : { onUnitChange: onAskDraftUnit })}
             disabled={posting}
             rateDay={rateDay}
           />
@@ -560,6 +538,30 @@ function creditPlanText(
   });
 }
 
+function creditTermLabel(
+  preset: CreditTermPreset,
+  custom: string,
+  t: (
+    key:
+      | 'forum.creditTerm30'
+      | 'forum.creditTerm365'
+      | 'forum.creditTerm730'
+      | 'forum.creditTermDayCount',
+    values?: Record<string, string | number>,
+  ) => string,
+): string {
+  if (preset === 30) {
+    return t('forum.creditTerm30');
+  }
+  if (preset === 365) {
+    return t('forum.creditTerm365');
+  }
+  if (preset === 730) {
+    return t('forum.creditTerm730');
+  }
+  return t('forum.creditTermDayCount', { days: custom });
+}
+
 function CreditPhasePanel({
   phase,
   bitcoinAsk,
@@ -567,14 +569,11 @@ function CreditPhasePanel({
   termPreset,
   customDays,
   planText,
-  confirmWant,
-  confirmCan,
+  owedText,
   posting,
   canContinue,
   onTermPreset,
   onCustomDays,
-  onConfirmWant,
-  onConfirmCan,
   onContinue,
 }: {
   phase: Exclude<CreditAskPhase, 'amount'>;
@@ -583,14 +582,11 @@ function CreditPhasePanel({
   termPreset: CreditTermPreset;
   customDays: string;
   planText: string;
-  confirmWant: boolean;
-  confirmCan: boolean;
+  owedText: string;
   posting: boolean;
   canContinue: boolean;
   onTermPreset: (value: CreditTermPreset) => void;
   onCustomDays: (value: string) => void;
-  onConfirmWant: (value: boolean) => void;
-  onConfirmCan: (value: boolean) => void;
   onContinue: () => void;
 }): ReactElement {
   const { t } = useTranslations();
@@ -598,21 +594,19 @@ function CreditPhasePanel({
     currencyCode === 'BTC'
       ? 'Bitcoin'
       : t(`forum.creditCurrency.${currencyCode}` as 'forum.creditCurrency.USD');
-  const continueDisabled =
-    posting ||
-    (phase === 'term' && !canContinue) ||
-    (phase === 'plan' && !canContinue) ||
-    (phase === 'confirmWant' && !confirmWant) ||
-    (phase === 'confirmCan' && !confirmCan);
+  const currencySentence = bitcoinAsk
+    ? t('forum.creditInBitcoin')
+    : t('forum.creditInFiat', { currency: currencyName });
+  const continueDisabled = posting || ((phase === 'term' || phase === 'plan') && !canContinue);
+  const confirmLabel =
+    phase === 'confirmWant'
+      ? t('forum.creditWant')
+      : phase === 'confirmCan'
+        ? t('forum.creditCanButton')
+        : t('forum.askContinue');
   return (
     <>
-      {phase === 'currency' ? (
-        <p className="text-sm text-app-fg">
-          {bitcoinAsk
-            ? t('forum.creditInBitcoin')
-            : t('forum.creditInFiat', { currency: currencyName })}
-        </p>
-      ) : null}
+      {phase === 'currency' ? <p className="text-sm text-app-fg">{currencySentence}</p> : null}
       {phase === 'term' ? (
         <>
           <SegmentedControl
@@ -653,28 +647,25 @@ function CreditPhasePanel({
           <p>{t('forum.creditDaily', { plan: planText })}</p>
         </div>
       ) : null}
-      {phase === 'confirmWant' || phase === 'confirmCan' ? (
-        <label className="flex items-start gap-2 text-sm text-app-fg">
-          <input
-            type="checkbox"
-            checked={phase === 'confirmWant' ? confirmWant : confirmCan}
-            onChange={(event) => {
-              if (phase === 'confirmWant') {
-                onConfirmWant(event.target.checked);
-              } else {
-                onConfirmCan(event.target.checked);
-              }
-            }}
-          />
-          <span>
-            {phase === 'confirmWant'
-              ? t('forum.creditWant')
-              : t('forum.creditCan', { plan: planText })}
-          </span>
-        </label>
+      {phase === 'confirmWant' ? (
+        <div className="flex flex-col gap-2 text-sm text-app-fg">
+          <p>{t('forum.creditAmountOwed', { amount: owedText })}</p>
+          <p>{currencySentence}</p>
+          <p>
+            {t('forum.creditTermSummary', {
+              term: creditTermLabel(termPreset, customDays, t),
+            })}
+          </p>
+          <p>{t('forum.creditPlanBody')}</p>
+          <p>{t('forum.creditInterest')}</p>
+          <p>{t('forum.creditDaily', { plan: planText })}</p>
+        </div>
+      ) : null}
+      {phase === 'confirmCan' ? (
+        <p className="text-sm text-app-fg">{t('forum.creditCan', { plan: planText })}</p>
       ) : null}
       <Button type="button" variant="primary" disabled={continueDisabled} onClick={onContinue}>
-        {t('forum.askContinue')}
+        {confirmLabel}
       </Button>
     </>
   );

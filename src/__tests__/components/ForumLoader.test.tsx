@@ -748,10 +748,8 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I want to take this credit.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I can repay this.' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
