@@ -6636,14 +6636,9 @@ test('Function: ForumVideo — a playable note shows Full screen', async ({ page
       }),
     });
   });
-  await page.route('**/messages/m-clip/video.mp4', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'video/mp4',
-      path: 'e2e/fixtures/tiny.mp4',
-    });
-  });
+  await page.route('**/messages/m-clip/video.mp4', () => new Promise(() => undefined));
   await page.goto('/welcome');
+  await expect(page.getByText('A clip')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
 });
 
@@ -6653,10 +6648,11 @@ test('Function: fetchPublicForumMessages — signed-out welcome asks for the act
   let sawActive = false;
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     const url = new URL(route.request().url());
+    const authorization = route.request().headerValue('authorization');
     if (
       route.request().method() === 'GET' &&
       url.searchParams.get('mode') === 'active' &&
-      route.request().headers()['authorization'] === undefined
+      authorization === null
     ) {
       sawActive = true;
     }
