@@ -73,7 +73,13 @@ export function syncScrollSurfaces(): void {
       continue;
     }
     const computed = getComputedStyle(node);
-    if (!isScrollingOverflow(computed.overflowY) && !isScrollingOverflow(computed.overflowX)) {
+    const scrolling =
+      isScrollingOverflow(computed.overflowY) ||
+      isScrollingOverflow(computed.overflowX) ||
+      isScrollingOverflow(node.style.overflow) ||
+      isScrollingOverflow(node.style.overflowX) ||
+      isScrollingOverflow(node.style.overflowY);
+    if (!scrolling) {
       continue;
     }
     node.style.overflow = 'hidden';

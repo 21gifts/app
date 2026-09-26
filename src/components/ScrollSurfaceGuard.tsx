@@ -4,9 +4,9 @@ import { useLayoutEffect, type ReactElement } from 'react';
 import { syncScrollSurfaces } from '@/lib/scroll-surface';
 
 /**
- * Watches the document and keeps a single scroll surface. Stray `overflow:
- * auto` or `scroll` (including values set from script) is forced to clip,
- * and textareas grow instead of scrolling inside the page.
+ * Watches the document and keeps a single scroll surface. A stray scrolling
+ * overflow, including one set from script, is forced to clip. Textareas
+ * grow instead of scrolling inside the page.
  *
  * @returns `null` (side-effect only).
  */
