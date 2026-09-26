@@ -51,7 +51,8 @@ function bannedLine(line) {
   return CLASS_BANNED.test(line) || STYLE_BANNED.test(line);
 }
 
-const SCROLL_DECL = /overflow(?:-x|-y)?\s*:\s*(?:auto|scroll|overlay)\b/g;
+const SCROLL_TOKEN = new Set(['auto', 'scroll', 'overlay']);
+const ACTIVE_SELECTOR = '[data-scrollport][data-scroll-active]';
 
 /**
  * @param {string} css
@@ -62,23 +63,84 @@ function stripCssComments(css) {
 }
 
 /**
- * The one allowed scrolling declaration is `overflow: auto` on
- * `[data-scrollport][data-scroll-active]`. Any other axis or value, or the
- * same declaration on another selector, is a second scrollport.
+ * Leaf style rules. A grouped selector stays one string, so a comma before
+ * the active port is not the active port.
+ *
+ * @param {string} css
+ * @returns {{ selector: string, body: string }[]}
+ */
+function leafRules(css) {
+  /** @type {{ selector: string, bodyStart: number }[]} */
+  const stack = [];
+  /** @type {{ selector: string, body: string }[]} */
+  const rules = [];
+  let last = 0;
+  for (let i = 0; i < css.length; i += 1) {
+    const ch = css[i];
+    if (ch === '{') {
+      stack.push({ selector: css.slice(last, i), bodyStart: i + 1 });
+      last = i + 1;
+    } else if (ch === '}' && stack.length > 0) {
+      const frame = stack.pop();
+      if (frame) {
+        const body = css.slice(frame.bodyStart, i);
+        if (!body.includes('{')) {
+          rules.push({ selector: frame.selector.trim(), body });
+        }
+      }
+      last = i + 1;
+    }
+  }
+  return rules;
+}
+
+/**
+ * @param {string} body
+ * @returns {{ prop: string, tokens: string[] }[]}
+ */
+function scrollingDecls(body) {
+  /** @type {{ prop: string, tokens: string[] }[]} */
+  const found = [];
+  const re = /(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
+  let match = re.exec(body);
+  while (match) {
+    const tokens = match[2]
+      .trim()
+      .split(/\s+/)
+      .filter((token) => token !== '!important');
+    if (tokens.some((token) => SCROLL_TOKEN.has(token))) {
+      found.push({ prop: match[1], tokens });
+    }
+    match = re.exec(body);
+  }
+  return found;
+}
+
+/**
+ * The one allowed scrolling declaration is `overflow: auto` on exactly
+ * `[data-scrollport][data-scroll-active]`. A second value (`clip auto`),
+ * another axis, or the same declaration on a grouped selector is a second
+ * scrollport.
  *
  * @param {string} css
  * @returns {string | null}
  */
 function globalsScrollProblem(css) {
-  const text = stripCssComments(css);
-  SCROLL_DECL.lastIndex = 0;
-  const all = text.match(SCROLL_DECL) ?? [];
-  const active = text.match(/\[data-scrollport\]\[data-scroll-active\]\s*\{([^}]*)\}/);
-  const body = active ? active[1] : '';
-  SCROLL_DECL.lastIndex = 0;
-  const inActive = body.match(SCROLL_DECL) ?? [];
-  const normalized = (inActive[0] ?? '').replace(/\s+/g, '');
-  if (all.length === 1 && inActive.length === 1 && normalized === 'overflow:auto') {
+  const hits = [];
+  for (const rule of leafRules(stripCssComments(css))) {
+    for (const decl of scrollingDecls(rule.body)) {
+      hits.push({ selector: rule.selector, prop: decl.prop, tokens: decl.tokens });
+    }
+  }
+  const only = hits[0];
+  if (
+    hits.length === 1 &&
+    only &&
+    only.selector === ACTIVE_SELECTOR &&
+    only.prop === 'overflow' &&
+    only.tokens.length === 1 &&
+    only.tokens[0] === 'auto'
+  ) {
     return null;
   }
   return 'expected exactly one overflow:auto on [data-scrollport][data-scroll-active]';
@@ -131,6 +193,11 @@ function selfTest() {
     '[data-scrollport] { overflow: auto }',
     '[data-scrollport][data-scroll-active] { overflow: auto; overflow-y: scroll }',
     'html, body { overflow: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: clip auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: hidden scroll }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: visible overlay }',
+    '.other, [data-scrollport][data-scroll-active] { overflow: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto clip }',
   ];
   if (globalsScrollProblem(passSheet) !== null) {
     problems.push('self-test globals false positive');
