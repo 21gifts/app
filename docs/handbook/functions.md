@@ -23,7 +23,7 @@
 
 ## Function: PosAmount
 
-- **Purpose:** Amount-only card on `/pos/amount`. Keypad and **Create payment**. No QR and no address. A created charge, an already open charge, or a member who cannot charge returns to `/pos`.
+- **Purpose:** Amount-only card on `/pos/amount`. Keypad and **Create payment**. No QR and no address. A failed till load shows the alert and **Try again**. A created charge, an already open charge, or a member who cannot charge returns to `/pos`.
 - **Inputs:** None. Reads the auth store.
 - **Returns / side effects:** React element. Calls `createPosCharge`. On success, `router.replace('/pos')`.
 - **Used by:** `PosAmountPage`.
