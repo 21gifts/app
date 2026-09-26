@@ -1938,7 +1938,7 @@ Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus
 
 ### Variant: funding-none
 
-Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and link **Apply for the 21 gifts grant** to `/grants/apply`. No denial sentence and no conviction titles.
+Verified owner with `funding.status` **none**. Heading **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, and link **Apply for the 21 gifts grant** to `/grants/apply`. No date and no conviction titles.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
 
@@ -1987,9 +1987,9 @@ Opening `/profile/apply` lands on the grants apply walk.
 
 ## Screen: /grants/apply
 
-- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then one yes/no question — whether the profile posts match the core principles — against the applicant’s living-room posts (post text is translatable; location and the composer are not). Yes submits `POST /funding/apply` and returns to `/grants`. No does not submit.
+- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then two yes/no questions against the applicant’s living-room posts (post text is translatable; location and the composer are not): whether the posts match the core principles, with a link to `https://21.gifts/about`, then whether the posts are true. Yes on the truth question submits `POST /funding/apply` and returns to `/grants`. No does not submit.
 - **Inputs:** Session account; `GET /forum/members/:id/posts`; `PUT /me/about`; `POST /me/location`; `POST /funding/apply`.
-- **Actions:** Fill About me, add a photo, set location, answer the principles question, or go back to `/grants`.
+- **Actions:** Fill About me, add a photo, set location, answer both questions, or go back to `/grants`.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
@@ -2015,6 +2015,12 @@ About me and photo set, location empty. Copy **Next, add the place you live.**
 Profile complete. Copy **Do your profile posts match the core principles of 21.gifts?** An **About** link goes to `https://21.gifts/about`. **Yes** and **No** are both visible. No conviction titles.
 
 ![21.gifts apply question](images/grants-apply-question.png)
+
+### Variant: truth
+
+**Yes** on the principles question. Copy **Do these posts, to your knowledge, correspond to the truth?** The About link is gone. **Yes** submits. **No** does not.
+
+![21.gifts apply truth](images/grants-apply-truth.png)
 
 ### Variant: translate
 
@@ -2090,13 +2096,13 @@ Posts fetch failed. `role="alert"` **Could not load this application. Please try
 
 ### Variant: applying
 
-Yes in flight. Yes button disabled.
+Yes on the truth question is in flight. Yes button disabled. The truth question stays visible.
 
 ![21.gifts apply applying](images/profile-apply-applying.png)
 
 ### Variant: apply-failed
 
-Yes failed. `role="alert"` **Could not submit your application. Please try again.**
+Yes on the truth question failed. The truth question stays visible. `role="alert"` **Could not submit your application. Please try again.**
 
 ![21.gifts apply failed](images/profile-apply-apply-failed.png)
 
@@ -2586,16 +2592,22 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 ## Screen: /grants/applications/[accountId]
 
 - **URL:** `/grants/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/grants/applications`. Heading **Grant application**. Staff see one question — whether the profile posts match the core principles — an **About** link to `https://21.gifts/about`, and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain). **Yes** admits and **No** rejects while the grant is open. Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
-- **Actions:** In-card icon back to the queue. Staff **Yes** posts admit; **No** posts reject. Try again. Open Menu. Back to the forum.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/grants/applications`. Heading **Grant application**. Staff see the applicant name, then two questions and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain; each post keeps its own time). The first question asks whether the profile posts match the core principles and links to `https://21.gifts/about`. **Yes** opens the truth question. **Yes** there admits. **No** on either question rejects, while the grant is open. There is no separate application time. Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **Actions:** In-card icon back to the queue. Staff **Yes** on the truth question posts admit; **No** posts reject. Try again. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
 
 ### Variant: default
 
-Staff (founder) loaded application for **Rose**. Question **Do their profile posts match the core principles of 21.gifts?** **Yes** / **No**.
+Staff (founder) loaded application for **Rose**. Question **Do their profile posts match the core principles of 21.gifts?** **Yes** / **No**. No application time under the name. The post keeps its own time.
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
+
+### Variant: truth
+
+**Yes** on the principles question. Copy **Do these posts, to your knowledge, correspond to the truth?** The About link is gone. **Yes** admits. **No** rejects.
+
+![21.gifts grant application truth](images/grants-applications-accountId-truth.png)
 
 ### Variant: translate
 

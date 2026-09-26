@@ -1746,6 +1746,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants/apply',
+    id: 'truth',
+    image: 'grants-apply-truth.png',
+    visual: 'state-grants-apply-truth',
+    needle: 'Do these posts, to your knowledge, correspond to the truth?',
+  },
+  {
+    route: '/grants/apply',
     id: 'translate',
     image: 'profile-apply-translate.png',
     visual: 'state-profile-apply-translate',
@@ -2534,6 +2541,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-applications-accountId.png',
     visual: 'screen-grants-applications-accountId',
     needle: 'Do their profile posts match the core principles of 21.gifts?',
+  },
+  {
+    route: '/grants/applications/[accountId]',
+    id: 'truth',
+    image: 'grants-applications-accountId-truth.png',
+    visual: 'state-grants-applications-accountId-truth',
+    needle: 'Do these posts, to your knowledge, correspond to the truth?',
   },
   {
     route: '/grants/applications/[accountId]',

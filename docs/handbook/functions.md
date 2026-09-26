@@ -3253,7 +3253,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplicationDetailScreen
 
-- **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and answer one question (`funding.review.question.staff`) against living-room posts (no replies; post text uses `TranslatableNoteBody`, the applicant name stays plain), with an About link to `https://21.gifts/about`. **Yes** posts `postFundingAdmit`; **No** posts `postFundingReject` while the grant is `pending` or `trial`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/grants/applications`. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
+- **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and answer two questions against living-room posts (no replies; post text uses `TranslatableNoteBody`, the applicant name stays plain; each post keeps its own time; there is no application time under the name). The first is `funding.review.question.staff`, with an About link to `https://21.gifts/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingAdmit`. **No** on either question posts `postFundingReject` while the grant is `pending` or `trial`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/grants/applications`. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
 - **Inputs:** `accountId`; session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications/:accountId` only when the role is founder or moderator. Decide buttons only when `grant.status` is `pending` or `trial`. Successful Admit / Reject leaves the buttons disabled and navigates to `/grants/applications`.
 - **Used by:** `FundingApplicationDetailPage`.
@@ -3274,7 +3274,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner grant section on `/grants`, not on the profile. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): grace copy that daily gifts continue until 25 September 2026, an **About** link to `/about`, and **Apply for the 21 gifts grant** as a `ButtonLink` to `/grants/apply` for `none`/`rejected` (no denial sentence and no conviction titles); pending; one-day trial; or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
+- **Purpose:** Owner grant section on `/grants`, not on the profile. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): copy that admitted members receive the daily gift, an **About** link to `/about`, and **Apply for the 21 gifts grant** as a `ButtonLink` to `/grants/apply` for `none`/`rejected` (no date, no denial sentence, and no conviction titles); pending; one-day trial; or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session or account. Apply is a link; it does not POST.
 - **Used by:** `GrantsScreen`.
@@ -3288,7 +3288,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplyScreen
 
-- **Purpose:** Guided grant apply. Missing About me, photo, or location are the next calm steps (not errors). Then one yes/no question (`funding.review.question.self`) against `fetchMemberPosts` (post text uses `TranslatableNoteBody` with `messageId` = `row.id`; the name, location, and About me editor have no Translate control), plus an About link to `https://21.gifts/about`. **Yes** posts `postFundingApply` and goes to `/grants`. **No** does not apply.
+- **Purpose:** Guided grant apply. Missing About me, photo, or location are the next calm steps (not errors). Then two yes/no questions against `fetchMemberPosts` (post text uses `TranslatableNoteBody` with `messageId` = `row.id`; the name, location, and About me editor have no Translate control). The first is `funding.review.question.self`, plus an About link to `https://21.gifts/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingApply` and goes to `/grants`. **No** does not apply.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session.
 - **Used by:** `FundingApplyPage`.

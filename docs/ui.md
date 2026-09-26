@@ -1070,9 +1070,9 @@ Handbook states: not-verified, none, pending, trial, admitted, funding-program-o
 
 ### `/grants/apply`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → in-card back to `/grants` → **h1** **Apply for the 21 gifts grant**. Missing About me, photo, or location are the next calm steps (not alerts). Then one question, whether the profile posts match the core principles of 21.gifts, and a link to `https://21.gifts/about` (Languages **Translate** on living-room post text). **Yes** applies and returns to `/grants`; **No** shows the unmet line. `/profile/apply` redirects here.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → in-card back to `/grants` → **h1** **Apply for the 21 gifts grant**. Missing About me, photo, or location are the next calm steps (not alerts). Then two questions: whether the profile posts match the core principles of 21.gifts, with a link to `https://21.gifts/about` (Languages **Translate** on living-room post text), then whether the posts are true. **Yes** on the truth question applies and returns to `/grants`; **No** shows the unmet line. `/profile/apply` redirects here.
 
-Handbook states: default, photo, location, question, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
+Handbook states: default, photo, location, question, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
 
 ### `/profile/apply`
 
@@ -1103,9 +1103,9 @@ Handbook states: default, forbidden, empty, loading, error.
 
 ### `/grants/applications/[accountId]`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → in-card icon back to `/grants/applications` → **h1** **Grant application**. Staff see one question, whether their profile posts match the core principles of 21.gifts, a link to `https://21.gifts/about`, and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain). **Yes** admits and **No** rejects; both return to `/grants/applications`. Failed decision uses `trustChain.actionFailed`. Non-staff: heading + forbidden copy. `/moderate/applications/[accountId]` redirects here.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → in-card icon back to `/grants/applications` → **h1** **Grant application**. Staff see two questions and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain; each post keeps its own time; no application time under the name). The first asks whether their profile posts match the core principles of 21.gifts and links to `https://21.gifts/about`. **Yes** opens the truth question. **Yes** there admits and **No** on either question rejects; both decisions return to `/grants/applications`. Failed decision uses `trustChain.actionFailed`. Non-staff: heading + forbidden copy. `/moderate/applications/[accountId]` redirects here.
 
-Handbook states: default, forbidden, empty, loading, error, decide-failed, deciding.
+Handbook states: default, truth, forbidden, empty, loading, error, decide-failed, deciding.
 
 ### `/moderate/hidden`
 

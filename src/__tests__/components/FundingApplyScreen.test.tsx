@@ -262,7 +262,7 @@ describe('FundingApplyScreen', () => {
     expect(screen.getByText('Next, add the place you live.')).toBeTruthy();
   });
 
-  it('asks one question then posts apply on Yes', async () => {
+  it('asks the principles question, then the truth question, then posts apply', async () => {
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
     expect(
@@ -273,6 +273,12 @@ describe('FundingApplyScreen', () => {
     );
     expect(screen.queryByText('Giving is a duty')).toBeNull();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+    expect(applyMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(applyMock).toHaveBeenCalledWith('sess');
@@ -285,7 +291,11 @@ describe('FundingApplyScreen', () => {
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
     fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
-    const yes = (await screen.findByRole('button', { name: 'Yes' })) as HTMLButtonElement;
+    expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    const yes = screen.getByRole('button', { name: 'Yes' }) as HTMLButtonElement;
     expect(yes.disabled).toBe(true);
   });
 
@@ -372,7 +382,14 @@ describe('FundingApplyScreen', () => {
     renderWithLocale(<FundingApplyScreen />);
     fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
     expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(
       await screen.findByText('Could not submit your application. Please try again.'),
+    ).toBeTruthy();
+    expect(
+      screen.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeTruthy();
   });
 

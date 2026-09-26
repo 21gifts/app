@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingApplicationDetailScreen } from '@/components/FundingApplicationDetailScreen';
 import type { Account, FundingApplicationDetail, ForumMessage } from '@/lib/api-types';
-import { formatForumTime, formatForumTimeFromMs } from '@/lib/forum-time';
+import { formatForumTime } from '@/lib/forum-time';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -168,9 +168,7 @@ describe('FundingApplicationDetailScreen', () => {
     expect(screen.getByRole('link', { name: 'Rose' }).getAttribute('href')).toBe(
       '/members/acc_rose',
     );
-    expect(
-      screen.getAllByText(formatForumTimeFromMs(DETAIL.grant.appliedAt, 'en')).length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(formatForumTime(POST.createdAt, 'en'))).toHaveLength(1);
     expect(
       screen.getByText('Do their profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
@@ -230,9 +228,15 @@ describe('FundingApplicationDetailScreen', () => {
     expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
   });
 
-  it('posts Admit on Yes', async () => {
+  it('posts Admit on Yes after the truth question', async () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
+    expect(
+      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+    expect(admitMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(admitMock).toHaveBeenCalledWith('sess', 'acc_rose');
     });

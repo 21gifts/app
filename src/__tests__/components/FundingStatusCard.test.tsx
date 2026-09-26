@@ -101,7 +101,7 @@ describe('FundingStatusCard', () => {
     expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
     expect(
       screen.getByText(
-        'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
@@ -131,7 +131,7 @@ describe('FundingStatusCard', () => {
     expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
     expect(
       screen.getByText(
-        'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();

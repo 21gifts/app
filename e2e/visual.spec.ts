@@ -7073,6 +7073,11 @@ test.describe('profile funding states', () => {
     await seedFundingProfile(page);
     await page.goto('/grants');
     await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
+      ),
+    ).toBeVisible();
     await shotScreen(page, 'screen-grants');
     await shotScreen(page, 'state-profile-funding-none');
   });
@@ -7280,6 +7285,22 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-grants-apply-question');
   });
 
+  test('profile apply truth', async ({ page }) => {
+    await seedApply(page, {
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+      location: 'Zurich',
+    });
+    await stubPosts(page, [POST]);
+    await page.goto('/grants/apply');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-apply-truth');
+  });
+
   test('profile apply forbidden', async ({ page }) => {
     await seedApply(page, { role: 'basis', funding: null });
     await page.goto('/grants/apply');
@@ -7383,6 +7404,10 @@ test.describe('profile apply screens', () => {
     });
     await page.goto('/grants/apply');
     await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Yes' }).click();
     await expect(page.getByRole('button', { name: 'Yes' })).toBeDisabled();
     await shotScreen(page, 'state-profile-apply-applying');
   });
@@ -7402,6 +7427,10 @@ test.describe('profile apply screens', () => {
       });
     });
     await page.goto('/grants/apply');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Yes' }).click();
     await expect(
       page.getByText('Could not submit your application. Please try again.'),
@@ -13074,6 +13103,24 @@ test.describe('moderate applications screens', () => {
     );
     await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
     await shotScreen(page, 'screen-grants-applications-accountId');
+  });
+
+  test('grants application truth', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/grants/applications/acc_rose');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-applications-accountId-truth');
   });
 
   test('moderate applications accountId forbidden', async ({ page }) => {

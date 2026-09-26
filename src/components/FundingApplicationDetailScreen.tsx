@@ -9,7 +9,7 @@ import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
 import type { FundingApplicationDetail } from '@/lib/api-types';
-import { formatForumTime, formatForumTimeFromMs } from '@/lib/forum-time';
+import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -27,8 +27,9 @@ function personLabel(name: string | null, unnamed: string): string {
 /**
  * Signed-in staff review of one 21 gifts grant application.
  *
- * Founders and moderators answer one yes/no question: whether the living-room
- * posts match the core principles. **Yes** posts admit. **No** posts reject.
+ * Founders and moderators answer two yes/no questions: whether the living-room
+ * posts match the core principles, then whether those posts are true. **Yes**
+ * on the truth question posts admit. **No** on either question posts reject.
  * Other signed-in visitors see forbidden copy and no fetch. Renders nothing
  * without a session. In-card back goes to the open-applications queue.
  *
@@ -50,6 +51,7 @@ export function FundingApplicationDetailScreen({
   const [detailAttempt, setDetailAttempt] = useState(0);
   const [deciding, setDeciding] = useState(false);
   const [decideFailed, setDecideFailed] = useState(false);
+  const [step, setStep] = useState<'principles' | 'truth'>('principles');
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -158,16 +160,17 @@ export function FundingApplicationDetailScreen({
             {name}
           </Link>
         </p>
-        <p className="text-center text-xs text-app-subtle">
-          {formatForumTimeFromMs(detail.grant.appliedAt, locale)}
+        <p className="text-center text-sm text-app-muted">
+          {step === 'truth' ? t('funding.review.truth') : t('funding.review.question.staff')}
         </p>
-        <p className="text-center text-sm text-app-muted">{t('funding.review.question.staff')}</p>
-        <a
-          href="https://21.gifts/about"
-          className="text-center text-sm text-app-fg underline underline-offset-2"
-        >
-          {t('nav.about')}
-        </a>
+        {step === 'principles' ? (
+          <a
+            href="https://21.gifts/about"
+            className="text-center text-sm text-app-fg underline underline-offset-2"
+          >
+            {t('nav.about')}
+          </a>
+        ) : null}
         {detail.messages.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>
         ) : (
@@ -210,6 +213,10 @@ export function FundingApplicationDetailScreen({
                 ) : undefined
               }
               onClick={() => {
+                if (step === 'principles') {
+                  setStep('truth');
+                  return;
+                }
                 finish('admit');
               }}
             >

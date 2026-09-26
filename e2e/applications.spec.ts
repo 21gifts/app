@@ -248,6 +248,10 @@ test('Function: postFundingAdmit — Yes admits and returns to the queue', async
     (req) => req.method() === 'POST' && req.url().includes('/funding/admit'),
   );
   await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(
+    page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Yes' }).click();
   expect((await posted).method()).toBe('POST');
   await expect(page).toHaveURL(/\/grants\/applications$/);
 });
@@ -372,6 +376,10 @@ test('Function: postFundingApply — Yes posts apply', async ({ page }) => {
   const posted = page.waitForRequest(
     (req) => req.method() === 'POST' && /\/funding\/apply$/.test(new URL(req.url()).pathname),
   );
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(
+    page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Yes' }).click();
   expect((await posted).method()).toBe('POST');
 });

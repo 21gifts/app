@@ -65,10 +65,11 @@ export function nextFillStep(account: Account): FillStep | null {
 }
 
 /**
- * Signed-in grant apply walk: fill About me, photo, and location, then one
- * yes/no question about the core principles. Missing fields are next steps,
- * not errors. Yes posts apply. No does not apply. Renders nothing without a
- * session.
+ * Signed-in grant apply walk: fill About me, photo, and location, then two
+ * yes/no questions. The first asks whether the posts match the core principles
+ * and links to the about page. The second asks whether the posts are true.
+ * Missing fields are next steps, not errors. Yes on the truth question posts
+ * apply. No does not apply. Renders nothing without a session.
  *
  * @returns The apply card, or `null` without a session.
  */
@@ -84,6 +85,7 @@ export function FundingApplyScreen(): ReactElement | null {
   const [postsAttempt, setPostsAttempt] = useState(0);
   const [applying, setApplying] = useState(false);
   const [applyFailed, setApplyFailed] = useState(false);
+  const [reviewStep, setReviewStep] = useState<'principles' | 'truth'>('principles');
 
   useEffect(() => {
     if (session === null || account === null || !roleAtLeast(account.role, 'verified')) {
@@ -264,6 +266,10 @@ export function FundingApplyScreen(): ReactElement | null {
     if (applying) {
       return;
     }
+    if (reviewStep === 'principles') {
+      setReviewStep('truth');
+      return;
+    }
     setApplying(true);
     setApplyFailed(false);
     void (async () => {
@@ -311,13 +317,17 @@ export function FundingApplyScreen(): ReactElement | null {
   } else {
     body = (
       <>
-        <p className="text-center text-sm text-app-muted">{t('funding.review.question.self')}</p>
-        <a
-          href="https://21.gifts/about"
-          className="text-center text-sm text-app-fg underline underline-offset-2"
-        >
-          {t('nav.about')}
-        </a>
+        <p className="text-center text-sm text-app-muted">
+          {reviewStep === 'truth' ? t('funding.review.truth') : t('funding.review.question.self')}
+        </p>
+        {reviewStep === 'principles' ? (
+          <a
+            href="https://21.gifts/about"
+            className="text-center text-sm text-app-fg underline underline-offset-2"
+          >
+            {t('nav.about')}
+          </a>
+        ) : null}
         {posts.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>
         ) : (
