@@ -338,7 +338,7 @@ A page scrolls in exactly one place. `html` and `body` are locked to `--app-heig
 
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
-- Canvas: `flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]`, with one `[data-scrollport]` around header, page, and footer. The document does not scroll.
+- Canvas: `flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]`, with one `[data-scrollport]` (`bg-ink`) around header, page, and footer. The document does not scroll. The ink background stays on the scroller so light theme cannot show through.
 - No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/handbook`, `/404`.
 - Header + footer always mounted.
 

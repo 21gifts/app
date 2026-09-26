@@ -17,7 +17,7 @@ export default async function MarketingLayout({
   const footer = await MarketingFooter();
   return (
     <div className="flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]">
-      <Scrollport className="flex-1">
+      <Scrollport className="flex-1 bg-ink">
         <MarketingHeader />
         {children}
         {footer}

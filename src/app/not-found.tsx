@@ -20,7 +20,7 @@ export default async function NotFound(): Promise<ReactElement> {
 
   return (
     <div className="flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]">
-      <Scrollport className="flex-1">
+      <Scrollport className="flex-1 bg-ink">
         <MarketingHeader />
         <main className="mx-auto flex max-w-[1100px] flex-col items-start px-5 py-28">
           <h1 className="text-5xl font-semibold">404</h1>
