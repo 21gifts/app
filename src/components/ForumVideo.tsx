@@ -9,8 +9,9 @@ import { IconButton } from '@/components/ui';
  * Playable note video with one fullscreen control.
  *
  * Native fullscreen is hidden (`controlsList="nofullscreen"`). The button
- * calls `requestFullscreen`, or `webkitEnterFullscreen` when that API is
- * missing. Escape stays the browser's.
+ * calls `requestFullscreen` on the frame that also holds the button, or
+ * `webkitEnterFullscreen` on the video when that API is missing. Escape
+ * stays the browser's.
  *
  * @param props - Native video attributes. `controls` and `playsInline` are set here.
  * @returns The video and its fullscreen button.
@@ -18,12 +19,13 @@ import { IconButton } from '@/components/ui';
 export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactElement {
   const { className, onClick, ...rest } = props;
   const { t } = useTranslations();
+  const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     const sync = (): void => {
-      setFullscreen(document.fullscreenElement === videoRef.current);
+      setFullscreen(document.fullscreenElement === frameRef.current);
     };
     document.addEventListener('fullscreenchange', sync);
     return () => {
@@ -32,15 +34,16 @@ export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactE
   }, []);
 
   const enter = (): void => {
+    const frame = frameRef.current;
     const video = videoRef.current;
     /* v8 ignore next -- the button is only rendered with the video */
-    if (video === null) return;
-    if (document.fullscreenElement === video) {
+    if (frame === null || video === null) return;
+    if (document.fullscreenElement === frame) {
       void document.exitFullscreen();
       return;
     }
-    if (typeof video.requestFullscreen === 'function') {
-      void video.requestFullscreen();
+    if (typeof frame.requestFullscreen === 'function') {
+      void frame.requestFullscreen();
       return;
     }
     const legacy = video as HTMLVideoElement & { webkitEnterFullscreen?: () => void };
@@ -48,7 +51,7 @@ export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactE
   };
 
   return (
-    <div className="relative">
+    <div ref={frameRef} className="relative">
       <video
         ref={videoRef}
         {...rest}

@@ -3729,8 +3729,12 @@ describe('ForumBoard', () => {
     expect(video?.hasAttribute('controls')).toBe(true);
     expect(video?.getAttribute('controlsList')).toContain('nofullscreen');
     expect(video?.hasAttribute('playsinline')).toBe(true);
+    const frame = video?.parentElement;
+    if (!(frame instanceof HTMLElement)) {
+      throw new Error('missing video frame');
+    }
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(video, 'requestFullscreen', {
+    Object.defineProperty(frame, 'requestFullscreen', {
       configurable: true,
       value: requestFullscreen,
     });
@@ -3740,7 +3744,7 @@ describe('ForumBoard', () => {
     document.exitFullscreen = exitFullscreen;
     Object.defineProperty(document, 'fullscreenElement', {
       configurable: true,
-      get: () => video,
+      get: () => frame,
     });
     act(() => {
       document.dispatchEvent(new Event('fullscreenchange'));
@@ -3755,7 +3759,7 @@ describe('ForumBoard', () => {
       document.dispatchEvent(new Event('fullscreenchange'));
     });
     const webkitEnterFullscreen = vi.fn();
-    Object.defineProperty(video, 'requestFullscreen', {
+    Object.defineProperty(frame, 'requestFullscreen', {
       configurable: true,
       value: undefined,
     });
