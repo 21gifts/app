@@ -212,13 +212,32 @@ export function PlacesMapScreen(): ReactElement {
             const selected = place.id === pinId;
             return (
               <li key={place.id}>
-                <a
-                  href={`/messages/${place.id}`}
-                  data-selected={selected ? 'true' : 'false'}
-                  className={`text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
-                >
-                  {place.name} · {label}
-                </a>
+                {typeof place.accountId === 'string' && place.accountId !== '' ? (
+                  <span
+                    data-selected={selected ? 'true' : 'false'}
+                    className={`text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                  >
+                    <a
+                      href={`/members/${place.accountId}`}
+                      aria-label={t('forum.authorProfile')}
+                      className="underline underline-offset-2"
+                    >
+                      {place.name}
+                    </a>
+                    {' · '}
+                    <a href={`/messages/${place.id}`} className="underline">
+                      {label}
+                    </a>
+                  </span>
+                ) : (
+                  <a
+                    href={`/messages/${place.id}`}
+                    data-selected={selected ? 'true' : 'false'}
+                    className={`text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                  >
+                    {place.name} · {label}
+                  </a>
+                )}
               </li>
             );
           })}

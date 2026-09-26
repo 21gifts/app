@@ -1178,9 +1178,17 @@ test.describe('screen baselines', () => {
         }),
       });
     });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
     await page.goto('/wallet');
     await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
+    await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'screen-wallet');
   });
 
@@ -1204,6 +1212,13 @@ test.describe('screen baselines', () => {
           walletBackupSeenAt: 1,
           passkeyCredentialId: 'cred-seed',
         }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
       });
     });
     await page.goto('/wallet?visual=phrase');
@@ -1231,6 +1246,13 @@ test.describe('screen baselines', () => {
           walletBackupSeenAt: 1,
           passkeyCredentialId: 'cred-seed',
         }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
       });
     });
     await page.goto('/wallet');
@@ -1261,6 +1283,13 @@ test.describe('screen baselines', () => {
         }),
       });
     });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
     await page.goto('/wallet');
     await page.getByText('Advanced functions').click();
     await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toBeVisible();
@@ -1284,6 +1313,13 @@ test.describe('screen baselines', () => {
           setup: null,
           missing: [],
         }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
       });
     });
     await page.goto('/wallet?visual=error');
@@ -1315,6 +1351,13 @@ test.describe('screen baselines', () => {
         }),
       });
     });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
     await page.goto('/wallet?visual=timeout');
     await expect(
       page.getByText('The device prompt timed out before you finished. Try again.'),
@@ -1340,6 +1383,13 @@ test.describe('screen baselines', () => {
           setup: null,
           missing: [],
         }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
       });
     });
     await page.goto('/wallet?visual=prf-unsupported');
@@ -1732,6 +1782,98 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('state /welcome signed-out', async ({ page }) => {
+    await page.route(/\/forum\/messages/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              name: 'Ada',
+              text: 'Hello from the active list.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"spendOverTime":[]}',
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await expect(page.getByText('Hello from the active list.')).toBeVisible();
+    await shotScreen(page, 'screen-welcome-signed-out');
+  });
+
+  test('state /welcome mention', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          forumLawsDismissed: true,
+        }),
+      });
+    });
+    await page.route(/\/forum\/messages/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Thanks @ada',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+              mentions: [{ username: 'ada', accountId: 'acc-ada' }],
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View profile' }).nth(1)).toBeVisible();
+    await shotScreen(page, 'state-welcome-mention');
+  });
+
   test('welcome shop-tag', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -2045,6 +2187,16 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${QUOTED_ID}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(quotedNote),
+        });
+      },
+    );
     await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -2692,6 +2844,7 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await page.getByRole('button', { name: 'Create payment' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'screen-pos');
   });
 
@@ -2844,7 +2997,9 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos');
-    await page.getByLabel('Amount').fill('1.5');
+    await page.getByRole('button', { name: '1', exact: true }).click();
+    await page.getByRole('button', { name: '.', exact: true }).click();
+    await page.getByRole('button', { name: '5', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
     await shotScreen(page, 'state-pos-bad-amount');
@@ -2887,7 +3042,8 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos');
-    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: '2', exact: true }).click();
+    await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('Amount is outside the wallet range.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
@@ -2932,7 +3088,8 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos');
-    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: '2', exact: true }).click();
+    await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('A payment is already open.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
@@ -2973,7 +3130,8 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos');
-    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: '2', exact: true }).click();
+    await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
@@ -5834,23 +5992,34 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
+    const signedNote = {
+      id,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          id,
-          name: 'Ada',
-          text: 'Hello from Ada',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 0,
-          payable: false,
-          hasPhoto: false,
-          role: 'basis',
-          replyCount: 0,
-        }),
+        body: JSON.stringify(signedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(signedNote),
+        });
+      },
+    );
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
@@ -7141,7 +7310,7 @@ test.describe('profile funding states', () => {
     const sentence = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
       Date.parse('2026-08-28T12:00:00.000Z'),
       'en',
-    )}`;
+    )}, reviewed by Ada`;
     const revealed = page.getByText(sentence, { exact: true });
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
@@ -9728,6 +9897,55 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-moderation-unread');
   });
 
+  test('welcome menu-staff', async ({ page }) => {
+    await page.addInitScript(() => {
+      const native = window.matchMedia.bind(window);
+      window.matchMedia = (query: string) => {
+        if (query.includes('display-mode: standalone')) {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener() {},
+            removeListener() {},
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() {
+              return false;
+            },
+          } as MediaQueryList;
+        }
+        return native(query);
+      };
+    });
+    await seedAda(page, 'moderator');
+    await emptyForum(page);
+    await page.route('**/conversations/moderator-group', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversation: {
+            id: 'conv-mod',
+            kind: 'moderator_group',
+            name: 'Moderators',
+            lastText: '',
+            lastAt: '2026-08-28T15:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: false,
+          },
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Grants' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderation', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Install app' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-staff');
+  });
+
   test('welcome pay-amount', async ({ page }) => {
     await seedAda(page);
     await stubPayInvoice(page);
@@ -11906,6 +12124,16 @@ test.describe('inbox screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${QUOTED_ID}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(quotedNote),
+        });
+      },
+    );
     await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -13626,6 +13854,16 @@ test.describe('moderate group screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${QUOTED_ID}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(quotedNote),
+        });
+      },
+    );
     await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
       await route.fulfill({
         status: 200,

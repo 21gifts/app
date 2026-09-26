@@ -1,6 +1,11 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: () => void } => ({ push: () => undefined }),
+}));
+
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -41,6 +46,19 @@ describe('ForumNoteText', () => {
     const { container } = renderWithLocale(<ForumNoteText text={text} className="body" />);
     expect(container.querySelector('p')?.textContent).toBe(text);
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('passes stored marks through short and collapsed text', () => {
+    const mentions = [{ username: 'ada', accountId: 'acc-ada' }];
+    const { unmount } = renderWithLocale(
+      <ForumNoteText text="Hi @Ada" className="body" mentions={mentions} />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    unmount();
+    renderWithLocale(
+      <ForumNoteText text={`${'a'.repeat(280)} @Ada`} className="body" mentions={mentions} />,
+    );
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeTruthy();
   });
 
   it('collapses long text with an ellipsis and Show more', () => {

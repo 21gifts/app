@@ -1345,6 +1345,51 @@ export async function fetchMessages(
   }
 }
 
+/** 401 from the public active page. A later page sends the visitor to log in. */
+export class PublicForumUnauthorizedError extends Error {
+  constructor() {
+    super('Could not load messages. Please try again.');
+    this.name = 'PublicForumUnauthorizedError';
+  }
+}
+
+/**
+ * Active living-room page with no Authorization header.
+ *
+ * @param args - Page size (default 20) and optional cursor.
+ * @returns The validated page.
+ * @throws PublicForumUnauthorizedError on HTTP 401.
+ * @throws Error when the api is unavailable or the body fails {@link forumListSchema}.
+ */
+export async function fetchPublicForumMessages(
+  args: { limit?: number; cursor?: string | null } = {},
+): Promise<ForumFeedPage> {
+  const query = new URLSearchParams();
+  query.set('mode', 'active');
+  query.set('limit', String(args.limit ?? 20));
+  if (args.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
+    query.set('cursor', args.cursor);
+  }
+  let response: Response;
+  try {
+    response = await fetch(`/forum/messages?${query.toString()}`);
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+  if (response.status === 401) {
+    throw new PublicForumUnauthorizedError();
+  }
+  if (!response.ok) {
+    throw new Error('Could not load messages. Please try again.');
+  }
+  try {
+    const page = forumListSchema.parse(await response.json());
+    return { messages: page.messages, nextCursor: page.nextCursor ?? null };
+  } catch {
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
 const HIDDEN_NOTES_ERROR = 'Could not load hidden notes. Please try again.';
 
 /**

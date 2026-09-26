@@ -220,6 +220,61 @@ function modeProps(
 }
 
 describe('ForumBoard', () => {
+  it('passes stored marks on a note and on a reaction', () => {
+    const marks = [{ username: 'bob', accountId: 'acc-bob' }];
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            accountId: 'acc-ada',
+            mentions: marks,
+            text: 'hi @bob',
+          },
+          {
+            ...SAMPLE,
+            id: 'm-nostr',
+            via: 'nostr',
+            accountId: 'acc-ada',
+            mentions: marks,
+            text: 'nostr @bob',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            accountId: 'acc-bob',
+            mentions: marks,
+            text: 'reply @bob',
+          },
+          {
+            ...SAMPLE,
+            id: 'r2',
+            via: 'nostr',
+            accountId: 'acc-bob',
+            mentions: marks,
+            text: 'nostr reply @bob',
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'View profile' }).length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain('nostr @bob');
+    expect(document.body.textContent).toContain('nostr reply @bob');
+  });
+
   it('collapses a long note behind Show more without toggling replies', () => {
     const onToggleExpand = vi.fn();
     const text = `${'a'.repeat(280)} TAILWORD`;
@@ -1801,6 +1856,7 @@ describe('ForumBoard', () => {
     );
     const preview = document.querySelector('form video');
     expect(preview?.getAttribute('src')).toBe('blob:v');
+    expect(screen.queryByRole('button', { name: 'Full screen' })).toBeNull();
     expect(preview?.hasAttribute('playsinline')).toBe(true);
     expect(preview?.getAttribute('preload')).toBe('metadata');
     const remove = screen.getByRole('button', { name: 'Remove video' });
@@ -3671,7 +3727,53 @@ describe('ForumBoard', () => {
     expect(video).toBeTruthy();
     expect(video?.getAttribute('src')).toBe('/messages/vid-webm/video.webm');
     expect(video?.hasAttribute('controls')).toBe(true);
+    expect(video?.getAttribute('controlsList')).toContain('nofullscreen');
     expect(video?.hasAttribute('playsinline')).toBe(true);
+    const frame = video?.parentElement;
+    if (!(frame instanceof HTMLElement)) {
+      throw new Error('missing video frame');
+    }
+    const requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(frame, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(requestFullscreen).toHaveBeenCalledTimes(1);
+    const exitFullscreen = vi.fn().mockResolvedValue(undefined);
+    document.exitFullscreen = exitFullscreen;
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => frame,
+    });
+    act(() => {
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Leave full screen' }));
+    expect(exitFullscreen).toHaveBeenCalledTimes(1);
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => null,
+    });
+    act(() => {
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
+    const webkitEnterFullscreen = vi.fn();
+    Object.defineProperty(frame, 'requestFullscreen', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(video, 'webkitEnterFullscreen', {
+      configurable: true,
+      value: webkitEnterFullscreen,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(webkitEnterFullscreen).toHaveBeenCalledTimes(1);
+    Object.defineProperty(video, 'webkitEnterFullscreen', {
+      configurable: true,
+      value: undefined,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
     expect(video?.getAttribute('preload')).toBe('metadata');
     const tokens = (video?.className ?? '').split(/\s+/);
     expect(tokens).toEqual(

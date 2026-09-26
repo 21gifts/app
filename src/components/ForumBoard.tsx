@@ -34,6 +34,7 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
+import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
@@ -292,6 +293,8 @@ export interface ForumBoardProps {
   replyFormError: ForumReplyFormError;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
+  /** Signed-out living room: no composer, reaction form, pay, or delete. Mode stays. */
+  readOnly?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
   onDeleted?: (messageId: string) => void;
   /**
@@ -647,6 +650,7 @@ export function ForumBoard({
   replyPosting,
   replyFormError,
   composerHidden = false,
+  readOnly = false,
   onDeleted,
   permalinkTargetId = null,
   truncate = true,
@@ -655,6 +659,7 @@ export function ForumBoard({
   shopPlaceEdit = false,
   onShopPlaceUpdated,
 }: ForumBoardProps): ReactElement {
+  const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -968,7 +973,9 @@ export function ForumBoard({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    {typeof message.accountId === 'string' && message.accountId !== '' ? (
+                    {!readOnly &&
+                    typeof message.accountId === 'string' &&
+                    message.accountId !== '' ? (
                       <button
                         type="button"
                         aria-label={t('forum.authorProfile')}
@@ -1033,7 +1040,7 @@ export function ForumBoard({
                   </p>
                 ) : null}
                 {videoSrc !== undefined ? (
-                  <video
+                  <ForumVideo
                     src={videoSrc}
                     poster={photoUrl}
                     controls
@@ -1072,6 +1079,12 @@ export function ForumBoard({
                         className="whitespace-pre-wrap text-sm text-app-fg"
                         controlSlotId={`note-translate-${message.id}`}
                         {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
+                        {...(!readOnly &&
+                        typeof message.accountId === 'string' &&
+                        message.accountId !== '' &&
+                        message.mentions !== undefined
+                          ? { mentions: message.mentions }
+                          : {})}
                       />
                     ) : (
                       <ForumQuotedBody
@@ -1083,6 +1096,12 @@ export function ForumBoard({
                         truncate={truncate}
                         controlSlotId={`note-translate-${message.id}`}
                         {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
+                        {...(!readOnly &&
+                        typeof message.accountId === 'string' &&
+                        message.accountId !== '' &&
+                        message.mentions !== undefined
+                          ? { mentions: message.mentions }
+                          : {})}
                         onActivate={(event) => {
                           event.stopPropagation();
                         }}
@@ -1155,7 +1174,8 @@ export function ForumBoard({
                 ) : null}
                 {message.parentId !== undefined &&
                 message.payable &&
-                message.deletedAt === undefined ? (
+                message.deletedAt === undefined &&
+                !readOnly ? (
                   <IconButton
                     type="button"
                     size="sm"
@@ -1270,7 +1290,9 @@ export function ForumBoard({
                           >
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <div className="flex flex-wrap items-center gap-2">
-                                {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                                {!readOnly &&
+                                typeof reply.accountId === 'string' &&
+                                reply.accountId !== '' ? (
                                   <button
                                     type="button"
                                     aria-label={t('forum.authorProfile')}
@@ -1350,6 +1372,12 @@ export function ForumBoard({
                                     truncate={truncate}
                                     className="whitespace-pre-wrap text-sm text-app-fg"
                                     controlSlotId={`note-translate-${reply.id}`}
+                                    {...(!readOnly &&
+                                    typeof reply.accountId === 'string' &&
+                                    reply.accountId !== '' &&
+                                    reply.mentions !== undefined
+                                      ? { mentions: reply.mentions }
+                                      : {})}
                                   />
                                 ) : (
                                   <ForumQuotedBody
@@ -1360,6 +1388,12 @@ export function ForumBoard({
                                     fiat={fiat}
                                     truncate={truncate}
                                     controlSlotId={`note-translate-${reply.id}`}
+                                    {...(!readOnly &&
+                                    typeof reply.accountId === 'string' &&
+                                    reply.accountId !== '' &&
+                                    reply.mentions !== undefined
+                                      ? { mentions: reply.mentions }
+                                      : {})}
                                     onActivate={(event) => {
                                       event.stopPropagation();
                                     }}
@@ -1381,7 +1415,7 @@ export function ForumBoard({
                             ) : null}
                             <div className="mt-2 flex flex-wrap items-center gap-5">
                               <div id={`note-translate-${reply.id}`} className="contents" />
-                              {reply.deletedAt === undefined && reply.payable ? (
+                              {reply.deletedAt === undefined && reply.payable && !readOnly ? (
                                 <IconButton
                                   type="button"
                                   size="sm"
@@ -1444,7 +1478,7 @@ export function ForumBoard({
                       })}
                     </ul>
                   ) : null}
-                  {message.deletedAt === undefined ? (
+                  {!readOnly && message.deletedAt === undefined ? (
                     <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
                       <AmountEntry
                         id="forum-reply-amount"
@@ -1608,7 +1642,7 @@ export function ForumBoard({
         </div>
       ) : null}
 
-      {!composerHidden && modeSelector ? (
+      {modeSelector && !composerHidden ? (
         <ForumModeSelect
           value={mode}
           options={FORUM_FEED_MODES.map((next) => {
@@ -1628,7 +1662,7 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden && allowAsk ? (
+      {!hideCompose && allowAsk ? (
         <SegmentedControl
           value={composeIntent}
           options={[
@@ -1644,7 +1678,7 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden && allowAsk && composeIntent === 'ask' ? (
+      {!hideCompose && allowAsk && composeIntent === 'ask' ? (
         <ForumAskWizard
           step={askStep}
           onStepChange={(next) => {
@@ -1671,7 +1705,7 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden && (!allowAsk || composeIntent === 'post') ? (
+      {!hideCompose && (!allowAsk || composeIntent === 'post') ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <IconButton
@@ -1819,42 +1853,42 @@ export function ForumBoard({
         />
       ) : null}
 
-      {!composerHidden && formError === 'empty' ? (
+      {!hideCompose && formError === 'empty' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorEmpty')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'tooLong' ? (
+      {!hideCompose && formError === 'tooLong' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLong')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'request' ? (
+      {!hideCompose && formError === 'request' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRequest')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'rateLimit' ? (
+      {!hideCompose && formError === 'rateLimit' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorRateLimit')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'unsupported' ? (
+      {!hideCompose && formError === 'unsupported' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorUnsupported')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'tooLarge' ? (
+      {!hideCompose && formError === 'tooLarge' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooLarge')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'tooMany' ? (
+      {!hideCompose && formError === 'tooMany' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorTooMany')}
         </p>
       ) : null}
-      {!composerHidden && formError === 'ask' ? (
+      {!hideCompose && formError === 'ask' ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('forum.errorAskAmount')}
         </p>

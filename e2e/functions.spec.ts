@@ -6566,6 +6566,157 @@ test('Function: PosPage — till heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
 });
 
+test('Function: PosTill — wallet links to the till instead of mounting it', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByText('ada@21.gifts')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveAttribute('href', '/pos');
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toHaveCount(0);
+});
+
+test('Function: ForumVideo — a playable note shows Full screen', async ({ page }) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-clip',
+            name: 'Ada',
+            text: 'A clip',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/video.mp4', () => new Promise(() => undefined));
+  await page.goto('/welcome');
+  await expect(page.getByText('A clip')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+});
+
+test('Function: fetchPublicForumMessages — signed-out welcome asks for the active page', async ({
+  page,
+}) => {
+  let sawActive = false;
+  page.on('request', (request) => {
+    if (request.method() !== 'GET' || !request.url().includes('/forum/messages?')) {
+      return;
+    }
+    if (!request.url().includes('mode=active')) {
+      return;
+    }
+    if (request.headers()['authorization'] === undefined) {
+      sawActive = true;
+    }
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-active',
+            name: 'Ada',
+            text: 'Active without a session',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Active without a session')).toBeVisible();
+  expect(sawActive).toBe(true);
+});
+
+test('Function: PublicForumUnauthorizedError — a later public page 401 is login, not the load error', async ({
+  page,
+}) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('cursor') !== null) {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-pub',
+            name: 'Ada',
+            text: 'Public note',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+        nextCursor: 'cur',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Public note')).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+});
+
 test('Function: PosScreen — till heading is visible', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {
@@ -6688,7 +6839,8 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
     });
   });
   await page.goto('/pos');
-  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
   await page.getByRole('button', { name: 'Create payment' }).click();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
@@ -7316,6 +7468,18 @@ test('Function: PublicMessageThread — signed-in permalink shows Copy link to t
   page,
 }) => {
   const id = '11111111-1111-4111-8111-111111111111';
+  const signedNote = {
+    id,
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis',
+    replyCount: 0,
+    accountId: 'acc_e2e',
+  };
   await seedAdaSession(page);
   await page.route(`**/forum/messages/${id}/replies`, async (route) => {
     await route.fulfill({
@@ -7335,17 +7499,18 @@ test('Function: PublicMessageThread — signed-in permalink shows Copy link to t
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        id,
-        name: 'Ada',
-        text: 'Hello from Ada',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-        role: 'basis',
-        replyCount: 0,
-      }),
+      body: JSON.stringify(signedNote),
+    });
+  });
+  await page.route(`**/forum/messages/${id}`, async (route) => {
+    if (route.request().url().includes('/replies')) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(signedNote),
     });
   });
   await page.goto(`/messages/${id}`);
@@ -9238,6 +9403,13 @@ test('Function: ForumQuotedBody — welcome reply shows the nested post', async 
       body: JSON.stringify(quotedNote),
     });
   });
+  await page.route(`**/forum/messages/${QUOTED_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quotedNote),
+    });
+  });
   await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -9375,6 +9547,13 @@ test('Function: splitNoteLinks — welcome note autolinks an internal url and st
     '/trust-chain',
   );
   await page.route(`**/public-messages/${QUOTED_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quotedNote),
+    });
+  });
+  await page.route(`**/forum/messages/${QUOTED_ID}`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useState,
   type KeyboardEvent,
@@ -9,8 +10,76 @@ import {
   type ReactNode,
 } from 'react';
 import { ExternalLinkWarning } from '@/components/ExternalLinkWarning';
+import { useTranslations } from '@/components/LocaleProvider';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import { splitNoteLinks } from '@/lib/note-links';
+
+const USERNAME_CHAR = /[A-Za-z0-9._-]/;
+
+/** One `@username` the signed-in payload resolved to a member. */
+export interface TextMention {
+  username: string;
+  accountId: string;
+}
+
+function MentionButton({ accountId, text }: { accountId: string; text: string }): ReactElement {
+  const router = useRouter();
+  const { t } = useTranslations();
+  return (
+    <button
+      type="button"
+      aria-label={t('forum.authorProfile')}
+      className="text-sm font-medium text-app-fg underline underline-offset-2"
+      onClick={(event) => {
+        event.stopPropagation();
+        router.push(`/members/${accountId}`);
+      }}
+    >
+      {text}
+    </button>
+  );
+}
+
+function mentionNodes(value: string, mentions: readonly TextMention[]): ReactNode {
+  const byName = new Map(
+    mentions.map((mention) => [mention.username.toLowerCase(), mention.accountId]),
+  );
+  const nodes: ReactNode[] = [];
+  let buf = '';
+  let index = 0;
+  const flush = (): void => {
+    if (buf === '') {
+      return;
+    }
+    nodes.push(<span key={`t-${String(index)}`}>{buf}</span>);
+    buf = '';
+    index += 1;
+  };
+  let i = 0;
+  while (i < value.length) {
+    const prev = i === 0 ? '' : value.charAt(i - 1);
+    if (value.charAt(i) === '@' && (i === 0 || !USERNAME_CHAR.test(prev))) {
+      let end = i + 1;
+      while (end < value.length && USERNAME_CHAR.test(value.charAt(end))) {
+        end += 1;
+      }
+      const token = value.slice(i + 1, end);
+      const accountId = token === '' ? undefined : byName.get(token.toLowerCase());
+      if (accountId !== undefined) {
+        flush();
+        nodes.push(
+          <MentionButton key={`m-${String(i)}`} accountId={accountId} text={value.slice(i, end)} />,
+        );
+        i = end;
+        continue;
+      }
+    }
+    buf += value.charAt(i);
+    i += 1;
+  }
+  flush();
+  return nodes;
+}
 
 const DEFAULT_LINK_CLASS = 'font-medium underline underline-offset-2';
 
@@ -28,6 +97,8 @@ export interface LinkedTextProps {
   suffix?: ReactNode;
   /** When true, render `text` as one span with no autolinks. */
   plain?: boolean;
+  /** Member marks to link. Omitted when the author name is not a member button. */
+  mentions?: readonly TextMention[];
 }
 
 /**
@@ -43,14 +114,16 @@ export function LinkedText({
   text,
   className,
   plain = false,
+  mentions,
   ...rest
 }: LinkedTextProps): ReactElement {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const linked = mentions !== undefined && mentions.length > 0;
 
   if (plain) {
     return (
       <p className={className}>
-        <span>{text}</span>
+        {linked ? mentionNodes(text, mentions) : <span>{text}</span>}
         {rest.suffix}
       </p>
     );
@@ -107,7 +180,11 @@ export function LinkedText({
       <p className={className}>
         {segments.map((segment, index) => {
           if (segment.kind === 'text') {
-            return <span key={`t-${String(index)}`}>{segment.value}</span>;
+            return linked ? (
+              <span key={`t-${String(index)}`}>{mentionNodes(segment.value, mentions)}</span>
+            ) : (
+              <span key={`t-${String(index)}`}>{segment.value}</span>
+            );
           }
           if (segment.internal) {
             return (

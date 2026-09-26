@@ -29,6 +29,8 @@ import {
   postFundingReject,
   fetchMessagePhoto,
   fetchMessages,
+  fetchPublicForumMessages,
+  PublicForumUnauthorizedError,
   fetchForumMessage,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
@@ -1429,6 +1431,43 @@ describe('fetchPlaces', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     await expect(fetchPlaces('tok')).rejects.toThrow('Could not load places. Please try again.');
     vi.unstubAllGlobals();
+  });
+});
+
+describe('fetchPublicForumMessages', () => {
+  it('loads the active page without an Authorization header', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage], nextCursor: 'next' },
+    });
+    await expect(fetchPublicForumMessages({ cursor: 'cur' })).resolves.toMatchObject({
+      nextCursor: 'next',
+    });
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain('mode=active');
+    expect(url).toContain('limit=20');
+    expect(url).toContain('cursor=cur');
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(init?.headers).toBeUndefined();
+    await fetchPublicForumMessages({ cursor: '' });
+    await fetchPublicForumMessages({ cursor: null });
+    stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [],
+      nextCursor: null,
+    });
+  });
+
+  it('throws PublicForumUnauthorizedError on 401 and a load error otherwise', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchPublicForumMessages()).rejects.toBeInstanceOf(PublicForumUnauthorizedError);
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchPublicForumMessages()).rejects.toThrow('Could not load messages');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(fetchPublicForumMessages()).rejects.toThrow('Could not load messages');
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchPublicForumMessages()).rejects.toThrow('Could not load messages');
   });
 });
 
