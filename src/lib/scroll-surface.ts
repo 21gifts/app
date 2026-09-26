@@ -21,8 +21,9 @@ function isScrollingOverflow(value: string): boolean {
  */
 function fitTextarea(el: HTMLTextAreaElement): void {
   el.style.setProperty('overflow', 'clip', 'important');
-  // An empty field already fits. A leftover pixel height would keep it tall.
-  if (!el.value.includes('\n') && el.scrollHeight <= el.clientHeight + 4) {
+  // Only a cleared field drops a leftover pixel height. A wrapped line has
+  // no newline, but its box already matches the text, so it must stay tall.
+  if (el.value === '') {
     if (el.style.height !== '') {
       el.style.removeProperty('height');
     }

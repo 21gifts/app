@@ -77,6 +77,10 @@ describe('scroll surface', () => {
     Object.defineProperty(wide, 'scrollHeight', { configurable: true, value: 70 });
     syncScrollSurfaces();
     expect(wide.style.height).toBe('70px');
+    Object.defineProperty(wide, 'clientHeight', { configurable: true, value: 70 });
+    Object.defineProperty(wide, 'scrollHeight', { configurable: true, value: 70 });
+    syncScrollSurfaces();
+    expect(wide.style.height).toBe('70px');
     field.value = 'one\ntwo\nthree';
     Object.defineProperty(field, 'clientHeight', { configurable: true, value: 20 });
     Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 80 });
