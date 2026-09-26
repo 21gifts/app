@@ -310,6 +310,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('links a nested 21.gifts author without opening the quote', async () => {
+    useAuthStore.setState({ session: 'tok', account: null });
     const onActivate = vi.fn();
     renderWithLocale(
       <ForumQuotedBody

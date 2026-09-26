@@ -100,7 +100,9 @@ function QuotedForumNote({
   const handleActivate = (event: { stopPropagation: () => void }): void => {
     onActivate?.(event);
   };
-  const memberAuthor = typeof note.accountId === 'string' && note.accountId !== '';
+  const session = useAuthStore((state) => state.session);
+  const memberAuthor =
+    session !== null && typeof note.accountId === 'string' && note.accountId !== '';
   const quoteLabel =
     note.via === 'nostr'
       ? t('forum.quotedNoteExternal', { name: note.name })

@@ -6608,8 +6608,39 @@ test('Function: PosTill — wallet links to the till instead of mounting it', as
 });
 
 test('Function: ForumVideo — a playable note shows Full screen', async ({ page }) => {
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-clip',
+            name: 'Ada',
+            text: 'A clip',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+        nextCursor: null,
+      }),
+    });
+  });
+  await page.route('**/messages/m-clip/video.mp4', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'video/mp4', body: '' });
+  });
   await page.goto('/welcome');
-  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
 });
 
 test('Function: fetchPublicForumMessages — signed-out welcome asks for the active page', async ({
@@ -6622,8 +6653,40 @@ test('Function: fetchPublicForumMessages — signed-out welcome asks for the act
 test('Function: PublicForumUnauthorizedError — a later public page 401 is login, not the load error', async ({
   page,
 }) => {
-  await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('cursor') !== null) {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-pub',
+            name: 'Ada',
+            text: 'Public note',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+        nextCursor: 'cur',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Public note')).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
 });
 
 test('Function: PosScreen — till heading is visible', async ({ page }) => {

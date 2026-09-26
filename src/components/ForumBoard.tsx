@@ -973,7 +973,9 @@ export function ForumBoard({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    {typeof message.accountId === 'string' && message.accountId !== '' ? (
+                    {!readOnly &&
+                    typeof message.accountId === 'string' &&
+                    message.accountId !== '' ? (
                       <button
                         type="button"
                         aria-label={t('forum.authorProfile')}
@@ -1077,7 +1079,8 @@ export function ForumBoard({
                         className="whitespace-pre-wrap text-sm text-app-fg"
                         controlSlotId={`note-translate-${message.id}`}
                         {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
-                        {...(typeof message.accountId === 'string' &&
+                        {...(!readOnly &&
+                        typeof message.accountId === 'string' &&
                         message.accountId !== '' &&
                         message.mentions !== undefined
                           ? { mentions: message.mentions }
@@ -1093,7 +1096,8 @@ export function ForumBoard({
                         truncate={truncate}
                         controlSlotId={`note-translate-${message.id}`}
                         {...(shopNote ? { formatTranslated: stripShopHashtag } : {})}
-                        {...(typeof message.accountId === 'string' &&
+                        {...(!readOnly &&
+                        typeof message.accountId === 'string' &&
                         message.accountId !== '' &&
                         message.mentions !== undefined
                           ? { mentions: message.mentions }
@@ -1286,7 +1290,9 @@ export function ForumBoard({
                           >
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <div className="flex flex-wrap items-center gap-2">
-                                {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                                {!readOnly &&
+                                typeof reply.accountId === 'string' &&
+                                reply.accountId !== '' ? (
                                   <button
                                     type="button"
                                     aria-label={t('forum.authorProfile')}
@@ -1366,7 +1372,8 @@ export function ForumBoard({
                                     truncate={truncate}
                                     className="whitespace-pre-wrap text-sm text-app-fg"
                                     controlSlotId={`note-translate-${reply.id}`}
-                                    {...(typeof reply.accountId === 'string' &&
+                                    {...(!readOnly &&
+                                    typeof reply.accountId === 'string' &&
                                     reply.accountId !== '' &&
                                     reply.mentions !== undefined
                                       ? { mentions: reply.mentions }
@@ -1381,7 +1388,8 @@ export function ForumBoard({
                                     fiat={fiat}
                                     truncate={truncate}
                                     controlSlotId={`note-translate-${reply.id}`}
-                                    {...(typeof reply.accountId === 'string' &&
+                                    {...(!readOnly &&
+                                    typeof reply.accountId === 'string' &&
                                     reply.accountId !== '' &&
                                     reply.mentions !== undefined
                                       ? { mentions: reply.mentions }
