@@ -2551,7 +2551,7 @@ Signed-in basis account. Copy **This page is for moderators.** No tools list.
 
 ### Variant: goal-open
 
-Staff (moderator) hub with the payout-goal widget expanded: explanation copy and the 30-UTC-day chart of people counted once (goal line at 100).
+Staff (moderator) hub with the payout-goal widget expanded: explanation copy, the 30-UTC-day chart of people counted once (goal line at 100), and a secondary large **Show payout per person** button under the chart to `/moderate/payouts`. The button is absent while the widget is collapsed, loading, or in error.
 
 ![21.gifts moderation goal open](images/moderate-goal-open.png)
 
@@ -2566,6 +2566,44 @@ Staff (moderator) hub with the payout-goal widget showing **Loading…** while `
 Staff (moderator) hub with the payout-goal widget showing **Could not load payouts. Please try again.** and labeled **Try again**. Tools list still visible.
 
 ![21.gifts moderation error](images/moderate-error.png)
+
+## Screen: /moderate/payouts
+
+- **URL:** `/moderate/payouts` — signed-in staff table of daily-grant payouts per person. Same onboarding gate as `/moderate` (`OnboardingGate screen="welcome"`). HTML `/moderate/payouts` is the table, not a GET proxy. JSON is `GET /funding/payout-days`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Payout per person**. Staff see the lead (seven UTC days, today on the right, moderator stipends and welcome gifts excluded), a legend (**Not entitled**, **Entitled, not collected**, **Payout received**), then a table: sticky **Name** plus seven day columns, oldest on the left and today on the right (the last header also says **today**). Cells are color blocks: black not entitled, white entitled but not collected, green payout received. A name with an account id links to `/members/{id}`. Empty copy **Nobody was entitled in these seven days.** Loading… or error plus **Try again**. Non-staff see the heading plus **This page is for moderators.** and no table.
+- **Actions:** In-card back to `/moderate`. Open a member when the row has an account id. **Try again** after a load error. Back to the forum. Open **Menu**.
+- **Calls:** `PayoutsPage`, `FundingPayoutsScreen`, `fetchFundingPayoutDays`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. The table fetches only when `roleAtLeast(role, 'moderator')`.
+
+### Variant: default
+
+Staff table with one person, Ada, and black, white, and green cells. Today is the rightmost column.
+
+![21.gifts payout per person](images/moderate-payouts.png)
+
+### Variant: empty
+
+Staff page when nobody was entitled. Sentence **Nobody was entitled in these seven days.** No table.
+
+![21.gifts payout per person empty](images/moderate-payouts-empty.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** No table.
+
+![21.gifts payout per person forbidden](images/moderate-payouts-forbidden.png)
+
+### Variant: loading
+
+Staff page while the table is loading. Copy **Loading…**.
+
+![21.gifts payout per person loading](images/moderate-payouts-loading.png)
+
+### Variant: error
+
+Staff page when the load fails. Copy **Could not load the payout table. Please try again.** and button **Try again**.
+
+![21.gifts payout per person error](images/moderate-payouts-error.png)
 
 ## Screen: /moderate/hidden
 

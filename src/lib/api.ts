@@ -25,6 +25,7 @@ import {
   fundingApplyResponseSchema,
   fundingApplicationDetailSchema,
   fundingApplicationsResponseSchema,
+  fundingPayoutDaysResponseSchema,
   fundingDecisionResultSchema,
   trustActionResultSchema,
   trustChainSchema,
@@ -56,6 +57,7 @@ import {
   type ModeratorProposal,
   type FundingApplication,
   type FundingApplicationDetail,
+  type FundingPayoutDays,
   type FundingDecisionResult,
   type OwnerFunding,
   type PasskeyBegin,
@@ -1023,6 +1025,7 @@ export async function fetchTrustProposals(sessionToken: string): Promise<Moderat
 const FUNDING_APPLY_ERROR = 'Could not submit your application. Please try again.';
 const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Please try again.';
 const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
+const FUNDING_PAYOUT_DAYS_LOAD_ERROR = 'Could not load the payout table. Please try again.';
 const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
 
 /**
@@ -1092,6 +1095,31 @@ export async function fetchFundingApplications(
     return fundingApplicationsResponseSchema.parse(await response.json()).applications;
   } catch {
     throw new Error(FUNDING_APPLICATIONS_LOAD_ERROR);
+  }
+}
+
+/**
+ * Fetches the seven-day payout table for moderators.
+ *
+ * Hits same-origin `GET /funding/payout-days` (Bearer). Next.js forbids a
+ * `route.ts` beside `/moderate/payouts`, so the proxy lives at this path.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The parsed payload (`days` plus `rows`), oldest day first.
+ * @throws Error with visitor-facing copy on 401/403/503, other non-2xx, a
+ * network failure, or a body that fails {@link fundingPayoutDaysResponseSchema}.
+ */
+export async function fetchFundingPayoutDays(sessionToken: string): Promise<FundingPayoutDays> {
+  try {
+    const response = await fetch('/funding/payout-days', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(FUNDING_PAYOUT_DAYS_LOAD_ERROR);
+    }
+    return fundingPayoutDaysResponseSchema.parse(await response.json());
+  } catch {
+    throw new Error(FUNDING_PAYOUT_DAYS_LOAD_ERROR);
   }
 }
 

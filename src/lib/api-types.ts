@@ -1095,6 +1095,38 @@ export const fundingApplicationsResponseSchema = z.object({
 export type FundingApplication = z.infer<typeof fundingApplicationSchema>;
 
 /**
+ * Runtime schema for one payout-day row from `GET /funding/payout-days`.
+ *
+ * `accountId` is a non-empty string or `null`. `name` may be null or empty.
+ * `days` is seven cells, oldest first.
+ */
+export const fundingPayoutDayRowSchema = z.object({
+  accountId: z.string().min(1).nullable(),
+  name: z.string().nullable(),
+  days: z.array(z.enum(['blocked', 'missed', 'paid'])).length(7),
+});
+
+/**
+ * Runtime schema for the payload of `GET /funding/payout-days`.
+ *
+ * `days` is seven UTC `YYYY-MM-DD` strings, oldest first, last is today.
+ */
+export const fundingPayoutDaysResponseSchema = z.object({
+  days: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).length(7),
+  rows: z.array(fundingPayoutDayRowSchema),
+});
+
+/**
+ * One payout-day row from the api.
+ */
+export type FundingPayoutDayRow = z.infer<typeof fundingPayoutDayRowSchema>;
+
+/**
+ * Seven-day payout table from the api.
+ */
+export type FundingPayoutDays = z.infer<typeof fundingPayoutDaysResponseSchema>;
+
+/**
  * Runtime schema for the grant snapshot on `GET /funding/applications/:accountId`.
  *
  * `status` is effective. Times are epoch ms.

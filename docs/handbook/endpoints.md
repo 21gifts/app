@@ -597,6 +597,13 @@
 - **Used by:** `postFundingApply` via `FundingApplyScreen` on `/grants/apply`.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
+## Endpoint: GET /funding/payout-days
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/payout-days` (seven-day grant payout matrix for moderators). Lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/payouts`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchFundingPayoutDays` via `FundingPayoutsScreen` on `/moderate/payouts`.
+- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+
 ## Endpoint: GET /funding/applications
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/grants/applications` (`/moderate/applications` redirects there).
