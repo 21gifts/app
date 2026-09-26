@@ -11782,6 +11782,119 @@ test.describe('shops screens', () => {
     await usePlace.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-error');
   });
+
+  test('shops staff-account', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await expect(note.getByText('Cafe Luna')).toBeVisible();
+    await note.getByRole('button', { name: 'Add an account' }).click();
+    await expect(note.getByLabel('Username')).toHaveValue('');
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeVisible();
+    await expect(note.getByRole('alert')).toHaveCount(0);
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account');
+  });
+
+  test('shops staff-account-set', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await expect(note.getByRole('link', { name: '@luna' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Edit account' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Save account' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-staff-account-set');
+  });
+
+  test('shops staff-account-error', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'No account with that username' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add an account' }).click();
+    await note.getByLabel('Username').fill('missing');
+    await note.getByRole('button', { name: 'Save account' }).click();
+    await expect(note.getByRole('alert')).toHaveText('No account with that username.');
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeVisible();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-error');
+  });
 });
 
 test.describe('map screens', () => {

@@ -8763,6 +8763,13 @@ test('Function: proxyMessagesPlacePatch — unauthenticated place patch is forwa
   expect(response.status()).toBe(401);
 });
 
+test('Function: proxyMessagesShopAccountPatch — unauthenticated shop-account patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/shop-account');
+  expect(response.status()).toBe(401);
+});
+
 test('Function: PATCH — PATCH /forum/messages/[id]/place without bearer is 401', async ({
   request,
 }) => {

@@ -1011,3 +1011,17 @@ export async function proxyMessagesPlacePatch(
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/place`);
 }
+
+/**
+ * Proxies a moderator's PATCH /messages/:id/shop-account request.
+ *
+ * @param request - Incoming Bearer request with JSON `{ username }`.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesShopAccountPatch(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/shop-account`);
+}

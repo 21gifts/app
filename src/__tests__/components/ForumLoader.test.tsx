@@ -32,6 +32,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
   setMessagePlace: vi.fn(),
+  setMessageShopAccount: vi.fn(),
   fetchMessages: vi.fn(),
   fetchPublicForumMessages: vi.fn(),
   fetchPublicMessage: vi.fn(),
@@ -83,6 +84,7 @@ import {
   postMessageVideo,
   setLightningAddress,
   setMessagePlace,
+  setMessageShopAccount,
   setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -1402,6 +1404,73 @@ describe('ForumLoader', () => {
       expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
     });
     delete (window as { google?: unknown }).google;
+  });
+
+  it('feed="shops" updates the listed account and leaves the other shop', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    const luna = { id: 'acc-luna', username: 'luna', name: 'Luna' };
+    fetchMock.mockResolvedValue(
+      forumPage([
+        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
+        { ...SAMPLE, id: 'shop2', text: 'Other stall\n\n#21GiftsShop', sats: 5 },
+      ]),
+    );
+    vi.mocked(setMessageShopAccount).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 5,
+      shopAccount: luna,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Add an account' }));
+    fireEvent.change(within(card).getByLabelText('Username'), { target: { value: 'luna' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Save account' }));
+    await waitFor(() => {
+      expect(within(card).getByRole('link', { name: '@luna' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: '@other' })).toBeNull();
+  });
+
+  it('feed="shops" clears the listed account when the save returns null', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+        },
+      ]),
+    );
+    vi.mocked(setMessageShopAccount).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 5,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: '@luna' })).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit account' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Remove account' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: '@luna' })).toBeNull();
+    });
   });
 
   it('default living-room post does not append #21GiftsShop', async () => {

@@ -2752,3 +2752,36 @@ export async function setMessagePlace(
   }
   return forumMessageSchema.parse(await response.json());
 }
+
+/**
+ * Sets or clears the shop account on a forum message (moderator session).
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @param username - 21.gifts username to attach, or `null` to clear.
+ * @returns The updated {@link ForumMessage}. Cleared accounts are omitted.
+ * @throws Error `No account with that username` on HTTP 404.
+ * @throws Error `Could not save account` on any other non-2xx status or a body
+ * that fails {@link forumMessageSchema}.
+ */
+export async function setMessageShopAccount(
+  sessionToken: string,
+  messageId: string,
+  username: string | null,
+): Promise<ForumMessage> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/shop-account`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username }),
+  });
+  if (response.status === 404) {
+    throw new Error('No account with that username');
+  }
+  if (!response.ok) {
+    throw new Error('Could not save account');
+  }
+  return forumMessageSchema.parse(await response.json());
+}

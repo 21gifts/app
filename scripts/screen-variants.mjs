@@ -3300,6 +3300,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'staff-account',
+    image: 'shops-staff-account.png',
+    visual: 'state-shops-staff-account',
+    needle: "shotScreen(page, 'state-shops-staff-account')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-account-set',
+    image: 'shops-staff-account-set.png',
+    visual: 'state-shops-staff-account-set',
+    needle: "shotScreen(page, 'state-shops-staff-account-set')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-account-error',
+    image: 'shops-staff-account-error.png',
+    visual: 'state-shops-staff-account-error',
+    needle: "shotScreen(page, 'state-shops-staff-account-error')",
+  },
+  {
+    route: '/shops',
     id: 'staff-place-unavailable',
     image: 'shops-staff-place-unavailable.png',
     visual: 'state-shops-staff-place-unavailable',
