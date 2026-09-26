@@ -1257,7 +1257,9 @@ export function ForumBoard({
                 {shopAccountEdit &&
                 onShopAccountUpdated !== undefined &&
                 message.parentId === undefined ? (
-                  <ShopAccountControl message={message} onUpdated={onShopAccountUpdated} />
+                  <SundayWritingGate>
+                    <ShopAccountControl message={message} onUpdated={onShopAccountUpdated} />
+                  </SundayWritingGate>
                 ) : null}
                 {onDeleted !== undefined && message.deletedAt === undefined ? (
                   <DeletePostControl messageId={message.id} onDeleted={onDeleted} />

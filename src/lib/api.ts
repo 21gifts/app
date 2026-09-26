@@ -2097,7 +2097,7 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
 export async function fetchModeratorGroup(sessionToken: string): Promise<Conversation> {
   try {
     const response = await fetch('/conversations/moderator-group', {
-      headers: { Authorization: `Bearer ${sessionToken}` },
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     });
     if (!response.ok) {
       throw new Error('Could not load messages. Please try again.');
@@ -2147,7 +2147,7 @@ export async function fetchConversation(
     }
     const url = `/conversations/${encodeURIComponent(id)}?${query.toString()}`;
     const init: RequestInit = {
-      headers: { Authorization: `Bearer ${sessionToken}` },
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     };
     if (opts?.signal !== undefined) {
       init.signal = opts.signal;
@@ -2272,6 +2272,7 @@ export async function postConversationMessage(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({
       text,
@@ -2372,7 +2373,7 @@ export async function markConversationRead(sessionToken: string, id: string): Pr
   try {
     const response = await fetch(`/conversations/${encodeURIComponent(id)}/read`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}` },
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     });
     if (!response.ok) {
       throw new Error('Could not mark conversation as read');
@@ -2829,6 +2830,7 @@ export async function setMessageShopAccount(
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
     },
     body: JSON.stringify({ username }),
   });
