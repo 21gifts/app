@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   deleteMessage,
   setMessagePlace,
+  setMessageShopAccount,
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
@@ -1949,6 +1950,27 @@ describe('postMessage', () => {
       goalAmount: '21000',
     });
     expect(Object.prototype.hasOwnProperty.call(body, 'goalSats')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(body, 'goalRepayable')).toBe(false);
+  });
+
+  it('includes goalRepayable true only with the ask fields', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('sess', {
+      text: 'Hello from Ada',
+      goalCurrency: 'BTC',
+      goalAmount: '21000',
+      goalRepayable: true,
+    });
+    const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body).toEqual({
+      text: 'Hello from Ada',
+      goalCurrency: 'BTC',
+      goalAmount: '21000',
+      goalRepayable: true,
+    });
   });
 
   it('keeps a comma in goalAmount', async () => {
@@ -2245,6 +2267,31 @@ describe('postMessageVideo', () => {
     expect(form.get('goalCurrency')).toBe('BTC');
     expect(form.get('goalAmount')).toBe('21000');
     expect(form.get('goalSats')).toBeNull();
+    expect(form.get('goalRepayable')).toBeNull();
+  });
+
+  it('sets goalRepayable on the form only when true', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/webm' as const,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: created });
+    const video = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' });
+    await postMessageVideo('sess', {
+      text: 'clip',
+      video,
+      goalCurrency: 'BTC',
+      goalAmount: '21000',
+      goalRepayable: true,
+      goalTermDays: 30,
+    });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('goalCurrency')).toBe('BTC');
+    expect(form.get('goalAmount')).toBe('21000');
+    expect(form.get('goalRepayable')).toBe('true');
+    expect(form.get('goalTermDays')).toBe('30');
   });
 
   it('omits ask fields from the form when not provided', async () => {
@@ -4324,5 +4371,50 @@ describe('setMessagePlace', () => {
   it('throws when the response is not ok', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setMessagePlace('token', 'm1', null)).rejects.toThrow('Could not save place');
+  });
+});
+
+describe('setMessageShopAccount', () => {
+  it('patches the username and returns the parsed shopAccount', async () => {
+    const shopAccount = { id: 'acc-luna', username: 'luna', name: 'Luna' };
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, shopAccount },
+    });
+    await expect(setMessageShopAccount('token', 'a/b', 'luna')).resolves.toEqual({
+      ...parsedForumMessage,
+      shopAccount,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/shop-account', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'luna' }),
+    });
+  });
+
+  it('sends username: null and accepts a body whose shopAccount is omitted', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(setMessageShopAccount('token', 'm1', null)).resolves.toEqual(parsedForumMessage);
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      username: null,
+    });
+  });
+
+  it('throws No account with that username on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
+    await expect(setMessageShopAccount('token', 'm1', 'missing')).rejects.toThrow(
+      'No account with that username',
+    );
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setMessageShopAccount('token', 'm1', null)).rejects.toThrow(
+      'Could not save account',
+    );
   });
 });

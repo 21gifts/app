@@ -524,7 +524,7 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: goal-50
 
-On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). This ask is not a credit, so the bar does not say **To be repaid.** Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
 
 ![21.gifts welcome goal 50](images/welcome-goal-50.png)
 
@@ -552,9 +552,171 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ![21.gifts welcome goal php](images/welcome-goal-php.png)
 
+### Variant: goal-credit
+
+On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50**. Under the ask: **To be repaid.**, **Interest 0%. Only interest-free credits are offered for now.**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** Progress bar at **50%**. Composer **Send a post** / **Ask for money** pill visible.
+
+![21.gifts welcome goal credit](images/welcome-goal-credit.png)
+
+### Variant: ask-credit-amount
+
+Credit, step **1 of 9**. **Ask for money** is selected. **Credit** is pressed under **One-time** / **Daily** (**One-time** pressed). The heading is **How much?** **21000** is typed in bitcoin, with the preferred-fiat counterpart under the field. **Continue** is enabled. There is no checkbox and no **Post** on this step. Choosing **Donation** leaves this path and returns to the four-step ask.
+
+![21.gifts welcome ask credit amount](images/welcome-ask-credit-amount.png)
+
+### Variant: ask-credit-amount-fiat
+
+Credit, step **1 of 9**, with the amount switch on **USD**. **Credit** and **One-time** are pressed. **1000** was typed in bitcoin, then the switch moved to fiat, so the field shows **1.00** and **₿1'000** under it. **Continue** is enabled.
+
+![21.gifts welcome ask credit amount fiat](images/welcome-ask-credit-amount-fiat.png)
+
+### Variant: ask-credit-amount-daily
+
+Credit, step **1 of 9**, with **Daily** pressed and **Credit** pressed. **21000** is typed in bitcoin. **Continue** is enabled. One-time / Daily is still not stored.
+
+![21.gifts welcome ask credit amount daily](images/welcome-ask-credit-amount-daily.png)
+
+### Variant: ask-credit-empty
+
+Credit, step **1 of 9**, before an amount is typed. **Credit** and **One-time** are pressed. The ask field is empty and **Continue** is disabled. The counter reads **1 of 9**, not 1 of 4.
+
+![21.gifts welcome ask credit empty](images/welcome-ask-credit-empty.png)
+
+### Variant: ask-credit-empty-daily
+
+Credit, step **1 of 9**, with **Daily** and **Credit** pressed and the ask field still empty. **Continue** is disabled. The counter reads **1 of 9**. One-time / Daily is still not stored.
+
+![21.gifts welcome ask credit empty daily](images/welcome-ask-credit-empty-daily.png)
+
+### Variant: ask-credit-error-ask
+
+Credit, step **1 of 9**, with **0** typed in bitcoin. **Credit** and **One-time** are pressed. **Continue** stays disabled. The counter reads **1 of 9**.
+
+![21.gifts welcome ask credit error ask](images/welcome-ask-credit-error-ask.png)
+
+### Variant: ask-credit-error-ask-daily
+
+Credit, step **1 of 9**, with **Daily** and **Credit** pressed and **0** typed. **Continue** stays disabled. The counter reads **1 of 9**.
+
+![21.gifts welcome ask credit error ask daily](images/welcome-ask-credit-error-ask-daily.png)
+
+### Variant: ask-credit-currency-btc
+
+Credit, step **2 of 9**. Heading **How the amount is fixed**. The screen says: **This credit is fixed in bitcoin. Payments stay in bitcoin, with no conversion.** Then: **A rising bitcoin price can hurt you significantly, because you bear the full price movement.** The button is **Continue**. There is no checkbox.
+
+![21.gifts welcome ask credit currency btc](images/welcome-ask-credit-currency-btc.png)
+
+### Variant: ask-credit-currency-fiat
+
+Credit, step **2 of 9**, after the amount switch is **USD** and **1000** is typed. Heading **How the amount is fixed**. The screen says: **This credit is fixed in US dollars. Payments are bitcoin and stay bitcoin. Each payment is only priced in US dollars at the rate when it is made. Nothing is exchanged.** Then: **You receive the amount in bitcoin. If the bitcoin price falls before you spend it on what you planned, you bear the full price risk.** The button is **Continue**. Swiss francs, euros, and Philippine pesos use the same sentences with that currency name. There is no checkbox.
+
+![21.gifts welcome ask credit currency fiat](images/welcome-ask-credit-currency-fiat.png)
+
+### Variant: ask-credit-term
+
+Credit, step **3 of 9**. Heading **How long is the credit repaid?** The choices are **30 days** (pressed), **1 year**, **2 years**, and **Custom**. **Continue** is enabled. There is no checkbox.
+
+![21.gifts welcome ask credit term](images/welcome-ask-credit-term.png)
+
+### Variant: ask-credit-term-custom
+
+Credit, step **3 of 9**, with **Custom** pressed. Heading **How long is the credit repaid?** A field **Number of days** shows **45**, so **Continue** is enabled. **Continue** stays disabled while that field is empty or not a whole number from 1 to 3650.
+
+![21.gifts welcome ask credit term custom](images/welcome-ask-credit-term-custom.png)
+
+### Variant: ask-credit-plan-btc
+
+Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How repayment works**. The screen says: **Repayment is due every day. It starts the day after the credit has been paid in full. If it takes 10 days for the credit to be given, repayment starts on day 11.** Then: **Interest 0%. Only interest-free credits are offered for now.** Then: **To repay per day: ₿700 · $0.70 per day for 30 days.** The button is **Continue**. Any remainder that does not divide evenly is added to the last day. There is no checkbox.
+
+![21.gifts welcome ask credit plan btc](images/welcome-ask-credit-plan-btc.png)
+
+### Variant: ask-credit-plan-fiat
+
+Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same daily rule and **Interest 0%** sentences. The daily line is **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The button is **Continue**.
+
+![21.gifts welcome ask credit plan fiat](images/welcome-ask-credit-plan-fiat.png)
+
+### Variant: ask-credit-confirm-want
+
+Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000 · $21.00.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The daily rule with the day-11 example. **Interest 0%. Only interest-free credits are offered for now.** **To repay per day: ₿700 · $0.70 per day for 30 days.** The button **I want to take this credit.** is the confirmation. There is no checkbox.
+
+![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
+
+### Variant: ask-credit-confirm-want-fiat
+
+Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The daily rule, **Interest 0%**, and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The button **I want to take this credit.** is the confirmation. There is no checkbox.
+
+![21.gifts welcome ask credit confirm want fiat](images/welcome-ask-credit-confirm-want-fiat.png)
+
+### Variant: ask-credit-confirm-can-btc
+
+Credit, step **6 of 9**, bitcoin. Heading **Can you repay it?** The sentence is **I can repay the amount owed on this plan: ₿700 · $0.70 per day for 30 days.** The button **I can repay this.** is the confirmation. There is no checkbox.
+
+![21.gifts welcome ask credit confirm can btc](images/welcome-ask-credit-confirm-can-btc.png)
+
+### Variant: ask-credit-confirm-can-fiat
+
+Credit, step **6 of 9**, US dollars. Heading **Can you repay it?** The sentence is **I can repay the amount owed on this plan: $33.33 per day for 29 days, then $33.43 on the last day.** The button **I can repay this.** is the confirmation. There is no checkbox.
+
+![21.gifts welcome ask credit confirm can fiat](images/welcome-ask-credit-confirm-can-fiat.png)
+
+### Variant: ask-credit-photos
+
+Credit, step **7 of 9**. Heading **Add photos**. The One-time / Daily and Donation / Credit pills are not on this step. A photo is optional. **Continue** goes to the message. The counter reads **7 of 9**.
+
+![21.gifts welcome ask credit photos](images/welcome-ask-credit-photos.png)
+
+### Variant: ask-credit-text
+
+Credit, step **8 of 9**. Heading **Write a message**. The message can be empty; **Continue** still opens the preview. **Post** on the next step stays disabled until there is text, a photo, or a video. The counter reads **8 of 9**.
+
+![21.gifts welcome ask credit text](images/welcome-ask-credit-text.png)
+
+### Variant: ask-credit-preview
+
+Credit, step **9 of 9**, bitcoin, after the message **Need help with a train ticket**. Heading **Preview**. **One-time** and **Credit** are pressed. The card shows the author, the message, and the goal bar at **0%**: **Ask ₿21'000 · $21.00**, **To be repaid.**, **Interest 0%. Only interest-free credits are offered for now.**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** **Post** is the only submit. It sends `goalRepayable: true` and `goalTermDays: 30` with the ask amount. The counter reads **9 of 9**.
+
+![21.gifts welcome ask credit preview](images/welcome-ask-credit-preview.png)
+
+### Variant: ask-credit-preview-daily
+
+Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same bitcoin ask and message. The goal bar still shows **To be repaid.**, interest **0%**, and the daily bitcoin plan with the visitor's fiat. **Post** is the only submit. One-time / Daily is not stored.
+
+![21.gifts welcome ask credit preview daily](images/welcome-ask-credit-preview-daily.png)
+
+### Variant: ask-credit-preview-fiat
+
+Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The goal bar shows the dollar amount, **To be repaid.**, interest **0%**, and the daily dollar plan (**$33.33** for 29 days, then **$33.43** on the last day). **Post** is the only submit. The counter reads **9 of 9**.
+
+![21.gifts welcome ask credit preview fiat](images/welcome-ask-credit-preview-fiat.png)
+
+### Variant: ask-credit-posting
+
+Credit, step **9 of 9**, while **Post** is in flight. The preview still shows the bitcoin credit (**To be repaid.**, interest **0%**, **₿700 · $0.70 per day for 30 days**). **Post** is disabled and a spinner replaces the label. The counter reads **9 of 9**.
+
+![21.gifts welcome ask credit posting](images/welcome-ask-credit-posting.png)
+
+### Variant: ask-credit-posting-daily
+
+Credit, step **9 of 9**, with **Daily** pressed, while **Post** is in flight. The goal bar still shows the repayment plan. **Post** is disabled. One-time / Daily is not stored. The counter reads **9 of 9**.
+
+![21.gifts welcome ask credit posting daily](images/welcome-ask-credit-posting-daily.png)
+
+### Variant: ask-credit-error-request
+
+Credit, step **9 of 9**, after **Post** fails. The preview stays, with **Could not post your message** under it. **Credit** stays pressed. The counter reads **9 of 9**.
+
+![21.gifts welcome ask credit error request](images/welcome-ask-credit-error-request.png)
+
+### Variant: ask-credit-error-request-daily
+
+Credit, step **9 of 9**, with **Daily** pressed, after **Post** fails. The same error stays on the credit preview. **Daily** and **Credit** stay pressed. The counter reads **9 of 9**.
+
+![21.gifts welcome ask credit error request daily](images/welcome-ask-credit-error-request-daily.png)
+
 ### Variant: ask-amount
 
-**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step.
+**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed), a **Donation** / **Credit** pill under it (**Donation** pressed by default), and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step. Only **Credit** is posted as `goalRepayable` true.
 
 ![21.gifts welcome ask amount](images/welcome-ask-amount.png)
 
@@ -644,7 +806,7 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ### Variant: ask-preview
 
-Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
+Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), the **Donation** / **Credit** pill under it (**Donation** pressed by default), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading. Only **Credit** is posted as `goalRepayable` true.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
 
@@ -1220,7 +1382,7 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**, back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`.
 
@@ -1304,7 +1466,7 @@ A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000
 
 ### Variant: staff-place
 
-A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place**. The map panel is closed.
+A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place](images/shops-staff-place.png)
 
@@ -1316,7 +1478,7 @@ A moderator session. **Add a place** on the Cafe Luna note is open and the map k
 
 ### Variant: staff-place-set
 
-A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place**. The map panel is closed.
+A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place set](images/shops-staff-place-set.png)
 
@@ -1364,7 +1526,7 @@ A moderator session. **Add a place** on the Cafe Luna note is open with a map. A
 
 ### Variant: staff-place-set-coords
 
-A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place**. The map panel is closed.
+A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place set coordinates](images/shops-staff-place-set-coords.png)
 
@@ -1373,6 +1535,24 @@ A moderator session. The Cafe Luna note has a saved pin with no name. The card s
 A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
 
 ![21.gifts shops staff place error](images/shops-staff-place-error.png)
+
+### Variant: staff-account
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is empty. **Save account** is visible. There is no alert.
+
+![21.gifts shops staff account](images/shops-staff-account.png)
+
+### Variant: staff-account-set
+
+A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' }`. The card shows the `@luna` link to `/members/acc-luna` and footer **Edit account**. The account panel is closed.
+
+![21.gifts shops staff account set](images/shops-staff-account-set.png)
+
+### Variant: staff-account-error
+
+A moderator session. **Add an account** is open on the Cafe Luna note. Username **missing** was saved. The save returned 404, so the alert **No account with that username.** is visible. **Save account** stays.
+
+![21.gifts shops staff account error](images/shops-staff-account-error.png)
 
 ## Screen: /map
 
@@ -1530,6 +1710,12 @@ Identity card; posts pressed; profile note hidden; the listed post has `sats: 23
 Identity card; posts pressed; the listed English post is defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts member posts open with fiat goal](images/members-posts-open-goal-fiat.png)
+
+### Variant: posts-open-goal-credit
+
+Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, **To be repaid.**, **Interest 0%**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**.
+
+![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
 
 ### Variant: posts-open-photos
 
@@ -1937,9 +2123,9 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator also sees a secondary large **Open applications** link to `/grants/applications`. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator or founder with at least one open application sees a secondary large **Open applications (N)** link to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications**.
+- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -1979,9 +2165,27 @@ Admitted owner on `/grants`. The participation sentence **Takes part in the 21.g
 
 ### Variant: open-applications
 
-Moderator on `/grants`. The grant card is shown, and **Open applications** links to `/grants/applications`. Needle `state-grants-open-applications`.
+Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`.
 
 ![21.gifts grants open applications](images/grants-open-applications.png)
+
+### Variant: no-applications
+
+Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`.
+
+![21.gifts grants no applications](images/grants-no-applications.png)
+
+### Variant: applications-loading
+
+Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`.
+
+![21.gifts grants applications loading](images/grants-applications-loading.png)
+
+### Variant: applications-error
+
+Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`.
+
+![21.gifts grants applications error](images/grants-applications-error.png)
 
 ## Screen: /profile/apply
 
@@ -2868,6 +3072,12 @@ Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 210
 Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**. No composer Ask.
 
 ![21.gifts public message fiat goal](images/messages-id-goal-fiat.png)
+
+### Variant: goal-credit
+
+Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, **To be repaid.**, **Interest 0%. Only interest-free credits are offered for now.**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. No composer Ask.
+
+![21.gifts public message credit goal](images/messages-id-goal-credit.png)
 
 ### Variant: photos
 

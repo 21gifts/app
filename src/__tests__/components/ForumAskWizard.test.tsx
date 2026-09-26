@@ -311,8 +311,11 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Daily' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Donation' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Credit' })).toBeNull();
     rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
     expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Donation' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(4);
   });
@@ -336,5 +339,214 @@ describe('ForumAskWizard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'One-time' }));
     expect(onAskCadenceChange).toHaveBeenCalledWith('once');
+  });
+
+  it('starts with Donation pressed and shows To be repaid when Credit is selected', () => {
+    const onAskObligationChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        onAskObligationChange={onAskObligationChange}
+      />,
+    );
+    expect(screen.getByRole('group', { name: 'Donation or credit' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Donation' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Credit' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    expect(onAskObligationChange).toHaveBeenCalledWith('credit');
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        draft="Need help"
+        askObligation="credit"
+      />,
+    );
+    expect(screen.getByText('To be repaid.')).toBeTruthy();
+  });
+
+  it('returns to the amount step when Credit is chosen on the preview', () => {
+    const onStepChange = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        askObligation="donation"
+        draft="Hello"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    expect(onStepChange).toHaveBeenCalledWith(1);
+  });
+
+  it('keeps the credit preview when Credit is pressed again', () => {
+    const onStepChange = vi.fn();
+    const onAskObligationChange = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        askObligation="credit"
+        draft="Hello"
+        onAskObligationChange={onAskObligationChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    expect(onStepChange).not.toHaveBeenCalled();
+    expect(onAskObligationChange).not.toHaveBeenCalled();
+    expect(screen.getByText('9 of 9')).toBeTruthy();
+  });
+
+  it('does not show To be repaid on a donation preview', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        draft="Need help"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Donation' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.queryByText('To be repaid.')).toBeNull();
+  });
+
+  it('clicks Credit on step 1 without an obligation callback', () => {
+    renderWithLocale(<ForumAskWizard step={1} onStepChange={() => undefined} {...idle} />);
+    expect(screen.getByRole('heading', { name: 'How much?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+  });
+
+  it('walks a bitcoin credit and a dollar credit before photos', () => {
+    const onStepChange = vi.fn();
+    const onCreditTermDays = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        askObligation="credit"
+        onCreditTermDays={onCreditTermDays}
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/rising bitcoin price/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Donation' }));
+    expect(screen.getByRole('heading', { name: 'How much?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 year' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Repayment term: 1 year/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: '2 years' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Repayment term: 2 years/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.getByText(/day 11/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Amount owed: ₿21'000/)).toBeTruthy();
+    expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/rising bitcoin price/)).toBeTruthy();
+    expect(screen.getByText(/Repayment term: 10 days/)).toBeTruthy();
+    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'I want to take this credit.' }));
+    expect(screen.getByText(/I can repay the amount owed on this plan/)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'I can repay this.' }));
+    expect(onStepChange).toHaveBeenCalledWith(2);
+    expect(onCreditTermDays).toHaveBeenCalledWith(10);
+
+    cleanup();
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        askDraftUnit="fiat"
+        askObligation="credit"
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/stay bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/Nothing is exchanged/)).toBeTruthy();
+    expect(screen.getByText(/price falls/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
+    expect(screen.getByText(/fixed in US dollars/)).toBeTruthy();
+    expect(screen.getByText(/price falls/)).toBeTruthy();
+    expect(screen.queryByText(/rising bitcoin price/)).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    cleanup();
+    const back = vi.fn();
+    renderWithLocale(
+      <ForumAskWizard
+        step={2}
+        onStepChange={back}
+        {...idle}
+        askDraft="21000"
+        askObligation="credit"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(back).toHaveBeenCalledWith(1);
+    cleanup();
+    const preview = renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="21000"
+        askObligation="credit"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '' } });
+    preview.rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="21000"
+        askObligation="credit"
+        draft="Hello"
+      />,
+    );
+    expect(screen.getByText('To be repaid.')).toBeTruthy();
   });
 });

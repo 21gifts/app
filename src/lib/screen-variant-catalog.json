@@ -342,6 +342,168 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:goal-credit",
+    "label": "/welcome goal-credit",
+    "visual": "state-welcome-goal-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-amount",
+    "label": "/welcome ask-credit-amount",
+    "visual": "state-welcome-ask-credit-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-amount-fiat",
+    "label": "/welcome ask-credit-amount-fiat",
+    "visual": "state-welcome-ask-credit-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-amount-daily",
+    "label": "/welcome ask-credit-amount-daily",
+    "visual": "state-welcome-ask-credit-amount-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-empty",
+    "label": "/welcome ask-credit-empty",
+    "visual": "state-welcome-ask-credit-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-empty-daily",
+    "label": "/welcome ask-credit-empty-daily",
+    "visual": "state-welcome-ask-credit-empty-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-error-ask",
+    "label": "/welcome ask-credit-error-ask",
+    "visual": "state-welcome-ask-credit-error-ask",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-error-ask-daily",
+    "label": "/welcome ask-credit-error-ask-daily",
+    "visual": "state-welcome-ask-credit-error-ask-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-currency-btc",
+    "label": "/welcome ask-credit-currency-btc",
+    "visual": "state-welcome-ask-credit-currency-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-currency-fiat",
+    "label": "/welcome ask-credit-currency-fiat",
+    "visual": "state-welcome-ask-credit-currency-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-term",
+    "label": "/welcome ask-credit-term",
+    "visual": "state-welcome-ask-credit-term",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-term-custom",
+    "label": "/welcome ask-credit-term-custom",
+    "visual": "state-welcome-ask-credit-term-custom",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-plan-btc",
+    "label": "/welcome ask-credit-plan-btc",
+    "visual": "state-welcome-ask-credit-plan-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-plan-fiat",
+    "label": "/welcome ask-credit-plan-fiat",
+    "visual": "state-welcome-ask-credit-plan-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-want",
+    "label": "/welcome ask-credit-confirm-want",
+    "visual": "state-welcome-ask-credit-confirm-want",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-want-fiat",
+    "label": "/welcome ask-credit-confirm-want-fiat",
+    "visual": "state-welcome-ask-credit-confirm-want-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-can-btc",
+    "label": "/welcome ask-credit-confirm-can-btc",
+    "visual": "state-welcome-ask-credit-confirm-can-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-confirm-can-fiat",
+    "label": "/welcome ask-credit-confirm-can-fiat",
+    "visual": "state-welcome-ask-credit-confirm-can-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-photos",
+    "label": "/welcome ask-credit-photos",
+    "visual": "state-welcome-ask-credit-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-text",
+    "label": "/welcome ask-credit-text",
+    "visual": "state-welcome-ask-credit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview",
+    "label": "/welcome ask-credit-preview",
+    "visual": "state-welcome-ask-credit-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview-daily",
+    "label": "/welcome ask-credit-preview-daily",
+    "visual": "state-welcome-ask-credit-preview-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview-fiat",
+    "label": "/welcome ask-credit-preview-fiat",
+    "visual": "state-welcome-ask-credit-preview-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-posting",
+    "label": "/welcome ask-credit-posting",
+    "visual": "state-welcome-ask-credit-posting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-posting-daily",
+    "label": "/welcome ask-credit-posting-daily",
+    "visual": "state-welcome-ask-credit-posting-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-error-request",
+    "label": "/welcome ask-credit-error-request",
+    "visual": "state-welcome-ask-credit-error-request",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-error-request-daily",
+    "label": "/welcome ask-credit-error-request-daily",
+    "visual": "state-welcome-ask-credit-error-request-daily",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-amount",
     "label": "/welcome ask-amount",
     "visual": "state-welcome-ask-amount",
@@ -1080,6 +1242,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-goal-credit",
+    "label": "/members/[accountId] posts-open-goal-credit",
+    "visual": "state-members-posts-open-goal-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-photos",
     "label": "/members/[accountId] posts-open-photos",
     "visual": "state-members-posts-open-photos",
@@ -1401,6 +1569,24 @@
     "id": "/grants:open-applications",
     "label": "/grants open-applications",
     "visual": "state-grants-open-applications",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:no-applications",
+    "label": "/grants no-applications",
+    "visual": "state-grants-no-applications",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:applications-loading",
+    "label": "/grants applications-loading",
+    "visual": "state-grants-applications-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:applications-error",
+    "label": "/grants applications-error",
+    "visual": "state-grants-applications-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2352,6 +2538,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:goal-credit",
+    "label": "/messages/[id] goal-credit",
+    "visual": "state-messages-id-goal-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:photos",
     "label": "/messages/[id] photos",
     "visual": "state-messages-id-photos",
@@ -2559,6 +2751,24 @@
     "id": "/shops:staff-place",
     "label": "/shops staff-place",
     "visual": "state-shops-staff-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account",
+    "label": "/shops staff-account",
+    "visual": "state-shops-staff-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account-set",
+    "label": "/shops staff-account-set",
+    "visual": "state-shops-staff-account-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account-error",
+    "label": "/shops staff-account-error",
+    "visual": "state-shops-staff-account-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -522,6 +522,8 @@ export type ForumPlaceRow = ForumPlacePin & {
  * `goalCurrency` / `goalAmount` are the Ask definition (fiat code or BTC plus
  * the typed amount string). Optional so an older payload still parses.
  * Absent `goalCurrency` with `goalSats` is a legacy Ask.
+ * `goalRepayable` is `true` on a credit Ask; omitted on a donation and on
+ * older payloads. `false` is not accepted.
  * `goalAmountUsd` / `goalAmountChf` / `goalAmountEur` / `goalAmountPhp` are
  * frozen two-decimal snapshots of that goal, optional, each a string or null.
  * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
@@ -530,6 +532,7 @@ export type ForumPlaceRow = ForumPlacePin & {
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
  * `place` is optional and is not a body.
+ * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
  */
 export const forumMessageSchema = z
   .object({
@@ -547,6 +550,8 @@ export const forumMessageSchema = z
     goalSats: z.number().int().positive().optional(),
     goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
     goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
+    goalRepayable: z.literal(true).optional(),
+    goalTermDays: z.number().int().min(1).max(3650).optional(),
     goalAmountUsd: fiatAmountSchema.optional(),
     goalAmountChf: fiatAmountSchema.optional(),
     goalAmountEur: fiatAmountSchema.optional(),
@@ -574,6 +579,13 @@ export const forumMessageSchema = z
       })
       .optional(),
     place: forumPlacePinSchema.optional(),
+    shopAccount: z
+      .object({
+        id: z.string().min(1),
+        username: z.string().min(1),
+        name: z.string(),
+      })
+      .optional(),
     /** Present on a signed-in payload when the body marks members. Omitted with no session. */
     mentions: z
       .array(

@@ -46,6 +46,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn().mockResolvedValue(null),
   fetchPublicMessagePhoto: vi.fn().mockRejectedValue(new Error('no photo')),
   setMessagePlace: vi.fn(),
+  setMessageShopAccount: vi.fn(),
 }));
 
 import { fetchPublicMessage } from '@/lib/api';
@@ -750,6 +751,28 @@ describe('ForumBoard', () => {
     expect(screen.getByText('How much?')).toBeTruthy();
     expect(screen.getByLabelText('Ask')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
+  });
+
+  it('clicks Credit when composeIntent is ask', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composeIntent="ask"
+        askStep={1}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('How much?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
   });
 
   it('hides the Ask field when composerHidden', () => {
@@ -3145,6 +3168,203 @@ describe('ForumBoard', () => {
       />,
     );
     expect(within(card()).queryByRole('button', { name: 'Add a place' })).toBeNull();
+  });
+
+  it('links a shop account @username to the member profile', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const linked = screen.getByRole('link', { name: '@luna' });
+    expect(linked.getAttribute('href')).toBe('/members/acc-luna');
+  });
+
+  it('shows the staff account control on a top-level note when shopAccountEdit and onShopAccountUpdated are set', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopAccountEdit
+        onShopAccountUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const card = document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card).getByRole('button', { name: 'Add an account' })).toBeTruthy();
+  });
+
+  it('omits the staff account control on a nested reply even when shopAccountEdit is on', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop', replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopAccountEdit
+        onShopAccountUpdated={() => undefined}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-shop',
+            parentId: 'm1',
+            name: 'Bob',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const replyCard = document.querySelector('[data-reply-id="r-shop"]') as HTMLElement;
+    expect(within(replyCard).queryByRole('button', { name: 'Add an account' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Edit account' })).toBeNull();
+  });
+
+  it('omits the staff account button when shopAccountEdit or onShopAccountUpdated is missing', () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    const shop = { ...SAMPLE, text: 'Cafe Luna\n\n#21GiftsShop' };
+    const view = renderWithLocale(
+      <ForumBoard
+        messages={[shop]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const card = (): HTMLElement => document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card()).queryByRole('button', { name: 'Add an account' })).toBeNull();
+    view.rerender(
+      <ForumBoard
+        messages={[shop]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopAccountEdit
+        {...modeProps('all')}
+      />,
+    );
+    expect(within(card()).queryByRole('button', { name: 'Add an account' })).toBeNull();
+    view.rerender(
+      <ForumBoard
+        messages={[shop]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onShopAccountUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(within(card()).queryByRole('button', { name: 'Add an account' })).toBeNull();
   });
 
   it('shows shops.empty copy when emptyKey is shops.empty', () => {

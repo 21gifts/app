@@ -653,6 +653,13 @@
 - **Returns:** Upstream 200 public message JSON, with `place` omitted when cleared.
 - **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502.
 
+## Endpoint: PATCH /forum/messages/[id]/shop-account
+
+- **Purpose:** Same-origin moderation proxy to PATCH /messages/:id/shop-account with JSON `{ username }` (a handle, or `null` to clear).
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 public message JSON, with `shopAccount` omitted when cleared; otherwise `{ id, username, name }`.
+- **Errors:** 404 `{ "error": "No account with that username" }` when the handle is unknown; other failures match the place patch (401/403/400/503, or 502 when unreachable).
+
 ## Endpoint: GET /translate
 
 - **Purpose:** Same-origin proxy of api `GET /translate`. `{ available: boolean }` is true when the api has `TRANSLATE_URL` and `TRANSLATE_API_KEY`. Always 200 from the api.
