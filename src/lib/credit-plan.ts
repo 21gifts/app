@@ -49,7 +49,7 @@ export function creditSmallestUnits(amount: string, bitcoin: boolean): bigint | 
     return BigInt(trimmed);
   }
   const normalized = trimmed.replace(',', '.');
-  if (!/^\d+(\.\d+)?$/.test(normalized)) {
+  if (!/^\d+(\.\d*)?$/.test(normalized)) {
     return null;
   }
   const parts = normalized.split('.');
