@@ -1221,9 +1221,36 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet');
     await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
     await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'screen-wallet');
+  });
+
+  test('screen /wallet/phrase', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet/phrase');
+    await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
+    await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
+    await shotScreen(page, 'screen-wallet-phrase');
   });
 
   test('wallet phrase', async ({ page }) => {
@@ -1255,8 +1282,10 @@ test.describe('screen baselines', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/wallet?visual=phrase');
+    await page.goto('/wallet/phrase?visual=phrase');
     await expect(page.getByText('abandon')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
+    await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-phrase');
   });
 
@@ -1291,7 +1320,7 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet');
     await expect(page.getByText('Advanced functions')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
     await shotScreen(page, 'state-wallet-reveal');
   });
 
@@ -1326,7 +1355,7 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet');
     await page.getByText('Advanced functions').click();
-    await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toBeVisible();
     await shotScreen(page, 'state-wallet-reveal-open');
   });
 
@@ -1356,7 +1385,7 @@ test.describe('screen baselines', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/wallet?visual=error');
+    await page.goto('/wallet/phrase?visual=error');
     await expect(
       page.getByText(
         'The recovery phrase could not be created or opened. Check this device and try again.',
@@ -1392,7 +1421,7 @@ test.describe('screen baselines', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/wallet?visual=timeout');
+    await page.goto('/wallet/phrase?visual=timeout');
     await expect(
       page.getByText('The device prompt timed out before you finished. Try again.'),
     ).toBeVisible();
@@ -1426,13 +1455,14 @@ test.describe('screen baselines', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/wallet?visual=prf-unsupported');
+    await page.goto('/wallet/phrase?visual=prf-unsupported');
     await expect(
       page.getByText(
         'This browser cannot create a recovery phrase. Try another browser or device.',
       ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-prf-unsupported');
   });
 
@@ -3111,9 +3141,47 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
-    await page.getByRole('button', { name: 'Create payment' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'screen-pos');
+  });
+
+  test('screen /pos/amount', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos/amount');
+    await expect(page.getByRole('heading', { name: 'Amount' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Create payment' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'screen-pos-amount');
   });
 
   test('pos open', async ({ page }) => {
@@ -3264,7 +3332,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/pos');
+    await page.goto('/pos/amount');
     await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: '.', exact: true }).click();
     await page.getByRole('button', { name: '5', exact: true }).click();
@@ -3309,7 +3377,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/pos');
+    await page.goto('/pos/amount');
     await page.getByRole('button', { name: '2', exact: true }).click();
     await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();
@@ -3355,7 +3423,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/pos');
+    await page.goto('/pos/amount');
     await page.getByRole('button', { name: '2', exact: true }).click();
     await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();
@@ -3397,7 +3465,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/pos');
+    await page.goto('/pos/amount');
     await page.getByRole('button', { name: '2', exact: true }).click();
     await page.getByRole('button', { name: '1', exact: true }).click();
     await page.getByRole('button', { name: 'Create payment' }).click();

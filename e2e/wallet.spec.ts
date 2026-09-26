@@ -207,6 +207,16 @@ test('Function: WalletScreen — wallet heading is Wallet', async ({ page }) => 
   await expect(page).toHaveURL(/\/(wallet|login)/);
 });
 
+test('Function: WalletPhraseScreen — phrase page is not the receive page', async ({ page }) => {
+  await page.goto('/wallet/phrase');
+  await expect(page).toHaveURL(/\/(wallet\/phrase|login)/);
+});
+
+test('Function: WalletPhrasePage — phrase page is not the receive page', async ({ page }) => {
+  await page.goto('/wallet/phrase');
+  await expect(page).toHaveURL(/\/(wallet\/phrase|login)/);
+});
+
 test('Function: resetWalletReturn — wallet heading is Wallet', async ({ page }) => {
   await page.goto('/wallet');
   await expect(page).toHaveURL(/\/(wallet|login)/);

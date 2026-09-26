@@ -2,13 +2,14 @@
 
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button, Card } from '@/components/ui';
+import { Button, ButtonLink, Card } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
@@ -37,15 +38,9 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
   }
 }
 
-/**
- * Signed-in till: set one sat amount, then the existing Open CryptoPay QR
- * accepts only that amount until it is cancelled or the five minutes end.
- *
- * @returns The point-of-sale card.
- */
-export function PosTill(): ReactElement {
+/** Shared till state for the QR page and the amount page. */
+function usePosTillState() {
   const { t } = useTranslations();
-  const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
@@ -116,6 +111,13 @@ export function PosTill(): ReactElement {
   const charge = state?.charge ?? null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
   const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
+  const needsUsername = account !== null && (account.username ?? '') === '';
+  const needsAddress =
+    account !== null &&
+    (account.username ?? '') !== '' &&
+    (account.lightningAddress ?? '').trim() === '';
+  const canCharge =
+    (account?.username ?? '') !== '' && (account?.lightningAddress ?? '').trim() !== '';
 
   useEffect(() => {
     if (
@@ -207,90 +209,107 @@ export function PosTill(): ReactElement {
     }
   }
 
+  return {
+    address,
+    qr,
+    showQr,
+    state,
+    error,
+    charge,
+    remaining,
+    chargeFiat,
+    amount,
+    setAmount,
+    shownUnit,
+    setShownUnit,
+    busy,
+    rateDay,
+    canCharge,
+    needsUsername,
+    needsAddress,
+    onCreate,
+    onCancel,
+  };
+}
+
+/**
+ * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
+ * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel.
+ *
+ * @returns The point-of-sale card.
+ */
+export function PosTill(): ReactElement {
+  const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
+  const till = usePosTillState();
+
   return (
     <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('pos.title')}
       </h1>
-      {address !== null ? (
+      {till.address !== null ? (
         <div className="flex flex-col items-stretch gap-3 border-t border-app-border pt-6">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}
           </p>
-          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
-          {showQr && qr !== null ? (
+          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">
+            {till.address}
+          </p>
+          {till.showQr && till.qr !== null ? (
             <div className="flex justify-center">
-              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+              <QrCode value={till.qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
             </div>
           ) : null}
         </div>
       ) : null}
-      {account !== null && (account.username ?? '') === '' ? (
+      {till.needsUsername ? (
         <p className="text-center text-sm text-app-fg">
           <Link href="/profile" className="underline">
             {t('pos.needUsername')}
           </Link>
         </p>
       ) : null}
-      {account !== null &&
-      (account.username ?? '') !== '' &&
-      (account.lightningAddress ?? '').trim() === '' ? (
+      {till.needsAddress ? (
         <p className="text-center text-sm text-app-fg">
           <Link href="/profile" className="underline">
             {t('pos.needAddress')}
           </Link>
         </p>
       ) : null}
-      {state === null && error === null ? (
+      {till.state === null && till.error === null ? (
         <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-app-subtle" />
       ) : null}
-      {charge !== null ? (
-        <div className="flex flex-col gap-3">
+      {till.charge !== null ? (
+        <div className="flex flex-col items-center gap-3">
           <p className="text-center text-sm text-app-subtle">
-            {t('pos.left', { time: formatLeft(remaining) })}
+            {t('pos.left', { time: formatLeft(till.remaining) })}
           </p>
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
-            {formatBitcoin(charge.amountSats, numberFormat)}
+            {formatBitcoin(till.charge.amountSats, numberFormat)}
           </p>
-          {chargeFiat === null ? null : (
+          {till.chargeFiat === null ? null : (
             <p className="text-center text-sm text-app-subtle">
-              {formatFiatDisplay(chargeFiat, fiat, numberFormat)}
+              {formatFiatDisplay(till.chargeFiat, fiat, numberFormat)}
             </p>
           )}
           <Button
             type="button"
-            size="lg"
             variant="secondary"
-            disabled={busy}
-            onClick={() => void onCancel()}
+            disabled={till.busy}
+            onClick={() => void till.onCancel()}
           >
             {t('pos.cancel')}
           </Button>
         </div>
       ) : null}
-      {state !== null &&
-      charge === null &&
-      (account?.username ?? '') !== '' &&
-      (account?.lightningAddress ?? '').trim() !== '' ? (
-        <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
-          <AmountEntry
-            keypad
-            label={t('pos.amount')}
-            placeholder={t('pos.amountPlaceholder')}
-            value={amount}
-            onValueChange={setAmount}
-            onUnitChange={setShownUnit}
-            disabled={busy}
-            rateDay={rateDay}
-          />
-          <Button type="submit" size="lg" disabled={busy}>
-            {t('pos.create')}
-          </Button>
-        </form>
+      {till.state !== null && till.charge === null && till.canCharge ? (
+        <ButtonLink href="/pos/amount">{t('wallet.setAmount')}</ButtonLink>
       ) : null}
-      {error !== null ? (
+      {till.error !== null ? (
         <p role="alert" className="text-center text-sm text-app-danger">
-          {error}
+          {till.error}
         </p>
       ) : null}
     </Card>
@@ -298,8 +317,66 @@ export function PosTill(): ReactElement {
 }
 
 /**
- * `/pos` till. The wallet page does not reuse this card. It shows the address
- * and QR, then links here to set an amount.
+ * Amount-only page. No QR and no other till actions. Confirming returns to
+ * `/pos`, which then shows Cancel, the countdown, and the amount.
+ *
+ * @returns The amount card.
+ */
+export function PosAmount(): ReactElement {
+  const { t } = useTranslations();
+  const router = useRouter();
+  const till = usePosTillState();
+  const account = useAuthStore((state) => state.account);
+
+  useEffect(() => {
+    if (till.charge !== null) {
+      router.push('/pos');
+    } else if (account !== null && !till.canCharge) {
+      router.replace('/pos');
+    }
+    /* next/navigation's identity is not stable */
+  }, [account, till.canCharge, till.charge]);
+
+  return (
+    <Card surface={false}>
+      <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+        {t('pos.amount')}
+      </h1>
+      {till.state === null && till.error === null ? (
+        <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-app-subtle" />
+      ) : null}
+      {till.state !== null && till.charge === null && till.canCharge ? (
+        <form
+          className="flex w-full flex-col gap-3"
+          noValidate
+          onSubmit={(event) => void till.onCreate(event)}
+        >
+          <AmountEntry
+            keypad
+            label={t('pos.amount')}
+            placeholder={t('pos.amountPlaceholder')}
+            value={till.amount}
+            onValueChange={till.setAmount}
+            onUnitChange={till.setShownUnit}
+            disabled={till.busy}
+            rateDay={till.rateDay}
+          />
+          <Button type="submit" disabled={till.busy}>
+            {t('pos.create')}
+          </Button>
+        </form>
+      ) : null}
+      {till.error !== null ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {till.error}
+        </p>
+      ) : null}
+    </Card>
+  );
+}
+
+/**
+ * `/pos` QR page. The amount keypad lives on `/pos/amount`.
  *
  * @returns The point-of-sale card.
  */

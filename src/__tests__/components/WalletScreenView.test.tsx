@@ -32,6 +32,7 @@ describe('WalletScreenView', () => {
   it('shows a timeout reason and a hint', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="activate"
         status="error"
         error="timeout"
@@ -49,6 +50,7 @@ describe('WalletScreenView', () => {
   it('renders twelve words on phrase view without Continue or I saved these words', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="phrase"
         status="idle"
         error={null}
@@ -60,6 +62,7 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByText('abandon')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'I saved these words' })).toBeNull();
   });
@@ -68,6 +71,7 @@ describe('WalletScreenView', () => {
     const hidePhrase = vi.fn();
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="phrase"
         status="idle"
         error={null}
@@ -172,9 +176,46 @@ describe('WalletScreenView', () => {
     expect(screen.getByText('Advanced functions')).toBeTruthy();
   });
 
+  it('starts the recovery ceremony on the phrase page', () => {
+    const activate = vi.fn();
+    const showPhrase = vi.fn();
+    const activateView = renderWithLocale(
+      <WalletScreenView
+        surface="phrase"
+        view="activate"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={activate}
+        showPhrase={showPhrase}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add recovery phrase' }));
+    expect(activate).toHaveBeenCalledTimes(1);
+    activateView.unmount();
+    renderWithLocale(
+      <WalletScreenView
+        surface="phrase"
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={activate}
+        showPhrase={showPhrase}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show recovery phrase' }));
+    expect(showPhrase).toHaveBeenCalledTimes(1);
+  });
+
   it('shows a spinner on the activate button while busy', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="activate"
         status="busy"
         error={null}
@@ -193,6 +234,7 @@ describe('WalletScreenView', () => {
   it('shows a spinner on retry while busy', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="activate"
         status="busy"
         error="generic"
@@ -207,7 +249,6 @@ describe('WalletScreenView', () => {
   });
 
   it('opens Advanced functions to Show recovery phrase', () => {
-    const showPhrase = vi.fn();
     renderWithLocale(
       <WalletScreenView
         view="reveal"
@@ -215,19 +256,21 @@ describe('WalletScreenView', () => {
         error={null}
         words={[]}
         activate={vi.fn()}
-        showPhrase={showPhrase}
+        showPhrase={vi.fn()}
         hidePhrase={vi.fn()}
         retry={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByText('Advanced functions'));
-    fireEvent.click(screen.getByRole('button', { name: 'Show recovery phrase' }));
-    expect(showPhrase).toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'Show recovery phrase' }).getAttribute('href')).toBe(
+      '/wallet/phrase',
+    );
   });
 
   it('shows a spinner on reveal while busy', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="reveal"
         status="busy"
         error={null}
@@ -238,7 +281,6 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByText('Advanced functions')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Show recovery phrase' }).querySelector('svg'),
     ).not.toBeNull();
@@ -318,8 +360,63 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByText('ada@21.gifts')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Set an amount' }).getAttribute('href')).toBe('/pos');
+    const address = screen.getByText('ada@21.gifts');
+    const recovery = screen.getByText('Advanced functions');
+    expect(address.compareDocumentPosition(recovery) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    const setAmount = screen.getByRole('link', { name: 'Set an amount' });
+    expect(setAmount.getAttribute('href')).toBe('/pos');
+    expect(setAmount.className).not.toContain('w-full');
     expect(screen.queryByRole('heading', { name: 'Point of sale' })).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
+  it('goes back one step from the phrase page when the words are hidden', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
+    Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    renderWithLocale(
+      <WalletScreenView
+        surface="phrase"
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(historyBack).toHaveBeenCalledTimes(1);
+    historyBack.mockRestore();
+    if (descriptor) {
+      Object.defineProperty(window.history, 'length', descriptor);
+    }
+  });
+
+  it('returns from the phrase page to the wallet when nothing is open', () => {
+    Object.defineProperty(window.history, 'length', { configurable: true, value: 1 });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    renderWithLocale(
+      <WalletScreenView
+        surface="phrase"
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(assign).toHaveBeenCalledWith('/wallet');
+    expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    vi.unstubAllGlobals();
   });
 });

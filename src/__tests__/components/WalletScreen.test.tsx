@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { WalletScreen } from '@/components/WalletScreen';
+import { WalletPhraseScreen, WalletScreen } from '@/components/WalletScreen';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import {
   WALLET_VISUAL_FIXTURE_MNEMONIC,
@@ -53,8 +53,9 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add recovery phrase' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add recovery phrase' }));
+    expect(screen.getByRole('link', { name: 'Add recovery phrase' }).getAttribute('href')).toBe(
+      '/wallet/phrase',
+    );
   });
 
   it('renders Show recovery phrase', () => {
@@ -71,13 +72,15 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByText('Advanced functions')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Show recovery phrase' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show recovery phrase' }));
+    expect(screen.getByRole('link', { name: 'Show recovery phrase' }).getAttribute('href')).toBe(
+      '/wallet/phrase',
+    );
   });
 
   it('renders Try again on timeout', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="activate"
         status="error"
         error="timeout"
@@ -96,6 +99,7 @@ describe('WalletScreenView', () => {
   it('renders PRF unsupported copy', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="activate"
         status="error"
         error="prfUnsupported"
@@ -114,6 +118,7 @@ describe('WalletScreenView', () => {
   it('renders twelve words without Continue or I saved these words', () => {
     renderWithLocale(
       <WalletScreenView
+        surface="phrase"
         view="phrase"
         status="idle"
         error={null}
@@ -136,14 +141,23 @@ describe('WalletScreen', () => {
     phraseState.words = [];
     phraseState.error = null;
     renderWithLocale(<WalletScreen />);
-    expect(screen.getByRole('button', { name: 'Add recovery phrase' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Add recovery phrase' })).toBeTruthy();
   });
 
-  it('calls retry from Try again', () => {
+  it('calls retry from Try again on the phrase page', () => {
     retry.mockClear();
     phraseState.error = 'timeout';
-    renderWithLocale(<WalletScreen />);
+    renderWithLocale(<WalletPhraseScreen />);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retry).toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+  });
+
+  it('does not show the recovery words on the receive page', () => {
+    phraseState.view = 'phrase';
+    phraseState.words = words;
+    renderWithLocale(<WalletScreen />);
+    expect(screen.queryByText('abandon')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
   });
 });
