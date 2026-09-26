@@ -6609,10 +6609,6 @@ test('Function: PosTill — wallet links to the till instead of mounting it', as
 
 test('Function: ForumVideo — a playable note shows Full screen', async ({ page }) => {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -6636,7 +6632,7 @@ test('Function: ForumVideo — a playable note shows Full screen', async ({ page
       }),
     });
   });
-  await page.route('**/messages/m-clip/video.mp4', () => new Promise(() => undefined));
+  await page.route('**/video.mp4', () => new Promise(() => undefined));
   await page.goto('/welcome');
   await expect(page.getByText('A clip')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
@@ -6646,16 +6642,18 @@ test('Function: fetchPublicForumMessages — signed-out welcome asks for the act
   page,
 }) => {
   let sawActive = false;
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    const url = new URL(route.request().url());
-    const authorization = route.request().headerValue('authorization');
-    if (
-      route.request().method() === 'GET' &&
-      url.searchParams.get('mode') === 'active' &&
-      authorization === null
-    ) {
+  page.on('request', (request) => {
+    if (request.method() !== 'GET' || !request.url().includes('/forum/messages?')) {
+      return;
+    }
+    if (!request.url().includes('mode=active')) {
+      return;
+    }
+    if (request.headers()['authorization'] === undefined) {
       sawActive = true;
     }
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
