@@ -932,6 +932,7 @@ describe('AmountEntry', () => {
     renderWithLocale(<Harness />, 'en', 'ch', 'USD');
     const display = screen.getByLabelText('Amount');
     expect(display.tagName).toBe('P');
+    expect(screen.queryByText('Amount')).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Amount' })).toBeNull();
     expect(display.textContent).toBe('0');
     fireEvent.click(screen.getByRole('button', { name: /^0$/ }));
