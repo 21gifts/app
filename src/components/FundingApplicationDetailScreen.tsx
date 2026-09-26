@@ -9,7 +9,7 @@ import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
 import type { FundingApplicationDetail } from '@/lib/api-types';
-import { formatForumTime, formatForumTimeFromMs } from '@/lib/forum-time';
+import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -24,17 +24,14 @@ function personLabel(name: string | null, unnamed: string): string {
   return name !== null && name !== '' ? name : unnamed;
 }
 
-type ReviewStep = 1 | 2 | 3 | 4;
-
 /**
  * Signed-in staff review of one 21 gifts grant application.
  *
- * Founders and moderators walk four steps: principles 1–3 against living-room
- * posts (no replies), then whether the posts are true to the reviewer's
- * knowledge. **Requirement met** advances; **Requirement not met** or **No**
- * posts reject. **Yes** on the last step posts admit. Other signed-in
- * visitors see forbidden copy and no fetch. Renders nothing without a
- * session. In-card back goes to the open-applications queue.
+ * Founders and moderators answer two yes/no questions: whether the living-room
+ * posts match the core principles, then whether those posts are true. **Yes**
+ * on the truth question posts admit. **No** on either question posts reject.
+ * Other signed-in visitors see forbidden copy and no fetch. Renders nothing
+ * without a session. In-card back goes to the open-applications queue.
  *
  * @param props - Dynamic route `accountId`.
  * @returns The detail card, forbidden copy, or `null` without a session.
@@ -52,9 +49,9 @@ export function FundingApplicationDetailScreen({
   const [detail, setDetail] = useState<FundingApplicationDetail | null>(null);
   const [detailError, setDetailError] = useState(false);
   const [detailAttempt, setDetailAttempt] = useState(0);
-  const [step, setStep] = useState<ReviewStep>(1);
   const [deciding, setDeciding] = useState(false);
   const [decideFailed, setDecideFailed] = useState(false);
+  const [step, setStep] = useState<'principles' | 'truth'>('principles');
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -63,7 +60,6 @@ export function FundingApplicationDetailScreen({
     let cancelled = false;
     setDetailError(false);
     setDecideFailed(false);
-    setStep(1);
     void (async () => {
       try {
         const next = await fetchFundingApplication(session, accountId);
@@ -91,7 +87,7 @@ export function FundingApplicationDetailScreen({
   const heading = (
     <div className="flex w-full items-center gap-2">
       <Link
-        href="/moderate/applications"
+        href="/grants/applications"
         aria-label={t('funding.applications.heading')}
         className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
       >
@@ -125,24 +121,12 @@ export function FundingApplicationDetailScreen({
     void (async () => {
       try {
         await run(session, accountId);
-        router.push('/moderate/applications');
+        router.push('/grants/applications');
       } catch {
         setDecideFailed(true);
         setDeciding(false);
       }
     })();
-  };
-
-  const onMet = (): void => {
-    if (step === 4) {
-      finish('admit');
-      return;
-    }
-    setStep((step + 1) as ReviewStep);
-  };
-
-  const onUnmet = (): void => {
-    finish('reject');
   };
 
   let body: ReactElement;
@@ -168,7 +152,6 @@ export function FundingApplicationDetailScreen({
   } else {
     const unnamed = t('moderate.unnamed');
     const name = personLabel(detail.account.name, unnamed);
-    const principle = step === 4 ? null : step;
     const open = detail.grant.status === 'pending' || detail.grant.status === 'trial';
     body = (
       <>
@@ -177,30 +160,17 @@ export function FundingApplicationDetailScreen({
             {name}
           </Link>
         </p>
-        <p className="text-center text-xs text-app-subtle">
-          {formatForumTimeFromMs(detail.grant.appliedAt, locale)}
+        <p className="text-center text-sm text-app-muted">
+          {step === 'truth' ? t('funding.review.truth') : t('funding.review.question.staff')}
         </p>
-        {principle === 1 ? (
-          <>
-            <p className="text-center text-sm text-app-muted">{t('funding.review.check1')}</p>
-            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv1Title')}</p>
-            <p className="text-center text-sm text-app-muted">{t('about.conv1Body')}</p>
-          </>
-        ) : principle === 2 ? (
-          <>
-            <p className="text-center text-sm text-app-muted">{t('funding.review.check2')}</p>
-            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv2Title')}</p>
-            <p className="text-center text-sm text-app-muted">{t('about.conv2Body')}</p>
-          </>
-        ) : principle === 3 ? (
-          <>
-            <p className="text-center text-sm text-app-muted">{t('funding.review.check3')}</p>
-            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv3Title')}</p>
-            <p className="text-center text-sm text-app-muted">{t('about.conv3Body')}</p>
-          </>
-        ) : (
-          <p className="text-center text-sm text-app-muted">{t('funding.review.truth')}</p>
-        )}
+        {step === 'principles' ? (
+          <a
+            href="https://21.gifts/about"
+            className="text-center text-sm text-app-fg underline underline-offset-2"
+          >
+            {t('nav.about')}
+          </a>
+        ) : null}
         {detail.messages.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>
         ) : (
@@ -242,9 +212,15 @@ export function FundingApplicationDetailScreen({
                   <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : undefined
               }
-              onClick={onMet}
+              onClick={() => {
+                if (step === 'principles') {
+                  setStep('truth');
+                  return;
+                }
+                finish('admit');
+              }}
             >
-              {step === 4 ? t('funding.review.yes') : t('funding.review.met')}
+              {t('funding.review.yes')}
             </Button>
             <Button
               type="button"
@@ -255,9 +231,11 @@ export function FundingApplicationDetailScreen({
                   <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 ) : undefined
               }
-              onClick={onUnmet}
+              onClick={() => {
+                finish('reject');
+              }}
             >
-              {step === 4 ? t('funding.review.no') : t('funding.review.unmet')}
+              {t('funding.review.no')}
             </Button>
           </div>
         ) : null}

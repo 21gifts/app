@@ -9,14 +9,14 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Owner profile section for verification and the 21 gifts grant.
+ * Grant section shown on `/grants`, not on the profile.
  *
  * Unverified (`basis`) members see that they are not verified and how in-person
  * verification works (a moderator who personally knows them and has met them
  * in the real world confirms them on the member page). No apply button.
  * Verified and above see funding status from `account.funding` (missing or
- * `null` is treated as `none`): grace copy, About link, and Apply link to
- * `/profile/apply` for `none`/`rejected` (no denial sentence and no conviction
+ * `null` is treated as `none`): the daily-gift sentence, About link, and Apply link to
+ * `/grants/apply` for `none`/`rejected` (no denial sentence and no conviction
  * titles), open application, one-day trial, or admitted with the participation sentence.
  *
  * @returns The grant section, or `null` without a session or account.
@@ -31,14 +31,14 @@ export function FundingStatusCard(): ReactElement | null {
   }
 
   const heading = (
-    <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
       {t('funding.heading')}
-    </p>
+    </h1>
   );
 
   if (!roleAtLeast(account.role, 'verified')) {
     return (
-      <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+      <div className="flex w-full flex-col items-stretch gap-3">
         {heading}
         <p className="text-center text-sm text-app-muted">{t('funding.notVerified')}</p>
         <p className="text-center text-sm text-app-muted">{t('funding.verifyHow')}</p>
@@ -82,7 +82,7 @@ export function FundingStatusCard(): ReactElement | null {
         >
           {t('nav.about')}
         </Link>
-        <ButtonLink href="/profile/apply" size="lg">
+        <ButtonLink href="/grants/apply" size="lg">
           {t('funding.apply')}
         </ButtonLink>
       </>
@@ -90,7 +90,7 @@ export function FundingStatusCard(): ReactElement | null {
   }
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+    <div className="flex w-full flex-col items-stretch gap-3">
       {heading}
       {body}
     </div>

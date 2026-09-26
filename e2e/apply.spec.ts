@@ -33,6 +33,7 @@ test('Function: FundingApplyPage — apply heading is visible', async ({ page })
     });
   });
   await page.goto('/profile/apply');
+  await page.goto('/grants/apply');
   await expect(page.getByRole('heading', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
 });
 
@@ -68,7 +69,7 @@ test('Function: FundingApplyScreen — empty About me is the first calm step', a
       }),
     });
   });
-  await page.goto('/profile/apply');
+  await page.goto('/grants/apply');
   await expect(
     page.getByText('First, write a short About me so people can get to know you.'),
   ).toBeVisible();
@@ -106,7 +107,7 @@ test('Function: aboutMeFilled — name-only About me still asks for a bio', asyn
       }),
     });
   });
-  await page.goto('/profile/apply');
+  await page.goto('/grants/apply');
   await expect(
     page.getByText('First, write a short About me so people can get to know you.'),
   ).toBeVisible();
@@ -145,7 +146,7 @@ test('Function: nextFillStep — photo is next after a filled About me', async (
       }),
     });
   });
-  await page.goto('/profile/apply');
+  await page.goto('/grants/apply');
   await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
 });
 
@@ -182,6 +183,6 @@ test('Function: locationFilled — location is next after About me and photo', a
       }),
     });
   });
-  await page.goto('/profile/apply');
+  await page.goto('/grants/apply');
   await expect(page.getByText('Next, add the place you live.')).toBeVisible();
 });

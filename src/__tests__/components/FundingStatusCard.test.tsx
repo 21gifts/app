@@ -78,7 +78,7 @@ describe('FundingStatusCard', () => {
       account: { ...account, role: 'basis', funding: null },
     });
     renderWithLocale(<FundingStatusCard />);
-    expect(screen.getByText('21 gifts grant')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '21 gifts grant', level: 1 })).toBeTruthy();
     expect(screen.getByText('You are not verified yet.')).toBeTruthy();
     expect(
       screen.getByText(
@@ -101,13 +101,13 @@ describe('FundingStatusCard', () => {
     expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
     expect(
       screen.getByText(
-        'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
-    ).toBe('/profile/apply');
+    ).toBe('/grants/apply');
   });
 
   it('treats missing funding as none for verified accounts', () => {
@@ -131,7 +131,7 @@ describe('FundingStatusCard', () => {
     expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
     expect(
       screen.getByText(
-        'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
