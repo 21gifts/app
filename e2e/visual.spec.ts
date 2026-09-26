@@ -3124,6 +3124,7 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos/amount');
     await expect(page.getByRole('heading', { name: 'Amount' })).toBeVisible();
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-amount-error');
   });

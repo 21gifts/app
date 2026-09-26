@@ -256,6 +256,27 @@ describe('PosScreen', () => {
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: original });
   });
 
+  it('loads the amount page again after Try again', async () => {
+    let charges = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes('/pos/charge')) {
+          charges += 1;
+          if (charges === 1) {
+            return jsonResponse({ error: 'nope' }, 500);
+          }
+          return jsonResponse({ charge: null, history: [] });
+        }
+        return jsonResponse({ error: 'nope' }, 500);
+      }),
+    );
+    renderWithLocale(<PosAmount />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
   it('shows an error when the till cannot be loaded', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: 'nope' }, 500)));
     renderWithLocale(<PosScreen />);

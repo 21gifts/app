@@ -81,6 +81,7 @@ type PosTillState = {
   needsAddress: boolean;
   onCreate: (event: FormEvent) => Promise<void>;
   onCancel: () => Promise<void>;
+  retryLoad: () => void;
 };
 
 /** Shared till state for the QR page and the amount page. */
@@ -101,6 +102,7 @@ function usePosTillState(): PosTillState {
   busyRef.current = busy;
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     setShowQr(true);
@@ -142,7 +144,7 @@ function usePosTillState(): PosTillState {
     return () => {
       alive = false;
     };
-  }, [session, t]);
+  }, [reload, session, t]);
 
   useEffect(() => {
     if (state?.charge === null || state?.charge === undefined) {
@@ -298,6 +300,10 @@ function usePosTillState(): PosTillState {
     needsAddress,
     onCreate,
     onCancel,
+    retryLoad: () => {
+      setError(null);
+      setReload((n) => n + 1);
+    },
   };
 }
 
@@ -437,6 +443,11 @@ export function PosAmount(): ReactElement {
         <p role="alert" className="text-center text-sm text-app-danger">
           {till.error}
         </p>
+      ) : null}
+      {till.state === null && till.error !== null ? (
+        <Button type="button" onClick={till.retryLoad}>
+          {t('login.retry')}
+        </Button>
       ) : null}
     </Card>
   );
