@@ -1138,7 +1138,7 @@ Typed caption **Caption before attaching a photo.** in the composer; no preview 
 
 ### Variant: keyboard-viewport
 
-Signed-in `/welcome` with the composer focused while `visualViewport.height` is 60% of `innerHeight` and `offsetTop` is 15% (iPhone Safari software-keyboard geometry). The rounded AppShell frame still fills `innerHeight`; it does not shrink to the short visual viewport.
+Signed-in `/welcome` with the composer focused while `visualViewport.height` is 60% of `innerHeight` and `offsetTop` is 15% (iPhone Safari software-keyboard geometry). The rounded AppShell frame matches that visible height. It does not stay at `innerHeight`, so the page does not scroll under the frame.
 
 ![21.gifts welcome keyboard viewport](images/welcome-keyboard-viewport.png)
 
