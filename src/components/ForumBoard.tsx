@@ -698,9 +698,11 @@ export function ForumBoard({
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedNostrId, setCopiedNostrId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyNostrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
@@ -813,6 +815,9 @@ export function ForumBoard({
       if (copyTimer.current !== null) {
         clearTimeout(copyTimer.current);
       }
+      if (copyNostrTimer.current !== null) {
+        clearTimeout(copyNostrTimer.current);
+      }
     };
   }, []);
 
@@ -873,6 +878,18 @@ export function ForumBoard({
     }, COPY_RESET_MS);
   };
 
+  const flashCopiedNostr = (messageId: string): void => {
+    setCopiedNostrId(messageId);
+    /* v8 ignore next 6 -- timer reset between copies */
+    if (copyNostrTimer.current !== null) {
+      clearTimeout(copyNostrTimer.current);
+    }
+    copyNostrTimer.current = setTimeout(() => {
+      setCopiedNostrId(null);
+      copyNostrTimer.current = null;
+    }, COPY_RESET_MS);
+  };
+
   const copyMessageLink = async (messageId: string): Promise<void> => {
     const url = shortResourceUrl(window.location.origin, messageId, `/messages/${messageId}`);
     try {
@@ -890,6 +907,32 @@ export function ForumBoard({
       }
       if (fallbackCopy(url)) {
         flashCopied(messageId);
+        return;
+      }
+      console.error('Copy link failed');
+    }
+  };
+
+  const copyNostrLink = async (message: ForumMessage): Promise<void> => {
+    const uri = message.nostrUri;
+    if (typeof uri !== 'string' || uri === '') {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(uri);
+      /* v8 ignore next 3 -- copy resolved after unmount */
+      if (!copyMounted.current) {
+        return;
+      }
+      flashCopiedNostr(message.id);
+      return;
+    } catch {
+      /* v8 ignore next 3 -- clipboard threw after unmount */
+      if (!copyMounted.current) {
+        return;
+      }
+      if (fallbackCopy(uri)) {
+        flashCopiedNostr(message.id);
         return;
       }
       console.error('Copy link failed');
@@ -947,6 +990,7 @@ export function ForumBoard({
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const copied = copiedId === message.id;
+          const copiedNostr = copiedNostrId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
 
@@ -1220,6 +1264,21 @@ export function ForumBoard({
                     <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
                 </IconButton>
+                {typeof message.nostrUri === 'string' && message.nostrUri !== '' ? (
+                  <button
+                    type="button"
+                    aria-label={t('forum.copyNostr')}
+                    title={t('forum.copyNostr')}
+                    data-copied={copiedNostr ? 'true' : undefined}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      void copyNostrLink(message);
+                    }}
+                    className="text-xs font-medium text-app-muted hover:text-app-fg"
+                  >
+                    Nostr
+                  </button>
+                ) : null}
                 {shopPlaceEdit &&
                 onShopPlaceUpdated !== undefined &&
                 message.parentId === undefined ? (
@@ -1460,6 +1519,21 @@ export function ForumBoard({
                                   <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                                 )}
                               </IconButton>
+                              {typeof reply.nostrUri === 'string' && reply.nostrUri !== '' ? (
+                                <button
+                                  type="button"
+                                  aria-label={t('forum.copyNostr')}
+                                  title={t('forum.copyNostr')}
+                                  data-copied={copiedNostrId === reply.id ? 'true' : undefined}
+                                  onClick={(event) => {
+                                    stopCardToggle(event);
+                                    void copyNostrLink(reply);
+                                  }}
+                                  className="text-xs font-medium text-app-muted hover:text-app-fg"
+                                >
+                                  Nostr
+                                </button>
+                              ) : null}
                               {reply.deletedAt === undefined && onDeleted !== undefined ? (
                                 <DeletePostControl
                                   kind="reply"

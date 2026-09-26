@@ -516,6 +516,7 @@ export type ForumPlaceRow = ForumPlacePin & {
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
+ * `nostrUri` is an optional `nostr:nevent1…` copy target; omitted when the api has not sent one.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
  * `goalSats` is the optional whole-sat ask on a top-level note; omitted when
  * the note has no goal; mixed/old payloads without the key still parse.
@@ -569,6 +570,10 @@ export const forumMessageSchema = z
     role: z.enum(ROLE_ORDER).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
     via: z.literal('nostr').optional(),
+    nostrUri: z
+      .string()
+      .regex(/^nostr:nevent1[023456789acdefghjklmnpqrstuvwxyz]+$/)
+      .optional(),
     deletedAt: z.string().datetime({ offset: true }).optional(),
     deletedBy: z
       .object({

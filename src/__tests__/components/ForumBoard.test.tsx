@@ -6539,6 +6539,43 @@ describe('reply form size', () => {
     expect(disconnected).toBe(true);
     globalThis.ResizeObserver = previous;
   });
+
+  it('copies nostrUri from Copy Nostr link and still copies the https short link', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const noteId = '77e0510d-03a8-4063-8716-75d61178e7f1';
+    const nostrUri = 'nostr:nevent1qqsrexample';
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: noteId, nostrUri }, SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const nostrCard = document.querySelector(`[data-message-id="${noteId}"]`) as HTMLElement;
+    const plainCard = document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    fireEvent.click(within(nostrCard).getByRole('button', { name: 'Copy Nostr link' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(nostrUri);
+    });
+    expect(writeText).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(nostrCard).getByRole('button', { name: 'Copy link to this note' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/77e0510d`);
+    });
+    expect(within(plainCard).queryByRole('button', { name: 'Copy Nostr link' })).toBeNull();
+  });
 });
 
 describe('revealReplyForm', () => {
