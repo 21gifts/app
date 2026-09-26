@@ -6575,6 +6575,8 @@ describe('reply form size', () => {
       expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/77e0510d`);
     });
     expect(within(plainCard).queryByRole('button', { name: 'Copy Nostr link' })).toBeNull();
+    expect(within(nostrCard).queryByText('Nostr')).toBeNull();
+    expect(within(nostrCard).queryByText('Copy Nostr link')).toBeNull();
   });
 
   it('copies nostrUri from a reply and falls back when the clipboard rejects', async () => {

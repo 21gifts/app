@@ -8,6 +8,7 @@ import {
   ImagePlus,
   Link2,
   Loader2,
+  Share2,
   MapPin,
   Reply,
   Send,
@@ -987,6 +988,7 @@ export function ForumBoard({
           const expanded = expandedId === message.id;
           const copied = copiedId === message.id;
           const copiedNostr = copiedNostrId === message.id;
+          const noteNostrUri = message.nostrUri;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
 
@@ -1260,20 +1262,25 @@ export function ForumBoard({
                     <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
                 </IconButton>
-                {typeof message.nostrUri === 'string' && message.nostrUri !== '' ? (
-                  <button
+                {typeof noteNostrUri === 'string' && noteNostrUri !== '' ? (
+                  <IconButton
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     aria-label={t('forum.copyNostr')}
                     title={t('forum.copyNostr')}
                     data-copied={copiedNostr ? 'true' : undefined}
                     onClick={(event) => {
                       stopCardToggle(event);
-                      void copyNostrLink(message.nostrUri, message.id);
+                      void copyNostrLink(noteNostrUri, message.id);
                     }}
-                    className="text-xs font-medium text-app-muted hover:text-app-fg"
                   >
-                    Nostr
-                  </button>
+                    {copiedNostr ? (
+                      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                    ) : (
+                      <Share2 aria-hidden="true" className="h-3.5 w-3.5" />
+                    )}
+                  </IconButton>
                 ) : null}
                 {shopPlaceEdit &&
                 onShopPlaceUpdated !== undefined &&
@@ -1342,6 +1349,7 @@ export function ForumBoard({
                         const replyRoleKeys =
                           replyTaggedRole === null ? null : ROLE_TAG_KEYS[replyTaggedRole];
                         const replyHintOpen = openRoleMessageId === reply.id;
+                        const replyNostrUri = reply.nostrUri;
                         return (
                           <li
                             key={reply.id}
@@ -1515,20 +1523,25 @@ export function ForumBoard({
                                   <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                                 )}
                               </IconButton>
-                              {typeof reply.nostrUri === 'string' && reply.nostrUri !== '' ? (
-                                <button
+                              {typeof replyNostrUri === 'string' && replyNostrUri !== '' ? (
+                                <IconButton
                                   type="button"
+                                  size="sm"
+                                  variant="ghost"
                                   aria-label={t('forum.copyNostr')}
                                   title={t('forum.copyNostr')}
                                   data-copied={copiedNostrId === reply.id ? 'true' : undefined}
                                   onClick={(event) => {
                                     stopCardToggle(event);
-                                    void copyNostrLink(reply.nostrUri, reply.id);
+                                    void copyNostrLink(replyNostrUri, reply.id);
                                   }}
-                                  className="text-xs font-medium text-app-muted hover:text-app-fg"
                                 >
-                                  Nostr
-                                </button>
+                                  {copiedNostrId === reply.id ? (
+                                    <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Share2 aria-hidden="true" className="h-3.5 w-3.5" />
+                                  )}
+                                </IconButton>
                               ) : null}
                               {reply.deletedAt === undefined && onDeleted !== undefined ? (
                                 <DeletePostControl
