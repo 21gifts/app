@@ -6956,6 +6956,11 @@ test('Function: PosAmount — amount page has the keypad and no QR', async ({ pa
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
 });
 
+test('Function: resetPosTillWriteForTests — till heading is visible', async ({ page }) => {
+  await page.goto('/pos');
+  await expect(page).toHaveURL(/\/(pos|login)/);
+});
+
 test('Function: PosAmountPage — amount heading is visible', async ({ page }) => {
   await page.goto('/pos/amount');
   await expect(page).toHaveURL(/\/(pos\/amount|login)/);

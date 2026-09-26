@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PosAmount, PosScreen } from '@/components/PosScreen';
+import { PosAmount, PosScreen, resetPosTillWriteForTests } from '@/components/PosScreen';
 import { fetchGiftStats } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -60,6 +60,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  resetPosTillWriteForTests();
   push.mockClear();
   replace.mockClear();
   useAuthStore.setState({ session: null, account: null });

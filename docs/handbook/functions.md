@@ -35,26 +35,33 @@
 - **Returns / side effects:** React element. Calls `fetchPosState` and `cancelPosCharge`.
 - **Used by:** `PosScreen`.
 
+## Function: resetPosTillWriteForTests
+
+- **Purpose:** Drop the module-level till write so a later test does not wait on a request the previous test left hanging.
+- **Inputs:** None.
+- **Returns / side effects:** Sets the in-flight write to null. Production clears that write when the request settles.
+- **Used by:** `PosScreen` tests.
+
 ## Function: fetchPosState
 
 - **Purpose:** `GET /pos/charge` for the signed-in till.
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** `{ charge, history }`. Throws when the response is not OK.
-- **Used by:** `PosScreen`.
+- **Used by:** `PosTill`, `PosAmount`.
 
 ## Function: createPosCharge
 
 - **Purpose:** `POST /pos/charge` with `{ amountSats }`.
 - **Inputs:** Bearer `sessionToken` and a whole sat amount.
 - **Returns / side effects:** The created charge. Throws with the API error string.
-- **Used by:** `PosScreen`.
+- **Used by:** `PosAmount`.
 
 ## Function: cancelPosCharge
 
 - **Purpose:** `DELETE /pos/charge`.
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Resolves when the open charge is cancelled. Throws otherwise.
-- **Used by:** `PosScreen`.
+- **Used by:** `PosTill`.
 
 ## Function: proxyPosGet
 
@@ -1417,7 +1424,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosScreen`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
 
 ## Function: RootLayout
 
@@ -1925,7 +1932,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosScreen`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
 
 ## Function: shownFiatForSats
 
@@ -3689,7 +3696,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip.
 - **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, or `{ kind: 'sats', sats }`. No I/O.
-- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosScreen`.
+- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosAmount`.
 
 ## Function: replySatsFromDraft
 
