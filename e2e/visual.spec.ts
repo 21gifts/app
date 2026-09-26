@@ -7310,7 +7310,7 @@ test.describe('profile funding states', () => {
     const sentence = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
       Date.parse('2026-08-28T12:00:00.000Z'),
       'en',
-    )}`;
+    )}, reviewed by Ada`;
     const revealed = page.getByText(sentence, { exact: true });
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
