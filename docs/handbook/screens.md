@@ -207,6 +207,12 @@ No phrase yet. **Add recovery phrase** on its own page. No receive QR.
 
 ![21.gifts wallet phrase add](images/wallet-phrase-add.png)
 
+### Variant: reveal
+
+The passkey can already show a phrase. **Show recovery phrase** is the only control. No receive QR.
+
+![21.gifts wallet phrase reveal](images/wallet-phrase-reveal.png)
+
 ### Variant: phrase
 
 12-word grid from a fixture mnemonic (not live PRF). No receive QR.

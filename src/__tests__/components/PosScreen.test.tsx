@@ -137,7 +137,7 @@ describe('PosScreen', () => {
     await pressAmount('21');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/pos');
+      expect(replace).toHaveBeenCalledWith('/pos');
     });
     expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
   });
@@ -201,7 +201,7 @@ describe('PosScreen', () => {
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/pos');
+      expect(replace).toHaveBeenCalledWith('/pos');
     });
   });
 
@@ -588,9 +588,138 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosAmount />);
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/pos');
+      expect(replace).toHaveBeenCalledWith('/pos');
     });
     expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+  });
+
+  it('ignores a second cancel while the first is still running', async () => {
+    let deletes = 0;
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          deletes += 1;
+          return new Promise<Response>(() => undefined);
+        }
+        return jsonResponse({ charge, history: [charge] });
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    const cancel = await screen.findByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancel);
+    fireEvent.click(cancel);
+    await waitFor(() => {
+      expect(deletes).toBe(1);
+    });
+  });
+
+  it('ignores a second create while the first is still running', async () => {
+    let posts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          posts += 1;
+          return new Promise<Response>(() => undefined);
+        }
+        return jsonResponse({ charge: null, history: [] });
+      }),
+    );
+    renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    const create = screen.getByRole('button', { name: 'Create payment' });
+    fireEvent.click(create);
+    fireEvent.click(create);
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+  });
+
+  it('waits for an in-flight create before showing an empty till', async () => {
+    let releasePost: ((value: Response) => void) | undefined;
+    let posted = false;
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        if (!posted) {
+          return jsonResponse({ charge: null, history: [] });
+        }
+        return jsonResponse({ charge, history: [charge] });
+      }),
+    );
+    const amount = renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(releasePost).toEqual(expect.any(Function));
+    });
+    amount.unmount();
+    renderWithLocale(<PosScreen />);
+    expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    posted = true;
+    await act(async () => {
+      releasePost?.(jsonResponse({ charge }));
+      await Promise.resolve();
+    });
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+  });
+
+  it('drops a till load that unmounts while create is still running', async () => {
+    let releasePost: ((value: Response) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        return jsonResponse({ charge: null, history: [] });
+      }),
+    );
+    const amount = renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(releasePost).toEqual(expect.any(Function));
+    });
+    amount.unmount();
+    const till = renderWithLocale(<PosScreen />);
+    till.unmount();
+    await act(async () => {
+      releasePost?.(
+        jsonResponse({
+          charge: {
+            id: 'c1',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
+      );
+      await Promise.resolve();
+    });
   });
 
   it('sends a member who cannot charge back to the QR page', async () => {

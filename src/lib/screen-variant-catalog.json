@@ -144,6 +144,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/phrase:reveal",
+    "label": "/wallet/phrase reveal",
+    "visual": "state-wallet-phrase-reveal",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:phrase",
     "label": "/wallet/phrase phrase",
     "visual": "state-wallet-phrase",
