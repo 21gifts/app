@@ -393,7 +393,7 @@ describe('RulesSetup', () => {
         <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeInstanceOf(HTMLElement);
     (scroller as HTMLElement).scrollTop = 400;
     expect((scroller as HTMLElement).scrollTop).toBe(400);
@@ -410,7 +410,7 @@ describe('RulesSetup', () => {
         <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeInstanceOf(HTMLElement);
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));

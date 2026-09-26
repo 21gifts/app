@@ -9,27 +9,27 @@ describe('APP_HEIGHT_BOOTSTRAP_SCRIPT', () => {
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('--app-height');
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('innerHeight');
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('setProperty');
-    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('Math.max');
-    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('offsetTop');
+    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).not.toContain('Math.max');
+    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).not.toContain('offsetTop');
     const skipWhenPinched = 'Math.abs(vv.scale-1)>0.01){return;}';
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain(skipWhenPinched);
   });
 });
 
 describe('resolveAppHeight', () => {
-  it('uses innerHeight when visualViewport is shorter', () => {
-    expect(resolveAppHeight(800, { height: 480 })).toBe(800);
+  it('uses the visible viewport when it is shorter than innerHeight', () => {
+    expect(resolveAppHeight(800, { height: 480 })).toBe(480);
   });
 
-  it('covers visualViewport.offsetTop so a scrolled keyboard viewport cannot leave a gap', () => {
-    expect(resolveAppHeight(700, { height: 500, offsetTop: 250 })).toBe(750);
+  it('ignores offsetTop so the frame is not taller than the visible viewport', () => {
+    expect(resolveAppHeight(700, { height: 500, offsetTop: 250 })).toBe(500);
   });
 
-  it('uses innerHeight for the iPhone Safari keyboard geometry (short height plus offsetTop)', () => {
-    expect(resolveAppHeight(852, { height: 511, offsetTop: 200 })).toBe(852);
+  it('uses visualViewport.height for the iPhone Safari keyboard geometry', () => {
+    expect(resolveAppHeight(852, { height: 511, offsetTop: 200 })).toBe(511);
   });
 
-  it('bootstrap IIFE writes max(innerHeight, height + offsetTop) for that keyboard geometry', () => {
+  it('bootstrap IIFE writes visualViewport.height for that keyboard geometry', () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 852 });
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
@@ -37,15 +37,15 @@ describe('resolveAppHeight', () => {
     });
     document.documentElement.style.removeProperty('--app-height');
     new Function(APP_HEIGHT_BOOTSTRAP_SCRIPT)();
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
   });
 
   it('skips the write when visualViewport is pinch-zoomed', () => {
     expect(resolveAppHeight(800, { height: 480, scale: 2 })).toBeNull();
   });
 
-  it('uses max height when scale is 1', () => {
-    expect(resolveAppHeight(800, { height: 480, scale: 1 })).toBe(800);
+  it('uses visualViewport.height when scale is 1', () => {
+    expect(resolveAppHeight(800, { height: 480, scale: 1 })).toBe(480);
   });
 
   it('falls back to innerHeight when visualViewport is null', () => {
