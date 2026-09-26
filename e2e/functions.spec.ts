@@ -7042,6 +7042,18 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
+test('Function: Scrollport — login has one scrollport and the document does not scroll', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await expect(page.locator('[data-scrollport]')).toHaveCount(1);
+  const documentScrolls = await page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollHeight > root.clientHeight + 1;
+  });
+  expect(documentScrolls).toBe(false);
+});
+
 test('Function: useAppShellScroller — welcome inner scroller drives New posts', async ({
   page,
 }) => {
