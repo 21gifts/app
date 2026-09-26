@@ -238,7 +238,9 @@ app/
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap row (data-scroll-x, 88% peek, chip, dots)
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
-│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
+│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
+│   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
+│   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
 │   │   ├── PlacesMapScreen.tsx  # Signed-in /map body (every note that has a pin)
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
