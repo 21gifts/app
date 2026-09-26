@@ -963,6 +963,20 @@ describe('forumMessageSchema', () => {
     expect(parsed.goalAmount).toBeUndefined();
   });
 
+  it('omits goalRepayable when the payload has no key', () => {
+    const parsed = forumMessageSchema.parse(base);
+    expect(parsed.goalRepayable).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'goalRepayable')).toBe(false);
+  });
+
+  it('keeps goalRepayable true', () => {
+    expect(forumMessageSchema.parse({ ...base, goalRepayable: true }).goalRepayable).toBe(true);
+  });
+
+  it('rejects goalRepayable false', () => {
+    expect(() => forumMessageSchema.parse({ ...base, goalRepayable: false })).toThrow();
+  });
+
   it('accepts an empty text when hasPhoto is true', () => {
     const photoOnly = { ...base, text: '', hasPhoto: true };
     expect(forumMessageSchema.parse(photoOnly)).toEqual({

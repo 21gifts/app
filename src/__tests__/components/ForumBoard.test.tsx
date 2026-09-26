@@ -697,6 +697,28 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
   });
 
+  it('clicks Credit when composeIntent is ask', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composeIntent="ask"
+        askStep={1}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByText('How much?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+  });
+
   it('hides the Ask field when composerHidden', () => {
     renderWithLocale(
       <ForumBoard

@@ -111,6 +111,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountEur - Payment EUR snapshot used for a EUR fiat percent.
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
  * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
+ * @param goalRepayable - Credit ask; shows `forum.askRepay` under the label.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -128,6 +129,7 @@ export function ForumGoalBar({
   amountEur,
   amountPhp,
   preview = false,
+  goalRepayable,
 }: {
   sats: number;
   goalSats: number;
@@ -143,6 +145,7 @@ export function ForumGoalBar({
   amountEur?: string | null | undefined;
   amountPhp?: string | null | undefined;
   preview?: boolean | undefined;
+  goalRepayable?: true | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -208,6 +211,9 @@ export function ForumGoalBar({
         {frozenViewer}
         {liveViewer}
       </p>
+      {goalRepayable === true ? (
+        <p className="text-xs font-medium text-app-muted">{t('forum.askRepay')}</p>
+      ) : null}
       <div className="flex items-center gap-2">
         <svg
           viewBox={`0 0 ${viewWidth} 8`}

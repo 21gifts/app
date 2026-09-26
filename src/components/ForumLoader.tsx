@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
-import type { ForumAskCadence } from '@/components/ForumAskWizard';
+import type { ForumAskCadence, ForumAskObligation } from '@/components/ForumAskWizard';
 import {
   ForumBoard,
   type ForumAskStep,
@@ -368,6 +368,7 @@ export function ForumLoader({
   const [composeIntent, setComposeIntent] = useState<ForumComposeIntent>('post');
   const [askStep, setAskStep] = useState<ForumAskStep>(1);
   const [askCadence, setAskCadence] = useState<ForumAskCadence>('once');
+  const [askObligation, setAskObligation] = useState<ForumAskObligation>('donation');
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const photoDraftsRef = useRef(photoDrafts);
   photoDraftsRef.current = photoDrafts;
@@ -467,7 +468,7 @@ export function ForumLoader({
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
   const pendingComposeGoalRef = useRef<
-    { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined
+    { goalCurrency: ForumGoalCurrency; goalAmount: string; goalRepayable?: true } | undefined
   >(undefined);
   const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
   const composeFeePaidRef = useRef(false);
@@ -1275,6 +1276,7 @@ export function ForumLoader({
             if (ownContent) {
               if (postAfterPay || switchToAll) {
                 setAskCadence('once');
+                setAskObligation('donation');
               }
               if (postAfterPay) {
                 /* v8 ignore next -- compose-pay always stores trimmed text, including '' */
@@ -1598,6 +1600,7 @@ export function ForumLoader({
     setComposeIntent('post');
     setAskStep(1);
     setAskCadence('once');
+    setAskObligation('donation');
     setPlaceDraft(null);
     setPhotoDrafts([]);
     setVideoDraft(null);
@@ -1609,7 +1612,8 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
-    askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
+    askGoal:
+      { goalCurrency: ForumGoalCurrency; goalAmount: string; goalRepayable?: true } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): Promise<void> => {
     setPosting(true);
@@ -1712,7 +1716,8 @@ export function ForumLoader({
     pendingPhotos: ForumPhotoPayload[],
     pendingVideo: ForumVideoPayload | null,
     isRetry: boolean,
-    askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined,
+    askGoal:
+      { goalCurrency: ForumGoalCurrency; goalAmount: string; goalRepayable?: true } | undefined,
     pendingPlace: ForumPlacePin | null,
   ): void => {
     if (notePostInFlightRef.current) return;
@@ -1731,7 +1736,8 @@ export function ForumLoader({
       setFormError('tooLong');
       return;
     }
-    let askGoal: { goalCurrency: ForumGoalCurrency; goalAmount: string } | undefined;
+    let askGoal:
+      { goalCurrency: ForumGoalCurrency; goalAmount: string; goalRepayable?: true } | undefined;
     if (feed !== 'shops' && composeIntent === 'ask') {
       const parsed = parseForumAskAmountInUnit(askDraft, askUnit.current, rateDay, fiat);
       /* v8 ignore next 4 -- step 1 Continue already requires a parseable amount */
@@ -1742,6 +1748,7 @@ export function ForumLoader({
       askGoal = {
         goalCurrency: askUnit.current === 'btc' ? 'BTC' : fiat,
         goalAmount: askDraft.trim(),
+        ...(askObligation === 'credit' ? { goalRepayable: true as const } : {}),
       };
     }
     const missing = account?.missing ?? [];
@@ -2330,6 +2337,8 @@ export function ForumLoader({
         onAskStepChange={setAskStep}
         askCadence={askCadence}
         onAskCadenceChange={setAskCadence}
+        askObligation={askObligation}
+        onAskObligationChange={setAskObligation}
         authorName={account?.name ?? ''}
         onPost={onPost}
         onRetry={() => {

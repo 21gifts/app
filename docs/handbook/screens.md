@@ -512,7 +512,7 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: goal-50
 
-On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). A repayable ask adds **To be repaid.** under the ask label; a normal ask does not. Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
 
 ![21.gifts welcome goal 50](images/welcome-goal-50.png)
 
@@ -542,7 +542,7 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ### Variant: ask-amount
 
-**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed) and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step.
+**Ask for money** selected. Step 1 of 4: **How much?** with the **One-time** / **Daily** pill above the amount (**One-time** pressed), a **Donation** / **Credit** pill under it (**Donation** pressed by default), and **1000** typed in bitcoin so the preferred-fiat counterpart (**$1.00**) shows under the field. Continue is enabled. No Post submit on this step. Only **Credit** is posted as `goalRepayable` true.
 
 ![21.gifts welcome ask amount](images/welcome-ask-amount.png)
 
@@ -632,7 +632,7 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ### Variant: ask-preview
 
-Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading.
+Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), the **Donation** / **Credit** pill under it (**Donation** pressed by default), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading. Only **Credit** is posted as `goalRepayable` true.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
 

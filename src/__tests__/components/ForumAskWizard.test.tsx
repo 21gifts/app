@@ -310,8 +310,11 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Daily' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Donation' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Credit' })).toBeNull();
     rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
     expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Donation' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(4);
   });
@@ -335,5 +338,59 @@ describe('ForumAskWizard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'One-time' }));
     expect(onAskCadenceChange).toHaveBeenCalledWith('once');
+  });
+
+  it('starts with Donation pressed and shows To be repaid when Credit is selected', () => {
+    const onAskObligationChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        onAskObligationChange={onAskObligationChange}
+      />,
+    );
+    expect(screen.getByRole('group', { name: 'Donation or credit' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Donation' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Credit' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    expect(onAskObligationChange).toHaveBeenCalledWith('credit');
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        draft="Need help"
+        askObligation="credit"
+      />,
+    );
+    expect(screen.getByText('To be repaid.')).toBeTruthy();
+  });
+
+  it('does not show To be repaid on a donation preview', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        draft="Need help"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Donation' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.queryByText('To be repaid.')).toBeNull();
+  });
+
+  it('clicks Credit on step 1 without an obligation callback', () => {
+    renderWithLocale(<ForumAskWizard step={1} onStepChange={() => undefined} {...idle} />);
+    expect(screen.getByRole('heading', { name: 'How much?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
   });
 });

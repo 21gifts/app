@@ -197,4 +197,16 @@ describe('ForumGoalBar', () => {
     expect(img.querySelector('[style]')).toBeNull();
     expect(container.querySelector('svg[aria-hidden="true"]')).toBeNull();
   });
+
+  it('shows To be repaid when goalRepayable is true', () => {
+    renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} goalRepayable />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText('To be repaid.')).toBeTruthy();
+  });
+
+  it('does not show To be repaid when goalRepayable is absent', () => {
+    renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.queryByText('To be repaid.')).toBeNull();
+  });
 });

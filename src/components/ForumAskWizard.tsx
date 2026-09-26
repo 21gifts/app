@@ -20,9 +20,13 @@ export type ForumAskStep = 1 | 2 | 3 | 4;
 /** One-time or daily Ask. The pill is on the amount step and the preview. */
 export type ForumAskCadence = 'once' | 'daily';
 
+/** Donation or credit Ask. The pill is on the amount step and the preview. */
+export type ForumAskObligation = 'donation' | 'credit';
+
 /**
  * Four-step Ask composer: amount, photos, text, then a preview with Post.
  * The One-time / Daily pill is on the amount step and again on the preview.
+ * The Donation / Credit pill sits under it on those same steps.
  *
  * @param props - Drafts, media, and step callbacks from {@link ForumLoader}.
  * @returns The wizard.
@@ -32,6 +36,8 @@ export function ForumAskWizard({
   onStepChange,
   askCadence = 'once',
   onAskCadenceChange = () => undefined,
+  askObligation = 'donation',
+  onAskObligationChange = () => undefined,
   askDraft,
   askDraftUnit,
   onAskDraftUnit,
@@ -53,6 +59,8 @@ export function ForumAskWizard({
   onStepChange: (step: ForumAskStep) => void;
   askCadence?: ForumAskCadence;
   onAskCadenceChange?: (value: ForumAskCadence) => void;
+  askObligation?: ForumAskObligation;
+  onAskObligationChange?: (value: ForumAskObligation) => void;
   askDraft: string;
   /** Unit `askDraft` is written in. Defaults to the account unit. */
   askDraftUnit?: AmountUnit;
@@ -117,17 +125,30 @@ export function ForumAskWizard({
         </p>
       </div>
       {step === 1 || step === 4 ? (
-        <SegmentedControl
-          value={askCadence}
-          options={[
-            { value: 'once', label: t('forum.askOnce') },
-            { value: 'daily', label: t('forum.askDaily') },
-          ]}
-          onChange={onAskCadenceChange}
-          ariaLabel={t('forum.askCadenceLabel')}
-          tone="neutral"
-          className="!grid grid-cols-2 !rounded-2xl"
-        />
+        <>
+          <SegmentedControl
+            value={askCadence}
+            options={[
+              { value: 'once', label: t('forum.askOnce') },
+              { value: 'daily', label: t('forum.askDaily') },
+            ]}
+            onChange={onAskCadenceChange}
+            ariaLabel={t('forum.askCadenceLabel')}
+            tone="neutral"
+            className="!grid grid-cols-2 !rounded-2xl"
+          />
+          <SegmentedControl
+            value={askObligation}
+            options={[
+              { value: 'donation', label: t('forum.askDonation') },
+              { value: 'credit', label: t('forum.askCredit') },
+            ]}
+            onChange={onAskObligationChange}
+            ariaLabel={t('forum.askObligationLabel')}
+            tone="neutral"
+            className="!grid grid-cols-2 !rounded-2xl"
+          />
+        </>
       ) : null}
       {step === 1 ? (
         <>
@@ -331,6 +352,7 @@ export function ForumAskWizard({
                 preview
                 goalCurrency={draftUnit === 'fiat' ? fiat : 'BTC'}
                 goalAmount={askDraft.trim()}
+                goalRepayable={askObligation === 'credit' ? true : undefined}
               />
             ) : null}
           </div>
