@@ -12,7 +12,7 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const SRC = path.join(ROOT, 'src');
 const CLASS_BANNED =
-  /overflow-(?:x-|y-)?(?:auto|scroll)\b|overflow-\[(?:auto|scroll)\]|overflow-(?:x|y)-\[(?:auto|scroll)\]/;
+  /overflow-(?:x-|y-)?(?:auto|scroll|overlay)\b|overflow-\[(?:auto|scroll|overlay)\]|overflow-(?:x|y)-\[(?:auto|scroll|overlay)\]/;
 const STYLE_BANNED =
   /overflow(?:-x|-y|X|Y)?\s*:\s*['"]?(?:auto|scroll|overlay)\b|overflow(?:X|Y)?\s*=\s*['"](?:auto|scroll|overlay)['"]|setProperty\(\s*['"]overflow(?:-x|-y)?['"]\s*,\s*['"](?:auto|scroll|overlay)['"]/;
 
@@ -153,7 +153,11 @@ function selfTest() {
   const caught = [
     'className="overflow-y-auto"',
     'className="overflow-x-scroll"',
+    'className="overflow-overlay"',
+    'className="overflow-x-overlay"',
     'className="overflow-auto"',
+    'className="overflow-[overlay]"',
+    'className="overflow-y-[overlay]"',
     'className="overflow-[auto]"',
     'className="overflow-y-[scroll]"',
     'style={{ overflow: "scroll" }}',
