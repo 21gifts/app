@@ -30,6 +30,7 @@ import { useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
   type ForumAskCadence,
+  type ForumAskObligation,
   type ForumAskStep,
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -187,6 +188,12 @@ export interface ForumBoardProps {
   askCadence?: ForumAskCadence;
   /** Called when the visitor picks One-time or Daily. */
   onAskCadenceChange?: (value: ForumAskCadence) => void;
+  /** Donation or credit Ask. Default `donation`. */
+  askObligation?: ForumAskObligation;
+  /** Called when the visitor picks Donation or Credit. */
+  onAskObligationChange?: (value: ForumAskObligation) => void;
+  /** Days a credit will be repaid over, or null while unset. */
+  onCreditTermDays?: (days: number | null) => void;
   /** Display name for the Ask preview card. */
   authorName?: string;
   /** Called when the composer form is submitted. */
@@ -603,6 +610,9 @@ export function ForumBoard({
   onAskStepChange,
   askCadence = 'once',
   onAskCadenceChange = () => undefined,
+  askObligation = 'donation',
+  onAskObligationChange = () => undefined,
+  onCreditTermDays,
   authorName = '',
   onPost,
   onRetry,
@@ -1138,6 +1148,8 @@ export function ForumBoard({
                   amountChf={message.amountChf}
                   amountEur={message.amountEur}
                   amountPhp={message.amountPhp}
+                  goalRepayable={message.goalRepayable}
+                  goalTermDays={message.goalTermDays}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">
@@ -1686,6 +1698,9 @@ export function ForumBoard({
           }}
           askCadence={askCadence}
           onAskCadenceChange={onAskCadenceChange}
+          askObligation={askObligation}
+          onAskObligationChange={onAskObligationChange}
+          {...(onCreditTermDays === undefined ? {} : { onCreditTermDays })}
           askDraft={askDraft}
           {...(askDraftUnit === undefined ? {} : { askDraftUnit })}
           {...(onAskDraftUnit === undefined ? {} : { onAskDraftUnit })}

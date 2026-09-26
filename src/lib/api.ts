@@ -1649,17 +1649,26 @@ type ForumPostStill = {
 /**
  * Ask fields for a top-level note. Both must be present; replies omit them.
  * `goalAmount` is the trimmed draft (a comma stays a comma).
+ * `goalRepayable` is sent only when it is `true` and the ask fields are sent.
  *
  * @param inReplyTo - Parent id when posting a reply.
  * @param goalCurrency - Typed Ask unit, or omitted.
  * @param goalAmount - Typed Ask amount, or omitted.
- * @returns Both fields, or `null` when they must not be sent.
+ * @param goalRepayable - Credit Ask flag, or omitted for a donation.
+ * @returns Both fields (and `goalRepayable` when true), or `null` when they must not be sent.
  */
 function forumAskGoalFields(
   inReplyTo: string | undefined,
   goalCurrency: ForumGoalCurrency | undefined,
   goalAmount: string | undefined,
-): { goalCurrency: ForumGoalCurrency; goalAmount: string } | null {
+  goalRepayable?: true,
+  goalTermDays?: number,
+): {
+  goalCurrency: ForumGoalCurrency;
+  goalAmount: string;
+  goalRepayable?: true;
+  goalTermDays?: number;
+} | null {
   if (inReplyTo !== undefined) {
     return null;
   }
@@ -1670,7 +1679,12 @@ function forumAskGoalFields(
   if (amount === '') {
     return null;
   }
-  return { goalCurrency, goalAmount: amount };
+  return {
+    goalCurrency,
+    goalAmount: amount,
+    ...(goalRepayable === true ? { goalRepayable: true as const } : {}),
+    ...(goalRepayable === true && typeof goalTermDays === 'number' ? { goalTermDays } : {}),
+  };
 }
 
 /**
@@ -1680,7 +1694,8 @@ function forumAskGoalFields(
  * @param input - Trimmed text, optional legacy `photo`, optional `photos`,
  * optional `inReplyTo` parent id (thread composer only; omit for top-level
  * notes), optional `goalCurrency` plus `goalAmount` (top-level Ask; omitted
- * on replies and when either is unset; never `goalSats`), and optional
+ * on replies and when either is unset; never `goalSats`), optional
+ * `goalRepayable: true` on a credit Ask (omitted on a donation), and optional
  * `place` pin (omit when unset; replies must not send it).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
@@ -1697,6 +1712,8 @@ export async function postMessage(
     inReplyTo?: string;
     goalCurrency?: ForumGoalCurrency;
     goalAmount?: string;
+    goalRepayable?: true;
+    goalTermDays?: number;
     place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
@@ -1715,7 +1732,13 @@ export async function postMessage(
   }));
   const inReplyTo =
     input.inReplyTo !== undefined && input.inReplyTo !== '' ? input.inReplyTo : undefined;
-  const askGoal = forumAskGoalFields(inReplyTo, input.goalCurrency, input.goalAmount);
+  const askGoal = forumAskGoalFields(
+    inReplyTo,
+    input.goalCurrency,
+    input.goalAmount,
+    input.goalRepayable,
+    input.goalTermDays,
+  );
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
@@ -1763,8 +1786,8 @@ export async function postMessage(
  * @param sessionToken - Bearer session.
  * @param input - Text, video file, optional JPEG poster, optional
  * `goalCurrency` plus `goalAmount` (omitted from the form when either is
- * unset; never `goalSats`), and optional `place` pin (omit when unset;
- * form fields only when set).
+ * unset; never `goalSats`), optional `goalRepayable: true` on a credit Ask,
+ * and optional `place` pin (omit when unset; form fields only when set).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
@@ -1778,6 +1801,8 @@ export async function postMessageVideo(
     poster?: Blob;
     goalCurrency?: ForumGoalCurrency;
     goalAmount?: string;
+    goalRepayable?: true;
+    goalTermDays?: number;
     place?: ForumPlacePin;
   },
 ): Promise<ForumMessage> {
@@ -1787,10 +1812,22 @@ export async function postMessageVideo(
   if (input.poster !== undefined) {
     form.set('poster', input.poster, 'poster.jpg');
   }
-  const askGoal = forumAskGoalFields(undefined, input.goalCurrency, input.goalAmount);
+  const askGoal = forumAskGoalFields(
+    undefined,
+    input.goalCurrency,
+    input.goalAmount,
+    input.goalRepayable,
+    input.goalTermDays,
+  );
   if (askGoal !== null) {
     form.set('goalCurrency', askGoal.goalCurrency);
     form.set('goalAmount', askGoal.goalAmount);
+    if (askGoal.goalRepayable === true) {
+      form.set('goalRepayable', 'true');
+    }
+    if (typeof askGoal.goalTermDays === 'number') {
+      form.set('goalTermDays', String(askGoal.goalTermDays));
+    }
   }
   if (input.place !== undefined) {
     form.set('placeLat', String(input.place.lat));

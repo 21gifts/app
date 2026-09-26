@@ -748,6 +748,41 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('posts goalRepayable true only for a credit Ask', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue(SAMPLE);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    await waitFor(() => {
+      expect(screen.getByText('How much?')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I want to take this credit.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I can repay this.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Hello',
+        goalCurrency: 'BTC',
+        goalAmount: '21000',
+        goalRepayable: true,
+        goalTermDays: 30,
+      });
+    });
+  });
+
   it('keeps Active selected after posting an Ask', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({ ...SAMPLE, id: 'm-ask', text: 'Hello', goalSats: 21000 });

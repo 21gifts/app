@@ -195,6 +195,8 @@ function PublicThreadCard({
           amountChf={note.amountChf}
           amountEur={note.amountEur}
           amountPhp={note.amountPhp}
+          goalRepayable={note.goalRepayable}
+          goalTermDays={note.goalTermDays}
         />
       ) : null}
     </Card>

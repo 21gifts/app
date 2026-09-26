@@ -11,6 +11,7 @@ import {
 } from '../src/lib/shop-sticker';
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
+import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
 import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
 import {
   fiatDraftForSats,
@@ -9927,4 +9928,70 @@ test('Function: AmountEntry — the ask field shows the unit switch', async ({ p
   await page.goto(`/pl?lightning=${PAY_LINK}`);
   await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toBeVisible();
   await expect(page.getByLabel('Amount')).toBeVisible();
+});
+
+async function openCreditAmount(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await page.getByRole('button', { name: 'Credit' }).click();
+  await page.getByLabel('Ask').fill('21000');
+}
+
+test('Function: parseCreditTermDays — presets and a typed day count', async ({ page }) => {
+  expect(parseCreditTermDays(30, '')).toBe(30);
+  expect(parseCreditTermDays(365, 'nope')).toBe(365);
+  expect(parseCreditTermDays(730, '')).toBe(730);
+  expect(parseCreditTermDays('custom', '45')).toBe(45);
+  expect(parseCreditTermDays('custom', '')).toBeNull();
+  expect(parseCreditTermDays('custom', '3651')).toBeNull();
+  await openCreditAmount(page);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('button', { name: '30 days' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Custom' }).click();
+  await page.getByLabel('Number of days').fill('45');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+});
+
+test('Function: creditSmallestUnits — bitcoin sats and fiat cents', async ({ page }) => {
+  expect(creditSmallestUnits('21000', true)).toBe(21000n);
+  expect(creditSmallestUnits('10.5', false)).toBe(1050n);
+  expect(creditSmallestUnits('nope', true)).toBeNull();
+  await openCreditAmount(page);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText(/fixed in bitcoin/)).toBeVisible();
+  await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
+});
+
+test('Function: splitCreditPlan — equal days and a remainder on the last day', async ({ page }) => {
+  expect(splitCreditPlan(21000n, 30)).toEqual({
+    perDay: 700n,
+    last: 700n,
+    days: 30,
+    remainder: 0n,
+  });
+  expect(splitCreditPlan(1000n, 3)).toEqual({
+    perDay: 333n,
+    last: 334n,
+    days: 3,
+    remainder: 1n,
+  });
+  expect(splitCreditPlan(1n, 0)).toBeNull();
+  await openCreditAmount(page);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('To repay per day: ₿700 · $0.70 per day for 30 days')).toBeVisible();
 });

@@ -197,4 +197,67 @@ describe('ForumGoalBar', () => {
     expect(img.querySelector('[style]')).toBeNull();
     expect(container.querySelector('svg[aria-hidden="true"]')).toBeNull();
   });
+
+  it('shows To be repaid when goalRepayable is true', () => {
+    renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} goalRepayable />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.getByText('To be repaid.')).toBeTruthy();
+  });
+
+  it('does not show To be repaid when goalRepayable is absent', () => {
+    renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} />);
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.queryByText('To be repaid.')).toBeNull();
+  });
+
+  it('shows the interest-free daily plan for a bitcoin credit and a dollar credit', () => {
+    const { rerender } = renderWithLocale(
+      <ForumGoalBar
+        sats={0}
+        goalSats={3000}
+        goalRepayable
+        goalTermDays={30}
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.getByText(/₿100 · \$0\.10 per day for 30 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={3000}
+        goalRepayable
+        goalTermDays={30}
+        goalCurrency="BTC"
+        goalAmount="3000"
+      />,
+    );
+    expect(screen.getByText(/₿100 per day for 30 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={1}
+        goalRepayable
+        goalTermDays={30}
+        goalCurrency="USD"
+        goalAmount="1000"
+      />,
+    );
+    expect(screen.getByText(/\$33\.33 per day for 29 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={1}
+        goalRepayable
+        goalTermDays={30}
+        goalCurrency="USD"
+        goalAmount="nope"
+      />,
+    );
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
+    rerender(
+      <ForumGoalBar sats={0} goalSats={1} goalRepayable goalTermDays={30} goalCurrency="USD" />,
+    );
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
+  });
 });
