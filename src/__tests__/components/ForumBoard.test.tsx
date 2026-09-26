@@ -1514,7 +1514,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('listitem').getAttribute('data-message-id')).toBe('m-photo');
   });
 
-  it('renders a horizontal snap gallery when photoCount is greater than one', () => {
+  it('stacks stills in the page scrollport when photoCount is greater than one', () => {
     renderWithLocale(
       <ForumBoard
         messages={[
