@@ -6628,7 +6628,6 @@ test('Function: ForumVideo — a playable note shows Full screen', async ({ page
             replyCount: 0,
           },
         ],
-        nextCursor: null,
       }),
     });
   });
@@ -6671,7 +6670,6 @@ test('Function: fetchPublicForumMessages — signed-out welcome asks for the act
             replyCount: 0,
           },
         ],
-        nextCursor: null,
       }),
     });
   });
