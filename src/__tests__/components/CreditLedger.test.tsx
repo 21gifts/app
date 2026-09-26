@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditLedger } from '@/components/CreditLedger';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -194,6 +194,19 @@ describe('CreditLedger', () => {
     await act(async () => {
       resolve(new Response(JSON.stringify(btc), { status: 200 }));
     });
+    expect(screen.queryByText('Given')).toBeNull();
+  });
+
+  it('keeps the feed ledger closed until the visitor asks', async () => {
+    ledger(btc);
+    renderWithLocale(
+      <ForumGoalBar sats={21} goalSats={21} goalRepayable messageId="m1" ledgerCollapsed />,
+    );
+    const toggle = await screen.findByRole('button', { name: 'Who gave and who is paid back' });
+    expect(screen.queryByText('Given')).toBeNull();
+    fireEvent.click(toggle);
+    expect(await screen.findByText('Given')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide givers and repayment' }));
     expect(screen.queryByText('Given')).toBeNull();
   });
 

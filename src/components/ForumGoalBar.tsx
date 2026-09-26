@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { CreditLedger } from '@/components/CreditLedger';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -116,6 +116,8 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
  * @param goalRepayable - Credit ask; shows `forum.askRepay` under the label.
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows 0% interest and the daily plan.
+ * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
+ * @param ledgerCollapsed - Feed lists hide the ledger behind a control. The note page leaves this false.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -136,6 +138,7 @@ export function ForumGoalBar({
   goalRepayable,
   goalTermDays,
   messageId,
+  ledgerCollapsed = false,
 }: {
   sats: number;
   goalSats: number;
@@ -155,6 +158,8 @@ export function ForumGoalBar({
   goalTermDays?: number | undefined;
   /** Set on a posted credit so the public ledger can load. Omitted in the wizard. */
   messageId?: string | undefined;
+  /** Feed lists keep the ledger behind a control. The note page leaves this false. */
+  ledgerCollapsed?: boolean | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -261,8 +266,32 @@ export function ForumGoalBar({
         </span>
       </div>
       {goalRepayable === true && messageId !== undefined ? (
-        <CreditLedger messageId={messageId} />
+        ledgerCollapsed ? (
+          <CreditLedgerDisclosure messageId={messageId} />
+        ) : (
+          <CreditLedger messageId={messageId} />
+        )
       ) : null}
+    </div>
+  );
+}
+
+function CreditLedgerDisclosure({ messageId }: { messageId: string }): ReactElement {
+  const { t } = useTranslations();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((value) => !value);
+        }}
+        className="text-xs font-medium text-app-fg underline decoration-app-border underline-offset-2"
+      >
+        {t(open ? 'forum.creditClose' : 'forum.creditOpen')}
+      </button>
+      {open ? <CreditLedger messageId={messageId} /> : null}
     </div>
   );
 }

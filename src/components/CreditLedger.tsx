@@ -36,20 +36,22 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
   }
   const fiat = ledger.currency === 'BTC' ? null : (ledger.currency as FiatCode);
   return (
-    <div className="mt-3 flex flex-col gap-3">
+    <div className="mt-3 rounded-xl bg-app-card-muted px-3 py-2.5">
       <section aria-label={t('forum.creditGiven')}>
-        <h3 className="text-xs font-medium text-app-muted">{t('forum.creditGiven')}</h3>
+        <h3 className="text-xs font-medium text-app-fg">{t('forum.creditGiven')}</h3>
         {ledger.givers.length === 0 ? (
-          <p className="text-sm text-app-fg">{t('forum.creditNoneYet')}</p>
+          <p className="mt-2 text-sm text-app-fg">{t('forum.creditNoneYet')}</p>
         ) : (
-          <ul className="mt-1 flex flex-col gap-1">
+          <ul className="mt-1">
             {ledger.givers.map((giver) => (
               <li
                 key={giver.accountId}
-                className="flex items-baseline justify-between gap-3 text-sm text-app-fg"
+                className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
               >
-                <span>{giverLabel(giver.name, giver.username, giver.accountId)}</span>
-                <span className="shrink-0 tabular-nums">
+                <span className="min-w-0 text-sm text-app-fg">
+                  {giverLabel(giver.name, giver.username, giver.accountId)}
+                </span>
+                <span className="shrink-0 text-sm tabular-nums text-app-fg">
                   {fiat !== null && giver.givenAmount !== null
                     ? formatFiatDisplay(giver.givenAmount, fiat, numberFormat)
                     : formatBitcoin(giver.givenSats, numberFormat)}
@@ -59,15 +61,15 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
           </ul>
         )}
         {ledger.unassignedSats > 0 ? (
-          <p className="mt-1 text-xs text-app-muted">
+          <p className="mt-2 text-xs text-app-muted">
             {t('forum.creditUnassigned', {
               amount: formatBitcoin(ledger.unassignedSats, numberFormat),
             })}
           </p>
         ) : null}
       </section>
-      <section aria-label={t('forum.creditBack')}>
-        <h3 className="text-xs font-medium text-app-muted">{t('forum.creditBack')}</h3>
+      <section aria-label={t('forum.creditBack')} className="mt-3">
+        <h3 className="text-xs font-medium text-app-fg">{t('forum.creditBack')}</h3>
         <p className="mt-1 text-xs text-app-muted">{t('forum.creditBackHow')}</p>
         {ledger.fundedAt === null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditBackOpen')}</p>
@@ -75,27 +77,32 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
-        <div className="mt-2 flex max-h-80 flex-col gap-2 overflow-y-auto">
+        <div className="mt-1 flex max-h-80 flex-col gap-2 overflow-y-auto">
           {groupsOf(ledger.repayments).map((group) => (
             <div key={group.dayIndex}>
-              <p className="text-xs text-app-muted">
+              <p className="text-xs font-medium text-app-fg">
                 {group.dueOn === null
                   ? t('forum.creditDay', { day: String(group.dayIndex + 1) })
                   : formatUtcDay(group.dueOn, locale)}
-                <span aria-hidden="true"> · </span>
-                {t('forum.creditVia')}
               </p>
-              <ul className="flex flex-col gap-1">
+              <ul>
                 {group.rows.map((row) => (
                   <li
                     key={`${row.dayIndex}:${row.accountId}`}
-                    className="flex items-baseline justify-between gap-3 text-sm text-app-fg"
+                    className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
                   >
-                    <span>{giverLabel(row.name, row.username, row.accountId)}</span>
-                    <span className="shrink-0 text-right tabular-nums">
-                      {rowAmount(row, fiat, numberFormat)}
-                      <span aria-hidden="true"> · </span>
-                      {t(statusKey(row.status))}
+                    <span className="min-w-0 text-sm text-app-fg">
+                      {giverLabel(row.name, row.username, row.accountId)}
+                    </span>
+                    <span className="flex shrink-0 items-baseline gap-2">
+                      <span className="text-sm tabular-nums text-app-fg">
+                        {rowAmount(row, fiat, numberFormat)}
+                      </span>
+                      <span
+                        className={`shrink-0 text-right text-xs font-medium ${statusClass(row.status)}`}
+                      >
+                        {t(statusKey(row.status))}
+                      </span>
                     </span>
                   </li>
                 ))}
@@ -129,6 +136,16 @@ function statusKey(status: RepaymentLine['status']): MessageKey {
     return 'forum.creditStatusDue';
   }
   return 'forum.creditStatusScheduled';
+}
+
+function statusClass(status: RepaymentLine['status']): string {
+  if (status === 'paid') {
+    return 'text-app-success';
+  }
+  if (status === 'due') {
+    return 'text-app-accent';
+  }
+  return 'text-app-muted';
 }
 
 function rowAmount(
