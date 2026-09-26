@@ -1054,7 +1054,7 @@ Handbook states: place, place-coords, composer-place, composer-place-map, compos
 
 ### `/wallet`
 
-Fill `AppShell` (page frame); `topLeft={<WalletChromeLeft />}`; the Back on screen is `WalletScreenView`'s `ProfileChromeLeft` via `AppShellTopLeft`. `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"`. Receive card first: address, Open CryptoPay QR, content-width **Set an amount**. Below it, **h1** Wallet. Missing or empty `passkeyCredentialId`: **Add recovery phrase** links to `/wallet/phrase`. Set id: **Show recovery phrase** inside **Advanced functions** links to `/wallet/phrase`. The 12 words and recovery errors are only on `/wallet/phrase`.
+Fill `AppShell` (page frame); `topLeft={<WalletChromeLeft />}`; the Back on screen is `WalletScreenView`'s `ProfileChromeLeft` via `AppShellTopLeft`. `topRight={<SignedInChrome />}`. `OnboardingGate screen="wallet"`. **h1** Wallet first, then address, Open CryptoPay QR, and content-width **Set an amount**. Below that card: missing or empty `passkeyCredentialId`: **Add recovery phrase** links to `/wallet/phrase`. Set id: **Show recovery phrase** inside **Advanced functions** links to `/wallet/phrase`. The 12 words and recovery errors are only on `/wallet/phrase`.
 
 Handbook states: default (receive, then Add recovery phrase), reveal (closed Advanced functions), reveal-open (Show recovery phrase). Phrase, error, timeout, and prf-unsupported are `/wallet/phrase`.
 

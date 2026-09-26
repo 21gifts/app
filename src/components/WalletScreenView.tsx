@@ -35,6 +35,9 @@ function WalletReceive(): ReactElement {
   const qr = openCryptoPayQrValue(username, host);
   return (
     <Card surface={false}>
+      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+        {t('wallet.title')}
+      </h1>
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
@@ -198,9 +201,11 @@ export function WalletScreenView({
       <AppShellTopLeft>
         <ProfileChromeLeft backHref="/wallet" backLabelKey="nav.back" onBackClick={stepBack} />
       </AppShellTopLeft>
-      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        {t('wallet.title')}
-      </h1>
+      {surface === 'phrase' ? (
+        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+          {t('wallet.title')}
+        </h1>
+      ) : null}
       {surface === 'phrase' ? phraseBody : entryBody}
     </Card>
   );

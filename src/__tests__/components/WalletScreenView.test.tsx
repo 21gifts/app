@@ -360,7 +360,11 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByText('ada@21.gifts')).toBeTruthy();
+    const heading = screen.getByRole('heading', { name: 'Wallet' });
     const address = screen.getByText('ada@21.gifts');
+    expect(heading.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     const recovery = screen.getByText('Advanced functions');
     expect(address.compareDocumentPosition(recovery) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
