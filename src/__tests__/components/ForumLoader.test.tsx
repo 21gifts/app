@@ -9499,7 +9499,7 @@ describe('forum feed pages', () => {
   });
 
   it('shows a repayment error when the missing field is not an overlay', async () => {
-    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['wallet']));
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError([]));
     fetchMock.mockResolvedValue(fundedCredit());
     renderWithLocale(<ForumLoader />);
     await revealAll();
