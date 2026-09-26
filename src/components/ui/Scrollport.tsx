@@ -31,10 +31,8 @@ export function Scrollport({
   const localRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    const mine = localRef.current;
-    if (mine === null) {
-      return;
-    }
+    // The ref callback runs before this effect, so the node is mounted.
+    const mine = localRef.current as HTMLDivElement;
     const locked: HTMLElement[] = [];
     let parent = mine.parentElement;
     while (parent !== null) {
