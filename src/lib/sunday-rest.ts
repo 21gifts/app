@@ -14,9 +14,12 @@ export function isLocalSunday(nowMs: number, timeZone?: string): boolean {
   }
 }
 
-/** Hides public write fields before paint once `data-local-sunday="1"` is set. */
+/**
+ * Weekday wrappers use `display: contents` so they do not change layout.
+ * On the device Sunday the field is hidden and the notice is shown.
+ */
 export const SUNDAY_WRITE_CSS =
-  'html[data-local-sunday="1"] .sunday-write-field{display:none!important}html:not([data-local-sunday="1"]) .sunday-write-notice{display:none!important}';
+  '.sunday-write-field{display:contents}html[data-local-sunday="1"] .sunday-write-field{display:none!important}html:not([data-local-sunday="1"]) .sunday-write-notice{display:none!important}';
 
 /**
  * Sets `documentElement.dataset.localSunday` before paint.
