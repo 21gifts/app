@@ -7442,9 +7442,56 @@ test.describe('profile funding states', () => {
 
   test('state /grants open-applications', async ({ page }) => {
     await seedFundingProfile(page, { role: 'moderator' });
+    await page.route('**/funding/applications', async (route) => {
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          applications: [
+            {
+              accountId: 'acc_rose',
+              name: 'Rose',
+              role: 'verified',
+              appliedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+            },
+            {
+              accountId: 'acc_neil',
+              name: 'Neil',
+              role: 'verified',
+              appliedAt: Date.parse('2026-08-29T12:00:00.000Z'),
+            },
+          ],
+        }),
+      });
+    });
     await page.goto('/grants');
-    await expect(page.getByRole('link', { name: 'Open applications' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Open applications (2)', exact: true }),
+    ).toBeVisible();
     await shotScreen(page, 'state-grants-open-applications');
+  });
+
+  test('state /grants no-applications', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'moderator' });
+    await page.route('**/funding/applications', async (route) => {
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ applications: [] }),
+      });
+    });
+    await page.goto('/grants');
+    await expect(page.getByText('No open applications.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open applications' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-no-applications');
   });
 });
 

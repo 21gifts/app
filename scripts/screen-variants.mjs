@@ -1920,6 +1920,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-grants-open-applications',
   },
   {
+    route: '/grants',
+    id: 'no-applications',
+    image: 'grants-no-applications.png',
+    visual: 'state-grants-no-applications',
+    needle: 'state-grants-no-applications',
+  },
+  {
     route: '/profile/apply',
     id: 'redirect',
     image: 'profile-apply.png',

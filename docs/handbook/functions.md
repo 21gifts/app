@@ -3316,9 +3316,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When `roleAtLeast(role, 'moderator')`, also a secondary large `ButtonLink` to `/grants/applications` labeled **Open applications**. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open applications ({count})**. A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Does not fetch; the card reads the signed-in account.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the link.
 - **Used by:** `GrantsPage`.
 
 ## Function: FundingStatusCard

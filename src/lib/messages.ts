@@ -820,6 +820,7 @@ const en = {
     'Takes part in the 21.gifts funding program since {date}, reviewed by {name}',
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
+  'funding.applications.openCount': 'Open applications ({count})',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
@@ -1695,6 +1696,7 @@ const de = {
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
+  'funding.applications.openCount': 'Offene Bewerbungen ({count})',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
@@ -2554,6 +2556,7 @@ const es = {
     'Participa en el programa de apoyo de 21.gifts desde {date}, revisado por {name}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
+  'funding.applications.openCount': 'Solicitudes abiertas ({count})',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
@@ -3423,6 +3426,7 @@ const fil = {
     'Kasali sa programa ng tulong ng 21.gifts mula noong {date}, sinuri ni {name}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
+  'funding.applications.openCount': 'Mga bukas na aplikasyon ({count})',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',

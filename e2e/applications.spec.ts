@@ -100,10 +100,9 @@ test('Function: FundingApplicationsPage — grants page opens the queue', async 
   await seedAdaSession(page, 'founder');
   await stubApplications(page, [APPLICATION]);
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Open applications' })).toHaveAttribute(
-    'href',
-    '/grants/applications',
-  );
+  await expect(
+    page.getByRole('link', { name: 'Open applications (1)', exact: true }),
+  ).toHaveAttribute('href', '/grants/applications');
   await page.goto('/grants/applications');
   await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
   await page.goto('/moderate/applications');
@@ -117,11 +116,11 @@ test('Function: GrantsPage — signed-in grant card is on /grants', async ({ pag
 
 test('Function: GrantsScreen — moderator sees the applications link', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
+  await stubApplications(page, [APPLICATION]);
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Open applications' })).toHaveAttribute(
-    'href',
-    '/grants/applications',
-  );
+  await expect(
+    page.getByRole('link', { name: 'Open applications (1)', exact: true }),
+  ).toHaveAttribute('href', '/grants/applications');
 });
 
 test('Function: fetchFundingApplications — staff see an applicant row', async ({ page }) => {

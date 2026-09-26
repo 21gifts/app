@@ -2105,9 +2105,9 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator also sees a secondary large **Open applications** link to `/grants/applications`. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator or founder with at least one open application sees a secondary large **Open applications (N)** link to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications**.
+- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications (N)** only when N is at least 1.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -2147,9 +2147,15 @@ Admitted owner on `/grants`. The participation sentence **Takes part in the 21.g
 
 ### Variant: open-applications
 
-Moderator on `/grants`. The grant card is shown, and **Open applications** links to `/grants/applications`. Needle `state-grants-open-applications`.
+Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`.
 
 ![21.gifts grants open applications](images/grants-open-applications.png)
+
+### Variant: no-applications
+
+Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`.
+
+![21.gifts grants no applications](images/grants-no-applications.png)
 
 ## Screen: /profile/apply
 
