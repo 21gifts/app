@@ -16,7 +16,7 @@
     "start": "next start",
     "start:standalone": "rm -rf .next/standalone/.next/static .next/standalone/public .next/standalone/docs .next/standalone/scripts && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r docs .next/standalone/docs && mkdir -p .next/standalone/scripts && cp scripts/screen-variants.mjs .next/standalone/scripts/screen-variants.mjs && node .next/standalone/server.js",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint && prettier --check .",
+    "lint": "next lint && prettier --check . && node scripts/check-scrollports.mjs",
     "lint:fix": "next lint --fix && prettier --write .",
     "format": "prettier --write .",
     "test": "vitest run",

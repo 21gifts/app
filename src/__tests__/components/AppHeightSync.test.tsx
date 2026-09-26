@@ -142,7 +142,7 @@ describe('useAppHeight', () => {
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('480px');
   });
 
-  it('uses innerHeight when visualViewport is shorter', () => {
+  it('uses the visible viewport when visualViewport is shorter', () => {
     stubInnerHeight(852);
     stubVisualViewport(511);
 
@@ -150,10 +150,10 @@ describe('useAppHeight', () => {
       useAppHeight();
     });
 
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
   });
 
-  it('does not shrink --app-height while a textarea is focused', () => {
+  it('uses the visible viewport height while a textarea is focused', () => {
     stubInnerHeight(852);
     stubVisualViewport(511);
 
@@ -165,10 +165,10 @@ describe('useAppHeight', () => {
       useAppHeight();
     });
 
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
   });
 
-  it('covers visualViewport.offsetTop when the keyboard scrolls the visual viewport', () => {
+  it('ignores offsetTop when the keyboard scrolls the visual viewport', () => {
     stubInnerHeight(700);
     stubVisualViewport(500, { offsetTop: 250 });
 
@@ -176,10 +176,10 @@ describe('useAppHeight', () => {
       useAppHeight();
     });
 
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('750px');
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('500px');
   });
 
-  it('keeps innerHeight after focus when the keyboard shortens visualViewport like iPhone Safari', () => {
+  it('follows the shortened visual viewport after focus', () => {
     stubInnerHeight(852);
     const visualViewport = stubVisualViewport(852);
     renderHook(() => {
@@ -203,7 +203,7 @@ describe('useAppHeight', () => {
     }
     onResize();
 
-    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+    expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
   });
 
   it('registers document focus listeners and window resize and removes them on unmount', () => {
@@ -231,7 +231,7 @@ describe('useAppHeight', () => {
     expect(docRemove).toHaveBeenCalledWith('focusout', expect.any(Function));
   });
 
-  it('treats a missing activeElement as unfocused', () => {
+  it('uses the visible viewport when nothing is focused', () => {
     stubInnerHeight(852);
     stubVisualViewport(511);
     const activeSpy = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(null);
@@ -240,7 +240,7 @@ describe('useAppHeight', () => {
         useAppHeight();
       });
 
-      expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+      expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
     } finally {
       activeSpy.mockRestore();
     }

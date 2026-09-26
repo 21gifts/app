@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { Scrollport } from '@/components/ui/Scrollport';
 
 /** Kept on the API; `fill` and `flow` render the same page-frame geometry. */
 export type AppShellMode = 'fill' | 'flow';
@@ -58,8 +59,9 @@ export { AppShellContext };
 /**
  * App page shell driven by `--app-height`. Prefer this over Tailwind
  * viewport-height utilities on app routes. Always draws one rounded-3xl page
- * frame; wordmark and Menu live in that frame’s first row. Content scrolls
- * inside the frame. Cards never host page chrome.
+ * frame; wordmark and Menu live in that frame’s first row. The document does
+ * not scroll. Content scrolls in the one `[data-scrollport]`. Cards never
+ * host page chrome.
  *
  * @param props - See {@link AppShellProps}.
  * @returns The page shell element.
@@ -116,7 +118,12 @@ export function AppShell({
             </div>
           </div>
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
-          <div ref={setScrollerEl} className="min-h-0 w-full flex-1 overflow-y-auto">
+          <Scrollport
+            scrollRef={(node) => {
+              setScrollerEl(node);
+            }}
+            className="w-full flex-1"
+          >
             {align === 'center' ? (
               <div className="shell-safe-center flex min-h-full flex-col items-center px-8 py-6">
                 {children}
@@ -124,7 +131,7 @@ export function AppShell({
             ) : (
               <div className="flex w-full flex-col items-center px-8 py-6">{children}</div>
             )}
-          </div>
+          </Scrollport>
           <footer ref={setFooterEl} className="flex-none px-8 pb-8 empty:hidden" />
         </section>
       </main>
@@ -135,7 +142,7 @@ export function AppShell({
 /**
  * The AppShell inner overflow scroller, or `null` outside {@link AppShell}.
  *
- * @returns The `overflow-y-auto` node, or `null` when no shell is mounted.
+ * @returns The `[data-scrollport]` node, or `null` when no shell is mounted.
  */
 export function useAppShellScroller(): HTMLElement | null {
   const ctx = useContext(AppShellContext);

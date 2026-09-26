@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui';
+import { Scrollport } from '@/components/ui/Scrollport';
 
 /** Props for {@link HandbookLightbox}. */
 export interface HandbookLightboxProps {
@@ -65,8 +66,8 @@ export function HandbookLightbox({
       className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
       onClick={onClose}
     >
-      <div
-        className="relative max-h-[90vh] max-w-[min(1100px,100%)] overflow-auto rounded-3xl border border-paper/10 bg-ink p-4"
+      <Scrollport
+        className="relative max-h-full max-w-[min(1100px,100%)] rounded-3xl border border-paper/10 bg-ink p-4"
         onClick={(event) => {
           event.stopPropagation();
         }}
@@ -115,8 +116,8 @@ export function HandbookLightbox({
           </IconButton>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element -- static handbook baseline PNG */}
-        <img src={src} alt={alt} className="mx-auto max-h-[80vh] w-auto max-w-full" />
-      </div>
+        <img src={src} alt={alt} className="mx-auto max-h-full w-auto max-w-full" />
+      </Scrollport>
     </div>
   );
 }

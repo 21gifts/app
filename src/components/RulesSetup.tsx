@@ -33,7 +33,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
 
   useEffect(() => {
     stepLock.current = false;
-    const scroller = bodyRef.current?.closest('.overflow-y-auto');
+    const scroller = bodyRef.current?.closest('[data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 0;
     }

@@ -62,37 +62,35 @@ export function GiftDayTable({ day, fiat, numberFormat }: GiftDayTableProps): Re
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-left text-sm">
-        <caption className="sr-only">{`Gifts on ${day.day}`}</caption>
-        <thead>
-          <tr className="border-b border-paper/15 text-paper/50">
-            <th className="py-2 pr-4 font-medium">Time</th>
-            <th className="py-2 pr-4 font-medium">Recipient</th>
-            <th className="py-2 pr-4 font-medium">₿</th>
-            <th className="py-2 font-medium">{fiat}</th>
+    <table className="w-full border-collapse text-left text-sm">
+      <caption className="sr-only">{`Gifts on ${day.day}`}</caption>
+      <thead>
+        <tr className="border-b border-paper/15 text-paper/50">
+          <th className="py-2 pr-4 font-medium">Time</th>
+          <th className="py-2 pr-4 font-medium">Recipient</th>
+          <th className="py-2 pr-4 font-medium">₿</th>
+          <th className="py-2 font-medium">{fiat}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {day.gifts.map((gift, index) => (
+          <tr
+            key={`${gift.paidAt}-${gift.recipient}-${gift.amountSats}-${index}`}
+            className="border-b border-paper/10"
+          >
+            <td className="py-2 pr-4 whitespace-nowrap text-paper/80">
+              <time dateTime={gift.paidAt}>{formatUtcTime(gift.paidAt)}</time>
+            </td>
+            <td className="py-2 pr-4 font-medium">{gift.recipient}</td>
+            <td className="py-2 pr-4 tabular-nums">
+              {formatBitcoin(gift.amountSats, numberFormat)}
+            </td>
+            <td className="py-2 tabular-nums text-paper/80">
+              {formatFiatDisplay(giftFiat(gift, fiat), fiat, numberFormat)}
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {day.gifts.map((gift, index) => (
-            <tr
-              key={`${gift.paidAt}-${gift.recipient}-${gift.amountSats}-${index}`}
-              className="border-b border-paper/10"
-            >
-              <td className="py-2 pr-4 whitespace-nowrap text-paper/80">
-                <time dateTime={gift.paidAt}>{formatUtcTime(gift.paidAt)}</time>
-              </td>
-              <td className="py-2 pr-4 font-medium">{gift.recipient}</td>
-              <td className="py-2 pr-4 tabular-nums">
-                {formatBitcoin(gift.amountSats, numberFormat)}
-              </td>
-              <td className="py-2 tabular-nums text-paper/80">
-                {formatFiatDisplay(giftFiat(gift, fiat), fiat, numberFormat)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 }

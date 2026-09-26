@@ -39,6 +39,22 @@ html {
   touch-action: manipulation;
 }
 
+/* One scroll surface: the document never scrolls. */
+html,
+body {
+  height: var(--app-height);
+  overflow: hidden;
+}
+
+[data-scrollport] {
+  overflow: auto;
+  overscroll-behavior: none;
+}
+
+[data-scrollport][data-scroll-locked] {
+  overflow: hidden;
+}
+
 /* `center` first so an engine that drops `safe` still centers. */
 .shell-safe-center {
   justify-content: center;

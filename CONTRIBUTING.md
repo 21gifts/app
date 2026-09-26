@@ -415,6 +415,19 @@ update stuff
   `rounded-full bg-app-btn` (or `bg-neutral-900`) outside primitives on a
   new or migrated surface is an undeclared deviation.
 
+### One scroll surface (hard requirement)
+
+Each page has exactly one scrollable surface, the element with
+`[data-scrollport]`. `html` and `body` are `overflow: hidden` and
+`height: var(--app-height)`. `--app-height` is the visible viewport
+(`visualViewport.height`, otherwise `innerHeight`), never taller. A second
+`overflow: auto` or `overflow: scroll` — on the document, in a panel, or as
+a horizontal strip inside the page — is forbidden. Clipping (`overflow:
+hidden`) is not a scrollport. `scripts/check-scrollports.mjs` fails CI when
+production source adds one. AppShell `<main>` stays free of `overflow-hidden`
+so the in-tree menu is not clipped; the document lock is what stops the
+page from scrolling under the frame.
+
 ### Components
 
 - **App Router, server components by default.** Add `'use client'` only when

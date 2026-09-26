@@ -5358,7 +5358,7 @@ test('Function: revealReplyForm — expanded reply stays inside the shell', asyn
   await expect(field).toBeVisible();
   const inside = await field.evaluate((node) => {
     const form = node.closest('form');
-    const scroller = node.closest('.overflow-y-auto');
+    const scroller = node.closest('[data-scrollport]');
     if (!(form instanceof HTMLElement) || !(scroller instanceof HTMLElement)) {
       return false;
     }
@@ -5787,7 +5787,7 @@ test('Function: ForumLoader — scrolled silent refresh shows New posts without 
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 900;
     } else {
@@ -5861,7 +5861,7 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 900;
     } else {
@@ -7042,6 +7042,18 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
+test('Function: Scrollport — login has one scrollport and the document does not scroll', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await expect(page.locator('[data-scrollport]')).toHaveCount(1);
+  const documentScrolls = await page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollHeight > root.clientHeight + 1;
+  });
+  expect(documentScrolls).toBe(false);
+});
+
 test('Function: useAppShellScroller — welcome inner scroller drives New posts', async ({
   page,
 }) => {
@@ -7072,13 +7084,13 @@ test('Function: useAppShellScroller — welcome inner scroller drives New posts'
     page.getByText('Scroller note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 900;
     }
   });
   const afterScroll = await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     return {
       innerTop: scroller instanceof HTMLElement ? scroller.scrollTop : -1,
       windowY: window.scrollY,
@@ -7126,7 +7138,7 @@ test('Function: useAppShellScroller — welcome inner scroller drives New posts'
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'New posts' })).toHaveCount(0);
   const afterTop = await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     return scroller instanceof HTMLElement ? scroller.scrollTop : -1;
   });
   expect(afterTop).toBeLessThan(8);

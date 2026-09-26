@@ -1920,7 +1920,7 @@ describe('InboxScreen', () => {
         />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -1958,7 +1958,7 @@ describe('InboxScreen', () => {
         />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -2026,7 +2026,7 @@ describe('InboxScreen', () => {
         <InboxScreen {...inboxScreenProps({ messages: [older, newest], photoUrls: {} })} />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -2170,7 +2170,7 @@ describe('InboxScreen', () => {
         <InboxScreen {...inboxScreenProps({ messages: [m2, m3] })} />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -2286,7 +2286,7 @@ describe('InboxScreen', () => {
         <InboxScreen {...inboxScreenProps()} />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -2309,7 +2309,7 @@ describe('InboxScreen', () => {
       </AppShell>,
     );
     expect(windowScrollTo).not.toHaveBeenCalled();
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -2418,7 +2418,7 @@ describe('InboxScreen', () => {
         <InboxScreen {...inboxScreenProps()} />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');
@@ -2429,7 +2429,7 @@ describe('InboxScreen', () => {
         <InboxScreen {...inboxScreenProps({ openId: null, messages: null })} />
       </AppShell>,
     );
-    const listScroller = container.querySelector('.overflow-y-auto');
+    const listScroller = container.querySelector('[data-scrollport]');
     expect(listScroller).toBeTruthy();
     if (!(listScroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');

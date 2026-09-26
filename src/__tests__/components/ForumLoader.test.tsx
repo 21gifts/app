@@ -7044,7 +7044,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello from Ada')).toBeTruthy();
     });
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (!(scroller instanceof HTMLElement)) {
       throw new Error('expected AppShell scroller');

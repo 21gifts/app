@@ -1090,7 +1090,7 @@ On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row 
 
 ### Variant: photos
 
-On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (first still in view, next still peeks, `1/2` chip, dots) and the attach control visible in the composer.
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (stills stacked in the page scrollport, `1/2` chip, dots) and the attach control visible in the composer.
 
 ![21.gifts welcome photos](images/welcome-photos.png)
 
@@ -1102,7 +1102,7 @@ After a successful post of caption **Hello with this photo.** plus a JPEG: the r
 
 ### Variant: photos-and-text
 
-On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (first still in view, next still peeks, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (stills stacked in the page scrollport, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
 
 ![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 
@@ -1719,7 +1719,7 @@ Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 2100
 
 ### Variant: posts-open-photos
 
-Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in `ForumPhotoGallery` (next still peeks, `1/2` chip, dots) above the text, same ForumBoard paint as `/welcome` `photos`.
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in `ForumPhotoGallery` (stills stacked in the page scrollport, `1/2` chip, dots) above the text, same ForumBoard paint as `/welcome` `photos`.
 
 ![21.gifts member posts open with photos](images/members-posts-open-photos.png)
 
@@ -3081,7 +3081,7 @@ Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`
 
 ### Variant: photos
 
-Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` shows earlier stills at 88% so the next photo peeks, the last still full width, a `1/2` chip, and dots.
+Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` stacks the stills full width in the page scrollport, with a `1/2` chip and dots.
 
 ![21.gifts public message photos](images/messages-id-photos.png)
 

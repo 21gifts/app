@@ -1550,27 +1550,11 @@ describe('ForumBoard', () => {
     expect(photos).toHaveLength(2);
     expect(photos[0]?.getAttribute('data-photo-index')).toBe('0');
     expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
-    const scroller = photos[0]?.parentElement?.parentElement;
-    expect(scroller?.contains(photos[1] ?? null)).toBe(true);
-    const scrollerTokens = (scroller?.className ?? '').split(/\s+/);
-    expect(scrollerTokens).toEqual(
-      expect.arrayContaining([
-        'flex',
-        'snap-x',
-        'snap-mandatory',
-        'gap-3',
-        'overflow-x-auto',
-        'overscroll-x-contain',
-      ]),
-    );
-    expect(scrollerTokens).not.toContain('flex-col');
-    const firstSlide = (photos[0]?.parentElement?.className ?? '').split(/\s+/);
-    const lastSlide = (photos[1]?.parentElement?.className ?? '').split(/\s+/);
-    expect(firstSlide).toEqual(
-      expect.arrayContaining(['w-[88%]', 'min-w-[88%]', 'shrink-0', 'snap-start']),
-    );
-    expect(lastSlide).toEqual(
-      expect.arrayContaining(['w-full', 'min-w-full', 'shrink-0', 'snap-start']),
+    expect(photos[0]?.parentElement?.contains(photos[1] ?? null)).toBe(true);
+    expect(photos[0]?.parentElement?.className).toContain('flex-col');
+    expect(photos[0]?.parentElement?.className).not.toContain('overflow-');
+    expect((photos[0]?.className ?? '').split(/\s+/)).toEqual(
+      expect.arrayContaining(['w-full', 'max-h-80', 'object-contain']),
     );
     expect(screen.getByText('1/2')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Photo 2 of 2' })).toBeTruthy();
@@ -5686,7 +5670,7 @@ describe('ForumBoard', () => {
         />
       </AppShell>,
     );
-    const scroller = container.querySelector('.overflow-y-auto');
+    const scroller = container.querySelector('[data-scrollport]');
     expect(scroller).toBeTruthy();
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 0;
