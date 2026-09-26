@@ -87,8 +87,32 @@ describe('ShopTable', () => {
     expect(await screen.findByText('Cafe Luna')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Cafe Luna')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(fetchMessagesMock).toHaveBeenLastCalledWith(
+        'tok',
+        expect.objectContaining({ cursor: 'c2', hashtag: '21GiftsShop' }),
+      );
+    });
     expect(await screen.findByText('Other stall')).toBeTruthy();
+    expect(screen.getByText('Cafe Luna')).toBeTruthy();
+  });
+
+  it('keeps show more when an empty page still has a cursor', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock
+      .mockResolvedValueOnce({ messages: [], nextCursor: 'c2' })
+      .mockResolvedValueOnce({
+        messages: [SHOP],
+        nextCursor: null,
+      });
+    renderWithLocale(<ShopTable />);
+    expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(await screen.findByText('Cafe Luna')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
   it('hides show more when the page is the last one', async () => {

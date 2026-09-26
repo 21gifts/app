@@ -12241,6 +12241,225 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-table');
   });
 
+  const shopTableRow = {
+    id: 'm-shop',
+    name: 'Ada',
+    text: 'Cafe Luna\n\n#21GiftsShop',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 5,
+    payable: true,
+    hasPhoto: false,
+    role: 'basis',
+    place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+  };
+
+  test('shops table more', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [shopTableRow], nextCursor: 'c2' }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-more');
+  });
+
+  test('shops table next', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get('cursor');
+      const message =
+        cursor === 'c2'
+          ? { ...shopTableRow, id: 'm-stall', text: 'Other stall\n\n#21GiftsShop' }
+          : shopTableRow;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [message],
+          ...(cursor === 'c2' ? {} : { nextCursor: 'c2' }),
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByText('Other stall')).toBeVisible();
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-next');
+  });
+
+  test('shops table more error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get('cursor');
+      if (cursor === 'c2') {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [shopTableRow], nextCursor: 'c2' }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-more-error');
+  });
+
+  test('shops table more empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [], nextCursor: 'c2' }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await expect(page.getByText('No shops yet — add the first one.')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-more-empty');
+  });
+
+  test('shops table empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-empty');
+  });
+
+  test('shops table loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await expect(page.getByRole('tab', { name: 'Table', selected: true })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-loading');
+    release();
+  });
+
+  test('shops table error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Table' }).click();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-error');
+  });
+
+  test('shops map empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ places: [] }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Map' }).click();
+    await expect(page.getByText('No places yet.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-empty');
+  });
+
+  test('shops map loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Map' }).click();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-loading');
+    release();
+  });
+
+  test('shops map error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('tab', { name: 'Map' }).click();
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-error');
+  });
+
   test('shops empty', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);

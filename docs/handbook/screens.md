@@ -1473,7 +1473,7 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. **Map** is the same place list as `/map`, without a second Map heading. **Table** has columns **Name**, **Place**, and **Operator**. There is no Active / No gifts yet / All / Most popular control. On **Post**, the composer sits under the pill as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. **Map** is the same place list as `/map`, without a second Map heading. **Table** has columns **Name**, **Place**, and **Operator**. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, the composer sits under the pill as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**, back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`.
 
@@ -1500,6 +1500,66 @@ The **Map** tab is selected. The post composer is gone. The place list from `/ma
 The **Table** tab is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland**, operator **@luna**.
 
 ![21.gifts shops table](images/shops-table.png)
+
+### Variant: table-more
+
+**Table** is selected. The same row is shown, and **Show more** is under the table. The composer is gone.
+
+![21.gifts shops table more](images/shops-table-more.png)
+
+### Variant: table-next
+
+**Show more** has loaded the next page. **Cafe Luna** stays, **Other stall** is added, and **Show more** is gone.
+
+![21.gifts shops table next](images/shops-table-next.png)
+
+### Variant: table-more-error
+
+The next page failed. **Cafe Luna** stays. The forum error and **Try again** sit under the table, and **Show more** is still there.
+
+![21.gifts shops table more error](images/shops-table-more-error.png)
+
+### Variant: table-more-empty
+
+**Table** is selected. The page has no shop rows, but another page exists. **Show more** is shown. The empty sentence is not.
+
+![21.gifts shops table more empty](images/shops-table-more-empty.png)
+
+### Variant: table-empty
+
+**Table** is selected and there are no shop notes. Empty copy **No shops yet — add the first one.** The composer is gone.
+
+![21.gifts shops table empty](images/shops-table-empty.png)
+
+### Variant: table-loading
+
+**Table** is selected and the page has not arrived. **Loading…** The composer is gone.
+
+![21.gifts shops table loading](images/shops-table-loading.png)
+
+### Variant: table-error
+
+**Table** is selected and the first page failed. **Could not load messages. Please try again.** and **Try again**. The composer is gone.
+
+![21.gifts shops table error](images/shops-table-error.png)
+
+### Variant: map-empty
+
+**Map** is selected and there are no places. **No places yet.** No second **Map** heading. The composer is gone.
+
+![21.gifts shops map empty](images/shops-map-empty.png)
+
+### Variant: map-loading
+
+**Map** is selected and places have not arrived. **Loading…** No second **Map** heading.
+
+![21.gifts shops map loading](images/shops-map-loading.png)
+
+### Variant: map-error
+
+**Map** is selected and places failed. **Could not load places. Please try again.** and **Try again**. No second **Map** heading.
+
+![21.gifts shops map error](images/shops-map-error.png)
 
 ### Variant: empty
 

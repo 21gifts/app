@@ -121,56 +121,58 @@ export function ShopTable(): ReactElement | null {
     return <p className="mt-4 text-center text-sm text-app-muted">{t('map.loading')}</p>;
   }
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && nextCursor === null) {
     return <p className="mt-4 text-center text-sm text-app-fg">{t('shops.empty')}</p>;
   }
 
   return (
     <div className="mt-4">
-      <table className="w-full text-left text-sm text-app-fg">
-        <thead>
-          <tr className="text-app-muted">
-            <th scope="col" className="py-2 pr-3 font-medium">
-              {t('shops.columnName')}
-            </th>
-            <th scope="col" className="py-2 pr-3 font-medium">
-              {t('shops.columnPlace')}
-            </th>
-            <th scope="col" className="py-2 font-medium">
-              {t('shops.columnOperator')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const place = placeText(row);
-            const operator = row.shopAccount;
-            return (
-              <tr key={row.id} className="border-t border-app-border">
-                <td className="py-2 pr-3">{shopDisplayName(row)}</td>
-                <td className="py-2 pr-3">
-                  {place === null ? (
-                    '—'
-                  ) : (
-                    <a href={`/map?pin=${row.id}`} className="underline">
-                      {place}
-                    </a>
-                  )}
-                </td>
-                <td className="py-2">
-                  {operator === undefined ? (
-                    '—'
-                  ) : (
-                    <a href={`/members/${operator.id}`} className="underline">
-                      @{operator.username}
-                    </a>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {rows.length === 0 ? null : (
+        <table className="w-full text-left text-sm text-app-fg">
+          <thead>
+            <tr className="text-app-muted">
+              <th scope="col" className="py-2 pr-3 font-medium">
+                {t('shops.columnName')}
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium">
+                {t('shops.columnPlace')}
+              </th>
+              <th scope="col" className="py-2 font-medium">
+                {t('shops.columnOperator')}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const place = placeText(row);
+              const operator = row.shopAccount;
+              return (
+                <tr key={row.id} className="border-t border-app-border">
+                  <td className="py-2 pr-3">{shopDisplayName(row)}</td>
+                  <td className="py-2 pr-3">
+                    {place === null ? (
+                      '—'
+                    ) : (
+                      <a href={`/map?pin=${row.id}`} className="underline">
+                        {place}
+                      </a>
+                    )}
+                  </td>
+                  <td className="py-2">
+                    {operator === undefined ? (
+                      '—'
+                    ) : (
+                      <a href={`/members/${operator.id}`} className="underline">
+                        @{operator.username}
+                      </a>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
       {failed ? (
         <div className="mt-3 flex flex-col items-center gap-3">
           <p role="alert" className="text-center text-sm text-app-danger">

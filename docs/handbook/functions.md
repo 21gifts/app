@@ -1290,7 +1290,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Table of shop notes with name, place, and operator.
 - **Inputs:** Session from `useAuthStore`. Catalog via `useTranslations`.
-- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` (label, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash. **Show more** loads the next page. Null without a session.
+- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` (label, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash. **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. Null without a session.
 - **Used by:** `ShopsScreen`.
 
 ## Function: isShopNote
