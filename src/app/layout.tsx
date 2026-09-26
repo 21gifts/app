@@ -1,3 +1,4 @@
+import { SundayRestGate } from '@/components/SundayRestGate';
 import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
@@ -129,6 +130,7 @@ export default async function RootLayout({
   const locale = await getRequestLocale();
   const numberFormat = await getRequestNumberFormat();
   const fiat = await getRequestFiat(locale);
+  const catalog = getCatalog(locale);
   return (
     <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
@@ -142,20 +144,27 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-app-bg font-sans text-app-fg antialiased">
-        <AppHeightSync />
-        <LocaleProvider locale={locale} messages={getCatalog(locale)}>
-          <NumberFormatProvider initial={numberFormat}>
-            <FiatPreferenceProvider initial={fiat}>
-              <ThemeProvider>
-                <AccountPreferenceSync />
-                <Suspense fallback={null}>
-                  <RememberWalletReturn />
-                </Suspense>
-                {children}
-              </ThemeProvider>
-            </FiatPreferenceProvider>
-          </NumberFormatProvider>
-        </LocaleProvider>
+        <SundayRestGate
+          serverNow={Date.now()}
+          title={catalog['sunday.title']}
+          message={catalog['sunday.message']}
+          schedule={catalog['sunday.schedule']}
+        >
+          <AppHeightSync />
+          <LocaleProvider locale={locale} messages={getCatalog(locale)}>
+            <NumberFormatProvider initial={numberFormat}>
+              <FiatPreferenceProvider initial={fiat}>
+                <ThemeProvider>
+                  <AccountPreferenceSync />
+                  <Suspense fallback={null}>
+                    <RememberWalletReturn />
+                  </Suspense>
+                  {children}
+                </ThemeProvider>
+              </FiatPreferenceProvider>
+            </NumberFormatProvider>
+          </LocaleProvider>
+        </SundayRestGate>
       </body>
     </html>
   );

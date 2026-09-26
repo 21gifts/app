@@ -1,6 +1,10 @@
 import type { Locale } from '@/lib/locale';
 
 const en = {
+  'sunday.title': 'Christ is risen!',
+  'sunday.message':
+    'Rejoice in the risen Lord, visit him at Holy Mass, and take time to rest today. Set work and shopping aside. 21.gifts will be back on Monday.',
+  'sunday.schedule': 'Sunday rest · Sunday 00:00 to Monday 00:00 · Manila time',
   'happyland.title': 'Happyland – a glimpse of life in Manila',
   'happyland.intro':
     'Happyland is in Tondo, Manila. Families live here under difficult, often extremely difficult, conditions. We want to look more closely and portray the people and their surroundings with respect.',
@@ -820,6 +824,10 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 const de = {
+  'sunday.title': 'Christus ist auferstanden!',
+  'sunday.message':
+    'Freut euch über den auferstandenen Herrn, besucht ihn in der heiligen Messe und nehmt euch heute Zeit zum Ausruhen. Lasst die Arbeit und das Einkaufen ruhen. Ab Montag ist 21.gifts wieder für euch da.',
+  'sunday.schedule': 'Sonntagsruhe · Sonntag 00:00 bis Montag 00:00 · Manila-Zeit',
   'happyland.title': 'Happyland – ein Einblick in das Leben in Manila',
   'happyland.intro':
     'Happyland liegt in Tondo, Manila. Familien leben hier unter schwierigen, oft sehr schwierigen Bedingungen. Wir möchten genauer hinschauen und die Menschen und ihr Umfeld mit Respekt darstellen.',
@@ -1650,6 +1658,10 @@ const de = {
 } satisfies Messages;
 
 const es = {
+  'sunday.title': '¡Cristo ha resucitado!',
+  'sunday.message':
+    'Alegraos en el Señor resucitado, visitadlo en la Santa Misa y dedicaos hoy al descanso. Dejad el trabajo y las compras a un lado. 21.gifts volverá el lunes.',
+  'sunday.schedule': 'Descanso dominical · Domingo 00:00 a lunes 00:00 · Hora de Manila',
   'happyland.title': 'Happyland: una mirada a la vida en Manila',
   'happyland.intro':
     'Happyland está en Tondo, Manila. Las familias viven aquí en condiciones difíciles, a menudo extremadamente difíciles. Queremos conocer mejor a las personas y su entorno y mostrarlos con respeto.',
@@ -2459,6 +2471,10 @@ const es = {
 } satisfies Messages;
 
 const fil = {
+  'sunday.title': 'Muling nabuhay si Kristo!',
+  'sunday.message':
+    'Magalak sa Panginoong muling nabuhay, dalawin siya sa Banal na Misa, at maglaan ng oras upang magpahinga ngayon. Ipagpaliban ang trabaho at pamimili. Magbabalik ang 21.gifts sa Lunes.',
+  'sunday.schedule': 'Pahinga sa Linggo · Linggo 00:00 hanggang Lunes 00:00 · Oras ng Maynila',
   'happyland.title': 'Happyland – isang sulyap sa buhay sa Maynila',
   'happyland.intro':
     'Ang Happyland ay nasa Tondo, Maynila. Namumuhay rito ang mga pamilya sa mahirap, at kadalasan ay napakahirap, na kalagayan. Nais naming mas maunawaan at mailarawan nang may paggalang ang mga tao at ang kanilang paligid.',

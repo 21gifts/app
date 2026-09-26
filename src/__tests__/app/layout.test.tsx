@@ -1,3 +1,4 @@
+import { SundayRestGate } from '@/components/SundayRestGate';
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -178,9 +179,9 @@ describe('RootLayout', () => {
     expect(body.props.className).toContain('bg-app-bg');
     expect(body.props.className).toContain('font-sans');
     expect(body.props.className).not.toContain('bg-white');
-    const bodyChildren = Array.isArray(body.props.children)
-      ? body.props.children
-      : [body.props.children];
+    const gate = body.props.children as unknown as ReactElement<{ children: ReactElement[] }>;
+    expect(gate.type).toBe(SundayRestGate);
+    const bodyChildren = gate.props.children;
     expect(bodyChildren[0]?.type).toBe(AppHeightSync);
     const localeProvider = bodyChildren[1] as ReactElement<{
       children: ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;

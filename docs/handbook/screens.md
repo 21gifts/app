@@ -3071,3 +3071,21 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 The only state.
 
 ![21.gifts not found](images/not-found.png)
+
+## Screen: /sunday-rest
+
+- **Purpose:** Invite visitors to rejoice in the risen Lord, attend Holy Mass, rest and set work and shopping aside.
+- **Inputs:** The server clock and the existing English, German, Spanish or Filipino locale.
+- **Actions:** None during Sunday. Website and installed PWA reopen at Monday midnight in Manila.
+
+All document paths rewrite here during Sunday without running their usual server pages. Open windows unmount the application and display the same invitation. This screen contains no navigation or dismiss control. The original address stays in the browser and is reloaded when rest ends.
+
+### Variant: default
+
+- **Purpose:** The Sunday invitation, with no controls or application content.
+- **Inputs:** Translated title, body and Manila schedule.
+- **Actions:** Wait for automatic reopening on Monday.
+
+The same quiet, centered message fills desktop and phone screens in both themes.
+
+![Sunday rest](images/sunday-rest.png)
