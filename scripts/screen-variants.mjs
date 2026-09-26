@@ -1074,6 +1074,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-staff',
+    image: 'welcome-menu-staff.png',
+    visual: 'state-welcome-menu-staff',
+    needle: "getByRole('link', { name: 'Grants' })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',
