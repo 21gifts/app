@@ -16,7 +16,6 @@ import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
-type ReviewStep = 1 | 2 | 3 | 4;
 type FillStep = 'about' | 'photo' | 'location';
 
 /**
@@ -66,10 +65,11 @@ export function nextFillStep(account: Account): FillStep | null {
 }
 
 /**
- * Signed-in grant apply walk: fill About me, photo, and location, then the
- * same four principle/truth questions staff use. Missing fields are next
- * steps, not errors. Yes on the last step posts apply. Unmet or No does not
- * apply. Renders nothing without a session.
+ * Signed-in grant apply walk: fill About me, photo, and location, then two
+ * yes/no questions. The first asks whether the posts match the core principles
+ * and links to the about page. The second asks whether the posts are true.
+ * Missing fields are next steps, not errors. Yes on the truth question posts
+ * apply. No does not apply. Renders nothing without a session.
  *
  * @returns The apply card, or `null` without a session.
  */
@@ -79,13 +79,13 @@ export function FundingApplyScreen(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
-  const [reviewStep, setReviewStep] = useState<ReviewStep>(1);
   const [unmet, setUnmet] = useState(false);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsError, setPostsError] = useState(false);
   const [postsAttempt, setPostsAttempt] = useState(0);
   const [applying, setApplying] = useState(false);
   const [applyFailed, setApplyFailed] = useState(false);
+  const [reviewStep, setReviewStep] = useState<'principles' | 'truth'>('principles');
 
   useEffect(() => {
     if (session === null || account === null || !roleAtLeast(account.role, 'verified')) {
@@ -130,7 +130,7 @@ export function FundingApplyScreen(): ReactElement | null {
     <>
       <div className="flex w-full justify-start">
         <Link
-          href="/profile"
+          href="/grants"
           className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
           aria-label={t('funding.apply.back')}
         >
@@ -261,13 +261,13 @@ export function FundingApplyScreen(): ReactElement | null {
     );
   }
 
-  const onMet = (): void => {
-    if (reviewStep < 4) {
-      setReviewStep((current) => (current + 1) as ReviewStep);
-      return;
-    }
+  const onYes = (): void => {
     /* v8 ignore next 3 — Yes is disabled while busy */
     if (applying) {
+      return;
+    }
+    if (reviewStep === 'principles') {
+      setReviewStep('truth');
       return;
     }
     setApplying(true);
@@ -281,7 +281,7 @@ export function FundingApplyScreen(): ReactElement | null {
           return;
         }
         setAccount({ ...current.account, funding: next });
-        router.push('/profile');
+        router.push('/grants');
       } catch {
         /* v8 ignore next 3 — session gone during apply */
         if (useAuthStore.getState().session !== session) {
@@ -315,30 +315,19 @@ export function FundingApplyScreen(): ReactElement | null {
   } else if (posts === null) {
     body = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
   } else {
-    const principle = reviewStep === 4 ? null : reviewStep;
     body = (
       <>
-        {principle === 1 ? (
-          <>
-            <p className="text-center text-sm text-app-muted">{t('funding.review.check1')}</p>
-            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv1Title')}</p>
-            <p className="text-center text-sm text-app-muted">{t('about.conv1Body')}</p>
-          </>
-        ) : principle === 2 ? (
-          <>
-            <p className="text-center text-sm text-app-muted">{t('funding.review.check2')}</p>
-            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv2Title')}</p>
-            <p className="text-center text-sm text-app-muted">{t('about.conv2Body')}</p>
-          </>
-        ) : principle === 3 ? (
-          <>
-            <p className="text-center text-sm text-app-muted">{t('funding.review.check3')}</p>
-            <p className="text-center text-sm font-medium text-app-fg">{t('about.conv3Title')}</p>
-            <p className="text-center text-sm text-app-muted">{t('about.conv3Body')}</p>
-          </>
-        ) : (
-          <p className="text-center text-sm text-app-muted">{t('funding.review.truth')}</p>
-        )}
+        <p className="text-center text-sm text-app-muted">
+          {reviewStep === 'truth' ? t('funding.review.truth') : t('funding.review.question.self')}
+        </p>
+        {reviewStep === 'principles' ? (
+          <a
+            href="https://21.gifts/about"
+            className="text-center text-sm text-app-fg underline underline-offset-2"
+          >
+            {t('nav.about')}
+          </a>
+        ) : null}
         {posts.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>
         ) : (
@@ -377,9 +366,9 @@ export function FundingApplyScreen(): ReactElement | null {
             icon={
               applying ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
             }
-            onClick={onMet}
+            onClick={onYes}
           >
-            {reviewStep === 4 ? t('funding.review.yes') : t('funding.review.met')}
+            {t('funding.review.yes')}
           </Button>
           <Button
             type="button"
@@ -389,7 +378,7 @@ export function FundingApplyScreen(): ReactElement | null {
               setUnmet(true);
             }}
           >
-            {reviewStep === 4 ? t('funding.review.no') : t('funding.review.unmet')}
+            {t('funding.review.no')}
           </Button>
         </div>
       </>

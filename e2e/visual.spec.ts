@@ -2537,6 +2537,45 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-sticker-open', false);
   });
 
+  test('state /profile funding-program-press', async ({ page }) => {
+    await page.unroute(/\/forum\/members\/acc_e2e$/);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page
+      .getByRole('button', { name: /Takes part in the 21.gifts funding program since/ })
+      .click();
+    await expect(
+      page.getByText(
+        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+          Date.parse('2026-08-28T12:00:00.000Z'),
+          'en',
+        )}`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-program-press', false);
+  });
+
   test('state /profile posts-open', async ({ page }) => {
     await seedProfilePage(page);
     await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
@@ -6980,7 +7019,7 @@ test.describe('profile funding states', () => {
   async function seedFundingProfile(
     page: Page,
     extras: {
-      role?: 'basis' | 'verified';
+      role?: 'basis' | 'verified' | 'moderator';
       funding?: unknown;
     } = {},
   ): Promise<void> {
@@ -7025,16 +7064,21 @@ test.describe('profile funding states', () => {
 
   test('profile funding not-verified', async ({ page }) => {
     await seedFundingProfile(page, { role: 'basis', funding: null });
-    await openProfile(page);
+    await page.goto('/grants');
     await expect(page.getByText('You are not verified yet.')).toBeVisible();
     await shotScreen(page, 'state-profile-funding-not-verified');
   });
 
   test('profile funding none', async ({ page }) => {
     await seedFundingProfile(page);
-    await openProfile(page);
+    await page.goto('/grants');
     await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
-    await shotScreen(page, 'state-profile-funding-none');
+    await expect(
+      page.getByText(
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-grants');
   });
 
   test('profile funding pending', async ({ page }) => {
@@ -7046,7 +7090,7 @@ test.describe('profile funding states', () => {
         reviewedByName: null,
       },
     });
-    await openProfile(page);
+    await page.goto('/grants');
     await expect(
       page.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeVisible();
@@ -7062,7 +7106,7 @@ test.describe('profile funding states', () => {
         reviewedByName: null,
       },
     });
-    await openProfile(page);
+    await page.goto('/grants');
     await expect(
       page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
     ).toBeVisible();
@@ -7078,33 +7122,13 @@ test.describe('profile funding states', () => {
         reviewedByName: 'Ada',
       },
     });
-    await openProfile(page);
+    await page.goto('/grants');
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await expect(page.getByText(/Takes part in the 21.gifts funding program since/)).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
   });
 
-  test('state /profile funding-program-open', async ({ page }) => {
-    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'acc_e2e',
-          name: 'Ada',
-          username: 'alice',
-          location: null,
-          role: 'verified',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          createdAt: '2026-01-15T12:00:00.000Z',
-          aboutMe: null,
-          profileMessage: null,
-          postCount: 14,
-          replyCount: 0,
-          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
-        }),
-      });
-    });
+  test('state /grants funding-program-open', async ({ page }) => {
     await seedFundingProfile(page, {
       funding: {
         status: 'admitted',
@@ -7113,16 +7137,22 @@ test.describe('profile funding states', () => {
         reviewedByName: 'Ada',
       },
     });
-    await openProfile(page);
+    await page.goto('/grants');
     const sentence = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
       Date.parse('2026-08-28T12:00:00.000Z'),
       'en',
     )}`;
-    await page.getByRole('button', { name: sentence }).click();
-    const revealed = page.locator('p[role="status"]').getByText(sentence, { exact: true });
+    const revealed = page.getByText(sentence, { exact: true });
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-funding-program-open', false);
+  });
+
+  test('state /grants open-applications', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'moderator' });
+    await page.goto('/grants');
+    await expect(page.getByRole('link', { name: 'Open applications' })).toBeVisible();
+    await shotScreen(page, 'state-grants-open-applications');
   });
 });
 
@@ -7213,66 +7243,45 @@ test.describe('profile apply screens', () => {
     });
   }
 
-  test('screen /profile/apply', async ({ page }) => {
+  test('screen /grants/apply', async ({ page }) => {
     await seedApply(page);
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(
       page.getByText('First, write a short About me so people can get to know you.'),
     ).toBeVisible();
-    await shotScreen(page, 'screen-profile-apply');
+    await shotScreen(page, 'screen-grants-apply');
   });
 
   test('profile apply photo', async ({ page }) => {
     await seedApply(page, { aboutMe: 'I build on Bitcoin' });
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-photo');
   });
 
   test('profile apply location', async ({ page }) => {
     await seedApply(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText('Next, add the place you live.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-location');
   });
 
-  test('profile apply principle-1', async ({ page }) => {
+  test('profile apply question', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
     });
     await stubPosts(page, [POST]);
-    await page.goto('/profile/apply');
-    await expect(page.getByText('Please check whether the posts match principle 1.')).toBeVisible();
-    await shotScreen(page, 'state-profile-apply-principle-1');
-  });
-
-  test('profile apply principle-2', async ({ page }) => {
-    await seedApply(page, {
-      aboutMe: 'I build on Bitcoin',
-      aboutMeHasPhoto: true,
-      location: 'Zurich',
-    });
-    await stubPosts(page, [POST]);
-    await page.goto('/profile/apply');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await expect(page.getByText('Please check whether the posts match principle 2.')).toBeVisible();
-    await shotScreen(page, 'state-profile-apply-principle-2');
-  });
-
-  test('profile apply principle-3', async ({ page }) => {
-    await seedApply(page, {
-      aboutMe: 'I build on Bitcoin',
-      aboutMeHasPhoto: true,
-      location: 'Zurich',
-    });
-    await stubPosts(page, [POST]);
-    await page.goto('/profile/apply');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await expect(page.getByText('Please check whether the posts match principle 3.')).toBeVisible();
-    await shotScreen(page, 'state-profile-apply-principle-3');
+    await page.goto('/grants/apply');
+    await expect(
+      page.getByText('Do your profile posts match the core principles of 21.gifts?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
+      'href',
+      'https://21.gifts/about',
+    );
+    await shotScreen(page, 'state-grants-apply-question');
   });
 
   test('profile apply truth', async ({ page }) => {
@@ -7282,19 +7291,18 @@ test.describe('profile apply screens', () => {
       location: 'Zurich',
     });
     await stubPosts(page, [POST]);
-    await page.goto('/profile/apply');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.goto('/grants/apply');
+    await page.getByRole('button', { name: 'Yes' }).click();
     await expect(
       page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeVisible();
-    await shotScreen(page, 'state-profile-apply-truth');
+    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-apply-truth');
   });
 
   test('profile apply forbidden', async ({ page }) => {
     await seedApply(page, { role: 'basis', funding: null });
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText('You are not verified yet.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-forbidden');
   });
@@ -7308,7 +7316,7 @@ test.describe('profile apply screens', () => {
         reviewedByName: null,
       },
     });
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(
       page.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeVisible();
@@ -7324,7 +7332,7 @@ test.describe('profile apply screens', () => {
         reviewedByName: null,
       },
     });
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(
       page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
     ).toBeVisible();
@@ -7340,7 +7348,7 @@ test.describe('profile apply screens', () => {
         reviewedByName: 'Ada',
       },
     });
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-admitted');
   });
@@ -7352,7 +7360,7 @@ test.describe('profile apply screens', () => {
       location: 'Zurich',
     });
     await stubPosts(page, []);
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText('No living-room posts.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-empty-posts');
   });
@@ -7364,7 +7372,7 @@ test.describe('profile apply screens', () => {
       location: 'Zurich',
     });
     await stubPosts(page, 'hang');
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText('Loading…').first()).toBeVisible();
     await shotScreen(page, 'state-profile-apply-loading');
   });
@@ -7376,7 +7384,7 @@ test.describe('profile apply screens', () => {
       location: 'Zurich',
     });
     await stubPosts(page, 'error');
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(
       page.getByText('Could not load this application. Please try again.'),
     ).toBeVisible();
@@ -7393,10 +7401,11 @@ test.describe('profile apply screens', () => {
     await page.route(/\/funding\/apply$/, async () => {
       /* hang */
     });
-    await page.goto('/profile/apply');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.goto('/grants/apply');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Yes' }).click();
     await expect(page.getByRole('button', { name: 'Yes' })).toBeDisabled();
     await shotScreen(page, 'state-profile-apply-applying');
@@ -7416,10 +7425,11 @@ test.describe('profile apply screens', () => {
         body: JSON.stringify({ error: 'Funding is unavailable' }),
       });
     });
-    await page.goto('/profile/apply');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.goto('/grants/apply');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Yes' }).click();
     await expect(
       page.getByText('Could not submit your application. Please try again.'),
@@ -7434,27 +7444,27 @@ test.describe('profile apply screens', () => {
       location: 'Zurich',
     });
     await stubPosts(page, [POST]);
-    await page.goto('/profile/apply');
-    await page.getByRole('button', { name: 'Requirement not met' }).click();
+    await page.goto('/grants/apply');
+    await page.getByRole('button', { name: 'No' }).click();
     await expect(page.getByText('When your posts match, you can apply again.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-unmet');
   });
 
-  test('state /profile/apply translate', async ({ page }) => {
+  test('state /grants/apply translate', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
     });
     await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-apply-translate');
   });
 
-  test('state /profile/apply translate-loading', async ({ page }) => {
+  test('state /grants/apply translate-loading', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7462,7 +7472,7 @@ test.describe('profile apply screens', () => {
     });
     await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
     await fulfillTranslatePost(page, 'hang');
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
       'aria-busy',
@@ -7472,7 +7482,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate-loading');
   });
 
-  test('state /profile/apply translate-done', async ({ page }) => {
+  test('state /grants/apply translate-done', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7480,7 +7490,7 @@ test.describe('profile apply screens', () => {
     });
     await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
     await fulfillTranslatePost(page, 'ok');
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
@@ -7489,7 +7499,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate-done');
   });
 
-  test('state /profile/apply translate-hidden', async ({ page }) => {
+  test('state /grants/apply translate-hidden', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7497,7 +7507,7 @@ test.describe('profile apply screens', () => {
     });
     await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
     await fulfillTranslatePost(page, 'ok');
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
@@ -7507,7 +7517,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate-hidden');
   });
 
-  test('state /profile/apply translate-error', async ({ page }) => {
+  test('state /grants/apply translate-error', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7515,7 +7525,7 @@ test.describe('profile apply screens', () => {
     });
     await stubPosts(page, [{ ...POST, text: GERMAN_NOTE_TEXT }]);
     await fulfillTranslatePost(page, 'fail');
-    await page.goto('/profile/apply');
+    await page.goto('/grants/apply');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
@@ -7523,6 +7533,15 @@ test.describe('profile apply screens', () => {
       .getByText('Could not translate this note. Please try again.')
       .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-apply-translate-error');
+  });
+
+  test('screen /profile/apply redirects', async ({ page }) => {
+    await seedApply(page);
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-profile-apply');
   });
 });
 
@@ -12388,7 +12407,7 @@ test.describe('moderate screens', () => {
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open applications' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open applications' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Moderators chat group' })).toBeVisible();
     await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'screen-moderate');
@@ -13008,19 +13027,19 @@ test.describe('moderate applications screens', () => {
     });
   }
 
-  test('screen /moderate/applications', async ({ page }) => {
+  test('screen /grants/applications', async ({ page }) => {
     await seedAda(page, 'founder');
     await stubApplications(page, [APPLICATION]);
-    await page.goto('/moderate/applications');
+    await page.goto('/grants/applications');
     await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
     await expect(page.getByText('Rose')).toBeVisible();
-    await shotScreen(page, 'screen-moderate-applications');
+    await shotScreen(page, 'screen-grants-applications');
   });
 
   test('moderate applications forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await stubApplications(page);
-    await page.goto('/moderate/applications');
+    await page.goto('/grants/applications');
     await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
     await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-forbidden');
@@ -13029,7 +13048,7 @@ test.describe('moderate applications screens', () => {
   test('moderate applications empty', async ({ page }) => {
     await seedAda(page, 'founder');
     await stubApplications(page);
-    await page.goto('/moderate/applications');
+    await page.goto('/grants/applications');
     await expect(page.getByText('No open applications.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-empty');
   });
@@ -13037,7 +13056,7 @@ test.describe('moderate applications screens', () => {
   test('moderate applications loading', async ({ page }) => {
     await seedAda(page, 'founder');
     await stubApplications(page, 'hang');
-    await page.goto('/moderate/applications');
+    await page.goto('/grants/applications');
     await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-loading');
   });
@@ -13055,14 +13074,14 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/moderate/applications');
+    await page.goto('/grants/applications');
     await expect(
       page.getByText('Could not load open applications. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-error');
   });
 
-  test('screen /moderate/applications/[accountId]', async ({ page }) => {
+  test('screen /grants/applications/[accountId]', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13071,15 +13090,21 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify(DETAIL),
       });
     });
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
     await expect(page.getByText('Living-room note.')).toBeVisible();
-    await expect(page.getByText('Please check whether the posts match principle 1.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Requirement met' })).toBeVisible();
-    await shotScreen(page, 'screen-moderate-applications-accountId');
+    await expect(
+      page.getByText('Do their profile posts match the core principles of 21.gifts?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
+      'href',
+      'https://21.gifts/about',
+    );
+    await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
+    await shotScreen(page, 'screen-grants-applications-accountId');
   });
 
-  test('moderate applications accountId principle-2', async ({ page }) => {
+  test('grants application truth', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13088,50 +13113,18 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify(DETAIL),
       });
     });
-    await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await expect(page.getByText('Please check whether the posts match principle 2.')).toBeVisible();
-    await shotScreen(page, 'state-moderate-applications-accountId-principle-2');
-  });
-
-  test('moderate applications accountId principle-3', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await page.route('**/funding/applications/acc_rose', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(DETAIL),
-      });
-    });
-    await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await expect(page.getByText('Please check whether the posts match principle 3.')).toBeVisible();
-    await shotScreen(page, 'state-moderate-applications-accountId-principle-3');
-  });
-
-  test('moderate applications accountId truth', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await page.route('**/funding/applications/acc_rose', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(DETAIL),
-      });
-    });
-    await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
-    await page.getByRole('button', { name: 'Requirement met' }).click();
+    await page.goto('/grants/applications/acc_rose');
+    await page.getByRole('button', { name: 'Yes' }).click();
     await expect(
       page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeVisible();
-    await shotScreen(page, 'state-moderate-applications-accountId-truth');
+    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-applications-accountId-truth');
   });
 
   test('moderate applications accountId forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
     await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-accountId-forbidden');
@@ -13146,7 +13139,7 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify({ ...DETAIL, messages: [] }),
       });
     });
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await expect(page.getByText('No living-room posts.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-accountId-empty');
   });
@@ -13156,7 +13149,7 @@ test.describe('moderate applications screens', () => {
     await page.route('**/funding/applications/acc_rose', async () => {
       /* hang */
     });
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await expect(page.locator('p.text-center', { hasText: 'Loading…' }).first()).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-accountId-loading');
   });
@@ -13170,7 +13163,7 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await expect(
       page.getByText('Could not load this application. Please try again.'),
     ).toBeVisible();
@@ -13193,8 +13186,8 @@ test.describe('moderate applications screens', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Requirement not met' }).click();
+    await page.goto('/grants/applications/acc_rose');
+    await page.getByRole('button', { name: 'No' }).click();
     await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-accountId-decide-failed');
   });
@@ -13211,13 +13204,13 @@ test.describe('moderate applications screens', () => {
     await page.route('**/funding/reject', async () => {
       /* hang */
     });
-    await page.goto('/moderate/applications/acc_rose');
-    await page.getByRole('button', { name: 'Requirement not met' }).click();
-    await expect(page.getByRole('button', { name: 'Requirement not met' })).toBeDisabled();
+    await page.goto('/grants/applications/acc_rose');
+    await page.getByRole('button', { name: 'No' }).click();
+    await expect(page.getByRole('button', { name: 'No' })).toBeDisabled();
     await shotScreen(page, 'state-moderate-applications-accountId-deciding');
   });
 
-  test('state /moderate/applications/[accountId] translate', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13229,14 +13222,14 @@ test.describe('moderate applications screens', () => {
         }),
       });
     });
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-applications-id-translate');
   });
 
-  test('state /moderate/applications/[accountId] translate-loading', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-loading', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13249,7 +13242,7 @@ test.describe('moderate applications screens', () => {
       });
     });
     await fulfillTranslatePost(page, 'hang');
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
       'aria-busy',
@@ -13259,7 +13252,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate-loading');
   });
 
-  test('state /moderate/applications/[accountId] translate-done', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-done', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13272,7 +13265,7 @@ test.describe('moderate applications screens', () => {
       });
     });
     await fulfillTranslatePost(page, 'ok');
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
@@ -13281,7 +13274,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate-done');
   });
 
-  test('state /moderate/applications/[accountId] translate-hidden', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-hidden', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13294,7 +13287,7 @@ test.describe('moderate applications screens', () => {
       });
     });
     await fulfillTranslatePost(page, 'ok');
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
@@ -13304,7 +13297,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate-hidden');
   });
 
-  test('state /moderate/applications/[accountId] translate-error', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-error', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13317,7 +13310,7 @@ test.describe('moderate applications screens', () => {
       });
     });
     await fulfillTranslatePost(page, 'fail');
-    await page.goto('/moderate/applications/acc_rose');
+    await page.goto('/grants/applications/acc_rose');
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
@@ -13325,6 +13318,30 @@ test.describe('moderate applications screens', () => {
       .getByText('Could not translate this note. Please try again.')
       .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-applications-id-translate-error');
+  });
+
+  test('screen /moderate/applications redirects', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubApplications(page, [APPLICATION]);
+    await page.goto('/moderate/applications');
+    await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
+    await shotScreen(page, 'screen-moderate-applications');
+  });
+
+  test('screen /moderate/applications/[accountId] redirects', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.goto('/moderate/applications/acc_rose');
+    await expect(
+      page.getByText('Do their profile posts match the core principles of 21.gifts?'),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-moderate-applications-accountId');
   });
 });
 

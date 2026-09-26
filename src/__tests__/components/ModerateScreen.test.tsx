@@ -214,9 +214,7 @@ describe('ModerateScreen', () => {
       expect(screen.getByRole('link', { name: 'Open proposals' }).getAttribute('href')).toBe(
         '/moderate/proposals',
       );
-      expect(screen.getByRole('link', { name: 'Open applications' }).getAttribute('href')).toBe(
-        '/moderate/applications',
-      );
+      expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
       expect(screen.getByRole('link', { name: 'Moderators chat group' }).getAttribute('href')).toBe(
         '/moderate/group',
       );

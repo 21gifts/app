@@ -195,7 +195,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();
     expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
-    expect(screen.getByText('You are not verified yet.')).toBeTruthy();
+    expect(screen.queryByText('You are not verified yet.')).toBeNull();
     expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
       'true',

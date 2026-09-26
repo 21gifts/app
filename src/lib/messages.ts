@@ -60,6 +60,7 @@ const en = {
   'nav.notificationsUnread': 'Notifications, {count} unread',
   'nav.moderate': 'Moderation',
   'nav.moderateUnread': 'Moderation, {count} unread',
+  'nav.grants': 'Grants',
   'nav.contact': 'Contact',
   'nav.back': 'Back',
 
@@ -745,7 +746,7 @@ const en = {
     'It does not mean they are a good person, and it does not mean they are entitled to receive money. It only means this person really exists and has a 21.gifts account.',
   'moderate.handbook.funding.title': 'Official funding program',
   'moderate.handbook.funding.body':
-    'Verified members can apply on their profile with the three convictions. Staff review the queue by walking each principle and whether the posts are true, then admit or reject. Daily gifts still go out as before until 25 September 2026. From that UTC day, only admitted members (or a same-day trial) receive them.',
+    'Verified members apply under Grants. They answer whether their profile posts match the core principles of 21.gifts, then whether the posts are true. Staff answer the same two questions, then admit or reject. Admitted members receive the daily gift.',
   'moderate.handbook.funding.rulesLead': 'The rules are simple.',
   'moderate.handbook.funding.rulePrinciples': 'Follow the 3 principles of 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Daily Bitcoin payments are mandatory',
@@ -757,14 +758,14 @@ const en = {
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
   'funding.grace':
-    'Daily gifts continue as usual until 25 September 2026. From that day, only admitted members receive them. Apply now so a moderator can review your posts.',
+    'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
   'funding.apply.heading': 'Apply for the 21 gifts grant',
   'funding.apply.about': 'First, write a short About me so people can get to know you.',
   'funding.apply.photo': 'Next, add a photo to your About me.',
   'funding.apply.location': 'Next, add the place you live.',
   'funding.apply.unmet': 'When your posts match, you can apply again.',
-  'funding.apply.back': 'Back to profile',
+  'funding.apply.back': 'Back to grants',
   'funding.pending': 'Your application is open. A moderator will review your posts.',
   'funding.trial': 'You are on a one-day trial. Review repeats tomorrow.',
   'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
@@ -779,9 +780,8 @@ const en = {
   'funding.detail.postsLabel': 'Living-room posts',
   'funding.detail.emptyPosts': 'No living-room posts.',
   'funding.detail.error': 'Could not load this application. Please try again.',
-  'funding.review.check1': 'Please check whether the posts match principle 1.',
-  'funding.review.check2': 'Please check whether the posts match principle 2.',
-  'funding.review.check3': 'Please check whether the posts match principle 3.',
+  'funding.review.question.self': 'Do your profile posts match the core principles of 21.gifts?',
+  'funding.review.question.staff': 'Do their profile posts match the core principles of 21.gifts?',
   'funding.review.truth': 'Do these posts, to your knowledge, correspond to the truth?',
   'funding.review.met': 'Requirement met',
   'funding.review.unmet': 'Requirement not met',
@@ -882,6 +882,7 @@ const de = {
   'nav.notificationsUnread': 'Benachrichtigungen, {count} ungelesen',
   'nav.moderate': 'Moderation',
   'nav.moderateUnread': 'Moderation, {count} ungelesen',
+  'nav.grants': 'Förderprogramm',
   'nav.contact': 'Kontakt',
   'nav.back': 'Zurück',
   'pwa.install': 'App installieren',
@@ -1570,7 +1571,7 @@ const de = {
     'Es bedeutet nicht, dass es ein guter Mensch ist oder dass die Person berechtigt sein soll, Geld zu erhalten. Es bedeutet nur, dass es diesen Menschen wirklich gibt und dass er ein Konto bei 21.gifts hat.',
   'moderate.handbook.funding.title': 'Offizielles Förderprogramm',
   'moderate.handbook.funding.body':
-    'Verifizierte Mitglieder können sich auf ihrem Profil mit den drei Überzeugungen bewerben. Das Team prüft die Warteschlange, indem es jeden Grundsatz und die Wahrheit der Beiträge prüft, und lässt dann zu oder lehnt ab. Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem UTC-Tag erhalten nur noch zugelassene Mitglieder (oder eine Probe für denselben Tag) welche.',
+    'Verifizierte Mitglieder bewerben sich unter Förderprogramm. Sie beantworten, ob ihre Profilbeiträge mit den Grundprinzipien von 21.gifts übereinstimmen, und danach, ob die Beiträge der Wahrheit entsprechen. Das Team beantwortet dieselben zwei Fragen und lässt dann zu oder lehnt ab. Tägliche Geschenke erhalten zugelassene Mitglieder.',
   'moderate.handbook.funding.rulesLead': 'Die Regeln sind einfach.',
   'moderate.handbook.funding.rulePrinciples': 'Die 3 Prinzipien von 21.gifts befolgen',
   'moderate.handbook.funding.ruleDaily': 'Tägliche Bitcoin-Zahlungen sind Pflicht',
@@ -1582,7 +1583,7 @@ const de = {
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
   'funding.grace':
-    'Tägliche Geschenke laufen bis 25. September 2026 wie bisher. Ab diesem Tag erhalten nur noch zugelassene Mitglieder welche. Bewerben Sie sich jetzt, damit das Team Ihre Beiträge prüfen kann.',
+    'Tägliche Geschenke erhalten zugelassene Mitglieder. Bewerben Sie sich, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
   'funding.apply.heading': 'Für 21 Förderprogramm bewerben',
   'funding.apply.about':
@@ -1590,7 +1591,7 @@ const de = {
   'funding.apply.photo': 'Als Nächstes fügen Sie ein Foto zu Über mich hinzu.',
   'funding.apply.location': 'Als Nächstes tragen Sie den Ort ein, an dem Sie leben.',
   'funding.apply.unmet': 'Wenn Ihre Beiträge passen, können Sie sich erneut bewerben.',
-  'funding.apply.back': 'Zurück zum Profil',
+  'funding.apply.back': 'Zurück zum Förderprogramm',
   'funding.pending':
     'Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.',
   'funding.trial': 'Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.',
@@ -1609,9 +1610,10 @@ const de = {
   'funding.detail.emptyPosts': 'Keine Wohnzimmer-Beiträge.',
   'funding.detail.error':
     'Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
-  'funding.review.check1': 'Bitte prüfen Sie, ob die Beiträge dem Grundsatz 1 entsprechen.',
-  'funding.review.check2': 'Bitte prüfen Sie, ob die Beiträge dem Grundsatz 2 entsprechen.',
-  'funding.review.check3': 'Bitte prüfen Sie, ob die Beiträge dem Grundsatz 3 entsprechen.',
+  'funding.review.question.self':
+    'Stimmen Ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein?',
+  'funding.review.question.staff':
+    'Stimmen ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein?',
   'funding.review.truth': 'Entsprechen diese Beiträge nach Ihrem Wissen der Wahrheit?',
   'funding.review.met': 'Anforderung erfüllt',
   'funding.review.unmet': 'Nicht erfüllt',
@@ -1709,6 +1711,7 @@ const es = {
   'nav.notificationsUnread': 'Notificaciones, {count} sin leer',
   'nav.moderate': 'Moderación',
   'nav.moderateUnread': 'Moderación, {count} sin leer',
+  'nav.grants': 'Beca',
   'nav.contact': 'Contacto',
   'nav.back': 'Volver',
   'pwa.install': 'Instalar app',
@@ -2383,7 +2386,7 @@ const es = {
     'No significa que sea una buena persona ni que tenga derecho a recibir dinero. Solo significa que esa persona existe de verdad y tiene una cuenta en 21.gifts.',
   'moderate.handbook.funding.title': 'Programa oficial de apoyo',
   'moderate.handbook.funding.body':
-    'Los miembros verificados pueden solicitar en su perfil con las tres convicciones. El equipo recorre cada principio y si los mensajes son verdad, luego admite o rechaza. Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día UTC, solo las personas admitidas (o en prueba ese mismo día) los reciben.',
+    'Los miembros verificados solicitan en Beca. Responden si sus publicaciones del perfil coinciden con los principios de 21.gifts y después si corresponden a la verdad. El equipo responde las mismas dos preguntas y luego admite o rechaza. Las personas admitidas reciben el regalo diario.',
   'moderate.handbook.funding.rulesLead': 'Las reglas son simples.',
   'moderate.handbook.funding.rulePrinciples': 'Seguir los 3 principios de 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Los pagos diarios en Bitcoin son obligatorios',
@@ -2395,14 +2398,14 @@ const es = {
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
   'funding.grace':
-    'Los regalos diarios siguen como hasta ahora hasta el 25 de septiembre de 2026. Desde ese día, solo las personas admitidas los reciben. Solicita ahora para que una persona moderadora revise tus mensajes.',
+    'Las personas admitidas reciben el regalo diario. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
   'funding.apply.heading': 'Solicitar la beca 21 gifts',
   'funding.apply.about': 'Primero, escribe un breve Sobre mí para que la gente te conozca.',
   'funding.apply.photo': 'Después, añade una foto a tu Sobre mí.',
   'funding.apply.location': 'Después, añade el lugar donde vives.',
   'funding.apply.unmet': 'Cuando tus mensajes coincidan, puedes solicitar de nuevo.',
-  'funding.apply.back': 'Volver al perfil',
+  'funding.apply.back': 'Volver a la beca',
   'funding.pending': 'Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.',
   'funding.trial': 'Estás en una prueba de un día. La revisión se repite mañana.',
   'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
@@ -2418,9 +2421,10 @@ const es = {
   'funding.detail.postsLabel': 'Mensajes del salón',
   'funding.detail.emptyPosts': 'No hay mensajes del salón.',
   'funding.detail.error': 'No se pudo cargar esta solicitud. Inténtalo de nuevo.',
-  'funding.review.check1': 'Comprueba si los mensajes coinciden con el principio 1.',
-  'funding.review.check2': 'Comprueba si los mensajes coinciden con el principio 2.',
-  'funding.review.check3': 'Comprueba si los mensajes coinciden con el principio 3.',
+  'funding.review.question.self':
+    '¿Tus publicaciones del perfil coinciden con los principios de 21.gifts?',
+  'funding.review.question.staff':
+    '¿Sus publicaciones del perfil coinciden con los principios de 21.gifts?',
   'funding.review.truth': '¿Estos mensajes, según tu conocimiento, corresponden a la verdad?',
   'funding.review.met': 'Requisito cumplido',
   'funding.review.unmet': 'No cumplido',
@@ -2519,6 +2523,7 @@ const fil = {
   'nav.notificationsUnread': 'Mga abiso, {count} hindi pa nababasa',
   'nav.moderate': 'Moderasyon',
   'nav.moderateUnread': 'Moderasyon, {count} hindi pa nababasa',
+  'nav.grants': 'Grant',
   'nav.contact': 'Contact',
   'nav.back': 'Bumalik',
   'pwa.install': 'I-install ang app',
@@ -3203,7 +3208,7 @@ const fil = {
     'Hindi ito nangangahulugang mabuting tao siya, at hindi ito nangangahulugang karapat-dapat siyang tumanggap ng pera. Ibig sabihin lang nito na totoong umiiral ang taong ito at may account siya sa 21.gifts.',
   'moderate.handbook.funding.title': 'Opisyal na programa ng tulong',
   'moderate.handbook.funding.body':
-    'Maaaring mag-apply ang mga verified na miyembro sa kanilang profile gamit ang tatlong paniniwala. Nilalakad ng staff ang bawat prinsipyo at kung totoo ang mga post, tapos admit o reject. Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa UTC day na iyon, admitted members (o same-day trial) na lang ang tatanggap.',
+    'Nag-a-apply ang mga verified na miyembro sa Grant. Sinasagot nila kung tumutugma ang mga post sa profile sa mga pangunahing prinsipyo ng 21.gifts, at pagkatapos kung tumutugma ang mga post sa katotohanan. Sinasagot ng staff ang parehong dalawang tanong, tapos admit o reject. Admitted members ang tumatanggap ng araw-araw na gift.',
   'moderate.handbook.funding.rulesLead': 'Simple lang ang mga patakaran.',
   'moderate.handbook.funding.rulePrinciples': 'Sundin ang 3 prinsipyo ng 21.gifts',
   'moderate.handbook.funding.ruleDaily': 'Mandatory ang araw-araw na bayad sa Bitcoin',
@@ -3215,14 +3220,14 @@ const fil = {
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
   'funding.grace':
-    'Tuloy ang araw-araw na gifts hanggang 25 September 2026. Mula sa araw na iyon, admitted members na lang ang tatanggap. Mag-apply na para masuri ng moderator ang iyong mga post.',
+    'Admitted members ang tumatanggap ng araw-araw na gift. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
   'funding.apply.heading': 'Mag-apply para sa 21 gifts grant',
   'funding.apply.about': 'Una, magsulat ng maikling About me para makilala ka ng iba.',
   'funding.apply.photo': 'Sunod, magdagdag ng larawan sa About me.',
   'funding.apply.location': 'Sunod, ilagay ang lugar kung saan ka nakatira.',
   'funding.apply.unmet': 'Kapag tumugma na ang iyong mga post, maaari kang mag-apply ulit.',
-  'funding.apply.back': 'Bumalik sa profile',
+  'funding.apply.back': 'Bumalik sa grant',
   'funding.pending': 'Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post.',
   'funding.trial': 'Nasa one-day trial ka. Uulitin ang review bukas.',
   'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
@@ -3237,9 +3242,10 @@ const fil = {
   'funding.detail.postsLabel': 'Mga living-room post',
   'funding.detail.emptyPosts': 'Walang living-room posts.',
   'funding.detail.error': 'Hindi ma-load ang aplikasyong ito. Subukan ulit.',
-  'funding.review.check1': 'Suriin kung tumutugma ang mga post sa prinsipyo 1.',
-  'funding.review.check2': 'Suriin kung tumutugma ang mga post sa prinsipyo 2.',
-  'funding.review.check3': 'Suriin kung tumutugma ang mga post sa prinsipyo 3.',
+  'funding.review.question.self':
+    'Tumutugma ba ang mga post sa profile mo sa mga pangunahing prinsipyo ng 21.gifts?',
+  'funding.review.question.staff':
+    'Tumutugma ba ang mga post sa profile nila sa mga pangunahing prinsipyo ng 21.gifts?',
   'funding.review.truth': 'Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan?',
   'funding.review.met': 'Natugunan ang kinakailangan',
   'funding.review.unmet': 'Hindi natugunan',

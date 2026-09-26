@@ -146,7 +146,14 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   └── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional this-device On/Off pill
+│   │   │   ├── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional this-device On/Off pill
+│   │   │   └── apply/page.tsx   # GET /profile/apply — redirect to /grants/apply
+│   │   ├── grants/
+│   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
+│   │   │   ├── apply/page.tsx   # GET /grants/apply — principles question, then truth
+│   │   │   └── applications/
+│   │   │       ├── page.tsx     # GET /grants/applications — grant queue
+│   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
 │   │   ├── wallet/
 │   │   │   └── page.tsx         # GET /wallet — Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
 │   │   ├── auth/passkey/replace/
@@ -161,8 +168,8 @@ app/
 │   │   │   ├── page.tsx              # GET /moderate — signed-in moderation hub
 │   │   │   ├── hidden/page.tsx       # GET /moderate/hidden — hidden notes
 │   │   │   ├── proposals/page.tsx    # GET /moderate/proposals — confirm/reject queue
-│   │   │   ├── applications/page.tsx # GET /moderate/applications — grant queue
-│   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — grant review
+│   │   │   ├── applications/page.tsx # GET /moderate/applications — redirect to /grants/applications
+│   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — redirect to /grants/applications/:id
 │   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
 │   │   │   └── handbook/page.tsx     # GET /moderate/handbook — staff handbook
 │   │   ├── trust-chain/
@@ -203,12 +210,13 @@ app/
 │   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + Open applications + moderator staff room + Handbook)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
+│   │   ├── GrantsScreen.tsx      # Signed-in /grants (grant card + staff queue link)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm/reject queue
-│   │   ├── FundingApplicationsScreen.tsx # Signed-in /moderate/applications grant queue
-│   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /moderate/applications/:id grant review
-│   │   ├── FundingStatusCard.tsx # Owner profile verification / 21 gifts grant
+│   │   ├── FundingApplicationsScreen.tsx # Signed-in /grants/applications grant queue
+│   │   ├── FundingApplicationDetailScreen.tsx # Signed-in /grants/applications/:id principles, then truth
+│   │   ├── FundingStatusCard.tsx # Grant status on /grants
 │   │   ├── ModeratorGroupScreen.tsx # Signed-in /moderate/group closed staff room
 │   │   ├── ModerateHandbookScreen.tsx # Signed-in /moderate/handbook staff chapters
 │   │   ├── MemberTrustActions.tsx # Staff verify / propose / confirm / appoint on a member card
@@ -331,7 +339,7 @@ app/
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
-│   ├── applications.spec.ts     # /moderate/applications grant queue and review
+│   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
