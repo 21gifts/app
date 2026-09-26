@@ -934,8 +934,10 @@ describe('AmountEntry', () => {
     Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
     fireEvent.click(screen.getByRole('button', { name: /^2$/ }));
     expect(vibrate).toHaveBeenCalledWith(10);
-    vibrate.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    vibrate.mockClear();
     fireEvent.click(screen.getByRole('button', { name: '.' }));
     fireEvent.click(screen.getByRole('button', { name: '.' }));
     expect(vibrate).toHaveBeenCalledTimes(1);
@@ -1002,7 +1004,7 @@ describe('AmountEntry', () => {
     expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
     fireEvent.keyDown(window, { key: 'Backspace' });
     fireEvent.keyDown(window, { key: 'Delete' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.5');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.');
     fireEvent.keyDown(window, { key: 'a' });
     fireEvent.keyDown(window, { key: '3', metaKey: true });
     fireEvent.keyDown(window, { key: '3', ctrlKey: true });
@@ -1016,11 +1018,11 @@ describe('AmountEntry', () => {
     fireEvent.keyDown(area, { key: '3' });
     fireEvent.keyDown(select, { key: '3' });
     fireEvent.keyDown(editable, { key: '3' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.5');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.');
     const plain = document.createElement('div');
     document.body.append(plain);
     fireEvent.keyDown(plain, { key: '7' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.5');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.7');
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2.');
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
