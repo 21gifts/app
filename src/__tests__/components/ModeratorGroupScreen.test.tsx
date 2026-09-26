@@ -142,9 +142,20 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   cleanup();
+  delete document.documentElement.dataset['localSunday'];
 });
 
 describe('ModeratorGroupScreen', () => {
+  it('shows the Sunday pause and does not open the moderator chat', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ModeratorGroupScreen />);
+    expect(screen.getByText('The moderator chat is paused on Sunday.')).toBeTruthy();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
+    expect(groupMock).not.toHaveBeenCalled();
+    document.documentElement.dataset['localSunday'] = '0';
+  });
+
   it('renders nothing when there is no session', () => {
     useAuthStore.setState({ session: null, account });
     const { container } = renderWithLocale(<ModeratorGroupScreen />);

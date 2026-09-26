@@ -57,10 +57,21 @@ describe('UsernameForm', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '  Ada  ' } });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     await waitFor(() => {
-      expect(setUsername).toHaveBeenCalledWith('sess', 'ada');
+      expect(setUsername).toHaveBeenCalledWith('sess', 'ada', 'setup');
     });
     expect(useAuthStore.getState().account).toEqual(saved);
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it('sends the device zone when the overlay saves', async () => {
+    const saved: Account = { ...base, username: 'ada', setup: null, missing: [] };
+    vi.mocked(setUsername).mockResolvedValue(saved);
+    renderWithLocale(<UsernameForm variant="overlay" />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    await waitFor(() => {
+      expect(setUsername).toHaveBeenCalledWith('sess', 'ada', 'enforce');
+    });
   });
 
   it('shows taken, invalid, and request errors', async () => {
