@@ -3,6 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import { useId, useState, type FormEvent, type ReactElement } from 'react';
 import { AppShellFooter } from '@/components/AppShell';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import { setUsername } from '@/lib/api';
@@ -75,7 +76,7 @@ export function UsernameForm({
     </Button>
   );
 
-  return (
+  const form = (
     <form id={formId} className="mt-6 flex w-full flex-col items-stretch gap-3" onSubmit={onSubmit}>
       <label className="sr-only" htmlFor={fieldId}>
         {t('setup.usernameTitle')}
@@ -119,4 +120,8 @@ export function UsernameForm({
       )}
     </form>
   );
+  if (variant === 'onboarding') {
+    return form;
+  }
+  return <SundayWritingGate>{form}</SundayWritingGate>;
 }

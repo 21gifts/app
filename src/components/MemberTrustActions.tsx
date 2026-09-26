@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactElement } from 'react';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { StaffFunctions } from '@/components/StaffFunctions';
 import { Button } from '@/components/ui';
@@ -142,7 +143,7 @@ export function MemberTrustActions({
             </Link>
           </p>
         ) : (
-          <>
+          <SundayWritingGate>
             {showVerify ? (
               <Button
                 variant="secondary"
@@ -195,7 +196,7 @@ export function MemberTrustActions({
                 {t('trustChain.action.appoint')}
               </Button>
             ) : null}
-          </>
+          </SundayWritingGate>
         )}
       </StaffFunctions>
     </div>

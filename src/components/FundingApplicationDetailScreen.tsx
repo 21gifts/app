@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
@@ -203,41 +204,43 @@ export function FundingApplicationDetailScreen({
           </p>
         ) : null}
         {open ? (
-          <div className="flex w-full flex-col items-stretch gap-3">
-            <Button
-              type="button"
-              disabled={deciding}
-              icon={
-                deciding ? (
-                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                ) : undefined
-              }
-              onClick={() => {
-                if (step === 'principles') {
-                  setStep('truth');
-                  return;
+          <SundayWritingGate>
+            <div className="flex w-full flex-col items-stretch gap-3">
+              <Button
+                type="button"
+                disabled={deciding}
+                icon={
+                  deciding ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : undefined
                 }
-                finish('admit');
-              }}
-            >
-              {t('funding.review.yes')}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={deciding}
-              icon={
-                deciding ? (
-                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                ) : undefined
-              }
-              onClick={() => {
-                finish('reject');
-              }}
-            >
-              {t('funding.review.no')}
-            </Button>
-          </div>
+                onClick={() => {
+                  if (step === 'principles') {
+                    setStep('truth');
+                    return;
+                  }
+                  finish('admit');
+                }}
+              >
+                {t('funding.review.yes')}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={deciding}
+                icon={
+                  deciding ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : undefined
+                }
+                onClick={() => {
+                  finish('reject');
+                }}
+              >
+                {t('funding.review.no')}
+              </Button>
+            </div>
+          </SundayWritingGate>
         ) : null}
       </>
     );

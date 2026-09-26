@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactElement } from 'react';
 import { Check, Loader2, Trash2, X } from 'lucide-react';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { IconButton } from '@/components/ui/IconButton';
 import { useTranslations } from '@/components/LocaleProvider';
 import { deleteMessage } from '@/lib/api';
@@ -63,60 +64,62 @@ export function DeletePostControl({
   }
 
   return (
-    <div
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
-      className={confirming ? 'order-last mt-2 w-full basis-full' : undefined}
-    >
-      {confirming ? (
-        <div
-          role="group"
-          aria-label={confirmLabel}
-          className="flex flex-col gap-2 rounded-xl border border-app-border p-3"
-        >
-          <p className="text-sm text-app-fg">{confirmLabel}</p>
-          {error ? (
-            <p role="alert" className="text-sm text-app-danger">
-              {errorLabel}
-            </p>
-          ) : null}
-          <div className="flex gap-3">
-            <IconButton
-              aria-label={t('forum.deleteConfirmAction')}
-              disabled={busy}
-              onClick={() => {
-                void remove();
-              }}
-            >
-              {busy ? (
-                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check aria-hidden="true" className="h-4 w-4" />
-              )}
-            </IconButton>
-            <IconButton
-              aria-label={t('forum.deleteCancel')}
-              disabled={busy}
-              onClick={() => {
-                setConfirming(false);
-                setError(false);
-              }}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
+    <SundayWritingGate>
+      <div
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+        className={confirming ? 'order-last mt-2 w-full basis-full' : undefined}
+      >
+        {confirming ? (
+          <div
+            role="group"
+            aria-label={confirmLabel}
+            className="flex flex-col gap-2 rounded-xl border border-app-border p-3"
+          >
+            <p className="text-sm text-app-fg">{confirmLabel}</p>
+            {error ? (
+              <p role="alert" className="text-sm text-app-danger">
+                {errorLabel}
+              </p>
+            ) : null}
+            <div className="flex gap-3">
+              <IconButton
+                aria-label={t('forum.deleteConfirmAction')}
+                disabled={busy}
+                onClick={() => {
+                  void remove();
+                }}
+              >
+                {busy ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check aria-hidden="true" className="h-4 w-4" />
+                )}
+              </IconButton>
+              <IconButton
+                aria-label={t('forum.deleteCancel')}
+                disabled={busy}
+                onClick={() => {
+                  setConfirming(false);
+                  setError(false);
+                }}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
           </div>
-        </div>
-      ) : (
-        <IconButton
-          size="sm"
-          variant="ghost"
-          aria-label={idleLabel}
-          title={idleLabel}
-          onClick={() => setConfirming(true)}
-        >
-          <Trash2 aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      )}
-    </div>
+        ) : (
+          <IconButton
+            size="sm"
+            variant="ghost"
+            aria-label={idleLabel}
+            title={idleLabel}
+            onClick={() => setConfirming(true)}
+          >
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+        )}
+      </div>
+    </SundayWritingGate>
   );
 }

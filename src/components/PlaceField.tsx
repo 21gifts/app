@@ -2,6 +2,7 @@
 
 import { MapPin, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
@@ -318,124 +319,126 @@ export function PlaceField(props: {
   }
 
   return (
-    <div className="relative shrink-0">
-      <IconButton
-        type="button"
-        size={buttonSize}
-        variant={buttonVariant}
-        aria-label={ariaLabel}
-        title={ariaLabel}
-        aria-expanded={open}
-        disabled={props.disabled}
-        onClick={() => {
-          setOpen((current) => !current);
-        }}
-      >
-        <MapPin
-          aria-hidden="true"
-          className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
-        />
-      </IconButton>
-      {showPreview && props.place !== null && !open ? (
-        <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-          <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-          <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
-          <IconButton
-            type="button"
-            size="sm"
-            variant="secondary"
-            aria-label={t('forum.placeRemove')}
-            disabled={props.disabled || saving}
-            onClick={() => {
-              void commit(null);
-            }}
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        </div>
-      ) : null}
-      {open && !props.disabled && (unavailable || mapsKey !== null) ? (
-        <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
-          {unavailable ? (
-            <>
-              <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
-              {saveError ? (
-                <p role="alert" className="mt-3 text-sm text-app-danger">
-                  {t('forum.placeSaveFailed')}
-                </p>
-              ) : null}
-              {props.onCommit !== undefined && !showPreview && props.place !== null ? (
-                <IconButton
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="mt-3"
-                  aria-label={t('forum.placeRemove')}
-                  disabled={props.disabled || saving}
-                  onClick={() => {
-                    void commit(null);
+    <SundayWritingGate>
+      <div className="relative shrink-0">
+        <IconButton
+          type="button"
+          size={buttonSize}
+          variant={buttonVariant}
+          aria-label={ariaLabel}
+          title={ariaLabel}
+          aria-expanded={open}
+          disabled={props.disabled}
+          onClick={() => {
+            setOpen((current) => !current);
+          }}
+        >
+          <MapPin
+            aria-hidden="true"
+            className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
+          />
+        </IconButton>
+        {showPreview && props.place !== null && !open ? (
+          <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+            <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
+            <IconButton
+              type="button"
+              size="sm"
+              variant="secondary"
+              aria-label={t('forum.placeRemove')}
+              disabled={props.disabled || saving}
+              onClick={() => {
+                void commit(null);
+              }}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
+        ) : null}
+        {open && !props.disabled && (unavailable || mapsKey !== null) ? (
+          <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
+            {unavailable ? (
+              <>
+                <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
+                {saveError ? (
+                  <p role="alert" className="mt-3 text-sm text-app-danger">
+                    {t('forum.placeSaveFailed')}
+                  </p>
+                ) : null}
+                {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="mt-3"
+                    aria-label={t('forum.placeRemove')}
+                    disabled={props.disabled || saving}
+                    onClick={() => {
+                      void commit(null);
+                    }}
+                  >
+                    <X aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <div ref={mapElRef} className="h-64 w-full rounded-xl" />
+                <input
+                  type="text"
+                  maxLength={80}
+                  aria-label={t('forum.placeLabel')}
+                  value={labelDraft}
+                  disabled={props.disabled}
+                  onChange={(event) => {
+                    setLabelDraft(event.target.value);
                   }}
-                >
-                  <X aria-hidden="true" className="h-4 w-4" />
-                </IconButton>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <div ref={mapElRef} className="h-64 w-full rounded-xl" />
-              <input
-                type="text"
-                maxLength={80}
-                aria-label={t('forum.placeLabel')}
-                value={labelDraft}
-                disabled={props.disabled}
-                onChange={(event) => {
-                  setLabelDraft(event.target.value);
-                }}
-                className="mt-3 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
-              />
-              {saveError ? (
-                <p role="alert" className="mt-3 text-sm text-app-danger">
-                  {t('forum.placeSaveFailed')}
-                </p>
-              ) : null}
-              {markerPos !== null ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="mt-3"
-                  disabled={props.disabled || saving}
-                  onClick={() => {
-                    const trimmed = labelDraft.trim();
-                    void commit({
-                      lat: markerPos.lat,
-                      lng: markerPos.lng,
-                      label: trimmed === '' ? null : trimmed,
-                    });
-                  }}
-                >
-                  {t('forum.placeDone')}
-                </Button>
-              ) : null}
-              {props.onCommit !== undefined && !showPreview && props.place !== null ? (
-                <IconButton
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="mt-3"
-                  aria-label={t('forum.placeRemove')}
-                  disabled={props.disabled || saving}
-                  onClick={() => {
-                    void commit(null);
-                  }}
-                >
-                  <X aria-hidden="true" className="h-4 w-4" />
-                </IconButton>
-              ) : null}
-            </>
-          )}
-        </div>
-      ) : null}
-    </div>
+                  className="mt-3 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+                />
+                {saveError ? (
+                  <p role="alert" className="mt-3 text-sm text-app-danger">
+                    {t('forum.placeSaveFailed')}
+                  </p>
+                ) : null}
+                {markerPos !== null ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-3"
+                    disabled={props.disabled || saving}
+                    onClick={() => {
+                      const trimmed = labelDraft.trim();
+                      void commit({
+                        lat: markerPos.lat,
+                        lng: markerPos.lng,
+                        label: trimmed === '' ? null : trimmed,
+                      });
+                    }}
+                  >
+                    {t('forum.placeDone')}
+                  </Button>
+                ) : null}
+                {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="mt-3"
+                    aria-label={t('forum.placeRemove')}
+                    disabled={props.disabled || saving}
+                    onClick={() => {
+                      void commit(null);
+                    }}
+                  >
+                    <X aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </SundayWritingGate>
   );
 }

@@ -3,6 +3,7 @@
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { IconButton } from '@/components/ui';
 import { setLocation } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
@@ -118,43 +119,45 @@ export function LocationForm({
       </p>
 
       {editing ? (
-        <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              autoComplete="address-level2"
-              spellCheck={false}
-              placeholder={t('location.placeholder')}
-              aria-label={t('location.aria')}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              disabled={busy}
-              className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
-            />
-            <IconButton
-              type="submit"
-              variant="primary"
-              size="md"
-              disabled={busy}
-              aria-label={t('location.save')}
-            >
-              {submitIcon}
-            </IconButton>
-            <IconButton
-              type="button"
-              variant="secondary"
-              size="md"
-              disabled={busy}
-              aria-label={t('location.cancel')}
-              onClick={() => {
-                setEditing(false);
-                setError(false);
-              }}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          </div>
-        </form>
+        <SundayWritingGate>
+          <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                autoComplete="address-level2"
+                spellCheck={false}
+                placeholder={t('location.placeholder')}
+                aria-label={t('location.aria')}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                disabled={busy}
+                className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
+              />
+              <IconButton
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={busy}
+                aria-label={t('location.save')}
+              >
+                {submitIcon}
+              </IconButton>
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={busy}
+                aria-label={t('location.cancel')}
+                onClick={() => {
+                  setEditing(false);
+                  setError(false);
+                }}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          </form>
+        </SundayWritingGate>
       ) : set ? (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{location}</p>

@@ -14,6 +14,7 @@ import { getRequestFiat } from '@/lib/request-fiat';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getRequestNumberFormat } from '@/lib/request-number-format';
 import { getCatalog } from '@/lib/messages';
+import { SUNDAY_BOOTSTRAP_SCRIPT, SUNDAY_WRITE_CSS } from '@/lib/sunday-rest';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
@@ -134,6 +135,11 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <style>{SUNDAY_WRITE_CSS}</style>
+        <script dangerouslySetInnerHTML={{ __html: SUNDAY_BOOTSTRAP_SCRIPT }} />
+        {process.env['NEXT_PUBLIC_E2E_NOW'] ? (
+          <meta name="e2e-now" content={process.env['NEXT_PUBLIC_E2E_NOW']} />
+        ) : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
