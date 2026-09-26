@@ -107,6 +107,14 @@ describe('ForumNoteText', () => {
     expect(screen.queryByRole('button', { name: /Show less/i })).toBeNull();
   });
 
+  it('shows the full body without Show more when forceExpanded', () => {
+    renderWithLocale(
+      <ForumNoteText text={`${'a'.repeat(280)} TAILWORD`} className="body" forceExpanded />,
+    );
+    expect(screen.getByText(/TAILWORD/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
   it('renders a short url as plain text when plain', () => {
     renderWithLocale(<ForumNoteText plain text="see https://example.com/hello" className="body" />);
     expect(screen.getByText('see https://example.com/hello')).toBeTruthy();
