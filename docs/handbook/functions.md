@@ -2357,10 +2357,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: PATCH
 
-- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`.
-- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place`, also async route `params` with the message id.
+- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`. `/forum/messages/[id]/shop-account` re-exports `proxyMessagesShopAccountPatch`.
+- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place` and `/forum/messages/[id]/shop-account`, also async route `params` with the message id.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin forum staff place save (`setMessagePlace`).
+- **Used by:** Same-origin forum staff place save (`setMessagePlace`) and shop-account save (`setMessageShopAccount`).
 
 ## Function: AboutPage
 
