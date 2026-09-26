@@ -6576,6 +6576,121 @@ describe('reply form size', () => {
     });
     expect(within(plainCard).queryByRole('button', { name: 'Copy Nostr link' })).toBeNull();
   });
+
+  it('copies nostrUri from a reply and falls back when the clipboard rejects', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+    const nostrUri = 'nostr:nevent1qqsrexample';
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[
+            {
+              id: 'r-nostr',
+              name: 'Bob',
+              text: 'A reply',
+              createdAt: '2026-08-28T12:30:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              photoCount: 0,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+              nostrUri,
+            },
+          ]}
+          {...modeProps('all')}
+        />,
+      );
+      const replyCard = document.querySelector('[data-reply-id="r-nostr"]') as HTMLElement;
+      fireEvent.click(within(replyCard).getByRole('button', { name: 'Copy Nostr link' }));
+      await waitFor(() => {
+        expect(execCommand).toHaveBeenCalledWith('copy');
+        expect(
+          within(replyCard)
+            .getByRole('button', { name: 'Copy Nostr link' })
+            .getAttribute('data-copied'),
+        ).toBe('true');
+      });
+      expect(writeText).toHaveBeenCalledWith(nostrUri);
+    } finally {
+      Object.defineProperty(document, 'execCommand', {
+        configurable: true,
+        value: originalExecCommand,
+      });
+      if (originalClipboard === undefined) {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      } else {
+        Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      }
+    }
+  });
+
+  it('logs when the Nostr clipboard write and the fallback both fail', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const originalExecCommand = document.execCommand;
+    const execCommand = vi.fn(() => false);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const noteId = '77e0510d-03a8-4063-8716-75d61178e7f1';
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[{ ...SAMPLE, id: noteId, nostrUri: 'nostr:nevent1qqsrexample' }]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          {...modeProps('all')}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Copy Nostr link' }));
+      await waitFor(() => {
+        expect(errorSpy).toHaveBeenCalledWith('Copy link failed');
+      });
+    } finally {
+      errorSpy.mockRestore();
+      Object.defineProperty(document, 'execCommand', {
+        configurable: true,
+        value: originalExecCommand,
+      });
+      if (originalClipboard === undefined) {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      } else {
+        Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      }
+    }
+  });
 });
 
 describe('revealReplyForm', () => {

@@ -913,18 +913,14 @@ export function ForumBoard({
     }
   };
 
-  const copyNostrLink = async (message: ForumMessage): Promise<void> => {
-    const uri = message.nostrUri;
-    if (typeof uri !== 'string' || uri === '') {
-      return;
-    }
+  const copyNostrLink = async (uri: string, messageId: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(uri);
       /* v8 ignore next 3 -- copy resolved after unmount */
       if (!copyMounted.current) {
         return;
       }
-      flashCopiedNostr(message.id);
+      flashCopiedNostr(messageId);
       return;
     } catch {
       /* v8 ignore next 3 -- clipboard threw after unmount */
@@ -932,7 +928,7 @@ export function ForumBoard({
         return;
       }
       if (fallbackCopy(uri)) {
-        flashCopiedNostr(message.id);
+        flashCopiedNostr(messageId);
         return;
       }
       console.error('Copy link failed');
@@ -1272,7 +1268,7 @@ export function ForumBoard({
                     data-copied={copiedNostr ? 'true' : undefined}
                     onClick={(event) => {
                       stopCardToggle(event);
-                      void copyNostrLink(message);
+                      void copyNostrLink(message.nostrUri, message.id);
                     }}
                     className="text-xs font-medium text-app-muted hover:text-app-fg"
                   >
@@ -1527,7 +1523,7 @@ export function ForumBoard({
                                   data-copied={copiedNostrId === reply.id ? 'true' : undefined}
                                   onClick={(event) => {
                                     stopCardToggle(event);
-                                    void copyNostrLink(reply);
+                                    void copyNostrLink(reply.nostrUri, reply.id);
                                   }}
                                   className="text-xs font-medium text-app-muted hover:text-app-fg"
                                 >
