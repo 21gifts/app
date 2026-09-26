@@ -1324,17 +1324,19 @@ export function ForumBoard({
                 typeof message.goalSats === 'number' &&
                 message.sats >= message.goalSats &&
                 message.deletedAt === undefined ? (
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-app-fg underline"
-                    disabled={payBusy}
-                    onClick={(event) => {
-                      stopCardToggle(event);
-                      onRepay(message.id);
-                    }}
-                  >
-                    {t('forum.repayToday')}
-                  </button>
+                  <SundayWritingGate notice="zap">
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-app-fg underline"
+                      disabled={payBusy}
+                      onClick={(event) => {
+                        stopCardToggle(event);
+                        onRepay(message.id);
+                      }}
+                    >
+                      {t('forum.repayToday')}
+                    </button>
+                  </SundayWritingGate>
                 ) : null}
                 {message.parentId !== undefined &&
                 message.payable &&

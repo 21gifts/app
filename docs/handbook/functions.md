@@ -3211,7 +3211,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: postRepaymentInvoice
 
-- **Purpose:** POST `/messages/:id/repayment` with no body. The author receives a BOLT11 for the next giver share.
+- **Purpose:** POST `/messages/:id/repayment` with no body. The author receives a BOLT11 for the next giver share. Sends the device `Time-Zone` so a local Sunday is refused.
 - **Inputs:** session token and the credit note id.
 - **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy. 409 `missing_requirements` throws `MissingRequirementsError`.
 - **Used by:** `ForumLoader`.

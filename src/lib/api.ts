@@ -2239,7 +2239,7 @@ export async function postRepaymentInvoice(
 ): Promise<MessageInvoice> {
   const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${sessionToken}` },
+    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
   if (response.status === 400 || response.status === 429 || response.status === 404) {
     const raw = await readApiError(response);
