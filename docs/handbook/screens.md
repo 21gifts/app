@@ -1857,7 +1857,7 @@ Identity card; posts pressed; the listed English post is defined as **$1.50** wi
 
 ### Variant: posts-open-goal-credit
 
-Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, **To be repaid.**, **Interest 0%**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**.
+Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, **To be repaid.**, **Interest 0%**, and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Who gave and who is paid back**.
 
 ![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
 

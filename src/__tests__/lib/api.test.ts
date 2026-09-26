@@ -1800,6 +1800,21 @@ describe('postRepaymentInvoice', () => {
     await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+    stubFetch({ ok: false, status: 409, body: { error: 'busy' } });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new Error('not json')),
+      }),
+    );
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
   });
 });
 

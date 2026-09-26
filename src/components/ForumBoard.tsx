@@ -238,6 +238,8 @@ export interface ForumBoardProps {
   viewerAccountId?: string | null;
   /** Requests today's repayment invoice for the author's own funded credit. */
   onRepay?: (messageId: string) => void;
+  /** Failure of today's repayment, shown without the gift amount form. */
+  repayNotice?: { messageId: string; error: Exclude<ForumPayError, null> | null } | null;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Unit the pay field is actually showing. */
@@ -691,6 +693,7 @@ export function ForumBoard({
   onPayOpen,
   viewerAccountId = null,
   onRepay,
+  repayNotice = null,
   onPayDraftChange,
   onPayUnitChange,
   onPaySubmit,
@@ -1337,6 +1340,17 @@ export function ForumBoard({
                       {t('forum.repayToday')}
                     </button>
                   </SundayWritingGate>
+                ) : null}
+                {repayNotice?.messageId === message.id && repayNotice.error !== null ? (
+                  <p role="alert" className="text-xs text-app-danger">
+                    {t(
+                      repayNotice.error === 'rateLimit'
+                        ? 'forum.payErrorRateLimit'
+                        : repayNotice.error === 'authorWallet'
+                          ? 'forum.payErrorAuthorWallet'
+                          : 'forum.payErrorRequest',
+                    )}
+                  </p>
                 ) : null}
                 {message.parentId !== undefined &&
                 message.payable &&

@@ -325,7 +325,7 @@ const en = {
   'forum.creditBackOpen':
     'The days are fixed once the credit is fully given. Until then this is the plan for what has been given.',
   'forum.creditNoneYet': 'No one has given yet.',
-  'forum.creditUnassigned': '{amount} has no 21.gifts account and is not paid back.',
+  'forum.creditUnassigned': 'has no 21.gifts account and is not paid back.',
   'forum.creditStatusPaid': 'Paid',
   'forum.creditStatusDue': 'Due',
   'forum.creditStatusScheduled': 'Scheduled',
@@ -1242,7 +1242,7 @@ const de = {
   'forum.creditBackOpen':
     'Die Tage stehen fest, sobald der Kredit voll gegeben ist. Bis dahin ist das der Plan für das bisher Gegebene.',
   'forum.creditNoneYet': 'Noch hat niemand gegeben.',
-  'forum.creditUnassigned': '{amount} hat kein 21.gifts-Konto und wird nicht zurückgezahlt.',
+  'forum.creditUnassigned': 'hat kein 21.gifts-Konto und wird nicht zurückgezahlt.',
   'forum.creditStatusPaid': 'Bezahlt',
   'forum.creditStatusDue': 'Fällig',
   'forum.creditStatusScheduled': 'Geplant',
@@ -2178,7 +2178,7 @@ const es = {
   'forum.creditBackOpen':
     'Los días quedan fijos cuando el crédito está completo. Hasta entonces, este es el plan de lo aportado.',
   'forum.creditNoneYet': 'Nadie ha aportado todavía.',
-  'forum.creditUnassigned': '{amount} no tiene cuenta de 21.gifts y no se devuelve.',
+  'forum.creditUnassigned': 'no tiene cuenta de 21.gifts y no se devuelve.',
   'forum.creditStatusPaid': 'Pagado',
   'forum.creditStatusDue': 'Pendiente',
   'forum.creditStatusScheduled': 'Previsto',
@@ -3100,7 +3100,7 @@ const fil = {
   'forum.creditBackOpen':
     'Natitiyak ang mga araw kapag puno na ang kredito. Hanggang noon, ito ang plano ng naibigay na.',
   'forum.creditNoneYet': 'Wala pang nagbigay.',
-  'forum.creditUnassigned': 'Ang {amount} ay walang 21.gifts na account at hindi ibinabalik.',
+  'forum.creditUnassigned': 'ay walang 21.gifts na account at hindi ibinabalik.',
   'forum.creditStatusPaid': 'Nabayaran',
   'forum.creditStatusDue': 'Dapat na',
   'forum.creditStatusScheduled': 'Nakatakda',

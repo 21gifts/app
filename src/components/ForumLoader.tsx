@@ -135,7 +135,7 @@ function isAuthorWalletError(err: unknown): boolean {
   if (!(err instanceof Error)) {
     return false;
   }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return /wallet cannot receive this Bitcoin payment/i.test(err.message);
 }
 
 /**
@@ -411,6 +411,10 @@ export function ForumLoader({
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
+  const [repayNotice, setRepayNotice] = useState<{
+    messageId: string;
+    error: Exclude<ForumPayError, null> | null;
+  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
@@ -690,16 +694,23 @@ export function ForumLoader({
     if (session === null) {
       return;
     }
-    bumpPayPollGeneration();
-    setPayMessageId(messageId);
-    setPayHost('card');
+    const generation = bumpPayPollGeneration();
+    setPayMessageId(null);
+    setPayHost(null);
     setPayDraft('');
     setPayInvoice(null);
     setPayWaiting(false);
     setPayError(null);
+    setRepayNotice({ messageId, error: null });
     setPayBusy(true);
     void postRepaymentInvoice(session, messageId)
       .then((invoice) => {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        setRepayNotice(null);
+        setPayHost('card');
+        setPayMessageId(messageId);
         setPayInvoice({
           messageId,
           pr: invoice.pr,
@@ -707,6 +718,9 @@ export function ForumLoader({
         });
       })
       .catch((err: unknown) => {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
         if (err instanceof MissingRequirementsError) {
           if (openOverlayForMissing(err.missing)) {
             pendingPostRef.current = () => {
@@ -715,18 +729,22 @@ export function ForumLoader({
             };
             return;
           }
-          setPayError('request');
+          setRepayNotice({ messageId, error: 'request' });
           return;
         }
-        setPayError(
-          isRateLimitError(err)
+        setRepayNotice({
+          messageId,
+          error: isRateLimitError(err)
             ? 'rateLimit'
             : isAuthorWalletError(err)
               ? 'authorWallet'
               : 'request',
-        );
+        });
       })
       .finally(() => {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
         setPayBusy(false);
       });
   };
@@ -2540,6 +2558,7 @@ export function ForumLoader({
         payDraft={payDraft}
         payBusy={payBusy}
         payError={payError}
+        repayNotice={repayNotice}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
         payWaiting={payWaiting}

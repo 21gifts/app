@@ -114,6 +114,32 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).toContain('bitcoin payment');
   });
 
+  it('reloads a due share and ignores a failed refresh', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    ledger(btc);
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('nope', { status: 500 })),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(screen.getByText('Due')).toBeTruthy();
+    ledger({
+      ...btc,
+      repayments: btc.repayments.map((row) =>
+        row.status === 'due' ? { ...row, status: 'paid' as const } : row,
+      ),
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(screen.getAllByText('Paid').length).toBeGreaterThan(0);
+    vi.useRealTimers();
+  });
+
   it('shows an open fiat plan and stays blank when the read fails', async () => {
     ledger({
       ...btc,
@@ -177,6 +203,32 @@ describe('CreditLedger', () => {
     expect(screen.getByText(/The days are fixed/)).toBeTruthy();
     expect(screen.getByText(/rate on the day/)).toBeTruthy();
     expect(screen.queryByText('No one has given yet.')).toBeNull();
+    cleanup();
+    ledger({
+      currency: 'USD',
+      fundedAt: null,
+      termDays: 1,
+      daysDue: 0,
+      daysPaid: 0,
+      unassignedSats: 0,
+      givers: [],
+      repayments: [
+        {
+          dayIndex: 0,
+          dueOn: null,
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: '0.02',
+          sats: 4,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+      ],
+      next: null,
+    });
+    renderWithLocale(<CreditLedger messageId="m1" />, 'en', 'ch', 'EUR');
+    expect(await screen.findByText(/Day 1/)).toBeTruthy();
     cleanup();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 404 })));
     renderWithLocale(<ForumGoalBar sats={21000} goalSats={21000} goalRepayable messageId="m1" />);

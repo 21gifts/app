@@ -36,6 +36,21 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
       cancel = true;
     };
   }, [messageId]);
+  useEffect(() => {
+    if (ledger === null || !ledger.repayments.some((row) => row.status === 'due')) {
+      return;
+    }
+    const timer = setInterval(() => {
+      void getRepayment(messageId).then((row) => {
+        if (row !== null) {
+          setLedger(row);
+        }
+      });
+    }, 4000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [ledger, messageId]);
   if (ledger === null) {
     return null;
   }
@@ -72,10 +87,11 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
         )}
         {ledger.unassignedSats > 0 ? (
           <p className="mt-2 text-xs text-app-muted">
-            {t('forum.creditUnassigned', {
-              amount: formatBitcoin(ledger.unassignedSats, numberFormat),
-            })}
-            {preferredFiatSuffix(ledger.unassignedSats, rateDay, visitorFiat, numberFormat)}
+            <span className="tabular-nums">
+              {formatBitcoin(ledger.unassignedSats, numberFormat)}
+              {preferredFiatSuffix(ledger.unassignedSats, rateDay, visitorFiat, numberFormat)}
+            </span>{' '}
+            {t('forum.creditUnassigned')}
           </p>
         ) : null}
       </section>
