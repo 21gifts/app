@@ -3055,6 +3055,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'credit-ledger',
+    image: 'messages-id-credit-ledger.png',
+    visual: 'state-messages-id-credit-ledger',
+    needle: 'state /messages/[id] credit-ledger',
+  },
+  {
+    route: '/messages/[id]',
     id: 'photos',
     image: 'messages-id-photos.png',
     visual: 'state-messages-id-photos',

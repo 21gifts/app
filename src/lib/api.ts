@@ -1967,6 +1967,107 @@ export async function postMessageInvoice(
   return messageInvoiceSchema.parse(await response.json());
 }
 
+const repaymentLineSchema = z.object({
+  dayIndex: z.number().int().nonnegative(),
+  dueOn: z.string().nullable(),
+  accountId: z.string(),
+  name: z.string(),
+  username: z.string().nullable(),
+  amount: z.string().nullable(),
+  sats: z.number().int().nonnegative().nullable(),
+  status: z.enum(['scheduled', 'due', 'paid']),
+  via: z.literal('lightning'),
+});
+
+const repaymentLedgerSchema = z.object({
+  currency: z.enum(['BTC', 'USD', 'CHF', 'EUR', 'PHP']),
+  fundedAt: z.string().nullable(),
+  termDays: z.number().int(),
+  daysDue: z.number().int().nonnegative(),
+  daysPaid: z.number().int().nonnegative(),
+  unassignedSats: z.number().int().nonnegative(),
+  givers: z.array(
+    z.object({
+      accountId: z.string(),
+      name: z.string(),
+      username: z.string().nullable(),
+      givenSats: z.number().int().nonnegative(),
+      givenAmount: z.string().nullable(),
+    }),
+  ),
+  repayments: z.array(repaymentLineSchema),
+  next: z
+    .object({
+      dayIndex: z.number().int().nonnegative(),
+      sats: z.number().int().nonnegative(),
+      recipientAccountId: z.string(),
+    })
+    .nullable(),
+});
+
+/** Public credit ledger from `GET /messages/:id/repayment`. */
+export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
+
+/** One row of {@link RepaymentLedger}. */
+export type RepaymentLine = z.infer<typeof repaymentLineSchema>;
+
+/**
+ * Loads who gave what and the Lightning repayment plan. No session.
+ *
+ * @param messageId - Credit note id.
+ * @returns The ledger, or null when the note is not a credit or the body is unusable.
+ */
+export async function getRepayment(messageId: string): Promise<RepaymentLedger | null> {
+  try {
+    const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`);
+    if (!response.ok) {
+      return null;
+    }
+    return repaymentLedgerSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Asks for a BOLT11 that pays the next giver their share of the next due day.
+ *
+ * @param sessionToken - Bearer session of the credit's author.
+ * @param messageId - Credit note id.
+ * @returns The invoice the author pays from their wallet.
+ * @throws Error with visitor copy when the api refuses.
+ */
+export async function postRepaymentInvoice(
+  sessionToken: string,
+  messageId: string,
+): Promise<MessageInvoice> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 400 || response.status === 429 || response.status === 404) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not start the Bitcoin payment');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (response.status === 503 || !response.ok) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return messageInvoiceSchema.parse(await response.json());
+}
+
 /**
  * Posts an in-app contact message to 21.gifts.
  *

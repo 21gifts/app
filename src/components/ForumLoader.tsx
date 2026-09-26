@@ -39,6 +39,7 @@ import {
   postMessage,
   fetchComposeTarget,
   postMessageInvoice,
+  postRepaymentInvoice,
   postMessageVideo,
 } from '@/lib/api';
 import {
@@ -2487,6 +2488,31 @@ export function ForumLoader({
           setPayInvoice(null);
           setPayWaiting(false);
           setPayBusy(false);
+        }}
+        viewerAccountId={account?.id ?? null}
+        onRepay={(messageId) => {
+          if (session === null) {
+            return;
+          }
+          setPayBusy(true);
+          setPayError(null);
+          void postRepaymentInvoice(session, messageId)
+            .then((invoice) => {
+              setPayMessageId(messageId);
+              setPayHost('card');
+              setPayInvoice({
+                messageId,
+                pr: invoice.pr,
+                amountSats: invoice.amountSats,
+              });
+              setPayWaiting(false);
+            })
+            .catch(() => {
+              setPayError('request');
+            })
+            .finally(() => {
+              setPayBusy(false);
+            });
         }}
         onPayUnitChange={setPayShownUnit}
         onReplyUnitChange={setReplyShownUnit}

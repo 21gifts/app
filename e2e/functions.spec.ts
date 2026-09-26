@@ -10002,3 +10002,120 @@ test('Function: splitCreditPlan — equal days and a remainder on the last day',
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('To repay per day: ₿700 · $0.70 per day for 30 days')).toBeVisible();
 });
+
+test('Function: proxyMessagesRepaymentGet — GET /messages/[id]/repayment is forwarded', async ({
+  request,
+}) => {
+  const response = await request.get('/messages/[id]/repayment');
+  expect(response.status()).toBeGreaterThanOrEqual(200);
+});
+
+test('Function: proxyMessagesRepaymentPost — POST /messages/[id]/repayment without bearer is denied', async ({
+  request,
+}) => {
+  const response = await request.post('/messages/[id]/repayment');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: getRepayment — GET /messages/[id]/repayment answers without a session', async ({
+  request,
+}) => {
+  const response = await request.get('/messages/11111111-1111-4111-8111-111111111111/repayment');
+  expect(response.status()).toBeGreaterThanOrEqual(200);
+});
+
+test('Function: postRepaymentInvoice — POST /messages/[id]/repayment without bearer is denied', async ({
+  request,
+}) => {
+  const response = await request.post('/messages/11111111-1111-4111-8111-111111111111/repayment');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: CreditLedger — a credit note lists who gave and who is paid back', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        totalBtc: '0',
+        totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
+        spendOverTime: [{ day: '2026-09-01', sats: 100000000, usd: '100000.00' }],
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Goal note to be repaid',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        goalSats: 21,
+        goalRepayable: true,
+        goalTermDays: 1,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/messages/${id}/repayment`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currency: 'BTC',
+        fundedAt: '2026-09-26T12:00:00.000Z',
+        termDays: 1,
+        daysDue: 1,
+        daysPaid: 0,
+        unassignedSats: 0,
+        givers: [
+          {
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            givenSats: 21,
+            givenAmount: null,
+          },
+        ],
+        repayments: [
+          {
+            dayIndex: 0,
+            dueOn: '2026-09-27',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 21,
+            status: 'due',
+            via: 'lightning',
+          },
+        ],
+        next: null,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
+  await expect(page.getByLabel('Paid back')).toBeVisible();
+  await expect(page.getByText(/Each share is one Lightning payment/)).toBeVisible();
+});
