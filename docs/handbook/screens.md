@@ -2017,7 +2017,7 @@ Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi addre
 ## Screen: /pos/amount
 
 - **Purpose:** Choose the sat amount for the till. No QR, no address, and no other till action. Confirming creates the charge and returns to `/pos`, which then shows **Cancel**, the countdown, and the amount in bitcoin and fiat.
-- **Layout:** `AppShell` fill. Back returns to `/pos`. `Card` `surface={false}`: heading **Amount**. While the till request is out, a spinner and no keypad. If that request fails, the alert, **Try again**, and no keypad. Otherwise the keypad (decimal from the number format: dot for Swiss and US, comma for German; no cookie means Swiss) and **Create payment**. A member who cannot charge, or who already has an open charge, is sent back to `/pos`.
+- **Layout:** `AppShell` fill. Back returns to `/pos`. `Card` `surface={false}`: heading **Amount**. While the till request is out, a spinner and no keypad. If that request fails, the alert, **Try again**, and no keypad. Otherwise the keypad and **Create payment**. Bitcoin has no decimal key. Fiat shows the number-format decimal (dot for Swiss and US, comma for German; no cookie means Swiss) and keeps two fraction digits. A member who cannot charge, or who already has an open charge, is sent back to `/pos`.
 - **Actions:** **Create payment**. Back to `/pos`.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos/amount`.
@@ -2042,7 +2042,7 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 
 ### Variant: bad-amount
 
-**Create payment** with `1.5`. Alert **Enter a whole number.** The keypad stays. No QR.
+**Create payment** while the amount is still empty. Alert **Enter a whole number.** The keypad stays and has no decimal key. No QR.
 
 ![21.gifts point of sale bad amount](images/pos-bad-amount.png)
 

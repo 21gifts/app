@@ -206,11 +206,12 @@ describe('PosScreen', () => {
     });
   });
 
-  it('rejects a fractional amount without calling the api', async () => {
+  it('rejects an empty amount without calling the api', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosAmount />);
-    await pressAmount('1.5');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '.' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect((await screen.findByRole('alert')).textContent).toContain('Enter a whole number.');
     expect(fetchMock).toHaveBeenCalledTimes(1);

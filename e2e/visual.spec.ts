@@ -3426,9 +3426,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos/amount');
-    await page.getByRole('button', { name: '1', exact: true }).click();
-    await page.getByRole('button', { name: '.', exact: true }).click();
-    await page.getByRole('button', { name: '5', exact: true }).click();
+    await expect(page.getByRole('button', { name: '.', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
     await shotScreen(page, 'state-pos-bad-amount');

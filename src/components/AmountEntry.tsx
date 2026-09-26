@@ -69,20 +69,27 @@ export interface AmountEntryProps {
 
 /**
  * Next till draft after one keypad or keyboard edit.
- * A lone `0` is replaced by the next digit. A second decimal and a ninth
- * fractional digit do nothing. Delete drops the last character.
+ * Bitcoin has no fraction. Fiat keeps at most two fractional digits.
+ * A lone `0` is replaced by the next digit. A second decimal does nothing.
+ * Delete drops the last character.
  *
  * @param current - Draft shown now.
  * @param key - A digit, `decimal`, or `delete`.
  * @param decimal - Decimal mark from the number format.
+ * @param maxFraction - Fractional digits allowed. `0` is whole sats.
  * @returns The next draft.
  */
-function nextKeypadDraft(current: string, key: string, decimal: string): string {
+function nextKeypadDraft(
+  current: string,
+  key: string,
+  decimal: string,
+  maxFraction: number,
+): string {
   if (key === 'delete') {
     return current.slice(0, -1);
   }
   if (key === 'decimal') {
-    if (current.includes('.') || current.includes(',')) {
+    if (maxFraction === 0 || current.includes('.') || current.includes(',')) {
       return current;
     }
     return `${current}${decimal}`;
@@ -91,7 +98,7 @@ function nextKeypadDraft(current: string, key: string, decimal: string): string 
     return key;
   }
   const sep = current.search(/[.,]/);
-  if (sep >= 0 && current.length - sep - 1 >= 8) {
+  if (sep >= 0 && current.length - sep - 1 >= maxFraction) {
     return current;
   }
   return `${current}${key}`;
@@ -324,7 +331,7 @@ export function AmountEntry({
         return;
       }
       event.preventDefault();
-      const next = nextKeypadDraft(value, key, decimal);
+      const next = nextKeypadDraft(value, key, decimal, shownUnit === 'btc' ? 0 : 2);
       if (next === value) {
         return;
       }
@@ -335,7 +342,7 @@ export function AmountEntry({
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [decimal, disabled, keypad, locked, onValueChange, value]);
+  }, [decimal, disabled, keypad, locked, onValueChange, shownUnit, value]);
 
   const changeUnit = (next: AmountUnit): void => {
     if (disabled || locked || posting.current || next === shownUnit) {
@@ -457,7 +464,7 @@ export function AmountEntry({
       ? 'h-12 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50'
       : 'w-full min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50';
   const pushKey = (key: string): void => {
-    const next = nextKeypadDraft(shown, key, decimal);
+    const next = nextKeypadDraft(shown, key, decimal, entryUnit === 'btc' ? 0 : 2);
     if (next === shown) {
       return;
     }
@@ -472,7 +479,19 @@ export function AmountEntry({
     navigator.vibrate(10);
   };
   if (keypad) {
-    const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', decimal, '0'];
+    const digits = [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      entryUnit === 'btc' ? null : decimal,
+      '0',
+    ];
     return (
       <div className={`flex flex-col gap-2${extra}`}>
         <div className="flex items-center justify-end gap-2">{unitSwitch}</div>
@@ -483,22 +502,26 @@ export function AmountEntry({
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
         ) : null}
         <div className="grid w-full grid-cols-3 gap-2">
-          {digits.map((digit) => (
-            <Button
-              key={digit}
-              variant="secondary"
-              size="sm"
-              type="button"
-              className="w-full active:scale-95 active:brightness-95"
-              disabled={disabled || locked}
-              aria-label={digit}
-              onClick={() => {
-                pushKey(digit === decimal ? 'decimal' : digit);
-              }}
-            >
-              {digit}
-            </Button>
-          ))}
+          {digits.map((digit, index) =>
+            digit === null ? (
+              <span key={`gap-${index}`} aria-hidden="true" />
+            ) : (
+              <Button
+                key={digit}
+                variant="secondary"
+                size="sm"
+                type="button"
+                className="w-full active:scale-95 active:brightness-95"
+                disabled={disabled || locked}
+                aria-label={digit}
+                onClick={() => {
+                  pushKey(digit === decimal ? 'decimal' : digit);
+                }}
+              >
+                {digit}
+              </Button>
+            ),
+          )}
           <Button
             variant="secondary"
             size="sm"
