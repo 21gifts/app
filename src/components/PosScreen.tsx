@@ -20,6 +20,7 @@ import {
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -38,8 +39,31 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
   }
 }
 
+/** Values shared by the QR page and the amount page. */
+type PosTillState = {
+  address: string | null;
+  qr: string | null;
+  showQr: boolean;
+  state: PosState | null;
+  error: string | null;
+  charge: PosState['charge'];
+  remaining: number;
+  chargeFiat: string | null;
+  amount: string;
+  setAmount: (value: string) => void;
+  shownUnit: AmountUnit;
+  setShownUnit: (value: AmountUnit) => void;
+  busy: boolean;
+  rateDay: FiatRateDay | null;
+  canCharge: boolean;
+  needsUsername: boolean;
+  needsAddress: boolean;
+  onCreate: (event: FormEvent) => Promise<void>;
+  onCancel: () => Promise<void>;
+};
+
 /** Shared till state for the QR page and the amount page. */
-function usePosTillState() {
+function usePosTillState(): PosTillState {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
