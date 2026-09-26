@@ -2162,6 +2162,12 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    const feedNote = {
+      ...rianaNote,
+      // The shared note is 487 characters and now stays whole. This shot still
+      // shows the collapsed preview, so the feed copy is past twice that preview.
+      text: `${rianaNote.text} Thank you again for remembering our family every single week and every morning.`,
+    };
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
@@ -2170,7 +2176,7 @@ test.describe('onboarding screens', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ messages: [rianaNote] }),
+        body: JSON.stringify({ messages: [feedNote] }),
       });
     });
     await page.route('**/forum/messages/**/replies', async (route) => {
