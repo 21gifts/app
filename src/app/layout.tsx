@@ -137,8 +137,8 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: SUNDAY_BOOTSTRAP_SCRIPT }} />
         {e2eNow !== null ? <meta name="e2e-now" content={e2eNow} /> : null}
+        <script dangerouslySetInnerHTML={{ __html: SUNDAY_BOOTSTRAP_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

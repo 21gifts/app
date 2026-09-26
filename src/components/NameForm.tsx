@@ -237,21 +237,23 @@ export function NameForm(
       ) : (
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{name}</p>
-          <IconButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={busy}
-            aria-label={t('name.edit')}
-            onClick={() => {
-              /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
-              setDraft(name ?? '');
-              setEditing(true);
-              setError(null);
-            }}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
+          <SundayWritingGate>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={busy}
+              aria-label={t('name.edit')}
+              onClick={() => {
+                /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
+                setDraft(name ?? '');
+                setEditing(true);
+                setError(null);
+              }}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </SundayWritingGate>
         </div>
       )}
 
