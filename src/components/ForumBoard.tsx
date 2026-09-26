@@ -11,6 +11,7 @@ import {
   MapPin,
   Reply,
   Send,
+  User,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -52,6 +53,7 @@ import {
   type ForumPlacePin,
 } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
+import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { ShopPlaceControl } from '@/components/ShopPlaceControl';
 import {
   FORUM_COMPOSE_EVENT,
@@ -326,6 +328,16 @@ export interface ForumBoardProps {
   shopPlaceEdit?: boolean;
   /** Apply a saved or cleared pin on a listed shop note. */
   onShopPlaceUpdated?: (messageId: string, place: ForumPlacePin | null) => void;
+  /**
+   * When true, show the shops staff account editor on top-level notes.
+   * Default false.
+   */
+  shopAccountEdit?: boolean;
+  /** Apply a saved or cleared shop account on a listed shop note. */
+  onShopAccountUpdated?: (
+    messageId: string,
+    shopAccount: { id: string; username: string; name: string } | null,
+  ) => void;
 }
 
 /**
@@ -668,6 +680,8 @@ export function ForumBoard({
   onPlaceDraftChange,
   shopPlaceEdit = false,
   onShopPlaceUpdated,
+  shopAccountEdit = false,
+  onShopAccountUpdated,
 }: ForumBoardProps): ReactElement {
   const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
@@ -1130,6 +1144,16 @@ export function ForumBoard({
                       `${message.place.lat.toFixed(5)}, ${message.place.lng.toFixed(5)}`}
                   </Link>
                 ) : null}
+                {message.parentId === undefined && message.shopAccount !== undefined ? (
+                  <Link
+                    href={`/members/${message.shopAccount.id}`}
+                    className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
+                    onClick={stopCardToggle}
+                  >
+                    <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />@
+                    {message.shopAccount.username}
+                  </Link>
+                ) : null}
               </div>
               {message.parentId === undefined &&
               typeof message.goalSats === 'number' &&
@@ -1224,6 +1248,11 @@ export function ForumBoard({
                 onShopPlaceUpdated !== undefined &&
                 message.parentId === undefined ? (
                   <ShopPlaceControl message={message} onUpdated={onShopPlaceUpdated} />
+                ) : null}
+                {shopAccountEdit &&
+                onShopAccountUpdated !== undefined &&
+                message.parentId === undefined ? (
+                  <ShopAccountControl message={message} onUpdated={onShopAccountUpdated} />
                 ) : null}
                 {onDeleted !== undefined && message.deletedAt === undefined ? (
                   <DeletePostControl messageId={message.id} onDeleted={onDeleted} />

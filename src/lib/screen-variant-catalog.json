@@ -2736,6 +2736,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:staff-account",
+    "label": "/shops staff-account",
+    "visual": "state-shops-staff-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account-set",
+    "label": "/shops staff-account-set",
+    "visual": "state-shops-staff-account-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account-error",
+    "label": "/shops staff-account-error",
+    "visual": "state-shops-staff-account-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:staff-place-unavailable",
     "label": "/shops staff-place-unavailable",
     "visual": "state-shops-staff-place-unavailable",

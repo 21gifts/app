@@ -1382,7 +1382,7 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with back (`ProfileChromeLeft`) + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** There is no Active / No gifts yet / All / Most popular control. The composer sits under the lead as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**, back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ForumLoader`, `ForumBoard`.
 
@@ -1466,7 +1466,7 @@ A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000
 
 ### Variant: staff-place
 
-A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place**. The map panel is closed.
+A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place](images/shops-staff-place.png)
 
@@ -1478,7 +1478,7 @@ A moderator session. **Add a place** on the Cafe Luna note is open and the map k
 
 ### Variant: staff-place-set
 
-A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place**. The map panel is closed.
+A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place set](images/shops-staff-place-set.png)
 
@@ -1526,7 +1526,7 @@ A moderator session. **Add a place** on the Cafe Luna note is open with a map. A
 
 ### Variant: staff-place-set-coords
 
-A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place**. The map panel is closed.
+A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place set coordinates](images/shops-staff-place-set-coords.png)
 
@@ -1535,6 +1535,24 @@ A moderator session. The Cafe Luna note has a saved pin with no name. The card s
 A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
 
 ![21.gifts shops staff place error](images/shops-staff-place-error.png)
+
+### Variant: staff-account
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is empty. **Save account** is visible. There is no alert.
+
+![21.gifts shops staff account](images/shops-staff-account.png)
+
+### Variant: staff-account-set
+
+A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' }`. The card shows the `@luna` link to `/members/acc-luna` and footer **Edit account**. The account panel is closed.
+
+![21.gifts shops staff account set](images/shops-staff-account-set.png)
+
+### Variant: staff-account-error
+
+A moderator session. **Add an account** is open on the Cafe Luna note. Username **missing** was saved. The save returned 404, so the alert **No account with that username.** is visible. **Save account** stays.
+
+![21.gifts shops staff account error](images/shops-staff-account-error.png)
 
 ## Screen: /map
 

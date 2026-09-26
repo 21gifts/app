@@ -532,6 +532,7 @@ export type ForumPlaceRow = ForumPlacePin & {
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
  * `place` is optional and is not a body.
+ * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
  */
 export const forumMessageSchema = z
   .object({
@@ -578,6 +579,13 @@ export const forumMessageSchema = z
       })
       .optional(),
     place: forumPlacePinSchema.optional(),
+    shopAccount: z
+      .object({
+        id: z.string().min(1),
+        username: z.string().min(1),
+        name: z.string(),
+      })
+      .optional(),
     /** Present on a signed-in payload when the body marks members. Omitted with no session. */
     mentions: z
       .array(

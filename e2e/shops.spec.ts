@@ -423,3 +423,87 @@ test('Function: setMessagePlace — moderator save shows the pin', async ({ page
   await note.getByRole('button', { name: 'Use this place' }).click();
   await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
 });
+
+test('Function: ShopAccountControl — moderator saves a username; basis cannot edit', async ({
+  page,
+}) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      const body = route.request().postDataJSON() as { username?: string | null };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...STAFF_SHOP_NOTE,
+          shopAccount: { id: 'acc-luna', username: body.username, name: 'Luna' },
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await expect(note.getByText('Cafe Luna')).toBeVisible();
+  await note.getByRole('button', { name: 'Add an account' }).click();
+  await note.getByLabel('Username').fill('luna');
+  const patched = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' &&
+      new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/shop-account'),
+  );
+  await note.getByRole('button', { name: 'Save account' }).click();
+  const accountReq = await patched;
+  expect(accountReq.postDataJSON()).toEqual({ username: 'luna' });
+  expect(new URL(accountReq.url()).pathname.endsWith('/forum/messages/m-staff/shop-account')).toBe(
+    true,
+  );
+  await expect(note.getByRole('link', { name: '@luna' })).toBeVisible();
+
+  await seedAda(page, 'basis');
+  await fulfillForumMessages(page, [
+    {
+      ...STAFF_SHOP_NOTE,
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    },
+  ]);
+  await page.goto('/shops');
+  await expect(
+    page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Add an account' }),
+  ).toHaveCount(0);
+});
+
+test('Function: setMessageShopAccount — moderator save shows the account', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      expect(route.request().headers()['authorization']?.startsWith('Bearer ')).toBe(true);
+      const body = route.request().postDataJSON() as { username?: string | null };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...STAFF_SHOP_NOTE,
+          shopAccount: { id: 'acc-luna', username: body.username, name: 'Luna' },
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Add an account' }).click();
+  await note.getByLabel('Username').fill('luna');
+  await note.getByRole('button', { name: 'Save account' }).click();
+  await expect(note.getByRole('link', { name: '@luna' })).toBeVisible();
+});

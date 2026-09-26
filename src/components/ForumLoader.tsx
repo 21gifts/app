@@ -2333,6 +2333,25 @@ export function ForumLoader({
                   }),
                 );
               },
+              shopAccountEdit: true as const,
+              onShopAccountUpdated: (
+                messageId: string,
+                shopAccount: { id: string; username: string; name: string } | null,
+              ) => {
+                setMessages((prev) =>
+                  prev!.map((row) => {
+                    if (row.id !== messageId) {
+                      return row;
+                    }
+                    if (shopAccount === null) {
+                      const next = { ...row };
+                      delete next.shopAccount;
+                      return next;
+                    }
+                    return { ...row, shopAccount };
+                  }),
+                );
+              },
             }
           : {})}
         newPostsAvailable={newPostsAvailable}

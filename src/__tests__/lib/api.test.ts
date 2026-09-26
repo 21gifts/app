@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   deleteMessage,
   setMessagePlace,
+  setMessageShopAccount,
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
@@ -4370,5 +4371,50 @@ describe('setMessagePlace', () => {
   it('throws when the response is not ok', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setMessagePlace('token', 'm1', null)).rejects.toThrow('Could not save place');
+  });
+});
+
+describe('setMessageShopAccount', () => {
+  it('patches the username and returns the parsed shopAccount', async () => {
+    const shopAccount = { id: 'acc-luna', username: 'luna', name: 'Luna' };
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, shopAccount },
+    });
+    await expect(setMessageShopAccount('token', 'a/b', 'luna')).resolves.toEqual({
+      ...parsedForumMessage,
+      shopAccount,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/shop-account', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'luna' }),
+    });
+  });
+
+  it('sends username: null and accepts a body whose shopAccount is omitted', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(setMessageShopAccount('token', 'm1', null)).resolves.toEqual(parsedForumMessage);
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      username: null,
+    });
+  });
+
+  it('throws No account with that username on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
+    await expect(setMessageShopAccount('token', 'm1', 'missing')).rejects.toThrow(
+      'No account with that username',
+    );
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setMessageShopAccount('token', 'm1', null)).rejects.toThrow(
+      'Could not save account',
+    );
   });
 });
