@@ -54,8 +54,8 @@ export function ShopTable(): ReactElement | null {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [attempt, setAttempt] = useState(0);
-  const [moreCursor, setMoreCursor] = useState<string | null>(null);
+  const [loadId, setLoadId] = useState(0);
+  const [cursor, setCursor] = useState<string | null>(null);
 
   useEffect(() => {
     if (session === null) {
@@ -68,14 +68,14 @@ export function ShopTable(): ReactElement | null {
       mode: 'all',
       limit: PAGE_LIMIT,
       hashtag: SHOP_HASHTAG,
-      ...(moreCursor !== null ? { cursor: moreCursor } : {}),
+      ...(cursor !== null ? { cursor } : {}),
     })
       .then((page) => {
         if (cancelled) {
           return;
         }
         const shops = page.messages.filter((row) => isShopNote(row.text));
-        setRows((prev) => (moreCursor === null || prev === null ? shops : [...prev, ...shops]));
+        setRows((prev) => (cursor === null || prev === null ? shops : [...prev, ...shops]));
         setNextCursor(page.nextCursor);
         setLoading(false);
       })
@@ -89,7 +89,7 @@ export function ShopTable(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, attempt, moreCursor]);
+  }, [session, loadId, cursor]);
 
   if (session === null) {
     return null;
@@ -105,10 +105,10 @@ export function ShopTable(): ReactElement | null {
           type="button"
           variant="secondary"
           onClick={() => {
-            setMoreCursor(null);
+            setCursor(null);
             setRows(null);
             setFailed(false);
-            setAttempt((n) => n + 1);
+            setLoadId((n) => n + 1);
           }}
         >
           {t('forum.retry')}
@@ -171,6 +171,23 @@ export function ShopTable(): ReactElement | null {
           })}
         </tbody>
       </table>
+      {failed ? (
+        <div className="mt-3 flex flex-col items-center gap-3">
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.error')}
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setFailed(false);
+              setLoadId((n) => n + 1);
+            }}
+          >
+            {t('forum.retry')}
+          </Button>
+        </div>
+      ) : null}
       {nextCursor !== null ? (
         <Button
           type="button"
@@ -178,7 +195,8 @@ export function ShopTable(): ReactElement | null {
           className="mt-3"
           disabled={loading}
           onClick={() => {
-            setMoreCursor(nextCursor);
+            setCursor(nextCursor);
+            setLoadId((n) => n + 1);
           }}
         >
           {t('shops.showMore')}

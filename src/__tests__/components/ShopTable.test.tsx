@@ -74,6 +74,23 @@ describe('ShopTable', () => {
     });
   });
 
+  it('retries a failed show more', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock
+      .mockResolvedValueOnce({ messages: [SHOP], nextCursor: 'c2' })
+      .mockRejectedValueOnce(new Error('nope'))
+      .mockResolvedValueOnce({
+        messages: [{ ...SHOP, id: 'm-2', text: 'Other stall\n\n#21GiftsShop' }],
+        nextCursor: null,
+      });
+    renderWithLocale(<ShopTable />);
+    expect(await screen.findByText('Cafe Luna')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Other stall')).toBeTruthy();
+  });
+
   it('hides show more when the page is the last one', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
