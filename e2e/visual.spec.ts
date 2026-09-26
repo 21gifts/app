@@ -9728,6 +9728,58 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-moderation-unread');
   });
 
+  test('welcome menu-staff-de', async ({ page }) => {
+    await page
+      .context()
+      .addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
+    await page.addInitScript(() => {
+      const native = window.matchMedia.bind(window);
+      window.matchMedia = (query: string) => {
+        if (query.includes('display-mode: standalone')) {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener() {},
+            removeListener() {},
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() {
+              return false;
+            },
+          } as MediaQueryList;
+        }
+        return native(query);
+      };
+    });
+    await seedAda(page, 'moderator');
+    await emptyForum(page);
+    await page.route('**/conversations/moderator-group', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversation: {
+            id: 'conv-mod',
+            kind: 'moderator_group',
+            name: 'Moderators',
+            lastText: '',
+            lastAt: '2026-08-28T15:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+            unread: false,
+          },
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menü' }).click();
+    await expect(page.getByRole('link', { name: 'Förderprogramm' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Moderation', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'App installieren' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-staff-de');
+  });
+
   test('welcome pay-amount', async ({ page }) => {
     await seedAda(page);
     await stubPayInvoice(page);

@@ -1067,6 +1067,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-staff-de',
+    image: 'welcome-menu-staff-de.png',
+    visual: 'state-welcome-menu-staff-de',
+    needle: "getByRole('link', { name: 'Förderprogramm' })",
+  },
+  {
+    route: '/welcome',
     id: 'pay-amount',
     image: 'welcome-pay-amount.png',
     visual: 'state-welcome-pay-amount',

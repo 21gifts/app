@@ -852,6 +852,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-staff-de",
+    "label": "/welcome menu-staff-de",
+    "visual": "state-welcome-menu-staff-de",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-amount",
     "label": "/welcome pay-amount",
     "visual": "state-welcome-pay-amount",
