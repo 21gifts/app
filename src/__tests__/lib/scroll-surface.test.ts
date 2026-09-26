@@ -31,6 +31,14 @@ describe('scroll surface', () => {
     expect(second.hasAttribute('data-scroll-locked')).toBe(true);
   });
 
+  it('does not clip the active scrollport', () => {
+    const first = port('first');
+    first.style.overflow = 'auto';
+    bindScrollport(first);
+    expect(first.hasAttribute('data-scroll-locked')).toBe(false);
+    expect(first.style.overflow).toBe('auto');
+  });
+
   it('ignores a release of an element that was never bound', () => {
     const first = port('first');
     const stranger = document.createElement('div');

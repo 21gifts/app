@@ -648,11 +648,11 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
       return;
     }
     const height = Math.max(port.scrollHeight, document.documentElement.clientHeight);
-    port.style.overflow = 'visible';
+    port.style.setProperty('overflow', 'visible', 'important');
     port.style.flex = 'none';
     port.style.height = `${height}px`;
-    document.documentElement.style.overflow = 'visible';
-    document.body.style.overflow = 'visible';
+    document.documentElement.style.setProperty('overflow', 'visible', 'important');
+    document.body.style.setProperty('overflow', 'visible', 'important');
     document.documentElement.style.height = `${height}px`;
     document.body.style.height = `${height}px`;
   });

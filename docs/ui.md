@@ -330,6 +330,10 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 
 **Clustered `sm` must not overlap.** `-inset-2.5` is 10px slop per side → 44px hit. Any row of two or more `sm` IconButtons uses `gap-5` (20px): 24px paint + 20px gap = 44px center-to-center, hits **touch, do not overlap**. Isolated `sm` (laws dismiss, pay-sheet back) keep their absolute position.
 
+## One scroll surface
+
+A page scrolls in exactly one place. `html` and `body` are locked to `--app-height` (`overflow: hidden`). The only scroller is the newest `[data-scrollport]` (`Scrollport` inside `AppShell`, the marketing shell, the 404 page, or a dialog that locks the page behind it). `ScrollSurfaceGuard` clips any other `auto`, `scroll`, or `overlay` overflow, including one added later from script. Textareas grow with their text. Inputs and selects stay native. Do not add `overflow-auto`, `overflow-scroll`, or an inline scrolling overflow. `scripts/check-scrollports.mjs` fails lint when that shows up, and it checks its own detector on every run.
+
 ## Two shells
 
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).

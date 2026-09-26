@@ -427,7 +427,8 @@ the document and forces any other `auto`, `scroll`, or `overlay` overflow
 instead of scrolling. Native inputs and selects are left alone. Clipping
 (`overflow: hidden` or `clip`) is not a scrollport. Components still must
 not set a scrolling overflow. `scripts/check-scrollports.mjs` fails CI on
-those utilities, arbitrary values, and assignments. AppShell `<main>` stays
+those utilities, arbitrary values, and assignments, and it rejects its own
+detector if that check goes blind. The document lock is `!important`. AppShell `<main>` stays
 free of `overflow-hidden` so the in-tree menu is not clipped. The document
 lock stops the page from scrolling under the frame.
 

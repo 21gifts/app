@@ -20,7 +20,7 @@ function isScrollingOverflow(value: string): boolean {
  * @returns Nothing.
  */
 function fitTextarea(el: HTMLTextAreaElement): void {
-  el.style.overflow = 'hidden';
+  el.style.setProperty('overflow', 'hidden', 'important');
   // An empty field already fits. Forcing a pixel height shifts the composer.
   if (!el.value.includes('\n') && el.scrollHeight <= el.clientHeight + 4) {
     return;
@@ -86,7 +86,7 @@ export function syncScrollSurfaces(): void {
     if (!scrolling) {
       continue;
     }
-    node.style.overflow = 'hidden';
+    node.style.setProperty('overflow', 'hidden', 'important');
   }
 }
 

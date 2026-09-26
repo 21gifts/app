@@ -41,6 +41,58 @@ function walk(dir, acc = []) {
   return acc;
 }
 
+/**
+ * @param {string} line
+ * @returns {boolean}
+ */
+function bannedLine(line) {
+  return CLASS_BANNED.test(line) || STYLE_BANNED.test(line);
+}
+
+function selfTest() {
+  const caught = [
+    'className="overflow-y-auto"',
+    'className="overflow-x-scroll"',
+    'className="overflow-auto"',
+    'className="overflow-[auto]"',
+    'className="overflow-y-[scroll]"',
+    'style={{ overflow: "scroll" }}',
+    "el.style.overflow = 'auto'",
+    "el.style.overflowY = 'overlay'",
+    'el.style.setProperty("overflow", "auto")',
+  ];
+  const allowed = [
+    'className="overflow-hidden"',
+    'className="overflow-clip"',
+    'overflow-anchor: none',
+    'el.style.setProperty("overflow", "hidden", "important")',
+  ];
+  const problems = [];
+  for (const line of caught) {
+    CLASS_BANNED.lastIndex = 0;
+    STYLE_BANNED.lastIndex = 0;
+    if (!bannedLine(line)) {
+      problems.push(`self-test missed: ${line}`);
+    }
+  }
+  for (const line of allowed) {
+    CLASS_BANNED.lastIndex = 0;
+    STYLE_BANNED.lastIndex = 0;
+    if (bannedLine(line)) {
+      problems.push(`self-test false positive: ${line}`);
+    }
+  }
+  if (problems.length > 0) {
+    console.error('SCROLLPORT: detector self-test failed');
+    for (const line of problems) {
+      console.error(line);
+    }
+    process.exit(1);
+  }
+}
+
+selfTest();
+
 const failures = [];
 
 for (const file of walk(SRC)) {
@@ -59,13 +111,20 @@ for (const file of walk(SRC)) {
       failures.push(`${rel}: html and body must be overflow:hidden`);
     }
     lines.forEach((line, index) => {
+      CLASS_BANNED.lastIndex = 0;
+      STYLE_BANNED.lastIndex = 0;
       if (CLASS_BANNED.test(line)) {
         failures.push(`${rel}:${index + 1}: banned overflow utility`);
+      }
+      if (/overflow:\s*(?:scroll|overlay)\b/.test(line)) {
+        failures.push(`${rel}:${index + 1}: only one overflow:auto scrollport is allowed`);
       }
     });
     continue;
   }
   lines.forEach((line, index) => {
+    CLASS_BANNED.lastIndex = 0;
+    STYLE_BANNED.lastIndex = 0;
     if (CLASS_BANNED.test(line) || STYLE_BANNED.test(line)) {
       failures.push(`${rel}:${index + 1}: ${line.trim()}`);
     }

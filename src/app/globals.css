@@ -39,20 +39,21 @@ html {
   touch-action: manipulation;
 }
 
-/* One scroll surface: the document never scrolls. */
+/* One scroll surface: the document never scrolls. !important so a later
+   script or utility cannot open a second scroller on the page itself. */
 html,
 body {
   height: var(--app-height);
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
-[data-scrollport] {
-  overflow: auto;
+[data-scrollport]:not([data-scroll-locked]) {
+  overflow: auto !important;
   overscroll-behavior: none;
 }
 
 [data-scrollport][data-scroll-locked] {
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
 /* `center` first so an engine that drops `safe` still centers. */
