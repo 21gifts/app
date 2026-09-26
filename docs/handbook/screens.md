@@ -1129,6 +1129,12 @@ Staff (moderator) Open **Menu** with `GET /conversations/moderator-group` stubbe
 
 ![21.gifts welcome menu moderation unread](images/welcome-menu-moderation-unread.png)
 
+### Variant: menu-staff
+
+Staff (moderator) in a standalone display, so **Install app** is absent. Open **Menu**. Rows: **Home**, **Shops**, **Map**, **Point of sale**, **Profile**, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Moderation** with no unread count, **Notifications**, **Messages**, **Contact**, **Log out**, then **Version dev**.
+
+![21.gifts welcome menu staff](images/welcome-menu-staff.png)
+
 ### Variant: pay-composer
 
 Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stays on the composer (`payHost` `'composer'`), not on a listed note. Desktop shows the Bitcoin payment QR and **Pay with Wallet of Satoshi**. A smartphone shows the same invoice card without a mounted `QrCode`; the wallet button remains. The empty-feed copy stays visible.
