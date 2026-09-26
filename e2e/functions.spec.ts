@@ -6636,8 +6636,9 @@ test('Function: ForumVideo — a playable note shows Full screen', async ({ page
       }),
     });
   });
-  await page.route('**/messages/m-clip/video.mp4', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'video/mp4', body: '' });
+  await page.route('**/messages/m-clip/video.mp4', () => {
+    // A failed decode removes the player. Leave the clip pending so the button stays.
+    return new Promise(() => undefined);
   });
   await page.goto('/welcome');
   await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
