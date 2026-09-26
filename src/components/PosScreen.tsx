@@ -42,6 +42,14 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
+/**
+ * Drop a till write left behind by a test. Production clears it when the
+ * request settles.
+ */
+export function resetPosTillWriteForTests(): void {
+  tillWrite = null;
+}
+
 /** Remember `work` until it settles so a later till load does not race it. */
 function trackTillWrite(work: Promise<void>): void {
   const tracked = work.finally(() => {
