@@ -49,6 +49,39 @@ function bannedLine(line) {
   return CLASS_BANNED.test(line) || STYLE_BANNED.test(line);
 }
 
+const SCROLL_DECL = /overflow(?:-x|-y)?\s*:\s*(?:auto|scroll|overlay)\b/g;
+
+/**
+ * @param {string} css
+ * @returns {string}
+ */
+function stripCssComments(css) {
+  return css.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+/**
+ * The one allowed scrolling declaration is `overflow: auto` on
+ * `[data-scrollport][data-scroll-active]`. Any other axis or value, or the
+ * same declaration on another selector, is a second scrollport.
+ *
+ * @param {string} css
+ * @returns {string | null}
+ */
+function globalsScrollProblem(css) {
+  const text = stripCssComments(css);
+  SCROLL_DECL.lastIndex = 0;
+  const all = text.match(SCROLL_DECL) ?? [];
+  const active = text.match(/\[data-scrollport\]\[data-scroll-active\]\s*\{([^}]*)\}/);
+  const body = active ? active[1] : '';
+  SCROLL_DECL.lastIndex = 0;
+  const inActive = body.match(SCROLL_DECL) ?? [];
+  const normalized = (inActive[0] ?? '').replace(/\s+/g, '');
+  if (all.length === 1 && inActive.length === 1 && normalized === 'overflow:auto') {
+    return null;
+  }
+  return 'expected exactly one overflow:auto on [data-scrollport][data-scroll-active]';
+}
+
 function selfTest() {
   const caught = [
     'className="overflow-y-auto"',
@@ -82,6 +115,29 @@ function selfTest() {
       problems.push(`self-test false positive: ${line}`);
     }
   }
+  const passSheet = `
+    html, body { overflow: clip !important; }
+    [data-scrollport] { overflow: clip !important; }
+    [data-scrollport][data-scroll-active] { overflow: auto !important; }
+    * { scroll-behavior: auto !important; }
+    /* overflow: auto must not count inside a comment */
+  `;
+  const failSheets = [
+    'body { overflow: auto } [data-scrollport] {}',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: scroll }',
+    '[data-scrollport][data-scroll-active] { overflow-x: auto }',
+    '[data-scrollport] { overflow: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto; overflow-y: scroll }',
+    'html, body { overflow: clip }',
+  ];
+  if (globalsScrollProblem(passSheet) !== null) {
+    problems.push('self-test globals false positive');
+  }
+  for (const sheet of failSheets) {
+    if (globalsScrollProblem(sheet) === null) {
+      problems.push(`self-test globals missed: ${sheet}`);
+    }
+  }
   if (problems.length > 0) {
     console.error('SCROLLPORT: detector self-test failed');
     for (const line of problems) {
@@ -100,9 +156,9 @@ for (const file of walk(SRC)) {
   const text = fs.readFileSync(file, 'utf8');
   const lines = text.split('\n');
   if (rel === 'src/app/globals.css') {
-    const auto = text.match(/overflow:\s*auto/g) ?? [];
-    if (auto.length !== 1 || !text.includes('[data-scrollport]')) {
-      failures.push(`${rel}: expected exactly one overflow:auto rule on [data-scrollport]`);
+    const sheet = globalsScrollProblem(text);
+    if (sheet !== null) {
+      failures.push(`${rel}: ${sheet}`);
     }
     if (
       !/html,\s*\nbody\s*\{[^}]*overflow:\s*clip/s.test(text) &&
@@ -115,9 +171,6 @@ for (const file of walk(SRC)) {
       STYLE_BANNED.lastIndex = 0;
       if (CLASS_BANNED.test(line)) {
         failures.push(`${rel}:${index + 1}: banned overflow utility`);
-      }
-      if (/overflow:\s*(?:scroll|overlay)\b/.test(line)) {
-        failures.push(`${rel}:${index + 1}: only one overflow:auto scrollport is allowed`);
       }
     });
     continue;

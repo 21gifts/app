@@ -16,10 +16,11 @@ export interface ScrollportProps {
 }
 
 /**
- * The only layout scrollport. Overflow lives in `globals.css` on
- * `[data-scrollport]`. The newest mounted scrollport is the one that scrolls.
- * Every older one, including a sibling, is locked. Stray scrolling elements
- * are clipped by the scroll-surface sync.
+ * The only layout scrollport. Overflow lives in `globals.css`: clip until
+ * `data-scroll-active`, then that attribute's scrolling rule. The innermost
+ * bound port scrolls. Among siblings, the most recently bound one scrolls.
+ * Every other port gets `data-scroll-locked`. Stray scrolling elements are
+ * clipped by the scroll-surface sync.
  *
  * @param props - See {@link ScrollportProps}.
  * @returns The scrollport element.

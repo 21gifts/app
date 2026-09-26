@@ -332,7 +332,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 
 ## One scroll surface
 
-A page scrolls in exactly one place. `html` and `body` are locked to `--app-height` (`overflow: clip`). The only scroller is the newest `[data-scrollport]` (`Scrollport` inside `AppShell`, the marketing shell, the 404 page, or a dialog that locks the page behind it). `ScrollSurfaceGuard` clips any other `auto`, `scroll`, or `overlay` overflow, including one added later from script. Textareas grow with their text. Inputs and selects stay native. Do not add `overflow-auto`, `overflow-scroll`, or an inline scrolling overflow. `scripts/check-scrollports.mjs` fails lint when that shows up, and it checks its own detector on every run.
+A page scrolls in exactly one place. `html` and `body` are locked to `--app-height` (`overflow: clip`). The only scroller is the innermost bound `[data-scrollport]` (`Scrollport` inside `AppShell`, the marketing shell, the 404 page, or a dialog that locks the page behind it). Among siblings, that is the most recently bound one. It has `data-scroll-active`. Every other port has `data-scroll-locked` and stays clipped; absence of the lock is not permission to scroll. `ScrollSurfaceGuard` clips any other `auto`, `scroll`, or `overlay` overflow, including one added later from script. Textareas grow with their text. Inputs and selects stay native. Do not add `overflow-auto`, `overflow-scroll`, or an inline scrolling overflow. `scripts/check-scrollports.mjs` fails lint when that shows up, including a second scrolling overflow in `globals.css`, and it checks its own detector on every run.
 
 ## Two shells
 
@@ -590,7 +590,7 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 **Anatomy.** `AppShell` always draws one `rounded-3xl` page frame. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). `fill` and `flow` share locked-height inner-scroller geometry. Card never hosts page chrome. `PageChrome` is the flow-mode wrapper (`mode="flow"`); prefer `AppShell` on new routes.
 
-**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, one inner `[data-scrollport]`, `bg` inherited from `body`. `html` and `body` are `overflow: clip`. Never Tailwind viewport-height utilities on app routes. Never a second scrollport. `ScrollSurfaceGuard` clips any later `auto` / `scroll` / `overlay` overflow, including values set from script. The newest scrollport is the one that scrolls. Textareas grow with their text.
+**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, one inner `[data-scrollport]`, `bg` inherited from `body`. `html` and `body` are `overflow: clip`. Never Tailwind viewport-height utilities on app routes. Never a second scrollport. `ScrollSurfaceGuard` clips any later `auto` / `scroll` / `overlay` overflow, including values set from script. The innermost bound scrollport scrolls; among siblings, the most recently bound one, marked `data-scroll-active`. The others are `data-scroll-locked`. Textareas grow with their text.
 
 **API.**
 

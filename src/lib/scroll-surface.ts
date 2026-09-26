@@ -105,8 +105,8 @@ export function syncScrollSurfaces(): void {
 }
 
 /**
- * Make `el` the active scrollport. A second bind of the same element does
- * not stack it twice.
+ * Remember `el` as a bound scrollport and resync. A second bind of the same
+ * element does not stack it twice. The innermost bound port scrolls.
  *
  * @param el - The scrollport element that just mounted.
  * @returns Nothing.
@@ -119,8 +119,9 @@ export function bindScrollport(el: HTMLElement): void {
 }
 
 /**
- * Drop `el` from the active stack. The previous scrollport starts scrolling
- * again. Releasing an element that is not bound is a no-op.
+ * Drop `el` from the stack and resync. The innermost remaining port scrolls;
+ * among siblings, the most recently bound. Releasing an element that is not
+ * bound is a no-op.
  *
  * @param el - The scrollport element that unmounted.
  * @returns Nothing.

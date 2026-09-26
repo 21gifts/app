@@ -424,17 +424,22 @@ update stuff
 Each page has exactly one scrollable surface. `html` and `body` are
 `overflow: clip` and `height: var(--app-height)`. `--app-height` is the
 visible viewport (`visualViewport.height`, otherwise `innerHeight`), never
-taller. The only element that may scroll is the newest `[data-scrollport]`.
-An older one, including a sibling, is locked. `ScrollSurfaceGuard` watches
-the document and forces any other `auto`, `scroll`, or `overlay` overflow
-— class, stylesheet, or script — to clip. Textareas grow with their text
-instead of scrolling. Native inputs and selects are left alone. Clipping
-(`overflow: hidden` or `clip`) is not a scrollport. Components still must
-not set a scrolling overflow. `scripts/check-scrollports.mjs` fails CI on
-those utilities, arbitrary values, and assignments, and it rejects its own
-detector if that check goes blind. The document lock is `!important`. AppShell `<main>` stays
-free of `overflow-hidden` so the in-tree menu is not clipped. The document
-lock stops the page from scrolling under the frame.
+taller. The only element that may scroll is the innermost bound
+`[data-scrollport]`. Among siblings, that is the most recently bound one.
+It carries `data-scroll-active`. Every other port stays clipped and carries
+`data-scroll-locked`. Absence of that lock is not permission to scroll.
+`ScrollSurfaceGuard` watches the document and forces any other `auto`,
+`scroll`, or `overlay` overflow — class, stylesheet, or script — to clip.
+Textareas grow with their text instead of scrolling. Native inputs and
+selects are left alone. Clipping (`overflow: hidden` or `clip`) is not a
+scrollport. Components still must not set a scrolling overflow.
+`scripts/check-scrollports.mjs` fails CI on those utilities, arbitrary
+values, and assignments, and on any stylesheet scrolling overflow except
+the one `overflow: auto` on `[data-scrollport][data-scroll-active]`. It
+rejects its own detector if that check goes blind. The document lock is
+`!important`. AppShell `<main>` stays free of `overflow-hidden` so the
+in-tree menu is not clipped. The document lock stops the page from
+scrolling under the frame.
 
 ### Components
 
