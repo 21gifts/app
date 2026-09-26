@@ -2105,9 +2105,9 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator or founder with at least one open application sees a secondary large **Open applications (N)** link to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator or founder with at least one open application sees a secondary large **Open applications (N)** link to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications (N)** only when N is at least 1.
+- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -2156,6 +2156,18 @@ Moderator on `/grants` with two open grant applications. The grant card is shown
 Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`.
 
 ![21.gifts grants no applications](images/grants-no-applications.png)
+
+### Variant: applications-loading
+
+Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`.
+
+![21.gifts grants applications loading](images/grants-applications-loading.png)
+
+### Variant: applications-error
+
+Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`.
+
+![21.gifts grants applications error](images/grants-applications-error.png)
 
 ## Screen: /profile/apply
 

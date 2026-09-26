@@ -7493,6 +7493,37 @@ test.describe('profile funding states', () => {
     await expect(page.getByRole('link', { name: 'Open applications' })).toHaveCount(0);
     await shotScreen(page, 'state-grants-no-applications');
   });
+
+  test('state /grants applications-loading', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'moderator' });
+    await page.route('**/funding/applications', async () => {
+      /* hang */
+    });
+    await page.goto('/grants');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-grants-applications-loading');
+  });
+
+  test('state /grants applications-error', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'moderator' });
+    await page.route('**/funding/applications', async (route) => {
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/grants');
+    await expect(
+      page.getByText('Could not load open applications. Please try again.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-grants-applications-error');
+  });
 });
 
 test.describe('profile apply screens', () => {
