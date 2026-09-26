@@ -1034,6 +1034,30 @@ Signed-in `/welcome` on the default filter; expand Ada's note to show its reply.
 
 ![21.gifts welcome reply copy](images/welcome-reply-copy.png)
 
+### Variant: copy-nostr
+
+Signed-in `/welcome`. Ada's note includes a Nostr address, so **Copy Nostr link** (Share icon) sits beside **Copy link to this note**. The website button is unchanged.
+
+![21.gifts welcome copy nostr](images/welcome-copy-nostr.png)
+
+### Variant: copy-nostr-copied
+
+Same note after clicking **Copy Nostr link**. That control shows a check and `data-copied`. The website copy button is not marked copied.
+
+![21.gifts welcome copy nostr copied](images/welcome-copy-nostr-copied.png)
+
+### Variant: reply-copy-nostr
+
+Expand Ada's note. The reply includes a Nostr address, so **Copy Nostr link** sits beside **Copy link to this reply**.
+
+![21.gifts welcome reply copy nostr](images/welcome-reply-copy-nostr.png)
+
+### Variant: reply-copy-nostr-copied
+
+Same reply after clicking **Copy Nostr link**. Only that reply's Nostr control shows a check.
+
+![21.gifts welcome reply copy nostr copied](images/welcome-reply-copy-nostr-copied.png)
+
 ### Variant: translate
 
 Signed-in `/welcome` with one paid German note. **Translate** is visible in the footer icon row with react / copy. English notes on other fixtures still hide it.
