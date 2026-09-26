@@ -7,18 +7,32 @@
 - **Returns / side effects:** The page element. No direct I/O.
 - **Used by:** Route `/pos`.
 
+## Function: PosAmountPage
+
+- **Purpose:** App Router page for `/pos/amount`. Wraps `PosAmount` in `AppShell` and `OnboardingGate screen="profile"`. Back returns to `/pos`.
+- **Inputs:** None.
+- **Returns / side effects:** The page element. No direct I/O.
+- **Used by:** Route `/pos/amount`.
+
 ## Function: PosScreen
 
-- **Purpose:** Signed-in till on `/pos`. Renders `PosTill`.
+- **Purpose:** Signed-in QR page on `/pos`. Renders `PosTill`.
 - **Inputs:** None.
 - **Returns / side effects:** The till card.
 - **Used by:** `/pos`.
 
+## Function: PosAmount
+
+- **Purpose:** Amount-only card on `/pos/amount`. Keypad and **Create payment**. No QR and no address. A created charge, an already open charge, or a member who cannot charge returns to `/pos`.
+- **Inputs:** None. Reads the auth store.
+- **Returns / side effects:** React element. Calls `createPosCharge`. On success, `router.push('/pos')`.
+- **Used by:** `PosAmountPage`.
+
 ## Function: PosTill
 
-- **Purpose:** The till card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, a keypad amount (decimal from the number format), and the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status. The wallet does not mount this card.
+- **Purpose:** The QR card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, content-width **Set an amount** linking to `/pos/amount` when no charge is open, otherwise the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. No keypad on this card. No paid status. The wallet does not mount this card.
 - **Inputs:** None. Reads the auth store.
-- **Returns / side effects:** React element. Calls `fetchPosState`, `createPosCharge`, and `cancelPosCharge`.
+- **Returns / side effects:** React element. Calls `fetchPosState` and `cancelPosCharge`.
 - **Used by:** `PosScreen`.
 
 ## Function: fetchPosState
@@ -740,8 +754,8 @@
 
 ## Function: AmountEntry
 
-- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (till only) replaces the input with a non-focusable amount and an always-visible 3-column keypad; other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
-- **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`), optional `keypad` (default false; till only).
+- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (the `/pos/amount` page only) replaces the input with a non-focusable amount and an always-visible 3-column keypad; other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
+- **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`), optional `keypad` (default false; the `/pos/amount` page only).
 - **Returns / side effects:** A labeled input, or with `keypad` a non-focusable amount plus the keypad and no input, the switch, and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
 - **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosScreen`.
 
@@ -2910,24 +2924,38 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletPhrase
 
-- **Purpose:** Add or show the recovery phrase for `/wallet`. There is no confirm view, no auto-reveal, and no Continue on the words.
+- **Purpose:** Add or show the recovery phrase. `/wallet` does not render the words. `/wallet/phrase` does. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
 - **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `startPasskeySeed`, `credentials.create` with PRF, `obtainPrfFirst`, no finish when that is null, otherwise `finishPasskeySeed`, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
 - **Used by:** `WalletScreen`.
 
 ## Function: WalletScreenView
 
-- **Purpose:** Wallet card, and the header Back for that page. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`.
-- **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Under that card: the centered 21.gifts address and Open CryptoPay QR used by `/pos`, then **Set an amount** linking to `/pos`. No keypad and no charge. Header Back takes one step: hide the words, close **Advanced functions**, `history.back()`, or open `/welcome` when the tab has no previous page. Error shows a reason, a hint, and **Try again**.
-- **Used by:** `WalletScreen`.
+- **Purpose:** Wallet cards, and the header Back. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`. `surface="entry"` is `/wallet`. `surface="phrase"` is `/wallet/phrase`.
+- **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`).
+- **Returns / side effects:** On `entry`, the receive card is first (centered address, Open CryptoPay QR, content-width **Set an amount** to `/pos`), then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR. Header Back on `entry` closes **Advanced functions**, calls `history.back()`, or opens `/welcome`. On `phrase` it hides the words, calls `history.back()`, or opens `/wallet`.
+- **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreen
 
-- **Purpose:** Signed-in wallet page body.
+- **Purpose:** Signed-in `/wallet` body. Receive address above the recovery entry.
 - **Inputs:** None.
-- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. No auto-reveal.
+- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. Does not render the 12 words.
 - **Used by:** `WalletPage`.
+
+## Function: WalletPhraseScreen
+
+- **Purpose:** `/wallet/phrase` body. Recovery phrase or recovery error, with no receive QR.
+- **Inputs:** None.
+- **Returns / side effects:** Renders `WalletScreenView` `surface="phrase"` with `useWalletPhrase()`.
+- **Used by:** `WalletPhrasePage`.
+
+## Function: WalletPhrasePage
+
+- **Purpose:** Next.js page for `/wallet/phrase`.
+- **Inputs:** None.
+- **Returns / side effects:** AppShell + OnboardingGate + `WalletPhraseScreen`.
+- **Used by:** Route `/wallet/phrase`.
 
 ## Function: WalletPage
 

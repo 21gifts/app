@@ -6787,7 +6787,8 @@ test('Function: fetchPosState — till shows the amount form', async ({ page }) 
   });
   await page.goto('/pos');
   await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
 });
 
 test('Function: createPosCharge — create opens the charge', async ({ page }) => {
@@ -6815,8 +6816,10 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
       }),
     });
   });
+  let created = false;
   await page.route(/\/pos\/charge$/, async (route) => {
     if (route.request().method() === 'POST') {
+      created = true;
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -6835,13 +6838,27 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ charge: null, history: [] }),
+      body: JSON.stringify(
+        created
+          ? {
+              charge: {
+                id: 'pos-e2e',
+                amountSats: 21,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 60_000).toISOString(),
+              },
+              history: [],
+            }
+          : { charge: null, history: [] },
+      ),
     });
   });
-  await page.goto('/pos');
+  await page.goto('/pos/amount');
   await page.getByRole('button', { name: '2', exact: true }).click();
   await page.getByRole('button', { name: '1', exact: true }).click();
   await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
 
@@ -6898,7 +6915,50 @@ test('Function: cancelPosCharge — cancel returns the amount form', async ({ pa
   });
   await page.goto('/pos');
   await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+});
+
+test('Function: PosAmount — amount page has the keypad and no QR', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos/amount');
+  await expect(page.getByRole('heading', { name: 'Amount' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
+});
+
+test('Function: PosAmountPage — amount heading is visible', async ({ page }) => {
+  await page.goto('/pos/amount');
+  await expect(page).toHaveURL(/\/(pos\/amount|login)/);
 });
 
 test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
