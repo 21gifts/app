@@ -9814,5 +9814,5 @@ test('Function: splitCreditPlan — equal days and a remainder on the last day',
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('To repay per day: ₿700 per day for 30 days')).toBeVisible();
+  await expect(page.getByText('To repay per day: ₿700 · $0.70 per day for 30 days')).toBeVisible();
 });
