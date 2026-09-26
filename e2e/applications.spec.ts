@@ -112,7 +112,7 @@ test('Function: FundingApplicationsPage — grants page opens the queue', async 
 test('Function: GrantsPage — signed-in grant card is on /grants', async ({ page }) => {
   await seedAdaSession(page, 'verified');
   await page.goto('/grants');
-  await expect(page.getByText('21 gifts grant')).toBeVisible();
+  await expect(page.getByText('21 gifts grant', { exact: true })).toBeVisible();
 });
 
 test('Function: GrantsScreen — moderator sees the applications link', async ({ page }) => {
@@ -180,7 +180,9 @@ test('Function: FundingApplicationDetailScreen — basis visitors see the forbid
   await expect(page.getByText('This page is for moderators.')).toBeVisible();
 });
 
-test('Function: fetchFundingApplication — staff see the principles question and posts', async ({ page }) => {
+test('Function: fetchFundingApplication — staff see the principles question and posts', async ({
+  page,
+}) => {
   await seedAdaSession(page, 'moderator');
   await page.route('**/funding/applications/acc_rose', async (route) => {
     await route.fulfill({

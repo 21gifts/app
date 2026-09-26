@@ -1609,8 +1609,10 @@ const de = {
   'funding.detail.emptyPosts': 'Keine Wohnzimmer-Beiträge.',
   'funding.detail.error':
     'Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
-  'funding.review.question.self': 'Stimmen Ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein?',
-  'funding.review.question.staff': 'Stimmen ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein?',
+  'funding.review.question.self':
+    'Stimmen Ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein?',
+  'funding.review.question.staff':
+    'Stimmen ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein?',
   'funding.review.met': 'Anforderung erfüllt',
   'funding.review.unmet': 'Nicht erfüllt',
   'funding.review.yes': 'Ja',
@@ -2417,8 +2419,10 @@ const es = {
   'funding.detail.postsLabel': 'Mensajes del salón',
   'funding.detail.emptyPosts': 'No hay mensajes del salón.',
   'funding.detail.error': 'No se pudo cargar esta solicitud. Inténtalo de nuevo.',
-  'funding.review.question.self': '¿Tus publicaciones del perfil coinciden con los principios de 21.gifts?',
-  'funding.review.question.staff': '¿Sus publicaciones del perfil coinciden con los principios de 21.gifts?',
+  'funding.review.question.self':
+    '¿Tus publicaciones del perfil coinciden con los principios de 21.gifts?',
+  'funding.review.question.staff':
+    '¿Sus publicaciones del perfil coinciden con los principios de 21.gifts?',
   'funding.review.met': 'Requisito cumplido',
   'funding.review.unmet': 'No cumplido',
   'funding.review.yes': 'Sí',
@@ -3235,8 +3239,10 @@ const fil = {
   'funding.detail.postsLabel': 'Mga living-room post',
   'funding.detail.emptyPosts': 'Walang living-room posts.',
   'funding.detail.error': 'Hindi ma-load ang aplikasyong ito. Subukan ulit.',
-  'funding.review.question.self': 'Tumutugma ba ang mga post sa profile mo sa mga pangunahing prinsipyo ng 21.gifts?',
-  'funding.review.question.staff': 'Tumutugma ba ang mga post sa profile nila sa mga pangunahing prinsipyo ng 21.gifts?',
+  'funding.review.question.self':
+    'Tumutugma ba ang mga post sa profile mo sa mga pangunahing prinsipyo ng 21.gifts?',
+  'funding.review.question.staff':
+    'Tumutugma ba ang mga post sa profile nila sa mga pangunahing prinsipyo ng 21.gifts?',
   'funding.review.met': 'Natugunan ang kinakailangan',
   'funding.review.unmet': 'Hindi natugunan',
   'funding.review.yes': 'Oo',
