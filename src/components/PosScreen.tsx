@@ -39,6 +39,19 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
   }
 }
 
+/** Create or cancel that is still talking to the server, across page changes. */
+let tillWrite: Promise<void> | null = null;
+
+/** Remember `work` until it settles so a later till load does not race it. */
+function trackTillWrite(work: Promise<void>): void {
+  const tracked = work.finally(() => {
+    if (tillWrite === tracked) {
+      tillWrite = null;
+    }
+  });
+  tillWrite = tracked;
+}
+
 /** Values shared by the QR page and the amount page. */
 type PosTillState = {
   address: string | null;
@@ -93,23 +106,31 @@ function usePosTillState(): PosTillState {
     }
     let alive = true;
     const mine = generation.current;
-    fetchPosState(session)
-      .then((next) => {
+    const pending = tillWrite;
+    void (async (): Promise<void> => {
+      if (pending !== null) {
+        await pending;
+      }
+      if (!alive) {
+        return;
+      }
+      try {
+        const next = await fetchPosState(session);
         if (!alive) {
           return;
         }
         whenCurrent(generation, mine, () => {
           setState(next);
         });
-      })
-      .catch(() => {
+      } catch {
         if (!alive) {
           return;
         }
         whenCurrent(generation, mine, () => {
           setError(t('pos.error'));
         });
-      });
+      }
+    })();
     return () => {
       alive = false;
     };
@@ -170,7 +191,7 @@ function usePosTillState(): PosTillState {
 
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (session === null) {
+    if (session === null || busyRef.current) {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
@@ -179,56 +200,72 @@ function usePosTillState(): PosTillState {
       return;
     }
     const amountSats = parsed.sats;
-    const mine = ++generation.current;
+    busyRef.current = true;
     setBusy(true);
+    const mine = ++generation.current;
     setError(null);
+    const work = (async (): Promise<void> => {
+      try {
+        const created = await createPosCharge(session, amountSats);
+        whenCurrent(generation, mine, () => {
+          /* v8 ignore next -- the form is only shown once state.history is an array */
+          const history = state?.history ?? [];
+          setState({ charge: created, history: [created, ...history] });
+          setAmount('');
+        });
+      } catch (err) {
+        whenCurrent(generation, mine, () => {
+          /* v8 ignore next -- createPosCharge only rejects with Error */
+          const message = err instanceof Error ? err.message : t('pos.error');
+          if (message === 'Amount is outside the wallet range') {
+            setError(t('pos.outside'));
+          } else if (message === 'A payment is already open') {
+            setError(t('pos.already'));
+          } else if (message === 'Set a username first') {
+            setError(t('pos.needUsername'));
+          } else if (message === 'Set a Wallet of Satoshi address first') {
+            setError(t('pos.needAddress'));
+          } else {
+            setError(t('pos.error'));
+          }
+        });
+      }
+    })();
+    trackTillWrite(work);
     try {
-      const created = await createPosCharge(session, amountSats);
-      whenCurrent(generation, mine, () => {
-        /* v8 ignore next -- the form is only shown once state.history is an array */
-        const history = state?.history ?? [];
-        setState({ charge: created, history: [created, ...history] });
-        setAmount('');
-      });
-    } catch (err) {
-      whenCurrent(generation, mine, () => {
-        /* v8 ignore next -- createPosCharge only rejects with Error */
-        const message = err instanceof Error ? err.message : t('pos.error');
-        if (message === 'Amount is outside the wallet range') {
-          setError(t('pos.outside'));
-        } else if (message === 'A payment is already open') {
-          setError(t('pos.already'));
-        } else if (message === 'Set a username first') {
-          setError(t('pos.needUsername'));
-        } else if (message === 'Set a Wallet of Satoshi address first') {
-          setError(t('pos.needAddress'));
-        } else {
-          setError(t('pos.error'));
-        }
-      });
+      await work;
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
 
   async function onCancel(): Promise<void> {
-    if (session === null) {
+    if (session === null || busyRef.current) {
       return;
     }
-    const mine = ++generation.current;
+    busyRef.current = true;
     setBusy(true);
+    const mine = ++generation.current;
     setError(null);
+    const work = (async (): Promise<void> => {
+      try {
+        await cancelPosCharge(session);
+        const next = await fetchPosState(session);
+        whenCurrent(generation, mine, () => {
+          setState(next);
+        });
+      } catch {
+        whenCurrent(generation, mine, () => {
+          setError(t('pos.error'));
+        });
+      }
+    })();
+    trackTillWrite(work);
     try {
-      await cancelPosCharge(session);
-      const next = await fetchPosState(session);
-      whenCurrent(generation, mine, () => {
-        setState(next);
-      });
-    } catch {
-      whenCurrent(generation, mine, () => {
-        setError(t('pos.error'));
-      });
+      await work;
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -353,9 +390,7 @@ export function PosAmount(): ReactElement {
   const account = useAuthStore((state) => state.account);
 
   useEffect(() => {
-    if (till.charge !== null) {
-      router.push('/pos');
-    } else if (account !== null && !till.canCharge) {
+    if (till.charge !== null || (account !== null && !till.canCharge)) {
       router.replace('/pos');
     }
     /* next/navigation's identity is not stable */
