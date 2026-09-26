@@ -14,9 +14,7 @@ export function ScrollSurfaceGuard(): ReactElement | null {
   useLayoutEffect(() => {
     let frame = 0;
     const run = (): void => {
-      if (frame !== 0) {
-        return;
-      }
+      cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         frame = 0;
         syncScrollSurfaces();
@@ -37,9 +35,7 @@ export function ScrollSurfaceGuard(): ReactElement | null {
     };
     document.addEventListener('input', onInput);
     return () => {
-      if (frame !== 0) {
-        cancelAnimationFrame(frame);
-      }
+      cancelAnimationFrame(frame);
       observer.disconnect();
       document.removeEventListener('input', onInput);
     };

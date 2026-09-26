@@ -54,6 +54,7 @@ describe('scroll surface', () => {
     select.appendChild(option);
     document.body.appendChild(select);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('data-scrollport', '');
     svg.style.overflow = 'auto';
     document.body.appendChild(svg);
     const plain = document.createElement('div');
