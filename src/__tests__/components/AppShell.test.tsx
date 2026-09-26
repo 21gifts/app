@@ -123,9 +123,7 @@ describe('AppShell', () => {
       const chrome = main?.querySelector('[data-app-chrome]');
       expect(chrome?.contains(screen.getByTestId(`${mode}-left`))).toBe(true);
       expect(chrome?.contains(screen.getByTestId(`${mode}-right`))).toBe(true);
-      expect(main?.querySelector('[data-scrollport]')?.hasAttribute('data-scrollport')).toBe(
-        true,
-      );
+      expect(main?.querySelector('[data-scrollport]')?.hasAttribute('data-scrollport')).toBe(true);
       expect(main?.innerHTML).not.toContain('pt-24');
       expect(screen.getByText(`${mode} body`)).toBeTruthy();
       unmount();
