@@ -186,6 +186,35 @@ describe('NoteTranslate', () => {
     );
   });
 
+  it('calls onTranslateRequest on Translate and not on the success toggle', async () => {
+    let resolveTranslation: ((text: string) => void) | undefined;
+    vi.mocked(translateNote).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    const onTranslateRequest = vi.fn();
+    const onToggleShowing = vi.fn();
+    renderWithLocale(
+      <NoteTranslate
+        messageId={NOTE_ID}
+        text={german}
+        showingTranslation
+        onTranslateRequest={onTranslateRequest}
+        onToggleShowing={onToggleShowing}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+    expect(onTranslateRequest).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveTranslation?.(translated);
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Show original' }));
+    expect(onTranslateRequest).toHaveBeenCalledTimes(1);
+    expect(onToggleShowing).toHaveBeenCalledTimes(1);
+  });
+
   it('does not render the translated body', async () => {
     vi.mocked(translateNote).mockResolvedValue(translated);
     const onTranslated = vi.fn();

@@ -9431,7 +9431,7 @@ test('Function: forumTextPreview — long welcome note hides the tail behind Sho
 }) => {
   await seedAdaSession(page);
   const tail = 'TAILTOKEN';
-  const text = `${'a'.repeat(280)} ${tail}`;
+  const text = `${'a'.repeat(560)} ${tail}`;
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -9460,7 +9460,7 @@ test('Function: forumTextPreview — long welcome note hides the tail behind Sho
 test('Function: ForumNoteText — Show more expands the long welcome note', async ({ page }) => {
   await seedAdaSession(page);
   const tail = 'TAILTOKEN';
-  const text = `${'a'.repeat(280)} ${tail}`;
+  const text = `${'a'.repeat(560)} ${tail}`;
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,

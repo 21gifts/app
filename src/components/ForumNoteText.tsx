@@ -15,12 +15,19 @@ export interface ForumNoteTextProps {
   plain?: boolean;
   /** Member marks. Omitted when the author name is not a member button. */
   mentions?: readonly TextMention[];
+  /** When true, render the full body and omit Show more. */
+  forceExpanded?: boolean;
 }
 
 /**
  * Render a public forum note or reply body, collapsing long text behind Show more.
  *
- * @param props - Body text, paragraph className, and optional plain mode.
+ * Optional `forceExpanded` renders the full body and omits Show more. Callers
+ * that omit it keep the 280-character collapsed preview; Show more starts only
+ * above 560.
+ *
+ * @param props - Body text, paragraph className, optional plain mode, and
+ *   optional `forceExpanded` (default false).
  * @returns The paragraph, or null when text is empty.
  * @throws Does not throw.
  */
@@ -29,6 +36,7 @@ export function ForumNoteText({
   className,
   plain = false,
   mentions,
+  forceExpanded = false,
 }: ForumNoteTextProps): ReactElement | null {
   const { t } = useTranslations();
   const [expanded, setExpanded] = useState(false);
@@ -38,7 +46,7 @@ export function ForumNoteText({
     return null;
   }
 
-  if (!truncated || expanded) {
+  if (forceExpanded || !truncated || expanded) {
     return (
       <LinkedText
         text={text}

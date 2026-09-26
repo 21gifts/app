@@ -277,7 +277,7 @@ describe('ForumBoard', () => {
 
   it('collapses a long note behind Show more without toggling replies', () => {
     const onToggleExpand = vi.fn();
-    const text = `${'a'.repeat(280)} TAILWORD`;
+    const text = `${'a'.repeat(560)} TAILWORD`;
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, text }]}
@@ -305,7 +305,7 @@ describe('ForumBoard', () => {
 
   it('collapses a long reply behind Show more without toggling the parent', () => {
     const onToggleExpand = vi.fn();
-    const text = `${'a'.repeat(280)} TAILWORD`;
+    const text = `${'a'.repeat(560)} TAILWORD`;
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}

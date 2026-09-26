@@ -39,10 +39,14 @@ export interface TranslatableNoteBodyProps {
  * Render a note body and replace it with the translation in the same commit.
  *
  * Holds translated text and the showing flag. Visible body is original XOR
- * translation — not via a parent `useEffect` after paint.
+ * translation — not via a parent `useEffect` after paint. Clicking Translate
+ * marks the note read-in-full so Show more is gone immediately (while loading,
+ * on error, and after Show original). A visible translation is the full text
+ * via `LinkedText` (no Show more).
  *
  * @param props - `messageId`, `text`, optional `source`, `plain` / `truncate`
- *   (`truncate` applies only to the original body), optional
+ *   (`truncate` applies only to the original body; a visible translation is
+ *   always full `LinkedText`), optional
  *   `className` (`text-app-btn-fg` selects NoteTranslate `tone="onButton"`),
  *   optional `formatTranslated` (applied only to the visible translation),
  *   optional `controlSlotId` (portals the control into that node; omits it
@@ -74,6 +78,7 @@ export function TranslatableNoteBody({
   }, [controlSlotId]);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showingTranslation, setShowingTranslation] = useState(false);
+  const [readFull, setReadFull] = useState(false);
   const sourceIdentity =
     source?.kind === 'conversation' ? `${source.kind}\0${source.conversationId}` : 'message';
   const identity = `${sourceIdentity}\0${messageId}\0${text}\0${locale}`;
@@ -82,6 +87,7 @@ export function TranslatableNoteBody({
     setSeenIdentity(identity);
     setTranslatedText(null);
     setShowingTranslation(false);
+    setReadFull(false);
   }
   if (text === '') {
     return null;
@@ -92,6 +98,7 @@ export function TranslatableNoteBody({
     <ForumNoteText
       text={text}
       className={className}
+      forceExpanded={readFull}
       {...(plain ? { plain: true } : {})}
       {...mentionProp}
     />
@@ -105,7 +112,7 @@ export function TranslatableNoteBody({
   );
   const visible =
     showingTranslation && translatedText !== null ? (
-      <ForumNoteText
+      <LinkedText
         text={formatTranslated === undefined ? translatedText : formatTranslated(translatedText)}
         className={className}
         {...(plain ? { plain: true } : {})}
@@ -122,6 +129,9 @@ export function TranslatableNoteBody({
       onTranslated={(next) => {
         setTranslatedText(next);
         setShowingTranslation(true);
+      }}
+      onTranslateRequest={() => {
+        setReadFull(true);
       }}
       onToggleShowing={() => {
         setShowingTranslation((shown) => !shown);

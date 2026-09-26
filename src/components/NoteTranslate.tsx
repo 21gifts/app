@@ -37,6 +37,11 @@ export interface NoteTranslateProps {
   showingTranslation?: boolean;
   /** Called with the translated string after a successful POST. */
   onTranslated?: (translatedText: string) => void;
+  /**
+   * Called synchronously when Translate is clicked, before the request.
+   * Not called from Show original / Show translation.
+   */
+  onTranslateRequest?: () => void;
   /** Called when the visitor toggles Show original / Show translation. */
   onToggleShowing?: () => void;
   /**
@@ -56,7 +61,9 @@ export interface NoteTranslateProps {
  * @param props - `messageId`, `text`, optional `source` / `tone`,
  *   optional `placement` (`block` under the body, or `row` in a parent
  *   flex footer), parent-owned `showingTranslation`, `onTranslated` on
- *   success, and `onToggleShowing` for Show original / Show translation.
+ *   success, optional `onTranslateRequest` (synchronously when Translate
+ *   is clicked, before the request; not from Show original / Show
+ *   translation), and `onToggleShowing` for Show original / Show translation.
  * @returns Translation control, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */
@@ -67,6 +74,7 @@ export function NoteTranslate({
   tone = 'default',
   showingTranslation = false,
   onTranslated,
+  onTranslateRequest,
   onToggleShowing,
   placement = 'block',
 }: NoteTranslateProps): ReactElement | null {
@@ -110,6 +118,7 @@ export function NoteTranslate({
   const requestTranslation = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     event.preventDefault();
+    onTranslateRequest?.();
     setStatus('loading');
     const id = requestId.current + 1;
     requestId.current = id;
