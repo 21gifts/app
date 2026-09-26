@@ -1,9 +1,15 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PosScreen } from '@/components/PosScreen';
+import { PosAmount, PosScreen, resetPosTillWriteForTests } from '@/components/PosScreen';
 import { fetchGiftStats } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const push = vi.fn();
+const replace = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push; replace: typeof replace } => ({ push, replace }),
+}));
 
 vi.mock('@/lib/api', async () => {
   const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
@@ -54,6 +60,9 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  resetPosTillWriteForTests();
+  push.mockClear();
+  replace.mockClear();
   useAuthStore.setState({ session: null, account: null });
   vi.unstubAllGlobals();
 });
@@ -98,10 +107,13 @@ describe('PosScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Point of sale' })).toBeTruthy();
     expect(screen.getByText('alice@21.gifts')).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Set an amount' }).getAttribute('href')).toBe(
+      '/pos/amount',
+    );
+    expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.getByText('alice@21.gifts').className).toContain('text-center');
-    expect(screen.getByRole('button', { name: /^1$/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^1$/ })).toBeNull();
   });
 
   it('creates a charge and then cancels it', async () => {
@@ -122,17 +134,35 @@ describe('PosScreen', () => {
       return jsonResponse({ charge: null, history: [] });
     });
     vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosScreen />);
+    renderWithLocale(<PosAmount />);
     await pressAmount('21');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/pos');
+    });
+    expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+  });
+
+  it('cancels an open charge and returns to set an amount', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'DELETE') {
+        return jsonResponse({ charge: null });
+      }
+      return jsonResponse({ charge, history: [charge] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getAllByText('₿21').length).toBeGreaterThan(0);
-    expect(screen.queryByText('$0.02')).toBeNull();
     fetchMock.mockImplementation(async () => jsonResponse({ charge: null, history: [] }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
-    });
+    expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
   });
 
   it('does not reload the till over an in-flight payment', async () => {
@@ -146,7 +176,7 @@ describe('PosScreen', () => {
       return jsonResponse({ charge: null, history: [] });
     });
     vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosScreen />);
+    renderWithLocale(<PosAmount />);
     await pressAmount('21');
     const callsAtForm = fetchMock.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
@@ -171,13 +201,15 @@ describe('PosScreen', () => {
       );
       await Promise.resolve();
     });
-    expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/pos');
+    });
   });
 
   it('rejects a fractional amount without calling the api', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
     vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosScreen />);
+    renderWithLocale(<PosAmount />);
     await pressAmount('1.5');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect((await screen.findByRole('alert')).textContent).toContain('Enter a whole number.');
@@ -192,7 +224,7 @@ describe('PosScreen', () => {
       return jsonResponse({ charge: null, history: [] });
     });
     vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosScreen />);
+    renderWithLocale(<PosAmount />);
     await pressAmount('21');
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -219,9 +251,30 @@ describe('PosScreen', () => {
     });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
-    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: original });
+  });
+
+  it('loads the amount page again after Try again', async () => {
+    let charges = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes('/pos/charge')) {
+          charges += 1;
+          if (charges === 1) {
+            return jsonResponse({ error: 'nope' }, 500);
+          }
+          return jsonResponse({ charge: null, history: [] });
+        }
+        return jsonResponse({ error: 'nope' }, 500);
+      }),
+    );
+    renderWithLocale(<PosAmount />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
   it('shows an error when the till cannot be loaded', async () => {
@@ -249,7 +302,7 @@ describe('PosScreen', () => {
           return jsonResponse({ charge: null, history: [] });
         }),
       );
-      renderWithLocale(<PosScreen />);
+      renderWithLocale(<PosAmount />);
       await pressAmount('21');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
       expect((await screen.findByRole('alert')).textContent?.toLowerCase()).toContain(
@@ -305,7 +358,7 @@ describe('PosScreen', () => {
       }),
     );
     renderWithLocale(<PosScreen />);
-    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
     expect(calls).toBe(2);
   });
@@ -423,12 +476,12 @@ describe('PosScreen', () => {
       expect(releaseRefresh).toEqual(expect.any(Function));
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
     await act(async () => {
       releaseRefresh?.(jsonResponse({ charge: expired, history: [expired] }));
       await Promise.resolve();
     });
-    expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
@@ -466,15 +519,14 @@ describe('PosScreen', () => {
       releaseDelete?.(jsonResponse({ charge: null }));
       await Promise.resolve();
     });
-    const create = await screen.findByRole('button', { name: 'Create payment' });
-    expect(create.hasAttribute('disabled')).toBe(false);
+    expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
   it('does not create a payment after the session disappears', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
     vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosScreen />);
+    renderWithLocale(<PosAmount />);
     expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
     const before = fetchMock.mock.calls.length;
     act(() => {
@@ -537,6 +589,170 @@ describe('PosScreen', () => {
     await act(async () => {
       await fetchMock.mock.results[0]?.value;
     });
-    expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+  });
+
+  it('leaves the amount page when a charge is already open', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          charge: {
+            id: 'c1',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+          history: [],
+        }),
+      ),
+    );
+    renderWithLocale(<PosAmount />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/pos');
+    });
+    expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+  });
+
+  it('ignores a second cancel while the first is still running', async () => {
+    let deletes = 0;
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          deletes += 1;
+          return new Promise<Response>(() => undefined);
+        }
+        return jsonResponse({ charge, history: [charge] });
+      }),
+    );
+    renderWithLocale(<PosScreen />);
+    const cancel = await screen.findByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancel);
+    fireEvent.click(cancel);
+    await waitFor(() => {
+      expect(deletes).toBe(1);
+    });
+  });
+
+  it('ignores a second create while the first is still running', async () => {
+    let posts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          posts += 1;
+          return new Promise<Response>(() => undefined);
+        }
+        return jsonResponse({ charge: null, history: [] });
+      }),
+    );
+    renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    const create = screen.getByRole('button', { name: 'Create payment' });
+    fireEvent.click(create);
+    fireEvent.click(create);
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+  });
+
+  it('waits for an in-flight create before showing an empty till', async () => {
+    let releasePost: ((value: Response) => void) | undefined;
+    let posted = false;
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        if (!posted) {
+          return jsonResponse({ charge: null, history: [] });
+        }
+        return jsonResponse({ charge, history: [charge] });
+      }),
+    );
+    const amount = renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(releasePost).toEqual(expect.any(Function));
+    });
+    amount.unmount();
+    renderWithLocale(<PosScreen />);
+    expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    posted = true;
+    await act(async () => {
+      releasePost?.(jsonResponse({ charge }));
+      await Promise.resolve();
+    });
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+  });
+
+  it('drops a till load that unmounts while create is still running', async () => {
+    let releasePost: ((value: Response) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        return jsonResponse({ charge: null, history: [] });
+      }),
+    );
+    const amount = renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(releasePost).toEqual(expect.any(Function));
+    });
+    amount.unmount();
+    const till = renderWithLocale(<PosScreen />);
+    till.unmount();
+    await act(async () => {
+      releasePost?.(
+        jsonResponse({
+          charge: {
+            id: 'c1',
+            amountSats: 21,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
+      );
+      await Promise.resolve();
+    });
+  });
+
+  it('sends a member who cannot charge back to the QR page', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...ACCOUNT, username: null },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
+    renderWithLocale(<PosAmount />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/pos');
+    });
   });
 });

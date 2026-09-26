@@ -171,50 +171,69 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 ## Screen: /wallet
 
-- **URL:** `/wallet` — signed-in recovery phrase.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet**. The phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: primary button **Add recovery phrase** and a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, via PRF get of that id, without `credentials.create` and without seed/begin. Pressing it shows the 12 words and the only-backup line. There is no confirmation and no **Continue** on the words.
-- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. Show the phrase from **Advanced functions**. **Try again** after an error (`role="alert"` plus a reason and a hint). Open **Menu** (Home, Shops, Map, Point of sale, Profile, Grants, Wallet, …). Back takes one step: it hides the 12 words, or closes **Advanced functions** when that row is open, or returns to the previous page. It does not jump to the forum unless that page was the previous step. A tab with no previous page goes to the forum (`/welcome`). The wordmark still opens the forum. Opening any other signed-in page shows that page. The 12 words appear only on `/wallet`, after **Show recovery phrase** or right after **Add recovery phrase**. Under that card, not inside **Advanced functions**, the same centered 21.gifts address and Open CryptoPay QR as `/pos`. **Set an amount** opens `/pos`. There is no keypad and no open charge on this page.
+- **URL:** `/wallet` — signed-in receive address. The recovery phrase is a separate page.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The receive card is first: centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below it, heading **Wallet**. The phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
+- **Actions:** **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Map, Point of sale, Profile, Grants, Wallet, …). Back closes **Advanced functions** when that row is open, or returns to the previous page. It does not jump to the forum unless that page was the previous step. A tab with no previous page goes to the forum (`/welcome`). The wordmark still opens the forum.
 - **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
 
 ### Variant: default
 
-Existing member, no phrase yet. **Add recovery phrase**.
+Existing member, no phrase yet. Receive address and QR above **Add recovery phrase**.
 
 ![21.gifts wallet add recovery phrase](images/wallet.png)
 
-### Variant: phrase
-
-12-word grid from a fixture mnemonic (not live PRF).
-
-![21.gifts wallet phrase](images/wallet-phrase.png)
-
 ### Variant: reveal
 
-Account that can already show a phrase, no phrase in the tab. Closed **Advanced functions** holds **Show recovery phrase**.
+Account that can already show a phrase. Receive address above closed **Advanced functions**.
 
 ![21.gifts wallet reveal](images/wallet-reveal.png)
 
 ### Variant: reveal-open
 
-Account that can already show a phrase, no phrase in the tab. Open **Advanced functions** shows **Show recovery phrase**.
+Account that can already show a phrase. Open **Advanced functions** shows **Show recovery phrase**, which links to `/wallet/phrase`.
 
 ![21.gifts wallet reveal open](images/wallet-reveal-open.png)
 
+## Screen: /wallet/phrase
+
+- **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
+- **What the user sees:** Same signed-in chrome as `/wallet`. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** runs PRF get of that id, without `credentials.create` and without seed/begin. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
+- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, and only after **Advanced functions** on `/wallet`. **Try again** clears the error. Back hides the 12 words, or returns to the previous page. A tab with no previous page opens `/wallet`.
+- **Calls:** `AppShell`, `WalletScreenView` `surface="phrase"`, `WalletPhraseScreen`, `WalletPhrasePage`, `useWalletPhrase`, `OnboardingGate`.
+
+### Variant: default
+
+No phrase yet. **Add recovery phrase** on its own page. No receive QR.
+
+![21.gifts wallet phrase add](images/wallet-phrase-add.png)
+
+### Variant: reveal
+
+The passkey can already show a phrase. **Show recovery phrase** is the only control. No receive QR.
+
+![21.gifts wallet phrase reveal](images/wallet-phrase-reveal.png)
+
+### Variant: phrase
+
+12-word grid from a fixture mnemonic (not live PRF). No receive QR.
+
+![21.gifts wallet phrase](images/wallet-phrase.png)
+
 ### Variant: error
 
-Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
+Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet error](images/wallet-error.png)
 
 ### Variant: timeout
 
-Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**.
+Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet timeout](images/wallet-timeout.png)
 
 ### Variant: prf-unsupported
 
-PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**.
+PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 
@@ -1905,15 +1924,15 @@ Same overlay after **Download** failed (here PNG with a browser that cannot enco
 
 ## Screen: /pos
 
-- **Purpose:** Signed-in point of sale. The member sets one amount with the ₿ / fiat switch and the other unit under the field. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount; the QR on this page is the same Open CryptoPay code as the profile card. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status, because Wallet of Satoshi settles the invoice. Missing username or lightning address links to `/profile`.
-- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, keypad amount form only when no charge is open, otherwise the open charge (countdown, including 0:00, amount, and Cancel). The amount form is the keypad. The decimal key comes from the number format (dot for Swiss and US, comma for German; no cookie means Swiss).
-- **Actions:** Create payment, Cancel. Menu row `pos.nav`.
+- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status, because Wallet of Satoshi settles the invoice. Missing username or lightning address links to `/profile`.
+- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, content-width **Set an amount** when no charge is open, otherwise the open charge (countdown, including 0:00, bitcoin, default fiat when a gift-day rate exists, and **Cancel**). No keypad on this page.
+- **Actions:** **Set an amount** opens `/pos/amount`. **Cancel** clears the charge. Menu row `pos.nav`.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos`.
 
 ### Variant: default
 
-Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Heading **Point of sale**, address `alice@21.gifts`, amount field, **Create payment**. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Heading **Point of sale**, address `alice@21.gifts`, Open CryptoPay QR, and **Set an amount**. No keypad. Desktop, iPad, and smartphone all show the QR.
 
 ![21.gifts point of sale](images/pos.png)
 
@@ -1925,7 +1944,7 @@ Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat a
 
 ### Variant: loading
 
-The till request has not returned. Heading **Point of sale**, the address, and the spinner. No amount form yet.
+The till request has not returned. Heading **Point of sale**, the address, and the spinner. No **Set an amount** yet.
 
 ![21.gifts point of sale loading](images/pos-loading.png)
 
@@ -1934,30 +1953,6 @@ The till request has not returned. Heading **Point of sale**, the address, and t
 The till request failed. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale error](images/pos-error.png)
-
-### Variant: bad-amount
-
-**Create payment** with `1.5`. Alert **Enter a whole number.** The form stays.
-
-![21.gifts point of sale bad amount](images/pos-bad-amount.png)
-
-### Variant: create-outside
-
-**Create payment** with `21`. The till answers that the amount is outside the wallet. Alert **Amount is outside the wallet range.** The form stays.
-
-![21.gifts point of sale create outside](images/pos-create-outside.png)
-
-### Variant: create-already
-
-**Create payment** with `21`. The till answers that a payment is already open. Alert **A payment is already open.** The form stays.
-
-![21.gifts point of sale create already](images/pos-create-already.png)
-
-### Variant: create-failed
-
-**Create payment** with `21`. The till does not answer. Alert **Point of sale is unavailable.** The form stays.
-
-![21.gifts point of sale create failed](images/pos-create-failed.png)
 
 ### Variant: cancel-failed
 
@@ -1982,6 +1977,56 @@ Setup is finished and the username is empty. Link **Set a username first.** No a
 Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi address first.** No amount form.
 
 ![21.gifts point of sale need address](images/pos-need-address.png)
+
+## Screen: /pos/amount
+
+- **Purpose:** Choose the sat amount for the till. No QR, no address, and no other till action. Confirming creates the charge and returns to `/pos`, which then shows **Cancel**, the countdown, and the amount in bitcoin and fiat.
+- **Layout:** `AppShell` fill. Back returns to `/pos`. `Card` `surface={false}`: heading **Amount**. While the till request is out, a spinner and no keypad. If that request fails, the alert, **Try again**, and no keypad. Otherwise the keypad (decimal from the number format: dot for Swiss and US, comma for German; no cookie means Swiss) and **Create payment**. A member who cannot charge, or who already has an open charge, is sent back to `/pos`.
+- **Actions:** **Create payment**. Back to `/pos`.
+- **Auth:** Bearer session via `OnboardingGate screen="profile"`.
+- **Used by:** Route `/pos/amount`.
+
+### Variant: default
+
+Signed-in Ada, no open charge. Heading **Amount**, the unit switch, the keypad, and **Create payment**. The heading is the only **Amount**. No QR.
+
+![21.gifts point of sale amount](images/pos-amount.png)
+
+### Variant: loading
+
+The till request has not returned. Heading **Amount** and the spinner. No keypad and no QR.
+
+![21.gifts point of sale amount loading](images/pos-amount-loading.png)
+
+### Variant: error
+
+The till request failed. Heading **Amount**. Alert **Point of sale is unavailable.** **Try again** loads the till once more. No keypad and no QR.
+
+![21.gifts point of sale amount error](images/pos-amount-error.png)
+
+### Variant: bad-amount
+
+**Create payment** with `1.5`. Alert **Enter a whole number.** The keypad stays. No QR.
+
+![21.gifts point of sale bad amount](images/pos-bad-amount.png)
+
+### Variant: create-outside
+
+**Create payment** with `21`. The till answers that the amount is outside the wallet. Alert **Amount is outside the wallet range.** The keypad stays. No QR.
+
+![21.gifts point of sale create outside](images/pos-create-outside.png)
+
+### Variant: create-already
+
+**Create payment** with `21`. The till answers that a payment is already open. Alert **A payment is already open.** The keypad stays. No QR.
+
+![21.gifts point of sale create already](images/pos-create-already.png)
+
+### Variant: create-failed
+
+**Create payment** with `21`. The till does not answer. Alert **Point of sale is unavailable.** The keypad stays. No QR.
+
+![21.gifts point of sale create failed](images/pos-create-failed.png)
 
 ## Screen: /profile
 

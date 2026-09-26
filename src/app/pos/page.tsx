@@ -6,7 +6,7 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/pos` — set one exact sat amount on the member's existing Open CryptoPay QR.
+ * `/pos` — the Open CryptoPay QR. Set an amount on `/pos/amount`.
  *
  * @returns The point-of-sale screen.
  */
