@@ -1968,6 +1968,45 @@ export async function postMessageInvoice(
 }
 
 /**
+ * Asks for a BOLT11 that pays the next giver their share of the next due day.
+ *
+ * @param sessionToken - Bearer session of the credit's author.
+ * @param messageId - Credit note id.
+ * @returns The invoice the author pays from their wallet.
+ * @throws Error with visitor copy when the api refuses.
+ */
+export async function postRepaymentInvoice(
+  sessionToken: string,
+  messageId: string,
+): Promise<MessageInvoice> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 400 || response.status === 429 || response.status === 404) {
+    const raw = await readApiError(response);
+    throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
+  }
+  if (response.status === 409) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Could not start the Bitcoin payment');
+    }
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  if (response.status === 503 || !response.ok) {
+    throw new Error('Could not start the Bitcoin payment');
+  }
+  return messageInvoiceSchema.parse(await response.json());
+}
+
+/**
  * Posts an in-app contact message to 21.gifts.
  *
  * @param sessionToken - A bearer token from a completed challenge.

@@ -387,6 +387,13 @@
 - **Used by:** Shared note, reply, and member profile links copied from the forum and member card.
 - **Auth:** Public.
 
+## Endpoint: POST /messages/[id]/repayment
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day.
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
+- **Used by:** `postRepaymentInvoice`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /messages/[id]/invoice
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).

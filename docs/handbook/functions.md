@@ -2985,6 +2985,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ messageId, sats }` of the payable platform profile note, or throws collapsed copy.
 - **Used by:** `ForumLoader`, `PublicMessageThread`, `MemberProfileScreen`.
 
+## Function: postRepaymentInvoice
+
+- **Purpose:** POST `/messages/:id/repayment` with no body. The author receives a BOLT11 for the next giver share.
+- **Inputs:** session token and the credit note id.
+- **Returns / side effects:** `{ pr, amountSats }` or throws collapsed copy. 409 `missing_requirements` throws `MissingRequirementsError`.
+- **Used by:** `ForumLoader`.
+
+## Function: proxyMessagesRepaymentPost
+
+- **Purpose:** Same-origin proxy for `POST /messages/:id/repayment`.
+- **Inputs:** App Router `Request` and the message id.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/messages/[id]/repayment/route.ts`.
+
 ## Function: postMessageInvoice
 
 - **Purpose:** POST `/messages/:id/invoice` with `{ sats }`, `{ sats, text }` when the visitor attached a reply comment, and `amountUsd`, `amountChf`, `amountEur`, `amountPhp` when a preview rate is on screen. Empty `text` is omitted. A missing preview omits those four fields.

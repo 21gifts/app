@@ -65,6 +65,7 @@ import {
   postMessage,
   fetchComposeTarget,
   postMessageInvoice,
+  postRepaymentInvoice,
   postMessageVideo,
   postNotificationLevel,
   setAccountFiat,
@@ -1721,6 +1722,35 @@ describe('fetchComposeTarget', () => {
   it('throws when the success body is null', async () => {
     stubFetch({ ok: true, status: 200, body: null });
     await expect(fetchComposeTarget('sess')).rejects.toThrow('Could not start the Bitcoin payment');
+  });
+});
+
+describe('postRepaymentInvoice', () => {
+  it('returns the giver invoice', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1repay', amountSats: 21 },
+    });
+    await expect(postRepaymentInvoice('sess', 'm1')).resolves.toEqual({
+      pr: 'lnbc21n1repay',
+      amountSats: 21,
+    });
+  });
+
+  it('surfaces a 400 and a missing-requirements 409', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Nothing is due' } });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow('Nothing is due');
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(Error);
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
   });
 });
 

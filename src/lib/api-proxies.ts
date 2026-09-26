@@ -738,6 +738,20 @@ export async function proxyMessagesInvoicePost(
 }
 
 /**
+ * Proxies POST /messages/:id/repayment to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param messageId - Credit note id.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesRepaymentPost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment`);
+}
+
+/**
  * Proxies POST /contact to the 21.gifts api (same-origin path `/contact/submit`).
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

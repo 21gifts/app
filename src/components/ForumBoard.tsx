@@ -227,6 +227,10 @@ export interface ForumBoardProps {
   payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
+  /** Signed-in account id, used to show repayment only on the author's credit. */
+  viewerAccountId?: string | null;
+  /** Requests today's repayment invoice for the author's own funded credit. */
+  onRepay?: (messageId: string) => void;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Unit the pay field is actually showing. */
@@ -640,6 +644,8 @@ export function ForumBoard({
   payInvoice,
   payWaiting,
   onPayOpen,
+  viewerAccountId = null,
+  onRepay,
   onPayDraftChange,
   onPayUnitChange,
   onPaySubmit,
@@ -1209,6 +1215,26 @@ export function ForumBoard({
                   >
                     <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </IconButton>
+                ) : null}
+                {onRepay !== undefined &&
+                viewerAccountId !== null &&
+                message.accountId === viewerAccountId &&
+                message.parentId === undefined &&
+                message.goalRepayable === true &&
+                message.goalSats != null &&
+                message.sats >= message.goalSats &&
+                message.deletedAt === undefined ? (
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-app-fg underline"
+                    disabled={payBusy}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      onRepay(message.id);
+                    }}
+                  >
+                    {t('forum.repayToday')}
+                  </button>
                 ) : null}
                 {message.parentId !== undefined &&
                 message.payable &&
