@@ -408,7 +408,8 @@ describe('ForumAskWizard', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/defined in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/rising bitcoin price/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Donation' }));
     expect(screen.getByRole('heading', { name: 'How much?' })).toBeTruthy();
@@ -435,7 +436,8 @@ describe('ForumAskWizard', () => {
     expect(screen.getByText(/day 11/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/Amount owed: ₿21'000/)).toBeTruthy();
-    expect(screen.getByText(/defined in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/rising bitcoin price/)).toBeTruthy();
     expect(screen.getByText(/Repayment term: 10 days/)).toBeTruthy();
     expect(screen.getByText(/Interest 0%/)).toBeTruthy();
     expect(screen.queryByRole('checkbox')).toBeNull();
@@ -465,6 +467,7 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
     expect(screen.getByText(/defined in US dollars/)).toBeTruthy();
+    expect(screen.queryByText(/rising bitcoin price/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     cleanup();
     const back = vi.fn();

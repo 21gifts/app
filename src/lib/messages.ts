@@ -365,7 +365,9 @@ const en = {
   'forum.askRepay': 'To be repaid.',
   'forum.creditCurrencyTitle': 'How the amount is fixed',
   'forum.creditInBitcoin':
-    'This credit is defined in bitcoin. The amount owed is fixed in bitcoin. Payments are made in bitcoin. Nothing is converted into another currency.',
+    'This credit is fixed in bitcoin. Payments stay in bitcoin, with no conversion.',
+  'forum.creditBitcoinRisk':
+    'A rising bitcoin price can hurt you significantly, because you bear the full price movement.',
   'forum.creditInFiat':
     'This credit is defined in {currency}. The amount owed is fixed in {currency}. Payments are made in bitcoin and are converted into {currency} at the moment of each payment.',
   'forum.creditCurrency.USD': 'US dollars',
@@ -1212,7 +1214,9 @@ const de = {
   'forum.askRepay': 'Zurückzuzahlen.',
   'forum.creditCurrencyTitle': 'Wie der Betrag festgelegt ist',
   'forum.creditInBitcoin':
-    'Dieser Kredit wird in Bitcoin definiert. Der geschuldete Betrag ist in Bitcoin festgelegt. Die Zahlungen erfolgen in Bitcoin. Es gibt keine Umrechnung in eine andere Währung.',
+    'Dieser Kredit ist in Bitcoin festgelegt. Die Zahlungen bleiben in Bitcoin, ohne Umrechnung.',
+  'forum.creditBitcoinRisk':
+    'Ein steigender Bitcoin-Kurs kann sich bedeutend negativ auf dich auswirken, da du die vollen Kursschwankungen trägst.',
   'forum.creditInFiat':
     'Dieser Kredit wird in {currency} definiert. Der geschuldete Betrag ist in {currency} festgelegt. Die Zahlungen erfolgen in Bitcoin und werden im Moment jeder Zahlung in {currency} umgerechnet.',
   'forum.creditCurrency.USD': 'US-Dollar',
@@ -2072,7 +2076,9 @@ const es = {
   'forum.askRepay': 'Hay que devolverlo.',
   'forum.creditCurrencyTitle': 'Cómo queda fijado el importe',
   'forum.creditInBitcoin':
-    'Este crédito se define en bitcoin. La cantidad adeudada queda fijada en bitcoin. Los pagos se hacen en bitcoin. No hay conversión a otra moneda.',
+    'Este crédito queda fijado en bitcoin. Los pagos siguen en bitcoin, sin conversión.',
+  'forum.creditBitcoinRisk':
+    'Un precio del bitcoin al alza puede perjudicarte de forma importante, porque asumes toda la fluctuación del precio.',
   'forum.creditInFiat':
     'Este crédito se define en {currency}. La cantidad adeudada queda fijada en {currency}. Los pagos se hacen en bitcoin y se convierten a {currency} en el momento de cada pago.',
   'forum.creditCurrency.USD': 'dólares estadounidenses',
@@ -2922,7 +2928,9 @@ const fil = {
   'forum.askRepay': 'Dapat ibalik.',
   'forum.creditCurrencyTitle': 'Paano nakapirmi ang halaga',
   'forum.creditInBitcoin':
-    'Ang pautang na ito ay nakatakda sa bitcoin. Ang utang ay nakapirmi sa bitcoin. Ang bayad ay sa bitcoin. Walang palitan sa ibang salapi.',
+    'Ang pautang na ito ay nakapirmi sa bitcoin. Ang bayad ay nananatili sa bitcoin, walang palitan.',
+  'forum.creditBitcoinRisk':
+    'Ang tumataas na presyo ng bitcoin ay maaaring makaapekto nang masama sa iyo, dahil ikaw ang dadala ng buong pagbabago ng presyo.',
   'forum.creditInFiat':
     'Ang pautang na ito ay nakatakda sa {currency}. Ang utang ay nakapirmi sa {currency}. Ang bayad ay sa bitcoin at iko-convert sa {currency} sa sandali ng bawat bayad.',
   'forum.creditCurrency.USD': 'dolyar ng US',

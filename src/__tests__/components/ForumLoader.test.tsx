@@ -744,7 +744,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Credit' }));
     fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/defined in bitcoin/)).toBeTruthy();
+    expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));

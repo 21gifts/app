@@ -606,7 +606,12 @@ function CreditPhasePanel({
         : t('forum.askContinue');
   return (
     <>
-      {phase === 'currency' ? <p className="text-sm text-app-fg">{currencySentence}</p> : null}
+      {phase === 'currency' ? (
+        <div className="flex flex-col gap-2 text-sm text-app-fg">
+          <p>{currencySentence}</p>
+          {bitcoinAsk ? <p>{t('forum.creditBitcoinRisk')}</p> : null}
+        </div>
+      ) : null}
       {phase === 'term' ? (
         <>
           <SegmentedControl
@@ -651,6 +656,7 @@ function CreditPhasePanel({
         <div className="flex flex-col gap-2 text-sm text-app-fg">
           <p>{t('forum.creditAmountOwed', { amount: owedText })}</p>
           <p>{currencySentence}</p>
+          {bitcoinAsk ? <p>{t('forum.creditBitcoinRisk')}</p> : null}
           <p>
             {t('forum.creditTermSummary', {
               term: creditTermLabel(termPreset, customDays, t),

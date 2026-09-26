@@ -8114,7 +8114,8 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText(/defined in bitcoin/)).toBeVisible();
+    await expect(page.getByText(/fixed in bitcoin/)).toBeVisible();
+    await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-currency-btc');
   });
 
@@ -8215,7 +8216,8 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText(/Amount owed: ₿21'000/)).toBeVisible();
-    await expect(page.getByText(/defined in bitcoin/)).toBeVisible();
+    await expect(page.getByText(/fixed in bitcoin/)).toBeVisible();
+    await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
     await expect(page.getByText(/Repayment term: 30 days/)).toBeVisible();
     await expect(page.getByText(/day 11/)).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toBeVisible();

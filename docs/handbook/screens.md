@@ -542,7 +542,7 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ### Variant: ask-credit-currency-btc
 
-**Ask for money**, **Credit** pressed, **21000** bitcoin. The next screen says the credit is defined in bitcoin, the amount owed stays in bitcoin, and payments are not converted.
+**Ask for money**, **Credit** pressed, **21000** bitcoin. The next screen says the credit is fixed in bitcoin, with no conversion, and that a rising bitcoin price can hurt the author because they bear the full price movement.
 
 ![21.gifts welcome ask credit currency btc](images/welcome-ask-credit-currency-btc.png)
 
@@ -578,7 +578,7 @@ Same plan for a **1000** US-dollar credit. Interest is **0%**. The daily dollar 
 
 ### Variant: ask-credit-confirm-want
 
-The screen repeats the amount owed, the bitcoin definition, the term, the daily rule with the day-11 example, interest **0%**, and the daily amount. The button **I want to take this credit.** is the confirmation. There is no checkbox.
+The screen repeats the amount owed, the shorter bitcoin definition and the rising-price warning, the term, the daily rule with the day-11 example, interest **0%**, and the daily amount. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
 

@@ -9792,7 +9792,8 @@ test('Function: creditSmallestUnits — bitcoin sats and fiat cents', async ({ p
   expect(creditSmallestUnits('nope', true)).toBeNull();
   await openCreditAmount(page);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText(/defined in bitcoin/)).toBeVisible();
+  await expect(page.getByText(/fixed in bitcoin/)).toBeVisible();
+  await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
 });
 
 test('Function: splitCreditPlan — equal days and a remainder on the last day', async ({ page }) => {
