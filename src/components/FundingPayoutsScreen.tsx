@@ -14,20 +14,20 @@ import { useAuthStore } from '@/stores/auth-store';
 /** Cell fill, legend catalog key, and cell aria-label catalog key. */
 const PAYOUT_STATUS: Record<
   'blocked' | 'missed' | 'paid',
-  { color: string; legend: MessageKey; cell: MessageKey }
+  { swatch: string; legend: MessageKey; cell: MessageKey }
 > = {
   blocked: {
-    color: '#111111',
+    swatch: 'bg-[#111111]',
     legend: 'moderate.payouts.legend.blocked',
     cell: 'moderate.payouts.cell.blocked',
   },
   missed: {
-    color: '#ffffff',
+    swatch: 'bg-paper',
     legend: 'moderate.payouts.legend.missed',
     cell: 'moderate.payouts.cell.missed',
   },
   paid: {
-    color: '#15803d',
+    swatch: 'bg-[#15803d]',
     legend: 'moderate.payouts.legend.paid',
     cell: 'moderate.payouts.cell.paid',
   },
@@ -170,8 +170,7 @@ export function FundingPayoutsScreen(): ReactElement | null {
             return (
               <li key={status} className="flex items-center gap-2">
                 <span
-                  className="inline-block h-4 w-4 border border-app-border"
-                  style={{ backgroundColor: meta.color }}
+                  className={`inline-block h-4 w-4 border border-app-border ${meta.swatch}`}
                   aria-hidden="true"
                 />
                 <span className="text-sm text-app-fg">{t(meta.legend)}</span>
@@ -239,8 +238,7 @@ export function FundingPayoutsScreen(): ReactElement | null {
                       return (
                         <td key={`${rowIndex}:${dayIndex}`} className="h-10 w-10 p-0">
                           <span
-                            className="block h-full min-h-10 min-w-10 border border-app-border"
-                            style={{ backgroundColor: meta.color }}
+                            className={`block h-full min-h-10 min-w-10 border border-app-border ${meta.swatch}`}
                             aria-label={t(meta.cell, { name: label, date })}
                           >
                             <span className="sr-only">{t(meta.legend)}</span>
