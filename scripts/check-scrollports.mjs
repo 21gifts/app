@@ -9,8 +9,10 @@ import path from 'node:path';
 
 const ROOT = process.cwd();
 const SRC = path.join(ROOT, 'src');
-const CLASS_BANNED = /overflow-(?:x|y)-auto|overflow-(?:x|y)-scroll|overflow-auto|overflow-scroll/;
-const STYLE_BANNED = /overflow(?:X|Y)?\s*:\s*['"]?(?:auto|scroll)\b/;
+const CLASS_BANNED =
+  /overflow-(?:x-|y-)?(?:auto|scroll)\b|overflow-\[(?:auto|scroll)\]|overflow-(?:x|y)-\[(?:auto|scroll)\]/;
+const STYLE_BANNED =
+  /overflow(?:-x|-y|X|Y)?\s*:\s*['"]?(?:auto|scroll|overlay)\b|overflow(?:X|Y)?\s*=\s*['"](?:auto|scroll|overlay)['"]|setProperty\(\s*['"]overflow(?:-x|-y)?['"]\s*,\s*['"](?:auto|scroll|overlay)['"]/;
 
 /**
  * @param {string} dir

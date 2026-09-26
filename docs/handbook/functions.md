@@ -806,10 +806,38 @@
 
 ## Function: Scrollport
 
-- **Purpose:** The only layout scrollport. Renders `[data-scrollport]`. Overflow is the `globals.css` rule, not a Tailwind utility. While mounted, ancestor scrollports get `data-scroll-locked` so they cannot scroll too. `html` and `body` stay `overflow: hidden`.
+- **Purpose:** The only layout scrollport. Renders `[data-scrollport]`. Overflow is the `globals.css` rule, not a Tailwind utility. The newest mounted port is the one that scrolls. Older ports, including siblings, get `data-scroll-locked`. `html` and `body` stay `overflow: hidden`.
 - **Inputs:** `children`, optional `className`, optional `scrollRef`, optional `onClick`.
-- **Returns / side effects:** A `div`. Locks ancestor scrollports on mount and unlocks them on unmount. No network.
+- **Returns / side effects:** A `div`. Binds on mount and releases on unmount. No network.
 - **Used by:** `AppShell`, marketing layout, `NotFound`, `HandbookLightbox`.
+
+## Function: bindScrollport
+
+- **Purpose:** Push a scrollport onto the active stack and resync. Binding the same element twice does not stack it twice. The top of the stack is the only port that may scroll.
+- **Inputs:** The mounted scrollport element.
+- **Returns / side effects:** Updates `data-scroll-locked` and clips stray scrolling elements. No network.
+- **Used by:** `Scrollport` on mount.
+
+## Function: releaseScrollport
+
+- **Purpose:** Remove a scrollport from the active stack and resync. The previous port becomes the one that scrolls. Releasing an element that is not on the stack does nothing.
+- **Inputs:** The unmounted scrollport element.
+- **Returns / side effects:** Updates `data-scroll-locked` and clips stray scrolling elements. No network.
+- **Used by:** `Scrollport` on unmount.
+
+## Function: syncScrollSurfaces
+
+- **Purpose:** Leave exactly one scrollport unlocked. Every other element whose computed overflow can scroll (`auto`, `scroll`, or legacy `overlay`, on either axis) is forced to clip. Textareas grow to their text instead. Inputs and selects are left to the browser.
+- **Inputs:** None. Reads the active stack and `document.body`.
+- **Returns / side effects:** Writes `data-scroll-locked`, and may set inline overflow or textarea height. No network.
+- **Used by:** `bindScrollport`, `releaseScrollport`, and `ScrollSurfaceGuard`.
+
+## Function: ScrollSurfaceGuard
+
+- **Purpose:** Root watcher. On mount, and whenever class, style, or children change, it runs `syncScrollSurfaces` so a scrolling overflow added later cannot become a second surface. Typing in a textarea resyncs immediately so the field grows instead of scrolling.
+- **Inputs:** None.
+- **Returns / side effects:** Renders `null`. Observes `document.body` and listens for `input`. Disconnects on unmount. No network.
+- **Used by:** `RootLayout`, mounted once for every page.
 
 ## Function: useAppShellScroller
 

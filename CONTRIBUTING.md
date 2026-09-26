@@ -417,16 +417,19 @@ update stuff
 
 ### One scroll surface (hard requirement)
 
-Each page has exactly one scrollable surface, the element with
-`[data-scrollport]`. `html` and `body` are `overflow: hidden` and
-`height: var(--app-height)`. `--app-height` is the visible viewport
-(`visualViewport.height`, otherwise `innerHeight`), never taller. A second
-`overflow: auto` or `overflow: scroll` — on the document, in a panel, or as
-a horizontal strip inside the page — is forbidden. Clipping (`overflow:
-hidden`) is not a scrollport. `scripts/check-scrollports.mjs` fails CI when
-production source adds one. AppShell `<main>` stays free of `overflow-hidden`
-so the in-tree menu is not clipped; the document lock is what stops the
-page from scrolling under the frame.
+Each page has exactly one scrollable surface. `html` and `body` are
+`overflow: hidden` and `height: var(--app-height)`. `--app-height` is the
+visible viewport (`visualViewport.height`, otherwise `innerHeight`), never
+taller. The only element that may scroll is the newest `[data-scrollport]`.
+An older one, including a sibling, is locked. `ScrollSurfaceGuard` watches
+the document and forces any other `auto`, `scroll`, or `overlay` overflow
+— class, stylesheet, or script — to clip. Textareas grow with their text
+instead of scrolling. Native inputs and selects are left alone. Clipping
+(`overflow: hidden` or `clip`) is not a scrollport. Components still must
+not set a scrolling overflow. `scripts/check-scrollports.mjs` fails CI on
+those utilities, arbitrary values, and assignments. AppShell `<main>` stays
+free of `overflow-hidden` so the in-tree menu is not clipped. The document
+lock stops the page from scrolling under the frame.
 
 ### Components
 

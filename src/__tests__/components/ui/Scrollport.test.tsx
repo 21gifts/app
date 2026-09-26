@@ -38,7 +38,7 @@ describe('Scrollport', () => {
     unmount();
   });
 
-  it('does not lock a sibling scrollport', () => {
+  it('leaves only the later sibling scrolling', () => {
     render(
       <div>
         <Scrollport>
@@ -49,8 +49,8 @@ describe('Scrollport', () => {
         </Scrollport>
       </div>,
     );
-    for (const port of document.querySelectorAll('[data-scrollport]')) {
-      expect(port.hasAttribute('data-scroll-locked')).toBe(false);
-    }
+    const ports = document.querySelectorAll('[data-scrollport]');
+    expect(ports[0]?.hasAttribute('data-scroll-locked')).toBe(true);
+    expect(ports[1]?.hasAttribute('data-scroll-locked')).toBe(false);
   });
 });

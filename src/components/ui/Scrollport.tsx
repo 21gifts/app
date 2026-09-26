@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, type MouseEvent, type ReactElement, type ReactNode } from 'react';
+import { bindScrollport, releaseScrollport } from '@/lib/scroll-surface';
 
 /** Props for {@link Scrollport}. */
 export interface ScrollportProps {
@@ -16,8 +17,9 @@ export interface ScrollportProps {
 
 /**
  * The only layout scrollport. Overflow lives in `globals.css` on
- * `[data-scrollport]`. While mounted, ancestor scrollports are locked so two
- * surfaces cannot scroll at once.
+ * `[data-scrollport]`. The newest mounted scrollport is the one that scrolls.
+ * Every older one, including a sibling, is locked. Stray scrolling elements
+ * are clipped by the scroll-surface sync.
  *
  * @param props - See {@link ScrollportProps}.
  * @returns The scrollport element.
@@ -33,19 +35,9 @@ export function Scrollport({
   useLayoutEffect(() => {
     // The ref callback runs before this effect, so the node is mounted.
     const mine = localRef.current as HTMLDivElement;
-    const locked: HTMLElement[] = [];
-    let parent = mine.parentElement;
-    while (parent !== null) {
-      if (parent.hasAttribute('data-scrollport')) {
-        parent.setAttribute('data-scroll-locked', '');
-        locked.push(parent);
-      }
-      parent = parent.parentElement;
-    }
+    bindScrollport(mine);
     return () => {
-      for (const node of locked) {
-        node.removeAttribute('data-scroll-locked');
-      }
+      releaseScrollport(mine);
     };
   }, []);
 

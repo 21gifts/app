@@ -7055,11 +7055,72 @@ test('Function: Scrollport — login has one scrollport and the document does no
 }) => {
   await page.goto('/login');
   await expect(page.locator('[data-scrollport]')).toHaveCount(1);
+  await expect(page.locator('[data-scrollport][data-scroll-locked]')).toHaveCount(0);
   const documentScrolls = await page.evaluate(() => {
     const root = document.documentElement;
     return root.scrollHeight > root.clientHeight + 1;
   });
   expect(documentScrolls).toBe(false);
+});
+
+test('Function: bindScrollport — the page scrollport is the one that is unlocked', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  const unlocked = await page.evaluate(() => {
+    return document.querySelectorAll('[data-scrollport]:not([data-scroll-locked])').length;
+  });
+  expect(unlocked).toBe(1);
+});
+
+test('Function: releaseScrollport — leaving the page does not leave a locked document', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.goto('/rules');
+  const documentScrolls = await page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollHeight > root.clientHeight + 1;
+  });
+  expect(documentScrolls).toBe(false);
+  await expect(page.locator('[data-scrollport]:not([data-scroll-locked])')).toHaveCount(1);
+});
+
+test('Function: syncScrollSurfaces — a scrolling box added at runtime is clipped', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  const overflow = await page.evaluate(() => {
+    const stray = document.createElement('div');
+    stray.style.overflow = 'auto';
+    stray.textContent = 'stray';
+    document.body.appendChild(stray);
+    return new Promise<string>((resolve) => {
+      requestAnimationFrame(() => {
+        resolve(getComputedStyle(stray).overflowY);
+      });
+    });
+  });
+  expect(overflow).toBe('hidden');
+});
+
+test('Function: ScrollSurfaceGuard — typing in a textarea does not make the field scroll', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  const scrollsInside = await page.evaluate(() => {
+    const field = document.createElement('textarea');
+    document.body.appendChild(field);
+    field.value = 'line\n'.repeat(30);
+    field.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    const style = getComputedStyle(field);
+    return (
+      style.overflowY === 'auto' ||
+      style.overflowY === 'scroll' ||
+      field.scrollHeight > field.clientHeight + 2
+    );
+  });
+  expect(scrollsInside).toBe(false);
 });
 
 test('Function: useAppShellScroller — welcome inner scroller drives New posts', async ({

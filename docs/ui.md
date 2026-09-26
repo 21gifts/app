@@ -586,7 +586,7 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 **Anatomy.** `AppShell` always draws one `rounded-3xl` page frame. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). `fill` and `flow` share locked-height inner-scroller geometry. Card never hosts page chrome. `PageChrome` is the flow-mode wrapper (`mode="flow"`); prefer `AppShell` on new routes.
 
-**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, one inner `[data-scrollport]`, `bg` inherited from `body`. `html` and `body` are `overflow: hidden`. Never Tailwind viewport-height utilities on app routes. Never a second scrollport.
+**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, one inner `[data-scrollport]`, `bg` inherited from `body`. `html` and `body` are `overflow: hidden`. Never Tailwind viewport-height utilities on app routes. Never a second scrollport. `ScrollSurfaceGuard` clips any later `auto` / `scroll` / `overlay` overflow, including values set from script. The newest scrollport is the one that scrolls. Textareas grow with their text.
 
 **API.**
 
