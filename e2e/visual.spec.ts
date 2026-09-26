@@ -14044,7 +14044,7 @@ test.describe('moderate screens', () => {
     await page.route('**/funding/payout-days', () => new Promise(() => undefined));
     await page.goto('/moderate/payouts');
     await expect(page.getByRole('heading', { name: 'Payout per person' })).toBeVisible();
-    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-loading');
   });
 
