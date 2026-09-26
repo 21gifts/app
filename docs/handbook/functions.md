@@ -754,28 +754,28 @@
 
 ## Function: APP_HEIGHT_BOOTSTRAP_SCRIPT
 
-- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Sets `--app-height` to `max(visualViewport.height + offsetTop, innerHeight)` (fallback `innerHeight`) so first paint matches the layout canvas. It does not follow `visualViewport.height` alone. Scale guard: skips the write when `visualViewport.scale` is present and not ≈ 1, keeping the last unzoomed height (or the CSS `100dvh` fallback).
+- **Purpose:** Blocking bootstrap IIFE string injected as a raw head script before paint. Sets `--app-height` to the visible viewport (`visualViewport.height`, else `innerHeight`). It does not add `offsetTop` and it does not take `max` with `innerHeight`. A taller frame would be a second scroll. Scale guard: skips the write when `visualViewport.scale` is present and not ≈ 1, keeping the last unzoomed height (or the CSS `100dvh` fallback).
 - **Inputs:** None (constant string).
-- **Returns / side effects:** Non-empty IIFE source mentioning `visualViewport`, `Math.max`, and `--app-height`.
+- **Returns / side effects:** Non-empty IIFE source mentioning `visualViewport` and `--app-height`. It does not mention `Math.max` or `offsetTop`.
 - **Used by:** `RootLayout` `<head>` script.
 
 ## Function: AppHeightViewport
 
-- **Purpose:** Minimal visual-viewport fields (`height`, optional `offsetTop`, optional `scale`) used to resolve `--app-height` without depending on the DOM `VisualViewport` type in tests.
-- **Inputs:** `height` in CSS pixels; optional `offsetTop` (keyboard scroll); optional `scale` (omit when unknown — do not pass `undefined`).
+- **Purpose:** Minimal visual-viewport fields (`height`, optional `offsetTop`, optional `scale`) used to resolve `--app-height` without depending on the DOM `VisualViewport` type in tests. `offsetTop` is accepted and ignored.
+- **Inputs:** `height` in CSS pixels; optional `offsetTop` (ignored); optional `scale` (omit when unknown — do not pass `undefined`).
 - **Returns / side effects:** A structural type only — no runtime value. Callers pass `{ height }` or `{ height, offsetTop, scale }` into `resolveAppHeight`.
 - **Used by:** `resolveAppHeight`; `useAppHeight` (live `window.visualViewport`).
 
 ## Function: resolveAppHeight
 
-- **Purpose:** Chooses the pixel value for `--app-height`. The result is `max(innerHeight, visualViewport.height + offsetTop)` so a stuck-short visual viewport cannot leave a white gap under the rounded page frame, including while the software keyboard is open. It does not shrink to `visualViewport.height` alone when a text field is focused. Pinch-zoom skip: returns `null` (caller must not write) when `scale` is present and not ≈ 1 (`|scale - 1| > 0.01`). Null/undefined visualViewport falls back to `innerHeight`.
-- **Inputs:** `innerHeight` (`window.innerHeight`); `visualViewport` (`window.visualViewport` or a stub; null/undefined allowed; `offsetTop` optional, treated as 0).
+- **Purpose:** Chooses the pixel value for `--app-height`. The result is `visualViewport.height` (else `innerHeight`). `offsetTop` is ignored. A frame taller than the visible viewport would scroll the document under the one scrollport. Pinch-zoom skip: returns `null` (caller must not write) when `scale` is present and not ≈ 1 (`|scale - 1| > 0.01`). Null/undefined visualViewport falls back to `innerHeight`.
+- **Inputs:** `innerHeight` (`window.innerHeight`); `visualViewport` (`window.visualViewport` or a stub; null/undefined allowed; `offsetTop` optional and ignored).
 - **Returns / side effects:** Rounded CSS-pixel height, or `null` to skip the write. No DOM writes of its own.
-- **Used by:** `useAppHeight` (`AppHeightSync`); bootstrap IIFE inlines the same max path.
+- **Used by:** `useAppHeight` (`AppHeightSync`); bootstrap IIFE inlines the same visible-height path.
 
 ## Function: useAppHeight
 
-- **Purpose:** After hydration, keeps the CSS custom property `--app-height` in sync so `AppShell` fill/flow layouts track the layout canvas. Uses `max(innerHeight, visualViewport.height + offsetTop)` via `resolveAppHeight`. Does not shrink to `visualViewport.height` alone when a text field is focused. Scale guard: does not update `--app-height` when `visualViewport.scale` is present and not ≈ 1, so pinch/auto-zoom keeps the last unzoomed height.
+- **Purpose:** After hydration, keeps the CSS custom property `--app-height` in sync so `AppShell` fill/flow layouts track the visible viewport. Uses `visualViewport.height` (else `innerHeight`) via `resolveAppHeight`. `offsetTop` is ignored. Scale guard: does not update `--app-height` when `visualViewport.scale` is present and not ≈ 1, so pinch/auto-zoom keeps the last unzoomed height.
 - **Inputs:** None (reads `window.visualViewport` / `innerHeight` inside a `useEffect`).
 - **Returns / side effects:** `void`. Sets `--app-height` on `document.documentElement` and registers window resize/orientationchange, document focusin/focusout, and visualViewport resize/scroll listeners; cleans them up on unmount.
 - **Used by:**
