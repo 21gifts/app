@@ -10549,5 +10549,5 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
   await page.goto(`/messages/${id}`);
   await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
   await expect(page.getByLabel('Paid back')).toBeVisible();
-  await expect(page.getByText(/Each share is one Lightning payment/)).toBeVisible();
+  await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
 });

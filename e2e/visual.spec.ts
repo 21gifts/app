@@ -7180,7 +7180,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByLabel('Given').getByText('Cara @cara')).toBeVisible();
     await expect(page.getByLabel('Paid back')).toBeVisible();
     await expect(page.getByText('Due')).toBeVisible();
-    await expect(page.getByText(/Each share is one Lightning payment/)).toBeVisible();
+    await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
     await shotScreen(page, 'state-messages-id-credit-ledger');
   });
 

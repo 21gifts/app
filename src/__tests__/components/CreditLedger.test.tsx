@@ -105,7 +105,7 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).toContain('Scheduled');
     expect(document.body.textContent).toContain('₿10');
     expect(document.body.textContent).toContain('has no 21.gifts account');
-    expect(document.body.textContent).toContain('Lightning');
+    expect(document.body.textContent).toContain('bitcoin payment');
   });
 
   it('shows an open fiat plan and stays blank when the read fails', async () => {
