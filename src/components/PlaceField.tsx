@@ -46,18 +46,30 @@ type GoogleWindow = Window & {
 const START_CENTER = { lat: 20, lng: 0 };
 
 /**
- * Optional place pin control for a top-level forum composer.
+ * Optional place pin control for a top-level forum composer or staff editor.
  *
- * @param props - Current pin, disabled flag, and change handler.
+ * @param props - Current pin, disabled flag, change handler, and optional
+ * staff-commit overrides (size, variant, preview, label, `onCommit`).
  * @returns Attach button, optional preview, and map panel.
  */
 export function PlaceField(props: {
   place: ForumPlacePin | null;
   disabled: boolean;
   onChange: (place: ForumPlacePin | null) => void;
+  buttonSize?: 'lg' | 'sm';
+  buttonVariant?: 'secondary' | 'ghost';
+  showPreview?: boolean;
+  ariaLabel?: string;
+  onCommit?: (place: ForumPlacePin | null) => Promise<void>;
 }): ReactElement {
   const { t } = useTranslations();
+  const buttonSize = props.buttonSize ?? 'lg';
+  const buttonVariant = props.buttonVariant ?? 'secondary';
+  const showPreview = props.showPreview ?? true;
+  const ariaLabel = props.ariaLabel ?? t('forum.addPlace');
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
@@ -272,29 +284,59 @@ export function PlaceField(props: {
         },
       );
     }
-  }, [open, unavailable, mapsKey, scriptReady, props.place]);
+  }, [
+    open,
+    unavailable,
+    mapsKey,
+    scriptReady,
+    props.place?.lat,
+    props.place?.lng,
+    props.place?.label,
+  ]);
 
   const previewText =
     props.place === null
       ? ''
       : (props.place.label ?? `${props.place.lat.toFixed(5)}, ${props.place.lng.toFixed(5)}`);
 
+  async function commit(next: ForumPlacePin | null): Promise<void> {
+    if (props.onCommit === undefined) {
+      props.onChange(next);
+      setOpen(false);
+      return;
+    }
+    setSaving(true);
+    setSaveError(false);
+    try {
+      await props.onCommit(next);
+      setOpen(false);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="relative shrink-0">
       <IconButton
         type="button"
-        size="lg"
-        variant="secondary"
-        aria-label={t('forum.addPlace')}
+        size={buttonSize}
+        variant={buttonVariant}
+        aria-label={ariaLabel}
+        title={ariaLabel}
         aria-expanded={open}
         disabled={props.disabled}
         onClick={() => {
           setOpen((current) => !current);
         }}
       >
-        <MapPin aria-hidden="true" className="block h-5 w-5 shrink-0" />
+        <MapPin
+          aria-hidden="true"
+          className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
+        />
       </IconButton>
-      {props.place !== null && !open ? (
+      {showPreview && props.place !== null && !open ? (
         <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
           <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
           <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
@@ -303,10 +345,9 @@ export function PlaceField(props: {
             size="sm"
             variant="secondary"
             aria-label={t('forum.placeRemove')}
-            disabled={props.disabled}
+            disabled={props.disabled || saving}
             onClick={() => {
-              props.onChange(null);
-              setOpen(false);
+              void commit(null);
             }}
           >
             <X aria-hidden="true" className="h-4 w-4" />
@@ -316,7 +357,29 @@ export function PlaceField(props: {
       {open && !props.disabled && (unavailable || mapsKey !== null) ? (
         <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
           {unavailable ? (
-            <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
+            <>
+              <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
+              {saveError ? (
+                <p role="alert" className="mt-3 text-sm text-app-danger">
+                  {t('forum.placeSaveFailed')}
+                </p>
+              ) : null}
+              {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="mt-3"
+                  aria-label={t('forum.placeRemove')}
+                  disabled={props.disabled || saving}
+                  onClick={() => {
+                    void commit(null);
+                  }}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              ) : null}
+            </>
           ) : (
             <>
               <div ref={mapElRef} className="h-64 w-full rounded-xl" />
@@ -331,24 +394,43 @@ export function PlaceField(props: {
                 }}
                 className="mt-3 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
               />
+              {saveError ? (
+                <p role="alert" className="mt-3 text-sm text-app-danger">
+                  {t('forum.placeSaveFailed')}
+                </p>
+              ) : null}
               {markerPos !== null ? (
                 <Button
                   type="button"
                   variant="secondary"
                   className="mt-3"
-                  disabled={props.disabled}
+                  disabled={props.disabled || saving}
                   onClick={() => {
                     const trimmed = labelDraft.trim();
-                    props.onChange({
+                    void commit({
                       lat: markerPos.lat,
                       lng: markerPos.lng,
                       label: trimmed === '' ? null : trimmed,
                     });
-                    setOpen(false);
                   }}
                 >
                   {t('forum.placeDone')}
                 </Button>
+              ) : null}
+              {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="mt-3"
+                  aria-label={t('forum.placeRemove')}
+                  disabled={props.disabled || saving}
+                  onClick={() => {
+                    void commit(null);
+                  }}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
               ) : null}
             </>
           )}

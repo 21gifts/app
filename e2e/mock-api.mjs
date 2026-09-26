@@ -461,6 +461,21 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'PATCH' && /^\/messages\/[^/]+\/place$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, { id: decodeURIComponent(pathName.split('/')[2] ?? ''), place: null });
+    return;
+  }
+
   if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

@@ -1284,6 +1284,78 @@ A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000
 
 ![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
+### Variant: staff-place
+
+A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place**. The map panel is closed.
+
+![21.gifts shops staff place](images/shops-staff-place.png)
+
+### Variant: staff-place-unavailable
+
+A moderator session. **Add a place** on the Cafe Luna note is open and the map key is missing. The panel says **The map is not available.** There is no map frame and no **Use this place**.
+
+![21.gifts shops staff place unavailable](images/shops-staff-place-unavailable.png)
+
+### Variant: staff-place-set
+
+A moderator session. The Cafe Luna note has place **Happyland**. The card shows the MapPin link **Happyland** plus footer **Edit place**. The map panel is closed.
+
+![21.gifts shops staff place set](images/shops-staff-place-set.png)
+
+### Variant: staff-place-edit
+
+A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open. The map frame is visible and **Remove place** is visible. The pin is not changed yet.
+
+![21.gifts shops staff place edit](images/shops-staff-place-edit.png)
+
+### Variant: staff-place-edit-error
+
+A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. **Remove place** and **Use this place** stay.
+
+![21.gifts shops staff place edit error](images/shops-staff-place-edit-error.png)
+
+### Variant: staff-place-edit-unavailable
+
+A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open and the map key is missing. The panel says **The map is not available.** and shows **Remove place**. There is no map frame and no **Use this place**.
+
+![21.gifts shops staff place edit unavailable](images/shops-staff-place-edit-unavailable.png)
+
+### Variant: staff-place-edit-unavailable-error
+
+A moderator session. **Edit place** is open without a map key, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Remove place** stays.
+
+![21.gifts shops staff place edit unavailable error](images/shops-staff-place-edit-unavailable-error.png)
+
+### Variant: staff-place-map
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+
+![21.gifts shops staff place map](images/shops-staff-place-map.png)
+
+### Variant: staff-place-confirm
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin, **Place name** is **Happyland**, and **Use this place** is still visible. The pin is not saved yet.
+
+![21.gifts shops staff place confirm](images/shops-staff-place-confirm.png)
+
+### Variant: staff-place-unlabeled
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible.
+
+![21.gifts shops staff place unlabeled](images/shops-staff-place-unlabeled.png)
+
+### Variant: staff-place-set-coords
+
+A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place**. The map panel is closed.
+
+![21.gifts shops staff place set coordinates](images/shops-staff-place-set-coords.png)
+
+### Variant: staff-place-error
+
+A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
+
+![21.gifts shops staff place error](images/shops-staff-place-error.png)
+
 ## Screen: /map
 
 - **URL:** `/map` — signed-in map of every forum note that has a pin. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.

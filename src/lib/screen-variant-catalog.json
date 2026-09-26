@@ -2544,6 +2544,78 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:staff-place",
+    "label": "/shops staff-place",
+    "visual": "state-shops-staff-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-unavailable",
+    "label": "/shops staff-place-unavailable",
+    "visual": "state-shops-staff-place-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-set",
+    "label": "/shops staff-place-set",
+    "visual": "state-shops-staff-place-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-edit",
+    "label": "/shops staff-place-edit",
+    "visual": "state-shops-staff-place-edit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-edit-error",
+    "label": "/shops staff-place-edit-error",
+    "visual": "state-shops-staff-place-edit-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-edit-unavailable",
+    "label": "/shops staff-place-edit-unavailable",
+    "visual": "state-shops-staff-place-edit-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-edit-unavailable-error",
+    "label": "/shops staff-place-edit-unavailable-error",
+    "visual": "state-shops-staff-place-edit-unavailable-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-map",
+    "label": "/shops staff-place-map",
+    "visual": "state-shops-staff-place-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-confirm",
+    "label": "/shops staff-place-confirm",
+    "visual": "state-shops-staff-place-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-unlabeled",
+    "label": "/shops staff-place-unlabeled",
+    "visual": "state-shops-staff-place-unlabeled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-set-coords",
+    "label": "/shops staff-place-set-coords",
+    "visual": "state-shops-staff-place-set-coords",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-error",
+    "label": "/shops staff-place-error",
+    "visual": "state-shops-staff-place-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/map:default",
     "label": "/map default",
     "visual": "screen-map",

@@ -31,6 +31,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
+  setMessagePlace: vi.fn(),
   fetchMessages: vi.fn(),
   fetchPublicMessage: vi.fn(),
   postMessage: vi.fn(),
@@ -73,6 +74,7 @@ import {
   postMessageInvoice,
   postMessageVideo,
   setLightningAddress,
+  setMessagePlace,
   setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -1194,6 +1196,159 @@ describe('ForumLoader', () => {
       'sess',
       expect.objectContaining({ cursor: expect.anything() }),
     );
+  });
+
+  it('feed="shops" shows the staff place control on a listed shop note', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+    );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+  });
+
+  it('does not put a staff place control on living-room notes', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, sats: 5 }]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card).queryByRole('button', { name: 'Add a place' })).toBeNull();
+  });
+
+  it('feed="shops" updates the listed pin from a saved place', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    const pin = { lat: 14.6, lng: 120.98, label: 'Happyland' };
+    fetchMock.mockResolvedValue(
+      forumPage([
+        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
+        {
+          ...SAMPLE,
+          id: 'shop2',
+          text: 'Other stall\n\n#21GiftsShop',
+          sats: 5,
+          place: { lat: 1, lng: 2, label: 'Keep me' },
+        },
+      ]),
+    );
+    vi.mocked(setMessagePlace).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 5,
+      place: pin,
+    });
+    const listeners = new Map<string, (event?: unknown) => void>();
+    const map = {
+      setCenter: vi.fn(),
+      addListener: (event: string, handler: (event?: unknown) => void) => {
+        listeners.set(event, handler);
+      },
+    };
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => map),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+          addListener: () => undefined,
+        })),
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response),
+    );
+    vi.stubGlobal('navigator', { ...navigator, geolocation: undefined });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(within(card).getByLabelText('Place name'), {
+      target: { value: 'Happyland' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Use this place' }));
+    await waitFor(() => {
+      expect(within(card).getByRole('link', { name: 'Happyland' })).toBeTruthy();
+    });
+    expect(screen.getByRole('link', { name: 'Keep me' })).toBeTruthy();
+    delete (window as { google?: unknown }).google;
+  });
+
+  it('feed="shops" clears the listed pin when the save returns no place', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+        },
+      ]),
+    );
+    vi.mocked(setMessagePlace).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 5,
+    });
+    const map = {
+      setCenter: vi.fn(),
+      addListener: vi.fn(),
+    };
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => map),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+          addListener: () => undefined,
+        })),
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response),
+    );
+    vi.stubGlobal('navigator', { ...navigator, geolocation: undefined });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Happyland' })).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit place' }));
+    expect(await within(card).findByRole('button', { name: 'Remove place' })).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Remove place' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
+    });
+    delete (window as { google?: unknown }).google;
   });
 
   it('default living-room post does not append #21GiftsShop', async () => {

@@ -646,6 +646,13 @@
 - **Returns:** Upstream 204, 401, 403, 404 or 503; proxy failures return 502.
 - **Side effects:** Deletes the post, direct replies and stored media on 21.gifts. Does not refund gifts or erase external Nostr relay copies.
 
+## Endpoint: PATCH /forum/messages/[id]/place
+
+- **Purpose:** Same-origin moderation proxy to PATCH /messages/:id/place with JSON `{ place }` (a pin, or `null` to clear).
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 public message JSON, with `place` omitted when cleared.
+- **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502.
+
 ## Endpoint: GET /translate
 
 - **Purpose:** Same-origin proxy of api `GET /translate`. `{ available: boolean }` is true when the api has `TRANSLATE_URL` and `TRANSLATE_API_KEY`. Always 200 from the api.

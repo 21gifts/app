@@ -8590,6 +8590,19 @@ test('Function: proxyMessagesDelete — unauthenticated deletion is forwarded an
   expect(response.status()).toBe(401);
 });
 
+test('Function: proxyMessagesPlacePatch — unauthenticated place patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/place');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: PATCH — PATCH /forum/messages/[id]/place without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.patch('/forum/messages/[id]/place')).status()).toBe(401);
+});
+
 test('Function: proxyTrustChainGet — GET /trust/graph without bearer is 401', async ({
   request,
 }) => {
