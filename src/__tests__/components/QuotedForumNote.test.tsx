@@ -765,7 +765,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('collapses long remaining text behind Show more on the feed', () => {
-    const text = `${'a'.repeat(280)} TAILTOKEN`;
+    const text = `${'a'.repeat(560)} TAILTOKEN`;
     renderWithLocale(
       <ForumQuotedBody
         text={text}
@@ -796,7 +796,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('collapses a long nested quoted note behind Show more', async () => {
-    const longQuoted: ForumMessage = { ...quotedNote, text: `${'a'.repeat(280)} TAILTOKEN` };
+    const longQuoted: ForumMessage = { ...quotedNote, text: `${'a'.repeat(560)} TAILTOKEN` };
     renderWithLocale(
       <ForumQuotedBody
         text={QUOTED_URL}

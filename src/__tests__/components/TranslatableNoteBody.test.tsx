@@ -221,7 +221,7 @@ describe('TranslatableNoteBody', () => {
   });
 
   it('expands a long original on Translate and keeps it expanded after Show original', async () => {
-    const longGerman = `${'Bitte hilf mir in Not. '.repeat(20)}ORIGTAIL`;
+    const longGerman = `${'Bitte hilf mir in Not. '.repeat(25)}ORIGTAIL`;
     const longTranslated = `${'b'.repeat(280)} TRANSTAIL`;
     let resolveTranslation: ((text: string) => void) | undefined;
     vi.mocked(translateNote).mockImplementation(
@@ -249,7 +249,7 @@ describe('TranslatableNoteBody', () => {
   });
 
   it('keeps a long original expanded when translation fails', async () => {
-    const longGerman = `${'Bitte hilf mir in Not. '.repeat(20)}ORIGTAIL`;
+    const longGerman = `${'Bitte hilf mir in Not. '.repeat(25)}ORIGTAIL`;
     vi.mocked(translateNote).mockRejectedValue(new Error('offline'));
     renderWithLocale(<TranslatableNoteBody messageId={NOTE_ID} text={longGerman} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
@@ -261,7 +261,7 @@ describe('TranslatableNoteBody', () => {
   });
 
   it('clears read-full when the note identity changes', async () => {
-    const longGerman = `${'Bitte hilf mir in Not. '.repeat(20)}ORIGTAIL`;
+    const longGerman = `${'Bitte hilf mir in Not. '.repeat(25)}ORIGTAIL`;
     const otherLongGerman = `${'Kann mir jemand diese Woche helfen. '.repeat(20)}OTHERTAIL`;
     vi.mocked(translateNote).mockResolvedValue(`${'b'.repeat(280)} TRANSTAIL`);
     const { rerender } = renderWithLocale(

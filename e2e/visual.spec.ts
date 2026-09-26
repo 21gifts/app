@@ -2468,7 +2468,7 @@ test.describe('onboarding screens', () => {
       });
     });
     const tail = 'TAILTOKEN';
-    const text = `${'Good morning everyone. '.repeat(14)}${tail}`;
+    const text = `${'Good morning everyone. '.repeat(24)}${tail}`;
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
