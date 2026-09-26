@@ -1319,7 +1319,7 @@ export function ForumBoard({
                 message.accountId === viewerAccountId &&
                 message.parentId === undefined &&
                 message.goalRepayable === true &&
-                message.goalSats != null &&
+                typeof message.goalSats === 'number' &&
                 message.sats >= message.goalSats &&
                 message.deletedAt === undefined ? (
                   <button
