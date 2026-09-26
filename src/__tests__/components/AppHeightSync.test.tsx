@@ -231,7 +231,7 @@ describe('useAppHeight', () => {
     expect(docRemove).toHaveBeenCalledWith('focusout', expect.any(Function));
   });
 
-  it('treats a missing activeElement as unfocused', () => {
+  it('uses the visible viewport when nothing is focused', () => {
     stubInnerHeight(852);
     stubVisualViewport(511);
     const activeSpy = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(null);
@@ -240,7 +240,7 @@ describe('useAppHeight', () => {
         useAppHeight();
       });
 
-      expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('852px');
+      expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
     } finally {
       activeSpy.mockRestore();
     }
