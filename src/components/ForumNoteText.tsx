@@ -23,7 +23,8 @@ export interface ForumNoteTextProps {
  * Render a public forum note or reply body, collapsing long text behind Show more.
  *
  * Optional `forceExpanded` renders the full body and omits Show more. Callers
- * that omit it keep the 280-character Show more preview.
+ * that omit it keep the 280-character collapsed preview; Show more starts only
+ * above 560.
  *
  * @param props - Body text, paragraph className, optional plain mode, and
  *   optional `forceExpanded` (default false).
