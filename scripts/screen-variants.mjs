@@ -3440,6 +3440,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map',
+    image: 'shops-map.png',
+    visual: 'state-shops-map',
+    needle: "shotScreen(page, 'state-shops-map')",
+  },
+  {
+    route: '/shops',
+    id: 'table',
+    image: 'shops-table.png',
+    visual: 'state-shops-table',
+    needle: "shotScreen(page, 'state-shops-table')",
+  },
+  {
+    route: '/shops',
     id: 'empty',
     image: 'shops-empty.png',
     visual: 'state-shops-empty',

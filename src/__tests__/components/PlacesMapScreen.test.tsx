@@ -323,4 +323,12 @@ describe('PlacesMapScreen', () => {
     });
     expect(Marker).not.toHaveBeenCalled();
   });
+
+  it('omits the Map heading when embedded', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([]);
+    renderWithLocale(<PlacesMapScreen embedded />);
+    expect(await screen.findByText('No places yet.')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Map' })).toBeNull();
+  });
 });

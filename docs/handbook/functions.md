@@ -1225,10 +1225,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text.
-- **Inputs:** Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. Fetches places and `/maps/key`.
-- **Used by:** `MapPage`.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. `embedded` returns that body without the heading or card.
+- **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
+- **Used by:** `MapPage`, `ShopsScreen`.
 
 ## Function: fetchPlaces
 
@@ -1274,10 +1274,24 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopsScreen
 
-- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, then `ForumLoader` `feed="shops"`.
-- **Inputs:** Catalog via `useTranslations`.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}` wrapping the shops forum. No network of its own.
+- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`.
+- **Inputs:** Catalog via `useTranslations`. View state starts at post.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The map and table fetch only after their tab is selected.
 - **Used by:** `ShopsPage`.
+
+## Function: ShopsViewSwitch
+
+- **Purpose:** Pill that switches the shops page between post, map, and table.
+- **Inputs:** `value` (`post`, `map`, or `table`) and `onChange`.
+- **Returns / side effects:** A tab list labelled **Shop view**. The selected tab is filled. No network.
+- **Used by:** `ShopsScreen`.
+
+## Function: ShopTable
+
+- **Purpose:** Table of shop notes with name, place, and operator.
+- **Inputs:** Session from `useAuthStore`. Catalog via `useTranslations`.
+- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` (label, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash. **Show more** loads the next page. Null without a session.
+- **Used by:** `ShopsScreen`.
 
 ## Function: isShopNote
 
