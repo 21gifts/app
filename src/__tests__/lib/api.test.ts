@@ -1790,6 +1790,10 @@ describe('postRepaymentInvoice', () => {
   it('surfaces a 400 and a missing-requirements 409', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Nothing is due' } });
     await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow('Nothing is due');
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
     stubFetch({
       ok: false,
       status: 409,
