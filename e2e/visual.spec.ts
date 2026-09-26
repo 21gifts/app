@@ -10337,6 +10337,471 @@ test.describe('shops screens', () => {
     await expect(page.getByText('14.50000, 120.90000', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-shops-composer-place-set-coords');
   });
+
+  test('shops staff-place', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await expect(note.getByText('Cafe Luna')).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Add a place' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-staff-place');
+  });
+
+  test('shops staff-place-unavailable', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    const unavailable = note.getByText('The map is not available.');
+    await expect(unavailable).toBeVisible();
+    await unavailable.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-unavailable');
+  });
+
+  test('shops staff-place-set', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-staff-place-set');
+  });
+
+  test('shops staff-place-edit', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(remove).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await remove.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit', false);
+  });
+
+  test('shops staff-place-edit-error', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unavailable' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await note.getByRole('button', { name: 'Remove place' }).click();
+    const alert = note.getByRole('alert');
+    await expect(alert).toHaveText('The place could not be saved. Please try again.');
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(remove).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await remove.scrollIntoViewIfNeeded();
+    await page.locator('main .overflow-y-auto').evaluate((node) => {
+      node.scrollTop += 160;
+    });
+    await shotScreen(page, 'state-shops-staff-place-edit-error');
+  });
+
+  test('shops staff-place-edit-unavailable', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    const unavailable = note.getByText('The map is not available.');
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(unavailable).toBeVisible();
+    await expect(remove).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await remove.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
+  });
+
+  test('shops staff-place-edit-unavailable-error', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unavailable' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await note.getByRole('button', { name: 'Remove place' }).click();
+    const alert = note.getByRole('alert');
+    await expect(alert).toHaveText('The place could not be saved. Please try again.');
+    const remove = note.getByRole('button', { name: 'Remove place' });
+    await expect(remove).toBeVisible();
+    await remove.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit-unavailable-error');
+  });
+
+  test('shops staff-place-map', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    const frame = page.locator('.h-64');
+    await expect(frame).toBeVisible();
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await frame.scrollIntoViewIfNeeded();
+    await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
+    await shotScreen(page, 'state-shops-staff-place-map', false);
+  });
+
+  test('shops staff-place-confirm', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await note.getByLabel('Place name').fill('Happyland');
+    const confirm = note.getByRole('button', { name: 'Use this place' });
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-confirm', false);
+  });
+
+  test('shops staff-place-unlabeled', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    const confirm = note.getByRole('button', { name: 'Use this place' });
+    await expect(note.getByLabel('Place name')).toHaveValue('');
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
+  });
+
+  test('shops staff-place-set-coords', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    const noteBody = {
+      id: 'm-staff',
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+    };
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [noteBody] }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        const body = route.request().postDataJSON() as { place?: unknown };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...noteBody, place: body.place }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await note.getByRole('button', { name: 'Use this place' }).click();
+    await expect(note.getByRole('link', { name: '14.50000, 120.90000' })).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
+    await shotScreen(page, 'state-shops-staff-place-set-coords');
+  });
+
+  test('shops staff-place-error', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unavailable' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await note.getByLabel('Place name').fill('Happyland');
+    await note.getByRole('button', { name: 'Use this place' }).click();
+    await expect(note.getByRole('alert')).toHaveText(
+      'The place could not be saved. Please try again.',
+    );
+    const usePlace = note.getByRole('button', { name: 'Use this place' });
+    await expect(usePlace).toBeVisible();
+    await usePlace.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-error');
+  });
 });
 
 test.describe('map screens', () => {
@@ -10761,6 +11226,35 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-unread');
   });
 
+  test('state /messages translate', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-bob',
+              kind: 'member_member',
+              name: 'Bob',
+              lastText: GERMAN_NOTE_TEXT,
+              lastMessageId: 'cm-de',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              unread: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages');
+    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+    await shotScreen(page, 'state-messages-translate');
+  });
+
   test('messages contact', async ({ page }) => {
     await seedAda(page, 'moderator');
     await mockThreeConversations(page);
@@ -10847,171 +11341,6 @@ test.describe('inbox screens', () => {
     await page.goto('/messages');
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-messages-error');
-  });
-
-  test('state /messages translate', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/conversations$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          conversations: [
-            {
-              id: 'conv-bob',
-              kind: 'member_member',
-              name: 'Bob',
-              lastText: GERMAN_NOTE_TEXT,
-              lastMessageId: 'cm-de',
-              lastAt: '2026-08-28T12:00:00.000Z',
-              lastFromMe: false,
-              lastSats: 0,
-              unread: false,
-            },
-          ],
-        }),
-      });
-    });
-    await page.goto('/messages');
-    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
-    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-messages-translate');
-  });
-
-  test('state /messages translate-loading', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/conversations$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          conversations: [
-            {
-              id: 'conv-bob',
-              kind: 'member_member',
-              name: 'Bob',
-              lastText: GERMAN_NOTE_TEXT,
-              lastMessageId: 'cm-de',
-              lastAt: '2026-08-28T12:00:00.000Z',
-              lastFromMe: false,
-              lastSats: 0,
-              unread: false,
-            },
-          ],
-        }),
-      });
-    });
-    await fulfillConversationTranslatePost(page, 'hang');
-    await page.goto('/messages');
-    await page.getByRole('button', { name: 'Translate' }).click();
-    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
-      'aria-busy',
-      'true',
-    );
-    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-messages-translate-loading');
-  });
-
-  test('state /messages translate-done', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/conversations$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          conversations: [
-            {
-              id: 'conv-bob',
-              kind: 'member_member',
-              name: 'Bob',
-              lastText: GERMAN_NOTE_TEXT,
-              lastMessageId: 'cm-de',
-              lastAt: '2026-08-28T12:00:00.000Z',
-              lastFromMe: false,
-              lastSats: 0,
-              unread: false,
-            },
-          ],
-        }),
-      });
-    });
-    await fulfillConversationTranslatePost(page, 'ok');
-    await page.goto('/messages');
-    await page.getByRole('button', { name: 'Translate' }).click();
-    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
-    await expect(page.getByText('Can anyone lend me a few satoshi this week?')).toBeVisible();
-    await expect(page.getByText(GERMAN_NOTE_TEXT)).toHaveCount(0);
-    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-messages-translate-done');
-  });
-
-  test('state /messages translate-hidden', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/conversations$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          conversations: [
-            {
-              id: 'conv-bob',
-              kind: 'member_member',
-              name: 'Bob',
-              lastText: GERMAN_NOTE_TEXT,
-              lastMessageId: 'cm-de',
-              lastAt: '2026-08-28T12:00:00.000Z',
-              lastFromMe: false,
-              lastSats: 0,
-              unread: false,
-            },
-          ],
-        }),
-      });
-    });
-    await fulfillConversationTranslatePost(page, 'ok');
-    await page.goto('/messages');
-    await page.getByRole('button', { name: 'Translate' }).click();
-    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
-    await page.getByRole('button', { name: 'Show original' }).click();
-    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
-    await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
-    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-messages-translate-hidden');
-  });
-
-  test('state /messages translate-error', async ({ page }) => {
-    await seedAda(page);
-    await page.route(/\/conversations$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          conversations: [
-            {
-              id: 'conv-bob',
-              kind: 'member_member',
-              name: 'Bob',
-              lastText: GERMAN_NOTE_TEXT,
-              lastMessageId: 'cm-de',
-              lastAt: '2026-08-28T12:00:00.000Z',
-              lastFromMe: false,
-              lastSats: 0,
-              unread: false,
-            },
-          ],
-        }),
-      });
-    });
-    await fulfillConversationTranslatePost(page, 'fail');
-    await page.goto('/messages');
-    await page.getByRole('button', { name: 'Translate' }).click();
-    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
-    await page
-      .getByText('Could not translate this note. Please try again.')
-      .scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-messages-translate-error');
   });
 
   test('messages thread', async ({ page }) => {

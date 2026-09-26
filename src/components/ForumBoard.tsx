@@ -50,6 +50,7 @@ import {
   type ForumPlacePin,
 } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
+import { ShopPlaceControl } from '@/components/ShopPlaceControl';
 import {
   FORUM_COMPOSE_EVENT,
   FORUM_FEED_MODES,
@@ -308,6 +309,13 @@ export interface ForumBoardProps {
   placeDraft?: ForumPlacePin | null;
   /** Called when the top-level composer pin changes. Default no-op. */
   onPlaceDraftChange?: (place: ForumPlacePin | null) => void;
+  /**
+   * When true, show the shops staff place editor on top-level notes.
+   * Default false.
+   */
+  shopPlaceEdit?: boolean;
+  /** Apply a saved or cleared pin on a listed shop note. */
+  onShopPlaceUpdated?: (messageId: string, place: ForumPlacePin | null) => void;
 }
 
 /**
@@ -548,7 +556,9 @@ export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElem
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
  * expands the reply composer; omitted when `deletedAt` is set), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
- * never on posts; omitted when `deletedAt` is set), staff Delete omitted
+ * never on posts; omitted when `deletedAt` is set), optional shops staff
+ * place editor after copy and before staff Delete when `shopPlaceEdit` and
+ * `onShopPlaceUpdated` are set (top-level notes only), staff Delete omitted
  * when `deletedAt` is set, optional inline photos, and optional inline videos.
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
@@ -642,6 +652,8 @@ export function ForumBoard({
   truncate = true,
   placeDraft = null,
   onPlaceDraftChange,
+  shopPlaceEdit = false,
+  onShopPlaceUpdated,
 }: ForumBoardProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -1176,6 +1188,11 @@ export function ForumBoard({
                     <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
                 </IconButton>
+                {shopPlaceEdit &&
+                onShopPlaceUpdated !== undefined &&
+                message.parentId === undefined ? (
+                  <ShopPlaceControl message={message} onUpdated={onShopPlaceUpdated} />
+                ) : null}
                 {onDeleted !== undefined && message.deletedAt === undefined ? (
                   <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
                 ) : null}

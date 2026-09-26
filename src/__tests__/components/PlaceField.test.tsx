@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaceField } from '@/components/PlaceField';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -179,6 +179,48 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(screen.queryByText('The map is not available.')).toBeNull();
     expect(screen.queryByLabelText('Place name')).toBeNull();
+  });
+
+  it('removes a saved pin when the map is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const onCommit = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 1, lng: 2, label: 'Stall' }}
+        disabled={false}
+        showPreview={false}
+        ariaLabel="Edit place"
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    await waitFor(() => {
+      expect(onCommit).toHaveBeenCalledWith(null);
+    });
+  });
+
+  it('keeps the unavailable panel open when removing a pin fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const onCommit = vi.fn().mockRejectedValue(new Error('denied'));
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 1, lng: 2, label: 'Stall' }}
+        disabled={false}
+        showPreview={false}
+        ariaLabel="Edit place"
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'The place could not be saved. Please try again.',
+    );
+    expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
   });
 
   it('closes the place panel while a post is in flight', async () => {
@@ -482,5 +524,132 @@ describe('PlaceField', () => {
     });
     expect(MarkerSaved).not.toHaveBeenCalled();
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
+  });
+
+  function stubMaps(): Map<string, (event?: unknown) => void> {
+    const listeners = new Map<string, (event?: unknown) => void>();
+    const map = {
+      setCenter: vi.fn(),
+      addListener: (event: string, handler: (event?: unknown) => void) => {
+        listeners.set(event, handler);
+      },
+    };
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => map),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+          addListener: () => undefined,
+        })),
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
+    return listeners;
+  }
+
+  it('commits through onCommit without calling onChange', async () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn().mockResolvedValue(undefined);
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={onChange} onCommit={onCommit} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Happyland' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    await waitFor(() => {
+      expect(onCommit).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98, label: 'Happyland' });
+    });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Use this place' })).toBeNull();
+  });
+
+  it('keeps the panel open and shows the save error when onCommit rejects', async () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn().mockRejectedValue(new Error('denied'));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={onChange} onCommit={onCommit} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'The place could not be saved. Please try again.',
+    );
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Use this place' })).toBeTruthy();
+  });
+
+  it('disables Done and Remove while onCommit is pending', async () => {
+    let resolveCommit!: () => void;
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCommit = resolve;
+        }),
+    );
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        showPreview={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(screen.getByRole('button', { name: 'Use this place' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    expect(screen.getByRole('button', { name: 'Remove place' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    await act(async () => {
+      resolveCommit();
+    });
+  });
+
+  it('uses custom size, variant, and accessible name', () => {
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        buttonSize="sm"
+        buttonVariant="ghost"
+        ariaLabel="Staff place"
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Staff place' });
+    expect(button.className).toContain('h-6 w-6');
+    expect(button.className).toContain('text-app-muted');
+    expect(screen.queryByRole('button', { name: 'Add a place' })).toBeNull();
+  });
+
+  it('hides the floating chip when showPreview is false', () => {
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+        showPreview={false}
+      />,
+    );
+    expect(screen.queryByText('Happyland')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a place' })).toBeTruthy();
   });
 });

@@ -997,3 +997,17 @@ export async function proxyMePushSubscriptionsDelete(request: Request): Promise<
 export async function proxyMessagesDelete(request: Request, messageId: string): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}`);
 }
+
+/**
+ * Proxies a moderator's PATCH /messages/:id/place request.
+ *
+ * @param request - Incoming Bearer request with JSON `{ place }`.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesPlacePatch(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/place`);
+}

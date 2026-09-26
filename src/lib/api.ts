@@ -2641,3 +2641,32 @@ export async function deleteMessage(sessionToken: string, messageId: string): Pr
     throw new Error('Message deletion failed');
   }
 }
+
+/**
+ * Sets or clears the place pin on a forum message (moderator session).
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @param place - Pin to store, or `null` to clear.
+ * @returns The updated {@link ForumMessage}. Cleared pins are omitted.
+ * @throws Error on a non-2xx status (`Could not save place`) or a body that
+ * fails {@link forumMessageSchema}.
+ */
+export async function setMessagePlace(
+  sessionToken: string,
+  messageId: string,
+  place: ForumPlacePin | null,
+): Promise<ForumMessage> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/place`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ place }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save place');
+  }
+  return forumMessageSchema.parse(await response.json());
+}

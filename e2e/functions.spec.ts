@@ -762,7 +762,7 @@ test('Function: proxyTranslateConversationMessagePost — POST conversation tran
   ).toBeGreaterThanOrEqual(400);
 });
 
-test('Function: translateConversationMessage — Translate a conversation preview', async ({
+test('Function: translateConversationMessage — Translate an open conversation', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -794,7 +794,28 @@ test('Function: translateConversationMessage — Translate a conversation previe
       }),
     });
   });
+  await page.route(/\/conversations\/conv-de(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'cm-de',
+            name: 'Bob',
+            text: GERMAN_NOTE_TEXT,
+            fromMe: false,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
   await page.goto('/messages');
+  await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
+  await page.goto('/messages?c=conv-de');
   await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
   await page.getByRole('button', { name: 'Translate' }).click();
   await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
@@ -8567,6 +8588,19 @@ test('Function: proxyMessagesDelete — unauthenticated deletion is forwarded an
 }) => {
   const response = await request.delete('/forum/messages/[id]');
   expect(response.status()).toBe(401);
+});
+
+test('Function: proxyMessagesPlacePatch — unauthenticated place patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/place');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: PATCH — PATCH /forum/messages/[id]/place without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.patch('/forum/messages/[id]/place')).status()).toBe(401);
 });
 
 test('Function: proxyTrustChainGet — GET /trust/graph without bearer is 401', async ({

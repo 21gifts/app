@@ -375,38 +375,32 @@ describe('InboxScreen', () => {
     expect(screen.getByRole('group', { name: 'Conversation type' })).toBeTruthy();
   });
 
-  it('translates a foreign list preview and clears it when the text changes', async () => {
+  it('shows a foreign list preview without a translate control', () => {
     const german = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
     const row: Conversation = { ...THREAD, lastText: german, lastMessageId: 'msg-1' };
-    const props = {
-      error: false,
-      loading: false,
-      onRetry: () => undefined,
-      openId: null,
-      onOpen: () => undefined,
-      messages: null,
-      messagesLoading: false,
-      messagesError: false,
-      onRetryMessages: () => undefined,
-      draft: '',
-      onDraftChange: () => undefined,
-      onPost: () => undefined,
-      posting: false,
-      formError: null,
-      showFilter: false,
-    };
-    const { rerender } = renderWithLocale(<InboxScreen {...props} conversations={[row]} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
-    expect(await screen.findByText('Can anyone lend me a few satoshi this week?')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show original' }));
-    expect(screen.getByText(german)).toBeTruthy();
-    rerender(
+    renderWithLocale(
       <InboxScreen
-        {...props}
-        conversations={[{ ...row, lastText: 'Andere Nachricht bitte helfen' }]}
+        conversations={[row]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId={null}
+        onOpen={() => undefined}
+        messages={null}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
       />,
     );
-    expect(screen.getByText('Andere Nachricht bitte helfen')).toBeTruthy();
+    expect(screen.getByText(german)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show original' })).toBeNull();
   });
 
   it('does not offer Translate when the list preview has no message id', () => {
