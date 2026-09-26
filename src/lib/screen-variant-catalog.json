@@ -342,6 +342,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-credit-amount",
+    "label": "/welcome ask-credit-amount",
+    "visual": "state-welcome-ask-credit-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-credit-currency-btc",
     "label": "/welcome ask-credit-currency-btc",
     "visual": "state-welcome-ask-credit-currency-btc",
@@ -384,6 +390,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-credit-confirm-want-fiat",
+    "label": "/welcome ask-credit-confirm-want-fiat",
+    "visual": "state-welcome-ask-credit-confirm-want-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-credit-confirm-can-btc",
     "label": "/welcome ask-credit-confirm-can-btc",
     "visual": "state-welcome-ask-credit-confirm-can-btc",
@@ -393,6 +405,30 @@
     "id": "/welcome:ask-credit-confirm-can-fiat",
     "label": "/welcome ask-credit-confirm-can-fiat",
     "visual": "state-welcome-ask-credit-confirm-can-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-photos",
+    "label": "/welcome ask-credit-photos",
+    "visual": "state-welcome-ask-credit-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-text",
+    "label": "/welcome ask-credit-text",
+    "visual": "state-welcome-ask-credit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview",
+    "label": "/welcome ask-credit-preview",
+    "visual": "state-welcome-ask-credit-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview-fiat",
+    "label": "/welcome ask-credit-preview-fiat",
+    "visual": "state-welcome-ask-credit-preview-fiat",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -472,6 +472,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-credit-amount',
+    image: 'welcome-ask-credit-amount.png',
+    visual: 'state-welcome-ask-credit-amount',
+    needle: 'state /welcome ask-credit-amount',
+  },
+  {
+    route: '/welcome',
     id: 'ask-credit-currency-btc',
     image: 'welcome-ask-credit-currency-btc.png',
     visual: 'state-welcome-ask-credit-currency-btc',
@@ -521,6 +528,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-credit-confirm-want-fiat',
+    image: 'welcome-ask-credit-confirm-want-fiat.png',
+    visual: 'state-welcome-ask-credit-confirm-want-fiat',
+    needle: 'state /welcome ask-credit-confirm-want-fiat',
+  },
+  {
+    route: '/welcome',
     id: 'ask-credit-confirm-can-btc',
     image: 'welcome-ask-credit-confirm-can-btc.png',
     visual: 'state-welcome-ask-credit-confirm-can-btc',
@@ -532,6 +546,34 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-ask-credit-confirm-can-fiat.png',
     visual: 'state-welcome-ask-credit-confirm-can-fiat',
     needle: 'state /welcome ask-credit-confirm-can-fiat',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-photos',
+    image: 'welcome-ask-credit-photos.png',
+    visual: 'state-welcome-ask-credit-photos',
+    needle: 'state /welcome ask-credit-photos',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-text',
+    image: 'welcome-ask-credit-text.png',
+    visual: 'state-welcome-ask-credit-text',
+    needle: 'state /welcome ask-credit-text',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-preview',
+    image: 'welcome-ask-credit-preview.png',
+    visual: 'state-welcome-ask-credit-preview',
+    needle: 'state /welcome ask-credit-preview',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-preview-fiat',
+    image: 'welcome-ask-credit-preview-fiat.png',
+    visual: 'state-welcome-ask-credit-preview-fiat',
+    needle: "shotScreen(page, 'state-welcome-ask-credit-preview-fiat')",
   },
   {
     route: '/welcome',
