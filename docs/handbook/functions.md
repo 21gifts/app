@@ -3697,3 +3697,43 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
 - **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
 - **Used by:** Route POST `/me/fiat`.
+
+## Function: isSundayRest
+
+- **Purpose:** Determine whether a timestamp is Sunday in Asia/Manila.
+- **Inputs:** Unix milliseconds from the server clock.
+- **Returns:** True on Sunday, false on all other days. It does not use the host timezone.
+
+The Sunday interval is Sunday 00:00 inclusive through Monday 00:00 exclusive in Asia/Manila, irrespective of visitor or server timezone.
+
+## Function: sundayRetryAfter
+
+- **Purpose:** Tell callers when Sunday rest ends.
+- **Inputs:** A Unix timestamp during Manila Sunday.
+- **Returns:** Seconds until Monday midnight, rounded up; the full interval is 86400 seconds.
+
+The Sunday interval is Sunday 00:00 inclusive through Monday 00:00 exclusive in Asia/Manila, irrespective of visitor or server timezone.
+
+## Function: SundayRestGate
+
+- **Purpose:** Replace the website and installed PWA with the Sunday invitation.
+- **Inputs:** Server timestamp, translated title/message/schedule, and application children.
+- **Returns:** Unmounts providers and children during Sunday; checks on focus, visibility and a timer. Rest-only server responses reload at reopening.
+
+The Sunday interval is Sunday 00:00 inclusive through Monday 00:00 exclusive in Asia/Manila, irrespective of visitor or server timezone.
+
+## Function: middleware
+
+- **Purpose:** Stop web route handlers and server pages during Sunday.
+- **Inputs:** Every non-static web request and the server clock.
+- **Returns:** 503 with Retry-After for data/writes; document and RSC requests rewrite to the empty Sunday page. Accept headers cannot bypass API blocking.
+
+The Sunday interval is Sunday 00:00 inclusive through Monday 00:00 exclusive in Asia/Manila, irrespective of visitor or server timezone.
+
+## Function: SundayRestPage
+
+- **Purpose:** Provide a side-effect-free rewrite target for Sunday requests.
+- **Inputs:** The current server time.
+- **Returns:** No page content; the root gate supplies the message. Weekday direct visits redirect home.
+
+The Sunday interval is Sunday 00:00 inclusive through Monday 00:00 exclusive in Asia/Manila, irrespective of visitor or server timezone.

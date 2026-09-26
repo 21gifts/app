@@ -9,6 +9,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('push', (event) => {
+  if (
+    new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', weekday: 'short' }).format(
+      Date.now(),
+    ) === 'Sun'
+  )
+    return;
   let payload = {};
   try {
     const parsed = event.data ? event.data.json() : {};

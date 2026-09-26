@@ -100,6 +100,23 @@ export default defineConfig({
       env: {
         ...process.env,
         HOSTNAME: '0.0.0.0',
+        NODE_OPTIONS: '--import ./e2e/server-clock.mjs',
+        E2E_CLOCK_ISO: '2026-09-24T12:00:00.000Z',
+        NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
+        NEXT_PUBLIC_APP_VERSION: 'dev',
+      },
+    },
+    {
+      command: 'node .next/standalone/server.js',
+      url: 'http://localhost:3002/healthz',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        ...process.env,
+        HOSTNAME: '0.0.0.0',
+        PORT: '3002',
+        NODE_OPTIONS: '--import ./e2e/server-clock.mjs',
+        E2E_CLOCK_ISO: '2026-09-27T04:00:00.000Z',
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
         NEXT_PUBLIC_APP_VERSION: 'dev',
       },

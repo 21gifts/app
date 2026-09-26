@@ -72,6 +72,13 @@ export function comboSnapshotStem(visual, comboId) {
 
 export const SCREEN_VARIANTS = [
   {
+    route: '/sunday-rest',
+    id: 'default',
+    image: 'sunday-rest.png',
+    visual: 'screen-sunday-rest',
+    needle: 'Christ is risen!',
+  },
+  {
     route: '/',
     id: 'default',
     image: 'root.png',

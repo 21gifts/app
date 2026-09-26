@@ -1,5 +1,11 @@
 [
   {
+    "id": "/sunday-rest:default",
+    "label": "/sunday-rest default",
+    "visual": "screen-sunday-rest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:default",
     "label": "/ default",
     "visual": "screen-root",

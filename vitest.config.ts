@@ -26,7 +26,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['./e2e/server-clock.mjs', './vitest.setup.ts'],
     include: ['src/__tests__/**/*.test.{ts,tsx}', 'src/__tests__/app/.well-known/**/*.test.ts'],
     coverage: {
       provider: 'v8',

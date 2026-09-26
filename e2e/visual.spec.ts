@@ -14086,3 +14086,9 @@ test.describe('stats variant baselines', () => {
     await shotScreen(page, 'state-stats-day-error');
   });
 });
+
+test('screen /sunday-rest', async ({ page }) => {
+  await page.goto('http://localhost:3002/sunday-rest');
+  await expect(page.getByRole('heading', { name: 'Christ is risen!' })).toBeVisible();
+  await shotScreen(page, 'screen-sunday-rest');
+});
