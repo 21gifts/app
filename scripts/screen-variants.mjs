@@ -3447,6 +3447,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-with-key',
+    image: 'shops-map-with-key.png',
+    visual: 'state-shops-map-with-key',
+    needle: "shotScreen(page, 'state-shops-map-with-key')",
+  },
+  {
+    route: '/shops',
     id: 'table',
     image: 'shops-table.png',
     visual: 'state-shops-table',

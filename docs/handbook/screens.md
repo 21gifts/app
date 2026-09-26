@@ -1491,9 +1491,15 @@ Device-local Sunday. The shop composer is gone. **Writing is paused on Sunday.**
 
 ### Variant: map
 
-The **Map** tab is selected. The post composer is gone. The place list from `/map` is visible without a second **Map** heading.
+The **Map** tab is selected. The post composer is gone. The place list from `/map` is visible without a second **Map** heading. No map key, so the frame stays empty.
 
 ![21.gifts shops map](images/shops-map.png)
+
+### Variant: map-with-key
+
+**Map** is selected and a map key is set. The stub map surface is in the frame, still without a second **Map** heading. The place list stays.
+
+![21.gifts shops map with key](images/shops-map-with-key.png)
 
 ### Variant: table
 

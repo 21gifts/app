@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import { fetchMessages } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Page size, same as the shops post list. */
@@ -49,6 +51,9 @@ function placeText(message: ForumMessage): string | null {
  */
 export function ShopTable(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
+  const router = useRouter();
+  const replaceRef = useRef(router.replace);
+  replaceRef.current = router.replace;
   const { t } = useTranslations();
   const [rows, setRows] = useState<ForumMessage[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -79,8 +84,12 @@ export function ShopTable(): ReactElement | null {
         setNextCursor(page.nextCursor);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (cancelled) {
+          return;
+        }
+        if (error instanceof MissingRequirementsError) {
+          replaceRef.current('/setup/rules');
           return;
         }
         setFailed(true);

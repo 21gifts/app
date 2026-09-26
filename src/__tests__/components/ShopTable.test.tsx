@@ -3,7 +3,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopTable } from '@/components/ShopTable';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumMessage } from '@/lib/api-types';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
+
+const replace = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof replace; replace: typeof replace } => ({
+    push: replace,
+    replace,
+  }),
+}));
 
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
@@ -32,10 +42,22 @@ const SHOP: ForumMessage = {
 
 afterEach(() => {
   cleanup();
+  replace.mockClear();
+  fetchMessagesMock.mockReset();
   useAuthStore.setState({ session: null, account: null });
 });
 
 describe('ShopTable', () => {
+  it('opens setup when the account is not allowed to load the table', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ShopTable />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('returns nothing without a session', () => {
     const { container } = renderWithLocale(<ShopTable />);
     expect(container.textContent).toBe('');
