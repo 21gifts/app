@@ -1008,6 +1008,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos/amount:loading",
+    "label": "/pos/amount loading",
+    "visual": "state-pos-amount-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos/amount:error",
+    "label": "/pos/amount error",
+    "visual": "state-pos-amount-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos/amount:bad-amount",
     "label": "/pos/amount bad-amount",
     "visual": "state-pos-bad-amount",

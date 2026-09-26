@@ -1249,6 +1249,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos/amount',
+    id: 'loading',
+    image: 'pos-amount-loading.png',
+    visual: 'state-pos-amount-loading',
+    needle: 'animate-spin',
+  },
+  {
+    route: '/pos/amount',
+    id: 'error',
+    image: 'pos-amount-error.png',
+    visual: 'state-pos-amount-error',
+    needle: 'Point of sale is unavailable.',
+  },
+  {
+    route: '/pos/amount',
     id: 'bad-amount',
     image: 'pos-bad-amount.png',
     visual: 'state-pos-bad-amount',
