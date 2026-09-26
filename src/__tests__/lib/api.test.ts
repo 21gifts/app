@@ -25,6 +25,7 @@ import {
   fetchTrustProposals,
   fetchFundingApplication,
   fetchFundingApplications,
+  fetchFundingPayoutDays,
   postFundingAdmit,
   postFundingApply,
   postFundingReject,
@@ -4197,6 +4198,70 @@ describe('fetchFundingApplications', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { applications: [{ id: 'acc_rose' }] } });
     await expect(fetchFundingApplications('sess')).rejects.toThrow(loadError);
+  });
+});
+
+describe('fetchFundingPayoutDays', () => {
+  const payload = {
+    days: [
+      '2026-09-20',
+      '2026-09-21',
+      '2026-09-22',
+      '2026-09-23',
+      '2026-09-24',
+      '2026-09-25',
+      '2026-09-26',
+    ],
+    rows: [
+      {
+        accountId: 'acc_ada',
+        name: 'Ada' as string | null,
+        days: ['blocked', 'missed', 'paid', 'blocked', 'blocked', 'blocked', 'blocked'] as const,
+      },
+    ],
+  };
+  const loadError = 'Could not load the payout table. Please try again.';
+
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: payload });
+    await expect(fetchFundingPayoutDays('sess')).resolves.toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/payout-days', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('accepts a null account id and a null name', async () => {
+    const row = { accountId: null, name: null, days: payload.rows[0]?.days };
+    stubFetch({ ok: true, status: 200, body: { days: payload.days, rows: [row] } });
+    await expect(fetchFundingPayoutDays('sess')).resolves.toEqual({
+      days: payload.days,
+      rows: [row],
+    });
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: {} });
+    await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { days: [], rows: [] } });
+    await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
   });
 });
 
