@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
+import { useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
@@ -72,6 +73,7 @@ function appendUnseenMessages(
  */
 export function ModeratorGroupScreen(): ReactElement | null {
   const { t } = useTranslations();
+  const sunday = useLocalSunday();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
@@ -99,7 +101,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   }, []);
 
   useEffect(() => {
-    if (session === null || !staff) {
+    if (session === null || !staff || sunday) {
       return;
     }
     let cancelled = false;
@@ -138,7 +140,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;
     };
-  }, [session, staff, attempt]);
+  }, [session, staff, attempt, sunday]);
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -247,7 +249,13 @@ export function ModeratorGroupScreen(): ReactElement | null {
     };
   }, []);
   useEffect(() => {
-    if (session === null || group === null || nearStartElement === null || nextCursor === null) {
+    if (
+      sunday ||
+      session === null ||
+      group === null ||
+      nearStartElement === null ||
+      nextCursor === null
+    ) {
       return;
     }
     let cancelled = false;
@@ -292,14 +300,14 @@ export function ModeratorGroupScreen(): ReactElement | null {
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-  }, [group, nearStartElement, nextCursor, session]);
+  }, [group, nearStartElement, nextCursor, session, sunday]);
 
   const groupId = group?.id ?? null;
   const threadLoaded = messages !== null && groupId !== null;
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   useEffect(() => {
-    if (session === null || !staff || groupId === null || !threadLoaded) {
+    if (sunday || session === null || !staff || groupId === null || !threadLoaded) {
       return;
     }
     let cancelled = false;
@@ -348,10 +356,23 @@ export function ModeratorGroupScreen(): ReactElement | null {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [session, staff, groupId, threadLoaded]);
+  }, [session, staff, groupId, threadLoaded, sunday]);
 
   if (session === null) {
     return null;
+  }
+
+  if (sunday) {
+    return (
+      <Card maxWidth="xl" surface={false}>
+        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+          {t('moderate.groupLabel')}
+        </h1>
+        <p className="text-center text-sm text-app-muted" data-sunday-writing="paused">
+          {t('sunday.moderatorChatPaused')}
+        </p>
+      </Card>
+    );
   }
 
   const heading = (

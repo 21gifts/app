@@ -4,6 +4,7 @@ import { getApiUrl } from '@/lib/config';
 const FORWARDED_HEADERS = [
   'authorization',
   'content-type',
+  'time-zone',
   'content-length',
   'origin',
   'user-agent',

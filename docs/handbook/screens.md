@@ -451,6 +451,12 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: sunday
+
+Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.
+
+![21.gifts welcome sunday](images/welcome-sunday.png)
+
 ### Variant: signed-out
 
 No session. Heading **Welcome**, wordmark, **Log in**, no member menu. Each note still shows its bitcoin amount. The active list is the public page. No composer.
@@ -1410,6 +1416,12 @@ Heading **Shops**, lead, composer (mode selector absent), one shop note **Cafe L
 
 ![21.gifts shops](images/shops.png)
 
+### Variant: sunday
+
+Device-local Sunday. The shop composer is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
+
+![21.gifts shops sunday](images/shops-sunday.png)
+
 ### Variant: empty
 
 Empty copy **No shops yet — add the first one.** Composer still present.
@@ -1891,6 +1903,12 @@ Same moderator and basis member after pressing **Moderator functions**. The disc
 
 ![21.gifts member staff verify open](images/members-staff-verify-open.png)
 
+### Variant: sunday
+
+Device-local Sunday. **Moderator functions** is open. **Verify** is gone. **Writing is paused on Sunday.**
+
+![21.gifts member sunday](images/members-accountId-sunday.png)
+
 ### Variant: funding-reviewed
 
 Member identity card with a **Verified** role pill and, beside it, one icon-only funding-program button when `fundingReviewedAt` is a number. The accessible name is **Takes part in the 21.gifts funding program since {date}**, or the same sentence with **reviewed by {name}** when the API sends `fundingReviewedByName`. The member card and the own profile name the person who admitted them when the API sends that name. The sentence is not visible until the icon is pressed. The resting shot does not cover the press.
@@ -2012,6 +2030,12 @@ Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi addre
 
 Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (returns to the forum); one **Menu** in that same header row (**Home** first; log out, then a quiet **Version {version}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
 ![21.gifts profile](images/profile.png)
+
+### Variant: sunday
+
+Device-local Sunday. The name, the empty About me sentence, and the address stay. The pencils and **Write your About me** are gone. **Writing is paused on Sunday.**
+
+![21.gifts profile sunday](images/profile-sunday.png)
 
 ### Variant: sticker-open
 
@@ -2230,6 +2254,12 @@ Opening `/profile/apply` lands on the grants apply walk.
 Verified none/rejected with empty About me. Copy **First, write a short About me so people can get to know you.** No `role="alert"`.
 
 ![21.gifts apply](images/profile-apply.png)
+
+### Variant: sunday
+
+Device-local Sunday. The step sentence stays. The About me editor is gone. **Writing is paused on Sunday.**
+
+![21.gifts apply sunday](images/grants-apply-sunday.png)
 
 ### Variant: photo
 
@@ -2692,6 +2722,12 @@ Staff (moderator) loaded queue with at least one open proposal (subject **Rose**
 
 ![21.gifts open proposals](images/moderate-proposals.png)
 
+### Variant: sunday
+
+Device-local Sunday. **Rose** stays. **Confirm as moderator** and **Reject** are gone. **Writing is paused on Sunday.**
+
+![21.gifts open proposals sunday](images/moderate-proposals-sunday.png)
+
 ### Variant: forbidden
 
 Signed-in basis account. Copy **This page is for moderators.** No list.
@@ -2836,6 +2872,12 @@ Staff (founder) loaded application for **Rose**. Question **Do their profile pos
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
 
+### Variant: sunday
+
+Device-local Sunday. The application stays readable. **Yes** and **No** are gone. **Writing is paused on Sunday.**
+
+![21.gifts grant application sunday](images/grants-applications-accountId-sunday.png)
+
 ### Variant: truth
 
 **Yes** on the principles question. Copy **Do these posts, to your knowledge, correspond to the truth?** The About link is gone. **Yes** admits. **No** rejects.
@@ -2921,6 +2963,12 @@ Staff (founder) Reject POST in flight. **No** disabled with a spinner; applicati
 Moderator. Loaded group thread with message **Hello mods**. Composer visible. No origin filter.
 
 ![21.gifts moderator group](images/moderate-group.png)
+
+### Variant: sunday
+
+Device-local Sunday. The moderator thread is not loaded and the composer is gone. The sentence **The moderator chat is paused on Sunday.** stands in their place.
+
+![21.gifts moderator group sunday](images/moderate-group-sunday.png)
 
 ### Variant: stipend
 
@@ -3108,6 +3156,12 @@ Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGall
 Hydrated Ada session: icon-only back + wordmark → `/welcome`, **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
+
+### Variant: sunday
+
+Device-local Sunday. **Hello from Ada** stays. **Write a reaction** is gone. **Writing is paused on Sunday.**
+
+![21.gifts public message sunday](images/messages-id-sunday.png)
 
 ### Variant: hidden
 

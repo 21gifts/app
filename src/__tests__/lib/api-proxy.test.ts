@@ -28,6 +28,7 @@ describe('proxyApiRequest', () => {
     const request = new Request('http://localhost/me?x=1', {
       headers: {
         authorization: 'Bearer tok',
+        'time-zone': 'Europe/Zurich',
         origin: 'https://21.gifts',
         'user-agent': 'Copay',
         'x-ignored': 'no',
@@ -44,6 +45,7 @@ describe('proxyApiRequest', () => {
     expect(url.toString()).toBe(`${API}/me?x=1`);
     const headers = init.headers as Headers;
     expect(headers.get('authorization')).toBe('Bearer tok');
+    expect(headers.get('time-zone')).toBe('Europe/Zurich');
     expect(headers.get('origin')).toBe('https://21.gifts');
     expect(headers.get('user-agent')).toBe('Copay');
     expect(headers.get('x-ignored')).toBeNull();

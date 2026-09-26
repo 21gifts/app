@@ -367,6 +367,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'sunday',
+    image: 'welcome-sunday.png',
+    visual: 'state-welcome-sunday',
+    needle: 'Writing is paused on Sunday.',
+  },
+  {
+    route: '/welcome',
     id: 'signed-out',
     image: 'welcome-signed-out.png',
     visual: 'screen-welcome-signed-out',
@@ -1382,6 +1389,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'sunday',
+    image: 'profile-sunday.png',
+    visual: 'state-profile-sunday',
+    needle: 'state /profile sunday',
+  },
+  {
+    route: '/profile',
     id: 'funding-program-press',
     image: 'profile-funding-program-press.png',
     visual: 'state-profile-funding-program-press',
@@ -1725,6 +1739,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'sunday',
+    image: 'members-accountId-sunday.png',
+    visual: 'state-members-accountId-sunday',
+    needle: 'state /members sunday',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'funding-reviewed',
     image: 'members-funding-reviewed.png',
     visual: 'state-members-funding-reviewed',
@@ -1953,6 +1974,13 @@ export const SCREEN_VARIANTS = [
     image: 'profile-apply.png',
     visual: 'screen-grants-apply',
     needle: 'First, write a short About me so people can get to know you.',
+  },
+  {
+    route: '/grants/apply',
+    id: 'sunday',
+    image: 'grants-apply-sunday.png',
+    visual: 'state-grants-apply-sunday',
+    needle: 'state /grants/apply sunday',
   },
   {
     route: '/grants/apply',
@@ -2642,6 +2670,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/proposals',
+    id: 'sunday',
+    image: 'moderate-proposals-sunday.png',
+    visual: 'state-moderate-proposals-sunday',
+    needle: 'state /moderate/proposals sunday',
+  },
+  {
+    route: '/moderate/proposals',
     id: 'forbidden',
     image: 'moderate-proposals-forbidden.png',
     visual: 'state-moderate-proposals-forbidden',
@@ -2775,6 +2810,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants/applications/[accountId]',
+    id: 'sunday',
+    image: 'grants-applications-accountId-sunday.png',
+    visual: 'state-grants-applications-accountId-sunday',
+    needle: 'state /grants/applications sunday',
+  },
+  {
+    route: '/grants/applications/[accountId]',
     id: 'truth',
     image: 'grants-applications-accountId-truth.png',
     visual: 'state-grants-applications-accountId-truth',
@@ -2863,6 +2905,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group.png',
     visual: 'screen-moderate-group',
     needle: 'Hello mods',
+  },
+  {
+    route: '/moderate/group',
+    id: 'sunday',
+    image: 'moderate-group-sunday.png',
+    visual: 'state-moderate-group-sunday',
+    needle: 'The moderator chat is paused on Sunday.',
   },
   {
     route: '/moderate/group',
@@ -3069,6 +3118,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'sunday',
+    image: 'messages-id-sunday.png',
+    visual: 'state-messages-id-sunday',
+    needle: 'state /messages sunday',
+  },
+  {
+    route: '/messages/[id]',
     id: 'hidden',
     image: 'messages-id-hidden.png',
     visual: 'state-messages-id-hidden',
@@ -3227,6 +3283,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops.png',
     visual: 'screen-shops',
     needle: 'Cafe Luna',
+  },
+  {
+    route: '/shops',
+    id: 'sunday',
+    image: 'shops-sunday.png',
+    visual: 'state-shops-sunday',
+    needle: 'state /shops sunday',
   },
   {
     route: '/shops',

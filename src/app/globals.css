@@ -80,6 +80,17 @@ html.dark {
   }
 }
 
+/* Weekday wrappers are not a box. Sunday hides the field and shows the notice. */
+.sunday-write-field {
+  display: contents;
+}
+html[data-local-sunday='1'] .sunday-write-field {
+  display: none !important;
+}
+html:not([data-local-sunday='1']) .sunday-write-notice {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

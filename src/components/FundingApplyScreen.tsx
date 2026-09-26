@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
@@ -359,28 +360,32 @@ export function FundingApplyScreen(): ReactElement | null {
             {t('funding.applyError')}
           </p>
         ) : null}
-        <div className="flex w-full flex-col items-stretch gap-3">
-          <Button
-            type="button"
-            disabled={applying}
-            icon={
-              applying ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-            }
-            onClick={onYes}
-          >
-            {t('funding.review.yes')}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={applying}
-            onClick={() => {
-              setUnmet(true);
-            }}
-          >
-            {t('funding.review.no')}
-          </Button>
-        </div>
+        <SundayWritingGate>
+          <div className="flex w-full flex-col items-stretch gap-3">
+            <Button
+              type="button"
+              disabled={applying}
+              icon={
+                applying ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : undefined
+              }
+              onClick={onYes}
+            >
+              {t('funding.review.yes')}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={applying}
+              onClick={() => {
+                setUnmet(true);
+              }}
+            >
+              {t('funding.review.no')}
+            </Button>
+          </div>
+        </SundayWritingGate>
       </>
     );
   }
