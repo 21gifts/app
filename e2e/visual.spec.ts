@@ -2537,6 +2537,45 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-sticker-open', false);
   });
 
+  test('state /profile funding-program-press', async ({ page }) => {
+    await page.unroute(/\/forum\/members\/acc_e2e$/);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+          fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+        }),
+      });
+    });
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page
+      .getByRole('button', { name: /Takes part in the 21.gifts funding program since/ })
+      .click();
+    await expect(
+      page.getByText(
+        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+          Date.parse('2026-08-28T12:00:00.000Z'),
+          'en',
+        )}`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-funding-program-press', false);
+  });
+
   test('state /profile posts-open', async ({ page }) => {
     await seedProfilePage(page);
     await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {

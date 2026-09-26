@@ -1171,6 +1171,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('heading', { name: 'Profile' })",
   },
   {
+    route: '/profile',
+    id: 'funding-program-press',
+    image: 'profile-funding-program-press.png',
+    visual: 'state-profile-funding-program-press',
+    needle: 'state-profile-funding-program-press',
+  },
+  {
     route: '/pos',
     id: 'default',
     image: 'pos.png',

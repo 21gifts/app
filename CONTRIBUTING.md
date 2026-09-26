@@ -339,7 +339,7 @@ app/
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
-│   ├── applications.spec.ts     # /moderate/applications grant queue and review
+│   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

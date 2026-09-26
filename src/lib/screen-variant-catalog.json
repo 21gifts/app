@@ -942,6 +942,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:funding-program-press",
+    "label": "/profile funding-program-press",
+    "visual": "state-profile-funding-program-press",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:default",
     "label": "/pos default",
     "visual": "screen-pos",
