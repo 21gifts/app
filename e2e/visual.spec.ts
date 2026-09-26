@@ -9728,10 +9728,7 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-moderation-unread');
   });
 
-  test('welcome menu-staff-de', async ({ page }) => {
-    await page
-      .context()
-      .addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
+  test('welcome menu-staff', async ({ page }) => {
     await page.addInitScript(() => {
       const native = window.matchMedia.bind(window);
       window.matchMedia = (query: string) => {
@@ -9773,11 +9770,11 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Menü' }).click();
-    await expect(page.getByRole('link', { name: 'Förderprogramm' })).toBeVisible();
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Grants' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Moderation', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'App installieren' })).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-menu-staff-de');
+    await expect(page.getByRole('button', { name: 'Install app' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-staff');
   });
 
   test('welcome pay-amount', async ({ page }) => {

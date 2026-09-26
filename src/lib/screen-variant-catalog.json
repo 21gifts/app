@@ -852,9 +852,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:menu-staff-de",
-    "label": "/welcome menu-staff-de",
-    "visual": "state-welcome-menu-staff-de",
+    "id": "/welcome:menu-staff",
+    "label": "/welcome menu-staff",
+    "visual": "state-welcome-menu-staff",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
