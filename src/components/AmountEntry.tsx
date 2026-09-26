@@ -468,10 +468,7 @@ export function AmountEntry({
     const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', decimal, '0'];
     return (
       <div className={`flex flex-col gap-2${extra}`}>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-app-fg">{label}</p>
-          {unitSwitch}
-        </div>
+        <div className="flex items-center justify-end gap-2">{unitSwitch}</div>
         <p id={fieldId} aria-label={label} className={`${amountClass} text-center`}>
           {shown === '' ? (placeholder ?? '') : shown}
         </p>

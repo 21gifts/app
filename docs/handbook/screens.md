@@ -1802,7 +1802,7 @@ Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi addre
 
 ### Variant: default
 
-Signed-in Ada, no open charge. Heading **Amount**, keypad, **Create payment**. No QR.
+Signed-in Ada, no open charge. Heading **Amount**, the unit switch, the keypad, and **Create payment**. The heading is the only **Amount**. No QR.
 
 ![21.gifts point of sale amount](images/pos-amount.png)
 
