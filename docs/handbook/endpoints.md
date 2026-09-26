@@ -417,7 +417,7 @@
 
 ## Endpoint: GET /messages/[id]/repayment
 
-- **Purpose:** Same-origin proxy of api GET `/messages/:id/repayment`. Public ledger of givers and each Lightning repayment.
+- **Purpose:** Same-origin proxy of api GET `/messages/:id/repayment`. Public ledger of givers and each bitcoin repayment.
 - **Errors:** Upstream 404/503, or 502 if the api is unreachable.
 - **Used by:** `getRepayment`.
 - **Auth:** Public.

@@ -98,7 +98,7 @@ const btc = {
 };
 
 describe('CreditLedger', () => {
-  it('lists givers and each Lightning repayment', async () => {
+  it('lists givers and each bitcoin repayment', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" />);
     expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);

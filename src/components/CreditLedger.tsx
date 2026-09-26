@@ -12,7 +12,7 @@ import type { NumberFormatStyle } from '@/lib/number-format';
 import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
 
 /**
- * Who gave what on a credit, and who is paid back how much, when, and by Lightning.
+ * Who gave what on a credit, and who is paid back how much, when, and by one bitcoin payment.
  *
  * Renders nothing until the public ledger loads. A failed read stays blank.
  *
@@ -53,10 +53,10 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
                 key={giver.accountId}
                 className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
               >
-                <span className="min-w-0 text-sm text-app-fg">
+                <span className="min-w-0 truncate text-sm text-app-fg">
                   {giverLabel(giver.name, giver.username, giver.accountId)}
                 </span>
-                <span className="shrink-0 text-sm tabular-nums text-app-fg">
+                <span className="shrink-0 text-right text-sm tabular-nums text-app-fg">
                   {fiat !== null && giver.givenAmount !== null ? (
                     formatFiatDisplay(giver.givenAmount, fiat, numberFormat)
                   ) : (
@@ -88,7 +88,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
-        <div className="mt-1 flex max-h-80 flex-col gap-2 overflow-y-auto">
+        <div className="mt-1 flex flex-col gap-2">
           {groupsOf(ledger.repayments).map((group) => (
             <div key={group.dayIndex}>
               <p className="text-xs font-medium text-app-fg">
@@ -102,15 +102,15 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
                     key={`${row.dayIndex}:${row.accountId}`}
                     className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
                   >
-                    <span className="min-w-0 text-sm text-app-fg">
+                    <span className="min-w-0 truncate text-sm text-app-fg">
                       {giverLabel(row.name, row.username, row.accountId)}
                     </span>
-                    <span className="flex shrink-0 items-baseline gap-2">
-                      <span className="text-sm tabular-nums text-app-fg">
+                    <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
+                      <span className="text-right text-sm tabular-nums text-app-fg">
                         {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
                       </span>
                       <span
-                        className={`shrink-0 text-right text-xs font-medium ${statusClass(row.status)}`}
+                        className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
                       >
                         {t(statusKey(row.status))}
                       </span>

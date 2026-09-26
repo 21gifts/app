@@ -2208,7 +2208,7 @@ export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
 export type RepaymentLine = z.infer<typeof repaymentLineSchema>;
 
 /**
- * Loads who gave what and the Lightning repayment plan. No session.
+ * Loads who gave what and the bitcoin repayment plan. No session.
  *
  * @param messageId - Credit note id.
  * @returns The ledger, or null when the note is not a credit or the body is unusable.
