@@ -1000,7 +1000,7 @@
 
 - **Purpose:** Living-room screen. With a session it is the fourth post-login screen after name, address, and living-room rules agreement are saved. Without a session it is the public active list. Embeds `ForumLoader` below the heading. Page column is `max-w-xl` (`Card surface={false}`) so the AppShell frame is the only page-level `rounded-3xl`.
 - **Inputs:** Reads `session` and `account.name` from `useAuthStore`.
-- **Returns / side effects:** Gift icon with an integrated Bitcoin symbol. Heading **Welcome, {name}** when the account has a name, otherwise **Welcome**. Forum board. A session gets the composer; no session passes `readOnly` and shows **Log in** in the chrome. No name or address form. No donate CTA. No `LogoutButton` in the page column.
+- **Returns / side effects:** Gift icon with an integrated Bitcoin symbol. Heading **Welcome, {name}** when the account has a name, otherwise **Welcome**. Forum board. A session gets the composer. `ForumLoader` sets `readOnly` when there is no session. `WelcomePage` shows **Log in** in the chrome. No name or address form. No donate CTA. No `LogoutButton` in the page column.
 - **Used by:** Screen `/welcome`.
 
 ## Function: forumTextPreview
