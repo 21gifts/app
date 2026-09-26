@@ -60,6 +60,9 @@ describe('scroll surface', () => {
     const option = document.createElement('option');
     select.appendChild(option);
     document.body.appendChild(select);
+    const math = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'math');
+    math.setAttribute('data-scrollport', '');
+    document.body.appendChild(math);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('data-scrollport', '');
     svg.style.overflow = 'auto';

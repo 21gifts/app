@@ -108,7 +108,7 @@ for (const file of walk(SRC)) {
       !/html,\s*\nbody\s*\{[^}]*overflow:\s*clip/s.test(text) &&
       !/html,\s*body\s*\{[^}]*overflow:\s*clip/s.test(text)
     ) {
-      failures.push(`${rel}: html and body must be overflow:hidden`);
+      failures.push(`${rel}: html and body must be overflow:clip`);
     }
     lines.forEach((line, index) => {
       CLASS_BANNED.lastIndex = 0;

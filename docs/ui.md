@@ -332,7 +332,7 @@ The painted control stays `h-6 w-6`. The lucide node sits in `relative z-10`. Do
 
 ## One scroll surface
 
-A page scrolls in exactly one place. `html` and `body` are locked to `--app-height` (`overflow: hidden`). The only scroller is the newest `[data-scrollport]` (`Scrollport` inside `AppShell`, the marketing shell, the 404 page, or a dialog that locks the page behind it). `ScrollSurfaceGuard` clips any other `auto`, `scroll`, or `overlay` overflow, including one added later from script. Textareas grow with their text. Inputs and selects stay native. Do not add `overflow-auto`, `overflow-scroll`, or an inline scrolling overflow. `scripts/check-scrollports.mjs` fails lint when that shows up, and it checks its own detector on every run.
+A page scrolls in exactly one place. `html` and `body` are locked to `--app-height` (`overflow: clip`). The only scroller is the newest `[data-scrollport]` (`Scrollport` inside `AppShell`, the marketing shell, the 404 page, or a dialog that locks the page behind it). `ScrollSurfaceGuard` clips any other `auto`, `scroll`, or `overlay` overflow, including one added later from script. Textareas grow with their text. Inputs and selects stay native. Do not add `overflow-auto`, `overflow-scroll`, or an inline scrolling overflow. `scripts/check-scrollports.mjs` fails lint when that shows up, and it checks its own detector on every run.
 
 ## Two shells
 
@@ -446,7 +446,7 @@ flowchart TB
 | Log out              | `LogoutButton`                | labeled                                                                             |
 | Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
 
-Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). `7rem` is AppShell `px-6` plus chrome `px-8` on both sides so the panel stays on-screen at 320 CSS pixels. AppShell `<main>` has no `overflow-hidden` so the panel is not clipped. The document is `overflow: hidden`; the only scrollport is `[data-scrollport]`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
+Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). `7rem` is AppShell `px-6` plus chrome `px-8` on both sides so the panel stays on-screen at 320 CSS pixels. AppShell `<main>` has no `overflow-hidden` so the panel is not clipped. The document is `overflow: clip`; the only scrollport is `[data-scrollport]`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
 **Marketing header** stays dedicated (`MarketingHeader`): sticky, `bg-ink/85 backdrop-blur-xl`, `border-b border-paper/10`, `px-5 py-3.5`. Do not reuse `PageChrome` on marketing.
 
@@ -590,7 +590,7 @@ Loading: leading `Loader2` `h-4 w-4 animate-spin` (labeled) or replacing the gly
 
 **Anatomy.** `AppShell` always draws one `rounded-3xl` page frame. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). `fill` and `flow` share locked-height inner-scroller geometry. Card never hosts page chrome. `PageChrome` is the flow-mode wrapper (`mode="flow"`); prefer `AppShell` on new routes.
 
-**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, one inner `[data-scrollport]`, `bg` inherited from `body`. `html` and `body` are `overflow: hidden`. Never Tailwind viewport-height utilities on app routes. Never a second scrollport. `ScrollSurfaceGuard` clips any later `auto` / `scroll` / `overlay` overflow, including values set from script. The newest scrollport is the one that scrolls. Textareas grow with their text.
+**Tokens.** `h-[var(--app-height)]` for both `fill` and `flow`, `px-6` `py-4`, one inner `[data-scrollport]`, `bg` inherited from `body`. `html` and `body` are `overflow: clip`. Never Tailwind viewport-height utilities on app routes. Never a second scrollport. `ScrollSurfaceGuard` clips any later `auto` / `scroll` / `overlay` overflow, including values set from script. The newest scrollport is the one that scrolls. Textareas grow with their text.
 
 **API.**
 

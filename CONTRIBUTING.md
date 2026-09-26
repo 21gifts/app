@@ -252,6 +252,7 @@ app/
 │   │   ├── ContactLoader.tsx    # Post + requirements-overlay state for /contact
 │   │   ├── AppShell.tsx         # fill/flow page shell driven by --app-height
 │   │   ├── AppHeightSync.tsx    # Client mount that syncs --app-height after hydration
+│   │   ├── ScrollSurfaceGuard.tsx # Clips every scrollport except the active one
 │   │   └── ui/
 │   │       ├── Button.tsx       # Shared button primitive
 │   │       ├── ButtonLink.tsx   # Shared pill link
@@ -260,6 +261,7 @@ app/
 │   │       ├── IconButton.tsx   # Shared icon button
 │   │       ├── PageChrome.tsx   # Flow-mode wrapper around AppShell
 │   │       ├── SegmentedControl.tsx # Mutually exclusive option group
+│   │       ├── Scrollport.tsx   # The one layout scrollport
 │   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
 │   ├── hooks/
@@ -303,6 +305,7 @@ app/
 │   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
 │   │   ├── trust-chain.ts       # mergeTrustChain + layoutTrustChain (stack, no invented edges)
 │   │   ├── app-height.ts        # --app-height bootstrap IIFE (server-safe; no hooks)
+│   │   ├── scroll-surface.ts    # Which scrollport is active, and clipping of the rest
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
@@ -419,7 +422,7 @@ update stuff
 ### One scroll surface (hard requirement)
 
 Each page has exactly one scrollable surface. `html` and `body` are
-`overflow: hidden` and `height: var(--app-height)`. `--app-height` is the
+`overflow: clip` and `height: var(--app-height)`. `--app-height` is the
 visible viewport (`visualViewport.height`, otherwise `innerHeight`), never
 taller. The only element that may scroll is the newest `[data-scrollport]`.
 An older one, including a sibling, is locked. `ScrollSurfaceGuard` watches
