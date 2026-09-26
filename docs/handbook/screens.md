@@ -1966,6 +1966,12 @@ Admitted owner on `/grants`. The participation sentence **Takes part in the 21.g
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
 
+### Variant: open-applications
+
+Moderator on `/grants`. The grant card is shown, and **Open applications** links to `/grants/applications`. Needle `state-grants-open-applications`.
+
+![21.gifts grants open applications](images/grants-open-applications.png)
+
 ## Screen: /profile/apply
 
 - **Purpose:** Permanent redirect to `/grants/apply`. This path renders no grant UI.

@@ -1703,6 +1703,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-profile-funding-program-open',
   },
   {
+    route: '/grants',
+    id: 'open-applications',
+    image: 'grants-open-applications.png',
+    visual: 'state-grants-open-applications',
+    needle: 'state-grants-open-applications',
+  },
+  {
     route: '/profile/apply',
     id: 'redirect',
     image: 'profile-apply.png',

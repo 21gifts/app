@@ -7019,7 +7019,7 @@ test.describe('profile funding states', () => {
   async function seedFundingProfile(
     page: Page,
     extras: {
-      role?: 'basis' | 'verified';
+      role?: 'basis' | 'verified' | 'moderator';
       funding?: unknown;
     } = {},
   ): Promise<void> {
@@ -7143,6 +7143,13 @@ test.describe('profile funding states', () => {
     await revealed.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-funding-program-open', false);
   });
+
+  test('state /grants open-applications', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'moderator' });
+    await page.goto('/grants');
+    await expect(page.getByRole('link', { name: 'Open applications' })).toBeVisible();
+    await shotScreen(page, 'state-grants-open-applications');
+  });
 });
 
 test.describe('profile apply screens', () => {
@@ -7232,7 +7239,7 @@ test.describe('profile apply screens', () => {
     });
   }
 
-  test('screen /profile/apply', async ({ page }) => {
+  test('screen /grants/apply', async ({ page }) => {
     await seedApply(page);
     await page.goto('/grants/apply');
     await expect(
@@ -7415,7 +7422,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-unmet');
   });
 
-  test('state /profile/apply translate', async ({ page }) => {
+  test('state /grants/apply translate', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7429,7 +7436,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate');
   });
 
-  test('state /profile/apply translate-loading', async ({ page }) => {
+  test('state /grants/apply translate-loading', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7447,7 +7454,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate-loading');
   });
 
-  test('state /profile/apply translate-done', async ({ page }) => {
+  test('state /grants/apply translate-done', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7464,7 +7471,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate-done');
   });
 
-  test('state /profile/apply translate-hidden', async ({ page }) => {
+  test('state /grants/apply translate-hidden', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -7482,7 +7489,7 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-translate-hidden');
   });
 
-  test('state /profile/apply translate-error', async ({ page }) => {
+  test('state /grants/apply translate-error', async ({ page }) => {
     await seedApply(page, {
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
@@ -12992,7 +12999,7 @@ test.describe('moderate applications screens', () => {
     });
   }
 
-  test('screen /moderate/applications', async ({ page }) => {
+  test('screen /grants/applications', async ({ page }) => {
     await seedAda(page, 'founder');
     await stubApplications(page, [APPLICATION]);
     await page.goto('/grants/applications');
@@ -13046,7 +13053,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-moderate-applications-error');
   });
 
-  test('screen /moderate/applications/[accountId]', async ({ page }) => {
+  test('screen /grants/applications/[accountId]', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13157,7 +13164,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-moderate-applications-accountId-deciding');
   });
 
-  test('state /moderate/applications/[accountId] translate', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13176,7 +13183,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate');
   });
 
-  test('state /moderate/applications/[accountId] translate-loading', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-loading', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13199,7 +13206,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate-loading');
   });
 
-  test('state /moderate/applications/[accountId] translate-done', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-done', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13221,7 +13228,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate-done');
   });
 
-  test('state /moderate/applications/[accountId] translate-hidden', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-hidden', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({
@@ -13244,7 +13251,7 @@ test.describe('moderate applications screens', () => {
     await shotScreen(page, 'state-applications-id-translate-hidden');
   });
 
-  test('state /moderate/applications/[accountId] translate-error', async ({ page }) => {
+  test('state /grants/applications/[accountId] translate-error', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/applications/acc_rose', async (route) => {
       await route.fulfill({

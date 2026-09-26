@@ -1398,6 +1398,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants:open-applications",
+    "label": "/grants open-applications",
+    "visual": "state-grants-open-applications",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile/apply:redirect",
     "label": "/profile/apply redirect",
     "visual": "screen-profile-apply",
