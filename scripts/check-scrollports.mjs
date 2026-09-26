@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fail if production source adds a second layout scrollport.
- * Overflow auto/scroll is allowed only on `[data-scrollport]` in globals.css.
+ * The only scrolling declaration in globals.css is `overflow: auto` on
+ * `[data-scrollport][data-scroll-active]`. Any other auto, scroll, or
+ * overlay overflow there is a second scrollport.
  * Run from the repo root. No extra packages.
  */
 import fs from 'node:fs';
