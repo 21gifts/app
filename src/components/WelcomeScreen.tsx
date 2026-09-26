@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/auth-store';
  */
 export function WelcomeScreen(): ReactElement {
   const { t } = useTranslations();
+  const session = useAuthStore((state) => state.session);
   const storedName = useAuthStore((state) => state.account?.name);
   const name = storedName === null || storedName === undefined ? '' : storedName.trim();
 
@@ -45,7 +46,9 @@ export function WelcomeScreen(): ReactElement {
         </g>
       </svg>
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        {t('login.welcomeHeading', { name })}
+        {session !== null && name !== ''
+          ? t('login.welcomeHeading', { name })
+          : t('login.welcomeSignedOut')}
       </h1>
       <ForumLoader />
     </Card>

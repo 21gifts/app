@@ -188,9 +188,35 @@ describe('FundingStatusCard', () => {
         `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
           admittedAt,
           'en',
+        )}, reviewed by Ada`,
+      ),
+    ).toBeTruthy();
+  });
+
+  it('keeps the old admitted sentence when reviewedByName is null', () => {
+    const admittedAt = Date.parse('2026-08-28T12:00:00.000Z');
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          status: 'admitted',
+          trialUtcDate: null,
+          admittedAt,
+          reviewedByName: null,
+        },
+      },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(
+      screen.getByText(
+        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+          admittedAt,
+          'en',
         )}`,
       ),
     ).toBeTruthy();
+    expect(screen.queryByText(/Ada/)).toBeNull();
   });
 
   it('shows admitted copy without a date when admittedAt is null', () => {

@@ -24,7 +24,12 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: () => void } => ({ push: () => undefined }),
+}));
+
 vi.mock('@/lib/api', () => ({
+  fetchForumMessage: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchShortLink: vi.fn(),
@@ -36,7 +41,13 @@ vi.mock('@/lib/note-translate', () => ({
   translateNote: vi.fn(),
 }));
 
-import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
+import {
+  fetchForumMessage,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchShortLink,
+} from '@/lib/api';
+import { useAuthStore } from '@/stores/auth-store';
 import {
   fetchTranslateAvailable,
   translateConversationMessage,
@@ -44,6 +55,7 @@ import {
 } from '@/lib/note-translate';
 
 const fetchMessage = vi.mocked(fetchPublicMessage);
+const fetchForum = vi.mocked(fetchForumMessage);
 const fetchPhoto = vi.mocked(fetchPublicMessagePhoto);
 const fetchShort = vi.mocked(fetchShortLink);
 const fetchAvailable = vi.mocked(fetchTranslateAvailable);
@@ -87,6 +99,7 @@ const parentNote: ForumMessage = {
 
 beforeEach(() => {
   fetchMessage.mockReset();
+  fetchForum.mockReset();
   fetchPhoto.mockReset();
   fetchShort.mockReset();
   fetchShort.mockResolvedValue(null);
@@ -112,6 +125,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ session: null, account: null });
   vi.restoreAllMocks();
 });
 
@@ -213,6 +227,107 @@ describe('ForumQuotedBody', () => {
       expect(translateConversation).not.toHaveBeenCalled();
     },
   );
+
+  it('loads a missing quote with the session and passes marks through', async () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    fetchForum.mockResolvedValue({ ...quotedNote, text: 'Nested' });
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`hello @ada ${QUOTED_URL}`}
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchForum).toHaveBeenCalledWith('tok', QUOTED_ID);
+    });
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    cleanup();
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <ForumQuotedBody
+        text="hello @ada"
+        knownNotes={[]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+        mentions={[{ username: 'ada', accountId: 'acc-ada' }]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+  });
+
+  it('passes marks on a nested note in each body', () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    const marked = {
+      ...quotedNote,
+      accountId: 'acc-cyrill',
+      text: 'hi @ada',
+      hasPhoto: false,
+      photoCount: 0,
+      mentions: [{ username: 'ada', accountId: 'acc-ada' }],
+    };
+    const { unmount } = renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[marked]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    unmount();
+    const plain = renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[marked]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    plain.unmount();
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[marked]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        translate={false}
+        truncate={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+  });
+
+  it('links a nested 21.gifts author without opening the quote', async () => {
+    useAuthStore.setState({ session: 'tok', account: null });
+    const onActivate = vi.fn();
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[{ ...quotedNote, accountId: 'acc-cyrill', text: 'Nested' }]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+        onActivate={onActivate}
+      />,
+    );
+    const author = await screen.findByRole('link', { name: 'View profile' });
+    expect(author.getAttribute('href')).toBe('/members/acc-cyrill');
+    fireEvent.click(author);
+    expect(onActivate).not.toHaveBeenCalled();
+  });
 
   it('translates a non-nostr nested caption using its forum id and keeps links active', async () => {
     fetchAvailable.mockResolvedValue(true);

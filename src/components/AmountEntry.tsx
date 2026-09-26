@@ -1,12 +1,14 @@
 'use client';
 
+import { Delete } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { SegmentedControl } from '@/components/ui';
+import { Button, SegmentedControl } from '@/components/ui';
 import { setAmountUnit } from '@/lib/api';
 import type { AmountUnit } from '@/lib/api-types';
+import { separatorsFor } from '@/lib/number-format';
 import {
   fiatDraftForSats,
   formatBitcoin,
@@ -59,6 +61,40 @@ export interface AmountEntryProps {
    * `composer` and `inline` keep the label for assistive tech only.
    */
   layout?: 'field' | 'composer' | 'inline';
+  /**
+   * Till keypad. No text field. Other screens omit this and keep the input.
+   */
+  keypad?: boolean;
+}
+
+/**
+ * Next till draft after one keypad or keyboard edit.
+ * A lone `0` is replaced by the next digit. A second decimal and a ninth
+ * fractional digit do nothing. Delete drops the last character.
+ *
+ * @param current - Draft shown now.
+ * @param key - A digit, `decimal`, or `delete`.
+ * @param decimal - Decimal mark from the number format.
+ * @returns The next draft.
+ */
+function nextKeypadDraft(current: string, key: string, decimal: string): string {
+  if (key === 'delete') {
+    return current.slice(0, -1);
+  }
+  if (key === 'decimal') {
+    if (current.includes('.') || current.includes(',')) {
+      return current;
+    }
+    return `${current}${decimal}`;
+  }
+  if (current === '0') {
+    return key;
+  }
+  const sep = current.search(/[.,]/);
+  if (sep >= 0 && current.length - sep - 1 >= 8) {
+    return current;
+  }
+  return `${current}${key}`;
 }
 
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
@@ -182,10 +218,12 @@ export function AmountEntry({
   valueUnit,
   onUnitChange,
   layout = 'field',
+  keypad = false,
 }: AmountEntryProps): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
+  const decimal = separatorsFor(numberFormat).decimal;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -211,6 +249,20 @@ export function AmountEntry({
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')}`;
 
+  const draftForUnit = (
+    from: AmountUnit,
+    to: AmountUnit,
+    draft: string,
+    day: FiatRateDay | null,
+    code: FiatCode,
+  ): string => {
+    const converted = convertAmountDraft(from, to, draft, day, code);
+    if (!keypad || to !== 'fiat' || decimal === '.') {
+      return converted;
+    }
+    return converted.replaceAll('.', decimal);
+  };
+
   useEffect(() => {
     if (locked) {
       applied.current = unit;
@@ -223,7 +275,7 @@ export function AmountEntry({
       return;
     }
     const from = applied.current;
-    const converted = convertAmountDraft(from, unit, value, rateDay, fiat);
+    const converted = draftForUnit(from, unit, value, rateDay, fiat);
     if (value.trim() !== '' && converted === '') {
       return;
     }
@@ -233,7 +285,57 @@ export function AmountEntry({
     if (converted !== value) {
       onValueChange(converted);
     }
-  }, [fiat, locked, onUnitChange, onValueChange, rateDay, unit, value]);
+  }, [decimal, fiat, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
+
+  useEffect(() => {
+    if (!keypad || disabled || locked) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          target.contentEditable === 'true'
+        ) {
+          return;
+        }
+      }
+      let key: string | null = null;
+      if (/^[0-9]$/.test(event.key)) {
+        key = event.key;
+      } else if (
+        event.key === '.' ||
+        event.key === ',' ||
+        event.key === 'Decimal' ||
+        event.code === 'NumpadDecimal'
+      ) {
+        key = 'decimal';
+      } else if (event.key === 'Backspace' || event.key === 'Delete') {
+        key = 'delete';
+      }
+      if (key === null) {
+        return;
+      }
+      event.preventDefault();
+      const next = nextKeypadDraft(value, key, decimal);
+      if (next === value) {
+        return;
+      }
+      draftRef.current = next;
+      onValueChange(next);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [decimal, disabled, keypad, locked, onValueChange, value]);
 
   const changeUnit = (next: AmountUnit): void => {
     if (disabled || locked || posting.current || next === shownUnit) {
@@ -241,7 +343,7 @@ export function AmountEntry({
     }
     const previousDraft = value;
     const previousUnit = shownUnit;
-    const converted = convertAmountDraft(previousUnit, next, value, rateDay, fiat);
+    const converted = draftForUnit(previousUnit, next, value, rateDay, fiat);
     if (value.trim() !== '' && converted === '') {
       return;
     }
@@ -300,7 +402,7 @@ export function AmountEntry({
         const restored =
           rollback === previousUnit && live === converted
             ? previousDraft
-            : convertAmountDraft(next, rollback, live, rateRef.current, fiatRef.current);
+            : draftForUnit(next, rollback, live, rateRef.current, fiatRef.current);
         const keepTyped = restored === '' && live.trim() !== '';
         applied.current = keepTyped ? next : rollback;
         setShownUnit(keepTyped ? next : rollback);
@@ -354,6 +456,62 @@ export function AmountEntry({
     layout === 'inline'
       ? 'h-12 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50'
       : 'w-full min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50';
+  const pushKey = (key: string): void => {
+    const next = nextKeypadDraft(shown, key, decimal);
+    if (next === shown) {
+      return;
+    }
+    draftRef.current = next;
+    onValueChange(next);
+  };
+  if (keypad) {
+    const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', decimal, '0'];
+    return (
+      <div className={`flex flex-col gap-2${extra}`}>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm text-app-fg">{label}</p>
+          {unitSwitch}
+        </div>
+        <p id={fieldId} aria-label={label} className={`${amountClass} text-center`}>
+          {shown === '' ? (placeholder ?? '') : shown}
+        </p>
+        {counter !== null ? (
+          <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
+        ) : null}
+        <div className="grid w-full grid-cols-3 gap-2">
+          {digits.map((digit) => (
+            <Button
+              key={digit}
+              variant="secondary"
+              size="sm"
+              type="button"
+              className="w-full"
+              disabled={disabled || locked}
+              aria-label={digit}
+              onClick={() => {
+                pushKey(digit === decimal ? 'decimal' : digit);
+              }}
+            >
+              {digit}
+            </Button>
+          ))}
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            className="w-full"
+            disabled={disabled || locked}
+            aria-label={t('pos.keypadDelete')}
+            onClick={() => {
+              pushKey('delete');
+            }}
+          >
+            <Delete aria-hidden="true" className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const amountInput = (
     <input
       id={fieldId}

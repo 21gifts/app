@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
+import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -25,7 +26,6 @@ import {
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
-import { roleAtLeast } from '@/lib/roles';
 import { formatBitcoin, latestRateDay, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -117,7 +117,7 @@ function PublicThreadCard({
         </time>
       </div>
       {note.hasVideo && !videoFailed ? (
-        <video
+        <ForumVideo
           src={forumVideoSrc(note.id, note.videoContentType)}
           poster={photoUrl ?? undefined}
           controls
@@ -216,9 +216,9 @@ function PublicThreadCard({
 
 /**
  * Client loader for `/messages/[id]`: validates the UUID, waits for session
- * hydrate, then fetches the note. Staff (moderator/founder) use bearer
- * {@link fetchForumMessage} / {@link fetchReplies} so a soft-hidden row can
- * load with a hide notice; everyone else uses the public fetch (404 → missing).
+ * hydrate, then fetches the note. Any session uses bearer
+ * {@link fetchForumMessage} / {@link fetchReplies}. A hidden note is still
+ * 404 for a non-moderator (missing). Everyone else uses the public fetch.
  * Opening a reply UUID still shows the parent thread. Unsigned visitors keep
  * the read-only cards. When hydrate is ready and both session and account are
  * set, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
@@ -263,13 +263,13 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     setReplies([]);
     setHighlightId(null);
 
-    const staff = session !== null && roleAtLeast(account?.role, 'moderator');
-    const loadNote =
-      staff && session
-        ? (noteId: string) => fetchForumMessage(session, noteId)
-        : fetchPublicMessage;
-    const loadReplies =
-      staff && session ? (rootId: string) => fetchReplies(session, rootId) : fetchPublicReplies;
+    const authed = session !== null;
+    const loadNote = authed
+      ? (noteId: string) => fetchForumMessage(session, noteId)
+      : fetchPublicMessage;
+    const loadReplies = authed
+      ? (rootId: string) => fetchReplies(session, rootId)
+      : fetchPublicReplies;
 
     void (async () => {
       try {
@@ -318,7 +318,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [id, attempt, ready, session, account?.role]);
+  }, [id, attempt, ready, session]);
 
   useEffect(() => {
     if (!MESSAGE_ID_RE.test(id)) {

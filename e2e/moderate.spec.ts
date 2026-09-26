@@ -547,24 +547,33 @@ test('Function: ForumQuotedBody — moderators group unfurls a pasted note URL',
   const quotedUrl = `https://21.gifts/messages/${quotedId}`;
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroup(page, `see ${quotedUrl}`);
+  const quoted = {
+    id: quotedId,
+    name: 'Cyrill',
+    text: 'Nested post',
+    createdAt: '2026-08-20T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    replyCount: 0,
+    role: 'founder',
+    accountId: 'acc-cyrill',
+  };
   await page.route(`**/public-messages/${quotedId}`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        id: quotedId,
-        name: 'Cyrill',
-        text: 'Nested post',
-        createdAt: '2026-08-20T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        replyCount: 0,
-        role: 'founder',
-      }),
+      body: JSON.stringify(quoted),
+    });
+  });
+  await page.route(`**/forum/messages/${quotedId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(quoted),
     });
   });
   await page.goto('/moderate/group');

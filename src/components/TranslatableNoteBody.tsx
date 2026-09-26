@@ -3,7 +3,7 @@
 import { useLayoutEffect, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { ForumNoteText } from '@/components/ForumNoteText';
-import { LinkedText } from '@/components/LinkedText';
+import { LinkedText, type TextMention } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NoteTranslate, type NoteTranslateSource } from '@/components/NoteTranslate';
 
@@ -31,6 +31,8 @@ export interface TranslatableNoteBodyProps {
    * rather than stacked. Default stacks the control under the body.
    */
   controlSlotId?: string;
+  /** Member marks on the original body. Not applied to a translation. */
+  mentions?: readonly TextMention[];
 }
 
 /**
@@ -59,6 +61,7 @@ export function TranslatableNoteBody({
   className = DEFAULT_BODY_CLASS,
   formatTranslated,
   controlSlotId,
+  mentions,
 }: TranslatableNoteBodyProps): ReactElement | null {
   const { locale } = useTranslations();
   const [controlSlot, setControlSlot] = useState<HTMLElement | null>(null);
@@ -84,10 +87,21 @@ export function TranslatableNoteBody({
     return null;
   }
   const onButton = className.split(/\s+/).includes('text-app-btn-fg');
+  const mentionProp = mentions === undefined ? {} : { mentions };
   const original = truncate ? (
-    <ForumNoteText text={text} className={className} {...(plain ? { plain: true } : {})} />
+    <ForumNoteText
+      text={text}
+      className={className}
+      {...(plain ? { plain: true } : {})}
+      {...mentionProp}
+    />
   ) : (
-    <LinkedText text={text} className={className} {...(plain ? { plain: true } : {})} />
+    <LinkedText
+      text={text}
+      className={className}
+      {...(plain ? { plain: true } : {})}
+      {...mentionProp}
+    />
   );
   const visible =
     showingTranslation && translatedText !== null ? (

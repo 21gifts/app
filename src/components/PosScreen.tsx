@@ -43,7 +43,7 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
  *
  * @returns The point-of-sale card.
  */
-export function PosScreen(): ReactElement {
+export function PosTill(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -217,7 +217,7 @@ export function PosScreen(): ReactElement {
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}
           </p>
-          <p className="min-w-0 truncate font-mono text-sm text-app-fg">{address}</p>
+          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
           {showQr && qr !== null ? (
             <div className="flex justify-center">
               <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
@@ -274,6 +274,7 @@ export function PosScreen(): ReactElement {
       (account?.lightningAddress ?? '').trim() !== '' ? (
         <form className="flex flex-col gap-3" noValidate onSubmit={(event) => void onCreate(event)}>
           <AmountEntry
+            keypad
             label={t('pos.amount')}
             placeholder={t('pos.amountPlaceholder')}
             value={amount}
@@ -294,4 +295,14 @@ export function PosScreen(): ReactElement {
       ) : null}
     </Card>
   );
+}
+
+/**
+ * `/pos` till. The wallet page does not reuse this card. It shows the address
+ * and QR, then links here to set an amount.
+ *
+ * @returns The point-of-sale card.
+ */
+export function PosScreen(): ReactElement {
+  return <PosTill />;
 }

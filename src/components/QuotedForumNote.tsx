@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { ForumNoteText } from '@/components/ForumNoteText';
-import { LinkedText } from '@/components/LinkedText';
+import { LinkedText, type TextMention } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { fetchPublicMessage, fetchPublicMessagePhoto, fetchShortLink } from '@/lib/api';
+import {
+  fetchForumMessage,
+  fetchPublicMessage,
+  fetchPublicMessagePhoto,
+  fetchShortLink,
+} from '@/lib/api';
+import { useAuthStore } from '@/stores/auth-store';
 import type { ForumMessage } from '@/lib/api-types';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
@@ -94,34 +100,46 @@ function QuotedForumNote({
   const handleActivate = (event: { stopPropagation: () => void }): void => {
     onActivate?.(event);
   };
+  const session = useAuthStore((state) => state.session);
+  const memberAuthor =
+    session !== null && typeof note.accountId === 'string' && note.accountId !== '';
+  const quoteLabel =
+    note.via === 'nostr'
+      ? t('forum.quotedNoteExternal', { name: note.name })
+      : t('forum.quotedNote', { name: note.name });
 
   return (
     <div
       className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2"
       onClick={handleActivate}
     >
-      <Link
-        href={`/messages/${note.id}`}
-        aria-label={
-          note.via === 'nostr'
-            ? t('forum.quotedNoteExternal', { name: note.name })
-            : t('forum.quotedNote', { name: note.name })
-        }
-        className="block"
-      >
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {memberAuthor ? (
+            <Link
+              href={`/members/${note.accountId}`}
+              aria-label={t('forum.authorProfile')}
+              className="text-sm font-medium text-app-fg underline underline-offset-2"
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              {note.name}
+            </Link>
+          ) : (
             <span className="text-sm font-medium text-app-fg">{note.name}</span>
-            {badgeLabel !== null ? (
-              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                {badgeLabel}
-              </span>
-            ) : null}
-          </span>
-          <time dateTime={note.createdAt} className="text-xs text-app-subtle">
-            {formatForumTime(note.createdAt, locale)}
-          </time>
-        </div>
+          )}
+          {badgeLabel !== null ? (
+            <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+              {badgeLabel}
+            </span>
+          ) : null}
+        </span>
+        <Link href={`/messages/${note.id}`} className="text-xs text-app-subtle">
+          <time dateTime={note.createdAt}>{formatForumTime(note.createdAt, locale)}</time>
+        </Link>
+      </div>
+      <Link href={`/messages/${note.id}`} aria-label={quoteLabel} className="block">
         {photoUrl !== null ? (
           /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
           <img
@@ -139,18 +157,21 @@ function QuotedForumNote({
             truncate={truncate}
             className="whitespace-pre-wrap text-sm text-app-fg"
             {...(note.via === 'nostr' ? { plain: true } : {})}
+            {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
           />
         ) : truncate ? (
           <ForumNoteText
             text={note.text}
             className="whitespace-pre-wrap text-sm text-app-fg"
             {...(note.via === 'nostr' ? { plain: true } : {})}
+            {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
           />
         ) : (
           <LinkedText
             text={note.text}
             className="whitespace-pre-wrap text-sm text-app-fg"
             {...(note.via === 'nostr' ? { plain: true } : {})}
+            {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
           />
         )
       ) : null}
@@ -208,6 +229,7 @@ export function ForumQuotedBody({
   formatTranslated,
   onActivate,
   controlSlotId,
+  mentions,
 }: {
   text: string;
   knownNotes: readonly ForumMessage[];
@@ -222,6 +244,8 @@ export function ForumQuotedBody({
   onActivate?: (event: { stopPropagation: () => void }) => void;
   /** When set, forwarded to TranslatableNoteBody, which portals NoteTranslate into this element (footer icon row). */
   controlSlotId?: string;
+  /** Member marks in the remaining body. Omitted when the author name is plain text. */
+  mentions?: readonly TextMention[];
 }): ReactElement | null {
   const quoteIds = useMemo(() => {
     const exclude = excludeId.toLowerCase();
@@ -267,6 +291,7 @@ export function ForumQuotedBody({
     return ids;
   }, [quoteIds, shortHits]);
 
+  const session = useAuthStore((state) => state.session);
   const [fetchedNotes, setFetchedNotes] = useState<ForumMessage[]>([]);
   const missingKey = candidateIds
     .filter((id) => findKnownNote(knownNotes, id) === undefined)
@@ -284,7 +309,8 @@ export function ForumQuotedBody({
       const next: ForumMessage[] = [];
       for (const id of missing) {
         try {
-          const note = await fetchPublicMessage(id);
+          const note =
+            session !== null ? await fetchForumMessage(session, id) : await fetchPublicMessage(id);
           if (note !== null) {
             next.push(note);
           }
@@ -300,7 +326,7 @@ export function ForumQuotedBody({
     return () => {
       cancelled = true;
     };
-  }, [missingKey]);
+  }, [missingKey, session]);
 
   const resolvedNotes = useMemo(() => {
     const notes: ForumMessage[] = [];
@@ -356,11 +382,20 @@ export function ForumQuotedBody({
               ? { source: { kind: 'conversation' as const, conversationId } }
               : {})}
             {...(controlSlotId === undefined ? {} : { controlSlotId })}
+            {...(mentions === undefined ? {} : { mentions })}
           />
         ) : truncate ? (
-          <ForumNoteText text={displayText} className={className} />
+          <ForumNoteText
+            text={displayText}
+            className={className}
+            {...(mentions === undefined ? {} : { mentions })}
+          />
         ) : (
-          <LinkedText text={displayText} className={className} />
+          <LinkedText
+            text={displayText}
+            className={className}
+            {...(mentions === undefined ? {} : { mentions })}
+          />
         )
       ) : null}
       {resolvedNotes.map((note) => (

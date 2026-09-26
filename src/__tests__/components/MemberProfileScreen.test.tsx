@@ -521,6 +521,41 @@ describe('MemberProfileScreen', () => {
     expect(mark.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('names the reviewer on the funding mark when the API sends a name', () => {
+    const admittedAt = Date.parse('2026-08-28T12:00:00.000Z');
+    const label = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      admittedAt,
+      'en',
+    )}, reviewed by Ada`;
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, fundingReviewedAt: admittedAt, fundingReviewedByName: 'Ada' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const mark = screen.getByRole('button', { name: label });
+    fireEvent.click(mark);
+    expect(screen.getByText(label)).toBeTruthy();
+  });
+
+  it('keeps the old funding sentence when the reviewer name is null', () => {
+    const admittedAt = Date.parse('2026-08-28T12:00:00.000Z');
+    const label = `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(
+      admittedAt,
+      'en',
+    )}`;
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, fundingReviewedAt: admittedAt, fundingReviewedByName: null }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    expect(screen.queryByText(/reviewed by/)).toBeNull();
+  });
+
   it('does not show a reviewed-by tag when fundingReviewedAt is null', () => {
     renderWithLocale(
       <MemberProfileScreen

@@ -229,6 +229,7 @@ const en = {
   'login.logOut': 'Log out',
   'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
+  'login.welcomeSignedOut': 'Welcome',
   'setup.nameTitle': 'Your name',
   'setup.usernameTitle': 'Your 21.gifts name',
   'setup.usernameHint':
@@ -389,6 +390,8 @@ const en = {
   'forum.newPosts': 'New posts',
   'forum.moderatorAppointed': 'You are a moderator',
   'forum.authorProfile': 'View profile',
+  'forum.videoFullscreen': 'Full screen',
+  'forum.videoExitFullscreen': 'Leave full screen',
   'forum.translate': 'Translate',
   'forum.translateShowOriginal': 'Show original',
   'forum.translateShowTranslation': 'Show translation',
@@ -420,6 +423,7 @@ const en = {
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
   'wallet.advanced': 'Advanced functions',
+  'wallet.setAmount': 'Set an amount',
   'wallet.prfUnsupported':
     'This browser cannot create a recovery phrase. Try another browser or device.',
   'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
@@ -452,7 +456,7 @@ const en = {
   'profile.push.level.active': 'Active',
   'profile.push.level.mentions': 'Mentions',
   'profile.push.level.hint':
-    'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive.',
+    'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive, and @username marks.',
   'profile.push.level.error': 'Could not save notification level.',
   'profile.postCount': '{count} posts',
   'profile.replyCount': '{count} reactions',
@@ -493,6 +497,7 @@ const en = {
   'pos.outside': 'Amount is outside the wallet range.',
   'pos.already': 'A payment is already open.',
   'pos.badAmount': 'Enter a whole number.',
+  'pos.keypadDelete': 'Delete',
   'profile.message': 'Message',
 
   'view.unnamed': 'Unnamed',
@@ -691,6 +696,7 @@ const en = {
   'notifications.photoPost': 'Photo',
   'notifications.moderatorAppointed': 'You are a moderator',
   'notifications.moderatorProposal': '{name} proposed a moderator',
+  'notifications.mention': '{name} marked you',
 
   'moderate.heading': 'Moderation',
   'moderate.toolsLabel': 'Moderation tools',
@@ -771,6 +777,8 @@ const en = {
   'funding.admitted': 'You are admitted to daily 21.gifts grant payouts.',
   'funding.participates': 'Takes part in the 21.gifts funding program',
   'funding.participatesSince': 'Takes part in the 21.gifts funding program since {date}',
+  'funding.participatesSinceBy':
+    'Takes part in the 21.gifts funding program since {date}, reviewed by {name}',
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
   'funding.applications.empty': 'No open applications.',
@@ -1042,6 +1050,7 @@ const de = {
   'login.logOut': 'Abmelden',
   'login.helloName': 'Hallo, {name}',
   'login.welcomeHeading': 'Willkommen, {name}',
+  'login.welcomeSignedOut': 'Willkommen',
   'setup.nameTitle': 'Ihr Name',
   'setup.usernameTitle': 'Ihr 21.gifts-Name',
   'setup.usernameHint':
@@ -1201,6 +1210,8 @@ const de = {
   'forum.newPosts': 'Neue Beiträge',
   'forum.moderatorAppointed': 'Du bist jetzt Moderator',
   'forum.authorProfile': 'Profil anzeigen',
+  'forum.videoFullscreen': 'Vollbild',
+  'forum.videoExitFullscreen': 'Vollbild verlassen',
   'forum.translate': 'Übersetzen',
   'forum.translateShowOriginal': 'Original anzeigen',
   'forum.translateShowTranslation': 'Übersetzung anzeigen',
@@ -1233,6 +1244,7 @@ const de = {
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
   'wallet.advanced': 'Erweiterte Funktionen',
+  'wallet.setAmount': 'Betrag festlegen',
   'wallet.prfUnsupported':
     'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
   'wallet.timeout':
@@ -1267,7 +1279,7 @@ const de = {
   'profile.push.level.active': 'Aktiv',
   'profile.push.level.mentions': 'Erwähnungen',
   'profile.push.level.hint':
-    'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Admin-Posts, Antworten auf dich und Geschenke, die du empfängst.',
+    'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Admin-Posts, Antworten auf dich und Geschenke, die du empfängst, und Markierungen mit @benutzername.',
   'profile.push.level.error': 'Benachrichtigungsstufe konnte nicht gespeichert werden.',
   'profile.postCount': '{count} Beiträge',
   'profile.replyCount': '{count} Reaktionen',
@@ -1308,6 +1320,7 @@ const de = {
   'pos.outside': 'Der Betrag liegt außerhalb der Wallet.',
   'pos.already': 'Es ist schon eine Zahlung offen.',
   'pos.badAmount': 'Gib eine ganze Zahl ein.',
+  'pos.keypadDelete': 'Löschen',
   'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
@@ -1512,6 +1525,7 @@ const de = {
   'notifications.photoPost': 'Foto',
   'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
   'notifications.moderatorProposal': '{name} hat einen Moderator vorgeschlagen',
+  'notifications.mention': '{name} hat dich markiert',
 
   'moderate.heading': 'Moderation',
   'moderate.toolsLabel': 'Moderationswerkzeuge',
@@ -1598,6 +1612,8 @@ const de = {
   'funding.admitted': 'Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen.',
   'funding.participates': 'Nimmt am 21.gifts Förderprogramm teil',
   'funding.participatesSince': 'Nimmt seit {date} am 21.gifts Förderprogramm teil',
+  'funding.participatesSinceBy':
+    'Nimmt seit {date} am 21.gifts Förderprogramm teil, geprüft von {name}',
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
@@ -1871,6 +1887,7 @@ const es = {
   'login.logOut': 'Cerrar sesión',
   'login.helloName': 'Hola, {name}',
   'login.welcomeHeading': 'Hola, {name}',
+  'login.welcomeSignedOut': 'Hola',
   'setup.nameTitle': 'Tu nombre',
   'setup.usernameTitle': 'Tu nombre en 21.gifts',
   'setup.usernameHint':
@@ -2026,6 +2043,8 @@ const es = {
   'forum.newPosts': 'Publicaciones nuevas',
   'forum.moderatorAppointed': 'Ahora eres moderador',
   'forum.authorProfile': 'Ver perfil',
+  'forum.videoFullscreen': 'Pantalla completa',
+  'forum.videoExitFullscreen': 'Salir de pantalla completa',
   'forum.translate': 'Traducir',
   'forum.translateShowOriginal': 'Mostrar original',
   'forum.translateShowTranslation': 'Mostrar traducción',
@@ -2057,6 +2076,7 @@ const es = {
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
   'wallet.advanced': 'Funciones avanzadas',
+  'wallet.setAmount': 'Fijar un importe',
   'wallet.prfUnsupported':
     'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
   'wallet.timeout':
@@ -2091,7 +2111,7 @@ const es = {
   'profile.push.level.active': 'Activas',
   'profile.push.level.mentions': 'Menciones',
   'profile.push.level.hint':
-    'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son publicaciones de administradores, respuestas a ti y regalos que recibes.',
+    'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son publicaciones de administradores, respuestas a ti y regalos que recibes, y marcas con @usuario.',
   'profile.push.level.error': 'No se pudo guardar el nivel de notificaciones.',
   'profile.postCount': '{count} publicaciones',
   'profile.replyCount': '{count} reacciones',
@@ -2133,6 +2153,7 @@ const es = {
   'pos.outside': 'El importe está fuera del rango de la wallet.',
   'pos.already': 'Ya hay un pago abierto.',
   'pos.badAmount': 'Escribe un número entero.',
+  'pos.keypadDelete': 'Borrar',
   'profile.message': 'Mensaje',
 
   'view.unnamed': 'Sin nombre',
@@ -2331,6 +2352,7 @@ const es = {
   'notifications.photoPost': 'Foto',
   'notifications.moderatorAppointed': 'Ahora eres moderador',
   'notifications.moderatorProposal': '{name} propuso un moderador',
+  'notifications.mention': '{name} te marcó',
 
   'moderate.heading': 'Moderación',
   'moderate.toolsLabel': 'Herramientas de moderación',
@@ -2411,6 +2433,8 @@ const es = {
   'funding.admitted': 'Estás admitida o admitido a los pagos diarios de la beca 21.gifts.',
   'funding.participates': 'Participa en el programa de apoyo de 21.gifts',
   'funding.participatesSince': 'Participa en el programa de apoyo de 21.gifts desde {date}',
+  'funding.participatesSinceBy':
+    'Participa en el programa de apoyo de 21.gifts desde {date}, revisado por {name}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
@@ -2684,6 +2708,7 @@ const fil = {
   'login.logOut': 'Mag-log out',
   'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
+  'login.welcomeSignedOut': 'Welcome',
   'setup.nameTitle': 'Ang pangalan mo',
   'setup.usernameTitle': 'Ang 21.gifts name mo',
   'setup.usernameHint':
@@ -2841,6 +2866,8 @@ const fil = {
   'forum.newPosts': 'Mga bagong post',
   'forum.moderatorAppointed': 'Isa ka nang moderator',
   'forum.authorProfile': 'Tingnan ang profile',
+  'forum.videoFullscreen': 'Buong screen',
+  'forum.videoExitFullscreen': 'Umalis sa buong screen',
   'forum.translate': 'Isalin',
   'forum.translateShowOriginal': 'Ipakita ang orihinal',
   'forum.translateShowTranslation': 'Ipakita ang pagsasalin',
@@ -2873,6 +2900,7 @@ const fil = {
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
   'wallet.advanced': 'Mga advanced na function',
+  'wallet.setAmount': 'Magtakda ng halaga',
   'wallet.prfUnsupported':
     'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
   'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',
@@ -2906,7 +2934,7 @@ const fil = {
   'profile.push.level.active': 'Aktibo',
   'profile.push.level.mentions': 'Mga pagbanggit',
   'profile.push.level.hint':
-    'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo.',
+    'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo, at mga marka gamit ang @username.',
   'profile.push.level.error': 'Hindi ma-save ang antas ng notification.',
   'profile.postCount': '{count} mga post',
   'profile.replyCount': '{count} mga reaksyon',
@@ -2948,6 +2976,7 @@ const fil = {
   'pos.outside': 'Labas sa range ng wallet ang halaga.',
   'pos.already': 'May bukas nang bayad.',
   'pos.badAmount': 'Maglagay ng buong bilang.',
+  'pos.keypadDelete': 'Burahin',
   'profile.message': 'Mensahe',
 
   'view.unnamed': 'Walang pangalan',
@@ -3152,6 +3181,7 @@ const fil = {
   'notifications.photoPost': 'Litrato',
   'notifications.moderatorAppointed': 'Isa ka nang moderator',
   'notifications.moderatorProposal': '{name} nagmungkahi ng moderator',
+  'notifications.mention': 'Minarkahan ka ni {name}',
 
   'moderate.heading': 'Moderasyon',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',
@@ -3233,6 +3263,8 @@ const fil = {
   'funding.admitted': 'Admitted ka sa araw-araw na 21.gifts grant payouts.',
   'funding.participates': 'Kasali sa programa ng tulong ng 21.gifts',
   'funding.participatesSince': 'Kasali sa programa ng tulong ng 21.gifts mula noong {date}',
+  'funding.participatesSinceBy':
+    'Kasali sa programa ng tulong ng 21.gifts mula noong {date}, sinuri ni {name}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',

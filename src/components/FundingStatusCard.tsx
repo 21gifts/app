@@ -60,15 +60,21 @@ export function FundingStatusCard(): ReactElement | null {
     body = <p className="text-center text-sm text-app-muted">{t('funding.trial')}</p>;
   } else if (funding.status === 'admitted') {
     const admittedAt = funding.admittedAt;
+    const reviewerName = (funding.reviewedByName ?? '').trim();
     body = (
       <>
         <p className="text-center text-sm text-app-muted">{t('funding.admitted')}</p>
         <p className="text-center text-sm text-app-muted">
-          {admittedAt === null
-            ? t('funding.participates')
-            : t('funding.participatesSince', {
+          {typeof admittedAt === 'number' && reviewerName !== ''
+            ? t('funding.participatesSinceBy', {
                 date: formatForumTimeFromMs(admittedAt, locale),
-              })}
+                name: reviewerName,
+              })
+            : admittedAt === null
+              ? t('funding.participates')
+              : t('funding.participatesSince', {
+                  date: formatForumTimeFromMs(admittedAt, locale),
+                })}
         </p>
       </>
     );
