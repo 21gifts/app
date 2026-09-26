@@ -1070,6 +1070,24 @@ Signed-in `/welcome` with one paid note whose body is longer than 560 characters
 
 ![21.gifts welcome note truncated](images/welcome-note-truncated.png)
 
+### Variant: note-whole
+
+Signed-in `/welcome` with one paid note longer than the 280-character preview and at most 560 characters. The whole body is visible, including the distinctive tail. **Show more** is absent.
+
+![21.gifts welcome note whole](images/welcome-note-whole.png)
+
+### Variant: translate-long-loading
+
+Signed-in `/welcome` with one paid German note longer than 560 characters. After clicking **Translate** while POST `/translate` hangs, the original body is fully visible, including its tail, **Show more** is gone, and the control is busy.
+
+![21.gifts welcome translate long loading](images/welcome-translate-long-loading.png)
+
+### Variant: translate-long-done
+
+Same long German note after a successful translation. The translated body is fully visible, including its tail. **Show more** is absent. The Languages icon is named **Show original**.
+
+![21.gifts welcome translate long done](images/welcome-translate-long-done.png)
+
 ### Variant: new-posts
 
 Visitor is scrolled down the forum list. A silent refresh found a newer note id. Labeled **New posts** pill is visible; the new note text is not yet in the list.

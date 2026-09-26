@@ -2652,6 +2652,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:note-whole",
+    "label": "/welcome note-whole",
+    "visual": "state-welcome-note-whole",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-long-loading",
+    "label": "/welcome translate-long-loading",
+    "visual": "state-welcome-translate-long-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:translate-long-done",
+    "label": "/welcome translate-long-done",
+    "visual": "state-welcome-translate-long-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:new-posts",
     "label": "/welcome new-posts",
     "visual": "state-welcome-new-posts",

@@ -851,6 +851,12 @@ async function fulfillMixedSatsMessages(page: Page): Promise<void> {
 }
 
 const GERMAN_NOTE_TEXT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
+/** Longer than 280 and at most 560, so the feed shows the whole body. */
+const WHOLE_NOTE_TEXT = `${'Good morning everyone. '.repeat(18)}WHOLETAIL`;
+/** German and longer than 560, so Translate is offered and Show more starts visible. */
+const LONG_GERMAN_NOTE_TEXT = `${'Bitte hilf mir in Not. '.repeat(25)}LONGORIG`;
+/** Longer than 560, so a truncated translation would hide the tail. */
+const LONG_TRANSLATION_TEXT = `${'Please help me in need. '.repeat(25)}LONGTRANS`;
 
 /** One paid German Ada note so Active shows Translate in the footer icon row. */
 async function fulfillGermanPaidAdaNote(page: Page): Promise<void> {
@@ -2499,6 +2505,166 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
     await expect(page.getByText(tail)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-note-truncated');
+  });
+
+  test('state /welcome note-whole', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-whole',
+              name: 'Ada',
+              text: WHOLE_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('WHOLETAIL')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-note-whole');
+  });
+
+  test('state /welcome translate-long-loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-long-de',
+              name: 'Ada',
+              text: LONG_GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillTranslatePost(page, 'hang');
+    await page.goto('/welcome');
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await expect(page.getByText('LONGORIG')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('LONGORIG')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await shotScreen(page, 'state-welcome-translate-long-loading');
+  });
+
+  test('state /welcome translate-long-done', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-long-de',
+              name: 'Ada',
+              text: LONG_GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/translate$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ translatedText: LONG_TRANSLATION_TEXT }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('LONGTRANS')).toBeVisible();
+    await expect(page.getByText('LONGORIG')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-translate-long-done');
   });
 
   test('state /welcome new-posts', async ({ page }) => {

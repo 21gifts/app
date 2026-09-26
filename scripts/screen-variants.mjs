@@ -3181,6 +3181,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'note-whole',
+    image: 'welcome-note-whole.png',
+    visual: 'state-welcome-note-whole',
+    needle: 'WHOLETAIL',
+  },
+  {
+    route: '/welcome',
+    id: 'translate-long-loading',
+    image: 'welcome-translate-long-loading.png',
+    visual: 'state-welcome-translate-long-loading',
+    needle: 'LONGORIG',
+  },
+  {
+    route: '/welcome',
+    id: 'translate-long-done',
+    image: 'welcome-translate-long-done.png',
+    visual: 'state-welcome-translate-long-done',
+    needle: 'LONGTRANS',
+  },
+  {
+    route: '/welcome',
     id: 'new-posts',
     image: 'welcome-new-posts.png',
     visual: 'state-welcome-new-posts',
