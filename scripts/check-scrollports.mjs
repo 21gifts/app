@@ -59,7 +59,8 @@ const ACTIVE_SELECTOR = '[data-scrollport][data-scroll-active]';
  * @returns {string}
  */
 function stripCssComments(css) {
-  return css.replace(/\/\*[\s\S]*?\*\//g, '');
+  // A space, not empty: `clip/**/auto` must stay two tokens.
+  return css.replace(/\/\*[\s\S]*?\*\//g, ' ');
 }
 
 /**
@@ -101,13 +102,15 @@ function leafRules(css) {
 function scrollingDecls(body) {
   /** @type {{ prop: string, tokens: string[] }[]} */
   const found = [];
-  const re = /(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
+  // Not `--overflow`: the name must not continue an identifier.
+  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
   let match = re.exec(body);
   while (match) {
     const tokens = match[2]
+      .replace(/\s*!important\b/g, '')
       .trim()
       .split(/\s+/)
-      .filter((token) => token !== '!important');
+      .filter((token) => token !== '');
     if (tokens.some((token) => SCROLL_TOKEN.has(token))) {
       found.push({ prop: match[1], tokens });
     }
@@ -184,6 +187,7 @@ function selfTest() {
     [data-scrollport] { overflow: clip !important; }
     [data-scrollport][data-scroll-active] { overflow: auto !important; }
     * { scroll-behavior: auto !important; }
+    :root { --overflow: auto; }
     /* overflow: auto must not count inside a comment */
   `;
   const failSheets = [
@@ -198,8 +202,15 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: visible overlay }',
     '.other, [data-scrollport][data-scroll-active] { overflow: auto }',
     '[data-scrollport][data-scroll-active] { overflow: auto clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: clip/**/auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: scroll!important }',
+    '[data-scrollport][data-scroll-active] { overflow: scroll!important }',
   ];
-  if (globalsScrollProblem(passSheet) !== null) {
+  const gluedImportant = `
+    [data-scrollport][data-scroll-active] { overflow:auto!important; }
+    :root { --overflow: auto; }
+  `;
+  if (globalsScrollProblem(passSheet) !== null || globalsScrollProblem(gluedImportant) !== null) {
     problems.push('self-test globals false positive');
   }
   for (const sheet of failSheets) {
