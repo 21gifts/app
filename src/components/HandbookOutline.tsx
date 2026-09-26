@@ -20,10 +20,7 @@ export function HandbookOutline({ chapters, title }: HandbookOutlineProps): Reac
     return null;
   }
   return (
-    <nav
-      aria-label={title}
-      className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
-    >
+    <nav aria-label={title} className="lg:sticky lg:top-24">
       <p className="text-sm font-semibold text-paper">{title}</p>
       <ol className="mt-3 flex flex-col gap-2 text-sm">
         {chapters.map((chapter) => (

@@ -2541,7 +2541,7 @@ test.describe('onboarding screens', () => {
       page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
     ).toBeVisible();
     await page.evaluate(() => {
-      const scroller = document.querySelector('main .overflow-y-auto');
+      const scroller = document.querySelector('main [data-scrollport]');
       if (scroller instanceof HTMLElement) {
         scroller.scrollTop = 900;
         return;
@@ -11492,7 +11492,7 @@ test.describe('shops screens', () => {
     await expect(remove).toBeVisible();
     await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
-    await page.locator('main .overflow-y-auto').evaluate((node) => {
+    await page.locator('main [data-scrollport]').evaluate((node) => {
       node.scrollTop += 160;
     });
     await shotScreen(page, 'state-shops-staff-place-edit-error');
