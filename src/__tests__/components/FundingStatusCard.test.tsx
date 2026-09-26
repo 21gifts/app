@@ -107,7 +107,7 @@ describe('FundingStatusCard', () => {
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
-    ).toBe('/profile/apply');
+    ).toBe('/grants/apply');
   });
 
   it('treats missing funding as none for verified accounts', () => {

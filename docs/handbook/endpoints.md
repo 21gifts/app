@@ -594,21 +594,21 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. About me, About me photo, and location are required (400). Effective `none` or `rejected` becomes pending.
 - **Errors:** Upstream 400/401/403/409/503, or 502 if the api is unreachable.
-- **Used by:** `postFundingApply` via `FundingApplyScreen` on `/profile/apply`.
+- **Used by:** `postFundingApply` via `FundingApplyScreen` on `/grants/apply`.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/applications
 
-- **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/applications`.
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/grants/applications` (`/moderate/applications` redirects there).
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
-- **Used by:** `fetchFundingApplications` via `FundingApplicationsScreen` on `/moderate/applications`. `ModerateScreen` on `/moderate` does not call this GET.
+- **Used by:** `fetchFundingApplications` via `FundingApplicationsScreen` on `/grants/applications`. `ModerateScreen` on `/moderate` does not call this GET.
 - **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: GET /funding/applications/[accountId]
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications/:accountId` (staff review payload: account, grant, living-room posts).
 - **Errors:** Upstream 401/403/404/503, or 502 if the api is unreachable.
-- **Used by:** `fetchFundingApplication` via `FundingApplicationDetailScreen` on `/moderate/applications/[accountId]`.
+- **Used by:** `fetchFundingApplication` via `FundingApplicationDetailScreen` on `/grants/applications/[accountId]`.
 - **Auth:** Bearer session; the api requires founder or moderator.
 
 ## Endpoint: POST /funding/trial

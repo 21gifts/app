@@ -131,7 +131,7 @@ export function FundingApplicationsScreen(): ReactElement | null {
               <div className="flex w-full flex-col items-start gap-1 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
                 <span className="flex w-full items-baseline justify-between gap-2">
                   <Link
-                    href={`/moderate/applications/${row.accountId}`}
+                    href={`/grants/applications/${row.accountId}`}
                     className="text-sm font-medium text-app-fg underline underline-offset-2"
                   >
                     {name}

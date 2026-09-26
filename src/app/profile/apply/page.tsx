@@ -1,29 +1,10 @@
-import type { ReactElement } from 'react';
-import { AppShell } from '@/components/AppShell';
-import { FundingApplyScreen } from '@/components/FundingApplyScreen';
-import { OnboardingGate } from '@/components/OnboardingGate';
-import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
-import { SignedInChrome } from '@/components/SignedInChrome';
+import { redirect } from 'next/navigation';
 
 /**
- * `/profile/apply` — guided 21 gifts grant apply for a signed-in member.
+ * `/profile/apply` redirects to the grants apply walk.
  *
- * Requires name + address + living-room rules agreement via {@link OnboardingGate}
- * `screen="profile"`.
- *
- * @returns The apply walk.
+ * @returns This function does not return; it redirects.
  */
-export default function FundingApplyPage(): ReactElement {
-  return (
-    <AppShell
-      mode="fill"
-      align="center"
-      topLeft={<ProfileChromeLeft />}
-      topRight={<SignedInChrome />}
-    >
-      <OnboardingGate screen="profile">
-        <FundingApplyScreen />
-      </OnboardingGate>
-    </AppShell>
-  );
+export default function FundingApplyPage(): never {
+  redirect('/grants/apply');
 }

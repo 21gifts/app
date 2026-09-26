@@ -238,6 +238,7 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Point of sale' }));
     expectMenuClosed();
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
+    expect(screen.getByRole('link', { name: 'Grants' }).getAttribute('href')).toBe('/grants');
     expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
@@ -599,6 +600,14 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
     fireEvent.click(screen.getByRole('link', { name: 'Wallet' }));
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Grants is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Grants' }));
     expectMenuClosed();
   });
 

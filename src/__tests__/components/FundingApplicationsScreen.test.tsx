@@ -139,7 +139,7 @@ describe('FundingApplicationsScreen', () => {
     renderWithLocale(<FundingApplicationsScreen />);
     expect(await screen.findByRole('heading', { name: 'Open applications' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Rose' }).getAttribute('href')).toBe(
-      '/moderate/applications/acc_rose',
+      '/grants/applications/acc_rose',
     );
     expect(screen.getByText(formatForumTimeFromMs(APPLICATION.appliedAt, 'en'))).toBeTruthy();
     expect(

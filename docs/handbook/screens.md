@@ -1781,14 +1781,14 @@ Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi addre
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then edit the Wallet of Satoshi address, then `FundingStatusCard` (verification / 21 gifts grant), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then edit the Wallet of Satoshi address, then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; given/received totals only when that side is non-zero. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement + optional `notificationLevel`) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). Location save is `POST /me/location` (`setLocation`). Notification level save is `POST /me/notification-level` (`postNotificationLevel`).
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile (current), **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; apply or read grant status on `FundingStatusCard` under the address form; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the grant section, and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
+- **Actions:** Open **Menu** for **Home**, **Shops**, **Map**, **Point of sale**, Profile (current), **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); icon-only back (top-left) to the forum; write or edit About me; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the address form, and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence; the pressed result is `funding-program-open`), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then `FundingStatusCard` (verification / 21 gifts grant) under the address form, then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (returns to the forum); one **Menu** in that same header row (**Home** first; log out, then a quiet **Version {version}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
+Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (returns to the forum); one **Menu** in that same header row (**Home** first; log out, then a quiet **Version {version}** line (`app.version`); given/received totals only when that side is non-zero). Chart never swaps to **Loading…**.
 ![21.gifts profile](images/profile.png)
 
 ### Variant: sticker-open
@@ -1911,15 +1911,28 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ![21.gifts profile push enable error](images/profile-push-enable-error.png)
 
+## Screen: /grants
+
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard` (verification / 21 gifts grant). A moderator also sees a secondary large **Open applications** link to `/grants/applications`. The profile no longer shows this card.
+- **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
+- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open applications**.
+- **Used by:** Route `/grants` (`GrantsPage`).
+
+### Variant: default
+
+Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy, an **About** link, and **Apply for the 21 gifts grant**.
+
+![21.gifts grants](images/grants.png)
+
 ### Variant: funding-not-verified
 
-Basis owner. Grant section after the address form. Copy **You are not verified yet.** plus how in-person verification works. No apply button.
+Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button.
 
 ![21.gifts profile funding not verified](images/profile-funding-not-verified.png)
 
 ### Variant: funding-none
 
-Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and link **Apply for the 21 gifts grant** to `/profile/apply`. No denial sentence and no conviction titles.
+Verified owner with `funding.status` **none**. Heading **21 gifts grant**, grace copy that daily gifts continue until 25 September 2026, an **About** link, and link **Apply for the 21 gifts grant** to `/grants/apply`. No denial sentence and no conviction titles.
 
 ![21.gifts profile funding none](images/profile-funding-none.png)
 
@@ -1937,22 +1950,35 @@ Verified owner with `funding.status` **trial**. Copy **You are on a one-day tria
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**.
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**.
 
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Same owner after pressing the funding-program icon beside the role pill. One status line **Takes part in the 21.gifts funding program since {date}**. Viewport capture after scrolling that line into view: the public facts sit below name and location, and a full-page stitch leaves the sentence below the fold. The resting shot does not cover this press.
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view.
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
 
 ## Screen: /profile/apply
 
-- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then the same four principle/truth questions as staff review against the applicant’s living-room posts (post text is translatable; location and the composer are not). Yes submits `POST /funding/apply`. Unmet or No does not submit.
+- **Purpose:** Permanent redirect to `/grants/apply`. This path renders no grant UI.
+- **Inputs:** None. The browser lands on `/grants/apply`.
+- **Actions:** `redirect('/grants/apply')`.
+- **Used by:** Old links to `/profile/apply`.
+
+### Variant: redirect
+
+Opening `/profile/apply` lands on the grants apply walk.
+
+![21.gifts apply](images/profile-apply.png)
+
+## Screen: /grants/apply
+
+- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then one yes/no question — whether the profile posts match the core principles — against the applicant’s living-room posts (post text is translatable; location and the composer are not). Yes submits `POST /funding/apply` and returns to `/grants`. No does not submit.
 - **Inputs:** Session account; `GET /forum/members/:id/posts`; `PUT /me/about`; `POST /me/location`; `POST /funding/apply`.
-- **Actions:** Fill About me, add a photo, set location, walk principles 1–3 and truth, apply or go back to `/profile`.
-- **Used by:** Route `/profile/apply` (`FundingApplyPage`).
+- **Actions:** Fill About me, add a photo, set location, answer the principles question, or go back to `/grants`.
+- **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
 
@@ -1972,15 +1998,15 @@ About me and photo set, location empty. Copy **Next, add the place you live.**
 
 ![21.gifts apply location](images/profile-apply-location.png)
 
-### Variant: principle-1
+### Variant: question
 
-Profile complete. Copy **Please check whether the posts match principle 1.**
+Profile complete. Copy **Do your profile posts match the core principles of 21.gifts?** An **About** link goes to `https://21.gifts/about`. **Yes** and **No** are both visible. No conviction titles.
 
-![21.gifts apply principle 1](images/profile-apply-principle-1.png)
+![21.gifts apply question](images/grants-apply-question.png)
 
 ### Variant: translate
 
-Signed-in `/profile/apply` on principle 1 with a German living-room post. **Translate** is visible under the post body.
+Signed-in `/grants/apply` on the principles question with a German living-room post. **Translate** is visible under the post body.
 
 ![21.gifts apply translate](images/profile-apply-translate.png)
 
@@ -2007,24 +2033,6 @@ After **Show original**: translated body hidden, the Languages icon is named **S
 Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
 
 ![21.gifts apply translate error](images/profile-apply-translate-error.png)
-
-### Variant: principle-2
-
-After Requirement met on principle 1. Copy **Please check whether the posts match principle 2.**
-
-![21.gifts apply principle 2](images/profile-apply-principle-2.png)
-
-### Variant: principle-3
-
-After Requirement met on principle 2. Copy **Please check whether the posts match principle 3.**
-
-![21.gifts apply principle 3](images/profile-apply-principle-3.png)
-
-### Variant: truth
-
-After Requirement met on principle 3. Copy **Do these posts, to your knowledge, correspond to the truth?**
-
-![21.gifts apply truth](images/profile-apply-truth.png)
 
 ### Variant: forbidden
 
@@ -2297,20 +2305,20 @@ Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator*
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, or applications. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s people counted once, as a percent of 100, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), a labeled **Open applications** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/applications`, **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Open **Open applications** to `/moderate/applications`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals or applications itself (Open proposals count comes from `useUnreadCount`).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` back + wordmark → `/welcome`, and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s people counted once, as a percent of 100, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Back to the forum. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals or applications itself (Open proposals count comes from `useUnreadCount`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `useUnreadCount`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal widget.
 
 ### Variant: default
 
-Staff (moderator) hub with heading **Moderation**, collapsed payout-goal widget, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, labeled **Open applications** control → `/moderate/applications`, **Moderators chat group** control → `/moderate/group`, and **Handbook** control → `/moderate/handbook`.
+Staff (moderator) hub with heading **Moderation**, collapsed payout-goal widget, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, and **Handbook** control → `/moderate/handbook`.
 
 ![21.gifts moderation](images/moderate.png)
 
 ### Variant: group-unread
 
-Staff hub with an unread Moderators chat group. Collapsed payout-goal widget unchanged. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Hidden notes, Open proposals, Open applications, and Handbook unchanged.
+Staff hub with an unread Moderators chat group. Collapsed payout-goal widget unchanged. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Hidden notes, Open proposals, and Handbook unchanged.
 
 ![21.gifts moderation group unread](images/moderate-group-unread.png)
 
@@ -2501,9 +2509,35 @@ Staff (moderator) Reject POST in flight on a row they proposed themselves. Copy 
 
 ## Screen: /moderate/applications
 
-- **URL:** `/moderate/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/moderate`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Staff rows: applicant name (link `/moderate/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
-- **Actions:** In-card icon back to hub. Open an applicant to `/moderate/applications/{id}`. Staff **Try again** on list error. Open Menu. Back to the forum.
+- **Purpose:** Permanent redirect to `/grants/applications`. This path renders no queue UI.
+- **Inputs:** None. The browser lands on `/grants/applications`.
+- **Actions:** `redirect('/grants/applications')`.
+- **Used by:** Old links to `/moderate/applications`.
+
+### Variant: redirect
+
+Opening `/moderate/applications` lands on the grants application queue.
+
+![21.gifts open applications](images/moderate-applications.png)
+
+## Screen: /moderate/applications/[accountId]
+
+- **Purpose:** Permanent redirect to `/grants/applications/[accountId]`. This path renders no review UI.
+- **Inputs:** `accountId` from the path. The browser lands on `/grants/applications/{accountId}`.
+- **Actions:** `redirect` to that grants review path.
+- **Used by:** Old links to `/moderate/applications/[accountId]`.
+
+### Variant: redirect
+
+Opening `/moderate/applications/[accountId]` lands on the grants review.
+
+![21.gifts grant application](images/moderate-applications-accountId.png)
+
+## Screen: /grants/applications
+
+- **URL:** `/grants/applications` — signed-in staff grant-application queue. Same onboarding gate as `/moderate`. JSON is `/funding/applications`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate`. Heading **Open applications**. Staff rows: applicant name (link `/grants/applications/{id}`), applied time. Empty / Loading… / error+Try again. Non-staff: heading + forbidden copy, no list. Menu: **Moderation** only.
+- **Actions:** In-card icon back to hub. Open an applicant to `/grants/applications/{id}`. Staff **Try again** on list error. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationsPage`, `FundingApplicationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplications`.
 - **Auth:** Bearer; list only for founder|moderator.
 
@@ -2537,23 +2571,23 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 
 ![21.gifts open applications error](images/moderate-applications-error.png)
 
-## Screen: /moderate/applications/[accountId]
+## Screen: /grants/applications/[accountId]
 
-- **URL:** `/moderate/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/moderate/applications`. Heading **Grant application**. Staff walk four steps: principles 1–3 (lead, title, summary, living-room posts with Languages **Translate** on the post text and the applicant name left plain, **Requirement met** / **Requirement not met**), then whether the posts are true (**Yes** / **No**). Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
-- **Actions:** In-card icon back to the queue. Staff **Requirement met** advances; **Requirement not met** or **No** posts reject; **Yes** on the last step posts admit. Try again. Open Menu. Back to the forum.
+- **URL:** `/grants/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` + **Menu**. In-card icon back to `/grants/applications`. Heading **Grant application**. Staff see one question — whether the profile posts match the core principles — an **About** link to `https://21.gifts/about`, and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain). **Yes** admits and **No** rejects while the grant is open. Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **Actions:** In-card icon back to the queue. Staff **Yes** posts admit; **No** posts reject. Try again. Open Menu. Back to the forum.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
 
 ### Variant: default
 
-Staff (founder) loaded application for **Rose** with a living-room post on principle 1. **Requirement met** / **Requirement not met**.
+Staff (founder) loaded application for **Rose**. Question **Do their profile posts match the core principles of 21.gifts?** **Yes** / **No**.
 
 ![21.gifts grant application](images/moderate-applications-accountId.png)
 
 ### Variant: translate
 
-Staff `/moderate/applications/:accountId` with a German reviewed post. **Translate** is visible under the body.
+Staff `/grants/applications/:accountId` with a German reviewed post. **Translate** is visible under the body.
 
 ![21.gifts grant application translate](images/applications-detail-translate.png)
 
@@ -2589,7 +2623,7 @@ Signed-in basis account. Copy **This page is for moderators.** No fetch.
 
 ### Variant: empty
 
-Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** Principle 1 and **Requirement met** / **Requirement not met** still visible.
+Staff (founder) loaded application for **Rose** with zero living-room posts. Copy **No living-room posts.** The principles question and **Yes** / **No** are still visible.
 
 ![21.gifts grant application empty](images/moderate-applications-accountId-empty.png)
 
@@ -2607,33 +2641,15 @@ Staff (founder) detail fetch failed. Copy **Could not load this application. Ple
 
 ### Variant: decide-failed
 
-Staff (founder) Reject POST failed after **Requirement not met**. Copy **Could not update this member. Please try again.**
+Staff (founder) Reject POST failed after **No**. Copy **Could not update this member. Please try again.**
 
 ![21.gifts grant application decide failed](images/moderate-applications-accountId-decide-failed.png)
 
 ### Variant: deciding
 
-Staff (founder) Reject POST in flight. **Requirement not met** disabled with a spinner; application still visible.
+Staff (founder) Reject POST in flight. **No** disabled with a spinner; application still visible.
 
 ![21.gifts grant application deciding](images/moderate-applications-accountId-deciding.png)
-
-### Variant: principle-2
-
-Staff (founder) after **Requirement met** on principle 1. Copy **Please check whether the posts match principle 2.**
-
-![21.gifts grant application principle 2](images/moderate-applications-accountId-principle-2.png)
-
-### Variant: principle-3
-
-Staff (founder) after **Requirement met** on principles 1 and 2. Copy **Please check whether the posts match principle 3.**
-
-![21.gifts grant application principle 3](images/moderate-applications-accountId-principle-3.png)
-
-### Variant: truth
-
-Staff (founder) after **Requirement met** on principles 1–3. Copy **Do these posts, to your knowledge, correspond to the truth?** Buttons **Yes** / **No**.
-
-![21.gifts grant application truth](images/moderate-applications-accountId-truth.png)
 
 ## Screen: /moderate/group
 

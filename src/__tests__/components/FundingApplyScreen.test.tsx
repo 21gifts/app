@@ -171,9 +171,9 @@ describe('FundingApplyScreen', () => {
       screen.getByText('First, write a short About me so people can get to know you.'),
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
-    const back = screen.getByRole('link', { name: 'Back to profile' });
-    expect(back.getAttribute('href')).toBe('/profile');
-    expect(screen.queryByText('Back to profile')).toBeNull();
+    const back = screen.getByRole('link', { name: 'Back to grants' });
+    expect(back.getAttribute('href')).toBe('/grants');
+    expect(screen.queryByText('Back to grants')).toBeNull();
   });
 
   it('advances to the photo step after About me is saved', async () => {
@@ -262,40 +262,29 @@ describe('FundingApplyScreen', () => {
     expect(screen.getByText('Next, add the place you live.')).toBeTruthy();
   });
 
-  it('walks principles then posts apply on Yes', async () => {
+  it('asks one question then posts apply on Yes', async () => {
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
     expect(
-      await screen.findByText('Please check whether the posts match principle 1.'),
+      await screen.findByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe(
+      'https://21.gifts/about',
+    );
+    expect(screen.queryByText('Giving is a duty')).toBeNull();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    expect(
-      await screen.findByText('Please check whether the posts match principle 2.'),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    expect(
-      await screen.findByText('Please check whether the posts match principle 3.'),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    expect(
-      await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
-    ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(applyMock).toHaveBeenCalledWith('sess');
     });
-    expect(push).toHaveBeenCalledWith('/profile');
+    expect(push).toHaveBeenCalledWith('/grants');
   });
 
   it('disables Yes while apply is in flight', async () => {
     applyMock.mockImplementation(() => new Promise(() => undefined));
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
     const yes = (await screen.findByRole('button', { name: 'Yes' })) as HTMLButtonElement;
     expect(yes.disabled).toBe(true);
   });
@@ -305,7 +294,7 @@ describe('FundingApplyScreen', () => {
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
     expect(
-      await screen.findByText('Please check whether the posts match principle 1.'),
+      await screen.findByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.queryByText('Living-room note.')).toBeNull();
@@ -321,14 +310,14 @@ describe('FundingApplyScreen', () => {
   it('does not apply when requirement is not met', async () => {
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Requirement not met' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'No' }));
     expect(await screen.findByText('When your posts match, you can apply again.')).toBeTruthy();
     expect(applyMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Back to profile' }).getAttribute('href')).toBe(
-      '/profile',
+    expect(screen.getByRole('link', { name: 'Back to grants' }).getAttribute('href')).toBe(
+      '/grants',
     );
-    expect(screen.queryByText('Back to profile')).toBeNull();
+    expect(screen.queryByText('Back to grants')).toBeNull();
   });
 
   it('shows trial copy when already on trial', () => {
@@ -373,7 +362,7 @@ describe('FundingApplyScreen', () => {
     expect(screen.getByText('Could not load this application. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(
-      await screen.findByText('Please check whether the posts match principle 1.'),
+      await screen.findByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
   });
 
@@ -381,10 +370,7 @@ describe('FundingApplyScreen', () => {
     applyMock.mockRejectedValue(new Error('boom'));
     useAuthStore.setState({ session: 'sess', account: complete });
     renderWithLocale(<FundingApplyScreen />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Requirement met' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Requirement met' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
     expect(
       await screen.findByText('Could not submit your application. Please try again.'),
     ).toBeTruthy();
@@ -410,7 +396,7 @@ describe('FundingApplyScreen', () => {
     expect(postsMock).not.toHaveBeenCalled();
   });
 
-  it('walks principles when funding was rejected', async () => {
+  it('shows the question when funding was rejected', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: {
@@ -425,7 +411,7 @@ describe('FundingApplyScreen', () => {
     });
     renderWithLocale(<FundingApplyScreen />);
     expect(
-      await screen.findByText('Please check whether the posts match principle 1.'),
+      await screen.findByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
     expect(postsMock).toHaveBeenCalled();
     expect(

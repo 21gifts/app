@@ -96,28 +96,41 @@ async function stubApplications(
   });
 }
 
-test('Function: FundingApplicationsPage — staff hub Open applications href /moderate/applications', async ({
-  page,
-}) => {
+test('Function: FundingApplicationsPage — grants page opens the queue', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubApplications(page, [APPLICATION]);
-  await page.goto('/moderate');
-  await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
+  await page.goto('/grants');
   await expect(page.getByRole('link', { name: 'Open applications' })).toHaveAttribute(
     'href',
-    '/moderate/applications',
+    '/grants/applications',
   );
-  await page.goto('/moderate/applications');
+  await page.goto('/grants/applications');
   await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
+  await page.goto('/moderate/applications');
+});
+
+test('Function: GrantsPage — signed-in grant card is on /grants', async ({ page }) => {
+  await seedAdaSession(page, 'verified');
+  await page.goto('/grants');
+  await expect(page.getByText('21 gifts grant')).toBeVisible();
+});
+
+test('Function: GrantsScreen — moderator sees the applications link', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  await page.goto('/grants');
+  await expect(page.getByRole('link', { name: 'Open applications' })).toHaveAttribute(
+    'href',
+    '/grants/applications',
+  );
 });
 
 test('Function: fetchFundingApplications — staff see an applicant row', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubApplications(page, [APPLICATION]);
-  await page.goto('/moderate/applications');
+  await page.goto('/grants/applications');
   await expect(page.getByRole('link', { name: 'Rose' })).toHaveAttribute(
     'href',
-    '/moderate/applications/acc_rose',
+    '/grants/applications/acc_rose',
   );
 });
 
@@ -125,7 +138,7 @@ test('Function: FundingApplicationsScreen — basis visitors see the forbidden c
   page,
 }) => {
   await seedAdaSession(page, 'basis');
-  await page.goto('/moderate/applications');
+  await page.goto('/grants/applications');
   await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
   await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('list')).toHaveCount(0);
@@ -134,7 +147,7 @@ test('Function: FundingApplicationsScreen — basis visitors see the forbidden c
 test('Function: formatForumTimeFromMs — applied time is visible', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubApplications(page, [APPLICATION]);
-  await page.goto('/moderate/applications');
+  await page.goto('/grants/applications');
   await expect(page.getByRole('link', { name: 'Rose' })).toBeVisible();
   await expect(page.locator('time').first()).toBeVisible();
 });
@@ -148,22 +161,26 @@ test('Function: FundingApplicationDetailPage — staff review loads posts', asyn
       body: JSON.stringify(DETAIL),
     });
   });
-  await page.goto('/moderate/applications/acc_rose');
+  await page.goto('/grants/applications/acc_rose');
   await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
   await expect(page.getByText('Living-room note.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Requirement met' })).toBeVisible();
+  await expect(
+    page.getByText('Do their profile posts match the core principles of 21.gifts?'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
 });
 
 test('Function: FundingApplicationDetailScreen — basis visitors see the forbidden copy', async ({
   page,
 }) => {
   await seedAdaSession(page, 'basis');
+  await page.goto('/grants/applications/[accountId]');
   await page.goto('/moderate/applications/[accountId]');
   await expect(page.getByRole('heading', { name: 'Grant application' })).toBeVisible();
   await expect(page.getByText('This page is for moderators.')).toBeVisible();
 });
 
-test('Function: fetchFundingApplication — staff see principle 1 and posts', async ({ page }) => {
+test('Function: fetchFundingApplication — staff see the principles question and posts', async ({ page }) => {
   await seedAdaSession(page, 'moderator');
   await page.route('**/funding/applications/acc_rose', async (route) => {
     await route.fulfill({
@@ -172,9 +189,11 @@ test('Function: fetchFundingApplication — staff see principle 1 and posts', as
       body: JSON.stringify(DETAIL),
     });
   });
-  await page.goto('/moderate/applications/acc_rose');
-  await expect(page.getByText('Please check whether the posts match principle 1.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Requirement not met' })).toBeVisible();
+  await page.goto('/grants/applications/acc_rose');
+  await expect(
+    page.getByText('Do their profile posts match the core principles of 21.gifts?'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
 });
 
 async function stubDetail(page: import('@playwright/test').Page): Promise<void> {
@@ -199,9 +218,7 @@ const DECISION = {
   },
 };
 
-test('Function: postFundingAdmit — four yes posts admit and returns to the queue', async ({
-  page,
-}) => {
+test('Function: postFundingAdmit — Yes admits and returns to the queue', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubDetail(page);
   await stubApplications(page, []);
@@ -224,16 +241,13 @@ test('Function: postFundingAdmit — four yes posts admit and returns to the que
       }),
     });
   });
-  await page.goto('/moderate/applications/acc_rose');
+  await page.goto('/grants/applications/acc_rose');
   const posted = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/funding/admit'),
   );
-  await page.getByRole('button', { name: 'Requirement met' }).click();
-  await page.getByRole('button', { name: 'Requirement met' }).click();
-  await page.getByRole('button', { name: 'Requirement met' }).click();
   await page.getByRole('button', { name: 'Yes' }).click();
   expect((await posted).method()).toBe('POST');
-  await expect(page).toHaveURL(/\/moderate\/applications$/);
+  await expect(page).toHaveURL(/\/grants\/applications$/);
 });
 
 test('Function: postFundingReject — unmet posts reject and returns to the queue', async ({
@@ -261,24 +275,22 @@ test('Function: postFundingReject — unmet posts reject and returns to the queu
       }),
     });
   });
-  await page.goto('/moderate/applications/acc_rose');
+  await page.goto('/grants/applications/acc_rose');
   const posted = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/funding/reject'),
   );
-  await page.getByRole('button', { name: 'Requirement not met' }).click();
+  await page.getByRole('button', { name: 'No' }).click();
   expect((await posted).method()).toBe('POST');
-  await expect(page).toHaveURL(/\/moderate\/applications$/);
+  await expect(page).toHaveURL(/\/grants\/applications$/);
 });
 
-test('Function: FundingStatusCard — basis profile shows not verified', async ({ page }) => {
+test('Function: FundingStatusCard — basis grants page shows not verified', async ({ page }) => {
   await seedAdaSession(page, 'basis', null);
-  await page.goto('/profile');
+  await page.goto('/grants');
   await expect(page.getByText('You are not verified yet.')).toBeVisible();
 });
 
-test('Function: postFundingApply — four yes posts apply and returns to profile', async ({
-  page,
-}) => {
+test('Function: postFundingApply — Yes posts apply', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -354,13 +366,10 @@ test('Function: postFundingApply — four yes posts apply and returns to profile
       }),
     });
   });
-  await page.goto('/profile/apply');
+  await page.goto('/grants/apply');
   const posted = page.waitForRequest(
     (req) => req.method() === 'POST' && /\/funding\/apply$/.test(new URL(req.url()).pathname),
   );
-  await page.getByRole('button', { name: 'Requirement met' }).click();
-  await page.getByRole('button', { name: 'Requirement met' }).click();
-  await page.getByRole('button', { name: 'Requirement met' }).click();
   await page.getByRole('button', { name: 'Yes' }).click();
   expect((await posted).method()).toBe('POST');
 });

@@ -9,14 +9,14 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Owner profile section for verification and the 21 gifts grant.
+ * Grant section shown on `/grants`, not on the profile.
  *
  * Unverified (`basis`) members see that they are not verified and how in-person
  * verification works (a moderator who personally knows them and has met them
  * in the real world confirms them on the member page). No apply button.
  * Verified and above see funding status from `account.funding` (missing or
  * `null` is treated as `none`): grace copy, About link, and Apply link to
- * `/profile/apply` for `none`/`rejected` (no denial sentence and no conviction
+ * `/grants/apply` for `none`/`rejected` (no denial sentence and no conviction
  * titles), open application, one-day trial, or admitted with the participation sentence.
  *
  * @returns The grant section, or `null` without a session or account.
@@ -82,7 +82,7 @@ export function FundingStatusCard(): ReactElement | null {
         >
           {t('nav.about')}
         </Link>
-        <ButtonLink href="/profile/apply" size="lg">
+        <ButtonLink href="/grants/apply" size="lg">
           {t('funding.apply')}
         </ButtonLink>
       </>
