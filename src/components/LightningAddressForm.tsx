@@ -176,7 +176,11 @@ export function LightningAddressForm(
       setError({ type: 'notZap' });
       return;
     }
-    void run((token) => setLightningAddress(token, trimmed), { notifySaved: true });
+    void run(
+      (token) =>
+        setLightningAddress(token, trimmed, variant === 'onboarding' ? 'setup' : 'enforce'),
+      { notifySaved: true },
+    );
   };
 
   const submitIcon = busy ? (

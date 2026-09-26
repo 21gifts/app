@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { isLocalSunday, SUNDAY_BOOTSTRAP_SCRIPT, SUNDAY_WRITE_CSS } from '@/lib/sunday-rest';
+import { isLocalSunday, SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 
 const SATURDAY_UTC = Date.parse('2026-09-26T12:00:00.000Z');
 const SUNDAY_UTC = Date.parse('2026-09-27T12:00:00.000Z');
@@ -33,7 +34,9 @@ describe('SUNDAY_BOOTSTRAP_SCRIPT', () => {
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('localSunday');
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('e2e-now');
     expect(SUNDAY_BOOTSTRAP_SCRIPT).toContain('weekday');
-    expect(SUNDAY_WRITE_CSS).toContain('sunday-write-field');
-    expect(SUNDAY_WRITE_CSS).toContain('sunday-write-notice');
+    const css = readFileSync('src/app/globals.css', 'utf8');
+    expect(css).toContain('.sunday-write-field');
+    expect(css).toContain('display: contents');
+    expect(css).toContain('.sunday-write-notice');
   });
 });

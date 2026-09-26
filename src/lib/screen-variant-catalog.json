@@ -252,6 +252,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:sunday",
+    "label": "/welcome sunday",
+    "visual": "state-welcome-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:laws",
     "label": "/welcome laws",
     "visual": "state-welcome-laws",
@@ -2379,6 +2385,12 @@
     "id": "/moderate/group:default",
     "label": "/moderate/group default",
     "visual": "screen-moderate-group",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:sunday",
+    "label": "/moderate/group sunday",
+    "visual": "state-moderate-group-sunday",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

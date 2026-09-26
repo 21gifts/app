@@ -50,3 +50,22 @@ export function getAppVersion(): string {
   }
   return value; // do not slice
 }
+
+/**
+ * Optional Playwright clock (`NEXT_PUBLIC_E2E_NOW`). Absent in production.
+ *
+ * Not a deploy setting: an empty value means the head script uses the device
+ * clock. It does not throw, and it does not invent a time.
+ *
+ * Dot access is load-bearing so Next inlines the value when the test build
+ * sets it.
+ *
+ * @returns The pinned instant, or `null` when unset.
+ */
+export function getE2eNow(): string | null {
+  const value = process.env.NEXT_PUBLIC_E2E_NOW;
+  if (value === undefined || value === '') {
+    return null;
+  }
+  return value;
+}

@@ -87,7 +87,7 @@ export function NameForm(
       return;
     }
     void runGuarded(
-      (token) => setName(token, trimmed),
+      (token) => setName(token, trimmed, variant === 'onboarding' ? 'setup' : 'enforce'),
       (updated) => {
         const current = useAuthStore.getState().account;
         if (current === null) {
