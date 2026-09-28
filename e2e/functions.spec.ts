@@ -5427,6 +5427,158 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
+test('Function: noteKinds — a credit, a donation, and a shop each get their tag', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-loan',
+            name: 'Ada',
+            text: 'Need help with a train ticket',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 21000,
+            goalRepayable: true,
+            goalTermDays: 30,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+          {
+            id: 'm-gift',
+            name: 'Bea',
+            text: 'For the hall',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 0,
+            goalSats: 21000,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+          {
+            id: 'm-shop',
+            name: 'Cara',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+          {
+            id: 'm-plain',
+            name: 'Dan',
+            text: 'Hello',
+            createdAt: '2026-08-28T09:00:00.000Z',
+            sats: 1,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Donation', expanded: false })).toBeVisible();
+  await expect(page.getByRole('link', { name: '#Shop' })).toBeVisible();
+  await expect(page.getByText('Hello')).toBeVisible();
+  await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
+});
+
+test('Function: MessageKindTags — pressing Loan explains the credit', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-loan',
+            name: 'Ada',
+            text: 'Need help with a train ticket',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 21000,
+            goalRepayable: true,
+            goalTermDays: 30,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  const loan = page.getByRole('button', { name: 'Loan' });
+  await loan.click();
+  await expect(page.getByRole('status')).toContainText('paid back');
+  await loan.click();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+
 test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -10433,4 +10585,209 @@ test('Function: splitCreditPlan — equal days and a remainder on the last day',
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('To repay per day: ₿700 · $0.70 per day for 30 days')).toBeVisible();
+});
+
+test('Function: proxyMessagesRepaymentGet — GET /messages/[id]/repayment is forwarded', async ({
+  request,
+}) => {
+  const response = await request.get('/messages/[id]/repayment');
+  expect(response.status()).toBeGreaterThanOrEqual(200);
+});
+
+test('Function: proxyMessagesRepaymentPost — POST /messages/[id]/repayment without bearer is denied', async ({
+  request,
+}) => {
+  const response = await request.post('/messages/[id]/repayment');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: getRepayment — GET /messages/[id]/repayment answers without a session', async ({
+  request,
+}) => {
+  const response = await request.get('/messages/11111111-1111-4111-8111-111111111111/repayment');
+  expect(response.status()).toBeGreaterThanOrEqual(200);
+});
+
+test('Function: postRepaymentInvoice — POST /messages/[id]/repayment without bearer is denied', async ({
+  request,
+}) => {
+  const response = await request.post('/messages/11111111-1111-4111-8111-111111111111/repayment');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: CreditLedger — a credit note lists who gave and who is paid back', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        totalBtc: '0',
+        totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
+        spendOverTime: [{ day: '2026-09-01', sats: 100000000, usd: '100000.00' }],
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Goal note to be repaid',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        goalSats: 21,
+        goalRepayable: true,
+        goalTermDays: 1,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/messages/${id}/repayment`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currency: 'BTC',
+        fundedAt: '2026-09-26T12:00:00.000Z',
+        termDays: 1,
+        daysDue: 1,
+        daysPaid: 0,
+        unassignedSats: 0,
+        givers: [
+          {
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            givenSats: 21,
+            givenAmount: null,
+          },
+        ],
+        repayments: [
+          {
+            dayIndex: 0,
+            dueOn: '2026-09-27',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 21,
+            status: 'due',
+            via: 'lightning',
+          },
+        ],
+        next: null,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
+  await expect(page.getByLabel('Paid back')).toBeVisible();
+  await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
+  await expect(page.getByRole('img', { name: /Sep 27/ })).toBeVisible();
+});
+
+test('Function: RepaymentPlanChart — dates run from the first day to the last', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ spendOverTime: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Need help with a train ticket',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        goalSats: 21,
+        goalRepayable: true,
+        goalTermDays: 2,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/messages/${id}/repayment`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currency: 'BTC',
+        fundedAt: '2026-09-26T12:00:00.000Z',
+        termDays: 2,
+        daysDue: 1,
+        daysPaid: 0,
+        unassignedSats: 0,
+        givers: [],
+        repayments: [
+          {
+            dayIndex: 0,
+            dueOn: '2026-09-27',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 10,
+            status: 'due',
+            via: 'lightning',
+          },
+          {
+            dayIndex: 1,
+            dueOn: '2026-09-28',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 11,
+            status: 'scheduled',
+            via: 'lightning',
+          },
+        ],
+        next: null,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  const chart = page.getByRole('img', { name: /Repayment from/ });
+  await expect(chart).toBeVisible();
+  await expect(chart).toContainText('Sep 27');
+  await expect(chart).toContainText('Sep 28');
+  await expect(page.getByText('Per day', { exact: true })).toBeVisible();
+  await expect(page.getByText('Still owed', { exact: true })).toBeVisible();
 });

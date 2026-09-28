@@ -43,6 +43,7 @@ vi.mock('@/lib/api', () => ({
   postMessageVideo: vi.fn(),
   fetchComposeTarget: vi.fn(),
   postMessageInvoice: vi.fn(),
+  postRepaymentInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
@@ -81,6 +82,7 @@ import {
   fetchComposeTarget,
   postMessage,
   postMessageInvoice,
+  postRepaymentInvoice,
   postMessageVideo,
   setLightningAddress,
   setMessagePlace,
@@ -101,6 +103,7 @@ const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
+const repayMock = vi.mocked(postRepaymentInvoice);
 const composeTargetMock = vi.mocked(fetchComposeTarget);
 const dismissLawsMock = vi.mocked(dismissForumLaws);
 const photoMock = vi.mocked(fetchMessagePhoto);
@@ -9404,4 +9407,143 @@ describe('forum feed pages', () => {
     expect(screen.getByText('Older page')).toBeTruthy();
     expect(fetchMock).toHaveBeenLastCalledWith('sess', { mode: 'active', limit: 20 });
   });
+
+  it('pays today repayment and opens requirements when the author is missing one', async () => {
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          accountId: 'acc_1',
+          sats: 21000,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+        },
+      ]),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    expect(await screen.findByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: 'name',
+    });
+    repayMock.mockResolvedValueOnce({ pr: 'lnbc21n1again', amountSats: 21 });
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledTimes(2);
+      expect(
+        (screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+  });
+
+  it('drops a repayment that finishes after the feed unmounts', async () => {
+    let resolveOld: (value: { pr: string; amountSats: number }) => void = () => {};
+    repayMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOld = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValue(fundedCredit());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledTimes(1);
+    });
+    cleanup();
+    await act(async () => {
+      resolveOld({ pr: 'lnbc21n1old', amountSats: 99 });
+      await Promise.resolve();
+    });
+    let rejectOld: (err: Error) => void = () => {};
+    repayMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectOld = reject;
+        }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledTimes(2);
+    });
+    cleanup();
+    await act(async () => {
+      rejectOld(new Error('late'));
+      await Promise.resolve();
+    });
+  });
+
+  it('does not start a repayment after the session is gone', async () => {
+    fetchMock.mockResolvedValue(fundedCredit());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await screen.findByRole('button', { name: "Pay today's repayment" });
+    act(() => {
+      useAuthStore.setState({ session: null });
+    });
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    expect(repayMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a repayment error when the missing field is not an overlay', async () => {
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError([]));
+    fetchMock.mockResolvedValue(fundedCredit());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('shows the rate limit, the author wallet, and a failed repayment', async () => {
+    fetchMock.mockResolvedValue(fundedCredit());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    repayMock.mockRejectedValueOnce(new Error('Too many payments'));
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    repayMock.mockRejectedValueOnce(
+      new Error("The author's wallet cannot receive this Bitcoin payment"),
+    );
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        "The author's wallet cannot receive this Bitcoin payment",
+      );
+    });
+    repayMock.mockRejectedValueOnce(new Error('Could not start the Bitcoin payment'));
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+    });
+  });
 });
+
+function fundedCredit(): ReturnType<typeof forumPage> {
+  return forumPage([
+    {
+      ...SAMPLE,
+      accountId: 'acc_1',
+      sats: 21000,
+      goalSats: 21000,
+      goalRepayable: true,
+      goalTermDays: 30,
+    },
+  ]);
+}

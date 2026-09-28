@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
+import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -102,16 +103,25 @@ function PublicThreadCard({
       className={`items-stretch text-left${highlight ? ' ring-1 ring-app-fg' : ''}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        {note.via === 'nostr' ? (
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-app-fg">{note.name}</span>
-            <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-              {t('forum.via.nostr')}
+        <MessageKindTags
+          kinds={noteKinds({
+            parentId: note.parentId,
+            text: note.text,
+            goalSats: note.goalSats,
+            goalRepayable: note.goalRepayable,
+          })}
+        >
+          {note.via === 'nostr' ? (
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-app-fg">{note.name}</span>
+              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                {t('forum.via.nostr')}
+              </span>
             </span>
-          </span>
-        ) : (
-          <span className="text-sm font-medium text-app-fg">{note.name}</span>
-        )}
+          ) : (
+            <span className="text-sm font-medium text-app-fg">{note.name}</span>
+          )}
+        </MessageKindTags>
         <time dateTime={note.createdAt} className="text-xs text-app-subtle">
           {formatForumTime(note.createdAt, locale)}
         </time>
@@ -197,6 +207,7 @@ function PublicThreadCard({
           amountPhp={note.amountPhp}
           goalRepayable={note.goalRepayable}
           goalTermDays={note.goalTermDays}
+          messageId={note.id}
         />
       ) : null}
     </Card>

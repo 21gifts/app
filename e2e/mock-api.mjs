@@ -644,6 +644,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const repaymentMatch = pathName.match(/^\/messages\/([^/]+)\/repayment$/);
+  if (repaymentMatch && method === 'POST') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { pr: 'lnbc1', amountSats: 21 });
+    return;
+  }
+
   const invoiceMatch = pathName.match(/^\/messages\/([^/]+)\/invoice$/);
   if (method === 'POST' && invoiceMatch) {
     const token = bearer(req);
