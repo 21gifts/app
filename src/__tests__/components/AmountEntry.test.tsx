@@ -912,6 +912,52 @@ describe('AmountEntry', () => {
     expect(screen.getByLabelText('Amount')).toHaveProperty('placeholder', '0');
   });
 
+  it('ticks once when a keypad key changes the amount', () => {
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    const Harness = (): ReactElement => {
+      const [value, setValue] = useState('');
+      return (
+        <AmountEntry
+          keypad
+          label="Amount"
+          placeholder="0"
+          value={value}
+          onValueChange={setValue}
+          rateDay={DAY}
+        />
+      );
+    };
+    renderWithLocale(<Harness />, 'en', 'ch', 'USD');
+    Reflect.deleteProperty(navigator, 'vibrate');
+    fireEvent.click(screen.getByRole('button', { name: /^1$/ }));
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    fireEvent.click(screen.getByRole('button', { name: /^2$/ }));
+    expect(vibrate).toHaveBeenCalledWith(10);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    vibrate.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: '.' }));
+    fireEvent.click(screen.getByRole('button', { name: '.' }));
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    vibrate.mockClear();
+    const reduced = window.matchMedia;
+    window.matchMedia = (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^5$/ }));
+    expect(vibrate).not.toHaveBeenCalled();
+    window.matchMedia = reduced;
+  });
+
   it('edits a till keypad without an input', () => {
     const Harness = (): ReactElement => {
       const [value, setValue] = useState('');
@@ -932,34 +978,33 @@ describe('AmountEntry', () => {
     renderWithLocale(<Harness />, 'en', 'ch', 'USD');
     const display = screen.getByLabelText('Amount');
     expect(display.tagName).toBe('P');
+    expect(screen.queryByText('Amount')).toBeNull();
+    expect(screen.getByRole('button', { name: '1' }).className).toContain('active:scale-95');
     expect(screen.queryByRole('textbox', { name: 'Amount' })).toBeNull();
     expect(display.textContent).toBe('0');
+    expect(screen.queryByRole('button', { name: '.' })).toBeNull();
+    fireEvent.keyDown(window, { key: '.' });
+    expect(screen.getByLabelText('Amount').textContent).toBe('0');
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
     fireEvent.click(screen.getByRole('button', { name: /^0$/ }));
     fireEvent.click(screen.getByRole('button', { name: /^2$/ }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2');
-    fireEvent.click(screen.getByRole('button', { name: /^\.$/ }));
+    fireEvent.click(screen.getByRole('button', { name: '.' }));
     fireEvent.click(screen.getByRole('button', { name: /^5$/ }));
     fireEvent.click(screen.getByRole('button', { name: /^0$/ }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
-    fireEvent.click(screen.getByRole('button', { name: /^\.$/ }));
+    fireEvent.click(screen.getByRole('button', { name: '.' }));
+    fireEvent.click(screen.getByRole('button', { name: /^9$/ }));
     expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.5');
-    fireEvent.keyDown(window, { key: '0' });
-    for (const digit of '123456') {
-      fireEvent.keyDown(window, { key: digit });
-    }
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.50123456');
-    fireEvent.keyDown(window, { key: '9' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.50123456');
+    fireEvent.keyDown(window, { key: '1' });
     fireEvent.keyDown(window, { key: '.' });
     fireEvent.keyDown(window, { key: ',' });
     fireEvent.keyDown(window, { key: 'Decimal' });
     fireEvent.keyDown(window, { key: 'Unidentified', code: 'NumpadDecimal' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.50123456');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.50');
     fireEvent.keyDown(window, { key: 'Backspace' });
     fireEvent.keyDown(window, { key: 'Delete' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.');
     fireEvent.keyDown(window, { key: 'a' });
     fireEvent.keyDown(window, { key: '3', metaKey: true });
     fireEvent.keyDown(window, { key: '3', ctrlKey: true });
@@ -973,13 +1018,13 @@ describe('AmountEntry', () => {
     fireEvent.keyDown(area, { key: '3' });
     fireEvent.keyDown(select, { key: '3' });
     fireEvent.keyDown(editable, { key: '3' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.');
     const plain = document.createElement('div');
     document.body.append(plain);
     fireEvent.keyDown(plain, { key: '7' });
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.5012347');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.7');
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    expect(screen.getByLabelText('Amount').textContent).toBe('2.501234');
+    expect(screen.getByLabelText('Amount').textContent).toBe('2.');
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
@@ -1039,6 +1084,7 @@ describe('AmountEntry', () => {
     };
     renderWithLocale(<Harness />, 'en', 'de', 'USD');
     fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect(screen.getByRole('button', { name: ',' })).toBeTruthy();
     expect(screen.getByLabelText('Amount').textContent).toBe('0,021');
     fireEvent.click(screen.getByRole('button', { name: '₿' }));
     expect(screen.getByLabelText('Amount').textContent).toBe('21');

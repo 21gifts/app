@@ -244,6 +244,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('100 people a day').parentElement).toBe(
       screen.getByText('yesterday 12 of 100').parentElement,
     );
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
     expect(screen.getByText(/Someone who receives both that day counts once/)).toBeTruthy();
     expect(screen.getByText('9')).toBeTruthy();
@@ -253,8 +254,12 @@ describe('ModerateScreen', () => {
     expect(chart.textContent).toContain('9/20');
     expect(chart.textContent).toContain('8/22');
     expect(chart.textContent).not.toContain('9/19');
+    expect(screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href')).toBe(
+      '/moderate/payouts',
+    );
     fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
     expect(screen.queryByText(/Someone who receives both that day counts once/)).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
   });
 
   it('shows zero on today even when the bar is empty', async () => {
@@ -295,6 +300,7 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
   });
 
   it('shows retry when a spend day omits officialCount', async () => {
@@ -329,6 +335,7 @@ describe('ModerateScreen', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(screen.queryByText('40%')).toBeNull();
     expect(screen.queryByText('0%')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
   });
 
   it('opens an empty chart when there are no gifts', async () => {
@@ -386,6 +393,7 @@ describe('ModerateScreen', () => {
         'Could not load payouts. Please try again.',
       );
     });
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     fetchMock.mockResolvedValue(EMPTY_STATS);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {

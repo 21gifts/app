@@ -7,40 +7,61 @@
 - **Returns / side effects:** The page element. No direct I/O.
 - **Used by:** Route `/pos`.
 
+## Function: PosAmountPage
+
+- **Purpose:** App Router page for `/pos/amount`. Wraps `PosAmount` in `AppShell` and `OnboardingGate screen="profile"`. Back returns to `/pos`.
+- **Inputs:** None.
+- **Returns / side effects:** The page element. No direct I/O.
+- **Used by:** Route `/pos/amount`.
+
 ## Function: PosScreen
 
-- **Purpose:** Signed-in till on `/pos`. Renders `PosTill`.
+- **Purpose:** Signed-in QR page on `/pos`. Renders `PosTill`.
 - **Inputs:** None.
 - **Returns / side effects:** The till card.
 - **Used by:** `/pos`.
 
+## Function: PosAmount
+
+- **Purpose:** Amount-only card on `/pos/amount`. Keypad and **Create payment**. No QR and no address. A failed till load shows the alert and **Try again**. A created charge, an already open charge, or a member who cannot charge returns to `/pos`.
+- **Inputs:** None. Reads the auth store.
+- **Returns / side effects:** React element. Calls `createPosCharge`. On success, `router.replace('/pos')`.
+- **Used by:** `PosAmountPage`.
+
 ## Function: PosTill
 
-- **Purpose:** The till card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, a keypad amount (decimal from the number format), and the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. History lists recent rows. No paid status. The wallet does not mount this card.
+- **Purpose:** The QR card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, content-width **Set an amount** linking to `/pos/amount` when no charge is open, otherwise the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. A slower refresh cannot replace a newer create or cancel. No keypad on this card. No paid status. The wallet does not mount this card.
 - **Inputs:** None. Reads the auth store.
-- **Returns / side effects:** React element. Calls `fetchPosState`, `createPosCharge`, and `cancelPosCharge`.
+- **Returns / side effects:** React element. Calls `fetchPosState` and `cancelPosCharge`.
 - **Used by:** `PosScreen`.
+
+## Function: resetPosTillWriteForTests
+
+- **Purpose:** Drop the module-level till write so a later test does not wait on a request the previous test left hanging.
+- **Inputs:** None.
+- **Returns / side effects:** Sets the in-flight write to null. Production clears that write when the request settles.
+- **Used by:** `PosScreen` tests.
 
 ## Function: fetchPosState
 
 - **Purpose:** `GET /pos/charge` for the signed-in till.
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** `{ charge, history }`. Throws when the response is not OK.
-- **Used by:** `PosScreen`.
+- **Used by:** `PosTill`, `PosAmount`.
 
 ## Function: createPosCharge
 
 - **Purpose:** `POST /pos/charge` with `{ amountSats }`.
 - **Inputs:** Bearer `sessionToken` and a whole sat amount.
 - **Returns / side effects:** The created charge. Throws with the API error string.
-- **Used by:** `PosScreen`.
+- **Used by:** `PosAmount`.
 
 ## Function: cancelPosCharge
 
 - **Purpose:** `DELETE /pos/charge`.
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Resolves when the open charge is cancelled. Throws otherwise.
-- **Used by:** `PosScreen`.
+- **Used by:** `PosTill`.
 
 ## Function: proxyPosGet
 
@@ -587,9 +608,9 @@
 
 ## Function: push service worker
 
-- **Purpose:** Push-only service worker at `/sw.js`. On `push`, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. No cache or offline strategy.
-- **Inputs:** Push `event` with optional JSON payload (`title`, `body`, `url`, `tag`, `unreadCount`).
-- **Returns / side effects:** `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
+- **Purpose:** Push-only service worker at `/sw.js`. On the device's local Sunday, a push whose `type` is not exactly `conversation` does not stay on screen and does not change the badge: it calls `showNotification` with tag `sunday-quiet` and closes that note in the same `waitUntil`, so the browser does not invent its own banner. Every other push, including a private message, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. A thrown weekday lookup does not pause notifications. No cache or offline strategy.
+- **Inputs:** Push `event` with optional JSON payload (`type`, `title`, `body`, `url`, `tag`, `unreadCount`).
+- **Returns / side effects:** On a non-conversation Sunday push, `event.waitUntil` shows and closes `sunday-quiet`. Otherwise `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients; notification click focuses or opens the payload URL.
 - **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
 
 ## Function: isStandaloneDisplay
@@ -740,10 +761,10 @@
 
 ## Function: AmountEntry
 
-- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (till only) replaces the input with a non-focusable amount and an always-visible 3-column keypad; other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
-- **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`), optional `keypad` (default false; till only).
-- **Returns / side effects:** A labeled input, or with `keypad` a non-focusable amount plus the keypad and no input, the switch, and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
-- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosScreen`.
+- **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (the `/pos/amount` page only) replaces the input with a non-focusable amount and an always-visible 3-column keypad. The page heading is already **Amount**, so the keypad does not repeat it; the amount keeps that name for assistive tech. Bitcoin offers no decimal key and ignores a typed decimal. Fiat shows the number-format decimal and keeps two fraction digits. A key scales down and darkens while it is held. When the amount changes and the device can vibrate, and reduced motion is off, it vibrates for 10 ms. Other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
+- **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`), optional `keypad` (default false; the `/pos/amount` page only).
+- **Returns / side effects:** A labeled input, or with `keypad` a non-focusable amount plus the keypad and no input. The keypad does not show the label again. The switch and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
+- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosAmount`.
 
 ## Function: Field
 
@@ -1466,7 +1487,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosScreen`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
 
 ## Function: RootLayout
 
@@ -1537,6 +1558,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingApplyScreen`.
+
+## Function: fetchFundingPayoutDays
+
+- **Purpose:** GET `/funding/payout-days` (same-origin Bearer proxy of api `GET /funding/payout-days`) and parse `fundingPayoutDaysResponseSchema`. Next.js forbids a `route.ts` beside `/moderate/payouts`, so the proxy lives at this path. Seven UTC days, oldest first, and one row per person.
+- **Inputs:** Bearer `sessionToken`.
+- **Returns / side effects:** `{ days, rows }`. Throws visitor copy `Could not load the payout table. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `FundingPayoutsScreen`.
 
 ## Function: fetchFundingApplications
 
@@ -2002,7 +2030,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosScreen`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
 
 ## Function: shownFiatForSats
 
@@ -2516,6 +2544,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/funding/apply`.
 
+## Function: proxyFundingPayoutDaysGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /funding/payout-days`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/funding/payout-days`.
+
 ## Function: proxyFundingApplicationsGet
 
 - **Purpose:** Same-origin Bearer proxy helper for api `GET /funding/applications`. Forwards the incoming Authorization header.
@@ -3008,24 +3043,38 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletPhrase
 
-- **Purpose:** Add or show the recovery phrase for `/wallet`. There is no confirm view, no auto-reveal, and no Continue on the words.
+- **Purpose:** Add or show the recovery phrase. `/wallet` does not render the words. `/wallet/phrase` does. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
 - **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `startPasskeySeed`, `credentials.create` with PRF, `obtainPrfFirst`, no finish when that is null, otherwise `finishPasskeySeed`, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
-- **Used by:** `WalletScreen`.
+- **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreenView
 
-- **Purpose:** Wallet card, and the header Back for that page. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`.
-- **Inputs:** `UseWalletPhraseResult`.
-- **Returns / side effects:** Card with **Add recovery phrase**, the 12-word grid and only-backup line (no Continue), or **Show recovery phrase** (`variant="secondary"`) under closed **Advanced functions** (open shows the button). Under that card: the centered 21.gifts address and Open CryptoPay QR used by `/pos`, then **Set an amount** linking to `/pos`. No keypad and no charge. Header Back takes one step: hide the words, close **Advanced functions**, `history.back()`, or open `/welcome` when the tab has no previous page. Error shows a reason, a hint, and **Try again**.
-- **Used by:** `WalletScreen`.
+- **Purpose:** Wallet cards, and the header Back. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`. `surface="entry"` is `/wallet`. `surface="phrase"` is `/wallet/phrase`.
+- **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`).
+- **Returns / side effects:** On `entry`, heading **Wallet** is first, then the centered address, Open CryptoPay QR, and content-width **Set an amount** to `/pos`, then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR. Header Back on `entry` closes **Advanced functions**, calls `history.back()`, or opens `/welcome`. On `phrase` it hides the words, calls `history.back()`, or opens `/wallet`.
+- **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreen
 
-- **Purpose:** Signed-in wallet page body.
+- **Purpose:** Signed-in `/wallet` body. Receive address above the recovery entry.
 - **Inputs:** None.
-- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. No auto-reveal.
+- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. Does not render the 12 words.
 - **Used by:** `WalletPage`.
+
+## Function: WalletPhraseScreen
+
+- **Purpose:** `/wallet/phrase` body. Recovery phrase or recovery error, with no receive QR.
+- **Inputs:** None.
+- **Returns / side effects:** Renders `WalletScreenView` `surface="phrase"` with `useWalletPhrase()`.
+- **Used by:** `WalletPhrasePage`.
+
+## Function: WalletPhrasePage
+
+- **Purpose:** Next.js page for `/wallet/phrase`.
+- **Inputs:** None.
+- **Returns / side effects:** AppShell + OnboardingGate + `WalletPhraseScreen`.
+- **Used by:** Route `/wallet/phrase`.
 
 ## Function: WalletPage
 
@@ -3341,6 +3390,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/messages/hidden` only when the role is at least moderator.
 - **Used by:** `HiddenNotesPage`.
+
+## Function: PayoutsPage
+
+- **Purpose:** Next.js page for `/moderate/payouts` (signed-in staff payout-per-person table). HTML `/moderate/payouts` is the table, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingPayoutsScreen`. JSON lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The payout table inside fill AppShell.
+- **Used by:** Route `/moderate/payouts`.
+
+## Function: FundingPayoutsScreen
+
+- **Purpose:** Client table of daily-grant payouts for seven UTC days. Staff (moderator) fetch `fetchFundingPayoutDays` and show a lead, a three-color legend, and name plus seven cells (black not entitled, white entitled but not collected, green payout received). Today is the rightmost column. A row with `accountId` links the name to `/members/{id}`. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. Moderator stipends and welcome gifts are not in this table.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
+- **Used by:** `PayoutsPage`.
 
 ## Function: ProposalsPage
 
@@ -3773,7 +3836,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip.
 - **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, or `{ kind: 'sats', sats }`. No I/O.
-- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosScreen`.
+- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosAmount`.
 
 ## Function: replySatsFromDraft
 
