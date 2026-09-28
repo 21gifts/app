@@ -21,9 +21,13 @@ describe('service worker notification click', () => {
     expect(source).toContain('postMessage');
     const click = source.indexOf("addEventListener('notificationclick'");
     expect(click).toBeGreaterThan(-1);
+    expect(source).toContain(".open('21gifts-push-open')");
+    expect(source).toContain('client.focused === true');
+    const remembered = source.indexOf('rememberPushOpen(path)', click);
     const post = source.indexOf('postMessage', click);
     const nav = source.indexOf('navigate', click);
-    expect(post).toBeGreaterThan(click);
+    expect(remembered).toBeGreaterThan(click);
+    expect(post).toBeGreaterThan(remembered);
     expect(nav).toBeGreaterThan(post);
   });
 });

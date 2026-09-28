@@ -104,6 +104,42 @@ function pushOpenTarget(raw) {
   }
 }
 
+/** Remember the path so a suspended page can open it after the message was missed. */
+function rememberPushOpen(path) {
+  return caches
+    .open('21gifts-push-open')
+    .then((cache) =>
+      cache.put(
+        new URL('/push-open', self.location.origin).href,
+        new Response(JSON.stringify({ url: path, at: Date.now() }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+    .catch(() => undefined);
+}
+
+/** Focus one same-origin window, preferring the one the person is looking at. */
+function chosenPushClient(clientList) {
+  let fallback = null;
+  for (const client of clientList) {
+    try {
+      const clientUrl = new URL(client.url);
+      if (clientUrl.origin === self.location.origin && 'focus' in client) {
+        if (client.focused === true) {
+          return client;
+        }
+        if (fallback === null) {
+          fallback = client;
+        }
+      }
+    } catch {
+      // ignore malformed client urls
+    }
+  }
+  return fallback;
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const raw =
@@ -113,34 +149,36 @@ self.addEventListener('notificationclick', (event) => {
   const { href, path } = pushOpenTarget(raw);
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        try {
-          const clientUrl = new URL(client.url);
-          if (clientUrl.origin === self.location.origin && 'focus' in client) {
-            client.postMessage({ type: '21gifts-push-open', url: path });
-            // Safari has no WindowClient.navigate, so an already open page stays put unless it receives the path.
-            if (clientUrl.href !== href && typeof client.navigate === 'function') {
-              return client
-                .navigate(href)
-                .then((navigated) => {
-                  if (navigated && 'focus' in navigated) {
-                    return navigated.focus();
-                  }
-                  return client.focus();
-                })
-                .catch(() => client.focus());
-            }
+    rememberPushOpen(path).then(() =>
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        const client = chosenPushClient(clientList);
+        if (client !== null) {
+          client.postMessage({ type: '21gifts-push-open', url: path });
+          // Safari has no WindowClient.navigate, so an already open page stays put unless it receives the path.
+          let clientUrl = null;
+          try {
+            clientUrl = new URL(client.url);
+          } catch {
             return client.focus();
           }
-        } catch {
-          // ignore malformed client urls
+          if (clientUrl.href !== href && typeof client.navigate === 'function') {
+            return client
+              .navigate(href)
+              .then((navigated) => {
+                if (navigated && 'focus' in navigated) {
+                  return navigated.focus();
+                }
+                return client.focus();
+              })
+              .catch(() => client.focus());
+          }
+          return client.focus();
         }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(href);
-      }
-      return undefined;
-    }),
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(href);
+        }
+        return undefined;
+      }),
+    ),
   );
 });
