@@ -675,7 +675,6 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
-/** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
 /** Signed-in composer suggestions: first page is Ada and Adam. */
 async function fulfillMentionPeople(page: Page): Promise<void> {
   await page.route('**/forum/mentions**', async (route) => {
@@ -692,6 +691,7 @@ async function fulfillMentionPeople(page: Page): Promise<void> {
   });
 }
 
+/** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
 async function fulfillPublicThreadReplies(
   page: Page,
   id: string,

@@ -322,6 +322,7 @@ export function MentionTextarea({
               <button
                 type="button"
                 id={`${listId}-${String(index)}`}
+                tabIndex={-1}
                 role="option"
                 aria-selected={index === activeIndex}
                 aria-label={`@${account.username}`}
