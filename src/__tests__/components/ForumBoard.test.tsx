@@ -6866,6 +6866,7 @@ describe('reply form size', () => {
           replies={[]}
           replyDraft="Hi Bob"
           replyAmountDraft="21"
+          replyPayPreview="Hi Bob"
           payMessageId="m1"
           payHost="card"
           payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
@@ -6877,8 +6878,13 @@ describe('reply form size', () => {
     expect(
       observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-sheet')),
     ).toBe(true);
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
+    expect(
+      observed.some(
+        (node) => node instanceof HTMLElement && node.hasAttribute('data-reply-pay-page'),
+      ),
+    ).toBe(true);
+    expect(screen.getByText('Hi Bob')).toBeTruthy();
+    expect(screen.queryByLabelText('Your reaction')).toBeNull();
     globalThis.ResizeObserver = previous;
   });
 
@@ -6905,6 +6911,7 @@ describe('reply form size', () => {
                 payHost: 'card' as const,
                 payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
                 payWaiting: true,
+                replyPayPreview: 'Hi Bob',
               }
             : {})}
           {...modeProps('all')}
@@ -6922,6 +6929,32 @@ describe('reply form size', () => {
     expect(port.scrollTop).toBe(48);
     view.rerender(board(true, [{ ...SAMPLE, id: 'r-extra', text: 'Later' }]));
     expect(port.scrollTop).toBe(48);
+  });
+
+  it('keeps the card pay sheet under a note when the reaction pay preview is absent', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        payMessageId="m1"
+        payHost="card"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('[data-pay-sheet]')).toBeTruthy();
+    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+    expect(screen.getByLabelText('Your reaction')).toBeTruthy();
   });
 });
 

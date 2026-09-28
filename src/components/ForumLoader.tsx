@@ -413,6 +413,7 @@ export function ForumLoader({
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const rateDay = useLatestRateDay();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
@@ -1254,6 +1255,7 @@ export function ForumLoader({
     setPosting(false);
     notePostInFlightRef.current = false;
     setPayHost(null);
+    setReplyPayPreview(null);
     const keptCaption = pendingComposeTextRef.current;
     if (keptCaption !== null && keptCaption !== '') {
       setDraft(keptCaption);
@@ -1383,6 +1385,7 @@ export function ForumLoader({
                   setPayInvoice(null);
                   setPayMessageId(null);
                   setPayHost(null);
+                  setReplyPayPreview(null);
                   setPayDraft('');
                   setPayError(null);
                   setPosting(false);
@@ -1465,6 +1468,7 @@ export function ForumLoader({
                 setReplyDraft('');
                 setReplyAmountDraft('');
               }
+              setReplyPayPreview(null);
               payMessageIdRef.current = null;
               payWaitingRef.current = false;
               if (switchToAll && feedModeRef.current !== 'all') {
@@ -1965,6 +1969,15 @@ export function ForumLoader({
       return;
     }
     if (
+      replyPayPreview !== null &&
+      /* v8 ignore next -- preview is only non-null while payHost is card */
+      payHost === 'card' &&
+      /* v8 ignore next -- preview is only non-null while payMessageId is set */
+      payMessageId !== null
+    ) {
+      return;
+    }
+    if (
       payMessageId !== null &&
       replies !== null &&
       replies.some((row) => row.id === payMessageId)
@@ -2125,6 +2138,7 @@ export function ForumLoader({
         amountSats: invoice.amountSats,
       });
       setPayHost('card');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
       startPayPoll(parentId, baselineSats, false, null, false, true);
@@ -2480,6 +2494,7 @@ export function ForumLoader({
         payBusy={payBusy}
         payError={payError}
         payInvoice={payInvoice}
+        replyPayPreview={replyPayPreview}
         payWaiting={payWaiting}
         onPayOpen={(messageId) => {
           bumpPayPollGeneration();
@@ -2488,6 +2503,7 @@ export function ForumLoader({
           setPayDraft('');
           setPayError(null);
           setPayInvoice(null);
+          setReplyPayPreview(null);
           setPayWaiting(false);
           setPayBusy(false);
         }}

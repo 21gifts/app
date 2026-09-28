@@ -3624,6 +3624,112 @@ test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, reque
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
+const REACTION_PAY_ANSWER = 'This is my answer';
+const REACTION_PAY_NOTE = 'Thank you so much to all donors.';
+
+/** Signed-in welcome, one foreign note, a paid reaction invoice that stays waiting. */
+async function openReactionPayPage(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-bob',
+            accountId: 'acc_bob',
+            name: 'Bob',
+            text: REACTION_PAY_NOTE,
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 1000,
+            payable: true,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/messages/**/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'r-platform',
+            accountId: 'acc_platform',
+            name: '21.gifts',
+            text: 'Glad it reached you.',
+            createdAt: '2026-08-28T12:05:00.000Z',
+            sats: 1000,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+    });
+  });
+  await page.route(/\/public-messages\/m-bob/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm-bob',
+        accountId: 'acc_bob',
+        name: 'Bob',
+        text: REACTION_PAY_NOTE,
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 1000,
+        payable: true,
+        hasPhoto: false,
+        photoCount: 0,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 1,
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByText(REACTION_PAY_NOTE).click();
+  const field = page.getByLabel('Your reaction');
+  await expect(field).toBeVisible();
+  await page.getByLabel('Amount').fill('21');
+  await field.fill(REACTION_PAY_ANSWER);
+  const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+  await form.getByRole('button', { name: 'Post' }).click();
+}
+
+test('Function: ForumReplyPayPage — paid reaction replaces the reply composer', async ({
+  page,
+}) => {
+  await openReactionPayPage(page);
+  const payPage = page.locator('[data-reply-pay-page]');
+  await expect(payPage).toBeVisible();
+  await expect(payPage.getByText(REACTION_PAY_ANSWER)).toBeVisible();
+  await expect(payPage.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByLabel('Your reaction')).toHaveCount(0);
+});
+
 test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet button', async ({
   page,
   request,
