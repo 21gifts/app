@@ -158,6 +158,7 @@ describe('MemberProfileLoader', () => {
     vi.mocked(fetchMemberActivity).mockRejectedValue(new Error('activity down'));
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(await screen.findByText('Could not load gifts.')).toBeTruthy();
   });
 
   it('fetches activity when lightningAddress is null', async () => {

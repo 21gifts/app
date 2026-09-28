@@ -479,6 +479,7 @@ describe('SignedInChrome', () => {
       donateOverTime: [],
       receiveOverTime: [],
       loading: true,
+      failed: false,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -495,6 +496,7 @@ describe('SignedInChrome', () => {
       donateOverTime: [],
       receiveOverTime: [],
       loading: false,
+      failed: false,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -517,6 +519,7 @@ describe('SignedInChrome', () => {
       donateOverTime: [],
       receiveOverTime: [],
       loading: false,
+      failed: false,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -531,6 +534,7 @@ describe('SignedInChrome', () => {
       donateOverTime: [],
       receiveOverTime: [],
       loading: false,
+      failed: false,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));

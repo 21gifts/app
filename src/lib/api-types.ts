@@ -352,24 +352,31 @@ export const activityFxSchema = giftStatsFxSchema.extend({
 });
 
 /**
- * One UTC day on an activity series. Fiat columns are optional for the same
- * reason as {@link activityFxSchema}.
+ * One UTC day on an activity series. CHF/EUR/PHP columns are optional for the
+ * same reason as {@link activityFxSchema}. `usd` and `cumulativeUsd` may be
+ * `null` when that currency could not be summed; gift-stats
+ * {@link spendDaySchema} days stay non-null USD.
  */
-export const activitySpendDaySchema = spendDaySchema.partial({
-  chf: true,
-  eur: true,
-  php: true,
-  cumulativeChf: true,
-  cumulativeEur: true,
-  cumulativePhp: true,
-});
+export const activitySpendDaySchema = spendDaySchema
+  .partial({
+    chf: true,
+    eur: true,
+    php: true,
+    cumulativeChf: true,
+    cumulativeEur: true,
+    cumulativePhp: true,
+  })
+  .extend({
+    usd: fiatAmountSchema,
+    cumulativeUsd: fiatAmountSchema,
+  });
 
 /**
  * Runtime schema for signed-in, member, and public-view activity
  * (`GET /me/activity`, `GET /members/:id/activity`, `GET /view/:viewKey/activity`).
  *
- * Series share the gift-stats day shape, with optional fiat fields. Totals
- * include house gifts and forum zaps.
+ * Series share the gift-stats day shape, with optional CHF/EUR/PHP and
+ * nullable USD. Totals include house gifts and forum zaps.
  */
 export const accountActivitySchema = z.object({
   donatedSats: z.number().int().nonnegative(),

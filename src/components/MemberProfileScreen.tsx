@@ -215,6 +215,7 @@ function FundingProgramMark({
  * @param props - Member profile and both activity series for the chart.
  *   `factsOnly` (default false) keeps every hook and returns only the public
  *   pills, gifts block, post/reaction counts, and activity feed.
+ *   `activityFailed` (default false) is passed to the chart as `failed`.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
@@ -222,11 +223,13 @@ export function MemberProfileScreen({
   received,
   donated = [],
   factsOnly = false,
+  activityFailed = false,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
   factsOnly?: boolean;
+  activityFailed?: boolean;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const router = useRouter();
@@ -1376,7 +1379,7 @@ export function MemberProfileScreen({
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
-          <AccountActivityChart received={received} donated={donated} />
+          <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
           <AboutMeSection
             mode="public"
             aboutMe={profile.aboutMe}

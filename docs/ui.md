@@ -545,7 +545,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker; a
 
 The closed forum view is a field (`bg-app-card`), not a selected pill. Post/Ask selected pill stays `bg-app-btn`. The check is `text-app-fg`, not orange. Profile uses `tone="gift"` (app shell). Stats uses `tone="gift" shell="dark"`.
 
-**Empty profile chart.** If both series empty/all-zero sats: unsigned shows FiatPicker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone; **no SVG / no ₿|fiat scale**. Legend without data is noise.
+**Empty profile chart.** If both series empty/all-zero sats: unsigned shows FiatPicker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone; **no SVG / no ₿|fiat scale**. Empty/all-zero sats and failed is `profile.chartError` `role="alert"`, not `profile.chartEmpty`. Successful empty and in-flight stay `profile.chartEmpty` `role="status"`, no SVG. Null `usd`/`cumulativeUsd` still draws the satoshi chart; USD scale uses an em dash when any raw `cumulativeUsd` is `null`. Legend without data is noise.
 
 ## Control grammar
 
@@ -916,7 +916,7 @@ The same anatomy is reused for an **External** badge (`forum.via.nostr`), shown 
 
 **Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
 
-**Profile activity.** FiatPicker only when `useHydrateSession().ready && session === null` (unsigned public view). Signed-in mounts omit it. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Unsigned empty: FiatPicker plus `profile.chartEmpty` `role="status"`, no SVG. Signed-in empty: `profile.chartEmpty` alone.
+**Profile activity.** FiatPicker only when `useHydrateSession().ready && session === null` (unsigned public view). Signed-in mounts omit it. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Unsigned empty: FiatPicker plus `profile.chartEmpty` `role="status"`, no SVG. Signed-in empty: `profile.chartEmpty` alone. Empty series and failed is `profile.chartError` `role="alert"`, not `profile.chartEmpty`. Successful empty and in-flight stay `profile.chartEmpty` `role="status"`, no SVG. Null `usd`/`cumulativeUsd` still draws the satoshi chart; USD scale uses an em dash when any raw `cumulativeUsd` is `null`.
 
 ### Alert / error
 
@@ -1228,7 +1228,7 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 5. **Control grammar wins.** Labeled for consent/continue/skip/login/logout/retry/activate/sentence-length/marketing primary/donate Open the forum. Icon-only inside cards. Notifications rows are labeled full-row controls. Member profile has no edit.
 6. **Pay control is lucide Gift, not ₿, and only on payable replies.** Amount is `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, the latest gift-day rate when that field is missing or null, no ` · —` when that rate is unusable). Accessible name stays **Send Bitcoin** (`forum.pay`). Posts show React (`forum.react`, lucide Reply) and do not show Send Bitcoin.
 7. **QR plates stay white** in both themes, `border-app-border`. A specific invoice omits the QR on a smartphone (`isSmartphoneUserAgent`, not viewport): the forum pay sheet, the inbox pay sheet, and the public pay link.
-8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone.
+8. **Empty profile chart is copy** (`profile.chartEmpty` `role="status"`), not an axis; no SVG / no ₿|fiat scale. Unsigned public view still adds FiatPicker; signed-in empty is copy alone. Failed empty series is `profile.chartError` `role="alert"`, not `profile.chartEmpty`. Null `usd`/`cumulativeUsd` still draws the satoshi chart; USD scale uses an em dash when any raw `cumulativeUsd` is `null`.
 9. **Four locales stay** (`en` `de` `es` `fil`). No fifth locale. Brand-voice examples in English.
 10. **Markdown in-repo is the source of truth.** Figma is not required.
 11. **Three profile pictures, never reused.** Wide image `aspect-[5/2]` and round photo `h-16 w-16` only when stored, above the title. The About me photo stays under the bio. No initials circle. A portrait is not the wide image.

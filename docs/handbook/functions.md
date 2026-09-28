@@ -713,9 +713,9 @@
 
 ## Function: AccountActivityChart
 
-- **Purpose:** Compact dual-line cumulative SVG of Given and Received. FiatPicker **only when unsigned** (`useHydrateSession().ready && session === null`; public view). Signed-in mounts (`ProfileScreen`, `MemberProfileScreen`, signed-in `/view`) omit it. Code from `useFiatPreference`. Empty/all-zero sats: unsigned shows picker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone (no SVG, no ₿|{fiat} scale). Populated: unsigned shows picker, then legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG; signed-in populated starts at legend + ₿|{code} scale. Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
-- **Inputs:** `received` (`AccountActivity.receivedOverTime`); optional `donated` (default `[]`) from `AccountActivity.donatedOverTime`.
-- **Returns / side effects:** When unsigned, FiatPicker, then when the series is empty or all zeros: `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG. Signed-in empty is `profile.chartEmpty` alone. Otherwise one chrome row (legend left, ₿ | selected FiatCode right) and SVG. Client state for scale; unsigned picker writes the `fiat` cookie. No network.
+- **Purpose:** Compact dual-line cumulative SVG of Given and Received. FiatPicker **only when unsigned** (`useHydrateSession().ready && session === null`; public view). Signed-in mounts (`ProfileScreen`, `MemberProfileScreen`, signed-in `/view`) omit it. Code from `useFiatPreference`. Empty/all-zero sats: unsigned shows picker plus `profile.chartEmpty` `role="status"`; signed-in empty is `profile.chartEmpty` alone (no SVG, no ₿|{fiat} scale). Empty/all-zero sats and `failed` show `profile.chartError` (`role="alert"`, `text-app-danger`) instead of `profile.chartEmpty`; unsigned FiatPicker stays above. In-flight and successful empty stay `profile.chartEmpty`, never **Loading…**. Null `usd`/`cumulativeUsd` with positive cumulative sats still draws the satoshi chart (legend + scale + SVG). Populated: unsigned shows picker, then legend + `SegmentedControl tone="gift"` options ₿ | selected FiatCode (`profile.chartScale`), then SVG; signed-in populated starts at legend + ₿|{code} scale. Scale state is `ActivityScale` `'sat' | 'fiat'`. Ticks: sat `formatBitcoin`; fiat `formatFiatTick` (USD may use `formatUsdTick`); USD scale uses an em dash when any raw `cumulativeUsd` is `null`; em dash when every source cumulative for the selected non-USD code is `null`. Wrapper `role="group"` uses `profile.chartTitle` as `aria-label`. No title heading; page heading is **Profile**. Given is `donatedOverTime` from account activity (no longer a hardcoded zero series).
+- **Inputs:** `received` (`AccountActivity.receivedOverTime`); optional `donated` (default `[]`) from `AccountActivity.donatedOverTime`; optional `failed` (default false).
+- **Returns / side effects:** When unsigned, FiatPicker, then when the series is empty or all zeros: `profile.chartEmpty` (`role="status"`) — no legend, ₿|{fiat} scale, or SVG — or `profile.chartError` (`role="alert"`, `text-app-danger`) when `failed`. Signed-in empty is `profile.chartEmpty` alone (or `profile.chartError` when `failed`). In-flight and successful empty stay `profile.chartEmpty`, never **Loading…**. Null `usd`/`cumulativeUsd` with positive cumulative sats still draws the satoshi chart. Otherwise one chrome row (legend left, ₿ | selected FiatCode right) and SVG. Client state for scale; unsigned picker writes the `fiat` cookie. No network.
 - **Used by:** `ProfileScreen`, `ViewProfileScreen`, `MemberProfileScreen`.
 
 ## Function: Button
@@ -986,7 +986,7 @@
 
 - **Purpose:** Client loader for the public view page: validates the key, fetches the public profile, then `fetchViewActivity` even if the Lightning Address is blank. Does not use `useAuthStore`.
 - **Inputs:** `viewKey` string from the route.
-- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After `fetchViewProfile`, always calls `fetchViewActivity` (even when address is blank) and maps both series onto the card. Activity failure still shows the card with empty series. Chart never swapped for `forum.loading`.
+- **Returns / side effects:** States loading / missing / error (with **Try again**) / ready card. In **ready**, renders `ViewProfileScreen` plus `ViewProfileClaim` under the card (passes `viewKey` and `hasPasskey` from the fetched profile). Malformed keys (not 64 lowercase hex) → missing without an api call. After `fetchViewProfile`, always calls `fetchViewActivity` (even when address is blank) and maps both series onto the card. Activity failure still shows the card; the chart shows `profile.chartError`, not `profile.chartEmpty`. Successful empty series stays `profile.chartEmpty`. Chart never swapped for `forum.loading`.
 - **Used by:** `ViewProfilePage`.
 
 ## Function: ViewProfileScreen
@@ -1042,7 +1042,7 @@
 
 - **Purpose:** Session-based GET `/me/activity` via `fetchAccountActivity`; returns given/received sats plus `donateOverTime` and `receiveOverTime`. Fetches even with a blank Lightning Address and does not call `fetchGiftStats`.
 - **Inputs:** Reads `session` and `account.lightningAddress` from `useAuthStore`; calls `fetchAccountActivity` whenever a session exists.
-- **Returns / side effects:** `{ donatedSats, receivedSats, donateOverTime, receiveOverTime, loading }`. On each fetch start (including session or Lightning Address change) totals and series reset to zeros/empty; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) when the series is empty. Drops stale responses when the session or address changes mid-flight; errors resolve to zeros and an empty series.
+- **Returns / side effects:** `{ donatedSats, receivedSats, donateOverTime, receiveOverTime, loading, failed }`. Fetch start: `failed` false, series empty, chart shows `profile.chartEmpty`. Success: `failed` false and series from the payload. Thrown fetch: `failed` true, zeros, empty series, chart `profile.chartError`. Session null: `failed` false, no fetch. On each fetch start (including session or Lightning Address change) totals and series reset to zeros/empty and `failed` is false; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) while in flight. Drops stale or cancelled responses when the session or address changes mid-flight and does not apply them.
 - **Used by:** `SignedInChrome`, `ProfileScreen`.
 
 ## Function: WelcomePage
@@ -1444,7 +1444,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then `fetchMemberActivity` even if the Lightning Address is blank. It does not prefetch post/reply feeds; `postCount` and `replyCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
-- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules`. `fetchMemberActivity` 409 `missing_requirements` → `/setup/rules`. Any other activity error keeps the card with empty given and received series.
+- **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules`. `fetchMemberActivity` 409 `missing_requirements` → `/setup/rules`. Any other activity error (other than `MissingRequirementsError`) keeps the card and the chart shows `profile.chartError`. `MissingRequirementsError` still goes to `/setup/rules`.
 - **Used by:** `MemberProfilePage`.
 
 ## Function: MemberProfileScreen
@@ -1696,7 +1696,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** GET `/view-key/:viewKey/activity` with no auth and parse public activity.
 - **Inputs:** `viewKey` (64 hex).
-- **Returns / side effects:** `AccountActivity`. Throws visitor copy on failure; the loader catches and shows empty series.
+- **Returns / side effects:** `AccountActivity`. Throws visitor copy on failure; the loader catches the error, keeps the card, and the chart shows `profile.chartError`.
 - **Used by:** `ViewProfileLoader`.
 
 ## Function: fetchMe

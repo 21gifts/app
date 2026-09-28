@@ -139,8 +139,9 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
     await waitFor(() => {
-      expect(screen.getByText('No gifts yet.')).toBeTruthy();
+      expect(screen.getByText('Could not load gifts.')).toBeTruthy();
     });
+    expect(screen.queryByText('No gifts yet.')).toBeNull();
   });
 
   it('fetches activity when lightningAddress is null', async () => {

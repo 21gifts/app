@@ -206,4 +206,32 @@ describe('AccountActivityChart', () => {
     expect(screen.getAllByText('\u2014').length).toBeGreaterThan(0);
     expect(screen.queryByText(formatFiatTick(1.2, 'CHF'))).toBeNull();
   });
+
+  it('draws the satoshi chart when usd is null and sats are positive', () => {
+    const nullUsd: SpendPoint[] = [
+      { ...day('2026-06-01', 21, '0.02', 21), usd: null, cumulativeUsd: null },
+    ];
+    renderWithLocale(<AccountActivityChart received={nullUsd} />);
+    expect(screen.getByText('Given')).toBeTruthy();
+    expect(screen.getByText('Received')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
+    expect(screen.queryByText('No gifts yet.')).toBeNull();
+  });
+
+  it('renders chart error copy when failed and the series is empty', () => {
+    renderWithLocale(<AccountActivityChart received={[]} failed={true} />);
+    expect(screen.getByRole('alert').textContent).toBe('Could not load gifts.');
+    expect(screen.queryByText('No gifts yet.')).toBeNull();
+  });
+
+  it('uses an em dash tick when any USD cumulative is null', () => {
+    const nullUsd: SpendPoint[] = [
+      { ...day('2026-06-01', 1500, '1.43', 1000), usd: null, cumulativeUsd: null },
+    ];
+    renderWithLocale(<AccountActivityChart received={nullUsd} />, 'en', 'ch', 'USD');
+    expect(screen.getByRole('img', { name: 'Given and received in ₿' })).toBeTruthy();
+    clickChartScale('USD');
+    expect(screen.getAllByText('\u2014').length).toBeGreaterThan(0);
+    expect(screen.queryByText(formatUsdTick(0))).toBeNull();
+  });
 });

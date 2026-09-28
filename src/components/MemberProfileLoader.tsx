@@ -15,7 +15,8 @@ const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 /**
  * Client loader for `/members/[accountId]`: validates the id, fetches the
  * member profile, then given/received activity for the chart (even when the
- * Lightning Address is blank).
+ * Lightning Address is blank). An activity fetch failure that is not
+ * `MissingRequirementsError` keeps the card and sets `activityFailed`.
  *
  * @param props - Dynamic route `accountId`.
  * @returns Loading note, missing, error, or the member profile screen.
@@ -30,6 +31,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
   const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
+  const [activityFailed, setActivityFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
       setProfile(null);
       setReceived([]);
       setDonated([]);
+      setActivityFailed(false);
       return;
     }
     if (session === null) {
@@ -49,6 +52,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     setProfile(null);
     setReceived([]);
     setDonated([]);
+    setActivityFailed(false);
 
     void (async () => {
       try {
@@ -64,6 +68,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
         setStatus('ready');
         setReceived([]);
         setDonated([]);
+        setActivityFailed(false);
 
         try {
           const activity = await fetchMemberActivity(session, accountId);
@@ -72,6 +77,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
           }
           setReceived(activity.receivedOverTime);
           setDonated(activity.donatedOverTime);
+          setActivityFailed(false);
         } catch (activityErr) {
           if (cancelled) {
             return;
@@ -82,6 +88,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
           }
           setReceived([]);
           setDonated([]);
+          setActivityFailed(true);
         }
       } catch (err) {
         if (cancelled) {
@@ -133,5 +140,12 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
 
   const readyProfile = profile as MemberProfile;
 
-  return <MemberProfileScreen profile={readyProfile} received={received} donated={donated} />;
+  return (
+    <MemberProfileScreen
+      profile={readyProfile}
+      received={received}
+      donated={donated}
+      activityFailed={activityFailed}
+    />
+  );
 }
