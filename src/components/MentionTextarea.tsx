@@ -92,6 +92,7 @@ export function MentionTextarea({
   const mention = collapsed ? activeMention(value, caret) : null;
   const query = mention === null ? null : mention.query;
   const tokenKey = mention === null ? '' : `${String(mention.start)}:${mention.query}`;
+  const dismissKey = mention === null ? '' : String(mention.start);
   const filtered =
     mention === null || seed === null
       ? []
@@ -99,7 +100,7 @@ export function MentionTextarea({
         ? seed
         : seed.filter((row) => row.username.toLowerCase().startsWith(mention.query));
   const shown = mention !== null && mention.query !== '' && remote !== null ? remote : filtered;
-  const open = mention !== null && closedKey !== tokenKey && shown.length > 0;
+  const open = mention !== null && closedKey !== dismissKey && shown.length > 0;
   const activeIndex = Math.min(highlight, Math.max(shown.length - 1, 0));
 
   useEffect(() => {
@@ -204,13 +205,13 @@ export function MentionTextarea({
       if (root.contains(event.target as Node)) {
         return;
       }
-      setClosedKey(tokenKey);
+      setClosedKey(dismissKey);
     };
     document.addEventListener('mousedown', onPointer, true);
     return () => {
       document.removeEventListener('mousedown', onPointer, true);
     };
-  }, [open, tokenKey]);
+  }, [open, dismissKey]);
 
   const sync = (node: HTMLTextAreaElement): void => {
     setCaret(node.selectionStart);
@@ -222,7 +223,7 @@ export function MentionTextarea({
     const caretAt = token.start + account.username.length + 2;
     pendingCaret.current = caretAt;
     setCaret(caretAt);
-    setClosedKey(`${String(token.start)}:${token.query}`);
+    setClosedKey(String(token.start));
     onChange(next);
   };
 
@@ -264,11 +265,11 @@ export function MentionTextarea({
     }
     if (event.key === 'Escape') {
       event.preventDefault();
-      setClosedKey(tokenKey);
+      setClosedKey(dismissKey);
       return;
     }
     if (event.key === 'Tab') {
-      setClosedKey(tokenKey);
+      setClosedKey(dismissKey);
     }
   };
 

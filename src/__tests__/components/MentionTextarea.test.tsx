@@ -159,12 +159,18 @@ describe('MentionTextarea', () => {
     fireEvent.keyDown(box, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
     typeInto('@a');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    typeInto('hi @');
     expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Tab' });
     expect(screen.queryByRole('listbox')).toBeNull();
-    typeInto('@ad');
+    typeInto('hi @a');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    typeInto('see @');
     expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
     fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    typeInto('see @a');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
