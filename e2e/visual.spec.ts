@@ -9,42 +9,6 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 }
 
 /**
- * Make the page look like the installed macOS Chrome app.
- *
- * Mobile visual projects ship an iPhone user agent. The notice must still
- * appear, so the page-visible agent and display-mode are overridden here.
- *
- * @param page - Playwright page.
- */
-async function installMacChromiumApp(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const ua =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
-    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'MacIntel' });
-    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
-    const original = window.matchMedia.bind(window);
-    window.matchMedia = (query) => {
-      if (String(query).includes('display-mode: standalone')) {
-        return {
-          matches: true,
-          media: query,
-          onchange: null,
-          addListener() {},
-          removeListener() {},
-          addEventListener() {},
-          removeEventListener() {},
-          dispatchEvent() {
-            return false;
-          },
-        } as MediaQueryList;
-      }
-      return original(query);
-    };
-  });
-}
-
-/**
  * Stable map for visual baselines. Live Google tiles are not a baseline:
  * they depend on a key, billing, and the network. The stub paints a fixed
  * surface and, when the app drops a marker, a fixed pin.
@@ -1430,43 +1394,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-reveal-open');
   });
 
-  test('wallet mac-app', async ({ page }) => {
-    await installMacChromiumApp(page);
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: 'ada@walletofsatoshi.com',
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(/\/pos\/charge$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ charge: null, history: [] }),
-      });
-    });
-    await page.goto('/wallet');
-    await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toHaveCount(0);
-    await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-wallet-mac-app');
-  });
-
   test('wallet error', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -1572,36 +1499,6 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-prf-unsupported');
-  });
-
-  test('wallet phrase mac-app', async ({ page }) => {
-    await installMacChromiumApp(page);
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: 'ada@walletofsatoshi.com',
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.goto('/wallet/phrase');
-    await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toHaveCount(0);
-    await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
-    await shotScreen(page, 'state-wallet-phrase-mac-app');
   });
 
   test('screen /stats', async ({ page }) => {
@@ -1787,16 +1684,6 @@ test.describe('login variant baselines', () => {
       page.getByRole('heading', { name: 'Open this page in your browser' }),
     ).toBeVisible();
     await shotScreen(page, 'state-login-in-app');
-  });
-
-  test('login mac-app', async ({ page }) => {
-    await installMacChromiumApp(page);
-    await page.goto('/login');
-    await expect(
-      page.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
-    await shotScreen(page, 'state-login-mac-app');
   });
 
   test('login language-open', async ({ page }) => {
@@ -8560,39 +8447,6 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
     await shotScreen(page, 'state-view-in-app');
-  });
-
-  test('screen /view/[viewKey] mac-app', async ({ page }) => {
-    await installMacChromiumApp(page);
-    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          name: 'Ada',
-          location: null,
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          lightningAddressVerified: false,
-          createdAt: 1,
-          hasPasskey: false,
-          aboutMe: null,
-        }),
-      });
-    });
-    await page.route('**/view-key/**/activity**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
-      });
-    });
-    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
-    const notice = page.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' });
-    await expect(notice).toBeVisible();
-    await notice.scrollIntoViewIfNeeded();
-    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
-    await shotScreen(page, 'state-view-mac-app');
   });
 });
 

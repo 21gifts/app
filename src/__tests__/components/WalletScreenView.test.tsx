@@ -1,18 +1,9 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
-import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-
-vi.mock('@/lib/mac-chromium-app', () => ({
-  isMacChromiumInstalledApp: vi.fn(() => false),
-}));
-
-beforeEach(() => {
-  vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
-});
 
 afterEach(() => {
   cleanup();
@@ -431,77 +422,5 @@ describe('WalletScreenView', () => {
     expect(assign).toHaveBeenCalledWith('/wallet');
     expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
     vi.unstubAllGlobals();
-  });
-
-  it('shows the Chrome app notice on the phrase surface and hides the ceremony', async () => {
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    renderWithLocale(
-      <WalletScreenView
-        surface="phrase"
-        view="activate"
-        status="idle"
-        error={null}
-        words={words}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-      />,
-    );
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-      ).toBeTruthy();
-    });
-    expect(screen.queryByRole('button', { name: 'Add recovery phrase' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Show recovery phrase' })).toBeNull();
-    expect(screen.queryByText('abandon')).toBeNull();
-  });
-
-  it('shows the Chrome app notice on the entry surface and keeps receive', async () => {
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    renderWithLocale(
-      <WalletScreenView
-        surface="entry"
-        view="activate"
-        status="idle"
-        error={null}
-        words={[]}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-      />,
-    );
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-      ).toBeTruthy();
-    });
-    expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Add recovery phrase' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
-  });
-
-  it('shows the Chrome app notice when the phrase error is macApp', () => {
-    renderWithLocale(
-      <WalletScreenView
-        surface="phrase"
-        view="phrase"
-        status="idle"
-        error="macApp"
-        words={words}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-      />,
-    );
-    expect(
-      screen.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-    ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
-    expect(screen.queryByText('abandon')).toBeNull();
   });
 });

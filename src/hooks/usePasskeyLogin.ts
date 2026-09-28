@@ -10,7 +10,6 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
@@ -24,10 +23,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * Discrete states of the passkey login flow.
  *
  * `choice` is the account question after `login()` gets `NotAllowedError`
- * outside an in-app browser. `macApp` is the installed macOS Chrome app,
- * where WebAuthn is not started.
+ * outside an in-app browser.
  */
-export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported' | 'choice' | 'macApp';
+export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported' | 'choice';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
@@ -36,21 +34,15 @@ export interface UsePasskeyLogin {
   /**
    * Authenticate with an existing discoverable passkey. On `NotAllowedError`
    * outside an in-app browser, status becomes `choice` instead of creating
-   * an account. When `isMacChromiumInstalledApp()` is true, status becomes
-   * `macApp` and WebAuthn is not started.
+   * an account.
    */
   login: () => void;
   /**
    * Create a new discoverable passkey and sign in.
    * Optional `viewKey` claims an existing public profile during registration.
-   * When `isMacChromiumInstalledApp()` is true, status becomes `macApp` and
-   * WebAuthn is not started.
    */
   register: (viewKey?: string) => void;
-  /**
-   * Sign in with an existing passkey. When `isMacChromiumInstalledApp()` is
-   * true, status becomes `macApp` and WebAuthn is not started.
-   */
+  /** Sign in with an existing passkey. */
   authenticate: () => void;
   /** Repeats the originating flow after an error. The single-button path restarts login. */
   retry: () => void;
@@ -255,10 +247,6 @@ export function usePasskeyLogin(): UsePasskeyLogin {
 
   const register = useCallback(
     (viewKey?: string): void => {
-      if (isMacChromiumInstalledApp()) {
-        setStatus('macApp');
-        return;
-      }
       if (isInAppBrowser()) {
         setStatus('unsupported');
         return;
@@ -275,10 +263,6 @@ export function usePasskeyLogin(): UsePasskeyLogin {
 
   const authenticate = useCallback((): void => {
     clearSessionPhrase();
-    if (isMacChromiumInstalledApp()) {
-      setStatus('macApp');
-      return;
-    }
     if (isInAppBrowser()) {
       setStatus('unsupported');
       return;
@@ -292,10 +276,6 @@ export function usePasskeyLogin(): UsePasskeyLogin {
 
   const login = useCallback((): void => {
     clearSessionPhrase();
-    if (isMacChromiumInstalledApp()) {
-      setStatus('macApp');
-      return;
-    }
     if (isInAppBrowser()) {
       setStatus('unsupported');
       return;

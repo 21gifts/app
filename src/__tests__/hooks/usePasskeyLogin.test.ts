@@ -12,7 +12,6 @@ import {
   WrongAccountError,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', async (importOriginal) => {
@@ -28,10 +27,6 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
-}));
-
-vi.mock('@/lib/mac-chromium-app', () => ({
-  isMacChromiumInstalledApp: vi.fn(() => false),
 }));
 
 vi.mock('@/lib/webauthn-browser', () => ({
@@ -79,7 +74,6 @@ const begin = { challengeId: 'ch', options: { challenge: 'aa' } };
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
-  vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
   vi.mocked(startPasskeyRegistration).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
@@ -1069,57 +1063,6 @@ describe('usePasskeyLogin', () => {
       value: originalUserAgent,
     });
     vi.useRealTimers();
-    vi.unstubAllGlobals();
-  });
-});
-
-describe('usePasskeyLogin macOS Chrome app', () => {
-  it('login sets macApp and does not call credentials', async () => {
-    const get = vi.fn();
-    const create = vi.fn();
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    vi.stubGlobal('navigator', { ...navigator, credentials: { get, create } });
-    const { result } = renderHook(() => usePasskeyLogin());
-    await act(async () => {
-      result.current.login();
-    });
-    expect(result.current.status).toBe('macApp');
-    expect(get).not.toHaveBeenCalled();
-    expect(create).not.toHaveBeenCalled();
-    expect(startPasskeyAuthentication).not.toHaveBeenCalled();
-    expect(startPasskeyRegistration).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
-  });
-
-  it('authenticate sets macApp and does not call credentials', async () => {
-    const get = vi.fn();
-    const create = vi.fn();
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    vi.stubGlobal('navigator', { ...navigator, credentials: { get, create } });
-    const { result } = renderHook(() => usePasskeyLogin());
-    await act(async () => {
-      result.current.authenticate();
-    });
-    expect(result.current.status).toBe('macApp');
-    expect(get).not.toHaveBeenCalled();
-    expect(create).not.toHaveBeenCalled();
-    expect(startPasskeyAuthentication).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
-  });
-
-  it('register sets macApp and does not call credentials', async () => {
-    const get = vi.fn();
-    const create = vi.fn();
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    vi.stubGlobal('navigator', { ...navigator, credentials: { get, create } });
-    const { result } = renderHook(() => usePasskeyLogin());
-    await act(async () => {
-      result.current.register('view-key');
-    });
-    expect(result.current.status).toBe('macApp');
-    expect(get).not.toHaveBeenCalled();
-    expect(create).not.toHaveBeenCalled();
-    expect(startPasskeyRegistration).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 });

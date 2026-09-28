@@ -4,7 +4,6 @@ import { LoginCard } from '@/components/LoginCard';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
-import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -13,10 +12,6 @@ vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
   openInSystemBrowser: vi.fn(),
-}));
-
-vi.mock('@/lib/mac-chromium-app', () => ({
-  isMacChromiumInstalledApp: vi.fn(() => false),
 }));
 
 const loginSpy = vi.fn();
@@ -56,7 +51,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
-  vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
   mockPasskey('idle');
 });
 
@@ -185,49 +179,6 @@ describe('LoginCard', () => {
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('heading', { name: 'Open this page in your browser' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
-  });
-
-  it('shows the Chrome app notice on mount when isMacChromiumInstalledApp is true', async () => {
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    renderWithLocale(<LoginCard />);
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-      ).toBeTruthy();
-    });
-    expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open in browser' })).toBeNull();
-  });
-
-  it('shows the Chrome app notice when passkey status is macApp', () => {
-    mockPasskey('macApp');
-    renderWithLocale(<LoginCard />);
-    expect(
-      screen.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-    ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
-  });
-
-  it('keeps Log in when the Chrome app detector is false', () => {
-    renderWithLocale(<LoginCard />);
-    expect(screen.getByRole('button', { name: /^log in$/i })).toBeTruthy();
-    expect(
-      screen.queryByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-    ).toBeNull();
-  });
-
-  it('shows the Chrome app notice before the in-app escape card', async () => {
-    vi.mocked(isInAppBrowser).mockReturnValue(true);
-    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
-    renderWithLocale(<LoginCard />);
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
-      ).toBeTruthy();
-    });
-    expect(screen.queryByRole('heading', { name: 'Open this page in your browser' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open in browser' })).toBeNull();
   });
 
   it('marks Copy link as copied after clipboard succeeds when fallback fails', async () => {

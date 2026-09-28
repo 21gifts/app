@@ -5,12 +5,10 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
-import { MacChromiumAppPasskeyView } from '@/components/MacChromiumAppPasskeyView';
 import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
-import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { WALLET_BACK_FALLBACK } from '@/lib/wallet-return';
 import { useAuthStore } from '@/stores/auth-store';
@@ -75,8 +73,7 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
 
 /**
  * `/wallet` shows the receive address above the recovery entry. The 12 words
- * and recovery errors render only on `/wallet/phrase`. Installed macOS Chrome
- * app: passkey notice instead of recovery ceremony controls.
+ * and recovery errors render only on `/wallet/phrase`.
  *
  * @param props - State from {@link useWalletPhrase}, plus the surface.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -94,13 +91,8 @@ export function WalletScreenView({
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
   const detailsRef = useRef<HTMLDetailsElement>(null);
-  const [macApp, setMacApp] = useState(false);
-  useEffect(() => {
-    setMacApp(isMacChromiumInstalledApp());
-  }, []);
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
-  const macAppNotice = error === 'macApp' || macApp;
   const stepBack = (): void => {
     if (surface === 'phrase') {
       if (showGrid) {
@@ -134,9 +126,7 @@ export function WalletScreenView({
   const spinner = busy ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
   ) : undefined;
-  const phraseBody = macAppNotice ? (
-    <MacChromiumAppPasskeyView />
-  ) : hasError ? (
+  const phraseBody = hasError ? (
     <>
       <p role="alert" className="text-center text-sm text-app-danger">
         {errorCopy}
@@ -187,26 +177,25 @@ export function WalletScreenView({
       {t('wallet.showPhrase')}
     </Button>
   );
-  const entryBody = macAppNotice ? (
-    <MacChromiumAppPasskeyView />
-  ) : view === 'activate' ? (
-    <>
-      <p className="text-center text-sm text-app-muted">{t('wallet.addPhraseHint')}</p>
-      <ButtonLink href="/wallet/phrase">{t('wallet.addPhrase')}</ButtonLink>
-    </>
-  ) : (
-    <details
-      ref={detailsRef}
-      className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2"
-    >
-      <summary className="cursor-pointer text-sm text-app-muted">{t('wallet.advanced')}</summary>
-      <div className="mt-3 flex justify-center">
-        <ButtonLink href="/wallet/phrase" variant="secondary">
-          {t('wallet.showPhrase')}
-        </ButtonLink>
-      </div>
-    </details>
-  );
+  const entryBody =
+    view === 'activate' ? (
+      <>
+        <p className="text-center text-sm text-app-muted">{t('wallet.addPhraseHint')}</p>
+        <ButtonLink href="/wallet/phrase">{t('wallet.addPhrase')}</ButtonLink>
+      </>
+    ) : (
+      <details
+        ref={detailsRef}
+        className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2"
+      >
+        <summary className="cursor-pointer text-sm text-app-muted">{t('wallet.advanced')}</summary>
+        <div className="mt-3 flex justify-center">
+          <ButtonLink href="/wallet/phrase" variant="secondary">
+            {t('wallet.showPhrase')}
+          </ButtonLink>
+        </div>
+      </details>
+    );
   const card = (
     <Card surface={false}>
       <AppShellTopLeft>
