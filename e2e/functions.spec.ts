@@ -1223,7 +1223,9 @@ test('Function: putProfilePhoto — PUT /pictures/me without bearer is 401', asy
   expect(res.status()).toBe(401);
 });
 
-test('Function: fetchProfilePhoto — GET /pictures/me without bearer is 401', async ({ request }) => {
+test('Function: fetchProfilePhoto — GET /pictures/me without bearer is 401', async ({
+  request,
+}) => {
   const res = await request.get('/pictures/me');
   expect(res.status()).toBe(401);
 });
@@ -1252,12 +1254,16 @@ test('Function: fetchWideBanner — GET /banners/me without bearer is 401', asyn
   expect(res.status()).toBe(401);
 });
 
-test('Function: proxyWideBannerGet — GET /banners/me without bearer is 401', async ({ request }) => {
+test('Function: proxyWideBannerGet — GET /banners/me without bearer is 401', async ({
+  request,
+}) => {
   const res = await request.get('/banners/me');
   expect(res.status()).toBe(401);
 });
 
-test('Function: proxyWideBannerPut — PUT /banners/me without bearer is 401', async ({ request }) => {
+test('Function: proxyWideBannerPut — PUT /banners/me without bearer is 401', async ({
+  request,
+}) => {
   const res = await request.put('/banners/me', { data: { photo: null } });
   expect(res.status()).toBe(401);
 });
