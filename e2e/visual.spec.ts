@@ -3382,6 +3382,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'state-profile-sunday');
   });
 
