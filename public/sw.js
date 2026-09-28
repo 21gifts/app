@@ -153,26 +153,35 @@ self.addEventListener('notificationclick', (event) => {
       self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
         const client = chosenPushClient(clientList);
         if (client !== null) {
-          client.postMessage({ type: '21gifts-push-open', url: path });
-          // Safari has no WindowClient.navigate, so an already open page stays put unless it receives the path.
+          // Safari has no WindowClient.navigate. Focus first so a frozen page
+          // can receive the path after it wakes.
           let clientUrl = null;
           try {
             clientUrl = new URL(client.url);
           } catch {
-            return client.focus();
+            clientUrl = null;
           }
-          if (clientUrl.href !== href && typeof client.navigate === 'function') {
-            return client
-              .navigate(href)
-              .then((navigated) => {
+          const focused = client.focus();
+          const deliver = () => {
+            client.postMessage({ type: '21gifts-push-open', url: path });
+            if (
+              clientUrl !== null &&
+              clientUrl.href !== href &&
+              typeof client.navigate === 'function'
+            ) {
+              return client.navigate(href).then((navigated) => {
                 if (navigated && 'focus' in navigated) {
                   return navigated.focus();
                 }
-                return client.focus();
-              })
-              .catch(() => client.focus());
+                return undefined;
+              });
+            }
+            return undefined;
+          };
+          if (focused !== undefined && focused !== null && typeof focused.then === 'function') {
+            return focused.then(deliver).catch(() => client.focus());
           }
-          return client.focus();
+          return deliver();
         }
         if (self.clients.openWindow) {
           return self.clients.openWindow(href);

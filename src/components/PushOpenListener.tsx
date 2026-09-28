@@ -39,20 +39,23 @@ async function takePendingPushOpen(now: number): Promise<string | null> {
     if (cached === undefined) {
       return null;
     }
-    await cache.delete(key);
     const parsed: unknown = await cached.json();
     if (parsed === null || typeof parsed !== 'object') {
+      await cache.delete(key);
       return null;
     }
     const url = 'url' in parsed ? parsed.url : undefined;
     const at = 'at' in parsed ? parsed.at : undefined;
     if (typeof url !== 'string' || typeof at !== 'number' || !Number.isFinite(at)) {
+      await cache.delete(key);
       return null;
     }
     if (now - at > PUSH_OPEN_MAX_AGE_MS || at > now) {
+      await cache.delete(key);
       return null;
     }
     if (!isPushOpenPath(url)) {
+      await cache.delete(key);
       return null;
     }
     return url;
@@ -61,11 +64,25 @@ async function takePendingPushOpen(now: number): Promise<string | null> {
   }
 }
 
+/** Drop a stored path after the page has followed it. */
+async function forgetPendingPushOpen(): Promise<void> {
+  const storage = globalThis.caches;
+  if (storage === undefined) {
+    return;
+  }
+  try {
+    const cache = await storage.open(PUSH_OPEN_CACHE);
+    await cache.delete(new URL('/push-open', window.location.origin).href);
+  } catch {
+    return;
+  }
+}
+
 /**
  * Listens for `21gifts-push-open` from the service worker so an installed
  * phone app can `router.push` to the notification path (no WindowClient.navigate).
- * Also opens a path the worker stored when this page loads and the message
- * was missed.
+ * Also opens a path the worker stored, on load and again when the page
+ * becomes visible or returns from the back-forward cache.
  *
  * @returns `null`.
  */
@@ -96,21 +113,40 @@ export function PushOpenListener(): null {
         return;
       }
       openUrl(url);
+      void forgetPendingPushOpen();
     };
 
     const pull = (): void => {
       void takePendingPushOpen(Date.now()).then((url) => {
         if (url !== null) {
           openUrl(url);
+          void forgetPendingPushOpen();
         }
       });
     };
 
+    const onVisibility = (): void => {
+      if (document.visibilityState === 'visible') {
+        pull();
+      }
+    };
+
+    const onPageShow = (event: Event): void => {
+      const persisted = (event as Event & { persisted?: boolean }).persisted;
+      if (persisted === true) {
+        pull();
+      }
+    };
+
     worker.addEventListener('message', onMessage);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
     pull();
     return () => {
       cancelled = true;
       worker.removeEventListener('message', onMessage);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
     };
   }, [router]);
 

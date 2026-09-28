@@ -188,6 +188,78 @@ describe('PushOpenListener', () => {
     expect(navigation.push).not.toHaveBeenCalled();
   });
 
+  it('opens a stored path again when the page becomes visible', async () => {
+    stubServiceWorker();
+    const at = Date.now();
+    installCaches(async () => record({ url: '/messages/note-9', at }));
+    let visibility: DocumentVisibilityState = 'visible';
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => visibility,
+    });
+    renderWithLocale(<PushOpenListener />);
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledTimes(1);
+    });
+    navigation.push.mockClear();
+
+    visibility = 'hidden';
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(navigation.push).not.toHaveBeenCalled();
+
+    visibility = 'visible';
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledWith('/messages/note-9');
+    });
+  });
+
+  it('opens a stored path when a frozen page is restored', async () => {
+    stubServiceWorker();
+    const at = Date.now();
+    installCaches(async () => record({ url: '/messages/note-9', at }));
+    renderWithLocale(<PushOpenListener />);
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledTimes(1);
+    });
+    navigation.push.mockClear();
+
+    const ignored = new Event('pageshow');
+    act(() => {
+      window.dispatchEvent(ignored);
+    });
+    const fresh = new Event('pageshow');
+    Object.defineProperty(fresh, 'persisted', { value: false });
+    act(() => {
+      window.dispatchEvent(fresh);
+    });
+    expect(navigation.push).not.toHaveBeenCalled();
+
+    const restored = new Event('pageshow');
+    Object.defineProperty(restored, 'persisted', { value: true });
+    act(() => {
+      window.dispatchEvent(restored);
+    });
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledWith('/messages/note-9');
+    });
+  });
+
+  it('still opens when dropping the stored path fails', async () => {
+    stubServiceWorker();
+    const at = Date.now();
+    const cache = installCaches(async () => record({ url: '/messages/note-9', at }));
+    cache.delete.mockRejectedValue(new Error('delete'));
+    renderWithLocale(<PushOpenListener />);
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledWith('/messages/note-9');
+    });
+  });
+
   it('does not open a stored path that resolves after unmount', async () => {
     stubServiceWorker();
     let resolveMatch: ((value: Response) => void) | undefined;

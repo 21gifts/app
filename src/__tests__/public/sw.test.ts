@@ -24,10 +24,12 @@ describe('service worker notification click', () => {
     expect(source).toContain(".open('21gifts-push-open')");
     expect(source).toContain('client.focused === true');
     const remembered = source.indexOf('rememberPushOpen(path)', click);
-    const post = source.indexOf('postMessage', click);
-    const nav = source.indexOf('navigate', click);
+    const focus = source.indexOf('client.focus()', click);
+    const post = source.indexOf('client.postMessage', click);
+    const nav = source.indexOf('client.navigate', click);
     expect(remembered).toBeGreaterThan(click);
-    expect(post).toBeGreaterThan(remembered);
+    expect(focus).toBeGreaterThan(remembered);
+    expect(post).toBeGreaterThan(focus);
     expect(nav).toBeGreaterThan(post);
   });
 });
