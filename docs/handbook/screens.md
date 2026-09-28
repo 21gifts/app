@@ -585,7 +585,7 @@ On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepay
 
 ### Variant: goal-credit-open
 
-Same note as **goal-credit**, after **Who gave and who is paid back** is pressed. **Given** lists Bea @bea at ₿20. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026: a bar for each day's amount and a line for the debt, then each share is one bitcoin payment, and 27 Sep 2026 with Bea's ₿10 **Due**.
+Same note as **goal-credit**, after **Who gave and who is paid back** is pressed. **Given** lists Bea @bea at ₿20. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026: a bar for each day's amount and a line for the debt, then each share is one bitcoin payment, 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 **Scheduled**.
 
 ![21.gifts welcome goal credit open](images/welcome-goal-credit-open.png)
 

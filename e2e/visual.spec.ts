@@ -4966,6 +4966,9 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await page.getByRole('button', { name: 'Who gave and who is paid back' }).click();
     await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
+    await expect(page.getByLabel('Paid back')).toBeVisible();
+    await expect(page.getByText('Due')).toBeVisible();
+    await page.getByText('Due').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-credit-open');
   });
 
@@ -10316,6 +10319,17 @@ test.describe('welcome forum variants', () => {
               status: 'due',
               via: 'lightning',
             },
+            {
+              dayIndex: 1,
+              dueOn: '2026-09-28',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'scheduled',
+              via: 'lightning',
+            },
           ],
           next: null,
         }),
@@ -10350,7 +10364,8 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Who gave and who is paid back' }).click();
     await expect(page.getByLabel('Paid back')).toBeVisible();
-    await page.getByLabel('Paid back').scrollIntoViewIfNeeded();
+    await expect(page.getByText('Scheduled')).toBeVisible();
+    await page.getByText('Scheduled').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-goal-credit-open');
   });
 
