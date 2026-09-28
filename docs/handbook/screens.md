@@ -2257,7 +2257,7 @@ The funding-program icon is pressed and the participation sentence is visible. N
 
 ### Variant: replies-open
 
-**1 reactions** is pressed and the feed shows **A reply from Ada.** Needle `A reply from Ada.`
+**1 reaction** is pressed and the feed shows **A reply from Ada.** Needle `A reply from Ada.`
 
 ![21.gifts profile reactions](images/profile-replies-open.png)
 

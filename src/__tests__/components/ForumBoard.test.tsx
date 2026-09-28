@@ -6193,7 +6193,7 @@ describe('ForumBoard', () => {
       window.dispatchEvent(new Event(FORUM_COMPOSE_EVENT));
     });
     expect(document.activeElement).toBe(textarea);
-    expect(scrollMock).toHaveBeenCalledWith({ block: 'nearest' });
+    expect(scrollMock).not.toHaveBeenCalled();
   });
 
   it('focuses the new-post composer on mount when compose is pending', () => {
@@ -6214,7 +6214,81 @@ describe('ForumBoard', () => {
       />,
     );
     expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
-    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('reveals the new-post composer inside the shell scrollport', () => {
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_COMPOSE_EVENT));
+    });
+    expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
+    expect(top).toBe(12);
+  });
+
+  it('reveals the open reaction field inside the shell scrollport', () => {
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'React' }));
+    expect(document.activeElement).toBe(screen.getByLabelText('Your reaction'));
+    expect(top).toBe(12);
   });
 
   it('consumes pending compose when the composer is hidden', () => {
@@ -7042,16 +7116,16 @@ describe('reply form size', () => {
 });
 
 describe('revealReplyForm', () => {
-  function box(bottom: number): DOMRect {
+  function box(bottom: number, height = bottom): DOMRect {
     return {
       bottom,
-      top: 0,
+      top: bottom - height,
       left: 0,
       right: 0,
       width: 0,
-      height: bottom,
+      height,
       x: 0,
-      y: 0,
+      y: bottom - height,
       toJSON: () => ({}),
     };
   }
@@ -7069,10 +7143,10 @@ describe('revealReplyForm', () => {
     const scroller = document.createElement('div');
     const form = document.createElement('form');
     scroller.getBoundingClientRect = () => box(100);
-    form.getBoundingClientRect = () => box(80);
+    form.getBoundingClientRect = () => box(80, 20);
     revealReplyForm(scroller, form);
     expect(scroller.scrollTop).toBe(0);
-    form.getBoundingClientRect = () => box(140);
+    form.getBoundingClientRect = () => box(140, 20);
     revealReplyForm(scroller, form);
     expect(scroller.scrollTop).toBe(52);
   });

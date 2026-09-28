@@ -1,58 +1,97 @@
 'use client';
 
-import { useEffect, type ReactElement } from 'react';
-import { resolveAppHeight } from '@/lib/app-height';
+import { useEffect } from 'react';
+
+import { resolveAppHeight, resolveAppOffsetTop } from '@/lib/app-height';
+import { revealInScrollport } from '@/lib/reveal-in-scrollport';
+
+function revealFocusedField(): void {
+  const active = document.activeElement;
+  if (!(
+    active instanceof HTMLInputElement ||
+    active instanceof HTMLTextAreaElement ||
+    active instanceof HTMLSelectElement
+  )) {
+    return;
+  }
+  const scroller = active.closest('[data-scrollport][data-scroll-active]');
+  if (!(scroller instanceof HTMLElement)) return;
+  revealInScrollport(scroller, active);
+}
 
 /**
- * After hydration: keep `--app-height` equal to the visible viewport
- * (`visualViewport.height`, else `innerHeight`). A frame taller than the
- * visible area would scroll the document under the inner scrollport. Skips
- * updates while `visualViewport.scale` is present and not ≈ 1.
- *
- * @returns void
+ * Keeps `--app-height` equal to `visualViewport.height` (else `innerHeight`).
+ * `--app-offset-top` positions `body`. The offset is never added into the height.
+ * Pinch-zoom (`|scale - 1| > 0.01`) skips both writes. After each write from a
+ * viewport resize or scroll, and on focus via `requestAnimationFrame`, the
+ * focused input, textarea, or select is revealed inside the active scrollport.
  */
 export function useAppHeight(): void {
   useEffect(() => {
-    const setAppHeight = (): void => {
-      const next = resolveAppHeight(window.innerHeight, window.visualViewport ?? undefined);
-      if (next === null) {
-        return;
-      }
-      document.documentElement.style.setProperty('--app-height', `${next}px`);
+    const viewport = window.visualViewport;
+    let focusFrame: number | null = null;
+
+    const writeViewport = (reveal = true): void => {
+      const height = resolveAppHeight(window.innerHeight, viewport);
+      if (height === null) return;
+      const offsetTop = resolveAppOffsetTop(viewport);
+      if (offsetTop === null) return;
+
+      document.documentElement.style.setProperty('--app-height', `${height}px`);
+      document.documentElement.style.setProperty('--app-offset-top', `${offsetTop}px`);
+      if (reveal) revealFocusedField();
     };
 
-    setAppHeight();
+    const handleFocusIn = (): void => {
+      writeViewport(false);
+      if (focusFrame !== null) cancelAnimationFrame(focusFrame);
+      focusFrame = requestAnimationFrame(() => {
+        focusFrame = null;
+        revealFocusedField();
+      });
+    };
+    const handleFocusOut = (): void => writeViewport(false);
 
-    window.addEventListener('resize', setAppHeight);
-    window.addEventListener('orientationchange', setAppHeight);
-    document.addEventListener('focusin', setAppHeight);
-    document.addEventListener('focusout', setAppHeight);
+    writeViewport(false);
+    const handleWindowResize = (): void => {
+      writeViewport(true);
+    };
+    const handleOrientationChange = (): void => {
+      writeViewport(true);
+    };
+    const handleViewportResize = (): void => {
+      writeViewport(true);
+    };
+    const handleViewportScroll = (): void => {
+      writeViewport(true);
+    };
 
-    const vv = window.visualViewport;
-    if (vv !== null && vv !== undefined) {
-      vv.addEventListener('resize', setAppHeight);
-      vv.addEventListener('scroll', setAppHeight);
-    }
+    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener('orientationchange', handleOrientationChange);
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+    viewport?.addEventListener('resize', handleViewportResize);
+    viewport?.addEventListener('scroll', handleViewportScroll);
 
     return () => {
-      window.removeEventListener('resize', setAppHeight);
-      window.removeEventListener('orientationchange', setAppHeight);
-      document.removeEventListener('focusin', setAppHeight);
-      document.removeEventListener('focusout', setAppHeight);
-      if (vv !== null && vv !== undefined) {
-        vv.removeEventListener('resize', setAppHeight);
-        vv.removeEventListener('scroll', setAppHeight);
-      }
+      window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+      viewport?.removeEventListener('resize', handleViewportResize);
+      viewport?.removeEventListener('scroll', handleViewportScroll);
+      if (focusFrame !== null) cancelAnimationFrame(focusFrame);
     };
   }, []);
 }
 
 /**
- * Client mount that keeps `--app-height` synced after hydration.
+ * Client mount that keeps `--app-height` at `visualViewport.height` and
+ * `--app-offset-top` as the body offset. The offset is never added into the height.
  *
  * @returns `null` (side-effect only).
  */
-export function AppHeightSync(): ReactElement | null {
+export function AppHeightSync(): null {
   useAppHeight();
   return null;
 }

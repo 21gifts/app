@@ -746,7 +746,7 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByText('thanks')).toBeTruthy();
-      expect(screen.getByText('1 reactions')).toBeTruthy();
+      expect(screen.getByText('1 reaction')).toBeTruthy();
     });
   });
 

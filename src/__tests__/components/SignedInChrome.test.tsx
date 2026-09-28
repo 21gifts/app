@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
@@ -176,7 +177,45 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  delete document.documentElement.dataset['menuSheet'];
 });
+
+function stubMatchMedia(matches: boolean): () => void {
+  const previous = window.matchMedia.bind(window);
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+  });
+  return () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: previous,
+    });
+  };
+}
+
+function trackScrollTop(scroller: HTMLElement, initial: number): { read: () => number } {
+  let top = initial;
+  Object.defineProperty(scroller, 'scrollTop', {
+    configurable: true,
+    get: () => top,
+    set: (value: number) => {
+      top = value;
+    },
+  });
+  return { read: () => top };
+}
 
 describe('SignedInChrome', () => {
   it('shows Menu while Log out stays hidden', () => {
@@ -726,5 +765,152 @@ describe('SignedInChrome', () => {
     requestForumCompose();
     renderWithLocale(<SignedInChrome />);
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  it('opens a full-width sheet without a shell scroller when the viewport is narrow', () => {
+    const restore = stubMatchMedia(true);
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('w-full');
+      expect(panel.className).not.toContain('absolute');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(document.getElementById('signed-in-menu-scrim')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(document.documentElement.dataset['menuSheet']).toBeUndefined();
+    } finally {
+      restore();
+    }
+  });
+
+  it('pins a narrow menu in the sheet host and restores the page scroll', () => {
+    const restore = stubMatchMedia(true);
+    try {
+      renderWithLocale(
+        <AppShell mode="fill" topRight={<SignedInChrome />}>
+          <p>Note</p>
+        </AppShell>,
+      );
+      const scroller = document.querySelector('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('missing scrollport');
+      }
+      const scroll = trackScrollTop(scroller, 80);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      expect(panel.className).toContain('w-full');
+      expect(panel.className).not.toContain('absolute');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(scroll.read()).toBe(0);
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(document.documentElement.dataset['menuSheet']).toBeUndefined();
+      expect(scroll.read()).toBe(80);
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Menu' }));
+    } finally {
+      restore();
+    }
+  });
+
+  it('closes a wide menu from the scrim', () => {
+    const restore = stubMatchMedia(false);
+    try {
+      renderWithLocale(
+        <AppShell mode="fill" topRight={<SignedInChrome />}>
+          <p>Note</p>
+        </AppShell>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expectMenuOpen();
+      const scrim = document.getElementById('signed-in-menu-scrim');
+      if (!(scrim instanceof HTMLButtonElement)) {
+        throw new Error('missing menu scrim');
+      }
+      expect(scrim.getAttribute('aria-label')).toBe('Close menu');
+      expect(scrim.tabIndex).toBe(-1);
+      expect(document.querySelector('[data-menu-scrim-host]')?.contains(scrim)).toBe(true);
+      fireEvent.click(scrim);
+      expectMenuClosed();
+    } finally {
+      restore();
+    }
+  });
+
+  it('follows the measured frame width instead of the viewport media query', () => {
+    const restore = stubMatchMedia(false);
+    const callbacks: ResizeObserverCallback[] = [];
+    class FakeResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        callbacks.push(callback);
+      }
+
+      observe(): void {}
+
+      unobserve(): void {}
+
+      disconnect(): void {}
+    }
+    const previousObserver = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const widthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => 400,
+    });
+    try {
+      renderWithLocale(
+        <AppShell mode="fill" topRight={<SignedInChrome />}>
+          <p>Note</p>
+        </AppShell>,
+      );
+      const scroller = document.querySelector('[data-scrollport]');
+      const frame = document.querySelector('[data-app-frame]');
+      const callback = callbacks.at(-1);
+      if (
+        !(scroller instanceof HTMLElement) ||
+        !(frame instanceof Element) ||
+        callback === undefined
+      ) {
+        throw new Error('missing frame measurement');
+      }
+      const scroll = trackScrollTop(scroller, 80);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(menuPanel().className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(scroll.read()).toBe(0);
+      expect(document.getElementById('signed-in-menu-scrim')).toBeNull();
+      act(() => {
+        callback(
+          [
+            {
+              target: frame,
+              contentBoxSize: [{ inlineSize: 800 }],
+              contentRect: { width: 800 },
+            } as unknown as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver,
+        );
+      });
+      expect(document.documentElement.dataset['menuSheet']).toBeUndefined();
+      expect(scroll.read()).toBe(80);
+      const scrim = document.getElementById('signed-in-menu-scrim');
+      if (!(scrim instanceof HTMLButtonElement)) {
+        throw new Error('missing menu scrim');
+      }
+      expect(menuPanel().className).toContain('absolute');
+      expect(menuPanel().className).toContain('w-72');
+      expect(menuPanel().className).not.toContain('100%');
+      fireEvent.click(scrim);
+      expectMenuClosed();
+    } finally {
+      restore();
+      globalThis.ResizeObserver = previousObserver;
+      if (widthDescriptor === undefined) {
+        delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
+      }
+    }
   });
 });

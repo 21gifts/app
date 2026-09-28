@@ -36,6 +36,7 @@
 html {
   color-scheme: light;
   --app-height: 100dvh;
+  --app-offset-top: 0px;
   touch-action: manipulation;
 }
 
@@ -126,4 +127,16 @@ html:not([data-local-sunday='1']) .sunday-write-notice {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+body {
+  position: fixed;
+  top: var(--app-offset-top, 0px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: var(--app-height);
+}
+
+html[data-menu-sheet='1'] [data-scroll-page] {
+  display: none !important;
 }
