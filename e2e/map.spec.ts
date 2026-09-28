@@ -44,22 +44,7 @@ test('Function: proxyMessagesPlacesGet — GET /forum/messages/places without be
   expect((await request.get('/maps/key')).status()).toBe(200);
 });
 
-test('Function: MapPage — map loading', async ({ page }) => {
-  await seedSignedIn(page);
-  let release: () => void = () => undefined;
-  const held = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await page.route(/\/forum\/messages\/places$/, async (route) => {
-    await held;
-    await route.abort();
-  });
-  await page.goto('/map');
-  await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
-  release();
-});
-
-test('Function: MapPage — heading is visible', async ({ page }) => {
+test('Function: middleware — an old map link opens the shops map', async ({ page }) => {
   await seedSignedIn(page);
   await page.route(/\/forum\/messages\/places$/, async (route) => {
     await route.fulfill({
@@ -69,7 +54,12 @@ test('Function: MapPage — heading is visible', async ({ page }) => {
     });
   });
   await page.goto('/map');
-  await expect(page.getByRole('heading', { name: 'Map' })).toBeVisible();
+  await expect(page).toHaveURL(/\/shops#map$/);
+  await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Map', selected: true })).toBeVisible();
+  await page.goto('/map?pin=m-pin');
+  await expect(page).toHaveURL(/\/shops\?pin=m-pin#map$/);
+  await expect(page.getByRole('tab', { name: 'Map', selected: true })).toBeVisible();
 });
 
 test('Function: fetchPlaces — the map lists a pin', async ({ page }) => {
@@ -92,8 +82,9 @@ test('Function: fetchPlaces — the map lists a pin', async ({ page }) => {
       }),
     });
   });
-  await page.goto('/map');
+  await page.goto('/shops#map');
   await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
 });
 
 test('Function: PlacesMapScreen — lists a pin', async ({ page }) => {
@@ -116,8 +107,9 @@ test('Function: PlacesMapScreen — lists a pin', async ({ page }) => {
       }),
     });
   });
-  await page.goto('/map');
+  await page.goto('/shops#map');
   await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
 });
 
 test('Function: PlaceField — add a place is on the shop composer', async ({ page }) => {
