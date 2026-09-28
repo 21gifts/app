@@ -84,19 +84,28 @@ describe('PasskeyRenewNotice', () => {
     renderWithLocale(<PasskeyRenewNotice />);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
-    expect(screen.queryByText('The renewal did not work. You can try again.')).toBeNull();
+    expect(screen.queryByText('You do not need to do anything now.', { exact: false })).toBeNull();
   });
 
-  it('shows the failure confirmation and try again returns to the explanation', async () => {
+  it('closes after a failure is confirmed and does not start again', async () => {
     vi.mocked(renewPasskey).mockResolvedValue({ outcome: 'failed', kind: 'generic' });
-    vi.mocked(postPasskeyRenewAck).mockResolvedValue(account);
+    vi.mocked(postPasskeyRenewAck).mockResolvedValue({
+      ...account,
+      passkeyRenewClosed: true,
+    });
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<PasskeyRenewNotice />);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('The renewal did not work. You can try again.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(
+      await screen.findByText('You do not need to do anything now.', { exact: false }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
     expect(postPasskeyRenewAck).toHaveBeenCalledWith('tok');
+    expect(renewPasskey).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
   it('starts on the failure confirmation when a failure is still open', () => {
@@ -105,7 +114,7 @@ describe('PasskeyRenewNotice', () => {
       account: { ...account, passkeyRenewFailed: true },
     });
     renderWithLocale(<PasskeyRenewNotice />);
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'OK' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
@@ -116,9 +125,9 @@ describe('PasskeyRenewNotice', () => {
       account: { ...account, passkeyRenewFailed: true },
     });
     renderWithLocale(<PasskeyRenewNotice />);
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    await screen.findByRole('button', { name: 'Try again' });
-    expect(screen.getByText('The renewal did not work. You can try again.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await screen.findByRole('button', { name: 'OK' });
+    expect(screen.getByText('You do not need to do anything now.', { exact: false })).toBeTruthy();
   });
 
   it('does not start without a session', () => {

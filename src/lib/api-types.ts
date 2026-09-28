@@ -88,6 +88,8 @@ export const accountSchema = z.object({
    * acknowledged the notice. Optional; missing means false.
    */
   passkeyRenewFailed: z.boolean().optional(),
+  /** True after the member confirmed a failed renew. The gate stays closed. */
+  passkeyRenewClosed: z.boolean().optional(),
   /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this

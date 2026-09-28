@@ -80,14 +80,13 @@ export function PasskeyRenewNotice(): ReactElement | null {
     }
   }
 
-  async function onTryAgain(): Promise<void> {
+  async function onFailureOk(): Promise<void> {
     if (session === null || busy) {
       return;
     }
     setBusy(true);
     try {
       setAccount(await postPasskeyRenewAck(session));
-      setStep('explain');
     } catch {
       // Stay on the failure step until the acknowledgement is stored.
     } finally {
@@ -95,7 +94,7 @@ export function PasskeyRenewNotice(): ReactElement | null {
     }
   }
 
-  if (account?.walletRequired !== false) {
+  if (account?.walletRequired !== false || account?.passkeyRenewClosed === true) {
     return null;
   }
 
@@ -142,11 +141,11 @@ export function PasskeyRenewNotice(): ReactElement | null {
         size="lg"
         disabled={busy}
         onClick={() => {
-          void onTryAgain();
+          void onFailureOk();
         }}
         icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
       >
-        {t('passkeyRenew.retry')}
+        {t('passkeyRenew.ok')}
       </Button>
     );
   } else {

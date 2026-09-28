@@ -1972,8 +1972,9 @@ test.describe('onboarding screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('The renewal did not work. You can try again.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByText('You do not need to do anything now.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'OK' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-renew-failed');
   });
 

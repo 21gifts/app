@@ -98,7 +98,10 @@ export function AppShell({
     [headerEl, footerEl, topLeftEl, hasTopLeftPortal, scrollerEl, topLeft, topRight],
   );
 
-  const showPasskeyRenew = useAuthStore((state) => state.account?.walletRequired === false);
+  const showPasskeyRenew = useAuthStore(
+    (state) =>
+      state.account?.walletRequired === false && state.account.passkeyRenewClosed !== true,
+  );
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const hasRight = topRight !== undefined && topRight !== null;
   const showPageTopLeft = !hasTopLeftPortal && topLeft !== undefined && topLeft !== null;

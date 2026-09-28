@@ -405,7 +405,7 @@ export const SCREEN_VARIANTS = [
     id: 'renew-failed',
     image: 'welcome-renew-failed.png',
     visual: 'state-welcome-renew-failed',
-    needle: 'The renewal did not work. You can try again.',
+    needle: 'You do not need to do anything now.',
   },
   {
     route: '/welcome',

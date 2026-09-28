@@ -490,7 +490,7 @@ The passkey was renewed. The dialog says it worked. **OK** closes it and the liv
 
 ### Variant: renew-failed
 
-The renewal did not work. **Try again** returns to the explanation. The member stays on this dialog until a later attempt succeeds.
+The renewal did not work. **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
 
 ![21.gifts welcome renew failed](images/welcome-renew-failed.png)
 

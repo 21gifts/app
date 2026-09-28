@@ -496,8 +496,8 @@ const en = {
   'passkeyRenew.successTitle': 'It worked',
   'passkeyRenew.successBody': 'Your passkey is renewed. You can continue.',
   'passkeyRenew.failedTitle': 'That did not work',
-  'passkeyRenew.failedBody': 'The renewal did not work. You can try again.',
-  'passkeyRenew.retry': 'Try again',
+  'passkeyRenew.failedBody':
+    'The renewal did not work. You can try again later. You do not need to do anything now.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
@@ -1434,8 +1434,8 @@ const de = {
   'passkeyRenew.successTitle': 'Es hat funktioniert',
   'passkeyRenew.successBody': 'Dein Passkey ist erneuert. Du kannst weitermachen.',
   'passkeyRenew.failedTitle': 'Das hat nicht funktioniert',
-  'passkeyRenew.failedBody': 'Die Erneuerung ist nicht gelungen. Du kannst es noch einmal versuchen.',
-  'passkeyRenew.retry': 'Noch einmal',
+  'passkeyRenew.failedBody':
+    'Die Erneuerung ist nicht gelungen. Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
@@ -2383,8 +2383,8 @@ const es = {
   'passkeyRenew.successTitle': 'Ha funcionado',
   'passkeyRenew.successBody': 'Tu passkey está renovado. Puedes continuar.',
   'passkeyRenew.failedTitle': 'Eso no funcionó',
-  'passkeyRenew.failedBody': 'La renovación no ha funcionado. Puedes intentarlo de nuevo.',
-  'passkeyRenew.retry': 'Intentar de nuevo',
+  'passkeyRenew.failedBody':
+    'La renovación no ha funcionado. Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
@@ -3323,8 +3323,8 @@ const fil = {
   'passkeyRenew.successTitle': 'Nagtagumpay ito',
   'passkeyRenew.successBody': 'Na-renew na ang passkey mo. Maaari ka nang magpatuloy.',
   'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
-  'passkeyRenew.failedBody': 'Hindi nagtagumpay ang pag-renew. Maaari mong subukan ulit.',
-  'passkeyRenew.retry': 'Subukan ulit',
+  'passkeyRenew.failedBody':
+    'Hindi nagtagumpay ang pag-renew. Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
