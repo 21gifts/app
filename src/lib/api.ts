@@ -1936,8 +1936,10 @@ function forumAskGoalFields(
  * `place` pin (omit when unset; replies must not send it), and optional
  * `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
- * @throws {@link NoteDeletedError} on 404 (missing or deleted `inReplyTo` parent).
- * @throws Error when the api rejects the body (400, 403, or 429) — the api
+ * @throws {@link NoteDeletedError} on 404 unless the api error is exactly
+ * `No account with that username`.
+ * @throws Error when the api rejects the body (400, 403, or 429), or on 404
+ * whose error is exactly `No account with that username` — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
  * on 409, on any other non-2xx status, or when the body fails
  * {@link forumMessageSchema} validation.
@@ -1996,7 +1998,7 @@ export async function postMessage(
       ...(shopUsername === '' ? {} : { shopUsername }),
     }),
   });
-  if (response.status === 400 || response.status === 404 || response.status === 429) {
+  if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
@@ -2018,6 +2020,10 @@ export async function postMessage(
     throw new Error('Could not post your message');
   }
   if (response.status === 404) {
+    const raw = await readApiError(response);
+    if (raw === 'No account with that username') {
+      throw new Error(toUserFacingError(raw));
+    }
     throw new NoteDeletedError();
   }
   if (!response.ok) {
@@ -2036,7 +2042,7 @@ export async function postMessage(
  * and optional `place` pin (omit when unset; form fields only when set),
  * and optional `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
- * @throws Error when the api rejects the body (400 or 429) — the api error
+ * @throws Error when the api rejects the body (400, 404, or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
  * when the body fails {@link forumMessageSchema} validation.
  */

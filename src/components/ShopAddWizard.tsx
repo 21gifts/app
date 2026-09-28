@@ -147,7 +147,7 @@ export function ShopAddWizard({
       }}
     >
       <p className="text-sm font-medium text-app-fg">
-        {step} / 5 · {title}
+        {t('shops.stepOf', { step, total: 5, title })}
       </p>
       {step === 1 ? (
         <div className="flex flex-col gap-2">
