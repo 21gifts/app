@@ -448,7 +448,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(await screen.findByRole('heading', { name: 'Passkey in the Chrome app' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Passkey in the Chrome app' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add recovery phrase' })).toBeTruthy();
   });
 });

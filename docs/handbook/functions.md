@@ -372,6 +372,20 @@
 - **Returns / side effects:** React element covering idle/choice/starting/error/wrong-account/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
 - **Used by:** Screen `/login`.
 
+## Function: ChromeAppPasskeyPage
+
+- **Purpose:** Next.js page for `/login/chrome-app`. It explains that the installed Mac Chrome app completes the passkey with the QR code, and that Touch ID on this Mac is a Chrome tab or Safari.
+- **Inputs:** None.
+- **Returns / side effects:** `AppShell` with `HomeWordmark` and `LanguageSwitcher` around `ChromeAppPasskeyScreen`. No OnboardingGate and no WebAuthn call.
+- **Used by:** Route `/login/chrome-app`. Linked from `MacChromiumAppPasskeyNote`.
+
+## Function: ChromeAppPasskeyScreen
+
+- **Purpose:** The visible explanation on `/login/chrome-app`: heading `passkey.macAppHeading` and body `passkey.macAppBody`.
+- **Inputs:** None. Reads the active locale through `useTranslations`.
+- **Returns / side effects:** A heading and one paragraph. No buttons and no network.
+- **Used by:** `ChromeAppPasskeyPage`.
+
 ## Function: LoginPage
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
@@ -2217,7 +2231,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MacChromiumAppPasskeyNote
 
-- **Purpose:** Info text in the installed macOS Chrome, Chromium, or Edge app. It says the QR code works with the phone that has the passkey, and that Touch ID on this Mac is available in a Chrome tab or by adding the site to the Dock from Safari. The passkey buttons stay on screen.
+- **Purpose:** One sentence plus a link to `/login/chrome-app`, shown in the installed macOS Chrome app next to a passkey button. The sentence says the QR code works and Touch ID on this Mac is not offered in that app. The full steps live on the linked page.
 - **Inputs:** None. Uses useTranslations for passkey.macAppHeading and passkey.macAppBody.
 - **Returns / side effects:** A heading and a paragraph. No buttons and no WebAuthn call.
 - **Used by:** `LoginCard` (idle and account choice) and `WalletScreenView` on `/wallet/phrase` until the 12 words are shown. Not on the public profile or the wallet receive page. Not a screenshot variant.

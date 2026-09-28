@@ -421,7 +421,14 @@ describe('LoginCard', () => {
   it('shows the Chrome-app note and still offers Log in', async () => {
     vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
     renderWithLocale(<LoginCard />);
-    expect(await screen.findByRole('heading', { name: 'Passkey in the Chrome app' })).toBeTruthy();
+    expect(
+      await screen.findByText(
+        'The QR code works. Touch ID on this Mac is not offered in this app.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Passkey in the Chrome app' }).getAttribute('href'),
+    ).toBe('/login/chrome-app');
     expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
     expect(loginSpy).toHaveBeenCalledTimes(1);

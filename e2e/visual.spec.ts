@@ -1692,6 +1692,12 @@ test.describe('login variant baselines', () => {
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-login-language');
   });
+
+  test('screen /login/chrome-app', async ({ page }) => {
+    await page.goto('/login/chrome-app');
+    await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
+    await shotScreen(page, 'screen-login-chrome-app');
+  });
 });
 
 test.describe('onboarding screens', () => {

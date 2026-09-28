@@ -156,6 +156,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Deutsch' })",
   },
   {
+    route: '/login/chrome-app',
+    id: 'default',
+    image: 'login-chrome-app.png',
+    visual: 'screen-login-chrome-app',
+    needle: 'Passkey in the Chrome app',
+  },
+  {
     route: '/donate',
     id: 'default',
     image: 'donate.png',

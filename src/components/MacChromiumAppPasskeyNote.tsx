@@ -1,19 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import type { ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 
 /**
- * Info shown in the installed macOS Chrome app. The passkey buttons stay.
+ * One sentence and a link to `/login/chrome-app`, shown only in the installed
+ * macOS Chrome app next to a passkey action. The explanation itself is that page.
  *
- * @returns The heading and body copy.
+ * @returns The note.
  */
 export function MacChromiumAppPasskeyNote(): ReactElement {
   const { t } = useTranslations();
   return (
-    <div className="flex w-full flex-col items-center gap-2">
-      <h2 className="text-center text-lg font-medium text-app-fg">{t('passkey.macAppHeading')}</h2>
-      <p className="text-center text-sm text-app-muted">{t('passkey.macAppBody')}</p>
-    </div>
+    <p className="text-center text-sm text-app-muted">
+      {t('passkey.macAppNote')}{' '}
+      <Link href="/login/chrome-app" className="text-app-fg underline">
+        {t('passkey.macAppHeading')}
+      </Link>
+    </p>
   );
 }

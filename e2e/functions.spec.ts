@@ -3676,7 +3676,7 @@ test('Function: isMacChromiumInstalledApp — Chrome app shows the passkey note'
     };
   });
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Passkey in the Chrome app' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
 
@@ -3707,8 +3707,18 @@ test('Function: MacChromiumAppPasskeyNote — Chrome app keeps Log in', async ({
     };
   });
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Passkey in the Chrome app' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: ChromeAppPasskeyPage — explains the Mac Chrome app', async ({ page }) => {
+  await page.goto('/login/chrome-app');
+  await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
+});
+
+test('Function: ChromeAppPasskeyScreen — explains the Mac Chrome app', async ({ page }) => {
+  await page.goto('/login/chrome-app');
+  await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
 });
 
 test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
