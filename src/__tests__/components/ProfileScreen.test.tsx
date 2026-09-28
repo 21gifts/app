@@ -879,6 +879,34 @@ describe('ProfileScreen', () => {
     });
   });
 
+  it('ignores an empty file choice and explains a bad or failed save', async () => {
+    vi.mocked(prepareForumPhoto).mockClear();
+    renderWithLocale(<ProfileScreen />);
+    const photoButton = await screen.findByRole('button', { name: 'Add a profile photo' });
+    const bannerButton = screen.getByRole('button', { name: 'Add a wide image' });
+    fireEvent.click(photoButton);
+    fireEvent.click(bannerButton);
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    fireEvent.change(photoInput, { target: { files: [] } });
+    fireEvent.change(bannerInput, { target: { files: [] } });
+    expect(prepareForumPhoto).not.toHaveBeenCalled();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'tooLarge' });
+    const file = new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' });
+    fireEvent.change(bannerInput, { target: { files: [file] } });
+    expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'unsupported' });
+    fireEvent.change(photoInput, { target: { files: [file] } });
+    expect(await screen.findByText('Use a JPEG, PNG, or WebP photo')).toBeTruthy();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockRejectedValue(new Error('no'));
+    fireEvent.change(photoInput, { target: { files: [file] } });
+    expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
+  });
+
   it('ignores a rejected fetchMember after unmount', async () => {
     let rejectMember: (err: Error) => void = () => undefined;
     vi.mocked(fetchMember).mockReturnValue(
