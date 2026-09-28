@@ -565,7 +565,11 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
- * Scrolls the reply form up only when its bottom sits past the shell.
+ * Reveals the reply form inside the one scrollport.
+ *
+ * A null scroller or form leaves the scroll position unchanged. Otherwise this
+ * delegates to {@link revealInScrollport}, which also corrects a top overflow
+ * and a target taller than the scroller.
  *
  * @param scroller - App shell scroller, or null when the board is not inside one.
  * @param form - Reply form, or null when no reply composer is open.

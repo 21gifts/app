@@ -8152,12 +8152,70 @@ test('Function: resolveAppOffsetTop — body sits on the visual viewport', async
   expect(measured.mainHeight).toBe(500);
 });
 
-test('Function: revealInScrollport — focusing a field does not scroll the document', async ({
+test('Function: revealInScrollport — a focused field moves the scrollport, not the document', async ({
   page,
 }) => {
   await page.goto('/login');
-  await page.getByRole('combobox', { name: 'Language' }).focus();
-  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await page.locator('[data-scrollport][data-scroll-active]').waitFor();
+  const before = await page.evaluate(() => {
+    const scroller = document.querySelector('[data-scrollport][data-scroll-active]');
+    if (!(scroller instanceof HTMLElement)) {
+      return { ready: false, scrollTop: -1, scrollY: window.scrollY, below: false };
+    }
+    const field = document.createElement('textarea');
+    field.id = 'reveal-probe';
+    field.setAttribute('aria-label', 'Reveal probe');
+    field.style.display = 'block';
+    field.style.width = '12rem';
+    field.style.marginTop = '2400px';
+    // Room below the field so the 12px reveal is not clamped at the scroll end.
+    field.style.marginBottom = '48px';
+    scroller.appendChild(field);
+    const fieldBox = field.getBoundingClientRect();
+    const scrollerBox = scroller.getBoundingClientRect();
+    return {
+      ready: true,
+      scrollTop: scroller.scrollTop,
+      scrollY: window.scrollY,
+      below: fieldBox.bottom > scrollerBox.bottom,
+    };
+  });
+  expect(before.ready).toBe(true);
+  expect(before.scrollTop).toBe(0);
+  expect(before.scrollY).toBe(0);
+  expect(before.below).toBe(true);
+
+  const after = await page.evaluate(
+    () =>
+      new Promise<{ focused: boolean; scrollTop: number; scrollY: number; bottomGap: number }>(
+        (resolve) => {
+          const field = document.querySelector('#reveal-probe');
+          const scroller = document.querySelector('[data-scrollport][data-scroll-active]');
+          if (!(field instanceof HTMLTextAreaElement) || !(scroller instanceof HTMLElement)) {
+            resolve({ focused: false, scrollTop: -1, scrollY: window.scrollY, bottomGap: -1 });
+            return;
+          }
+          // The browser must not scroll on focus. The app's focus listener reveals.
+          field.focus({ preventScroll: true });
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const fieldBox = field.getBoundingClientRect();
+              const scrollerBox = scroller.getBoundingClientRect();
+              resolve({
+                focused: document.activeElement === field,
+                scrollTop: scroller.scrollTop,
+                scrollY: window.scrollY,
+                bottomGap: scrollerBox.bottom - fieldBox.bottom,
+              });
+            });
+          });
+        },
+      ),
+  );
+  expect(after.focused).toBe(true);
+  expect(after.scrollTop).toBeGreaterThan(before.scrollTop);
+  expect(after.scrollY).toBe(0);
+  expect(Math.abs(after.bottomGap - 12)).toBeLessThan(1);
 });
 
 test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {

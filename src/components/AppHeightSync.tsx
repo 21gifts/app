@@ -25,6 +25,8 @@ function revealFocusedField(): void {
  * Pinch-zoom (`|scale - 1| > 0.01`) skips both writes. After each write from a
  * viewport resize or scroll, and on focus via `requestAnimationFrame`, the
  * focused input, textarea, or select is revealed inside the active scrollport.
+ *
+ * @returns void. Writes both custom properties, then reveals the focused field.
  */
 export function useAppHeight(): void {
   useEffect(() => {

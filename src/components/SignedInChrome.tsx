@@ -40,7 +40,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * unread count when greater than zero, messages with an inbox unread count
  * when greater than zero, contact, optional PWA install,
  * and log out). The Menu ends with a quiet
- * Version line (`app.version` / `getAppVersion()`). When onboarding
+ * Version line (`app.version` / `getAppVersion()`). On a wide frame the panel
+ * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
+ * `[data-menu-scrim-host]`. On a narrow frame the panel is a full-width sheet
+ * in `[data-menu-sheet-host]` and the page underneath is hidden. When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
  * introduce CTA skips the overlay once so a remount after navigating to

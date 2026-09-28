@@ -45,13 +45,13 @@ function expandPlurals(template: string, count: number): string {
 }
 
 /**
- * Look up `key` in `catalog` and replace `{name}` from `vars`.
+ * Look up `key` in `catalog`, expand a `{count, plural, one {…} other {…}}` branch, then replace `{name}` from `vars`.
  *
  * @param catalog - Message catalog for one locale.
  * @param key - Catalog key to resolve.
- * @param vars - Placeholder values for `{name}` tokens in the template.
- * @returns The interpolated string.
- * @throws If the key is missing or a `{name}` has no `vars[name]`.
+ * @param vars - Placeholder values. `count` selects `one` when it is 1 and `other` otherwise. `#` inside the chosen branch becomes that count. Other `{name}` tokens come from `vars`.
+ * @returns The interpolated string. A broken plural header is left in place.
+ * @throws If the key is missing, a `{count, plural` header has no finite `count`, or a `{name}` has no `vars[name]`.
  */
 export function translate(
   catalog: Messages,

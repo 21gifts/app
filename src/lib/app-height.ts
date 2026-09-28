@@ -11,6 +11,12 @@
 export const APP_HEIGHT_BOOTSTRAP_SCRIPT =
   "(function(){function setAppHeight(){var vv=window.visualViewport;if(vv&&typeof vv.scale==='number'&&Math.abs(vv.scale-1)>0.01){return;}var h=vv?vv.height:window.innerHeight;var top=vv&&typeof vv.offsetTop==='number'?Math.round(vv.offsetTop):0;document.documentElement.style.setProperty('--app-height',Math.round(h)+'px');document.documentElement.style.setProperty('--app-offset-top',top+'px');}setAppHeight();})();";
 
+/**
+ * Pixel offset for `--app-offset-top`, or null to skip the write (pinch-zoom).
+ *
+ * @param visualViewport - `window.visualViewport` or a test stub; null/undefined is offset 0
+ * @returns Rounded CSS-pixel offset, 0 when there is no viewport, or null when scale is present and not ≈ 1
+ */
 export function resolveAppOffsetTop(
   visualViewport: AppHeightViewport | null | undefined,
 ): number | null {

@@ -60,9 +60,12 @@ export { AppShellContext };
 /**
  * App page shell driven by `--app-height`. Prefer this over Tailwind
  * viewport-height utilities on app routes. Always draws one rounded-3xl page
- * frame; wordmark and Menu live in that frame’s first row. The document does
- * not scroll. Content scrolls in the one `[data-scrollport]`. Cards never
- * host page chrome.
+ * frame; wordmark and Menu live in that frame’s first row. The frame
+ * (`data-app-frame`) publishes its content-box width as `frameWidth`.
+ * `[data-menu-scrim-host]` sits on that frame. `[data-menu-sheet-host]` and
+ * `[data-scroll-page]` sit inside the one `[data-scrollport]`. `<main>` has
+ * no `overflow-hidden`. The document does not scroll. Content scrolls in the
+ * one `[data-scrollport]`. Cards never host page chrome.
  *
  * @param props - See {@link AppShellProps}.
  * @returns The page shell element.
