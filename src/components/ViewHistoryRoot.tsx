@@ -109,8 +109,9 @@ function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
 }
 
 /**
- * Records a search-only change. `useSearchParams` can suspend, so this is not
- * the first record of a full navigation.
+ * Records a search-only change, including a cleared query as the pathname.
+ * `useSearchParams` can suspend, so this is not the first record of a full
+ * navigation.
  *
  * @param props - Stable callback that re-renders the chrome after a record.
  * @returns `null` (side-effect only).
@@ -120,7 +121,11 @@ function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
   const searchParams = useSearchParams();
   const query = searchParams.toString();
   const path =
-    query === '' || typeof pathname !== 'string' || pathname === '' ? null : `${pathname}?${query}`;
+    typeof pathname !== 'string' || pathname === ''
+      ? null
+      : query === ''
+        ? pathname
+        : `${pathname}?${query}`;
   if (path !== null) {
     recordCurrentView(path);
   }

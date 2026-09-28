@@ -33,7 +33,7 @@ export interface ProfileChromeLeftProps {
 }
 
 /**
- * Shared signed-in top-left chrome: one icon-only back plus wordmark.
+ * Shared top-left chrome: one icon-only back plus wordmark.
  *
  * Back is a link to the previous in-app view, or `/welcome` when this tab has
  * none. The first client render matches SSR (`/welcome`, `profile.back`). An

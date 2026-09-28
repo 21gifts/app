@@ -80,6 +80,37 @@ describe('ViewHistoryRoot', () => {
     expect(previousViewPath()).toBe('/shops');
   });
 
+  it('records the pathname when a query is cleared', () => {
+    navigation.pathname = '/shops';
+    navigation.query = '';
+    window.history.pushState(null, '', '/shops');
+    const view = renderWithLocale(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBeNull();
+
+    navigation.pathname = '/messages';
+    navigation.query = 'c=thread';
+    window.history.pushState(null, '', '/messages?c=thread');
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBe('/shops');
+
+    navigation.query = '';
+    window.history.pushState(null, '', '/messages');
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBe('/messages?c=thread');
+  });
+
   it('ignores setOverride when no provider is mounted', () => {
     function Probe(): ReactElement {
       const { override, setOverride } = useChromeBack();

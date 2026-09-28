@@ -92,6 +92,12 @@ for (const file of files) {
   if (source.includes('notFound.back') && rel !== 'src/lib/messages.ts') {
     failures.push(`${rel}: notFound.back is only allowed in src/lib/messages.ts`);
   }
+  if (source.includes('inbox.back') && rel !== 'src/lib/messages.ts') {
+    failures.push(`${rel}: inbox.back is only allowed in src/lib/messages.ts`);
+  }
+  if (source.includes('funding.apply.back') && rel !== 'src/lib/messages.ts') {
+    failures.push(`${rel}: funding.apply.back is only allowed in src/lib/messages.ts`);
+  }
   if (/topLeft=\{<(?:Wordmark|HomeWordmark)\b/.test(source)) {
     failures.push(`${rel}: topLeft must be ProfileChromeLeft, not a bare wordmark`);
   }
