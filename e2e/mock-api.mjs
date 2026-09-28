@@ -2207,6 +2207,32 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/funding/payout-days') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, {
+      days: [
+        '2026-09-20',
+        '2026-09-21',
+        '2026-09-22',
+        '2026-09-23',
+        '2026-09-24',
+        '2026-09-25',
+        '2026-09-26',
+      ],
+      rows: [],
+    });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/funding/applications') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

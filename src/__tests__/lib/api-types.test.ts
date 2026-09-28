@@ -25,6 +25,7 @@ import {
   fundingApplyResponseSchema,
   fundingApplicationSchema,
   fundingApplicationsResponseSchema,
+  fundingPayoutDaysResponseSchema,
   fundingApplicationDetailSchema,
   fundingDecisionResultSchema,
   trustActionResultSchema,
@@ -380,6 +381,30 @@ describe('fundingApplicationsResponseSchema', () => {
     expect(fundingApplicationsResponseSchema.parse({ applications: [] })).toEqual({
       applications: [],
     });
+  });
+});
+
+describe('fundingPayoutDaysResponseSchema', () => {
+  it('accepts seven days and a null account', () => {
+    const payload = {
+      days: [
+        '2026-09-20',
+        '2026-09-21',
+        '2026-09-22',
+        '2026-09-23',
+        '2026-09-24',
+        '2026-09-25',
+        '2026-09-26',
+      ],
+      rows: [
+        {
+          accountId: null,
+          name: null,
+          days: ['blocked', 'missed', 'paid', 'blocked', 'blocked', 'blocked', 'blocked'],
+        },
+      ],
+    };
+    expect(fundingPayoutDaysResponseSchema.parse(payload)).toEqual(payload);
   });
 });
 
