@@ -5366,7 +5366,7 @@ test('Function: revealReplyForm — expanded reply stays inside the shell', asyn
   await expect(field).toBeVisible();
   const inside = await field.evaluate((node) => {
     const form = node.closest('form');
-    const scroller = node.closest('.overflow-y-auto');
+    const scroller = node.closest('[data-scrollport]');
     if (!(form instanceof HTMLElement) || !(scroller instanceof HTMLElement)) {
       return false;
     }
@@ -5795,7 +5795,7 @@ test('Function: ForumLoader — scrolled silent refresh shows New posts without 
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 900;
     } else {
@@ -5869,7 +5869,7 @@ test('Function: hasUnseenForumPosts — scrolled silent refresh holds a new id b
     page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 900;
     } else {
@@ -7050,6 +7050,79 @@ test('Function: AppShell — login chrome is visible', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
 });
 
+test('Function: Scrollport — login has one scrollport and the document does not scroll', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await expect(page.locator('[data-scrollport]')).toHaveCount(1);
+  await expect(page.locator('[data-scrollport][data-scroll-locked]')).toHaveCount(0);
+  const documentScrolls = await page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollHeight > root.clientHeight + 1;
+  });
+  expect(documentScrolls).toBe(false);
+});
+
+test('Function: bindScrollport — the page scrollport is the one that is unlocked', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  const unlocked = await page.evaluate(() => {
+    return document.querySelectorAll('[data-scrollport]:not([data-scroll-locked])').length;
+  });
+  expect(unlocked).toBe(1);
+});
+
+test('Function: releaseScrollport — leaving the page does not leave a locked document', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.goto('/rules');
+  const documentScrolls = await page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollHeight > root.clientHeight + 1;
+  });
+  expect(documentScrolls).toBe(false);
+  await expect(page.locator('[data-scrollport]:not([data-scroll-locked])')).toHaveCount(1);
+});
+
+test('Function: syncScrollSurfaces — a scrolling box added at runtime is clipped', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.evaluate(() => {
+    const stray = document.createElement('div');
+    stray.id = 'stray-scroll';
+    stray.style.overflow = 'auto';
+    stray.textContent = 'stray';
+    document.body.appendChild(stray);
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => getComputedStyle(document.getElementById('stray-scroll')!).overflowY),
+    )
+    .toBe('clip');
+});
+
+test('Function: ScrollSurfaceGuard — typing in a textarea does not make the field scroll', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  const scrollsInside = await page.evaluate(() => {
+    const field = document.createElement('textarea');
+    document.body.appendChild(field);
+    field.value = 'line\n'.repeat(30);
+    field.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    const style = getComputedStyle(field);
+    return (
+      style.overflowY === 'auto' ||
+      style.overflowY === 'scroll' ||
+      field.scrollHeight > field.clientHeight + 2
+    );
+  });
+  expect(scrollsInside).toBe(false);
+});
+
 test('Function: useAppShellScroller — welcome inner scroller drives New posts', async ({
   page,
 }) => {
@@ -7080,13 +7153,13 @@ test('Function: useAppShellScroller — welcome inner scroller drives New posts'
     page.getByText('Scroller note 0 so the welcome list can scroll past the top.'),
   ).toBeVisible();
   await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     if (scroller instanceof HTMLElement) {
       scroller.scrollTop = 900;
     }
   });
   const afterScroll = await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     return {
       innerTop: scroller instanceof HTMLElement ? scroller.scrollTop : -1,
       windowY: window.scrollY,
@@ -7134,7 +7207,7 @@ test('Function: useAppShellScroller — welcome inner scroller drives New posts'
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'New posts' })).toHaveCount(0);
   const afterTop = await page.evaluate(() => {
-    const scroller = document.querySelector('main .overflow-y-auto');
+    const scroller = document.querySelector('main [data-scrollport]');
     return scroller instanceof HTMLElement ? scroller.scrollTop : -1;
   });
   expect(afterTop).toBeLessThan(8);
@@ -7230,7 +7303,7 @@ test('Function: resolveAppHeight — document has --app-height', async ({ page }
   expect(value).not.toBe('');
 });
 
-test('Function: resolveAppHeight — short keyboard visualViewport does not shrink the page frame', async ({
+test('Function: resolveAppHeight — short keyboard visualViewport sizes the page frame', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -7291,8 +7364,8 @@ test('Function: resolveAppHeight — short keyboard visualViewport does not shri
   });
   expect(measured.short).toBeGreaterThan(0);
   expect(measured.short).toBeLessThan(measured.inner);
-  expect(measured.appHeight).toBe(`${measured.inner}px`);
-  expect(measured.mainHeight).toBe(measured.inner);
+  expect(measured.appHeight).toBe(`${measured.short}px`);
+  expect(measured.mainHeight).toBe(measured.short);
 });
 
 test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {

@@ -29,7 +29,7 @@ npm run dev    # → http://localhost:3000
 | `npm run build`                | Production build (standalone output)                                                                                                          |
 | `npm run start`                | Serve the production build on :3000                                                                                                           |
 | `npm run typecheck`            | `tsc --noEmit`                                                                                                                                |
-| `npm run lint`                 | `next lint` + Prettier check                                                                                                                  |
+| `npm run lint`                 | `next lint` + Prettier check + `scripts/check-scrollports.mjs`                                                                                |
 | `npm run lint:fix`             | Auto-fix lint findings + Prettier write                                                                                                       |
 | `npm run format`               | Prettier write                                                                                                                                |
 | `npm test`                     | Vitest unit tests, single run                                                                                                                 |
@@ -236,7 +236,7 @@ app/
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
 │   │   ├── ForumAskWizard.tsx   # Ask-for-money steps amount → photos → text → preview Post
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
-│   │   ├── ForumPhotoGallery.tsx # Horizontal snap gallery for photoCount > 1 (peek, current/total chip, dots)
+│   │   ├── ForumPhotoGallery.tsx # Stills stacked in the page scrollport (current/total chip, dots)
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
@@ -252,6 +252,7 @@ app/
 │   │   ├── ContactLoader.tsx    # Post + requirements-overlay state for /contact
 │   │   ├── AppShell.tsx         # fill/flow page shell driven by --app-height
 │   │   ├── AppHeightSync.tsx    # Client mount that syncs --app-height after hydration
+│   │   ├── ScrollSurfaceGuard.tsx # Clips every scrollport except the active one
 │   │   └── ui/
 │   │       ├── Button.tsx       # Shared button primitive
 │   │       ├── ButtonLink.tsx   # Shared pill link
@@ -260,6 +261,7 @@ app/
 │   │       ├── IconButton.tsx   # Shared icon button
 │   │       ├── PageChrome.tsx   # Flow-mode wrapper around AppShell
 │   │       ├── SegmentedControl.tsx # Mutually exclusive option group
+│   │       ├── Scrollport.tsx   # The one layout scrollport
 │   │       ├── Wordmark.tsx     # Text wordmark 21.gifts
 │   │       └── index.ts         # Barrel export for ui primitives
 │   ├── hooks/
@@ -303,6 +305,7 @@ app/
 │   │   ├── screen-variant-catalog.json # screen-variant ids/labels/visual stems
 │   │   ├── trust-chain.ts       # mergeTrustChain + layoutTrustChain (stack, no invented edges)
 │   │   ├── app-height.ts        # --app-height bootstrap IIFE (server-safe; no hooks)
+│   │   ├── scroll-surface.ts    # Which scrollport is active, and clipping of the rest
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
@@ -323,6 +326,7 @@ app/
 │       └── images/              # Markdown still references images/<file>.png; PNGs are not committed
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
+│   ├── check-scrollports.mjs    # CI gate: a second layout scrollport → exit 1; detector self-test first
 │   ├── screen-variants.mjs      # Distinct UI states of screenshot-gated screens (e2e needles + visual args)
 │   ├── build-shop-sticker-artwork.mjs # Regenerate src/lib/shop-sticker-artwork.ts (fonts → outlines)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
@@ -414,6 +418,28 @@ update stuff
   `docs/ui.md`. New or migrated surfaces compose those parts. Raw
   `rounded-full bg-app-btn` (or `bg-neutral-900`) outside primitives on a
   new or migrated surface is an undeclared deviation.
+
+### One scroll surface (hard requirement)
+
+Each page has exactly one scrollable surface. `html` and `body` are
+`overflow: clip` and `height: var(--app-height)`. `--app-height` is the
+visible viewport (`visualViewport.height`, otherwise `innerHeight`), never
+taller. The only element that may scroll is the innermost bound
+`[data-scrollport]`. Among siblings, that is the most recently bound one.
+It carries `data-scroll-active`. Every other port stays clipped and carries
+`data-scroll-locked`. Absence of that lock is not permission to scroll.
+`ScrollSurfaceGuard` watches the document and forces any other `auto`,
+`scroll`, or `overlay` overflow — class, stylesheet, or script — to clip.
+Textareas grow with their text instead of scrolling. Native inputs and
+selects are left alone. Clipping (`overflow: hidden` or `clip`) is not a
+scrollport. Components still must not set a scrolling overflow.
+`scripts/check-scrollports.mjs` fails CI on those utilities, arbitrary
+values, and assignments, and on any stylesheet scrolling overflow except
+the one `overflow: auto` on `[data-scrollport][data-scroll-active]`. It
+rejects its own detector if that check goes blind. The document lock is
+`!important`. AppShell `<main>` stays free of `overflow-hidden` so the
+in-tree menu is not clipped. The document lock stops the page from
+scrolling under the frame.
 
 ### Components
 

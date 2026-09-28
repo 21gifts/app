@@ -39,6 +39,25 @@ html {
   touch-action: manipulation;
 }
 
+/* One scroll surface: the document never scrolls. !important so a later
+   script or utility cannot open a second scroller on the page itself. */
+html,
+body {
+  height: var(--app-height);
+  overflow: clip !important;
+}
+
+/* Hidden until the effect marks the one active port. Absence of the lock
+   is not permission to scroll: several ports exist before that effect. */
+[data-scrollport] {
+  overflow: clip !important;
+  overscroll-behavior: none;
+}
+
+[data-scrollport][data-scroll-active] {
+  overflow: auto !important;
+}
+
 /* `center` first so an engine that drops `safe` still centers. */
 .shell-safe-center {
   justify-content: center;

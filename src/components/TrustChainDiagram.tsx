@@ -221,7 +221,7 @@ export function TrustChainDiagram({
   }
 
   return (
-    <div className="overflow-auto">
+    <div>
       <svg
         width={width}
         height={height}
