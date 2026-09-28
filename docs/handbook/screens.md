@@ -2334,7 +2334,7 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: about-photo
 
-Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`, at most 10rem tall), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA. No profile photo and no wide image.
+Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA. No profile photo and no wide image.
 
 ![21.gifts profile About me photo](images/profile-about-photo.png)
 
@@ -3565,7 +3565,7 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: about-photo
 
-Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading, bio, and photo (`About me photo`, at most 10rem tall). Copy-profile-link remains. No edit.
+Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading, bio, and photo (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop). Copy-profile-link remains. No edit.
 
 ![21.gifts public view about photo](images/view-about-photo.png)
 
