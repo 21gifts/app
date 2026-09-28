@@ -572,7 +572,7 @@ export function AboutMeSection({
       <img
         src={storedPhotoUrl}
         alt={t('profile.about.photoAlt')}
-        className="max-h-40 w-full rounded-2xl object-cover"
+        className="mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-2xl object-contain"
       />
     ) : null;
 
