@@ -512,6 +512,7 @@ export const forumPlacesResponseSchema = z.object({
       name: z.string().min(1),
       createdAt: z.string().min(1),
       accountId: z.string().min(1).optional(),
+      shop: z.boolean().optional(),
     }),
   ),
 });
@@ -524,6 +525,8 @@ export type ForumPlaceRow = ForumPlacePin & {
   name: string;
   createdAt: string;
   accountId?: string | undefined;
+  /** True when the note is a shop. Omitted by an older api. */
+  shop?: boolean | undefined;
 };
 
 /**

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import {
+  fetchMessagePhoto,
   fetchShopNoteEdits,
   setMessagePlace,
   setMessageShopAccount,
@@ -19,6 +20,7 @@ vi.mock('@/lib/api', () => ({
   setMessageShopAccount: vi.fn(),
   setMessageShopPhotos: vi.fn(),
   fetchShopNoteEdits: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-photo', () => ({
@@ -392,5 +394,76 @@ describe('ShopNoteEditControl', () => {
       'Could not save this shop note',
     );
     vi.unstubAllGlobals();
+  });
+
+  it('loads stills that are not already shown and drops them on failure', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    vi.mocked(fetchMessagePhoto)
+      .mockResolvedValueOnce(new Blob([Uint8Array.of(1)]))
+      .mockRejectedValueOnce(new Error('nope'));
+    const view = renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:loaded');
+    view.unmount();
+    expect(revoke).toHaveBeenCalledWith('blob:loaded');
+
+    vi.mocked(fetchMessagePhoto).mockReset();
+    vi.mocked(fetchMessagePhoto)
+      .mockResolvedValueOnce(new Blob([Uint8Array.of(1)]))
+      .mockRejectedValueOnce(new Error('second'));
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 2, hasVideo: true }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(document.querySelector('video')).toBeNull();
+  });
+
+  it('does not open on mount for a reply', () => {
+    signIn();
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, parentId: 'm1' }}
+        startOpen
+        onUpdated={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+  });
+
+  it('opens on mount when asked and shows a stored video', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasVideo: true, videoContentType: 'video/webm' }}
+        startOpen
+        onUpdated={vi.fn()}
+      />,
+    );
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(document.querySelector('video')?.getAttribute('src')).toBe('/messages/shop1/video.webm');
   });
 });

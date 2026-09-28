@@ -1,11 +1,15 @@
 'use client';
 
+import { Pencil } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card } from '@/components/ui';
-import { fetchPlaces } from '@/lib/api';
-import type { ForumPlaceRow } from '@/lib/api-types';
+import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
+import { Button, Card, IconButton } from '@/components/ui';
+import { fetchForumMessage, fetchPlaces } from '@/lib/api';
+import type { ForumMessage, ForumPlaceRow } from '@/lib/api-types';
+import { isShopNote } from '@/lib/forum-shop';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 type GoogleMap = {
@@ -19,6 +23,67 @@ type GoogleMapsNamespace = {
   ) => GoogleMap;
   Marker: new (opts: { position: { lat: number; lng: number }; map: GoogleMap }) => unknown;
 };
+
+function ShopPinEdit({
+  placeId,
+  onUpdated,
+}: {
+  placeId: string;
+  onUpdated: (message: ForumMessage) => void;
+}): ReactElement | null {
+  const session = useAuthStore((state) => state.session);
+  const account = useAuthStore((state) => state.account);
+  const { t } = useTranslations();
+  const [message, setMessage] = useState<ForumMessage | null>(null);
+  const [failed, setFailed] = useState(false);
+  if (session === null || !roleAtLeast(account?.role, 'moderator')) {
+    return null;
+  }
+  if (message !== null) {
+    return (
+      <ShopNoteEditControl
+        message={message}
+        startOpen
+        onUpdated={(updated) => {
+          setMessage(updated);
+          onUpdated(updated);
+        }}
+      />
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-2">
+      <IconButton
+        type="button"
+        size="sm"
+        variant="ghost"
+        aria-label={t('forum.editShopNote')}
+        title={t('forum.editShopNote')}
+        onClick={() => {
+          void fetchForumMessage(session, placeId)
+            .then((loaded) => {
+              if (loaded === null || !isShopNote(loaded.text)) {
+                setFailed(true);
+                return;
+              }
+              setFailed(false);
+              setMessage(loaded);
+            })
+            .catch(() => {
+              setFailed(true);
+            });
+        }}
+      >
+        <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+      </IconButton>
+      {failed ? (
+        <p role="alert" className="text-xs text-app-danger">
+          {t('forum.editShopNoteFailed')}
+        </p>
+      ) : null}
+    </span>
+  );
+}
 
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
@@ -212,7 +277,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
             const label = place.label ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
             const selected = place.id === pinId;
             return (
-              <li key={place.id}>
+              <li key={place.id} className="flex items-start justify-between gap-2">
                 {typeof place.accountId === 'string' && place.accountId !== '' ? (
                   <span
                     data-selected={selected ? 'true' : 'false'}
@@ -239,6 +304,33 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                     {place.name} · {label}
                   </a>
                 )}
+                {place.shop === true ? (
+                  <ShopPinEdit
+                    placeId={place.id}
+                    onUpdated={(updated) => {
+                      const pin = updated.place;
+                      setPlaces((current) => {
+                        /* v8 ignore next 3 -- the list is on screen before a pin editor can save */
+                        if (current === null) {
+                          return current;
+                        }
+                        if (pin === undefined) {
+                          return current;
+                        }
+                        return current.map((row) =>
+                          row.id === updated.id
+                            ? {
+                                ...row,
+                                lat: pin.lat,
+                                lng: pin.lng,
+                                label: pin.label ?? null,
+                              }
+                            : row,
+                        );
+                      });
+                    }}
+                  />
+                ) : null}
               </li>
             );
           })}

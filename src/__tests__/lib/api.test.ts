@@ -1423,6 +1423,15 @@ describe('fetchPlaces', () => {
     await expect(fetchPlaces('tok')).resolves.toEqual([placeRow]);
   });
 
+  it('keeps a shop flag on a pin', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { places: [{ ...placeRow, shop: true }] },
+    });
+    await expect(fetchPlaces('tok')).resolves.toEqual([{ ...placeRow, shop: true }]);
+  });
+
   it('rejects on status 500', async () => {
     stubFetch({
       ok: false,

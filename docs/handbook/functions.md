@@ -1339,7 +1339,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. `embedded` returns that body without the heading or card.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. `embedded` returns that body without the heading or card.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
 - **Used by:** `ShopsScreen`.
@@ -1348,7 +1348,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Load every live top-level forum pin for the signed-in session.
 - **Inputs:** `sessionToken` bearer.
-- **Returns / side effects:** `ForumPlaceRow[]` from `GET /forum/messages/places`. Throws the visitor-facing load error on a non-2xx status, a network failure, or a body that fails the schema.
+- **Returns / side effects:** `ForumPlaceRow[]` from `GET /forum/messages/places`. A row may include `shop: true` when the note is a shop. Throws the visitor-facing load error on a non-2xx status, a network failure, or a body that fails the schema.
 - **Used by:** `PlacesMapScreen`.
 
 ## Function: proxyMessagesPlacesGet
@@ -1377,7 +1377,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Moderator-only pencil on a listed shop note. Opens a text editor and the edit history. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved body).
 - **Returns / side effects:** Small ghost pencil (**Edit shop note**). The open panel edits the visible text (the shop tag is not shown), **Save** / **Cancel**, and **History** loaded when the panel opens. Save calls `setMessageShopText`. A failed save keeps the panel open. History rows show who, when, and the field (text, place, or account).
-- **Used by:** `ForumBoard` when `shopNoteEdit` and `onShopNoteUpdated` are set (`ForumLoader` for a moderator on every feed).
+- **Used by:** `ForumBoard` when `shopNoteEdit` and `onShopNoteUpdated` are set (`ForumLoader` for a moderator on every feed), `ShopTable`, and `PlacesMapScreen` for a pin with `shop: true`.
 
 ## Function: ShopAccountControl
 
@@ -1409,7 +1409,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopTable
 
-- **Purpose:** Table of shop notes with name, place, and operator.
+- **Purpose:** Table of shop notes with name, place, and operator. A moderator sees the same shop pencil on each row.
 - **Inputs:** Session from `useAuthStore`. Catalog via `useTranslations`.
 - **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` (label, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash (shops.missing). **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session.
 - **Used by:** `ShopsScreen`.

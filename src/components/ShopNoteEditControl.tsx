@@ -1,12 +1,13 @@
 'use client';
 
 import { Pencil } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopAddWizard, type ShopKeptMedia } from '@/components/ShopAddWizard';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { IconButton } from '@/components/ui';
 import {
+  fetchMessagePhoto,
   fetchShopNoteEdits,
   setMessagePlace,
   setMessageShopAccount,
@@ -17,6 +18,7 @@ import {
 import type { ForumMessage, ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -30,6 +32,8 @@ export interface ShopNoteEditControlProps {
   existingPhotos?: readonly string[];
   /** Video preview already loaded for this note. */
   existingVideoUrl?: string;
+  /** Open the steps immediately. Used after the map pencil has loaded the note. */
+  startOpen?: boolean;
 }
 
 /**
@@ -138,6 +142,7 @@ export function ShopNoteEditControl({
   onUpdated,
   existingPhotos = [],
   existingVideoUrl,
+  startOpen = false,
 }: ShopNoteEditControlProps): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
@@ -152,6 +157,29 @@ export function ShopNoteEditControl({
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
+  const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
+  const ownedPhotoUrls = useRef<string[]>([]);
+  const openEditorRef = useRef<(() => void) | null>(null);
+
+  function revokeOwnedPhotos(): void {
+    for (const url of ownedPhotoUrls.current) {
+      URL.revokeObjectURL(url);
+    }
+    ownedPhotoUrls.current.length = 0;
+  }
+
+  useEffect(() => {
+    if (!startOpen) {
+      return;
+    }
+    openEditorRef.current?.();
+  }, [startOpen]);
+
+  useEffect(() => {
+    return () => {
+      revokeOwnedPhotos();
+    };
+  }, []);
 
   if (
     message.parentId !== undefined ||
@@ -165,18 +193,40 @@ export function ShopNoteEditControl({
 
   const token = session;
 
-  function openEditor(): void {
+  async function openEditor(): Promise<void> {
     setDraft(stripShopHashtag(message.text));
     setPlace(message.place ?? null);
     setUsername(message.shopAccount?.username ?? '');
-    setKept([
-      ...existingPhotos.map((url) => ({ url, kind: 'photo' as const })),
-      ...(existingVideoUrl ? [{ url: existingVideoUrl, kind: 'video' as const }] : []),
-    ]);
     setPhotoDrafts([]);
     setSaveError(false);
     setHistory(null);
     setHistoryError(false);
+    let photos = [...existingPhotos];
+    if (photos.length === 0 && message.photoCount > 0) {
+      try {
+        const loaded: string[] = [];
+        for (let index = 0; index < message.photoCount; index += 1) {
+          const blob = await fetchMessagePhoto(token, message.id, index);
+          const url = URL.createObjectURL(blob);
+          ownedPhotoUrls.current.push(url);
+          loaded.push(url);
+        }
+        photos = loaded;
+      } catch {
+        revokeOwnedPhotos();
+        setSaveError(true);
+        setOpen(true);
+        return;
+      }
+    }
+    const video =
+      existingVideoUrl ??
+      (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
+    setPhotoBaseline(photos);
+    setKept([
+      ...photos.map((url) => ({ url, kind: 'photo' as const })),
+      ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
+    ]);
     setOpen(true);
     void fetchShopNoteEdits(token, message.id)
       .then((rows) => {
@@ -186,6 +236,10 @@ export function ShopNoteEditControl({
         setHistoryError(true);
       });
   }
+
+  openEditorRef.current = () => {
+    void openEditor();
+  };
 
   /* v8 ignore start -- edit mode never has a pending video to clear */
   function clearPendingPhotos(): void {
@@ -223,7 +277,7 @@ export function ShopNoteEditControl({
         latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
       }
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
-      const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== existingPhotos.length;
+      const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
       if (photosChanged) {
         const stills = [];
         for (const item of keptPhotos) {
