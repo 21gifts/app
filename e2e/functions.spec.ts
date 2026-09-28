@@ -5571,7 +5571,9 @@ test('Function: revealPaySheet — paying a reaction keeps the note on screen', 
   await field.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
   const back = page.getByRole('button', { name: 'Back' });
   await expect(back).toBeVisible();
-  await expect(field).toHaveValue('This is my answer');
+  const payPage = page.locator('[data-reply-pay-page]');
+  await expect(payPage.getByText('This is my answer')).toBeVisible();
+  await expect(field).toHaveCount(0);
   const noteStillVisible = await page.getByText('Hello from Ada').evaluate((node) => {
     const scroller = node.closest('[data-scrollport]');
     if (!(scroller instanceof HTMLElement)) {
