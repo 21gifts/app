@@ -3647,6 +3647,70 @@ test('Function: InAppBrowserView — Telegram WebView shows Open in browser', as
   await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
 });
 
+test('Function: isMacChromiumInstalledApp — Chrome app shows the passkey note', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const ua =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
+    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'MacIntel' });
+    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      if (String(query).includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return false;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
+test('Function: MacChromiumAppPasskeyNote — Chrome app keeps Log in', async ({ page }) => {
+  await page.addInitScript(() => {
+    const ua =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
+    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'MacIntel' });
+    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      if (String(query).includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return false;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+});
+
 test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });

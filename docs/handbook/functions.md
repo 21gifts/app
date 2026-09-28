@@ -2215,12 +2215,26 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `true` iff the UA is a smartphone. No side effects.
 - **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` to hide a specific invoice QR.
 
+## Function: MacChromiumAppPasskeyNote
+
+- **Purpose:** Info text in the installed macOS Chrome, Chromium, or Edge app. It says the QR code works with the phone that has the passkey, and that Touch ID on this Mac is available in a Chrome tab or by adding the site to the Dock from Safari. The passkey buttons stay on screen.
+- **Inputs:** None. Uses useTranslations for passkey.macAppHeading and passkey.macAppBody.
+- **Returns / side effects:** A heading and a paragraph. No buttons and no WebAuthn call.
+- **Used by:** LoginCard, ViewProfileClaim, and WalletScreenView when the macOS Chromium app gate is on.
+
 ## Function: isInAppBrowser
 
 - **Purpose:** Detects Telegram and other in-app WebViews where a WebAuthn passkey ceremony cannot complete, so `/login` and `/view/[viewKey]` can show an escape card instead of starting WebAuthn.
 - **Inputs:** Optional `InAppBrowserHost` (`win`); defaults to `globalThis.window` when present. Missing window (SSR) is treated as not in-app.
 - **Returns / side effects:** `true` when a Telegram JS bridge is present (`TelegramWebviewProxy`, `TelegramWebview`, or `Telegram.WebApp`) or the UA matches a known in-app token list; otherwise `false`. No network and no DOM writes.
 - **Used by:** `LoginCard` and `ViewProfileClaim` (choose the in-app escape card after mount), `usePasskeyLogin` (safety net: `NotAllowedError` during authenticate → `unsupported`, no register fallback), `shouldOfferIosInstall` / `PwaInstall` (hide install when in-app), and the `/login` / `/view/[viewKey]` in-app handbook / e2e variants.
+
+## Function: isMacChromiumInstalledApp
+
+- **Purpose:** Detects an installed macOS Chrome, Chromium, or Edge app, where the page shows a note that the QR code works and Touch ID on this Mac needs a Chrome tab or Safari. A normal Chrome tab and Safari stay false, so those pages stay unchanged.
+- **Inputs:** Optional MacChromiumAppHost (win); defaults to globalThis.window when present. Missing window (SSR) is false.
+- **Returns / side effects:** True only for a Macintosh Chrome, Chromium, or Edge app window (display-mode standalone, minimal-ui, or window-controls-overlay), not iPhone, iPad, or iPadOS desktop-site. No network and no DOM writes.
+- **Used by:** LoginCard, ViewProfileClaim, and WalletScreenView after mount. It does not start or block WebAuthn.
 
 ## Function: loadHandbookDocuments
 

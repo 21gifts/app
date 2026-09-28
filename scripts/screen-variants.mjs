@@ -150,6 +150,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'mac-app',
+    image: 'login-mac-app.png',
+    visual: 'state-login-mac-app',
+    needle: 'Passkey in the Chrome app',
+  },
+  {
+    route: '/login',
     id: 'language-open',
     image: 'login-language.png',
     visual: 'state-login-language',
@@ -233,6 +240,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Show recovery phrase',
   },
   {
+    route: '/wallet',
+    id: 'mac-app',
+    image: 'wallet-mac-app.png',
+    visual: 'state-wallet-mac-app',
+    needle: 'Passkey in the Chrome app',
+  },
+  {
     route: '/wallet/phrase',
     id: 'default',
     image: 'wallet-phrase-add.png',
@@ -273,6 +287,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-prf-unsupported.png',
     visual: 'state-wallet-prf-unsupported',
     needle: 'This browser cannot create a recovery phrase. Try another browser or device.',
+  },
+  {
+    route: '/wallet/phrase',
+    id: 'mac-app',
+    image: 'wallet-phrase-mac-app.png',
+    visual: 'state-wallet-phrase-mac-app',
+    needle: 'Passkey in the Chrome app',
   },
   {
     route: '/setup/name',
@@ -2331,6 +2352,13 @@ export const SCREEN_VARIANTS = [
     image: 'view-in-app.png',
     visual: 'state-view-in-app',
     needle: 'Open this page in your browser',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'mac-app',
+    image: 'view-mac-app.png',
+    visual: 'state-view-mac-app',
+    needle: 'Passkey in the Chrome app',
   },
   {
     route: '/stats',

@@ -194,6 +194,12 @@ Account that can already show a phrase. Open **Advanced functions** shows **Show
 
 ![21.gifts wallet reveal open](images/wallet-reveal-open.png)
 
+### Variant: mac-app
+
+Installed macOS Chrome app. The receive card and **Add recovery phrase** stay. Above them, the note **Passkey in the Chrome app**: the QR code works, Touch ID on this Mac is in a Chrome tab or Safari (File → Add to Dock).
+
+![21.gifts wallet mac app](images/wallet-mac-app.png)
+
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
@@ -237,6 +243,12 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 
+### Variant: mac-app
+
+Installed macOS Chrome app. Heading **Wallet**, the note **Passkey in the Chrome app**, and **Add recovery phrase** still on the page. No receive QR.
+
+![21.gifts wallet phrase mac app](images/wallet-phrase-mac-app.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.
@@ -279,6 +291,12 @@ After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
 
 ![21.gifts login in-app](images/login-in-app.png)
+
+### Variant: mac-app
+
+Installed macOS Chrome app. Note **Passkey in the Chrome app** above **Log in**. The QR code still starts from **Log in**. Touch ID on this Mac is the Chrome tab or Safari.
+
+![21.gifts login mac app](images/login-mac-app.png)
 
 ### Variant: language-open
 
@@ -3598,6 +3616,12 @@ Valid known key whose profile already has a passkey (`hasPasskey: true`). Same r
 Telegram or another in-app WebView detected on an unclaimed profile. Escape card under the profile (**Open this page in your browser**, **Open in browser**, **Copy link**); no yellow **Activate** banner.
 
 ![21.gifts public view in-app](images/view-in-app.png)
+
+### Variant: mac-app
+
+Installed macOS Chrome app on an unclaimed profile. Note **Passkey in the Chrome app** above the yellow **Activate** banner. **Activate** stays.
+
+![21.gifts public view mac app](images/view-mac-app.png)
 
 ## Screen: /handbook
 

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -27,6 +28,10 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
   openInSystemBrowser: vi.fn(),
+}));
+
+vi.mock('@/lib/mac-chromium-app', () => ({
+  isMacChromiumInstalledApp: vi.fn(() => false),
 }));
 
 const account = {
@@ -71,6 +76,7 @@ beforeEach(() => {
   hydrateReady.current = true;
   useAuthStore.setState({ session: null, account: null });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
+  vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
   mockPasskey('idle');
 });
 
@@ -255,5 +261,13 @@ describe('ViewProfileClaim', () => {
     expect(alert.textContent).toContain('Could not set up a passkey. Please try again.');
     expect(alert.className).toContain('text-app-danger');
     expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+  });
+
+  it('shows the Chrome-app note and still offers Activate', async () => {
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(await screen.findByRole('heading', { name: 'Passkey in the Chrome app' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Activate' }));
+    expect(registerSpy).toHaveBeenCalledWith(VIEW_KEY);
   });
 });

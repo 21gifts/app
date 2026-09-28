@@ -4,11 +4,13 @@ import { useRef, useState, useEffect, type ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { AppShellTopLeft } from '@/components/AppShell';
+import { MacChromiumAppPasskeyNote } from '@/components/MacChromiumAppPasskeyNote';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { WALLET_BACK_FALLBACK } from '@/lib/wallet-return';
 import { useAuthStore } from '@/stores/auth-store';
@@ -91,6 +93,11 @@ export function WalletScreenView({
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [macApp, setMacApp] = useState(false);
+  useEffect(() => {
+    setMacApp(isMacChromiumInstalledApp());
+  }, []);
+  const macNote = macApp ? <MacChromiumAppPasskeyNote /> : null;
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
   const stepBack = (): void => {
@@ -206,6 +213,7 @@ export function WalletScreenView({
           {t('wallet.title')}
         </h1>
       ) : null}
+      {macNote}
       {surface === 'phrase' ? phraseBody : entryBody}
     </Card>
   );

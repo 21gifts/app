@@ -4,6 +4,7 @@ import { LoginCard } from '@/components/LoginCard';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -12,6 +13,10 @@ vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
   openInSystemBrowser: vi.fn(),
+}));
+
+vi.mock('@/lib/mac-chromium-app', () => ({
+  isMacChromiumInstalledApp: vi.fn(() => false),
 }));
 
 const loginSpy = vi.fn();
@@ -51,6 +56,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   vi.mocked(isInAppBrowser).mockReturnValue(false);
+  vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
   mockPasskey('idle');
 });
 
@@ -410,5 +416,14 @@ describe('LoginCard', () => {
     expect(
       screen.getByRole('button', { name: 'Copy link' }).getAttribute('data-copied'),
     ).toBeNull();
+  });
+
+  it('shows the Chrome-app note and still offers Log in', async () => {
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('heading', { name: 'Passkey in the Chrome app' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
   });
 });

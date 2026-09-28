@@ -3,11 +3,13 @@
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
+import { MacChromiumAppPasskeyNote } from '@/components/MacChromiumAppPasskeyNote';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -26,9 +28,11 @@ export function LoginCard(): ReactElement {
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
   const [inApp, setInApp] = useState(false);
+  const [macApp, setMacApp] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
+    setMacApp(isMacChromiumInstalledApp());
   }, []);
 
   useEffect(() => {
@@ -68,7 +72,12 @@ export function LoginCard(): ReactElement {
     body = <StartView onLogin={passkey.login} />;
   }
 
-  return <Card surface={false}>{body}</Card>;
+  return (
+    <Card surface={false}>
+      {macApp && !inApp ? <MacChromiumAppPasskeyNote /> : null}
+      {body}
+    </Card>
+  );
 }
 
 /** Props for {@link StartView}. */
