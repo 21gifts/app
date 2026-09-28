@@ -266,7 +266,11 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   });
   await page.goto('/shops');
   await page.getByLabel('Your message').fill('Cafe Luna');
-  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await page
+    .getByLabel('Your message')
+    .locator('xpath=ancestor::form')
+    .getByRole('button', { name: 'Post', exact: true })
+    .click();
   const invoiceReq = await invoiced;
   const parsed = invoiceReq.postDataJSON() as { text?: string };
   expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');
