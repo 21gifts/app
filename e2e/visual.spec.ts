@@ -12254,6 +12254,135 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-with-key');
   });
 
+  async function fulfillShopsMapPlaces(page: Page, label: string | null): Promise<void> {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-pin',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label,
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  test('shops map pin', async ({ page }) => {
+    await seedAda(page);
+    await fulfillShopsMapPlaces(page, 'Happyland');
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
+      timeout: 20000,
+    });
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-pin');
+  });
+
+  test('shops map pin with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillShopsMapPlaces(page, 'Happyland');
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
+      timeout: 20000,
+    });
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await shotScreen(page, 'state-shops-map-pin-with-key');
+  });
+
+  test('shops map coords', async ({ page }) => {
+    await seedAda(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops#map');
+    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords');
+  });
+
+  test('shops map coords pin', async ({ page }) => {
+    await seedAda(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords-pin');
+  });
+
+  test('shops map coords with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.goto('/shops#map');
+    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords-with-key');
+  });
+
+  test('shops map coords pin with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords-pin-with-key');
+  });
+
   test('shops table', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {

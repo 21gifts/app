@@ -2898,6 +2898,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:map-pin",
+    "label": "/shops map-pin",
+    "visual": "state-shops-map-pin",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-pin-with-key",
+    "label": "/shops map-pin-with-key",
+    "visual": "state-shops-map-pin-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords",
+    "label": "/shops map-coords",
+    "visual": "state-shops-map-coords",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords-pin",
+    "label": "/shops map-coords-pin",
+    "visual": "state-shops-map-coords-pin",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords-with-key",
+    "label": "/shops map-coords-with-key",
+    "visual": "state-shops-map-coords-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords-pin-with-key",
+    "label": "/shops map-coords-pin-with-key",
+    "visual": "state-shops-map-coords-pin-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:table",
     "label": "/shops table",
     "visual": "state-shops-table",

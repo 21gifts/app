@@ -709,6 +709,7 @@ const en = {
   'shops.columnPlace': 'Place',
   'shops.columnOperator': 'Operator',
   'shops.showMore': 'Show more',
+  'shops.missing': '—',
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
@@ -1616,6 +1617,7 @@ const de = {
   'shops.columnPlace': 'Ort',
   'shops.columnOperator': 'Betreiber',
   'shops.showMore': 'Mehr anzeigen',
+  'shops.missing': '—',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
@@ -2525,6 +2527,7 @@ const es = {
   'shops.columnPlace': 'Lugar',
   'shops.columnOperator': 'Operador',
   'shops.showMore': 'Mostrar más',
+  'shops.missing': '—',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
@@ -3433,6 +3436,7 @@ const fil = {
   'shops.columnPlace': 'Lugar',
   'shops.columnOperator': 'Operator',
   'shops.showMore': 'Magpakita pa',
+  'shops.missing': '—',
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',

@@ -160,7 +160,7 @@ export function ShopTable(): ReactElement | null {
                   <td className="py-2 pr-3">{shopDisplayName(row)}</td>
                   <td className="py-2 pr-3">
                     {place === null ? (
-                      '—'
+                      t('shops.missing')
                     ) : (
                       <a href={`/map?pin=${row.id}`} className="underline">
                         {place}
@@ -169,7 +169,7 @@ export function ShopTable(): ReactElement | null {
                   </td>
                   <td className="py-2">
                     {operator === undefined ? (
-                      '—'
+                      t('shops.missing')
                     ) : (
                       <a href={`/members/${operator.id}`} className="underline">
                         @{operator.username}

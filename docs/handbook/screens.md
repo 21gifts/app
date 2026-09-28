@@ -1501,6 +1501,42 @@ The **Map** option is selected. The post composer is gone. The place list is vis
 
 ![21.gifts shops map with key](images/shops-map-with-key.png)
 
+### Variant: map-pin
+
+`/shops?pin=m-pin#map`. **Map** is selected. The row **Ada · Happyland** is semibold. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map pin](images/shops-map-pin.png)
+
+### Variant: map-pin-with-key
+
+`/shops?pin=m-pin#map` with a map key. **Map** is selected. The stub map surface is in the frame. **Ada · Happyland** is semibold. No second **Map** heading.
+
+![21.gifts shops map pin with key](images/shops-map-pin-with-key.png)
+
+### Variant: map-coords
+
+**Map** is selected. One pin with no label and no map key. The row reads **Ada · 14.60000, 120.98000** and is not semibold. The frame stays empty. No second **Map** heading.
+
+![21.gifts shops map coordinates](images/shops-map-coords.png)
+
+### Variant: map-coords-pin
+
+`/shops?pin=m-pin#map`. **Map** is selected. The coordinate row **Ada · 14.60000, 120.98000** is semibold. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map coordinates pin](images/shops-map-coords-pin.png)
+
+### Variant: map-coords-with-key
+
+**Map** is selected and a map key is set. The pin has no label. The frame shows the stub map surface. The row reads **Ada · 14.60000, 120.98000** and is not semibold. No second **Map** heading.
+
+![21.gifts shops map coordinates with key](images/shops-map-coords-with-key.png)
+
+### Variant: map-coords-pin-with-key
+
+`/shops?pin=m-pin#map` with a map key and no label. **Map** is selected. The frame shows the stub map surface. The coordinate row is semibold. No second **Map** heading.
+
+![21.gifts shops map coordinates pin with key](images/shops-map-coords-pin-with-key.png)
+
 ### Variant: table
 
 The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland**, operator **@luna**.
