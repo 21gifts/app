@@ -64,6 +64,10 @@ describe('MessagesPage', () => {
 
   it('returns to the messages list after that view was recorded', () => {
     recordCurrentView('/messages');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
     recordCurrentView('/messages?c=conv-21');
     searchParams.set('c', 'conv-21');
     renderWithLocale(<MessagesPage />);

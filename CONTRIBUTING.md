@@ -29,7 +29,7 @@ npm run dev    # → http://localhost:3000
 | `npm run build`                | Production build (standalone output)                                                                                                          |
 | `npm run start`                | Serve the production build on :3000                                                                                                           |
 | `npm run typecheck`            | `tsc --noEmit`                                                                                                                                |
-| `npm run lint`                 | `next lint` + Prettier check + `scripts/check-scrollports.mjs`                                                                                |
+| `npm run lint`                 | `next lint` + Prettier check + `scripts/check-scrollports.mjs` + `scripts/check-one-back.mjs`                                                 |
 | `npm run lint:fix`             | Auto-fix lint findings + Prettier write                                                                                                       |
 | `npm run format`               | Prettier write                                                                                                                                |
 | `npm test`                     | Vitest unit tests, single run                                                                                                                 |
@@ -328,6 +328,7 @@ app/
 ├── scripts/
 │   ├── check-handbook.mjs       # CI gate: missing heading (screen, function, or endpoint) → exit 1
 │   ├── check-scrollports.mjs    # CI gate: a second layout scrollport → exit 1; detector self-test first
+│   ├── check-one-back.mjs       # CI gate: a second back control → exit 1
 │   ├── screen-variants.mjs      # Distinct UI states of screenshot-gated screens (e2e needles + visual args)
 │   ├── build-shop-sticker-artwork.mjs # Regenerate src/lib/shop-sticker-artwork.ts (fonts → outlines)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)

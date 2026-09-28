@@ -37,6 +37,8 @@ function setGiftsView(value: number | undefined): void {
   window.history.replaceState(state, '');
 }
 
+const originalHistoryLength = Object.getOwnPropertyDescriptor(window.history, 'length');
+
 function setHistoryLength(length: number): () => void {
   const descriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
   Object.defineProperty(window.history, 'length', { configurable: true, value: length });
@@ -45,6 +47,18 @@ function setHistoryLength(length: number): () => void {
       Object.defineProperty(window.history, 'length', descriptor);
     }
   };
+}
+
+/** A new path grows `history.length` before it is recorded, as a real navigation does. */
+function pushView(path: string): void {
+  const slot = readSlot();
+  if (slot && slot.stack[slot.cursor] !== path) {
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
+  }
+  recordCurrentView(path);
 }
 
 beforeEach(() => {
@@ -56,6 +70,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   resetViewHistory();
+  if (originalHistoryLength) {
+    Object.defineProperty(window.history, 'length', originalHistoryLength);
+  } else {
+    Reflect.deleteProperty(window.history, 'length');
+  }
 });
 
 describe('previousViewPath', () => {
@@ -64,7 +83,7 @@ describe('previousViewPath', () => {
   });
 
   it('is null when the cursor is in range but the previous entry is missing', () => {
-    recordCurrentView('/a');
+    pushView('/a');
     const slot = readSlot();
     if (slot === undefined) {
       throw new Error('missing slot');
@@ -77,61 +96,61 @@ describe('previousViewPath', () => {
 
 describe('recordCurrentView', () => {
   it('records shops then notifications so the previous path is shops', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+    pushView('/shops');
+    pushView('/notifications');
     expect(previousViewPath()).toBe('/shops');
     expect(stored()).toEqual({ stack: ['/shops', '/notifications'], cursor: 1 });
   });
 
   it('pushes a third visit to /a instead of collapsing back', () => {
-    recordCurrentView('/a');
-    recordCurrentView('/b');
+    pushView('/a');
+    pushView('/b');
     setGiftsView(undefined);
-    recordCurrentView('/a');
+    pushView('/a');
     expect(previousViewPath()).toBe('/b');
     expect(stored()?.stack).toEqual(['/a', '/b', '/a']);
   });
 
   it('restores a stamped earlier entry and drops the forward entry on the next push', () => {
-    recordCurrentView('/a');
-    recordCurrentView('/b');
-    recordCurrentView('/c');
+    pushView('/a');
+    pushView('/b');
+    pushView('/c');
     setGiftsView(1);
-    recordCurrentView('/b');
+    pushView('/b');
     expect(previousViewPath()).toBe('/a');
     expect(stored()?.stack).toEqual(['/a', '/b', '/c']);
-    recordCurrentView('/d');
+    pushView('/d');
     expect(previousViewPath()).toBe('/b');
     expect(stored()?.stack).toEqual(['/a', '/b', '/d']);
     setGiftsView(0);
-    recordCurrentView('/a');
+    pushView('/a');
     setGiftsView(2);
-    recordCurrentView('/d');
+    pushView('/d');
     expect(previousViewPath()).toBe('/b');
     expect(stored()?.cursor).toBe(2);
   });
 
   it('does not grow a self-loop when the same path is recorded twice', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/shops');
+    pushView('/shops');
+    pushView('/shops');
     expect(previousViewPath()).toBeNull();
     expect(stored()?.stack).toEqual(['/shops']);
-    recordCurrentView('/notifications');
-    recordCurrentView('/notifications');
+    pushView('/notifications');
+    pushView('/notifications');
     expect(previousViewPath()).toBe('/shops');
     expect(stored()?.stack).toEqual(['/shops', '/notifications']);
   });
 
   it('stamps a repeated path when the history entry has no giftsView yet', () => {
-    recordCurrentView('/shops');
+    pushView('/shops');
     setGiftsView(undefined);
-    recordCurrentView('/shops');
+    pushView('/shops');
     expect(stored()?.stack).toEqual(['/shops']);
     expect((window.history.state as { giftsView?: unknown }).giftsView).toBe(0);
   });
 
   it('does not restamp when the current entry is already stamped', () => {
-    recordCurrentView('/shops');
+    pushView('/shops');
     const slot = readSlot();
     if (slot === undefined) {
       throw new Error('missing slot');
@@ -155,7 +174,7 @@ describe('recordCurrentView', () => {
   });
 
   it('ignores unsafe paths', () => {
-    recordCurrentView('/shops');
+    pushView('/shops');
     const unsafe = [
       '//evil',
       '/../x',
@@ -168,54 +187,98 @@ describe('recordCurrentView', () => {
       '/foo!',
     ];
     for (const path of unsafe) {
-      recordCurrentView(path);
+      pushView(path);
       expect(previousViewPath()).toBeNull();
       expect(stored()?.stack).toEqual(['/shops']);
     }
   });
 
   it('does not treat a non-integer, negative, or out-of-range giftsView as a stamp', () => {
-    recordCurrentView('/a');
-    recordCurrentView('/b');
-    recordCurrentView('/c');
+    pushView('/a');
+    pushView('/b');
+    pushView('/c');
     setGiftsView(1.5);
-    recordCurrentView('/b');
+    pushView('/b');
     expect(previousViewPath()).toBe('/c');
     resetViewHistory();
     window.history.replaceState(null, '');
-    recordCurrentView('/a');
-    recordCurrentView('/b');
+    pushView('/a');
+    pushView('/b');
     setGiftsView(-1);
-    recordCurrentView('/a');
+    pushView('/a');
     expect(previousViewPath()).toBe('/b');
     resetViewHistory();
     window.history.replaceState(null, '');
-    recordCurrentView('/a');
-    recordCurrentView('/b');
+    pushView('/a');
+    pushView('/b');
     setGiftsView(9);
-    recordCurrentView('/z');
+    pushView('/z');
     expect(previousViewPath()).toBe('/b');
     resetViewHistory();
     window.history.replaceState(null, '');
-    recordCurrentView('/a');
-    recordCurrentView('/b');
-    recordCurrentView('/c');
+    pushView('/a');
+    pushView('/b');
+    pushView('/c');
     setGiftsView(0);
-    recordCurrentView('/z');
+    pushView('/z');
     expect(stored()?.stack).toEqual(['/a', '/b', '/c', '/z']);
   });
 
   it('drops the oldest path after 51 pushes and does not treat stamp 0 as the original first path', () => {
     for (let index = 0; index < 51; index += 1) {
-      recordCurrentView(`/p${index}`);
+      pushView(`/p${index}`);
     }
     expect(stored()?.stack[0]).toBe('/p1');
     expect(stored()?.stack).toHaveLength(50);
     setGiftsView(0);
-    recordCurrentView('/p0');
+    pushView('/p0');
     expect(previousViewPath()).toBe('/p50');
     expect(stored()?.stack[0]).not.toBe('/p0');
     expect(stored()?.cursor).toBe(49);
+  });
+
+  it('replaces the open view when history.length does not grow', () => {
+    recordCurrentView('/gated');
+    recordCurrentView('/login');
+    expect(previousViewPath()).toBeNull();
+    expect(stored()).toEqual({ stack: ['/login'], cursor: 0 });
+  });
+
+  it('keeps the earlier view when a later screen is replaced', () => {
+    pushView('/shops');
+    pushView('/moderate');
+    recordCurrentView('/login');
+    expect(previousViewPath()).toBe('/shops');
+    expect(stored()).toEqual({ stack: ['/shops', '/login'], cursor: 1 });
+  });
+
+  it('pushes the first path of a new document, then replaces a screen that does not grow history', () => {
+    pushView('/shops');
+    pushView('/moderate');
+    const saved = sessionStorage.getItem(HISTORY_KEY);
+    if (saved === null) {
+      throw new Error('missing history');
+    }
+    resetViewHistory();
+    sessionStorage.setItem(HISTORY_KEY, saved);
+    dropSlot();
+    recordCurrentView('/notifications');
+    expect(stored()).toEqual({ stack: ['/shops', '/moderate', '/notifications'], cursor: 2 });
+    expect(previousViewPath()).toBe('/moderate');
+    recordCurrentView('/login');
+    expect(stored()).toEqual({ stack: ['/shops', '/moderate', '/login'], cursor: 2 });
+    expect(previousViewPath()).toBe('/moderate');
+  });
+
+  it('drops forward entries when the current screen is replaced', () => {
+    pushView('/a');
+    pushView('/b');
+    pushView('/c');
+    setGiftsView(1);
+    recordCurrentView('/b');
+    recordCurrentView('/login');
+    expect(previousViewPath()).toBe('/a');
+    expect(stored()).toEqual({ stack: ['/a', '/login'], cursor: 1 });
   });
 });
 
@@ -254,7 +317,12 @@ describe('stored memory', () => {
     sessionStorage.setItem(HISTORY_KEY, '{"stack":[],"cursor":3}');
     dropSlot();
     expect(previousViewPath()).toBeNull();
-    expect(readSlot()).toEqual({ stack: [], cursor: 0 });
+    expect(readSlot()).toEqual({
+      stack: [],
+      cursor: 0,
+      historyLength: window.history.length,
+      anchored: false,
+    });
     resetViewHistory();
     sessionStorage.setItem(HISTORY_KEY, '{"stack":[1,"/ok"],"cursor":0}');
     dropSlot();
@@ -269,13 +337,13 @@ describe('stored memory', () => {
     });
     expect(previousViewPath()).toBeNull();
     getItem.mockRestore();
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+    pushView('/shops');
+    pushView('/notifications');
     expect(previousViewPath()).toBe('/shops');
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('denied');
     });
-    recordCurrentView('/map');
+    pushView('/map');
     expect(previousViewPath()).toBe('/notifications');
     setItem.mockRestore();
     const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
@@ -300,23 +368,25 @@ describe('goToPreviousView', () => {
     restoreLength();
   });
 
-  it('calls history.back when the previous view is stamped and history has more than one entry', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+  it('assigns the previous path and does not call history.back when the entry is stamped', () => {
+    pushView('/shops');
+    pushView('/notifications');
     setGiftsView(1);
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
     const restoreLength = setHistoryLength(2);
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     goToPreviousView();
-    expect(historyBack).toHaveBeenCalledTimes(1);
-    expect(assign).not.toHaveBeenCalled();
+    goToPreviousView();
+    expect(assign).toHaveBeenNthCalledWith(1, '/shops');
+    expect(assign).toHaveBeenNthCalledWith(2, '/shops');
+    expect(historyBack).not.toHaveBeenCalled();
     restoreLength();
   });
 
   it('assigns the previous path when the stamp is missing', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+    pushView('/shops');
+    pushView('/notifications');
     setGiftsView(undefined);
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
@@ -329,8 +399,8 @@ describe('goToPreviousView', () => {
   });
 
   it('assigns the previous path when the stamp is 0', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+    pushView('/shops');
+    pushView('/notifications');
     setGiftsView(0);
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
@@ -343,8 +413,8 @@ describe('goToPreviousView', () => {
   });
 
   it('assigns the previous path when the stamp is set but history.length is 1', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+    pushView('/shops');
+    pushView('/notifications');
     setGiftsView(1);
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
@@ -355,12 +425,23 @@ describe('goToPreviousView', () => {
     expect(historyBack).not.toHaveBeenCalled();
     restoreLength();
   });
+
+  it('assigns /welcome when a replaced cold open has no earlier view', () => {
+    recordCurrentView('/gated');
+    recordCurrentView('/login');
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    goToPreviousView();
+    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(historyBack).not.toHaveBeenCalled();
+  });
 });
 
 describe('resetViewHistory', () => {
   it('clears the slot and the session key', () => {
-    recordCurrentView('/shops');
-    recordCurrentView('/notifications');
+    pushView('/shops');
+    pushView('/notifications');
     resetViewHistory();
     expect(previousViewPath()).toBeNull();
     expect(sessionStorage.getItem(HISTORY_KEY)).toBeNull();

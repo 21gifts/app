@@ -10,7 +10,7 @@ export interface RulesDocumentProps {
   /** Catalog for the negotiated request locale. */
   messages: Messages;
   /**
-   * When true (default), show the public Contact / forum nav. Set false on the
+   * When true (default), show the public Contact link. Set false on the
    * signed-in onboarding screen so agreement is the only continue action.
    * Ignored when `chapter` is set (never public nav).
    */
@@ -272,8 +272,8 @@ function renderChapter(id: RulesChapterId, t: Translate): ReactElement {
 /**
  * Presentational living-room rules body: lead with the sofa test, three rule
  * cards (test callout on rules 1 and 2), welcome / allowed / better-not /
- * forbidden lists with glyphs, the closing "Our house" block, and optional
- * CTAs to `/contact` and `/welcome`.
+ * forbidden lists with glyphs, the closing "Our house" block, and an optional
+ * Contact link. There is no forum back link.
  *
  * Server component — copy comes from {@link translate} + the request catalog.
  * Pass `chapter` to render a single onboarding page.

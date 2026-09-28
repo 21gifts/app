@@ -66,6 +66,10 @@ describe('WelcomePage', () => {
 
   it('returns to the previous view when this tab has one', () => {
     recordCurrentView('/shops');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
     recordCurrentView('/welcome');
     renderWithLocale(<WelcomePage />);
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');

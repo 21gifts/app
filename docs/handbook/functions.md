@@ -552,16 +552,16 @@
 
 ## Function: goToPreviousView
 
-- **Purpose:** Leave for the previous in-app view in this tab, or open `/welcome` when this tab has none. Does not jump to a fixed parent. Calls `history.back()` only when the current entry is stamped with an in-app previous index.
-- **Inputs:** None. Reads `previousViewPath` and `history.state.giftsView`.
-- **Returns / side effects:** `location.assign('/welcome')` when there is no previous view. `history.back()` only when the stamp is at least 1 and `history.length` is greater than 1. Otherwise `location.assign` of the previous path. No network.
+- **Purpose:** Leave for the previous in-app view in this tab, or open `/welcome` when this tab has none. Does not jump to a fixed parent and does not leave the site.
+- **Inputs:** None. Reads `previousViewPath`.
+- **Returns / side effects:** `location.assign` of the previous path, or `location.assign('/welcome')` when this tab has none. Does not call `history.back()`. No network.
 - **Used by:** `ProfileChromeLeft`, `RulesSetup`, `WalletScreenView`.
 
 ## Function: recordCurrentView
 
-- **Purpose:** Push the current in-app path onto this tab's view stack, or restore a stamped index on browser back and forward. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50.
+- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A path change that grows `history.length`, and the first path change after a new document loads the stack, is a push. A path change that does not grow `history.length` replaces the current entry, so a replaced screen is not a previous view. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50.
 - **Inputs:** A pathname, optionally with a query string.
-- **Returns / side effects:** Updates the module slot and `sessionStorage`. Stamps `giftsView` with `history.replaceState` without pushing a history entry. A thrown storage write leaves the slot intact. No network.
+- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor` only). Stamps `giftsView` with `history.replaceState` without pushing a history entry. A thrown storage write leaves the slot intact. No network.
 - **Used by:** `ViewHistoryRoot`.
 
 ## Function: resetViewHistory
@@ -785,8 +785,8 @@
 
 - **Purpose:** Labeled pill link matching `Button` anatomy (`primary` / `secondary` / `accent`, `sm` / `md` / `lg`, `tone` `app` or `dark`).
 - **Inputs:** `href`, optional `variant` / `size` / `tone` / `icon` / `className`, `children` label.
-- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`https:`). No network. Used on marketing CTAs, donate **Open the forum**, and rules nav. The 404 page does not use it as a second back control.
-- **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`.
+- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`https:`). No network. Used on marketing CTAs, donate **Open the forum**, and rules nav. The 404 page does not use it.
+- **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `RulesDocument`.
 
 ## Function: SegmentedControl
 
@@ -2602,8 +2602,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: NotFound
 
-- **Purpose:** Async app-wide 404 screen with marketing chrome and a localized link home.
-- **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy; awaits `MarketingFooter()`.
+- **Purpose:** Async app-wide 404 screen with marketing chrome and localized body copy.
+- **Inputs:** None. Calls `getRequestLocale()` for body copy; awaits `MarketingFooter()`.
 - **Returns / side effects:** 404 element with `MarketingHeader` (the only back control is that header arrow) and awaited footer (not rendered as JSX child). No **Back home** button.
 - **Used by:** Next.js `not-found.tsx`.
 

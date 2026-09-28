@@ -88,6 +88,10 @@ describe('RulesSetup', () => {
 
   it('labels the chapter 0 arrow Back when this tab has a previous view', () => {
     recordCurrentView('/shops');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
     recordCurrentView('/setup/rules');
     renderWithLocale(<RulesSetup chapters={oneChapter} />);
     expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();

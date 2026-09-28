@@ -662,7 +662,7 @@ export function Wordmark(props: {
 
 ### `ButtonLink`
 
-Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>` for external). Used by marketing CTAs, 404, donate **Open the forum**. Optional `icon`. Optional `aria-label`. Legal **Open the app** is an inline `text-accent` link, not `ButtonLink`. Pay-sheet **Pay** is a `Button`, not `ButtonLink`.
+Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>` for external). Used by marketing CTAs and donate **Open the forum**. The 404 page does not use it. Optional `icon`. Optional `aria-label`. Legal **Open the app** is an inline `text-accent` link, not `ButtonLink`. Pay-sheet **Pay** is a `Button`, not `ButtonLink`.
 
 | `tone`          | `variant="secondary"`                                         | `variant="accent"` / `primary`                            |
 | --------------- | ------------------------------------------------------------- | --------------------------------------------------------- |

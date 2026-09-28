@@ -44,7 +44,7 @@ describe('RulesDocument', () => {
     expect(screen.getByText(/Money for a task — “for ₿5,000 I will draw you.”/)).toBeTruthy();
   });
 
-  it('omits the public Contact and forum nav when showNav is false', () => {
+  it('omits the public Contact link when showNav is false', () => {
     render(<RulesDocument messages={getCatalog('en')} showNav={false} />);
     expect(screen.queryByRole('link', { name: 'Contact 21.gifts' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();

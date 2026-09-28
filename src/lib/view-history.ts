@@ -7,7 +7,18 @@ const CAP = 50;
 
 const SAFE_IN_APP_PATH = /^\/[A-Za-z0-9._~/-]*(?:\?[A-Za-z0-9._~%=&*+-]*)?$/;
 
-type ViewHistoryMemory = { stack: string[]; cursor: number };
+/** Persisted stack. `historyLength` stays in memory so a reload can see the new document. */
+type StoredViewHistory = { stack: string[]; cursor: number };
+
+/**
+ * In-memory stack for this document.
+ *
+ * `historyLength` is the last `history.length` observed here. It is not
+ * stored: a new document hydrates the stack and treats its first path change
+ * as the navigation that opened it. A later path change that does not grow
+ * `history.length` is a replace, not a new view.
+ */
+type ViewHistoryMemory = StoredViewHistory & { historyLength: number; anchored: boolean };
 
 type ViewHistoryGlobal = typeof globalThis & { [SLOT]?: ViewHistoryMemory };
 
@@ -56,8 +67,14 @@ function hydrateSlot(): ViewHistoryMemory | null {
   if (stored === null) {
     return null;
   }
-  g[SLOT] = stored;
-  return stored;
+  const hydrated: ViewHistoryMemory = {
+    stack: stored.stack,
+    cursor: stored.cursor,
+    historyLength: window.history.length,
+    anchored: false,
+  };
+  g[SLOT] = hydrated;
+  return hydrated;
 }
 
 /**
@@ -75,7 +92,12 @@ function browserSlot(): ViewHistoryMemory | null {
   if (typeof window === 'undefined') {
     return null;
   }
-  const created = { stack: [], cursor: 0 };
+  const created: ViewHistoryMemory = {
+    stack: [],
+    cursor: 0,
+    historyLength: window.history.length,
+    anchored: true,
+  };
   (globalThis as ViewHistoryGlobal)[SLOT] = created;
   return created;
 }
@@ -85,7 +107,7 @@ function browserSlot(): ViewHistoryMemory | null {
  *
  * @returns A stored stack, or `null`.
  */
-function readStoredMemory(): ViewHistoryMemory | null {
+function readStoredMemory(): StoredViewHistory | null {
   try {
     /* v8 ignore next 3 -- SSR has no sessionStorage */
     if (typeof sessionStorage === 'undefined') {
@@ -116,9 +138,9 @@ function readStoredMemory(): ViewHistoryMemory | null {
 /**
  * Persist the stack, or remove the key when the stack is empty after reset.
  *
- * @param memory - Stack to store, or `null` to clear.
+ * @param memory - Stack to store, or `null` to clear. Length is not stored.
  */
-function writeStoredMemory(memory: ViewHistoryMemory | null): void {
+function writeStoredMemory(memory: StoredViewHistory | null): void {
   try {
     /* v8 ignore next 3 -- SSR has no sessionStorage */
     if (typeof sessionStorage === 'undefined') {
@@ -128,7 +150,10 @@ function writeStoredMemory(memory: ViewHistoryMemory | null): void {
       sessionStorage.removeItem(HISTORY_KEY);
       return;
     }
-    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(memory));
+    sessionStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify({ stack: memory.stack, cursor: memory.cursor }),
+    );
   } catch {
     /* Private mode can reject storage; the global slot still holds the stack. */
   }
@@ -191,8 +216,10 @@ export function previousViewPath(): string | null {
 /**
  * Record `path` as the current in-app view unless it is unsafe.
  *
- * Restores a stamped stack index on browser back/forward. A real link that
- * returns to an earlier path is a push, not a collapse. Caps the stack at 50.
+ * Restores a stamped stack index on browser back/forward. A path change that
+ * grows `history.length`, and the first path change after a new document
+ * loads the stack, is a push. A path change that does not grow
+ * `history.length` replaces the current entry. Caps the stack at 50.
  *
  * @param path - Candidate in-app path (pathname, optionally with query).
  * @returns void
@@ -206,6 +233,7 @@ export function recordCurrentView(path: string): void {
   if (!slot) {
     return;
   }
+  const length = window.history.length;
   const stamped = stampedIndex();
   if (
     stamped !== null &&
@@ -215,34 +243,46 @@ export function recordCurrentView(path: string): void {
     slot.stack[stamped] === path
   ) {
     slot.cursor = stamped;
+    slot.historyLength = length;
+    slot.anchored = true;
     stampGiftsView(slot.cursor);
-    writeStoredMemory({ stack: slot.stack, cursor: slot.cursor });
+    writeStoredMemory(slot);
     return;
   }
   if (slot.stack[slot.cursor] === path) {
     if (stamped !== slot.cursor) {
       stampGiftsView(slot.cursor);
     }
-    writeStoredMemory({ stack: slot.stack, cursor: slot.cursor });
+    slot.historyLength = length;
+    slot.anchored = true;
+    writeStoredMemory(slot);
     return;
   }
-  const next = slot.stack.slice(0, slot.cursor + 1);
-  next.push(path);
-  if (next.length > CAP) {
-    next.shift();
+  const replacing = slot.anchored && slot.stack.length > 0 && length <= slot.historyLength;
+  if (replacing) {
+    const kept = slot.stack.slice(0, slot.cursor + 1);
+    kept[slot.cursor] = path;
+    slot.stack = kept;
+  } else {
+    const next = slot.stack.slice(0, slot.cursor + 1);
+    next.push(path);
+    if (next.length > CAP) {
+      next.shift();
+    }
+    slot.stack = next;
+    slot.cursor = next.length - 1;
   }
-  slot.stack = next;
-  slot.cursor = next.length - 1;
+  slot.historyLength = length;
+  slot.anchored = true;
   stampGiftsView(slot.cursor);
-  writeStoredMemory({ stack: slot.stack, cursor: slot.cursor });
+  writeStoredMemory(slot);
 }
 
 /**
  * Return to the previous in-app view, or open the forum when this tab has none.
  *
- * Does not call `history.back()` unless the current entry is stamped with an
- * in-app previous index, so an external referrer cannot take the visitor off
- * the site.
+ * Assigns that path. A browser back step can leave the site when the current
+ * entry replaced an external referrer.
  *
  * @returns void
  */
@@ -252,14 +292,5 @@ export function goToPreviousView(): void {
     return;
   }
   const prev = previousViewPath();
-  if (prev === null) {
-    window.location.assign('/welcome');
-    return;
-  }
-  const stamped = stampedIndex();
-  if (stamped !== null && stamped >= 1 && window.history.length > 1) {
-    window.history.back();
-    return;
-  }
-  window.location.assign(prev);
+  window.location.assign(prev ?? '/welcome');
 }

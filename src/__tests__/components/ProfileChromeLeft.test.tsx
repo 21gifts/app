@@ -44,6 +44,10 @@ describe('ProfileChromeLeft', () => {
 
   it('points the back link at the previous in-app view', () => {
     recordCurrentView('/shops');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
     recordCurrentView('/notifications');
     renderWithLocale(<ProfileChromeLeft />);
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
@@ -103,6 +107,10 @@ describe('ProfileChromeLeft', () => {
 
   it('shows the previous view when hideWithoutHistory still has history', () => {
     recordCurrentView('/shops');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
     recordCurrentView('/welcome');
     renderWithLocale(<ProfileChromeLeft hideWithoutHistory />);
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
