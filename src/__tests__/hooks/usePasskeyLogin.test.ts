@@ -122,8 +122,7 @@ describe('usePasskeyLogin', () => {
     expect(finishPasskeyRegistration).toHaveBeenCalled();
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
     const createArg = vi.mocked(navigator.credentials.create).mock.calls[0]?.[0] as
-      | CredentialCreationOptions
-      | undefined;
+      CredentialCreationOptions | undefined;
     expect(createArg?.publicKey?.extensions).toHaveProperty('prf.eval.first');
     expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
     vi.unstubAllGlobals();
