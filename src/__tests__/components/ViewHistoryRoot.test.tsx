@@ -129,7 +129,27 @@ describe('ViewHistoryRoot', () => {
         <p>child</p>
       </ViewHistoryRoot>,
     );
+    expect(previousViewPath()).toBeNull();
+
+    window.history.pushState(null, '', '/messages?c=thread');
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
     expect(previousViewPath()).toBe('/shops');
+  });
+
+  it('records one path when the location keeps an encoded space', () => {
+    navigation.pathname = '/about';
+    navigation.query = 'ref=a+b';
+    window.history.pushState(null, '', '/about?ref=a%20b');
+    renderWithLocale(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBeNull();
   });
 
   it('ignores setOverride when no provider is mounted', () => {

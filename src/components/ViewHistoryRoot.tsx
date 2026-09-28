@@ -101,18 +101,19 @@ function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
     recordCurrentView(path, false);
   }
   useLayoutEffect(() => {
-    if (path !== null) {
-      recordCurrentView(path);
+    const live = pathFromLocation(pathname);
+    if (live !== null) {
+      recordCurrentView(live);
       onRecorded();
     }
-  }, [onRecorded, path]);
+  }, [onRecorded, pathname, path]);
   return null;
 }
 
 /**
- * Records a search-only change, including a cleared query as the pathname.
- * `useSearchParams` can suspend, so this is not the first record of a full
- * navigation.
+ * Re-renders when the search changes. The recorded path is the live location,
+ * the same string as {@link pathFromLocation}, and only after that location
+ * has reached the router pathname.
  *
  * @param props - Stable callback that re-renders the chrome after a record.
  * @returns `null` (side-effect only).
@@ -120,27 +121,23 @@ function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
 function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const query = searchParams.toString();
-  const path =
-    typeof pathname !== 'string' || pathname === ''
-      ? null
-      : query === ''
-        ? pathname
-        : `${pathname}?${query}`;
+  const path = pathFromLocation(pathname);
   if (path !== null) {
     recordCurrentView(path, false);
   }
   useLayoutEffect(() => {
-    if (path !== null) {
-      recordCurrentView(path);
+    const live = pathFromLocation(pathname);
+    if (live !== null) {
+      recordCurrentView(live);
       onRecorded();
     }
-  }, [onRecorded, path]);
+  }, [onRecorded, pathname, searchParams]);
   useEffect(() => {
-    if (path !== null) {
-      recordCurrentView(path);
+    const live = pathFromLocation(pathname);
+    if (live !== null) {
+      recordCurrentView(live);
     }
-  }, [path]);
+  }, [pathname, searchParams]);
   return null;
 }
 
