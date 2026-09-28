@@ -6865,13 +6865,13 @@ describe('revealPaySheet', () => {
     expect(scroller.scrollTop).toBe(20);
   });
 
-  it('scrolls the sheet top to the shell top when it is below the fold', () => {
+  it('does not scroll when the sheet starts below the fold', () => {
     const scroller = document.createElement('div');
     const sheet = document.createElement('div');
     scroller.scrollTop = 0;
     scroller.getBoundingClientRect = () => box(0, 400);
     sheet.getBoundingClientRect = () => box(480, 900);
     revealPaySheet(scroller, sheet);
-    expect(scroller.scrollTop).toBe(480);
+    expect(scroller.scrollTop).toBe(0);
   });
 });

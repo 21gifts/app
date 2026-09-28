@@ -568,11 +568,10 @@ export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElem
 }
 
 /**
- * Brings a pay sheet's top edge into the shell without pinning its bottom.
+ * Pulls a pay sheet back into the shell only when its top sits above the shell.
  *
- * Pinning the reply composer under the sheet scrolls the note off screen.
- * A sheet whose top is already inside the shell does not move. A missing
- * scroller or sheet leaves the scroll position unchanged.
+ * A sheet that starts below the fold is left alone so the note above it stays
+ * on screen. A missing scroller or sheet leaves the scroll position unchanged.
  *
  * @param scroller - App shell scroller, or null when the board is not inside one.
  * @param sheet - Pay sheet element, or null when no sheet is open.
@@ -584,12 +583,10 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
   }
   const shell = scroller.getBoundingClientRect();
   const box = sheet.getBoundingClientRect();
+  // A sheet that starts below the fold stays put. Pulling it to the top
+  // would scroll the note off screen.
   if (box.top < shell.top) {
     scroller.scrollTop -= shell.top - box.top;
-    return;
-  }
-  if (box.top > shell.bottom) {
-    scroller.scrollTop += box.top - shell.top;
   }
 }
 
