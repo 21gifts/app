@@ -86,7 +86,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo` (`id` + `messageId`), `/conversations/[id]/messages/[messageId]/photo/[file]` (`id` + `messageId` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/maps/key`; `/translate` takes the incoming `Request`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/maps/key` is always 200 `{ key: string | null }`; `/translate` is 200 `{ available: boolean }` or 502; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16.
@@ -1362,6 +1362,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved pin, or `null` when cleared).
 - **Returns / side effects:** Compact `PlaceField` (`showPreview` false, small ghost **Add a place** / **Edit place**). `onCommit` calls `setMessagePlace`; a failed save keeps the panel open and shows `forum.placeSaveFailed`.
 - **Used by:** `ForumBoard` when `shopPlaceEdit` and `onShopPlaceUpdated` are set (`ForumLoader` `feed="shops"`).
+
+## Function: ShopNoteEditControl
+
+- **Purpose:** Moderator-only pencil on a listed shop note. Opens a text editor and the edit history. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
+- **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved body).
+- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The open panel edits the visible text (the shop tag is not shown), **Save** / **Cancel**, and **History** loaded when the panel opens. Save calls `setMessageShopText`. A failed save keeps the panel open. History rows show who, when, and the field (text, place, or account).
+- **Used by:** `ForumBoard` when `shopNoteEdit` and `onShopNoteUpdated` are set (`ForumLoader` for a moderator on every feed).
 
 ## Function: ShopAccountControl
 
@@ -2665,10 +2672,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: PATCH
 
-- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`. `/forum/messages/[id]/shop-account` re-exports `proxyMessagesShopAccountPatch`.
-- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place` and `/forum/messages/[id]/shop-account`, also async route `params` with the message id.
+- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`. `/forum/messages/[id]/shop-account` re-exports `proxyMessagesShopAccountPatch`. `/forum/messages/[id]/text` re-exports `proxyMessagesTextPatch`.
+- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place`, `/forum/messages/[id]/shop-account`, and `/forum/messages/[id]/text`, also async route `params` with the message id.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin forum staff place save (`setMessagePlace`) and shop-account save (`setMessageShopAccount`).
+- **Used by:** Same-origin forum staff place save (`setMessagePlace`), shop-account save (`setMessageShopAccount`), and shop-note text save (`setMessageShopText`).
 
 ## Function: AboutPage
 
@@ -4120,6 +4127,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** PATCH `/forum/messages/:id/place` with JSON `{ place }`. Resolves to the public message JSON (`place` omitted when cleared). Throws `Could not save place` on a non-2xx status.
 - **Used by:** `ShopPlaceControl`.
 
+## Function: setMessageShopText
+
+- **Purpose:** Replace the text of a shop note for a moderator session. The API keeps the shop tag.
+- **Inputs:** sessionToken, messageId, and `text` (the visible draft; the shop tag may be omitted).
+- **Returns / side effects:** PATCH `/forum/messages/:id/text` with JSON `{ text }`. Resolves to the public message JSON. Throws `Could not save shop note` on a non-2xx status.
+- **Used by:** `ShopNoteEditControl`.
+
+## Function: fetchShopNoteEdits
+
+- **Purpose:** Load the staff edit history of one shop note, newest first.
+- **Inputs:** sessionToken and messageId.
+- **Returns / side effects:** GET `/forum/messages/:id/edits`. Resolves to the `edits` array (text, place, or shop account, with actor id, name, and role). Throws `Could not load edit history` on a non-2xx status.
+- **Used by:** `ShopNoteEditControl` when the pencil panel opens.
+
 ## Function: setMessageShopAccount
 
 - **Purpose:** Set or clear the shop account on a forum message for a moderator session.
@@ -4147,6 +4168,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming Request (Bearer JSON `{ place }`) and messageId.
 - **Returns / side effects:** Proxied PATCH `/messages/:id/place`, with encoded id, authorization and upstream status. 200 is the public message JSON; a cleared pin omits `place`.
 - **Used by:** App Router `PATCH` on `/forum/messages/[id]/place`.
+
+## Function: proxyMessagesTextPatch
+
+- **Purpose:** Forward a moderator's PATCH of a shop-note body to the API.
+- **Inputs:** Incoming Request (Bearer JSON `{ text }`) and messageId.
+- **Returns / side effects:** Proxied PATCH `/messages/:id/text`, with encoded id, authorization and upstream status. 200 is the public message JSON. The shop tag stays on the stored text.
+- **Used by:** App Router `PATCH` on `/forum/messages/[id]/text`.
+
+## Function: proxyMessagesEditsGet
+
+- **Purpose:** Forward a moderator's GET of shop-note edit history to the API.
+- **Inputs:** Incoming Request (Bearer) and messageId.
+- **Returns / side effects:** Proxied GET `/messages/:id/edits`, with encoded id, authorization and upstream status. 200 is `{ edits }` newest first.
+- **Used by:** App Router `GET` on `/forum/messages/[id]/edits`.
 
 ## Function: proxyMessagesShopAccountPatch
 

@@ -4,6 +4,8 @@ import {
   deleteMessage,
   setMessagePlace,
   setMessageShopAccount,
+  setMessageShopText,
+  fetchShopNoteEdits,
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
@@ -4877,6 +4879,58 @@ describe('setMessageShopAccount', () => {
     await expect(setMessageShopAccount('token', 'm1', null)).rejects.toThrow(
       'Could not save account',
     );
+  });
+});
+
+describe('setMessageShopText', () => {
+  it('patches the draft and returns the parsed message', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, text: 'Cafe Sol\n\n#21GiftsShop' },
+    });
+    await expect(setMessageShopText('token', 'a/b', 'Cafe Sol')).resolves.toEqual({
+      ...parsedForumMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/text', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Cafe Sol' }),
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(setMessageShopText('token', 'm1', 'Cafe')).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+});
+
+describe('fetchShopNoteEdits', () => {
+  it('returns the parsed history', async () => {
+    const edit = {
+      id: 'e1',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      field: 'text',
+      before: 'Cafe',
+      after: 'Cafe Sol',
+      actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { edits: [edit] } });
+    await expect(fetchShopNoteEdits('token', 'a/b')).resolves.toEqual([edit]);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/edits', {
+      headers: { Authorization: 'Bearer token' },
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchShopNoteEdits('token', 'm1')).rejects.toThrow('Could not load edit history');
   });
 });
 

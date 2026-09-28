@@ -730,6 +730,20 @@
 - **Returns:** Upstream 200 public message JSON, with `place` omitted when cleared.
 - **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502.
 
+## Endpoint: PATCH /forum/messages/[id]/text
+
+- **Purpose:** Same-origin moderation proxy to PATCH /messages/:id/text with JSON `{ text }`. The API keeps `#21GiftsShop` on the stored body and records the change.
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 public message JSON.
+- **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502. Sunday in the device zone is refused by the API.
+
+## Endpoint: GET /forum/messages/[id]/edits
+
+- **Purpose:** Same-origin moderation proxy to GET /messages/:id/edits. Returns who changed the shop note text, place, or account, and when.
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 `{ edits }` newest first. An empty list is `{ edits: [] }`.
+- **Errors:** 401/403/404/503 with `{ "error": string }`; unreachable api is 502. This read is not a Sunday write.
+
 ## Endpoint: PATCH /forum/messages/[id]/shop-account
 
 - **Purpose:** Same-origin moderation proxy to PATCH /messages/:id/shop-account with JSON `{ username }` (a handle, or `null` to clear).

@@ -388,6 +388,104 @@ const STAFF_SHOP_NOTE = {
   role: 'basis',
 };
 
+test('Function: ShopNoteEditControl — moderator sees the pencil; basis does not', async ({
+  page,
+}) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.goto('/shops');
+  await expect(
+    page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
+  ).toBeVisible();
+
+  await seedAda(page, 'basis');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.goto('/shops');
+  await expect(
+    page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
+  ).toHaveCount(0);
+});
+
+test('Function: fetchShopNoteEdits — opening the pencil shows who edited the note', async ({
+  page,
+}) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          edits: [
+            {
+              id: 'e1',
+              createdAt: '2026-08-28T13:00:00.000Z',
+              field: 'text',
+              before: 'Old\n\n#21GiftsShop',
+              after: 'Cafe Luna\n\n#21GiftsShop',
+              actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+            },
+          ],
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Edit shop note' }).click();
+  await expect(note.getByRole('heading', { name: 'History' })).toBeVisible();
+  await expect(note.getByText(/Ada ·/)).toBeVisible();
+  await expect(note.getByText('Old → Cafe Luna')).toBeVisible();
+});
+
+test('Function: setMessageShopText — moderator save updates the shop note', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    },
+  );
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/text'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      const body = route.request().postDataJSON() as { text?: string };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...STAFF_SHOP_NOTE,
+          text: `${body.text ?? ''}\n\n#21GiftsShop`,
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Edit shop note' }).click();
+  await note.getByRole('textbox', { name: 'Edit shop note' }).fill('Cafe Sol');
+  const patched = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' &&
+      new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/text'),
+  );
+  await note.getByRole('button', { name: 'Save' }).click();
+  const textReq = await patched;
+  expect(textReq.postDataJSON()).toEqual({ text: 'Cafe Sol' });
+  await expect(note.getByText('Cafe Sol')).toBeVisible();
+});
+
 test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', async ({ page }) => {
   await stubPlaceMap(page);
   await seedAda(page, 'moderator');

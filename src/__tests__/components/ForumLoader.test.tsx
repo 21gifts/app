@@ -46,6 +46,8 @@ vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
+  setMessageShopText: vi.fn(),
+  fetchShopNoteEdits: vi.fn(),
   fetchMessages: vi.fn(),
   fetchPublicForumMessages: vi.fn(),
   fetchPublicMessage: vi.fn(),
@@ -107,6 +109,8 @@ import {
   setLightningAddress,
   setMessagePlace,
   setMessageShopAccount,
+  setMessageShopText,
+  fetchShopNoteEdits,
   setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -1290,6 +1294,41 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+    expect(within(card).getByRole('button', { name: 'Edit shop note' })).toBeTruthy();
+  });
+
+  it('updates the listed shop note text and leaves the other note', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
+        { ...SAMPLE, id: 'shop2', text: 'Other stall\n\n#21GiftsShop', sats: 5 },
+      ]),
+    );
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      sats: 5,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Edit shop note' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+    });
+    expect(screen.getByText('Other stall')).toBeTruthy();
   });
 
   it('does not put a staff place control on living-room notes', async () => {

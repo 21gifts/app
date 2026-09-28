@@ -58,6 +58,7 @@ import {
 } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
+import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { ShopPlaceControl } from '@/components/ShopPlaceControl';
 import {
   FORUM_COMPOSE_EVENT,
@@ -354,6 +355,13 @@ export interface ForumBoardProps {
     messageId: string,
     shopAccount: { id: string; username: string; name: string } | null,
   ) => void;
+  /**
+   * When true, show the shop-note pencil on top-level notes.
+   * Default false. The control itself hides non-shop text.
+   */
+  shopNoteEdit?: boolean;
+  /** Apply a saved shop-note body to the listed row. */
+  onShopNoteUpdated?: (messageId: string, text: string) => void;
 }
 
 /**
@@ -637,7 +645,9 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
  * expands the reply composer; omitted when `deletedAt` is set), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
- * never on posts; omitted when `deletedAt` is set), optional shops staff
+ * never on posts; omitted when `deletedAt` is set), optional shop-note
+ * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
+ * notes; the control hides non-shop text), optional shops staff
  * place editor after copy and before staff Delete when `shopPlaceEdit` and
  * `onShopPlaceUpdated` are set, then the shops account editor when
  * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
@@ -747,6 +757,8 @@ export function ForumBoard({
   onShopPlaceUpdated,
   shopAccountEdit = false,
   onShopAccountUpdated,
+  shopNoteEdit = false,
+  onShopNoteUpdated,
 }: ForumBoardProps): ReactElement {
   const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
@@ -1421,6 +1433,11 @@ export function ForumBoard({
                       <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
                   </IconButton>
+                  {shopNoteEdit &&
+                  onShopNoteUpdated !== undefined &&
+                  message.parentId === undefined ? (
+                    <ShopNoteEditControl message={message} onUpdated={onShopNoteUpdated} />
+                  ) : null}
                   {shopPlaceEdit &&
                   onShopPlaceUpdated !== undefined &&
                   message.parentId === undefined ? (

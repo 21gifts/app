@@ -10120,6 +10120,20 @@ test('Function: proxyMessagesShopAccountPatch — unauthenticated shop-account p
   expect(response.status()).toBe(401);
 });
 
+test('Function: proxyMessagesTextPatch — unauthenticated text patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/text');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: proxyMessagesEditsGet — unauthenticated edit history is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.get('/forum/messages/[id]/edits');
+  expect(response.status()).toBe(401);
+});
+
 test('Function: PATCH — PATCH /forum/messages/[id]/place without bearer is 401', async ({
   request,
 }) => {

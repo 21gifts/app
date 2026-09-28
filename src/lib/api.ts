@@ -3268,3 +3268,79 @@ export async function setMessageShopAccount(
   }
   return forumMessageSchema.parse(await response.json());
 }
+
+/** One staff edit of a shop note, newest first when listed. */
+export const shopNoteEditSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  field: z.enum(['text', 'place', 'shopAccount']),
+  before: z.unknown(),
+  after: z.unknown(),
+  actor: z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    role: z.string().nullable(),
+  }),
+});
+
+/** Parsed `GET /forum/messages/:id/edits` row. */
+export type ShopNoteEdit = z.infer<typeof shopNoteEditSchema>;
+
+const shopNoteEditsSchema = z.object({ edits: z.array(shopNoteEditSchema) });
+
+/**
+ * Replaces the visible text of a shop note (moderator session).
+ *
+ * The stored body keeps `#21GiftsShop`. This sends the draft as typed.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @param text - New visible body. The shop tag may be omitted.
+ * @returns The updated {@link ForumMessage}.
+ * @throws Error `Could not save shop note` on a non-2xx status or a body that
+ * fails {@link forumMessageSchema}.
+ */
+export async function setMessageShopText(
+  sessionToken: string,
+  messageId: string,
+  text: string,
+): Promise<ForumMessage> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/text`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save shop note');
+  }
+  return forumMessageSchema.parse(await response.json());
+}
+
+/**
+ * Loads the staff edit history of one shop note.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @returns Newest-first edits. An empty list means nobody has edited it.
+ * @throws Error `Could not load edit history` on a non-2xx status or a body
+ * that fails {@link shopNoteEditSchema}.
+ */
+export async function fetchShopNoteEdits(
+  sessionToken: string,
+  messageId: string,
+): Promise<ShopNoteEdit[]> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/edits`, {
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      ...deviceTimeZoneHeader(),
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Could not load edit history');
+  }
+  return shopNoteEditsSchema.parse(await response.json()).edits;
+}

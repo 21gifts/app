@@ -2461,6 +2461,16 @@ export function ForumLoader({
         onShowModeratorAppointed={showModeratorAppointed}
         {...(account !== null && roleAtLeast(account.role, 'moderator')
           ? {
+              shopNoteEdit: true as const,
+              onShopNoteUpdated: (messageId: string, text: string) => {
+                setMessages((prev) =>
+                  prev!.map((row) => (row.id === messageId ? { ...row, text } : row)),
+                );
+              },
+            }
+          : {})}
+        {...(account !== null && roleAtLeast(account.role, 'moderator')
+          ? {
               onDeleted: (messageId: string) => {
                 /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
                 if (deletedIds.current.has(messageId)) {
