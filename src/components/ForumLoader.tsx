@@ -1266,6 +1266,7 @@ export function ForumLoader({
     switchToAll = false,
     replyParentId: string | null = null,
     postAfterPay = false,
+    clearReplyDraft = false,
   ): void => {
     /* v8 ignore next -- pay polling starts only after a signed-in invoice */
     if (session === null) return;
@@ -1459,6 +1460,10 @@ export function ForumLoader({
                   );
                 });
                 /* v8 ignore stop */
+              }
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
               }
               payMessageIdRef.current = null;
               payWaitingRef.current = false;
@@ -2120,11 +2125,9 @@ export function ForumLoader({
         amountSats: invoice.amountSats,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, false, null, false, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
         return;

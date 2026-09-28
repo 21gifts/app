@@ -4,7 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { ForumBoard, revealReplyForm, type ForumBoardProps } from '@/components/ForumBoard';
+import {
+  ForumBoard,
+  revealPaySheet,
+  revealReplyForm,
+  type ForumBoardProps,
+} from '@/components/ForumBoard';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import {
@@ -2341,7 +2346,12 @@ describe('ForumBoard', () => {
     expect(walletButton.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     expect(screen.queryByText('Back')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const back = screen.getByRole('button', { name: 'Back' });
+    expect(back.parentElement?.className).toContain('absolute');
+    expect(back.parentElement?.className).toContain('left-2');
+    expect(back.parentElement?.className).toContain('top-2');
+    expect(back.closest('[data-pay-sheet]')).toBeTruthy();
+    fireEvent.click(back);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
@@ -6721,6 +6731,57 @@ describe('reply form size', () => {
     expect(disconnected).toBe(true);
     globalThis.ResizeObserver = previous;
   });
+
+  it('watches the pay sheet instead of pinning the reply form', () => {
+    const observed: Element[] = [];
+    class FakeResizeObserver {
+      constructor(private readonly onResize: ResizeObserverCallback) {
+        void this.onResize;
+      }
+
+      observe(target: Element): void {
+        observed.push(target);
+        this.onResize([], this as unknown as ResizeObserver);
+      }
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          replyDraft="Hi Bob"
+          replyAmountDraft="21"
+          payMessageId="m1"
+          payHost="card"
+          payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+          payWaiting
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    expect(
+      observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-sheet')),
+    ).toBe(true);
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
+    globalThis.ResizeObserver = previous;
+  });
 });
 
 describe('revealReplyForm', () => {
@@ -6757,5 +6818,60 @@ describe('revealReplyForm', () => {
     form.getBoundingClientRect = () => box(140);
     revealReplyForm(scroller, form);
     expect(scroller.scrollTop).toBe(52);
+  });
+});
+
+describe('revealPaySheet', () => {
+  function box(top: number, bottom: number): DOMRect {
+    return {
+      bottom,
+      top,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: bottom - top,
+      x: 0,
+      y: top,
+      toJSON: () => ({}),
+    };
+  }
+
+  it('does nothing without a scroller or a sheet', () => {
+    const sheet = document.createElement('div');
+    const scroller = document.createElement('div');
+    scroller.scrollTop = 4;
+    revealPaySheet(null, sheet);
+    revealPaySheet(scroller, null);
+    expect(scroller.scrollTop).toBe(4);
+  });
+
+  it('leaves the scroll alone when the sheet top is already inside the shell', () => {
+    const scroller = document.createElement('div');
+    const sheet = document.createElement('div');
+    scroller.scrollTop = 10;
+    scroller.getBoundingClientRect = () => box(0, 400);
+    sheet.getBoundingClientRect = () => box(80, 500);
+    revealPaySheet(scroller, sheet);
+    expect(scroller.scrollTop).toBe(10);
+  });
+
+  it('scrolls up when the sheet top sits above the shell', () => {
+    const scroller = document.createElement('div');
+    const sheet = document.createElement('div');
+    scroller.scrollTop = 40;
+    scroller.getBoundingClientRect = () => box(20, 400);
+    sheet.getBoundingClientRect = () => box(0, 300);
+    revealPaySheet(scroller, sheet);
+    expect(scroller.scrollTop).toBe(20);
+  });
+
+  it('scrolls the sheet top to the shell top when it is below the fold', () => {
+    const scroller = document.createElement('div');
+    const sheet = document.createElement('div');
+    scroller.scrollTop = 0;
+    scroller.getBoundingClientRect = () => box(0, 400);
+    sheet.getBoundingClientRect = () => box(480, 900);
+    revealPaySheet(scroller, sheet);
+    expect(scroller.scrollTop).toBe(480);
   });
 });
