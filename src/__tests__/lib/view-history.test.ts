@@ -69,7 +69,7 @@ function replaceView(path: string): void {
 
 beforeEach(() => {
   resetViewHistory();
-  window.history.replaceState(null, '');
+  window.history.replaceState(null, '', '/');
 });
 
 afterEach(() => {
