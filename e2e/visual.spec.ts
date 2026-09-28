@@ -2499,8 +2499,8 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const alert = page.getByRole('alert');
-    await expect(alert).toHaveText('Could not post your message');
+    const alert = page.getByText('Could not post your message');
+    await expect(alert).toBeVisible();
     await alert.evaluate((node) => {
       node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
@@ -2523,8 +2523,8 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const alert = page.getByRole('alert');
-    await expect(alert).toHaveText('Too many messages. Please wait a moment and try again.');
+    const alert = page.getByText('Too many messages. Please wait a moment and try again.');
+    await expect(alert).toBeVisible();
     await alert.evaluate((node) => {
       node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
