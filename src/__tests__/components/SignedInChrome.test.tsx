@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { useAccountTotals } from '@/hooks/useAccountTotals';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   fetchAccountActivity,
@@ -54,25 +53,6 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
-const rateDayState = vi.hoisted(() => ({
-  current: null as null | {
-    sats: number;
-    usd: string;
-    chf: string;
-    eur: string;
-    php: string;
-  },
-}));
-
-vi.mock('@/hooks/useLatestRateDay', () => ({
-  useLatestRateDay: (): typeof rateDayState.current => rateDayState.current,
-}));
-vi.mock('@/hooks/useAccountTotals', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/hooks/useAccountTotals')>();
-  return {
-    useAccountTotals: vi.fn(actual.useAccountTotals),
-  };
-});
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -124,10 +104,6 @@ vi.mock('@/lib/api', () => ({
   fetchTrustProposals: vi.fn().mockResolvedValue([]),
 }));
 
-const useAccountTotalsActual = (
-  await vi.importActual<typeof import('@/hooks/useAccountTotals')>('@/hooks/useAccountTotals')
-).useAccountTotals;
-
 function menuPanel(): HTMLElement {
   const panel = document.getElementById('signed-in-menu');
   expect(panel).not.toBeNull();
@@ -160,8 +136,6 @@ beforeEach(() => {
   vi.mocked(shouldOfferIosInstall).mockReturnValue(false);
   vi.mocked(isStandaloneDisplay).mockReturnValue(false);
   vi.mocked(isInAppBrowser).mockReturnValue(false);
-  rateDayState.current = null;
-  vi.mocked(useAccountTotals).mockImplementation(useAccountTotalsActual);
   vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(fetchNotifications).mockResolvedValue({ notifications: [], unreadCount: 0 });
   vi.mocked(fetchConversations).mockResolvedValue([]);
@@ -440,109 +414,20 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
-  it('formats a single received amount as BIP-177 ₿1', async () => {
+  it('does not show given or received amounts on Profile', async () => {
     vi.mocked(fetchAccountActivity).mockResolvedValue({
       ...EMPTY_ACTIVITY,
-      receivedSats: 1,
-    });
-    renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expectMenuOpen();
-    await waitFor(() => {
-      expect(screen.getByLabelText('Received ₿1')).toBeTruthy();
-    });
-    expect(screen.queryByLabelText(/Given/)).toBeNull();
-    const profile = screen.getByRole('link', { name: /Profile/ });
-    expect(profile.textContent?.includes('·')).toBe(false);
-  });
-
-  it("formats a single received amount as BIP-177 ₿1'000 and hides zero given", async () => {
-    vi.mocked(fetchAccountActivity).mockResolvedValue({
-      ...EMPTY_ACTIVITY,
+      donatedSats: 1,
       receivedSats: 1000,
     });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
-    await waitFor(() => {
-      expect(screen.getByLabelText("Received ₿1'000")).toBeTruthy();
-    });
-    expect(screen.queryByLabelText(/Given/)).toBeNull();
-    const profile = screen.getByRole('link', { name: /Profile/ });
-    expect(profile.textContent?.includes('·')).toBe(false);
-  });
-
-  it('shows Loading… in the Profile totals while account totals are in flight', () => {
-    vi.mocked(useAccountTotals).mockReturnValue({
-      donatedSats: 0,
-      receivedSats: 0,
-      donateOverTime: [],
-      receiveOverTime: [],
-      loading: true,
-      failed: false,
-    });
-    renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expectMenuOpen();
-    expect(screen.getByText('Loading…')).toBeTruthy();
+    const profile = await screen.findByRole('link', { name: 'Profile' });
+    expect(profile.textContent?.replace(/\s+/g, ' ').trim()).toBe('Profile');
     expect(screen.queryByLabelText(/Given/)).toBeNull();
     expect(screen.queryByLabelText(/Received/)).toBeNull();
-  });
-
-  it('shows a non-zero given amount and hides zero received', () => {
-    vi.mocked(useAccountTotals).mockReturnValue({
-      donatedSats: 1,
-      receivedSats: 0,
-      donateOverTime: [],
-      receiveOverTime: [],
-      loading: false,
-      failed: false,
-    });
-    renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expectMenuOpen();
-    expect(screen.getByLabelText('Given ₿1')).toBeTruthy();
-    expect(screen.queryByLabelText(/Received/)).toBeNull();
-  });
-
-  it('shows the default fiat beside a non-zero menu total', () => {
-    rateDayState.current = {
-      sats: 100_000_000,
-      usd: '100000000.00',
-      chf: '80000000.00',
-      eur: '90000000.00',
-      php: '5600000000.00',
-    };
-    vi.mocked(useAccountTotals).mockReturnValue({
-      donatedSats: 1,
-      receivedSats: 0,
-      donateOverTime: [],
-      receiveOverTime: [],
-      loading: false,
-      failed: false,
-    });
-    renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expectMenuOpen();
-    expect(screen.getByLabelText('Given ₿1 · $1.00')).toBeTruthy();
-  });
-
-  it('shows given and received with a middle dot when both sides are non-zero', () => {
-    vi.mocked(useAccountTotals).mockReturnValue({
-      donatedSats: 1,
-      receivedSats: 1000,
-      donateOverTime: [],
-      receiveOverTime: [],
-      loading: false,
-      failed: false,
-    });
-    renderWithLocale(<SignedInChrome />);
-    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    expectMenuOpen();
-    expect(screen.getByLabelText('Given ₿1')).toBeTruthy();
-    expect(screen.getByLabelText("Received ₿1'000")).toBeTruthy();
-    const profile = screen.getByRole('link', { name: /Profile/ });
-    expect(profile.textContent?.includes('·')).toBe(true);
+    expect(screen.queryByText('Loading…')).toBeNull();
   });
 
   it('closes the menu when Home is clicked', () => {

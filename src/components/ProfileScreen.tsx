@@ -132,7 +132,7 @@ function ProfileImages({
  * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`
  * without a chart FiatPicker (including while activity is in flight); a failed
  * activity fetch shows `profile.chartError`. The only FiatPicker on the card is
- * {@link FiatPreferenceSwitcher}. Menu totals stay in `SignedInChrome`.
+ * {@link FiatPreferenceSwitcher}. The signed-in menu Profile row shows no amounts.
  *
  * @returns The identity card.
  */

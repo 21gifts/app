@@ -1113,12 +1113,14 @@ export type FundingApplication = z.infer<typeof fundingApplicationSchema>;
  * Runtime schema for one payout-day row from `GET /funding/payout-days`.
  *
  * `accountId` is a non-empty string or `null`. `name` may be null or empty.
- * `days` is seven cells, oldest first.
+ * `days` is seven cells, oldest first. `welcome` is optional seven booleans,
+ * oldest first; missing means seven falses.
  */
 export const fundingPayoutDayRowSchema = z.object({
   accountId: z.string().min(1).nullable(),
   name: z.string().nullable(),
   days: z.array(z.enum(['blocked', 'missed', 'paid'])).length(7),
+  welcome: z.array(z.boolean()).length(7).optional(),
 });
 
 /**

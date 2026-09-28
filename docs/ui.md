@@ -427,23 +427,23 @@ flowchart TB
 
 **Signed-in Menu** (`SignedInChrome`). Labeled Menu trigger (lucide `Menu` 14px + catalog `aria.menu`). Rows icon+label, in this order:
 
-| Row                  | Icon                          | Href / control                                                                      |
-| -------------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
-| Home                 | `Home`                        | `/welcome`                                                                          |
-| Shops                | `Store`                       | `/shops`                                                                            |
-| Point of sale        | `Banknote`                    | `/pos`                                                                              |
-| Profile              | `User`                        | `/profile` — given/received `formatBitcoin` amounts only when that side is non-zero |
-| Grants               | `HandCoins`                   | `/grants` — grant status, apply, and the staff queue                                |
-| Wallet               | `Wallet`                      | `/wallet` — receive QR, then Add recovery phrase or Advanced functions              |
-| Living room rules    | `ScrollText`                  | `/rules`                                                                            |
-| Trust Chain          | `Share2`                      | `/trust-chain`                                                                      |
-| Moderation           | `Shield`                      | `/moderate` — moderator only                                                        |
-| Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero               |
-| Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero                    |
-| Contact              | `MessageCircle`               | `/contact`                                                                          |
-| optional Install app | `PwaInstall placement="menu"` | labeled row                                                                         |
-| Log out              | `LogoutButton`                | labeled                                                                             |
-| Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control           |
+| Row                  | Icon                          | Href / control                                                            |
+| -------------------- | ----------------------------- | ------------------------------------------------------------------------- |
+| Home                 | `Home`                        | `/welcome`                                                                |
+| Shops                | `Store`                       | `/shops`                                                                  |
+| Point of sale        | `Banknote`                    | `/pos`                                                                    |
+| Profile              | `User`                        | `/profile`                                                                |
+| Grants               | `HandCoins`                   | `/grants` — grant status, apply, and the staff queue                      |
+| Wallet               | `Wallet`                      | `/wallet` — receive QR, then Add recovery phrase or Advanced functions    |
+| Living room rules    | `ScrollText`                  | `/rules`                                                                  |
+| Trust Chain          | `Share2`                      | `/trust-chain`                                                            |
+| Moderation           | `Shield`                      | `/moderate` — moderator only                                              |
+| Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero     |
+| Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero          |
+| Contact              | `MessageCircle`               | `/contact`                                                                |
+| optional Install app | `PwaInstall placement="menu"` | labeled row                                                               |
+| Log out              | `LogoutButton`                | labeled                                                                   |
+| Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control |
 
 Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]`. Panel is in-tree `absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg` (sibling of the trigger, not createPortal / not fixed). `7rem` is AppShell `px-6` plus chrome `px-8` on both sides so the panel stays on-screen at 320 CSS pixels. AppShell `<main>` has no `overflow-hidden` so the panel is not clipped. The document is `overflow: clip`; the only scrollport is `[data-scrollport]`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. Escape and outside-click close the panel.
 
@@ -475,13 +475,13 @@ flowchart LR
 
 | Glyph | px  | Tailwind      | Use                                                 |
 | ----- | --- | ------------- | --------------------------------------------------- |
-| 14    | 14  | `h-3.5 w-3.5` | Menu row icons, ₿\|USD is text not icon             |
+| 14    | 14  | `h-3.5 w-3.5` | Menu row icons                                      |
 | 16    | 16  | `h-4 w-4`     | Button leading icon, Field-adjacent, pay-sheet back |
 | 20    | 20  | `h-5 w-5`     | IconButton md/lg default, profile back              |
 | 32    | 32  | `h-8 w-8`     | Login fingerprint / error / spinner                 |
 | 48    | 48  | `h-12 w-12`   | Welcome gift-and-Bitcoin SVG; pay-link shop sticker |
 
-**Decorative vs control.** Decorative: `aria-hidden="true"` (gift-and-Bitcoin SVG on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. Indicators (given/received arrows in Menu): `aria-label` on the wrapping `span`, not a button.
+**Decorative vs control.** Decorative: `aria-hidden="true"` (gift-and-Bitcoin SVG on welcome, Fingerprint on login, AlertTriangle on error, legend swatches). Control: `IconButton` with required `aria-label` from the catalog. The Profile menu row is the label only.
 
 **Welcome gift-and-Bitcoin glyph.** Combined gift outline and Bitcoin symbol, `h-12 w-12 text-app-fg`, `aria-hidden`. It is the forum’s page glyph, not the brand mark. Do not color it orange. Do not duplicate it in chrome. On `/pl` it appears only when the link is not valid.
 
@@ -825,7 +825,7 @@ NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: up
 
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. Profile row amounts only when non-zero. Notifications unread count only when greater than zero. Messages unread count only when greater than zero. Menu has no language, theme, or number format.
+See Layout and chrome. Trigger stays labeled. The Profile row shows no amounts. Notifications unread count only when greater than zero. Messages unread count only when greater than zero. Menu has no language, theme, or number format.
 
 ### Banner (living-room laws)
 
