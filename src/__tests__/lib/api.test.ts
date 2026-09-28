@@ -16,6 +16,8 @@ import {
   fetchGiftStats,
   fetchPostStats,
   fetchAboutMePhoto,
+  fetchWideBanner,
+  putWideBanner,
   fetchMe,
   fetchMember,
   fetchMemberActivity,
@@ -2469,6 +2471,64 @@ describe('fetchMessagePhoto', () => {
     await expect(fetchMessagePhoto('sess', 'm1')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+});
+
+describe('putWideBanner', () => {
+  it('puts the photo and clears it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 } as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await putWideBanner('sess', { contentType: 'image/jpeg', data: 'abc' });
+    await putWideBanner('sess', null);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/banners/me', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo: { contentType: 'image/jpeg', data: 'abc' } }),
+    });
+    expect(JSON.parse(String((fetchMock.mock.calls[1]?.[1] as RequestInit).body))).toEqual({
+      photo: null,
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 400 } as Response));
+    await expect(putWideBanner('sess', null)).rejects.toThrow('Could not save. Please try again.');
+  });
+});
+
+describe('fetchWideBanner', () => {
+  it('returns the blob', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: () => Promise.resolve(blob),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchWideBanner('sess')).resolves.toBe(blob);
+  });
+
+  it('throws when the response is not ok or the blob is empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchWideBanner('sess')).rejects.toThrow('Could not load. Please try again.');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(new Blob()),
+      } as unknown as Response),
+    );
+    await expect(fetchWideBanner('sess')).rejects.toThrow('Could not load. Please try again.');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
+    await expect(fetchWideBanner('sess')).rejects.toThrow('Could not load. Please try again.');
   });
 });
 

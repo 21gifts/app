@@ -163,6 +163,20 @@
 - **Used by:** `putAboutMe`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /banners/me
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /banners/me` (raw bytes of the signed-in wide profile image). Not the About me photo.
+- **Errors:** Upstream 401/404, or 502 if the api is unreachable.
+- **Used by:** `fetchWideBanner`.
+- **Auth:** Bearer.
+
+## Endpoint: PUT /banners/me
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /banners/me`. Body `{ photo }` sets a wide image or `null` clears it. Does not change the About me photo.
+- **Errors:** Upstream 400/401, or 502 if the api is unreachable.
+- **Used by:** `putWideBanner`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /me/about/photo
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw JPEG/PNG/WebP bytes for the signed-in About me note). Always render via blob URLs — not bare `<img src>`.

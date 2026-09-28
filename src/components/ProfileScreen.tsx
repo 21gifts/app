@@ -16,7 +16,13 @@ import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Button, Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { fetchAboutMePhoto, fetchMember, putAboutMe } from '@/lib/api';
+import {
+  fetchAboutMePhoto,
+  fetchMember,
+  fetchWideBanner,
+  putAboutMe,
+  putWideBanner,
+} from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
@@ -105,6 +111,10 @@ export function ProfileScreen(): ReactElement {
             : {})}
           hasPhoto={account.aboutMeHasPhoto === true}
           loadPhoto={() => fetchAboutMePhoto(session)}
+          loadBanner={() => fetchWideBanner(session)}
+          onSaveBanner={async (photo) => {
+            await putWideBanner(session, photo);
+          }}
           /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
           {...(origin !== '' ? { profileUrl: `${origin}/view/${account.viewKey}` } : {})}
           onSave={async (text, photo) => {

@@ -359,13 +359,65 @@ export async function putAboutMe(
 const ABOUT_ME_PHOTO_LOAD_ERROR = 'Could not load. Please try again.';
 
 /**
- * Fetches the signed-in account's About me photo bytes.
+ * Stores or clears the signed-in account's wide profile image.
+ *
+ * The About me photo is unchanged. `null` clears the wide image.
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @returns The photo as a Blob.
+ * @param photo - JPEG payload, or `null` to clear.
+ * @throws Error `'Could not save. Please try again.'` on a non-2xx response.
+ */
+export async function putWideBanner(
+  sessionToken: string,
+  photo: { contentType: string; data: string } | null,
+): Promise<void> {
+  const response = await fetch('/banners/me', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      photo:
+        photo === null
+          ? null
+          : {
+              contentType: photo.contentType,
+              data: photo.data,
+            },
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save. Please try again.');
+  }
+}
+
+/**
+ * Fetches the signed-in account's wide profile image.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The image as a Blob.
  * @throws Error `'Could not load. Please try again.'` on a non-ok response,
  * an empty blob, or a network failure.
  */
+export async function fetchWideBanner(sessionToken: string): Promise<Blob> {
+  try {
+    const response = await fetch('/banners/me', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    return blob;
+  } catch {
+    throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+  }
+}
+
 export async function fetchAboutMePhoto(sessionToken: string): Promise<Blob> {
   try {
     const response = await fetch('/me/about/photo', {

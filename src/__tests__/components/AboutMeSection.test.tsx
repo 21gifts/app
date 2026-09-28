@@ -905,4 +905,59 @@ describe('AboutMeSection', () => {
       expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
     });
   });
+
+  it('saves a wide image on its own and can clear it', async () => {
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'wide',
+        previewUrl: 'data:image/jpeg;base64,wide',
+      },
+    });
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    const loadBanner = vi.fn().mockRejectedValue(new Error('missing'));
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        onSaveBanner={onSaveBanner}
+        loadBanner={loadBanner}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const inputs = document.querySelectorAll('input[type="file"]');
+    fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSaveBanner).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'wide' });
+    });
+    expect(screen.getByAltText('Wide profile image')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove wide image' }));
+    await waitFor(() => {
+      expect(onSaveBanner).toHaveBeenCalledWith(null);
+    });
+  });
+
+  it('shows the wide-image error and the save error', async () => {
+    prepareMock.mockResolvedValue({ ok: false, error: 'notWide' });
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const inputs = document.querySelectorAll('input[type="file"]');
+    fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Use an image at least 1.5 times as wide as it is tall',
+      );
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
+    });
+    onSaveBanner.mockRejectedValueOnce(new Error('nope'));
+    fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
+    });
+  });
 });

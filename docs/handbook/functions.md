@@ -2698,6 +2698,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** App Router `PUT` on `/me/about`.
 
+## Function: putWideBanner
+
+- **Purpose:** `PUT /banners/me` with `{ photo }` for the signed-in account. `null` clears the wide image. Does not change the About me photo.
+- **Inputs:** Session token, JPEG payload or `null`.
+- **Returns / side effects:** Resolves on 2xx. Throws the save error otherwise.
+- **Used by:** Profile About me editor.
+
+## Function: fetchWideBanner
+
+- **Purpose:** `GET /banners/me` bytes for the signed-in account.
+- **Inputs:** Session token.
+- **Returns / side effects:** Blob. Throws the load error on failure or an empty body.
+- **Used by:** Profile About me editor.
+
+## Function: proxyWideBannerGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /banners/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `GET` on `/banners/me`.
+
+## Function: proxyWideBannerPut
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /banners/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `PUT` on `/banners/me`.
+
 ## Function: proxyMeAboutPhotoGet
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw profile-note photo bytes).
