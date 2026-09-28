@@ -470,6 +470,18 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: renew
+
+Signed in, no seed yet (`walletRequired` false). A **Renew passkey** bar sits under the frame header. The failure dialog is closed.
+
+![21.gifts welcome renew](images/welcome-renew.png)
+
+### Variant: renew-failed
+
+The renew ceremony failed and has not been acknowledged. The dialog says it did not work, a later try is possible, and nothing is required now. **OK** is the only action. The bar stays underneath.
+
+![21.gifts welcome renew failed](images/welcome-renew-failed.png)
+
 ### Variant: sunday
 
 Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.

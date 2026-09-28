@@ -381,6 +381,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'renew',
+    image: 'welcome-renew.png',
+    visual: 'state-welcome-renew',
+    needle: 'Renew passkey',
+  },
+  {
+    route: '/welcome',
+    id: 'renew-failed',
+    image: 'welcome-renew-failed.png',
+    visual: 'state-welcome-renew-failed',
+    needle: 'You can try again later. You do not need to do anything now.',
+  },
+  {
+    route: '/welcome',
     id: 'sunday',
     image: 'welcome-sunday.png',
     visual: 'state-welcome-sunday',
