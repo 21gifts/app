@@ -634,14 +634,42 @@ async function unstickStickyChrome(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Marketing pages scroll inside one port, so the document is viewport-tall.
+ * Stretch that port to its content before a full-page shot, or the capture
+ * is only the window.
+ *
+ * @param page - Page under test.
+ */
+async function expandScrollportForFullShot(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      return;
+    }
+    const height = Math.max(port.scrollHeight, document.documentElement.clientHeight);
+    port.style.setProperty('overflow', 'visible', 'important');
+    port.style.flex = 'none';
+    port.style.height = `${height}px`;
+    document.documentElement.style.setProperty('overflow', 'visible', 'important');
+    document.body.style.setProperty('overflow', 'visible', 'important');
+    document.documentElement.style.height = `${height}px`;
+    document.body.style.height = `${height}px`;
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
   await unstickStickyChrome(page);
   // The app frame is one window. A full-page capture would append the
   // scrolled overflow as an empty band under the frame. Marketing pages
   // have no frame chrome and still capture their full height.
   const shell = await page.locator('[data-app-chrome]').count();
+  const captureFullPage = fullPage && shell === 0;
+  if (captureFullPage) {
+    await expandScrollportForFullShot(page);
+  }
   await expect(page).toHaveScreenshot(`${arg}.png`, {
-    fullPage: fullPage && shell === 0,
+    fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
     ...SHOT,
   });
@@ -2743,7 +2771,7 @@ test.describe('onboarding screens', () => {
       page.getByText('Tall note 0 so the welcome list can scroll past the top.'),
     ).toBeVisible();
     await page.evaluate(() => {
-      const scroller = document.querySelector('main .overflow-y-auto');
+      const scroller = document.querySelector('main [data-scrollport]');
       if (scroller instanceof HTMLElement) {
         scroller.scrollTop = 900;
         return;
@@ -11895,7 +11923,7 @@ test.describe('shops screens', () => {
     await expect(remove).toBeVisible();
     await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
-    await page.locator('main .overflow-y-auto').evaluate((node) => {
+    await page.locator('main [data-scrollport]').evaluate((node) => {
       node.scrollTop += 160;
     });
     await shotScreen(page, 'state-shops-staff-place-edit-error');

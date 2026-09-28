@@ -63,7 +63,7 @@ describe('AppShell', () => {
     const footer = main?.querySelector('footer');
     expect(header).toBeTruthy();
     expect(scroller?.className).toContain('flex-1');
-    expect(scroller?.className).toContain('overflow-y-auto');
+    expect(scroller?.hasAttribute('data-scrollport')).toBe(true);
     expect(scroller?.className).toContain('min-h-0');
     expect(footer).toBeTruthy();
     expect(footer?.previousElementSibling).toBe(scroller);
@@ -88,7 +88,7 @@ describe('AppShell', () => {
     expect(frame?.className).toContain('grow');
     expect(frame?.className).toContain('shrink');
     expect(frame?.className.split(/\s+/)).not.toContain('flex-1');
-    const scroller = main?.querySelector('.overflow-y-auto');
+    const scroller = main?.querySelector('[data-scrollport]');
     expect(scroller?.className).not.toContain('items-center');
     expect(scroller?.className).not.toContain('justify-center');
     const inner = scroller?.firstElementChild;
@@ -123,7 +123,7 @@ describe('AppShell', () => {
       const chrome = main?.querySelector('[data-app-chrome]');
       expect(chrome?.contains(screen.getByTestId(`${mode}-left`))).toBe(true);
       expect(chrome?.contains(screen.getByTestId(`${mode}-right`))).toBe(true);
-      expect(main?.querySelector('.overflow-y-auto')?.className).toContain('overflow-y-auto');
+      expect(main?.querySelector('[data-scrollport]')?.hasAttribute('data-scrollport')).toBe(true);
       expect(main?.innerHTML).not.toContain('pt-24');
       expect(screen.getByText(`${mode} body`)).toBeTruthy();
       unmount();
@@ -257,13 +257,13 @@ describe('AppShell', () => {
     expect(screen.getByRole('button').textContent).toBe('8');
   });
 
-  it('useAppShellScroller returns the overflow-y-auto node inside AppShell', () => {
+  it('useAppShellScroller returns the scrollport inside AppShell', () => {
     renderWithLocale(
       <AppShell mode="fill">
         <ScrollerProbe />
       </AppShell>,
     );
-    expect(screen.getByTestId('scroller-probe').textContent).toContain('overflow-y-auto');
+    expect(screen.getByTestId('scroller-probe').textContent).toContain('flex-1');
   });
 
   it('useAppShellScroller returns null outside AppShell', () => {
@@ -291,7 +291,7 @@ describe('AppShell', () => {
     expect(chrome?.contains(screen.getByTestId('right'))).toBe(true);
     expect(card?.contains(screen.getByTestId('left'))).toBe(false);
     expect(card?.contains(screen.getByTestId('right'))).toBe(false);
-    const scroller = main?.querySelector('.overflow-y-auto');
+    const scroller = main?.querySelector('[data-scrollport]');
     expect(scroller?.firstElementChild?.className).not.toContain('pt-24');
     expect(scroller?.className).not.toContain('justify-center');
     expect(main?.className).not.toContain('justify-center');

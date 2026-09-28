@@ -16,11 +16,13 @@ describe('MarketingLayout', () => {
     expect(props.className).toContain('[color-scheme:dark]');
   });
 
-  it('renders three children: header, page, footer', async () => {
+  it('puts header, page, and footer in one scrollport', async () => {
     const tree = await MarketingLayout({ children: 'content' });
-    const props = tree.props as { children: unknown[] };
-    expect(Array.isArray(props.children)).toBe(true);
-    expect((props.children as unknown[]).length).toBe(3);
-    expect((props.children as unknown[])[1]).toBe('content');
+    const props = tree.props as { className: string; children: { props: { children: unknown[] } } };
+    expect(props.className).toContain('h-[var(--app-height)]');
+    const inner = props.children.props.children;
+    expect(Array.isArray(inner)).toBe(true);
+    expect(inner).toHaveLength(3);
+    expect(inner[1]).toBe('content');
   });
 });

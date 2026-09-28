@@ -1049,7 +1049,7 @@ export const SCREEN_VARIANTS = [
     id: 'keyboard-viewport',
     image: 'welcome-keyboard-viewport.png',
     visual: 'state-welcome-keyboard-viewport',
-    needle: 'short keyboard visualViewport does not shrink the page frame',
+    needle: 'short keyboard visualViewport sizes the page frame',
   },
   {
     route: '/welcome',

@@ -4,11 +4,10 @@ import { useEffect, type ReactElement } from 'react';
 import { resolveAppHeight } from '@/lib/app-height';
 
 /**
- * After hydration: keep `--app-height` in sync with the layout canvas.
- * Uses `max(innerHeight, visualViewport.height + offsetTop)` so a short
- * visual viewport (stuck after keyboard, or keyboard `offsetTop` positive)
- * cannot leave a white gap below the rounded page frame. Skips updates
- * while `visualViewport.scale` is present and not ≈ 1.
+ * After hydration: keep `--app-height` equal to the visible viewport
+ * (`visualViewport.height`, else `innerHeight`). A frame taller than the
+ * visible area would scroll the document under the inner scrollport. Skips
+ * updates while `visualViewport.scale` is present and not ≈ 1.
  *
  * @returns void
  */
