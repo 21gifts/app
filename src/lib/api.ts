@@ -3004,6 +3004,68 @@ export async function postWalletBackupSeen(sessionToken: string): Promise<Accoun
   return accountSchema.parse(await response.json());
 }
 
+/** Safe browser report body for `POST /me/passkey-renew/report`. */
+export type PasskeyRenewReportBody = {
+  stage: 'begin' | 'ceremony' | 'finish';
+  outcome: 'failed' | 'cancelled';
+  errorName: string;
+  errorCode: string | null;
+  httpStatus: number | null;
+  message: string;
+};
+
+/**
+ * Reports a passkey-renew ceremony failure or cancel. Body is only the six
+ * safe fields; never a phrase, PRF bytes, credential, challenge, or session.
+ *
+ * @param sessionToken - Bearer session.
+ * @param body - Safe report fields.
+ * @returns The owner {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
+ */
+export async function postPasskeyRenewReport(
+  sessionToken: string,
+  body: PasskeyRenewReportBody,
+): Promise<Account> {
+  const response = await fetch('/me/passkey-renew/report', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      stage: body.stage,
+      outcome: body.outcome,
+      errorName: body.errorName,
+      errorCode: body.errorCode,
+      httpStatus: body.httpStatus,
+      message: body.message,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not report passkey renew');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Acknowledges the passkey-renew failure notice.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
+ */
+export async function postPasskeyRenewAck(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/passkey-renew/ack', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not acknowledge passkey renew');
+  }
+  return accountSchema.parse(await response.json());
+}
+
 /**
  * Deletes a forum post and its replies using a moderator session.
  *

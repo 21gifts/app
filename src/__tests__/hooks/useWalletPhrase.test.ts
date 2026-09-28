@@ -132,6 +132,54 @@ describe('useWalletPhrase', () => {
     expect(peekSessionPhrase()).toBeNull();
   });
 
+  it('maps a thrown phrase error through the wallet error kinds', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('wallet.prfUnsupported'));
+    const prf = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await prf.result.current.activate();
+    });
+    expect(prf.result.current.error).toBe('prfUnsupported');
+
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(
+      Object.assign(new Error('slow'), { name: 'TimeoutError' }),
+    );
+    const timed = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await timed.result.current.activate();
+    });
+    expect(timed.result.current.error).toBe('timeout');
+
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(
+      Object.assign(new Error('nope'), { name: 'NotAllowedError' }),
+    );
+    const cancelled = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await cancelled.result.current.activate();
+    });
+    expect(cancelled.result.current.error).toBeNull();
+    expect(cancelled.result.current.status).toBe('idle');
+
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce('nope');
+    const plain = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await plain.result.current.activate();
+    });
+    expect(plain.result.current.error).toBe('generic');
+  });
+
+  it('clears the wallet error when the session ends while deriving the phrase', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      throw new Error('boom');
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+  });
+
   it('keeps the seed account when word derivation throws', async () => {
     vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('boom'));
     const { result } = renderHook(() => useWalletPhrase());

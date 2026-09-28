@@ -487,6 +487,10 @@ const en = {
   'wallet.addPhrase': 'Add recovery phrase',
   'wallet.addPhraseHint':
     'This creates a recovery phrase on this device. Your existing login passkey stays.',
+  'passkeyRenew.banner': 'Renew passkey',
+  'passkeyRenew.failedTitle': 'That did not work',
+  'passkeyRenew.failedBody': 'You can try again later. You do not need to do anything now.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
@@ -1413,6 +1417,11 @@ const de = {
   'wallet.addPhrase': 'Wiederherstellungssatz hinzufügen',
   'wallet.addPhraseHint':
     'Dadurch entsteht ein Wiederherstellungssatz auf diesem Gerät. Ihr vorhandener Anmelde-Passkey bleibt.',
+  'passkeyRenew.banner': 'Passkey erneuern',
+  'passkeyRenew.failedTitle': 'Das hat nicht funktioniert',
+  'passkeyRenew.failedBody':
+    'Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
@@ -2350,6 +2359,10 @@ const es = {
   'wallet.addPhrase': 'Añadir frase de recuperación',
   'wallet.addPhraseHint':
     'Esto crea una frase de recuperación en este dispositivo. Tu passkey de inicio de sesión se mantiene.',
+  'passkeyRenew.banner': 'Renovar passkey',
+  'passkeyRenew.failedTitle': 'Eso no funcionó',
+  'passkeyRenew.failedBody': 'Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
@@ -3278,6 +3291,10 @@ const fil = {
   'wallet.addPhrase': 'Magdagdag ng recovery phrase',
   'wallet.addPhraseHint':
     'Lumilikha ito ng recovery phrase sa device na ito. Mananatili ang kasalukuyang login passkey mo.',
+  'passkeyRenew.banner': 'I-renew ang passkey',
+  'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
+  'passkeyRenew.failedBody': 'Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',

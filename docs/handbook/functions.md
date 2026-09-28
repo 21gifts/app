@@ -3004,7 +3004,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST one allowlisted client diagnostic to `/diagnostics`. Drops fields that fail the pattern instead of shortening them.
 - **Inputs:** Event name plus optional name, message, stage, status, path, challenge id, account id, and whether a PRF output was present.
 - **Returns / side effects:** void. Fire-and-forget `fetch` with `keepalive`. Never throws. Never sends PRF bytes, the recovery phrase, or a session token.
-- **Used by:** `DiagnosticsListener`, `usePasskeyLogin`, and `useWalletPhrase`.
+- **Used by:** `DiagnosticsListener`, `usePasskeyLogin`, `renewPasskey`, and `useWalletPhrase`.
 
 ## Function: proxyAuthPasskeyRegisterBeginPost
 
@@ -3068,6 +3068,48 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session token.
 - **Returns / side effects:** Owner `Account`. Throws on non-2xx.
 - **Used by:** The helper remains. `useWalletPhrase` does not call it.
+
+## Function: postPasskeyRenewReport
+
+- **Purpose:** POST `/me/passkey-renew/report` with Bearer and the six safe fields only.
+- **Inputs:** Session token and `{ stage, outcome, errorName, errorCode, httpStatus, message }`.
+- **Returns / side effects:** Owner `Account`. Throws `Could not report passkey renew` on non-2xx. Never sends a phrase, PRF bytes, credential, or token in the body.
+- **Used by:** `renewPasskey` for browser-only ceremony failures and cancels.
+
+## Function: postPasskeyRenewAck
+
+- **Purpose:** POST `/me/passkey-renew/ack` with Bearer.
+- **Inputs:** Session token.
+- **Returns / side effects:** Owner `Account`. Throws `Could not acknowledge passkey renew` on non-2xx.
+- **Used by:** `PasskeyRenewNotice` OK button.
+
+## Function: renewPasskey
+
+- **Purpose:** Runs the seed-passkey ceremony for a member who has no seed yet.
+- **Inputs:** Session token.
+- **Returns / side effects:** `ok` with the account and in-memory PRF bytes, `cancelled`, `stored` when reload already shows a seed, or `failed` with a wallet error kind. HTTP seed failures are not reported again. Does not persist the phrase.
+- **Used by:** `useWalletPhrase.activate` and `PasskeyRenewNotice`.
+
+## Function: PasskeyRenewNotice
+
+- **Purpose:** Top bar "Renew passkey" and the failure dialog for a member with `walletRequired === false`.
+- **Inputs:** None. Reads the auth store and translations.
+- **Returns / side effects:** The bar. The dialog appears when `passkeyRenewFailed` is true. OK acknowledges it. A failed ack leaves the dialog up.
+- **Used by:** `AppShell` when `walletRequired === false`.
+
+## Function: proxyMePasskeyRenewReportPost
+
+- **Purpose:** Proxies POST `/me/passkey-renew/report`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/passkey-renew/report`.
+
+## Function: proxyMePasskeyRenewAckPost
+
+- **Purpose:** Proxies POST `/me/passkey-renew/ack`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/passkey-renew/ack`.
 
 ## Function: proxyAuthPasskeyReplaceBeginPost
 

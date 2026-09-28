@@ -2039,6 +2039,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (
+    method === 'POST' &&
+    (pathName === '/me/passkey-renew/report' || pathName === '/me/passkey-renew/ack')
+  ) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (pathName === '/me/passkey-renew/ack') {
+      account.passkeyRenewFailed = false;
+    }
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'POST' && pathName === '/auth/passkey/replace/begin') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

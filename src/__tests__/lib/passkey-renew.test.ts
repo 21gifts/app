@@ -1,0 +1,258 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fetchMe, finishPasskeySeed, postPasskeyRenewReport, startPasskeySeed } from '@/lib/api';
+import { renewPasskey } from '@/lib/passkey-renew';
+import { obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { useAuthStore } from '@/stores/auth-store';
+import type { Account } from '@/lib/api-types';
+
+vi.mock('@/lib/api', () => ({
+  startPasskeySeed: vi.fn(),
+  finishPasskeySeed: vi.fn(),
+  fetchMe: vi.fn(),
+  postPasskeyRenewReport: vi.fn(),
+}));
+
+vi.mock('@/lib/prf-mnemonic', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/prf-mnemonic')>();
+  return {
+    ...actual,
+    obtainPrfFirst: vi.fn(),
+    prfEvalFirstSalt: vi.fn().mockResolvedValue(new Uint8Array(32).fill(1)),
+  };
+});
+
+vi.mock('@/lib/webauthn-browser', () => ({
+  creationOptionsFromJSON: vi.fn().mockReturnValue({ challenge: new ArrayBuffer(1) }),
+  credentialToJSON: vi.fn().mockReturnValue({ id: 'cred' }),
+}));
+
+const account = {
+  id: 'acc_1',
+  linkingKey: null,
+  role: 'basis',
+  name: null,
+  location: null,
+  lightningAddress: null,
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1,
+  rulesAgreedAt: null,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  setup: null,
+  missing: [],
+  walletRequired: false,
+  passkeyCredentialId: null,
+} as Account;
+
+beforeEach(() => {
+  useAuthStore.setState({ session: 'tok', account });
+  vi.mocked(startPasskeySeed)
+    .mockReset()
+    .mockResolvedValue({
+      challengeId: 'ch',
+      options: { challenge: 'aa' },
+    });
+  vi.mocked(finishPasskeySeed)
+    .mockReset()
+    .mockResolvedValue({
+      ...account,
+      walletRequired: true,
+      passkeyCredentialId: 'seed',
+    });
+  vi.mocked(fetchMe).mockReset().mockResolvedValue(account);
+  vi.mocked(postPasskeyRenewReport).mockReset().mockResolvedValue(account);
+  vi.mocked(obtainPrfFirst)
+    .mockReset()
+    .mockResolvedValue(new Uint8Array([7]));
+  vi.stubGlobal('navigator', {
+    ...navigator,
+    credentials: {
+      create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+      get: vi.fn(),
+    },
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  useAuthStore.setState({ session: null, account: null });
+});
+
+describe('renewPasskey', () => {
+  it('returns the account and PRF bytes without a report', async () => {
+    const result = await renewPasskey('tok');
+    expect(result).toMatchObject({ outcome: 'ok', account: { passkeyCredentialId: 'seed' } });
+    if (result.outcome === 'ok') {
+      expect(result.prfFirst).toEqual(new Uint8Array([7]));
+    }
+    expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+  });
+
+  it('does not report an HTTP seed failure and reloads the account', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to start passkey seed: 409'),
+    );
+    const result = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+    expect(fetchMe).toHaveBeenCalledWith('tok');
+    expect(result).toEqual({ outcome: 'failed', kind: 'generic' });
+  });
+
+  it('returns stored when reload already has a seed', async () => {
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to finish passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockResolvedValueOnce({ ...account, passkeyCredentialId: 'from-server' });
+    const result = await renewPasskey('tok');
+    expect(result).toMatchObject({
+      outcome: 'stored',
+      account: { passkeyCredentialId: 'from-server' },
+    });
+  });
+
+  it('reports a begin network error and still fails when the report throws', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new TypeError('offline'));
+    vi.mocked(postPasskeyRenewReport).mockRejectedValueOnce(new Error('report down'));
+    const result = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ stage: 'begin', outcome: 'failed', errorName: 'TypeError' }),
+    );
+    expect(result).toEqual({ outcome: 'failed', kind: 'generic' });
+  });
+
+  it('reports cancel and does not fail the ceremony', async () => {
+    const denied = Object.assign(new Error('nope'), { name: 'NotAllowedError', code: 0 });
+    vi.mocked(navigator.credentials.create).mockRejectedValueOnce(denied);
+    const result = await renewPasskey('tok');
+    expect(result).toEqual({ outcome: 'cancelled' });
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({
+        stage: 'ceremony',
+        outcome: 'cancelled',
+        errorName: 'NotAllowedError',
+        errorCode: '0',
+      }),
+    );
+  });
+
+  it('returns cancelled when the browser returns no credential', async () => {
+    vi.mocked(navigator.credentials.create).mockResolvedValueOnce(null);
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+    expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+  });
+
+  it('reports a missing PRF as prfUnsupported', async () => {
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    const result = await renewPasskey('tok');
+    expect(result).toEqual({ outcome: 'failed', kind: 'prfUnsupported' });
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ errorName: 'prfUnsupported', message: 'wallet.prfUnsupported' }),
+    );
+  });
+
+  it('cancels when the session changes before the ceremony', async () => {
+    vi.mocked(startPasskeySeed).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { challengeId: 'ch', options: { challenge: 'aa' } };
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+  });
+
+  it('cancels when the session changes after create', async () => {
+    vi.mocked(navigator.credentials.create).mockImplementation(async () => {
+      useAuthStore.setState({ session: 'other', account });
+      return { id: 'cred', type: 'public-key' } as PublicKeyCredential;
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+  });
+
+  it('reports a finish network error with a string code', async () => {
+    const boom = Object.assign(new Error('socket'), { code: 'ECONNRESET' });
+    vi.mocked(finishPasskeySeed).mockRejectedValueOnce(boom);
+    const result = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ stage: 'finish', outcome: 'failed', errorCode: 'ECONNRESET' }),
+    );
+    expect(result).toEqual({ outcome: 'failed', kind: 'generic' });
+  });
+
+  it('maps a timeout message and a non-Error throw', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce('time out');
+    const result = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ errorName: 'Error', errorCode: null, message: 'time out' }),
+    );
+    expect(result).toEqual({ outcome: 'failed', kind: 'timeout' });
+  });
+
+  it('stays failed when reload throws', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to start passkey seed: 500'),
+    );
+    vi.mocked(fetchMe).mockRejectedValueOnce(new Error('down'));
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'failed', kind: 'generic' });
+  });
+
+  it('cancels when the session ends during reload', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to start passkey seed: 409'),
+    );
+    vi.mocked(fetchMe).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return account;
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+  });
+
+  it('cancels when the session ends after a successful finish', async () => {
+    vi.mocked(finishPasskeySeed).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return { ...account, passkeyCredentialId: 'seed' };
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+  });
+
+  it('cancels when the session ends while the report is in flight', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new TypeError('offline'));
+    vi.mocked(postPasskeyRenewReport).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return account;
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+  });
+
+  it('ignores a non-string error code and a null throw', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce({ name: 'Boom', code: true });
+    const coded = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ errorName: 'Boom', errorCode: null, message: '[object Object]' }),
+    );
+    expect(coded).toEqual({ outcome: 'failed', kind: 'generic' });
+
+    vi.mocked(postPasskeyRenewReport).mockClear();
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(null);
+    const empty = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ errorName: 'Error', errorCode: null, message: '' }),
+    );
+    expect(empty).toEqual({ outcome: 'failed', kind: 'generic' });
+  });
+
+  it('cancels when the session ends after PRF bytes are missing', async () => {
+    vi.mocked(obtainPrfFirst).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      return null;
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+    expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+  });
+});

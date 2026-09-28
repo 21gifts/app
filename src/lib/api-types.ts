@@ -84,6 +84,11 @@ export const accountSchema = z.object({
    */
   passkeyCredentialId: z.string().min(1).nullable().optional(),
   /**
+   * True after a passkey-renew ceremony failed and the member has not
+   * acknowledged the notice. Optional; missing means false.
+   */
+  passkeyRenewFailed: z.boolean().optional(),
+  /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
    * is strictly `false`.
@@ -143,7 +148,8 @@ export const accountSchema = z.object({
  * fields still unset for posting; skipped steps stay listed until filled.
  * `walletRequired` is true for a new passkey account and after seed finish;
  * omitted or false means no seed has been stored yet. The app does not use it
- * to choose Add versus Show. `walletBackupSeenAt` is epoch ms the api may
+ * to choose Add versus Show. `PasskeyRenewNotice` reads `walletRequired === false`
+ * and `passkeyRenewFailed === true`. `walletBackupSeenAt` is epoch ms the api may
  * record; the app does not read it. `passkeyCredentialId` is set once a seed
  * passkey exists; missing or null means no seed.
  * `hasPosted` is true after the owner has posted in the forum, false until then,

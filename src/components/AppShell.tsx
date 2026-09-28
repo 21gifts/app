@@ -10,7 +10,9 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { PasskeyRenewNotice } from '@/components/PasskeyRenewNotice';
 import { Scrollport } from '@/components/ui/Scrollport';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Kept on the API; `fill` and `flow` render the same page-frame geometry. */
 export type AppShellMode = 'fill' | 'flow';
@@ -96,6 +98,7 @@ export function AppShell({
     [headerEl, footerEl, topLeftEl, hasTopLeftPortal, scrollerEl, topLeft, topRight],
   );
 
+  const showPasskeyRenew = useAuthStore((state) => state.account?.walletRequired === false);
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const hasRight = topRight !== undefined && topRight !== null;
   const showPageTopLeft = !hasTopLeftPortal && topLeft !== undefined && topLeft !== null;
@@ -117,6 +120,7 @@ export function AppShell({
               {hasRight ? topRight : null}
             </div>
           </div>
+          {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
           <Scrollport
             scrollRef={(node) => {

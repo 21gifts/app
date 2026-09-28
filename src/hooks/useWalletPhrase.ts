@@ -1,20 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchMe, finishPasskeySeed, startPasskeySeed } from '@/lib/api';
+import { renewPasskey } from '@/lib/passkey-renew';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
-  obtainPrfFirst,
   obtainPrfFirstFromGet,
-  prfEvalFirstSalt,
 } from '@/lib/prf-mnemonic';
-import {
-  base64UrlToBytes,
-  creationOptionsFromJSON,
-  credentialToJSON,
-} from '@/lib/webauthn-browser';
 import { reportDiagnostic } from '@/lib/diagnostics';
+import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -25,23 +19,6 @@ function diagnosticName(error: unknown): string | undefined {
     return undefined;
   }
   const name = (error as { name: unknown }).name;
-  return typeof name === 'string' ? name : undefined;
-}
-
-function diagnosticMessage(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null || !('message' in error)) {
-    return undefined;
-  }
-  const message = (error as { message: unknown }).message;
-  return typeof message === 'string' ? message : undefined;
-}
-
-function accountIdFromOptions(options: Record<string, unknown>): string | undefined {
-  const user = options['user'];
-  if (user === null || typeof user !== 'object') {
-    return undefined;
-  }
-  const name = (user as { name?: unknown }).name;
   return typeof name === 'string' ? name : undefined;
 }
 
@@ -114,19 +91,6 @@ function visualMnemonicOverride(): string | null {
 
 function hasSeedPasskey(credentialId: string | null | undefined): boolean {
   return typeof credentialId === 'string' && credentialId !== '';
-}
-
-async function mergePrfExtension(
-  options: PublicKeyCredentialCreationOptions,
-): Promise<PublicKeyCredentialCreationOptions> {
-  const salt = await prfEvalFirstSalt();
-  const first = new Uint8Array(salt.byteLength);
-  first.set(salt);
-  const extensions = {
-    ...(options.extensions ?? {}),
-    prf: { eval: { first } },
-  };
-  return { ...options, extensions };
 }
 
 /**
@@ -212,115 +176,28 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setStatus('busy');
     setError(null);
     try {
-      let begin: Awaited<ReturnType<typeof startPasskeySeed>>;
-      try {
-        begin = await startPasskeySeed(token);
-      } catch (error: unknown) {
-        reportDiagnostic({
-          event: 'client.passkey.seed.begin',
-          stage: 'seed',
-          name: diagnosticName(error),
-          message: diagnosticMessage(error),
-        });
-        throw error;
-      }
-      if (abandonStaleSession(token, setError, setStatus)) {
-        return;
-      }
-      reportDiagnostic({
-        event: 'client.passkey.seed.begin',
-        stage: 'seed',
-        challengeId: begin.challengeId,
-        accountId: accountIdFromOptions(begin.options),
-      });
-      const options = await mergePrfExtension(creationOptionsFromJSON(begin.options));
-      let credential: PublicKeyCredential | null;
-      try {
-        credential = (await navigator.credentials.create({
-          publicKey: options,
-        })) as PublicKeyCredential | null;
-      } catch (error: unknown) {
-        reportDiagnostic(
-          classifyWebAuthnError(error) === 'cancel'
-            ? { event: 'client.passkey.cancel', stage: 'seed', name: diagnosticName(error) }
-            : {
-                event: 'client.passkey.seed.ceremony',
-                stage: 'seed',
-                name: diagnosticName(error),
-                message: diagnosticMessage(error),
-              },
-        );
-        throw error;
-      }
-      if (abandonStaleSession(token, setError, setStatus)) {
-        return;
-      }
-      if (!credential) {
-        reportDiagnostic({
-          event: 'client.passkey.seed.ceremony',
-          stage: 'seed',
-          message: 'no credential',
-        });
+      const result = await renewPasskey(token);
+      if (result.outcome === 'cancelled') {
+        setError(null);
         setStatus('idle');
         return;
       }
-      let prfFirst: Uint8Array | null;
-      try {
-        prfFirst = await obtainPrfFirst(credential);
-      } catch (error: unknown) {
-        reportDiagnostic(
-          classifyWebAuthnError(error) === 'cancel'
-            ? { event: 'client.passkey.cancel', stage: 'seed', name: diagnosticName(error) }
-            : {
-                event: 'client.passkey.seed.ceremony',
-                stage: 'seed',
-                name: diagnosticName(error),
-                message: diagnosticMessage(error),
-              },
-        );
-        throw error;
-      }
-      if (abandonStaleSession(token, setError, setStatus)) {
+      if (result.outcome === 'stored') {
+        if (isCurrentSession(token)) {
+          setAccount(result.account);
+        }
+        setError(null);
+        setStatus('idle');
         return;
       }
-      if (!prfFirst) {
-        reportDiagnostic({
-          event: 'client.passkey.seed.prf',
-          prfPresent: false,
-          stage: 'seed',
-        });
-        setError('prfUnsupported');
+      if (result.outcome === 'failed') {
+        setError(result.kind);
         setStatus('error');
-        return;
-      }
-      reportDiagnostic({
-        event: 'client.passkey.seed.prf',
-        prfPresent: true,
-        stage: 'seed',
-      });
-      let nextAccount: Awaited<ReturnType<typeof finishPasskeySeed>>;
-      try {
-        nextAccount = await finishPasskeySeed(
-          token,
-          begin.challengeId,
-          credentialToJSON(credential),
-        );
-      } catch (error: unknown) {
-        reportDiagnostic({
-          event: 'client.passkey.seed.finish',
-          stage: 'seed',
-          challengeId: begin.challengeId,
-          name: diagnosticName(error),
-          message: diagnosticMessage(error),
-        });
-        throw error;
-      }
-      if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       let nextMnemonic: string;
       try {
-        nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
+        nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(result.prfFirst));
       } catch (deriveErr) {
         reportDiagnostic({
           event: 'client.passkey.seed.finish',
@@ -328,35 +205,17 @@ export function useWalletPhrase(): UseWalletPhraseResult {
           name: diagnosticName(deriveErr),
         });
         if (useAuthStore.getState().session === token) {
-          setAccount(nextAccount);
+          setAccount(result.account);
         }
         throw deriveErr;
       }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
-      setAccount(nextAccount);
+      setAccount(result.account);
       setMnemonic(nextMnemonic);
       setStatus('idle');
     } catch (err) {
-      if (abandonStaleSession(token, setError, setStatus)) {
-        return;
-      }
-      try {
-        const latest = await fetchMe(token);
-        if (
-          useAuthStore.getState().session === token &&
-          latest !== null &&
-          hasSeedPasskey(latest.passkeyCredentialId)
-        ) {
-          setAccount(latest);
-          setError(null);
-          setStatus('idle');
-          return;
-        }
-      } catch {
-        // The original failure still stands when the account cannot be reloaded.
-      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }

@@ -116,6 +116,32 @@ test('Function: proxyMeWalletBackupSeenPost — backup-seen without a session is
   expect((await request.post('/me/wallet-backup-seen')).status()).toBe(401);
 });
 
+test('Function: postPasskeyRenewReport — report without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: postPasskeyRenewAck — ack without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/ack')).status()).toBe(401);
+});
+
+test('Function: renewPasskey — report without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: PasskeyRenewNotice — ack without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/ack')).status()).toBe(401);
+});
+
+test('Function: proxyMePasskeyRenewReportPost — report without a session is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: proxyMePasskeyRenewAckPost — ack without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/ack')).status()).toBe(401);
+});
+
 test('Function: prfEvalFirstSalt — wallet heading is Wallet', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
