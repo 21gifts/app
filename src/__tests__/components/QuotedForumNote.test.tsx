@@ -738,6 +738,41 @@ describe('ForumQuotedBody', () => {
     expect(onActivate).toHaveBeenCalledTimes(1);
   });
 
+  it('opens the original note from the caption, photo, and amount', async () => {
+    fetchPhoto.mockResolvedValue(new Blob(['photo'], { type: 'image/jpeg' }));
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${QUOTED_URL}`}
+        knownNotes={[quotedNote]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    const link = await screen.findByRole('link', { name: 'Open linked note from Cyrill' });
+    expect(link.getAttribute('href')).toBe(`/messages/${QUOTED_ID}`);
+    expect(link.className).toContain('absolute');
+    expect(link.className).toContain('inset-0');
+    expect(screen.getAllByRole('link', { name: 'Open linked note from Cyrill' })).toHaveLength(1);
+    const caption = screen.getByText('A Quick Technical Note', { exact: false });
+    expect(caption.closest('a')).toBeNull();
+    expect(screen.getByText('₿43').closest('a')).toBeNull();
+    expect(screen.getByRole('time').closest('a')).toBeNull();
+    const photo = await screen.findByRole('img', { name: 'Photo from Cyrill' });
+    expect(photo.closest('a')).toBeNull();
+    expect(photo.getAttribute('draggable')).toBe('false');
+    let wrapper: HTMLElement | null = caption;
+    while (wrapper !== null && !wrapper.className.includes('[&_*]:pointer-events-none')) {
+      wrapper = wrapper.parentElement;
+    }
+    expect(
+      wrapper?.className ??
+        caption.closest('div')?.parentElement?.className ??
+        caption.closest('[class*="pointer-events-none"]')?.className,
+    ).toContain('pointer-events-none');
+    expect(wrapper?.className).toContain('[&_*]:pointer-events-none');
+  });
+
   it('does not render a role pill for basis authors', async () => {
     const basisNote: ForumMessage = {
       ...quotedNote,
