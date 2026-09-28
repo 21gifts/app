@@ -1160,6 +1160,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Prefixed string, or `''` when the amount cannot be shown. No I/O.
 - **Used by:** `ForumGoalBar`.
 
+## Function: RepaymentPlanChart
+
+- **Purpose:** Draw the repayment plan. Each day is a bar for the amount due that day. A line starts at the whole debt and falls to zero on the last day. The horizontal axis is the first day and the last day. When the credit is fully given those labels are the UTC dates. Before that they are day numbers. The words **Per day** and **Still owed** name the bar and the line.
+- **Inputs:** `amounts` (one positive number per day, same unit), `from`, `to`, and `totalText` (the whole debt, already formatted).
+- **Returns / side effects:** A figure, or `null` when every amount is missing. No network.
+- **Used by:** `CreditLedger`, `ForumAskWizard` plan and confirmation.
+
 ## Function: revealReplyForm
 
 - **Purpose:** Keeps a forum reply form fully inside the AppShell scroller. When the form's bottom edge is below the scroller, adds that overflow plus 12px to `scrollTop`. A missing scroller or form, and a form that already fits, leave the scroll position unchanged.

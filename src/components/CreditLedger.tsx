@@ -6,6 +6,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -104,6 +105,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
+        <RepaymentChart ledger={ledger} fiat={fiat} locale={locale} />
         <div className="mt-1 flex flex-col gap-2">
           {groupsOf(ledger.repayments).map((group) => (
             <div key={group.dayIndex}>
@@ -209,6 +211,19 @@ function rowAmount(
   );
 }
 
+function yearOf(dueOn: string): string {
+  return dueOn.slice(0, 4);
+}
+
+function formatAxisDay(dueOn: string, locale: string, withYear: boolean): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'short',
+    ...(withYear ? { year: 'numeric' as const } : {}),
+  }).format(new Date(`${dueOn}T00:00:00Z`));
+}
+
 function formatUtcDay(dueOn: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     timeZone: 'UTC',
@@ -216,6 +231,70 @@ function formatUtcDay(dueOn: string, locale: string): string {
     month: 'short',
     year: 'numeric',
   }).format(new Date(`${dueOn}T00:00:00Z`));
+}
+
+function RepaymentChart({
+  ledger,
+  fiat,
+  locale,
+}: {
+  ledger: RepaymentLedger;
+  fiat: FiatCode | null;
+  locale: string;
+}): ReactElement | null {
+  const { t, numberFormat } = useChartFormat();
+  const groups = groupsOf(ledger.repayments);
+  if (groups.length === 0) {
+    return null;
+  }
+  const amounts = groups.map((group) => dayAmount(group.rows, fiat));
+  const total = amounts.reduce((sum, amount) => sum + amount, 0);
+  if (total <= 0) {
+    return null;
+  }
+  const first = groups[0]!;
+  const last = groups[groups.length - 1]!;
+  const from =
+    first.dueOn === null
+      ? t('forum.creditDay', { day: '1' })
+      : formatAxisDay(first.dueOn, locale, false);
+  const to =
+    last.dueOn === null
+      ? t('forum.creditDay', { day: String(groups.length) })
+      : formatAxisDay(
+          last.dueOn,
+          locale,
+          first.dueOn === null || yearOf(first.dueOn) !== yearOf(last.dueOn),
+        );
+  const totalText =
+    fiat === null
+      ? formatBitcoin(total, numberFormat)
+      : formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
+  return <RepaymentPlanChart amounts={amounts} from={from} to={to} totalText={totalText} />;
+}
+
+function useChartFormat(): {
+  t: ReturnType<typeof useTranslations>['t'];
+  numberFormat: NumberFormatStyle;
+} {
+  const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  return { t, numberFormat };
+}
+
+function dayAmount(rows: readonly RepaymentLine[], fiat: FiatCode | null): number {
+  let sum = 0;
+  for (const row of rows) {
+    if (fiat !== null && row.amount !== null) {
+      const cents = Math.round(Number(row.amount) * 100);
+      if (Number.isFinite(cents)) {
+        sum += cents / 100;
+      }
+    } else if (row.sats !== null) {
+      sum += row.sats;
+    }
+  }
+  return sum;
 }
 
 function groupsOf(rows: readonly RepaymentLine[]): {

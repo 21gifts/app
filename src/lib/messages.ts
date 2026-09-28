@@ -322,6 +322,9 @@ const en = {
   'forum.creditGiven': 'Given',
   'forum.creditBack': 'Paid back',
   'forum.creditBackHow': 'Each share is one bitcoin payment to that person.',
+  'forum.creditChartPerDay': 'Per day',
+  'forum.creditChartDebt': 'Still owed',
+  'forum.creditChartAria': 'Repayment from {from} to {to}. {total} owed at the start.',
   'forum.creditBackOpen':
     'The days are fixed once the credit is fully given. Until then this is the plan for what has been given.',
   'forum.creditNoneYet': 'No one has given yet.',
@@ -388,8 +391,7 @@ const en = {
   'forum.askCredit': 'Credit',
   'forum.askObligationLabel': 'Donation or credit',
   'forum.tag.loan': 'Loan',
-  'forum.tag.loanHint':
-    'A loan is paid back. Each person who gives is paid back what they gave.',
+  'forum.tag.loanHint': 'A loan is paid back. Each person who gives is paid back what they gave.',
   'forum.tag.donation': 'Donation',
   'forum.tag.donationHint': 'A donation is a gift. It is not paid back.',
   'forum.creditCurrencyTitle': 'How the amount is fixed',
@@ -1242,6 +1244,9 @@ const de = {
   'forum.creditGiven': 'Gegeben',
   'forum.creditBack': 'Rückzahlung',
   'forum.creditBackHow': 'Jeder Anteil ist eine Bitcoin-Zahlung an diese Person.',
+  'forum.creditChartPerDay': 'Pro Tag',
+  'forum.creditChartDebt': 'Schuld',
+  'forum.creditChartAria': 'Rückzahlung von {from} bis {to}. Am Anfang {total} geschuldet.',
   'forum.creditBackOpen':
     'Die Tage stehen fest, sobald der Kredit voll gegeben ist. Bis dahin ist das der Plan für das bisher Gegebene.',
   'forum.creditNoneYet': 'Noch hat niemand gegeben.',
@@ -1311,8 +1316,7 @@ const de = {
   'forum.askCredit': 'Kredit',
   'forum.askObligationLabel': 'Spende oder Kredit',
   'forum.tag.loan': 'Darlehen',
-  'forum.tag.loanHint':
-    'Ein Darlehen wird zurückgezahlt. Wer gibt, bekommt das Gegebene zurück.',
+  'forum.tag.loanHint': 'Ein Darlehen wird zurückgezahlt. Wer gibt, bekommt das Gegebene zurück.',
   'forum.tag.donation': 'Spende',
   'forum.tag.donationHint': 'Eine Spende ist ein Geschenk. Sie wird nicht zurückgezahlt.',
   'forum.creditCurrencyTitle': 'Wie der Betrag festgelegt ist',
@@ -2181,6 +2185,9 @@ const es = {
   'forum.creditGiven': 'Aportado',
   'forum.creditBack': 'Devolución',
   'forum.creditBackHow': 'Cada parte es un pago en bitcoin a esa persona.',
+  'forum.creditChartPerDay': 'Por día',
+  'forum.creditChartDebt': 'Deuda',
+  'forum.creditChartAria': 'Devolución del {from} al {to}. Al principio se deben {total}.',
   'forum.creditBackOpen':
     'Los días quedan fijos cuando el crédito está completo. Hasta entonces, este es el plan de lo aportado.',
   'forum.creditNoneYet': 'Nadie ha aportado todavía.',
@@ -2247,8 +2254,7 @@ const es = {
   'forum.askCredit': 'Crédito',
   'forum.askObligationLabel': 'Donación o crédito',
   'forum.tag.loan': 'Préstamo',
-  'forum.tag.loanHint':
-    'Un préstamo se devuelve. Quien aporta recibe de vuelta lo que dio.',
+  'forum.tag.loanHint': 'Un préstamo se devuelve. Quien aporta recibe de vuelta lo que dio.',
   'forum.tag.donation': 'Donación',
   'forum.tag.donationHint': 'Una donación es un regalo. No se devuelve.',
   'forum.creditCurrencyTitle': 'Cómo queda fijado el importe',
@@ -3106,6 +3112,9 @@ const fil = {
   'forum.creditGiven': 'Naibigay',
   'forum.creditBack': 'Ibabalik',
   'forum.creditBackHow': 'Bawat bahagi ay isang bayad na bitcoin sa taong iyon.',
+  'forum.creditChartPerDay': 'Bawat araw',
+  'forum.creditChartDebt': 'Utang',
+  'forum.creditChartAria': 'Bayad mula {from} hanggang {to}. Sa simula, {total} ang utang.',
   'forum.creditBackOpen':
     'Natitiyak ang mga araw kapag puno na ang kredito. Hanggang noon, ito ang plano ng naibigay na.',
   'forum.creditNoneYet': 'Wala pang nagbigay.',
@@ -3172,8 +3181,7 @@ const fil = {
   'forum.askCredit': 'Utang',
   'forum.askObligationLabel': 'Donasyon o utang',
   'forum.tag.loan': 'Pautang',
-  'forum.tag.loanHint':
-    'Ang pautang ay ibinabalik. Ang nagbigay ay makakabalik ng ibinigay.',
+  'forum.tag.loanHint': 'Ang pautang ay ibinabalik. Ang nagbigay ay makakabalik ng ibinigay.',
   'forum.tag.donation': 'Donasyon',
   'forum.tag.donationHint': 'Ang donasyon ay regalo. Hindi ito ibinabalik.',
   'forum.creditCurrencyTitle': 'Paano nakapirmi ang halaga',

@@ -10702,4 +10702,92 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
   await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
   await expect(page.getByLabel('Paid back')).toBeVisible();
   await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
+  await expect(page.getByRole('img', { name: /Sep 27/ })).toBeVisible();
+});
+
+test('Function: RepaymentPlanChart — dates run from the first day to the last', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ spendOverTime: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        name: 'Ada',
+        text: 'Need help with a train ticket',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 21,
+        goalSats: 21,
+        goalRepayable: true,
+        goalTermDays: 2,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/messages/${id}/repayment`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currency: 'BTC',
+        fundedAt: '2026-09-26T12:00:00.000Z',
+        termDays: 2,
+        daysDue: 1,
+        daysPaid: 0,
+        unassignedSats: 0,
+        givers: [],
+        repayments: [
+          {
+            dayIndex: 0,
+            dueOn: '2026-09-27',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 10,
+            status: 'due',
+            via: 'lightning',
+          },
+          {
+            dayIndex: 1,
+            dueOn: '2026-09-28',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 11,
+            status: 'scheduled',
+            via: 'lightning',
+          },
+        ],
+        next: null,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}`);
+  const chart = page.getByRole('img', { name: /Repayment from/ });
+  await expect(chart).toBeVisible();
+  await expect(chart).toContainText('Sep 27');
+  await expect(chart).toContainText('Sep 28');
+  await expect(page.getByText('Per day')).toBeVisible();
+  await expect(page.getByText('Still owed')).toBeVisible();
 });

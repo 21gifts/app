@@ -112,6 +112,12 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).toContain('₿10');
     expect(document.body.textContent).toContain('has no 21.gifts account');
     expect(document.body.textContent).toContain('bitcoin payment');
+    const chart = screen.getByRole('img', { name: /Sep 27/ });
+    expect(chart.getAttribute('aria-label')).toContain('Sep 28');
+    expect(chart.querySelectorAll('[data-testid="repayment-plan-bar"]').length).toBe(2);
+    expect(chart.querySelector('[data-testid="repayment-plan-debt"]')).toBeTruthy();
+    expect(screen.getByText('Per day')).toBeTruthy();
+    expect(screen.getByText('Still owed')).toBeTruthy();
   });
 
   it('reloads a due share and ignores a failed refresh', async () => {

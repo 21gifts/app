@@ -6,6 +6,7 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
+import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
@@ -229,6 +230,14 @@ export function ForumAskWizard({
           termPreset={termPreset}
           customDays={customDays}
           planText={planText}
+          chartAmounts={
+            plan === null
+              ? []
+              : Array.from({ length: plan.days }, (_, index) =>
+                  Number(index === plan.days - 1 ? plan.last : plan.perDay),
+                )
+          }
+          chartTotal={owedText}
           owedText={owedText}
           posting={posting}
           canContinue={termDays !== null && plan !== null}
@@ -590,6 +599,27 @@ function creditTermLabel(
   return t('forum.creditTermDayCount', { days: custom });
 }
 
+function PlanChart({
+  amounts,
+  totalText,
+}: {
+  amounts: readonly number[];
+  totalText: string;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (amounts.length === 0 || totalText === '') {
+    return null;
+  }
+  return (
+    <RepaymentPlanChart
+      amounts={amounts}
+      from={t('forum.creditDay', { day: '1' })}
+      to={t('forum.creditDay', { day: String(amounts.length) })}
+      totalText={totalText}
+    />
+  );
+}
+
 function CreditPhasePanel({
   phase,
   bitcoinAsk,
@@ -597,6 +627,8 @@ function CreditPhasePanel({
   termPreset,
   customDays,
   planText,
+  chartAmounts,
+  chartTotal,
   owedText,
   posting,
   canContinue,
@@ -610,6 +642,8 @@ function CreditPhasePanel({
   termPreset: CreditTermPreset;
   customDays: string;
   planText: string;
+  chartAmounts: readonly number[];
+  chartTotal: string;
   owedText: string;
   posting: boolean;
   canContinue: boolean;
@@ -677,6 +711,7 @@ function CreditPhasePanel({
         <div className="flex flex-col gap-2 text-sm text-app-fg">
           <p>{t('forum.creditPlanBody')}</p>
           <p>{t('forum.creditDaily', { plan: planText })}</p>
+          <PlanChart amounts={chartAmounts} totalText={chartTotal} />
         </div>
       ) : null}
       {phase === 'confirmWant' ? (
@@ -691,6 +726,7 @@ function CreditPhasePanel({
           </p>
           <p>{t('forum.creditPlanBody')}</p>
           <p>{t('forum.creditDaily', { plan: planText })}</p>
+          <PlanChart amounts={chartAmounts} totalText={chartTotal} />
         </div>
       ) : null}
       {phase === 'confirmCan' ? (
