@@ -84,6 +84,16 @@ describe('ProfileChromeLeft', () => {
     expect(screen.queryByRole('link', { name: '21.gifts' })).toBeNull();
   });
 
+  it('paints the default wordmark in the dark tone', () => {
+    renderWithLocale(<ProfileChromeLeft tone="dark" wordmarkHref="/" />);
+    const mark = screen.getByRole('link', { name: '21.gifts' });
+    expect(mark.className).toContain('text-paper');
+    expect(mark.getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).className).toContain(
+      'text-paper/70',
+    );
+  });
+
   it('omits the arrow when hideWithoutHistory has no earlier view', () => {
     renderWithLocale(<ProfileChromeLeft hideWithoutHistory />);
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
