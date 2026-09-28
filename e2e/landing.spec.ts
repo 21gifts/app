@@ -4,26 +4,46 @@ import { getCatalog } from '../src/lib/messages';
 test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Give Bitcoin' })).toHaveAttribute(
+    'href',
+    '/en/donate',
+  );
+  await expect(page.locator('main').getByText('How it works', { exact: true })).toBeVisible();
+  const bitcoinMarks = page.locator('main img[src="/bitcoin-symbol.svg"]');
+  await expect(bitcoinMarks).toHaveCount(5);
+  await expect
+    .poll(() =>
+      bitcoinMarks.evaluateAll((images) =>
+        images.every(
+          (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+        ),
+      ),
+    )
+    .toBe(true);
+  await expect(page.getByRole('spinbutton')).toHaveCount(0);
 });
 
 test('landing shows the project donate address', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Want to support 21.gifts?' })).toBeVisible();
   await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
     'href',
     'lightning:21gifts@walletofsatoshi.com',
   );
 });
 
-test('Happyland follows how it works and hides unverified claims', async ({ page }) => {
+test('Happyland follows the giving journey and keeps unverified claims out', async ({ page }) => {
   await page.goto('/');
   const sections = page.locator('main > section');
   await expect(sections.nth(1)).toHaveAttribute('id', 'how');
-  await expect(sections.nth(2)).toHaveAttribute('id', 'happyland');
-  await expect(
-    page.getByRole('heading', { name: 'Happyland – a glimpse of life in Manila' }),
-  ).toBeVisible();
+  await expect(sections.nth(3)).toHaveAttribute('id', 'why');
+  await expect(sections.nth(4)).toHaveAttribute('id', 'happyland');
+  await expect(page.getByRole('heading', { name: 'Happyland in Tondo' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Happyland · Tondo/ })).toHaveAttribute(
+    'href',
+    '#happyland',
+  );
   await expect(page.getByRole('heading', { name: '21.gifts on the ground' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'What your gift makes possible' })).toHaveCount(0);
 });
@@ -35,7 +55,7 @@ test('legal page is reachable', async ({ page }) => {
 
 test('about page is reachable', async ({ page }) => {
   await page.goto('/about');
-  await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeVisible();
 });
 
 test('landing mobile nav opens the section links', async ({ page }) => {
@@ -47,7 +67,7 @@ test('landing mobile nav opens the section links', async ({ page }) => {
 });
 
 for (const locale of ['en', 'de', 'es', 'fil'] as const) {
-  test(`Function: HappylandSection renders the complete ${locale} essay without overflow`, async ({
+  test(`Function: HappylandSection renders the ${locale} place portrait without overflow`, async ({
     page,
     context,
   }) => {
@@ -56,45 +76,37 @@ for (const locale of ['en', 'de', 'es', 'fil'] as const) {
     await page.goto('/');
     const section = page.locator('#happyland');
     await expect(section.getByRole('heading', { level: 2 })).toContainText('Happyland');
-    await expect(section.locator('figure')).toHaveCount(8);
-    await expect(section.locator('figcaption', { hasText: /^Pagpag$/ })).toHaveCount(1);
-    await expect
-      .poll(() =>
-        section
-          .getByRole('img')
-          .evaluateAll((images) =>
-            images.every(
-              (image) =>
-                image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
-            ),
-          ),
-      )
-      .toBe(true);
+    await expect(section.locator('article')).toHaveCount(3);
+    await expect(section.locator('img')).toHaveCount(4);
+    await expect(section.locator('figcaption').first()).toContainText('Happyland');
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
   });
 }
 
-test('Function: HappylandPhoto preserves photographs and displays descriptive captions', async ({
+test('Happyland uses the original people photographs with equal gallery frames', async ({
   page,
 }) => {
   await page.goto('/');
-  const figures = page.locator('#happyland figure');
-  await expect(figures).toHaveCount(8);
-  for (const figure of await figures.all()) {
-    const image = figure.getByRole('img');
-    await expect(image).toHaveAttribute('alt', /.+/);
-    await expect(image).toHaveAttribute('src', /^\/happyland\/.+\.webp$/);
-    await expect(figure.locator('figcaption')).not.toBeEmpty();
-    await expect
-      .poll(() =>
-        image.evaluate(
-          (element) =>
-            element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0,
-        ),
-      )
-      .toBe(true);
+  const section = page.locator('#happyland');
+  await expect(section.locator('img')).toHaveCount(4);
+  for (const photo of ['food-stall', 'main-street', 'home', 'household']) {
+    expect((await page.request.get(`/happyland/${photo}.webp`)).status()).toBe(200);
+  }
+  const galleryImages = section.locator('figure img');
+  const frames = await galleryImages.evaluateAll((images) =>
+    images.slice(1).map((image) => ({ width: image.clientWidth, height: image.clientHeight })),
+  );
+  expect(frames).toHaveLength(3);
+  expect(new Set(frames.map(({ height }) => height)).size).toBe(1);
+  await expect(section.locator('article')).toHaveCount(3);
+  for (const title of [
+    'Making a living from discarded things',
+    'One room for everyday life',
+    'Paths through the neighborhood',
+  ]) {
+    await expect(section.getByRole('heading', { name: title, exact: true })).toBeVisible();
   }
 });
 

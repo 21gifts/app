@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { setAccountLocale } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const refresh = vi.fn();
+const navigate = vi.fn();
 
 vi.mock('@/lib/api', () => ({ setAccountLocale: vi.fn() }));
 
@@ -38,9 +39,27 @@ function account(id: string, locale: 'en' | 'de'): Account {
   } as Account;
 }
 
+beforeEach(() => {
+  const browserLocation = globalThis.location;
+  vi.stubGlobal('location', {
+    get pathname() {
+      return browserLocation.pathname;
+    },
+    get hash() {
+      return browserLocation.hash;
+    },
+    get protocol() {
+      return browserLocation.protocol;
+    },
+    assign: navigate,
+  });
+});
+
 afterEach(() => {
   cleanup();
   refresh.mockReset();
+  navigate.mockReset();
+  vi.unstubAllGlobals();
   document.cookie = `${LOCALE_COOKIE}=; Path=/; Max-Age=0`;
   clearSession();
 });
@@ -69,23 +88,65 @@ describe('LanguageSwitcher', () => {
     );
   });
 
-  it('clicking Español writes the locale cookie, refreshes, and closes', () => {
+  it('clicking Español writes the locale cookie, loads the language URL, and closes', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     fireEvent.click(screen.getByLabelText('Language'));
     fireEvent.click(screen.getByRole('option', { name: 'Español' }));
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=es`);
-    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith('/es');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('clicking the already-current English is a no-op', () => {
+  it('clicking current English on the legacy URL goes to its stable URL', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     document.cookie = `${LOCALE_COOKIE}=; Path=/; Max-Age=0`;
     fireEvent.click(screen.getByLabelText('Language'));
     fireEvent.click(screen.getByRole('option', { name: 'English' }));
-    expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=en`);
+    expect(document.cookie).toContain(`${LOCALE_COOKIE}=en`);
+    expect(navigate).toHaveBeenCalledWith('/en');
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('stays on the same localized URL when choosing the current language', () => {
+    window.history.replaceState({}, '', '/en');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      fireEvent.click(screen.getByLabelText('Language'));
+      fireEvent.click(screen.getByRole('option', { name: 'English' }));
+      expect(navigate).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+    } finally {
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('keeps the current public page when choosing another language', () => {
+    window.history.replaceState({}, '', '/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      fireEvent.click(screen.getByLabelText('Language'));
+      fireEvent.click(screen.getByRole('option', { name: 'Deutsch' }));
+      expect(navigate).toHaveBeenCalledWith('/de/about');
+      expect(document.documentElement.lang).toBe('de');
+    } finally {
+      window.history.replaceState({}, '', '/');
+      document.documentElement.lang = 'en';
+    }
+  });
+
+  it('refreshes an app page after keyboard language selection', () => {
+    window.history.replaceState({}, '', '/login');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      fireEvent.keyDown(screen.getByLabelText('Language'), { key: 'ArrowDown' });
+      fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowDown' });
+      fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(navigate).not.toHaveBeenCalled();
+    } finally {
+      window.history.replaceState({}, '', '/');
+    }
   });
 
   it('adds Secure to the cookie on https', () => {
@@ -164,7 +225,7 @@ describe('LanguageSwitcher', () => {
     expect(listbox.getAttribute('aria-activedescendant')).toBe('language-option-de');
     fireEvent.keyDown(listbox, { key: 'Enter' });
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
-    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith('/de');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
@@ -216,7 +277,7 @@ describe('LanguageSwitcher', () => {
     fireEvent.mouseDown(option);
     fireEvent.click(option);
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
-    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith('/de');
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
@@ -265,7 +326,7 @@ describe('LanguageSwitcher', () => {
     fireEvent.keyDown(listbox, { key: 'End' });
     fireEvent.keyDown(listbox, { key: ' ' });
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=fil`);
-    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith('/fil');
   });
 
   it('ArrowDown on the open trigger keeps the listbox open', () => {
@@ -277,12 +338,13 @@ describe('LanguageSwitcher', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
-  it('Enter on the already-current locale closes without cookie or refresh', () => {
+  it('Enter on the current locale moves the legacy URL to its stable URL', () => {
     renderWithLocale(<LanguageSwitcher tone="light" />);
     document.cookie = `${LOCALE_COOKIE}=; Path=/; Max-Age=0`;
     fireEvent.click(screen.getByLabelText('Language'));
     fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
-    expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=en`);
+    expect(document.cookie).toContain(`${LOCALE_COOKIE}=en`);
+    expect(navigate).toHaveBeenCalledWith('/en');
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.queryByRole('listbox')).toBeNull();
   });

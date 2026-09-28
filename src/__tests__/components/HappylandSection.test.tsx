@@ -2,28 +2,33 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { HappylandSection } from '@/components/HappylandSection';
 import { getCatalog } from '@/lib/messages';
-import { happylandPhotos } from '@/lib/happyland';
 
 afterEach(cleanup);
 
 describe('HappylandSection', () => {
-  it.each(['en', 'de', 'es', 'fil'] as const)('presents the complete essay in %s', (locale) => {
-    const messages = getCatalog(locale);
-    render(<HappylandSection locale={locale} />);
-    const section = screen.getByRole('region', { name: messages['happyland.title'] });
-    expect(section.id).toBe('happyland');
-    expect(within(section).getAllByRole('img')).toHaveLength(8);
-    expect(within(section).getAllByRole('heading', { level: 3 })).toHaveLength(2);
-    for (const key of ['intro', 'daily', 'observation', 'poverty', 'lanes'] as const) {
-      expect(within(section).getByText(messages[`happyland.${key}`])).toBeTruthy();
-    }
-    for (const photo of happylandPhotos) {
-      const image = within(section).getByAltText(messages[photo.altKey]);
-      expect(image.getAttribute('src')).toBe(photo.src);
-      expect(image.closest('figure')?.querySelector('figcaption')?.textContent).toBe(
-        messages[photo.captionKey],
-      );
-    }
-    expect(within(section).getByText('Pagpag')).toBeTruthy();
-  });
+  it.each(['en', 'de', 'es', 'fil'] as const)(
+    'presents the original Happyland photographs in %s',
+    (locale) => {
+      const messages = getCatalog(locale);
+      render(<HappylandSection locale={locale} />);
+      const section = screen.getByRole('region', { name: messages['happyland.title'] });
+      expect(section.id).toBe('happyland');
+      expect(
+        within(section).getByRole('img', { name: messages['happyland.photoAlt'] }),
+      ).toBeTruthy();
+      expect(within(section).getByText(messages['happyland.photoCaption'])).toBeTruthy();
+      for (const key of ['street', 'home', 'household'] as const) {
+        expect(
+          within(section).getByRole('img', { name: messages[`happyland.${key}Alt`] }),
+        ).toBeTruthy();
+        expect(within(section).getByText(messages[`happyland.${key}Caption`])).toBeTruthy();
+      }
+      expect(within(section).getAllByRole('img')).toHaveLength(4);
+      expect(within(section).getAllByRole('heading', { level: 3 })).toHaveLength(3);
+      for (const key of ['intro', 'daily', 'poverty', 'lanes', 'source'] as const) {
+        expect(within(section).getByText(messages[`happyland.${key}`])).toBeTruthy();
+      }
+      expect(within(section).getAllByRole('article')).toHaveLength(3);
+    },
+  );
 });

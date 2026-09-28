@@ -1,7 +1,7 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import DonatePage from '@/app/donate/page';
+import DonatePage, { generateMetadata } from '@/app/donate/page';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -43,14 +43,21 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('DonatePage', () => {
+  it('publishes the canonical URL for the localized gift entry', async () => {
+    expect(await generateMetadata()).toMatchObject({
+      title: 'Give Bitcoin to someone | 21.gifts',
+      alternates: { canonical: '/en/donate', languages: { fil: '/fil/donate' } },
+    });
+  });
+
   it('renders the page heading', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByRole('heading', { name: 'Send help' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Give Bitcoin to someone' })).toBeTruthy();
   });
 
   it('renders the explainer lead', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByText(/open Show reactions/i)).toBeTruthy();
+    expect(screen.getByText(/Read the reactions beneath it/i)).toBeTruthy();
   });
 
   it('links Open the forum to /welcome', async () => {
@@ -66,7 +73,7 @@ describe('DonatePage', () => {
 
   it('links the unsigned wordmark home', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );

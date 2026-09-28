@@ -7,9 +7,9 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark and a language switcher (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow). The language-prefixed public URL (`/en`, `/de`, `/es`, or `/fil`) has reciprocal language links and a matching canonical. The Bitcoin-led hero offers **Give Bitcoin** (`/donate`) first and **Ask for help** (`/login`) second, with a labeled, non-interactive example of the real post → reply → Bitcoin journey and a wallet → Bitcoin → recipient diagram using the familiar orange Bitcoin symbol. Light sections show three donor steps and three discovery links. Why uses four concise cards. Happyland follows with four photographs from the original 21.gifts page, a source link and three concrete observations in all four languages. The dark closing sections distinguish gifts to people from separate support for the 21.gifts project at `21gifts@walletofsatoshi.com`, then answer common questions. **Install app** appears in the header and after Give Bitcoin only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **Actions:** Read the pitch, change language, open login, open Give Bitcoin, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `ProfileChromeLeft`.
 
 ### Variant: default
 
@@ -46,8 +46,8 @@ The only state: imprint plus privacy, marketing chrome.
 
 - **Purpose:** Public foundation of the house — three convictions and Matthew 10:8.
 - **URL:** `/about` — public marketing page (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, kicker **About**, heading **Three convictions**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is a duty with 1 John 3:18; Direct, with no middleman; Bitcoin is the most effective money) and **Open the living room** (`/welcome`). Visitor copy comes from the catalog.
-- **Actions:** Change language. Read the convictions. Open **Open the living room** (`/welcome`). Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark and a language switcher (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), kicker **About**, heading **What 21.gifts stands for**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is part of faith with 1 John 3:18; From one person to another; Why Bitcoin?) and **Go to the forum** (`/welcome`). Visitor copy comes from the catalog.
+- **Actions:** Change language. Read the convictions. Open **Go to the forum** (`/welcome`). Header **Log in** goes to `/login`.
 - **Calls:** `AboutPage` inside `MarketingLayout`, `LanguageSwitcher`, `ButtonLink`.
 
 ### Variant: default
@@ -325,13 +325,13 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not marketing header). Heading **Send help**, short lead about opening **Show reactions** then sending Bitcoin on a payable reaction, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark the localized public home when unsigned, `/welcome` when a session is hydrated — not marketing header). Heading **Give Bitcoin to someone**, short lead reading reactions and choosing the Gift icon on a payable reaction, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
 - **Actions:** Change language. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`.
 
 ### Variant: default
 
-Heading **Send help**, explainer lead, **Open the forum**.
+Heading **Give Bitcoin to someone**, explainer lead, **Open the forum**.
 
 ![21.gifts donate](images/donate.png)
 

@@ -76,7 +76,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'root.png',
     visual: 'screen-root',
-    needle: 'Direct human-to-human gifts',
+    needle: 'Help people',
   },
   {
     route: '/',
@@ -104,7 +104,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'about.png',
     visual: 'screen-about',
-    needle: 'Three convictions',
+    needle: 'What 21.gifts stands for',
   },
   {
     route: '/login',

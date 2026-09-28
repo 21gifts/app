@@ -15,10 +15,13 @@ export interface HomeWordmarkProps {
   className?: string;
   /** Link click handler. */
   onClick?: MouseEventHandler<HTMLAnchorElement>;
+  /** Public destination on localized marketing pages; signed-in users still go to the app. */
+  publicHref?: string;
 }
 
 /**
- * Session-aware wordmark: `/welcome` when signed in, `/` otherwise.
+ * Session-aware wordmark: `/welcome` when signed in, the provided public URL
+ * on localized pages, or `/` otherwise.
  *
  * @param props - See {@link HomeWordmarkProps}.
  * @returns The linked `21.gifts` wordmark.
@@ -26,7 +29,7 @@ export interface HomeWordmarkProps {
 export function HomeWordmark(props: HomeWordmarkProps): ReactElement {
   const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
-  const href = ready && session !== null ? '/welcome' : '/';
+  const href = ready && session !== null ? '/welcome' : (props.publicHref ?? '/');
   return (
     <Wordmark
       href={href}

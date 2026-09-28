@@ -17,13 +17,23 @@ beforeEach(() => {
 describe('getRequestLocale', () => {
   it('prefers a valid locale cookie over Accept-Language', async () => {
     cookieGet.mockReturnValue({ value: 'es' });
-    headerGet.mockReturnValue('de');
+    headerGet.mockImplementation((name: string) => (name === 'accept-language' ? 'de' : null));
     await expect(getRequestLocale()).resolves.toBe('es');
   });
 
   it('ignores an invalid cookie and uses Accept-Language', async () => {
     cookieGet.mockReturnValue({ value: 'xx' });
-    headerGet.mockReturnValue('de-DE,de;q=0.9');
+    headerGet.mockImplementation((name: string) =>
+      name === 'accept-language' ? 'de-DE,de;q=0.9' : null,
+    );
+    await expect(getRequestLocale()).resolves.toBe('de');
+  });
+
+  it('uses the public URL locale even when the cookie disagrees', async () => {
+    cookieGet.mockReturnValue({ value: 'es' });
+    headerGet.mockImplementation((name: string) =>
+      name === 'x-21gifts-public-locale' ? 'de' : 'es',
+    );
     await expect(getRequestLocale()).resolves.toBe('de');
   });
 
