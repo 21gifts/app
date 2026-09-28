@@ -2631,15 +2631,35 @@ describe('InboxScreen', () => {
           <InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />
         </AppShell>,
       );
+      const opened = queued.length;
       await act(async () => {
         queued[queued.length - 1]?.(0);
       });
+      expect(stored).toBe(0);
       expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+      expect(queued.length).toBe(opened + 1);
       stick = true;
-      columnBottom = 100;
+      const pinnedAt = queued.length;
+      const pinnedFrame = queued[queued.length - 1];
+      if (pinnedFrame === undefined) {
+        throw new Error('expected a pin frame');
+      }
       await act(async () => {
-        queued[queued.length - 1]?.(0);
+        pinnedFrame(0);
       });
+      expect(stored).toBe(1600);
+      expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+      expect(queued.length).toBe(pinnedAt + 1);
+      columnBottom = 100;
+      const armedAt = queued.length;
+      const armedFrame = queued[queued.length - 1];
+      if (armedFrame === undefined) {
+        throw new Error('expected a follow-up pin frame');
+      }
+      await act(async () => {
+        armedFrame(0);
+      });
+      expect(queued.length).toBe(armedAt);
       expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m8"]'));
     } finally {
       rectSpy.mockRestore();
