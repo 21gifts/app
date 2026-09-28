@@ -266,37 +266,40 @@ export function ModeratorGroupScreen(): ReactElement | null {
     const generation = paginationGeneration.current;
     const rootNode = document.querySelector('[data-scrollport][data-scroll-active]');
     const root = rootNode instanceof HTMLElement ? rootNode : null;
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
-        return;
-      }
-      loadingMoreRef.current = true;
-      void (async () => {
-        try {
-          const page = await fetchConversation(activeSession, activeId, {
-            cursor: activeCursor,
-          });
-          /* v8 ignore next 3 -- unmount during cursor fetch */
-          if (cancelled || generation !== paginationGeneration.current) {
-            return;
-          }
-          setMessages((prev) => {
-            /* v8 ignore next -- the sentinel only renders after page one is in state */
-            if (prev === null) return page.messages;
-            const ids = new Set(prev.map((message) => message.id));
-            const older = page.messages.filter((message) => !ids.has(message.id));
-            return [...older, ...prev];
-          });
-          setNextCursor(page.nextCursor);
-        } catch {
-          // Keep the current pages and cursor so a later intersection may retry.
-        } finally {
-          if (!cancelled && generation === paginationGeneration.current) {
-            loadingMoreRef.current = false;
-          }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
+          return;
         }
-      })();
-    }, { root });
+        loadingMoreRef.current = true;
+        void (async () => {
+          try {
+            const page = await fetchConversation(activeSession, activeId, {
+              cursor: activeCursor,
+            });
+            /* v8 ignore next 3 -- unmount during cursor fetch */
+            if (cancelled || generation !== paginationGeneration.current) {
+              return;
+            }
+            setMessages((prev) => {
+              /* v8 ignore next -- the sentinel only renders after page one is in state */
+              if (prev === null) return page.messages;
+              const ids = new Set(prev.map((message) => message.id));
+              const older = page.messages.filter((message) => !ids.has(message.id));
+              return [...older, ...prev];
+            });
+            setNextCursor(page.nextCursor);
+          } catch {
+            // Keep the current pages and cursor so a later intersection may retry.
+          } finally {
+            if (!cancelled && generation === paginationGeneration.current) {
+              loadingMoreRef.current = false;
+            }
+          }
+        })();
+      },
+      { root },
+    );
     observer.observe(nearStartElement);
     return () => {
       cancelled = true;
