@@ -120,7 +120,7 @@ function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
  */
 function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const query = useSearchParams().toString();
   const path = pathFromLocation(pathname);
   if (path !== null) {
     recordCurrentView(path, false);
@@ -131,13 +131,13 @@ function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
       recordCurrentView(live);
       onRecorded();
     }
-  }, [onRecorded, pathname, searchParams]);
+  }, [onRecorded, pathname, query]);
   useEffect(() => {
     const live = pathFromLocation(pathname);
     if (live !== null) {
       recordCurrentView(live);
     }
-  }, [pathname, searchParams]);
+  }, [pathname, query]);
   return null;
 }
 
