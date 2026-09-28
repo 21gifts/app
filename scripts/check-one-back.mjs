@@ -73,8 +73,8 @@ for (const file of files) {
   if (source.includes('rules.forumCta') && rel !== 'src/lib/messages.ts') {
     failures.push(`${rel}: rules.forumCta is only allowed in src/lib/messages.ts`);
   }
-  if (source.includes('history.back') && rel !== 'src/lib/view-history.ts') {
-    failures.push(`${rel}: history.back is only allowed in src/lib/view-history.ts`);
+  if (source.includes('history.back')) {
+    failures.push(`${rel}: history.back is forbidden`);
   }
   if (source.includes('forum.payBack') && rel !== 'src/lib/messages.ts') {
     failures.push(`${rel}: forum.payBack is only allowed in src/lib/messages.ts`);

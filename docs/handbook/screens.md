@@ -3645,7 +3645,7 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook
 
 - **URL:** `/handbook` — public app handbook hub (no auth gate). Header **Handbook** stays here.
-- **What the user sees:** Localized heading **Handbook** and intro chrome, language switcher in the marketing header (wordmark `/` when unsigned, `/welcome` when a session is hydrated), intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files. After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
+- **What the user sees:** Localized heading **Handbook** and intro chrome, one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark in the marketing header (wordmark `/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, intro with a link to the api handbook on GitHub (`21gifts/api`), nav links to **Screens**, **Functions**, and **Endpoints**, plus a short lead for each part. Does not dump those three markdown files. After tapping the link icon on the Handbook heading, that button shows the check icon and `data-copied`.
 - **Actions:** Change language, open a part, copy the hub heading URL, follow the api handbook link.
 - **Calls:** `HandbookPage`, `HandbookIntro`, `HandbookCopyLink`, `LanguageSwitcher`.
 - **Screenshots:** none. Documentation page, not a product screen.
@@ -3653,7 +3653,7 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook/screens
 
 - **URL:** `/handbook/screens` — public screens handbook (no auth gate).
-- **What the user sees:** Heading **Screens**, a three-level table of contents (chapter = first path segment, screen, variant), and nested compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). Topics that lack the selected combo are omitted. No topic picker. Marketing header wordmark goes to `/` when unsigned and `/welcome` when a session is hydrated.
+- **What the user sees:** Heading **Screens**, a three-level table of contents (chapter = first path segment, screen, variant), and nested compact cards (`HandbookFigure` via `HandbookImageViewer`) under global **Desktop** / **Mobile** and **Light** / **Dark** switches. Switches appear only when those baselines exist somewhere in the catalog. Each card has a ~220px preview, a written description of what the picture shows, a permalink label, and a copy-link. Clicking the preview opens the same PNG at full size in `HandbookLightbox` (close via X, backdrop, or Escape). The lightbox chevron shows the previous image (`handbook.previousImage`, “Previous screen”) and is not the page-back arrow. Topics that lack the selected combo are omitted. No topic picker. Marketing header has one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow).
 - **Actions:** Jump via the contents nav, switch viewport/theme when available (applies to every card), open a preview at full size, step through every visible variant with Left/Right arrows or lightbox chevrons, copy a chapter/screen/card deep link, follow a hash deep link, return to the hub.
 - **Calls:** `HandbookScreensPage`, `HandbookImageViewer`, `HandbookOutline`, `HandbookSectionHeading`, `HandbookFigure`, `HandbookLightbox`, `HandbookIntro`, `HandbookCopyLink`, `buildHandbookOutline`, `nextOutlineIndex`, `topicAnchor`, `parseScreenVariantDescriptions`, `loadHandbookDocuments`.
 - **Screenshots:** none. This page _shows_ product-screen goldens; it is not itself a golden.
@@ -3661,7 +3661,7 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook/functions
 
 - **URL:** `/handbook/functions` — public functions handbook (no auth gate).
-- **What the user sees:** Heading **Functions** and the functions markdown (`## Function: name`) only. No image switches. Marketing header wordmark goes to `/` when unsigned and `/welcome` when a session is hydrated.
+- **What the user sees:** Heading **Functions** and the functions markdown (`## Function: name`) only. No image switches. Marketing header has one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow).
 - **Actions:** Read the markdown, return to the hub.
 - **Calls:** `HandbookFunctionsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
 - **Screenshots:** none.
@@ -3669,7 +3669,7 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 ## Screen: /handbook/endpoints
 
 - **URL:** `/handbook/endpoints` — public endpoints handbook (no auth gate).
-- **What the user sees:** Heading **Endpoints** and the endpoints markdown only. No image switches. Marketing header wordmark goes to `/` when unsigned and `/welcome` when a session is hydrated.
+- **What the user sees:** Heading **Endpoints** and the endpoints markdown only. No image switches. Marketing header has one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow).
 - **Actions:** Read the markdown, return to the hub.
 - **Calls:** `HandbookEndpointsPage`, `HandbookMarkdown`, `loadHandbookDocuments`.
 - **Screenshots:** none.
