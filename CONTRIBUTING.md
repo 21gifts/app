@@ -236,7 +236,7 @@ app/
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
 │   │   ├── ForumAskWizard.tsx   # Ask-for-money steps amount → photos → text → preview Post
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
-│   │   ├── ForumPhotoGallery.tsx # Stills stacked in the page scrollport (current/total chip, dots)
+│   │   ├── ForumPhotoGallery.tsx # Horizontal snap row (data-scroll-x, 88% peek, chip, dots)
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
@@ -433,10 +433,12 @@ It carries `data-scroll-active`. Every other port stays clipped and carries
 Textareas grow with their text instead of scrolling. Native inputs and
 selects are left alone. Clipping (`overflow: hidden` or `clip`) is not a
 scrollport. Components still must not set a scrolling overflow.
-`scripts/check-scrollports.mjs` fails CI on those utilities, arbitrary
-values, and assignments, and on any stylesheet scrolling overflow except
-the one `overflow: auto` on `[data-scrollport][data-scroll-active]`. It
-rejects its own detector if that check goes blind. The document lock is
+A photo row may scroll sideways on `[data-scroll-x]`. That row is
+`overflow-x: auto` and `overflow-y: clip`, so it is not a second page
+scroll. `scripts/check-scrollports.mjs` fails CI on scrolling utilities,
+arbitrary values, and assignments, and on any stylesheet scrolling overflow
+except `overflow: auto` on `[data-scrollport][data-scroll-active]` and that
+one sideways row. It rejects its own detector if that check goes blind. The document lock is
 `!important`. AppShell `<main>` stays free of `overflow-hidden` so the
 in-tree menu is not clipped. The document lock stops the page from
 scrolling under the frame.

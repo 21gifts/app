@@ -1037,6 +1037,54 @@ On **All**, expand Ada's note. The thread shows two replies from **Robin**, who 
 
 ![21.gifts welcome expanded external](images/welcome-expanded-external.png)
 
+### Variant: reaction-draft
+
+On **Active**, expand Bob's note. Ada, a basis member, has typed **21** in **Amount** (the line under it shows **$0.02**) and **This is my answer** in **Your reaction**. Bob's note and the existing **21.gifts** reply stay on screen. **Post** is still enabled.
+
+![21.gifts welcome reaction draft](images/welcome-reaction-draft.png)
+
+### Variant: reaction-submitting
+
+Same draft, with the payment request still in flight. The reply **Post** control is disabled and shows its spinner. The typed sentence and **21** stay in the fields.
+
+![21.gifts welcome reaction submitting](images/welcome-reaction-submitting.png)
+
+### Variant: reaction-pay
+
+The invoice has been minted. The pay sheet is open under the note, and the note text is still inside the window (the page does not jump the note away). The reply field still contains **This is my answer**.
+
+![21.gifts welcome reaction pay](images/welcome-reaction-pay.png)
+
+### Variant: reaction-pay-sheet
+
+The same open payment, scrolled so the sheet itself is in the window. **Back** is at the top left. The line reads **Pay ₿21**. Desktop shows the Bitcoin payment QR; a phone shows **Pay** and no QR. **Waiting for payment…** is visible.
+
+![21.gifts welcome reaction pay sheet](images/welcome-reaction-pay-sheet.png)
+
+### Variant: reaction-pay-kept
+
+The same open payment, scrolled so the reply composer is in the window. **Your reaction** is disabled and still says **This is my answer**. **Amount** is still **21**, with **$0.02** under it.
+
+![21.gifts welcome reaction pay kept](images/welcome-reaction-pay-kept.png)
+
+### Variant: reaction-error
+
+The payment request failed. The alert says **Could not post your message**. The typed sentence is still in the field, and no pay sheet is open.
+
+![21.gifts welcome reaction error](images/welcome-reaction-error.png)
+
+### Variant: reaction-rate-limit
+
+The payment request was rate-limited. The alert says **Too many messages. Please wait a moment and try again.** The typed sentence is still in the field.
+
+![21.gifts welcome reaction rate limit](images/welcome-reaction-rate-limit.png)
+
+### Variant: reaction-paid
+
+The payment was detected. Ada's reply **This is my answer** is in the thread, and the composer is empty again.
+
+![21.gifts welcome reaction paid](images/welcome-reaction-paid.png)
+
 ### Variant: quoted-note
 
 Signed-in founder Cyrill, living-room laws dismissed, Active. Only Riana Rosello's paid 21-sat verified note is in the list; the card is expanded. Cyrill's reply shows `just for information:` and a nested technical-note post (photo, caption starting **A Quick Technical Note**, Founder pill, ₿43). The raw `https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec` URL is not visible.
@@ -1133,7 +1181,7 @@ On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row 
 
 ### Variant: photos
 
-On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (stills stacked in the page scrollport, `1/2` chip, dots) and the attach control visible in the composer.
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and the attach control visible in the composer.
 
 ![21.gifts welcome photos](images/welcome-photos.png)
 
@@ -1145,7 +1193,7 @@ After a successful post of caption **Hello with this photo.** plus a JPEG: the r
 
 ### Variant: photos-and-text
 
-On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (stills stacked in the page scrollport, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
 
 ![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 
@@ -1768,7 +1816,7 @@ Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 2100
 
 ### Variant: posts-open-photos
 
-Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in `ForumPhotoGallery` (stills stacked in the page scrollport, `1/2` chip, dots) above the text, same ForumBoard paint as `/welcome` `photos`.
+Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) above the text, same ForumBoard paint as `/welcome` `photos`.
 
 ![21.gifts member posts open with photos](images/members-posts-open-photos.png)
 
@@ -3236,7 +3284,7 @@ Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`
 
 ### Variant: photos
 
-Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` stacks the stills full width in the page scrollport, with a `1/2` chip and dots.
+Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` is a horizontal snap row (`data-scroll-x`, 88% peek) with a `1/2` chip and dots.
 
 ![21.gifts public message photos](images/messages-id-photos.png)
 

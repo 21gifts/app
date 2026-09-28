@@ -2724,6 +2724,54 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:reaction-draft",
+    "label": "/welcome reaction-draft",
+    "visual": "state-welcome-reaction-draft",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-submitting",
+    "label": "/welcome reaction-submitting",
+    "visual": "state-welcome-reaction-submitting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-pay",
+    "label": "/welcome reaction-pay",
+    "visual": "state-welcome-reaction-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-pay-sheet",
+    "label": "/welcome reaction-pay-sheet",
+    "visual": "state-welcome-reaction-pay-sheet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-pay-kept",
+    "label": "/welcome reaction-pay-kept",
+    "visual": "state-welcome-reaction-pay-kept",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-error",
+    "label": "/welcome reaction-error",
+    "visual": "state-welcome-reaction-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-rate-limit",
+    "label": "/welcome reaction-rate-limit",
+    "visual": "state-welcome-reaction-rate-limit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-paid",
+    "label": "/welcome reaction-paid",
+    "visual": "state-welcome-reaction-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:quoted-note",
     "label": "/welcome quoted-note",
     "visual": "state-welcome-quoted-note",
