@@ -55,6 +55,17 @@ describe('prepareForumPhoto', () => {
     });
   });
 
+  it('rejects a tall image that is already 640 px wide', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 640, height: 960, close: vi.fn() }),
+    );
+    await expect(prepareForumPhoto(jpegFile(), { wide: true })).resolves.toEqual({
+      ok: false,
+      error: 'notWide',
+    });
+  });
+
   it('accepts a wide image', async () => {
     vi.stubGlobal(
       'createImageBitmap',
