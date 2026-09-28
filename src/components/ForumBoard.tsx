@@ -755,8 +755,7 @@ export function ForumBoard({
         revealPaySheet(scroller, liveSheet);
         return;
       }
-      const liveField = replyComposerRef.current;
-      revealReplyForm(scroller, liveField === null ? null : liveField.form);
+      revealReplyForm(scroller, form);
     });
     if (sheet !== null) {
       observer.observe(sheet);
