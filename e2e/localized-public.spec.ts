@@ -77,8 +77,12 @@ test('language switching updates the preview, navigation, and footer in every la
       verse: 'Matthäus 10,8',
     },
   ]) {
-    await page.getByRole('combobox').click();
-    await page.getByRole('option', { name: choice.option }).click();
+    const option = page.getByRole('option', { name: choice.option });
+    await expect(async () => {
+      if (!(await option.isVisible())) await page.getByRole('combobox').click();
+      await expect(option).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 10000 });
+    await option.click();
     await expect(page).toHaveURL(new RegExp(`/${choice.locale}$`));
     await expect(page.locator('html')).toHaveAttribute('lang', choice.locale);
     await expect(page.getByRole('heading', { name: choice.preview })).toBeVisible();

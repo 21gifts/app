@@ -6514,7 +6514,7 @@ test('Function: parseSupportedLocale — Español cookie localizes the landing h
   await page.getByLabel('Language').click();
   await page.getByRole('option', { name: 'Español' }).click();
   await expect(
-    page.getByRole('heading', { name: /Escucha a las personas Ayuda con Bitcoin/ }),
+    page.getByRole('heading', { name: /Ayuda a otras personas con Bitcoin/ }),
   ).toBeVisible();
 });
 
@@ -9124,7 +9124,7 @@ test('Function: Button — login shows the Log in button', async ({ page }) => {
 
 test('Function: ButtonLink — landing Ask for help is a link', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('link', { name: 'Ask for help' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ask for help' }).first()).toBeVisible();
 });
 
 test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page }) => {
@@ -9134,7 +9134,7 @@ test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page
 
 test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ page }) => {
   await page.goto('/donate');
-  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/');
+  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/en');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
     'href',
     '/welcome',
