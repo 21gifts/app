@@ -1218,6 +1218,30 @@ test('Function: proxyMeAboutPut — PUT /me/about without bearer is 401', async 
   expect(res.status()).toBe(401);
 });
 
+test('Function: putProfilePhoto — PUT /pictures/me without bearer is 401', async ({ request }) => {
+  const res = await request.put('/pictures/me', { data: { photo: null } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: fetchProfilePhoto — GET /pictures/me without bearer is 401', async ({ request }) => {
+  const res = await request.get('/pictures/me');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyProfilePhotoGet — GET /pictures/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/pictures/me');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyProfilePhotoPut — PUT /pictures/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.put('/pictures/me', { data: { photo: null } });
+  expect(res.status()).toBe(401);
+});
+
 test('Function: putWideBanner — PUT /banners/me without bearer is 401', async ({ request }) => {
   const res = await request.put('/banners/me', { data: { photo: null } });
   expect(res.status()).toBe(401);

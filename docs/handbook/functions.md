@@ -2698,6 +2698,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** App Router `PUT` on `/me/about`.
 
+## Function: putProfilePhoto
+
+- **Purpose:** `PUT /pictures/me` with `{ photo }` for the signed-in account. `null` clears the profile photo. Does not change the wide image or the About me note.
+- **Inputs:** Session token, JPEG payload or `null`.
+- **Returns / side effects:** Resolves on 2xx. Throws the save error otherwise.
+- **Used by:** Profile editor.
+
+## Function: fetchProfilePhoto
+
+- **Purpose:** `GET /pictures/me` bytes for the signed-in account.
+- **Inputs:** Session token.
+- **Returns / side effects:** Blob. Throws the load error on failure or an empty body.
+- **Used by:** Profile editor.
+
+## Function: proxyProfilePhotoGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /pictures/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `GET` on `/pictures/me`.
+
+## Function: proxyProfilePhotoPut
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /pictures/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `PUT` on `/pictures/me`.
+
 ## Function: putWideBanner
 
 - **Purpose:** `PUT /banners/me` with `{ photo }` for the signed-in account. `null` clears the wide image. Does not change the About me photo.

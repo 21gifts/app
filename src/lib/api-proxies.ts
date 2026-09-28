@@ -186,6 +186,26 @@ export async function proxyMeAboutPhotoGet(request: Request): Promise<Response> 
  * @param request - Incoming App Router request (Bearer session).
  * @returns The upstream response (raw image bytes).
  */
+/**
+ * Proxies GET /pictures/me to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyProfilePhotoGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/pictures/me');
+}
+
+/**
+ * Proxies PUT /pictures/me to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ photo }`).
+ * @returns The upstream response.
+ */
+export async function proxyProfilePhotoPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/pictures/me');
+}
+
 export async function proxyWideBannerGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/banners/me');
 }

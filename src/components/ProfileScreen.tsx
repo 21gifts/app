@@ -19,8 +19,10 @@ import { useAccountTotals } from '@/hooks/useAccountTotals';
 import {
   fetchAboutMePhoto,
   fetchMember,
+  fetchProfilePhoto,
   fetchWideBanner,
   putAboutMe,
+  putProfilePhoto,
   putWideBanner,
 } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
@@ -111,6 +113,10 @@ export function ProfileScreen(): ReactElement {
             : {})}
           hasPhoto={account.aboutMeHasPhoto === true}
           loadPhoto={() => fetchAboutMePhoto(session)}
+          loadPicture={() => fetchProfilePhoto(session)}
+          onSavePicture={async (photo) => {
+            await putProfilePhoto(session, photo);
+          }}
           loadBanner={() => fetchWideBanner(session)}
           onSaveBanner={async (photo) => {
             await putWideBanner(session, photo);

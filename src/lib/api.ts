@@ -367,6 +367,60 @@ const ABOUT_ME_PHOTO_LOAD_ERROR = 'Could not load. Please try again.';
  * @param photo - JPEG payload, or `null` to clear.
  * @throws Error `'Could not save. Please try again.'` on a non-2xx response.
  */
+/**
+ * Stores or clears the signed-in account's profile photo.
+ *
+ * Not the wide image and not the About me note photo.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param photo - JPEG payload, or `null` to clear.
+ * @throws Error `'Could not save. Please try again.'` on a non-2xx response.
+ */
+export async function putProfilePhoto(
+  sessionToken: string,
+  photo: { contentType: string; data: string } | null,
+): Promise<void> {
+  const response = await fetch('/pictures/me', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      photo: photo === null ? null : { contentType: photo.contentType, data: photo.data },
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save. Please try again.');
+  }
+}
+
+/**
+ * Fetches the signed-in account's profile photo.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The image as a Blob.
+ * @throws Error `'Could not load. Please try again.'` on a non-ok response,
+ * an empty blob, or a network failure.
+ */
+export async function fetchProfilePhoto(sessionToken: string): Promise<Blob> {
+  try {
+    const response = await fetch('/pictures/me', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+    }
+    return blob;
+  } catch {
+    throw new Error(ABOUT_ME_PHOTO_LOAD_ERROR);
+  }
+}
+
 export async function putWideBanner(
   sessionToken: string,
   photo: { contentType: string; data: string } | null,

@@ -27,6 +27,8 @@ import {
   proxyMeLightningAddressPost,
   proxyMeLocationPost,
   proxyMeAboutPhotoGet,
+  proxyProfilePhotoGet,
+  proxyProfilePhotoPut,
   proxyWideBannerGet,
   proxyWideBannerPut,
   proxyMeAboutPut,
@@ -209,6 +211,16 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('PUT');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/about');
+  });
+
+  it('proxyProfilePhotoGet and proxyProfilePhotoPut hit /pictures/me', async () => {
+    const fetchMock = stubApi();
+    await proxyProfilePhotoGet(new Request('http://localhost/pictures/me'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pictures/me');
+    await proxyProfilePhotoPut(
+      new Request('http://localhost/pictures/me', { method: 'PUT', body: '{"photo":null}' }),
+    );
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/pictures/me');
   });
 
   it('proxyWideBannerGet and proxyWideBannerPut hit /banners/me', async () => {

@@ -46,6 +46,13 @@ export type AboutMeSectionProps = {
   hasPhoto?: boolean;
   /** Load stored photo bytes (owner: GET /me/about/photo; view/member: public). */
   loadPhoto?: () => Promise<Blob>;
+  /** Load the stored profile photo. A rejection means none is stored. */
+  loadPicture?: () => Promise<Blob>;
+  /**
+   * Owner save for the profile photo only. Not the About me note photo and
+   * not the wide image. `null` clears it.
+   */
+  onSavePicture?: (photo: AboutMeSavePhoto | null) => Promise<void>;
   /** Load the stored wide image. A rejection means none is stored. */
   loadBanner?: () => Promise<Blob>;
   /**
@@ -80,6 +87,8 @@ export function AboutMeSection({
   profileUrl,
   hasPhoto,
   loadPhoto,
+  loadPicture,
+  onSavePicture,
   loadBanner,
   onSaveBanner,
   onSave,
@@ -91,10 +100,12 @@ export function AboutMeSection({
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const pictureInputRef = useRef<HTMLInputElement>(null);
   const loadPhotoRef = useRef(loadPhoto);
   const storedObjectUrlRef = useRef<string | null>(null);
   const photoGeneration = useRef(0);
   const loadGeneration = useRef(0);
+  const pictureGeneration = useRef(0);
   const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
@@ -106,10 +117,14 @@ export function AboutMeSection({
   const [preparingPhoto, setPreparingPhoto] = useState(false);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const bannerUrlRef = useRef<string | null>(null);
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const pictureUrlRef = useRef<string | null>(null);
 
   loadPhotoRef.current = loadPhoto;
   const loadBannerRef = useRef(loadBanner);
   loadBannerRef.current = loadBanner;
+  const loadPictureRef = useRef(loadPicture);
+  loadPictureRef.current = loadPicture;
 
   useEffect(() => {
     if (!editing || loadBannerRef.current === undefined) {
@@ -135,6 +150,34 @@ export function AboutMeSection({
           return;
         }
         setBannerUrl(null);
+      }
+    })();
+  }, [editing]);
+
+  useEffect(() => {
+    if (!editing || loadPictureRef.current === undefined) {
+      return;
+    }
+    const generation = pictureGeneration.current + 1;
+    pictureGeneration.current = generation;
+    const load = loadPictureRef.current;
+    void (async () => {
+      try {
+        const blob = await load();
+        if (generation !== pictureGeneration.current) {
+          return;
+        }
+        if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(pictureUrlRef.current);
+        }
+        const url = URL.createObjectURL(blob);
+        pictureUrlRef.current = url;
+        setPictureUrl(url);
+      } catch {
+        if (generation !== pictureGeneration.current) {
+          return;
+        }
+        setPictureUrl(null);
       }
     })();
   }, [editing]);
@@ -350,6 +393,52 @@ export function AboutMeSection({
     })();
   };
 
+  const handlePictureChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file === undefined || onSavePicture === undefined) {
+      return;
+    }
+    const generation = photoGeneration.current + 1;
+    photoGeneration.current = generation;
+    setPreparingPhoto(true);
+    void (async () => {
+      try {
+        const result = await prepareForumPhoto(file);
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        if (!result.ok) {
+          setError(
+            result.error === 'tooLarge'
+              ? t('profile.about.errorTooLarge')
+              : t('profile.about.errorUnsupported'),
+          );
+          return;
+        }
+        await onSavePicture({ contentType: result.photo.contentType, data: result.photo.data });
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(pictureUrlRef.current);
+        }
+        pictureUrlRef.current = result.photo.previewUrl;
+        setPictureUrl(result.photo.previewUrl);
+        setError(null);
+      } catch {
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        setError(t('profile.about.error'));
+      } finally {
+        if (generation === photoGeneration.current) {
+          setPreparingPhoto(false);
+        }
+      }
+    })();
+  };
+
   const handleBannerChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -474,29 +563,56 @@ export function AboutMeSection({
                 disabled={saving}
                 onChange={handleFileChange}
               />
-              {onSaveBanner !== undefined ? (
-                <IconButton
-                  type="button"
-                  variant="secondary"
-                  size="md"
-                  disabled={saving || preparingPhoto}
-                  aria-label={t('profile.about.banner')}
-                  title={t('profile.about.banner')}
-                  onClick={() => {
-                    bannerInputRef.current?.click();
-                  }}
-                >
-                  <ImagePlus aria-hidden="true" className="h-4 w-4" />
-                </IconButton>
+              {onSavePicture !== undefined ? (
+                <>
+                  <IconButton
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    disabled={saving || preparingPhoto}
+                    aria-label={t('profile.about.portrait')}
+                    title={t('profile.about.portrait')}
+                    onClick={() => {
+                      pictureInputRef.current?.click();
+                    }}
+                  >
+                    <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                  <input
+                    ref={pictureInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    disabled={saving}
+                    onChange={handlePictureChange}
+                  />
+                </>
               ) : null}
-              <input
-                ref={bannerInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                disabled={saving}
-                onChange={handleBannerChange}
-              />
+              {onSaveBanner !== undefined ? (
+                <>
+                  <IconButton
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    disabled={saving || preparingPhoto}
+                    aria-label={t('profile.about.banner')}
+                    title={t('profile.about.banner')}
+                    onClick={() => {
+                      bannerInputRef.current?.click();
+                    }}
+                  >
+                    <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                  <input
+                    ref={bannerInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    disabled={saving}
+                    onChange={handleBannerChange}
+                  />
+                </>
+              ) : null}
               <label htmlFor={textareaId} className="sr-only">
                 {t('profile.about.heading')}
               </label>
@@ -537,6 +653,14 @@ export function AboutMeSection({
                 <X aria-hidden="true" className="h-4 w-4" />
               </IconButton>
             </div>
+            {pictureUrl !== null ? (
+              // eslint-disable-next-line @next/next/no-img-element -- blob or data URL from the profile photo
+              <img
+                src={pictureUrl}
+                alt={t('profile.about.portraitAlt')}
+                className="h-16 w-16 rounded-full object-cover"
+              />
+            ) : null}
             {bannerUrl !== null ? (
               <div className="flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element -- blob or data URL from the wide image */}

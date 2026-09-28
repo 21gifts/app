@@ -163,6 +163,20 @@
 - **Used by:** `putAboutMe`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /pictures/me
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /pictures/me` (raw bytes of the signed-in profile photo). Not the wide image and not the About me note photo.
+- **Errors:** Upstream 401/404, or 502 if the api is unreachable.
+- **Used by:** `fetchProfilePhoto`.
+- **Auth:** Bearer.
+
+## Endpoint: PUT /pictures/me
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /pictures/me`. Body `{ photo }` sets the profile photo or `null` clears it. Does not change the wide image or the About me note.
+- **Errors:** Upstream 400/401, or 502 if the api is unreachable.
+- **Used by:** `putProfilePhoto`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /banners/me
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /banners/me` (raw bytes of the signed-in wide profile image). Not the About me photo.
