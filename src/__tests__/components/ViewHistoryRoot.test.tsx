@@ -111,6 +111,27 @@ describe('ViewHistoryRoot', () => {
     expect(previousViewPath()).toBe('/messages?c=thread');
   });
 
+  it('does not record a bare pathname before the location catches a query', () => {
+    navigation.pathname = '/shops';
+    navigation.query = '';
+    window.history.pushState(null, '', '/shops');
+    const view = renderWithLocale(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBeNull();
+
+    navigation.pathname = '/messages';
+    navigation.query = 'c=thread';
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBe('/shops');
+  });
+
   it('ignores setOverride when no provider is mounted', () => {
     function Probe(): ReactElement {
       const { override, setOverride } = useChromeBack();

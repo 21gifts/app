@@ -147,6 +147,25 @@ describe('recordCurrentView', () => {
     expect(stored()?.stack).toEqual(['/shops', '/notifications']);
   });
 
+  it('collapses a provisional push when the router then replaces', () => {
+    pushView('/shops');
+    recordCurrentView('/login', false);
+    expect(previousViewPath()).toBe('/shops');
+    window.history.replaceState(window.history.state, '', '/login');
+    recordCurrentView('/login');
+    expect(stored()?.stack).toEqual(['/login']);
+    expect(previousViewPath()).toBeNull();
+  });
+
+  it('keeps the previous view when the router then pushes', () => {
+    pushView('/shops');
+    recordCurrentView('/notifications', false);
+    window.history.pushState(null, '', '/notifications');
+    recordCurrentView('/notifications');
+    expect(stored()?.stack).toEqual(['/shops', '/notifications']);
+    expect(previousViewPath()).toBe('/shops');
+  });
+
   it('does not stamp the history entry being left when stampHistory is false', () => {
     pushView('/shops');
     expect((window.history.state as { giftsView?: unknown }).giftsView).toBe(0);

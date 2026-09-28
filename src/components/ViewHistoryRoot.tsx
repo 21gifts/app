@@ -61,7 +61,8 @@ export function ChromeBackProvider({ children }: { children: ReactNode }): React
  * Current in-app path from the router pathname and the live location search.
  *
  * Search is taken from `window.location` only when it still matches the
- * pathname, so a suspended `useSearchParams` cannot delay the first record.
+ * pathname. A router pathname the location has not reached is not recorded,
+ * so a query is not stored as a separate hop.
  *
  * @param pathname - Router pathname, or null before the router is ready.
  * @returns The path to record, or `null` when there is nothing to record.
@@ -75,7 +76,7 @@ function pathFromLocation(pathname: string | null): string | null {
     return pathname;
   }
   if (window.location.pathname !== pathname) {
-    return pathname;
+    return null;
   }
   const search = window.location.search;
   if (search === '' || search === '?') {

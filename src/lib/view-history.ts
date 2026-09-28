@@ -408,7 +408,15 @@ export function recordCurrentView(path: string, stampHistory = true): void {
     return;
   }
   if (slot.stack[slot.cursor] === path) {
-    if (stamped !== slot.cursor) {
+    // Render records before Next commits history, so a replace looks like a push.
+    // The layout record then sees that replace and drops the provisional entry.
+    if (kind === 'replace' && slot.cursor >= 1) {
+      const kept = slot.stack.slice(0, slot.cursor);
+      slot.cursor -= 1;
+      kept[slot.cursor] = path;
+      slot.stack = kept;
+    }
+    if (stamped !== slot.cursor + slot.base) {
       stampCommitted(stampHistory, slot.cursor + slot.base);
     }
     slot.historyLength = length;

@@ -575,7 +575,7 @@
 
 - **Purpose:** Record the current pathname and search on the in-app view stack and provide the chrome back override. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Inputs:** `children` — the page tree.
-- **Returns / side effects:** `ChromeBackProvider` around `children`. A location recorder writes the stack during render without stamping history, and stamps `giftsView` from a layout effect after the router commits the history entry, using `window.location.search` when it matches the pathname, so a full navigation is stored before the load event. A suspended search recorder updates a query-only change, including a cleared query as the pathname alone, and re-renders the tree so the top-left arrow reads that path. No network.
+- **Returns / side effects:** `ChromeBackProvider` around `children`. A location recorder writes the stack during render without stamping history, and stamps `giftsView` from a layout effect after the router commits the history entry. A pathname the location has not reached yet is not recorded, so a query is not stored as its own hop. A replace committed after that render collapses the provisional push, so a replaced screen is not a previous view. Search comes from `window.location.search` when it matches the pathname, so a full navigation is stored before the load event. A suspended search recorder updates a query-only change, including a cleared query as the pathname alone, and re-renders the tree so the top-left arrow reads that path. No network.
 - **Used by:** `RootLayout`, inside `ThemeProvider`, beside `RememberWalletReturn`.
 
 ## Function: useChromeBack
