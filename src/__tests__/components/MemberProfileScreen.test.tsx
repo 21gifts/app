@@ -36,6 +36,8 @@ vi.mock('next/navigation', () => ({
     push,
     replace: push,
   }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -1076,7 +1078,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
@@ -1108,7 +1110,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectInvoice(new Error('fail'));
     });
@@ -1255,9 +1257,9 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(replyCard).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('uses expanded-thread sats for nested Gift, not a stale reactions copy', async () => {
@@ -1342,14 +1344,14 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(within(replyCard).getByRole('button', { name: 'Back' })).toBeTruthy();
+      expect(within(replyCard).getByRole('button', { name: 'Close' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
     fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     const reopened = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
     expect(within(reopened).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(within(reopened).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('cancels an expanded-thread Gift when Posts is collapsed', async () => {
@@ -1364,14 +1366,14 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(within(replyCard).getByRole('button', { name: 'Back' })).toBeTruthy();
+      expect(within(replyCard).getByRole('button', { name: 'Close' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: true }));
     fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: false }));
     expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
     const reopened = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
     expect(within(reopened).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(within(reopened).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('shows pay author-wallet copy when Gift Continue is rejected', async () => {
@@ -1598,7 +1600,7 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectPoll(new Error('poll failed'));
     });
@@ -1623,7 +1625,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
@@ -1648,7 +1650,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectInvoice(new Error('gone'));
     });

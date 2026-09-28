@@ -21,6 +21,8 @@ vi.mock('next/navigation', () => ({
     push,
     replace: push,
   }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 vi.mock('@/hooks/useHydrateSession', () => ({
@@ -183,7 +185,7 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
-  it('renders Back to the forum when signed in', async () => {
+  it('does not render a text back link when signed in', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: {
@@ -207,10 +209,9 @@ describe('PublicMessageLoader', () => {
     fetchMessageBearer.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Back to the forum' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
     });
-    const back = screen.getByRole('link', { name: 'Back to the forum' });
-    expect(back.getAttribute('href')).toBe('/welcome');
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();

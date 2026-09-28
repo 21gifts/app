@@ -1453,7 +1453,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationStub.href.toLowerCase()).toContain('lnbc21n1test');
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -1513,7 +1513,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   });
 
   it('shows the fiat value next to the amount in the pay sheet', async () => {

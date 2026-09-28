@@ -179,7 +179,11 @@ test('Function: HiddenNotesPage — staff see the hidden-note list', async ({ pa
   await page.goto('/moderate/hidden');
   await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
+  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: HiddenNotesScreen — basis visitors see the forbidden copy', async ({ page }) => {

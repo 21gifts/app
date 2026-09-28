@@ -1,9 +1,11 @@
 import { deleteMessage } from '@/lib/api';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { ForumLoader } from '@/components/ForumLoader';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
+import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type Account,
@@ -27,7 +29,18 @@ const replace = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof replace } => ({ push, replace }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
+
+function renderForumWithChrome(ui: ReactElement = <ForumLoader />) {
+  return renderWithLocale(
+    <ChromeBackProvider>
+      <ProfileChromeLeft />
+      {ui}
+    </ChromeBackProvider>,
+  );
+}
 
 vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
@@ -938,7 +951,7 @@ describe('ForumLoader', () => {
         },
       ],
     });
-    renderWithLocale(<ForumLoader />);
+    renderForumWithChrome();
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
@@ -1007,7 +1020,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps an ask in sats when step 1 returns before a rate can convert', async () => {
-    renderWithLocale(<ForumLoader />);
+    renderForumWithChrome();
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
@@ -1027,7 +1040,7 @@ describe('ForumLoader', () => {
   });
 
   it('leaves an unmounted ask draft unchanged when the rate cannot convert it', async () => {
-    renderWithLocale(<ForumLoader />);
+    renderForumWithChrome();
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
@@ -3149,7 +3162,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe(
       'Hello gifts',
     );
@@ -4304,7 +4317,7 @@ describe('ForumLoader', () => {
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('clears the pay sheet when a public fetch returns more sats', async () => {
@@ -4445,7 +4458,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolvePoll?.({ ...PAYABLE_REPLY, sats: 21 });
       await Promise.resolve();
@@ -4483,7 +4496,7 @@ describe('ForumLoader', () => {
     });
     expect(seenSignal).toBeDefined();
     expect(seenSignal?.aborted).toBe(false);
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     expect(seenSignal?.aborted).toBe(true);
     await act(async () => {
       resolvePoll?.({ ...PAYABLE_REPLY, sats: 21 });
@@ -4614,7 +4627,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
@@ -4766,7 +4779,7 @@ describe('ForumLoader', () => {
     expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('clears the pay sheet when the paid reply is deleted', async () => {
@@ -4960,7 +4973,7 @@ describe('ForumLoader', () => {
     const replyCard = await clickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolveInvoice?.({ pr: 'lnbc21n1example', amountSats: 21 });
     });
@@ -5020,7 +5033,7 @@ describe('ForumLoader', () => {
     const replyCard = await clickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectInvoice?.(new Error('gone'));
     });
@@ -6089,9 +6102,9 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
@@ -7603,7 +7616,7 @@ describe('ForumLoader', () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(3);
     });
@@ -8493,7 +8506,7 @@ it('does not treat a session-deleted id as unseen on silent refresh', async () =
   await screen.findByText('A payable reply');
   const postCard = screen.getByText('Hello from Ada').closest('li')!;
   const replyCard = clickGiftOnReply();
-  fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
   const deletePost = postCard.querySelector<HTMLButtonElement>('[aria-label="Delete post"]');
   expect(deletePost).toBeTruthy();
   fireEvent.click(deletePost as HTMLButtonElement);

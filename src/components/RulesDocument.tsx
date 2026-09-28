@@ -291,9 +291,6 @@ export function RulesDocument({
     chapter === undefined && showNav ? (
       <nav className="flex flex-wrap items-center justify-center gap-4 pb-8 text-sm font-medium">
         <ButtonLink href="/contact">{t('rules.contactCta')}</ButtonLink>
-        <ButtonLink href="/welcome" variant="secondary">
-          {t('rules.forumCta')}
-        </ButtonLink>
       </nav>
     ) : null;
 

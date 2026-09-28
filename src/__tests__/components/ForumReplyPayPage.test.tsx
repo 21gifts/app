@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 describe('ForumReplyPayPage', () => {
-  it('shows the preview, fiat suffix, QR, waiting line, and Back', async () => {
+  it('shows the preview, fiat suffix, QR, waiting line, and Close', async () => {
     const onCancel = vi.fn();
     renderWithLocale(
       <ForumReplyPayPage
@@ -52,11 +52,12 @@ describe('ForumReplyPayPage', () => {
     expect(screen.queryByLabelText('Your reaction')).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(document.querySelector('textarea')).toBeNull();
-    const back = screen.getByRole('button', { name: 'Back' });
-    expect(back.parentElement?.className).toContain('absolute');
-    expect(back.parentElement?.className).toContain('left-2');
-    expect(back.parentElement?.className).toContain('top-2');
-    fireEvent.click(back);
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(close.parentElement?.className).toContain('absolute');
+    expect(close.parentElement?.className).toContain('left-2');
+    expect(close.parentElement?.className).toContain('top-2');
+    fireEvent.click(close);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 

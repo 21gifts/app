@@ -11,6 +11,7 @@ import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
+import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { getRequestFiat } from '@/lib/request-fiat';
@@ -162,7 +163,7 @@ export default async function RootLayout({
                 <Suspense fallback={null}>
                   <RememberWalletReturn />
                 </Suspense>
-                {children}
+                <ViewHistoryRoot>{children}</ViewHistoryRoot>
               </ThemeProvider>
             </FiatPreferenceProvider>
           </NumberFormatProvider>

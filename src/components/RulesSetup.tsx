@@ -1,11 +1,19 @@
 'use client';
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactElement,
+} from 'react';
 import { AppShellFooter, AppShellHeader, AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton, Wordmark } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
+import { goToPreviousView, previousViewPath } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -28,8 +36,13 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [index, setIndex] = useState(0);
+  const [chapter0Label, setChapter0Label] = useState(t('profile.back'));
   const stepLock = useRef(false);
   const bodyRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    setChapter0Label(previousViewPath() !== null ? t('nav.back') : t('profile.back'));
+  });
 
   useEffect(() => {
     stepLock.current = false;
@@ -109,7 +122,19 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
             >
               <ArrowLeft aria-hidden="true" className="h-5 w-5" />
             </IconButton>
-          ) : null}
+          ) : (
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="md"
+              aria-label={chapter0Label}
+              onClick={() => {
+                goToPreviousView();
+              }}
+            >
+              <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+            </IconButton>
+          )}
           <Wordmark />
         </>
       </AppShellTopLeft>

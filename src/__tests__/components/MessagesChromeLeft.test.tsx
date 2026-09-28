@@ -1,11 +1,13 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MessagesChromeLeft } from '@/components/MessagesChromeLeft';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
+  usePathname: (): string => '/',
   useSearchParams: (): URLSearchParams => searchParams,
 }));
 
@@ -27,11 +29,12 @@ vi.mock('next/link', () => ({
 
 afterEach(() => {
   searchParams.delete('c');
+  resetViewHistory();
   cleanup();
 });
 
 describe('MessagesChromeLeft', () => {
-  it('renders forum back when search params are empty', () => {
+  it('renders forum back when this tab has no earlier view', () => {
     renderWithLocale(<MessagesChromeLeft />);
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
@@ -39,16 +42,18 @@ describe('MessagesChromeLeft', () => {
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
-  it('renders All conversations back when c is a conversation id', () => {
-    searchParams.set('c', 'conv-1');
+  it('returns to the messages list after that view was recorded', () => {
+    recordCurrentView('/messages');
+    recordCurrentView('/messages?c=conv-21');
+    searchParams.set('c', 'conv-21');
     renderWithLocale(<MessagesChromeLeft />);
-    expect(screen.getByRole('link', { name: 'All conversations' }).getAttribute('href')).toBe(
-      '/messages',
-    );
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/messages');
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'All conversations' })).toBeNull();
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
-  it('renders forum back when c is an empty string', () => {
+  it('renders forum back when c is an empty string and nothing was recorded', () => {
     searchParams.set('c', '');
     renderWithLocale(<MessagesChromeLeft />);
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(

@@ -39,8 +39,8 @@ describe('FundingApplicationsPage', () => {
     renderWithLocale(<FundingApplicationsPage />);
     expect(screen.getByTestId('funding-applications-screen')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to grants' }).getAttribute('href')).toBe(
-      '/grants',
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
     );
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });

@@ -13,6 +13,8 @@ vi.mock('next/link', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: (href: string) => void } => ({ push: vi.fn() }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 vi.mock('@/lib/api', () => ({

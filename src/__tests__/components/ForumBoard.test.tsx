@@ -46,6 +46,8 @@ vi.mock('next/link', () => ({
 }));
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn().mockResolvedValue(null),
@@ -1950,7 +1952,7 @@ describe('ForumBoard', () => {
       await Promise.resolve();
     });
     expect(locationAssign).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
@@ -2348,7 +2350,7 @@ describe('ForumBoard', () => {
     expect(walletButton.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     expect(screen.queryByText('Back')).toBeNull();
-    const back = screen.getByRole('button', { name: 'Back' });
+    const back = screen.getByRole('button', { name: 'Close' });
     expect(back.parentElement?.className).toContain('absolute');
     expect(back.parentElement?.className).toContain('left-2');
     expect(back.parentElement?.className).toContain('top-2');
@@ -2415,7 +2417,7 @@ describe('ForumBoard', () => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
@@ -2540,7 +2542,7 @@ describe('ForumBoard', () => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
@@ -2567,7 +2569,8 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Zurück' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Zurück' })).toBeNull();
     expect(screen.queryByText('Zurück')).toBeNull();
     const walletButton = screen.getByRole('button', { name: 'Mit Wallet of Satoshi zahlen' });
     expect(walletButton.textContent).toContain('Zahlen');

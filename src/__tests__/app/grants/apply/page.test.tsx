@@ -39,8 +39,8 @@ describe('FundingApplyPage', () => {
     const { container } = renderWithLocale(<FundingApplyPage />);
     expect(screen.getByTestId('funding-apply-screen')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to grants' }).getAttribute('href')).toBe(
-      '/grants',
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
     );
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
     const main = container.querySelector('main');

@@ -24,14 +24,12 @@ describe('RulesDocument', () => {
     expect(screen.getByRole('heading', { name: 'Our house' })).toBeTruthy();
   });
 
-  it('links to /contact and /welcome', () => {
+  it('links to /contact and has no forum back link', () => {
     render(<RulesDocument messages={getCatalog('en')} />);
     expect(screen.getByRole('link', { name: 'Contact 21.gifts' }).getAttribute('href')).toBe(
       '/contact',
     );
-    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
-      '/welcome',
-    );
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
   });
 
   it('lists welcome, allowed, better-not, and forbidden items', () => {

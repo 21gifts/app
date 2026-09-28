@@ -3278,9 +3278,7 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
 });
 
-test('Function: MessagesChromeLeft — open thread has one All conversations back', async ({
-  page,
-}) => {
+test('Function: MessagesChromeLeft — cold open thread is Back to the forum', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -3345,17 +3343,17 @@ test('Function: MessagesChromeLeft — open thread has one All conversations bac
     });
   });
   await page.goto('/messages?c=conv-21');
-  await expect(page.getByRole('link', { name: 'All conversations' })).toHaveCount(1);
-  await expect(page.getByRole('link', { name: 'All conversations' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
     'href',
-    '/messages',
+    '/welcome',
   );
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toHaveAttribute(
     'href',
     '/welcome',
   );
+  await expect(page.getByRole('link', { name: 'All conversations' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'All conversations' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
 test('Function: MessagesChromeLeft — list chrome back goes to the forum', async ({ page }) => {
@@ -3402,6 +3400,195 @@ test('Function: MessagesChromeLeft — list chrome back goes to the forum', asyn
     '/welcome',
   );
   await expect(page.getByRole('link', { name: 'All conversations' })).toHaveCount(0);
+});
+
+test('Function: MessagesChromeLeft — recorded thread returns to the list', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      '21gifts.viewHistory',
+      JSON.stringify({ stack: ['/messages', '/messages?c=conv-21'], cursor: 1 }),
+    );
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveCount(1);
+  await expect(back).toHaveAttribute('href', '/messages');
+  // The load stamps giftsView. Clear it so this click assigns instead of leaving the site.
+  await page.evaluate(() => {
+    const state = window.history.state as { giftsView?: unknown } | null;
+    if (state !== null && typeof state === 'object') {
+      const next = { ...state };
+      delete next.giftsView;
+      window.history.replaceState(next, '');
+    }
+  });
+  const origin = new URL(page.url()).origin;
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/messages`);
+  expect(new URL(page.url()).origin).toBe(origin);
+});
+
+/** Empty forum lists so shops and notifications do not depend on the mock server shape. */
+async function routeForumLists(page: Page): Promise<void> {
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/forum\/notifications(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.route(/\/conversations(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [], unreadCount: 0 }),
+    });
+  });
+}
+
+test('Function: recordCurrentView shows Back to shops after notifications', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveCount(1);
+  await expect(back).toHaveAttribute('href', '/shops');
+});
+
+test('Function: ViewHistoryRoot records shops then notifications in this tab', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/shops');
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+});
+
+test('Function: goToPreviousView opens the shops view from notifications', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  expect(new URL(page.url()).origin).toBe(origin);
+});
+
+test('Function: previousViewPath is the shops href on the back link', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
+    'href',
+    '/shops',
+  );
+});
+
+test('Function: resetViewHistory leaves a fresh shops visit on the forum back', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+});
+
+test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+});
+
+test('Function: useChromeBack shows one chrome Back on the ask step', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await page.getByLabel('Ask').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Add photos' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(1);
+  await expect(
+    page.locator('[data-app-chrome]').getByRole('button', { name: 'Back', exact: true }),
+  ).toHaveCount(1);
 });
 
 test('Function: postConversationMessage — composer is visible on a thread', async ({ page }) => {
@@ -5816,7 +6003,7 @@ test('Function: revealPaySheet — paying a reaction keeps the note on screen', 
   await field.fill('This is my answer');
   await page.getByLabel('Amount').fill('21');
   await field.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
-  const back = page.getByRole('button', { name: 'Back' });
+  const back = page.getByRole('button', { name: 'Close' });
   await expect(back).toBeVisible();
   const payPage = page.locator('[data-reply-pay-page]');
   await expect(payPage.getByText('This is my answer')).toBeVisible();

@@ -8,8 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/moderate/payouts` — signed-in staff payout-per-person table.
  *
- * `/moderate` is the hub; this page is the table. The chrome back goes to
- * `/moderate` (the card has no back control). Requires name + address +
+ * This page is the table. The chrome back returns to the previous in-app view
+ * (the card has no back control). Requires name + address +
  * living-room rules agreement via {@link OnboardingGate} `screen="welcome"`,
  * same as `/moderate`. HTML `/moderate/payouts` is the table, not a GET
  * proxy; JSON lives under `/funding/payout-days`, because Next.js forbids a
@@ -22,7 +22,7 @@ export default function PayoutsPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}
+      topLeft={<ProfileChromeLeft />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">

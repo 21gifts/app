@@ -8,8 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/moderate/proposals` — signed-in staff confirm/reject queue.
  *
- * `/moderate` is the hub; this page is the confirm/reject queue. The chrome
- * back goes to `/moderate` (the card has no back control). Requires name +
+ * This page is the confirm/reject queue. The chrome back returns to the
+ * previous in-app view (the card has no back control). Requires name +
  * address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`, same as `/moderate`. There is no `route.ts` beside this
  * page (Next.js forbids that); proposal HTTP lives under `/trust/proposals`.
@@ -21,7 +21,7 @@ export default function ProposalsPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}
+      topLeft={<ProfileChromeLeft />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">

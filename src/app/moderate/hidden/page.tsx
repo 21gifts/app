@@ -8,8 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/moderate/hidden` — signed-in hidden-notes list for moderators.
  *
- * `/moderate` is the hub; `/moderate/hidden` is the hidden-notes list. The
- * chrome back goes to `/moderate` (the card has no back control). Requires
+ * `/moderate/hidden` is the hidden-notes list. The chrome back returns to the
+ * previous in-app view (the card has no back control). Requires
  * name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids
  * that); hidden-note HTTP lives under `/forum/messages/hidden`.
@@ -21,7 +21,7 @@ export default function HiddenNotesPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft backHref="/moderate" backLabelKey="moderate.heading" />}
+      topLeft={<ProfileChromeLeft />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">

@@ -12,11 +12,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  */
 export default function PosAmountPage(): ReactElement {
   return (
-    <AppShell
-      mode="fill"
-      topLeft={<ProfileChromeLeft backHref="/pos" backLabelKey="nav.back" />}
-      topRight={<SignedInChrome />}
-    >
+    <AppShell mode="fill" topLeft={<ProfileChromeLeft />} topRight={<SignedInChrome />}>
       <OnboardingGate screen="profile">
         <PosAmount />
       </OnboardingGate>

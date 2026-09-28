@@ -29,6 +29,8 @@ vi.mock('next/navigation', () => ({
     push,
     replace: push,
   }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -417,7 +419,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     expect(payAmountInput()).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
     expect(replyAmountInput().id).toBe('forum-reply-amount');
   });
@@ -1755,7 +1757,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });

@@ -8,7 +8,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/grants/applications/[accountId]` — signed-in staff grant-application review.
  *
- * The chrome back goes to `/grants/applications` (the card has no back
+ * The chrome back returns to the previous in-app view (the card has no back
  * control). Requires name + address + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`. There is no `route.ts` beside
  * this page (Next.js forbids that); application HTTP lives under
@@ -27,12 +27,7 @@ export default async function FundingApplicationDetailPage({
     <AppShell
       mode="fill"
       align="center"
-      topLeft={
-        <ProfileChromeLeft
-          backHref="/grants/applications"
-          backLabelKey="funding.applications.heading"
-        />
-      }
+      topLeft={<ProfileChromeLeft />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">
