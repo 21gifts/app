@@ -151,14 +151,14 @@ export function ForumAskWizard({
   }, [askObligation, creditInside, creditPhase, onStepChange, step]);
   useLayoutEffect(() => {
     if (step > 1 || creditInside) {
-      setOverride({ labelKey: 'forum.askBack', onClick: stepBack });
+      setOverride({ labelKey: 'forum.askBack', onClick: stepBack, disabled: posting });
     } else {
       setOverride(null);
     }
     return (): void => {
       setOverride(null);
     };
-  }, [creditInside, setOverride, step, stepBack]);
+  }, [creditInside, posting, setOverride, step, stepBack]);
   const stepTitle = creditInside
     ? t(
         creditPhase === 'currency'

@@ -19,6 +19,7 @@ import { recordCurrentView } from '@/lib/view-history';
 export type ChromeBackOverride = {
   labelKey: 'forum.askBack';
   onClick: () => void;
+  disabled?: boolean;
 };
 
 type ChromeBackContextValue = {

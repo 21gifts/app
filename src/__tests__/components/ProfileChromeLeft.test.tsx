@@ -136,4 +136,25 @@ describe('ProfileChromeLeft', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it('disables the ask-wizard back button while a post is in flight', () => {
+    function Arm(): ReactElement {
+      const { setOverride } = useChromeBack();
+      useLayoutEffect(() => {
+        setOverride({
+          labelKey: 'forum.askBack',
+          onClick: (): void => undefined,
+          disabled: true,
+        });
+      }, [setOverride]);
+      return <ProfileChromeLeft />;
+    }
+
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Arm />
+      </ChromeBackProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(true);
+  });
 });

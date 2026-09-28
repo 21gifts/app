@@ -83,6 +83,7 @@ export function ProfileChromeLeft({
           type="button"
           className={arrowClass}
           aria-label={t(override.labelKey)}
+          disabled={override.disabled === true}
           onClick={override.onClick}
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
