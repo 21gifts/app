@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 
 /**
  * Title and description for `/legal` (overrides the root layout metadata).
  */
-export const metadata: Metadata = {
-  title: 'Legal Notice & Privacy — 21.gifts',
-  description: 'Legal notice and privacy policy of 21.gifts.',
-};
+export const metadata: Metadata = marketingMetadata(
+  '/legal',
+  'Legal Notice & Privacy — 21.gifts',
+  'Legal notice and privacy policy of 21.gifts.',
+);
 
 /**
  * Legal notice and privacy policy at `/legal`.

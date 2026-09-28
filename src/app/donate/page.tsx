@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { HomeWordmark } from '@/components/HomeWordmark';
@@ -6,10 +7,24 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog } from '@/lib/messages';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 import { translate } from '@/lib/translate';
+import { localizedPublicPath } from '@/lib/public-locale-path';
+
+/** The public gift entry page also has its own canonical search preview. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  const messages = getCatalog(locale);
+  return marketingMetadata(
+    '/donate',
+    messages['donate.metaTitle'],
+    messages['donate.lead'],
+    locale,
+  );
+}
 
 /**
- * `/donate` — Send help explainer: open the forum, show reactions, then send Bitcoin on a payable reaction.
+ * `/donate` — Give Bitcoin explainer: open the forum, choose a payable reaction, then send Bitcoin.
  *
  * @returns The donate screen.
  */
@@ -20,7 +35,9 @@ export default async function DonatePage(): Promise<ReactElement> {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft wordmark={<HomeWordmark />} />}
+      topLeft={
+        <ProfileChromeLeft wordmark={<HomeWordmark publicHref={localizedPublicPath(locale, '/')} />} />
+      }
       topRight={<LanguageSwitcher tone="light" />}
     >
       <div className="flex w-full max-w-md flex-col items-center gap-6">

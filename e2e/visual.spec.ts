@@ -1023,7 +1023,7 @@ async function fulfillConversationTranslatePost(
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
     await shotScreen(page, 'screen-root');
   });
 
@@ -1035,9 +1035,7 @@ test.describe('screen baselines', () => {
         page.getByLabel('Primary').getByRole('link', { name: 'Handbook' }),
       ).toBeVisible();
     } else {
-      await expect(
-        page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
     }
     await shotScreen(page, 'state-root-mobile-nav');
   });
@@ -1057,7 +1055,7 @@ test.describe('screen baselines', () => {
 
   test('screen /about', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeVisible();
     await shotScreen(page, 'screen-about');
   });
 
@@ -1069,7 +1067,7 @@ test.describe('screen baselines', () => {
 
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Give Bitcoin to someone' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
   });
 

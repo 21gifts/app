@@ -1,5 +1,12 @@
 # Functions
 
+## Function: marketingMetadata
+
+- **Purpose:** Gives each public entry page its own title, description, canonical URL, and matching Open Graph and social preview instead of inheriting the generic site preview.
+- **Inputs:** Canonical path, visible page title, and a concise description.
+- **Returns / side effects:** Next.js `Metadata`; no I/O.
+- **Used by:** Home, About, Donate, Rules, Stats, Legal, and Handbook pages.
+
 ## Function: PosPage
 
 - **Purpose:** App Router page for `/pos`. Wraps `PosScreen` in `AppShell` and `OnboardingGate screen="profile"`.
@@ -227,16 +234,16 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from `/donate` forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from `/donate` forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Give Bitcoin**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Give Bitcoin, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
 
 ## Function: LanguageSwitcher
 
-- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
+- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie, stores it on the account when signed in, and either opens the localized public URL or refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, unsigned `/rules`, unsigned `/messages/[id]`, and `/view/[viewKey]`). Reads current locale via `useTranslations` and an optional session token from storage. No `embedded` prop.
-- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before writing the cookie and refreshing. Without a token it does not bump or POST and writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` plus `; Secure` on HTTPS before `router.refresh()`, as before. Never set on first visit.
+- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels (English/Deutsch/Español/Filipino). With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not navigate, while success merges only `locale` onto the current same-id account. It then writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` plus `; Secure` on HTTPS. Public Home, About, Donate, and Rules choices fully load the corresponding `/{locale}` URL so the page, shared navigation, and footer all use the new language; other unsigned app routes call `router.refresh()`. Choosing the current language on an already localized URL is a no-op; choosing it on a legacy URL opens its stable URL. Never set on first visit.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, unsigned `/rules`, unsigned `/messages/[id]`, `/view/[viewKey]`.
 
 ## Function: LanguagePreferenceSwitcher
@@ -381,7 +388,7 @@
 
 ## Function: DonatePage
 
-- **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
+- **Purpose:** Next.js page for `/donate`. Guest-visible Give Bitcoin explainer: read a forum post, choose a payable reaction, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
 - **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
 - **Used by:**
@@ -2861,7 +2868,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: AboutPage
 
-- **Purpose:** Next.js page for `/about`. Three convictions, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
+- **Purpose:** Next.js page for `/about`. What 21.gifts stands for, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
 - **Inputs:** None. Calls `getRequestLocale()` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** The about screen with a link to `/welcome`.
 - **Used by:** Route `/about`.
@@ -4753,10 +4760,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: HappylandSection
 
 - **Purpose:** Presents Father Severin's account of Happyland after How it works on the public homepage.
-- **Input:** Receives the marketing page locale and reads all paragraphs, headings and image descriptions from the shared English, German, Spanish or Filipino catalog.
-- **Output:** Renders an accessible section with eight full-proportion photographs in a lead image, alternating text and image groups, and a portrait row that stacks on small screens.
+- **Input:** Receives the marketing page locale and reads the place portrait and observations from the shared English, German, Spanish or Filipino catalog.
+- **Output:** Renders a place portrait, four photographs from the original 21.gifts Happyland page in balanced frames, a source link, and three observations.
 
-## Function: HappylandPhoto
+## Function: localizedPublicPath
 
 - **Purpose:** Keeps each Happyland photograph and its localized caption together in a semantic figure.
 - **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
@@ -4844,7 +4851,6 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/fiat`.
 - **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
 - **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
-- **Used by:** Route POST `/me/fiat`.
 
 ## Function: HabitTrackerPage
 
@@ -4887,3 +4893,25 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `sessionToken` — bearer token; `body` — JSON action; `timeZone` — when true, also sends the device `Time-Zone` header.
 - **Returns / side effects:** The JSON body when the response is OK. Throws the api `error` string when that field is a string, otherwise `'Could not save the habit tracker. Please try again.'`.
 - **Used by:** `MemberHabits`.
+
+- **Used by:** Route POST `/me/fiat`.- **Purpose:** Builds a stable public URL for one supported language and one of Home, About, Donate, or Rules.
+- **Inputs:** A supported locale and one localized public path.
+- **Returns:** A language-prefixed path such as `/de/about`; used by metadata, links, and the language switcher.
+
+## Function: parseLocalizedPublicPath
+
+- **Purpose:** Recognizes only the sixteen supported language and public-page combinations.
+- **Inputs:** A request pathname.
+- **Returns:** Its locale and public path, or `null` for app routes, unsupported languages, or extra path segments.
+
+## Function: publicPathFromUrl
+
+- **Purpose:** Keeps the visitor on the same public page when they choose another language.
+- **Inputs:** A legacy or language-prefixed pathname.
+- **Returns:** The public page path, or `null` when the pathname belongs to the app.
+
+## Function: middleware
+
+- **Purpose:** Serves stable language-prefixed public URLs through their existing page implementations while fixing the request language from the URL.
+- **Inputs:** A Next.js request for a supported language prefix and public page.
+- **Returns:** A rewrite to that public page with the explicit locale in a request header; unsupported paths continue to normal routing.
