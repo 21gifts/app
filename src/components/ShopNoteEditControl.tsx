@@ -284,7 +284,8 @@ export function ShopNoteEditControl({
         setSaveError(true);
         return;
       }
-      if (ensureShopHashtag(draft).length > FORUM_MESSAGE_MAX_LENGTH) {
+      const textChanged = draft !== stripShopHashtag(message.text);
+      if (textChanged && ensureShopHashtag(draft).length > FORUM_MESSAGE_MAX_LENGTH) {
         setSaveError(true);
         return;
       }
@@ -293,8 +294,23 @@ export function ShopNoteEditControl({
         setSaveError(true);
         return;
       }
+      const stills = [];
+      if (photosChanged) {
+        for (const item of keptPhotos) {
+          stills.push(await stillFromUrl(item.url));
+        }
+        for (const photo of photoDrafts) {
+          stills.push({
+            contentType: photo.contentType,
+            data: photo.data,
+            ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+              ? { takenAt: photo.takenAt }
+              : {}),
+          });
+        }
+      }
       let latest = message;
-      if (draft !== stripShopHashtag(message.text)) {
+      if (textChanged) {
         latest = await setMessageShopText(token, message.id, draft);
         onUpdated(latest);
       }
@@ -309,19 +325,6 @@ export function ShopNoteEditControl({
         onUpdated(latest);
       }
       if (photosChanged) {
-        const stills = [];
-        for (const item of keptPhotos) {
-          stills.push(await stillFromUrl(item.url));
-        }
-        for (const photo of photoDrafts) {
-          stills.push({
-            contentType: photo.contentType,
-            data: photo.data,
-            ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
-              ? { takenAt: photo.takenAt }
-              : {}),
-          });
-        }
         latest = await setMessageShopPhotos(token, message.id, stills);
         onUpdated(latest);
       }

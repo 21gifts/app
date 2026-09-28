@@ -4084,6 +4084,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-open',
+    image: 'shops-edit-open.png',
+    visual: 'state-shops-edit-open',
+    needle: "shotScreen(page, 'state-shops-edit-open')",
+  },
+  {
+    route: '/shops',
     id: 'staff-account',
     image: 'shops-staff-account.png',
     visual: 'state-shops-staff-account',

@@ -1885,6 +1885,12 @@ A moderator session. One Cafe Luna shop note with no pin. **Edit shop note** is 
 
 ![21.gifts shops staff place](images/shops-staff-place.png)
 
+### Variant: edit-open
+
+A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is open, the text is already filled, and **History** says there are no edits yet. **Save changes** is on the last step.
+
+![21.gifts shops edit open](images/shops-edit-open.png)
+
 ### Variant: staff-place-unavailable
 
 A moderator session. **Add a place** on the Cafe Luna note is open and the map key is missing. The panel says **The map is not available.** There is no map frame and no **Use this place**.

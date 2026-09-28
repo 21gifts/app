@@ -3438,6 +3438,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:edit-open",
+    "label": "/shops edit-open",
+    "visual": "state-shops-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:staff-account",
     "label": "/shops staff-account",
     "visual": "state-shops-staff-account",
