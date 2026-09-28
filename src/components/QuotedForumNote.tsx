@@ -118,7 +118,7 @@ function QuotedForumNote({
         aria-label={quoteLabel}
         className="absolute inset-0 z-0 rounded-xl"
       />
-      <div className="pointer-events-none relative z-10 [&_*]:pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
+      <div className="pointer-events-none relative z-10 [&_*]:pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_[role=dialog]]:pointer-events-auto [&_[role=dialog]_*]:pointer-events-auto">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="flex flex-wrap items-center gap-2">
             {memberAuthor ? (
@@ -220,7 +220,10 @@ function QuotedForumNote({
  *   that short URL. Each nested card has one stretched permalink to
  *   `/messages/<id>` covering the caption, photo, time, and amount; the author
  *   link, Translate, Show more, and links inside the caption stay outside that
- *   permalink.
+ *   permalink. `[&_[role=dialog]]:pointer-events-auto` and
+ *   `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm
+ *   dialog and everything inside it clickable, because that dialog is a
+ *   descendant of the card and is not portaled.
  * @throws Does not throw.
  */
 export function ForumQuotedBody({

@@ -773,6 +773,32 @@ describe('ForumQuotedBody', () => {
     expect(wrapper?.className).toContain('[&_*]:pointer-events-none');
   });
 
+  it('keeps the external-link dialog clickable inside a quoted note', async () => {
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[
+          { ...quotedNote, text: 'see https://example.com/hello', hasPhoto: false, photoCount: 0 },
+        ]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    fireEvent.click(await screen.findByRole('link', { name: 'https://example.com/hello' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Open external link?' });
+    let wrapper: HTMLElement | null = dialog;
+    while (
+      wrapper !== null &&
+      !wrapper.className.includes('[&_[role=dialog]]:pointer-events-auto')
+    ) {
+      wrapper = wrapper.parentElement;
+    }
+    expect(wrapper?.className).toContain('[&_[role=dialog]]:pointer-events-auto');
+    expect(wrapper?.className).toContain('[&_[role=dialog]_*]:pointer-events-auto');
+    expect(dialog.closest('a')).toBeNull();
+  });
+
   it('does not render a role pill for basis authors', async () => {
     const basisNote: ForumMessage = {
       ...quotedNote,
