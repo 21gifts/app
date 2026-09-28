@@ -1067,6 +1067,9 @@ export function ForumBoard({
                   onToggleExpand(message.id);
                 }}
                 onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) {
+                    return;
+                  }
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     onToggleExpand(message.id);
@@ -1076,9 +1079,7 @@ export function ForumBoard({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    {!readOnly &&
-                    typeof message.accountId === 'string' &&
-                    message.accountId !== '' ? (
+                    {typeof message.accountId === 'string' && message.accountId !== '' ? (
                       <button
                         type="button"
                         aria-label={t('forum.authorProfile')}
@@ -1416,9 +1417,7 @@ export function ForumBoard({
                           >
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <div className="flex flex-wrap items-center gap-2">
-                                {!readOnly &&
-                                typeof reply.accountId === 'string' &&
-                                reply.accountId !== '' ? (
+                                {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
                                   <button
                                     type="button"
                                     aria-label={t('forum.authorProfile')}

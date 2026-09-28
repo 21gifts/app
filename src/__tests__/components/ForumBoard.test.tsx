@@ -4494,6 +4494,103 @@ describe('ForumBoard', () => {
     expect(push).toHaveBeenCalledWith('/members/acc_reply');
   });
 
+  it('links author names with accountId to the member profile when readOnly', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const author = screen.getByRole('button', { name: 'View profile' });
+    fireEvent.click(author);
+    expect(push).toHaveBeenCalledWith('/members/acc_other');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.keyDown(author, { key: 'Enter' });
+    fireEvent.keyDown(author, { key: ' ' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not expand the card when Enter or Space is pressed on a role pill', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other', role: 'verified' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const pill = screen.getByRole('button', { name: 'Verified' });
+    fireEvent.keyDown(pill, { key: 'Enter' });
+    fireEvent.keyDown(pill, { key: ' ' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('links reply author names with accountId to the member profile when readOnly', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_reply');
+  });
+
+  it('keeps author names as plain text when readOnly and there is no accountId', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
+  });
+
   it('keeps Damus-only names as plain text', () => {
     renderWithLocale(
       <ForumBoard
