@@ -3484,7 +3484,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingPayoutsScreen
 
-- **Purpose:** Client table of daily-grant payouts for seven UTC days. Staff (moderator) fetch `fetchFundingPayoutDays` and show a lead, a three-color legend, and name plus seven cells (black not entitled, white entitled but not collected, green payout received). Today is the rightmost column. A row with `accountId` links the name to `/members/{id}`. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. Moderator stipends and welcome gifts are not in this table.
+- **Purpose:** Client table of daily-grant payouts for seven UTC days. Staff (moderator) fetch `fetchFundingPayoutDays` and show a lead, a four-color legend, and name plus seven cells (black not entitled, white entitled but not collected, green payout received, amber welcome gift; split green/amber when both were paid the same day). Today is the rightmost column. A row with `accountId` links the name to `/members/{id}`. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. Moderator stipends are not in this table. Welcome gifts are in the table.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
 - **Used by:** `PayoutsPage`.

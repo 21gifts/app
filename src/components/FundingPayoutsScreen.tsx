@@ -33,6 +33,9 @@ const PAYOUT_STATUS: Record<
   },
 };
 
+/** Amber fill for a welcome gift. */
+const WELCOME_SWATCH = 'bg-[#d97706]';
+
 /**
  * Display name for a payout row, or the unnamed fallback.
  *
@@ -63,10 +66,11 @@ function formatPayoutDay(day: string, locale: string): string {
  * Signed-in staff table of daily-grant payouts per person for seven UTC days.
  *
  * Moderators fetch {@link fetchFundingPayoutDays} and see name plus seven
- * color cells (blocked / missed / paid). Other signed-in visitors see a short
- * forbidden message and no table. Renders nothing without a session. In-card
- * back goes to the moderation hub. Moderator stipends and welcome gifts are
- * not in this table.
+ * color cells (blocked / missed / paid / welcome; split when both were paid
+ * the same day). Other signed-in visitors see a short forbidden message and
+ * no table. Renders nothing without a session. In-card back goes to the
+ * moderation hub. Moderator stipends are not in this table. Welcome gifts are
+ * in the table.
  *
  * @returns The payouts card, forbidden copy, or `null` without a session.
  */
@@ -177,6 +181,13 @@ export function FundingPayoutsScreen(): ReactElement | null {
               </li>
             );
           })}
+          <li className="flex items-center gap-2">
+            <span
+              className={`inline-block h-4 w-4 border border-app-border ${WELCOME_SWATCH}`}
+              aria-hidden="true"
+            />
+            <span className="text-sm text-app-fg">{t('moderate.payouts.legend.welcome')}</span>
+          </li>
         </ul>
         <div className="w-full">
           <table
@@ -232,9 +243,50 @@ export function FundingPayoutsScreen(): ReactElement | null {
                       )}
                     </th>
                     {row.days.map((status, dayIndex) => {
-                      const meta = PAYOUT_STATUS[status];
+                      const isWelcome = row.welcome?.[dayIndex] === true;
                       const day = days[dayIndex] as string;
                       const date = formatPayoutDay(day, locale);
+                      if (status === 'paid' && isWelcome) {
+                        return (
+                          <td key={`${rowIndex}:${dayIndex}`} className="h-10 p-0">
+                            <span
+                              className="flex h-full min-h-10 w-full border border-app-border"
+                              aria-label={t('moderate.payouts.cell.both', {
+                                name: label,
+                                date,
+                              })}
+                            >
+                              <span
+                                className="h-full min-h-10 w-1/2 bg-[#15803d]"
+                                aria-hidden="true"
+                              />
+                              <span
+                                className="h-full min-h-10 w-1/2 bg-[#d97706]"
+                                aria-hidden="true"
+                              />
+                              <span className="sr-only">{t('moderate.payouts.legend.paid')}</span>
+                            </span>
+                          </td>
+                        );
+                      }
+                      if (isWelcome) {
+                        return (
+                          <td key={`${rowIndex}:${dayIndex}`} className="h-10 p-0">
+                            <span
+                              className={`block h-full min-h-10 w-full border border-app-border ${WELCOME_SWATCH}`}
+                              aria-label={t('moderate.payouts.cell.welcome', {
+                                name: label,
+                                date,
+                              })}
+                            >
+                              <span className="sr-only">
+                                {t('moderate.payouts.legend.welcome')}
+                              </span>
+                            </span>
+                          </td>
+                        );
+                      }
+                      const meta = PAYOUT_STATUS[status];
                       return (
                         <td key={`${rowIndex}:${dayIndex}`} className="h-10 p-0">
                           <span

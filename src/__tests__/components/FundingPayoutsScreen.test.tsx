@@ -64,6 +64,7 @@ const TABLE: FundingPayoutDays = {
       accountId: 'acc_ada',
       name: 'Ada',
       days: ['blocked', 'missed', 'paid', 'blocked', 'blocked', 'blocked', 'blocked'],
+      welcome: [true, false, true, false, false, false, false],
     },
     {
       accountId: null,
@@ -129,9 +130,11 @@ describe('FundingPayoutsScreen', () => {
     renderWithLocale(<FundingPayoutsScreen />);
     expect(await screen.findByRole('table', { name: 'Payout per person' })).toBeTruthy();
     const legend = screen.getByRole('list');
+    expect(within(legend).getAllByRole('listitem')).toHaveLength(4);
     expect(within(legend).getByText('Not entitled')).toBeTruthy();
     expect(within(legend).getByText('Entitled, not collected')).toBeTruthy();
     expect(within(legend).getByText('Payout received')).toBeTruthy();
+    expect(within(legend).getByText('Welcome gift')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe('/members/acc_ada');
     expect(screen.getByRole('rowheader', { name: 'ghost' }).querySelector('a')).toBeNull();
     expect(screen.getByRole('link', { name: 'Unnamed' }).getAttribute('href')).toBe(
@@ -141,7 +144,12 @@ describe('FundingPayoutsScreen', () => {
     expect(headers[headers.length - 1]?.getAttribute('aria-label')).toMatch(/today/);
     expect(screen.getAllByLabelText(/Ada, .+, not entitled/).length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText(/Ada, .+, entitled, not collected/)).toHaveLength(1);
-    expect(screen.getAllByLabelText(/Ada, .+, payout received/)).toHaveLength(1);
+    expect(screen.getAllByLabelText(/^Ada, (?!.*daily grant and ).+, welcome gift$/)).toHaveLength(
+      1,
+    );
+    expect(screen.getAllByLabelText(/Ada, .+, daily grant and welcome gift/)).toHaveLength(1);
+    expect(screen.getAllByLabelText(/ghost, .+, payout received/)).toHaveLength(1);
+    expect(screen.getAllByLabelText(/Unnamed, .+, entitled, not collected/)).toHaveLength(1);
   });
 
   it('shows the error and retries', async () => {
