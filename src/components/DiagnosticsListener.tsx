@@ -26,12 +26,11 @@ function scalarFields(value: unknown): { name?: string; message?: string } {
  */
 export function DiagnosticsListener(): null {
   useEffect(() => {
-    const path = window.location.pathname;
     const onError = (event: ErrorEvent): void => {
       reportDiagnostic({
         event: 'client.unhandled',
         stage: 'unhandled',
-        path,
+        path: window.location.pathname,
         ...scalarFields(event.error),
       });
     };
@@ -39,7 +38,7 @@ export function DiagnosticsListener(): null {
       reportDiagnostic({
         event: 'client.unhandled',
         stage: 'unhandled',
-        path,
+        path: window.location.pathname,
         ...scalarFields(event.reason),
       });
     };

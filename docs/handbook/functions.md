@@ -2981,7 +2981,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: DiagnosticsListener
 
 - **Purpose:** Subscribe to window `error` and `unhandledrejection` and forward the error name and message to the diagnostic log.
-- **Inputs:** None. Reads `window.location.pathname` and the event's `error` or `reason`.
+- **Inputs:** None. Reads `window.location.pathname` when the event fires, plus the event's `error` or `reason`.
 - **Returns / side effects:** Renders null. Posts `client.unhandled` through `reportDiagnostic`. Removes both listeners on unmount.
 - **Used by:** Root layout, mounted once for every page.
 

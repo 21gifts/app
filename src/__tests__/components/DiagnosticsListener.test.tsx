@@ -69,6 +69,26 @@ describe('DiagnosticsListener', () => {
     ]);
   });
 
+  it('reads the path when the error happens, not when the listener mounted', () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const previous = window.location.pathname;
+    window.history.pushState({}, '', '/login');
+    render(<DiagnosticsListener />);
+    window.history.pushState({}, '', '/wallet');
+    window.dispatchEvent(windowError(new TypeError('Boom')));
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toEqual({
+      event: 'client.unhandled',
+      stage: 'unhandled',
+      path: '/wallet',
+      name: 'TypeError',
+      message: 'Boom',
+    });
+    window.history.pushState({}, '', previous);
+  });
+
   it('omits a non-object rejection reason', () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
