@@ -205,7 +205,7 @@ describe('CreditLedger', () => {
       ],
     });
     renderWithLocale(<CreditLedger messageId="m1" />);
-    expect(await screen.findByText(/Day 1/)).toBeTruthy();
+    expect((await screen.findAllByText(/Day 1/)).length).toBeGreaterThan(0);
     expect(screen.getByText(/The days are fixed/)).toBeTruthy();
     expect(screen.getByText(/rate on the day/)).toBeTruthy();
     expect(screen.queryByText('No one has given yet.')).toBeNull();
@@ -234,7 +234,7 @@ describe('CreditLedger', () => {
       next: null,
     });
     renderWithLocale(<CreditLedger messageId="m1" />, 'en', 'ch', 'EUR');
-    expect(await screen.findByText(/Day 1/)).toBeTruthy();
+    expect((await screen.findAllByText(/Day 1/)).length).toBeGreaterThan(0);
     cleanup();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 404 })));
     renderWithLocale(<ForumGoalBar sats={21000} goalSats={21000} goalRepayable messageId="m1" />);

@@ -61,42 +61,40 @@ export function MessageKindTags({
   const [open, setOpen] = useState<Exclude<NoteKind, 'shop'> | null>(null);
   const shown = open !== null && kinds.includes(open) ? open : null;
   return (
-    <div className="min-w-0 flex-1">
-      <div className="flex flex-wrap items-center gap-2">
-        {children}
-        {kinds.map((kind) =>
-          kind === 'shop' ? (
-            <Link
-              key={kind}
-              href="/shops"
-              className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted no-underline"
-              onClick={(event) => {
-                event.stopPropagation();
-              }}
-              onKeyDown={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              {t('forum.shopTag')}
-            </Link>
-          ) : (
-            <button
-              key={kind}
-              type="button"
-              aria-expanded={shown === kind}
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpen(open === kind ? null : kind);
-              }}
-              className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-            >
-              {t(KIND_KEYS[kind].label)}
-            </button>
-          ),
-        )}
-      </div>
+    <div className="flex flex-wrap items-center gap-2">
+      {children}
+      {kinds.map((kind) =>
+        kind === 'shop' ? (
+          <Link
+            key={kind}
+            href="/shops"
+            className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted no-underline"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            {t('forum.shopTag')}
+          </Link>
+        ) : (
+          <button
+            key={kind}
+            type="button"
+            aria-expanded={shown === kind}
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(open === kind ? null : kind);
+            }}
+            className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+          >
+            {t(KIND_KEYS[kind].label)}
+          </button>
+        ),
+      )}
       {shown !== null ? (
-        <p role="status" className="mt-1 text-xs text-app-muted">
+        <p role="status" className="basis-full text-xs text-app-muted">
           {t(KIND_KEYS[shown].hint)}
         </p>
       ) : null}
