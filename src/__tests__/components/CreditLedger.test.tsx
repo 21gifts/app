@@ -261,6 +261,121 @@ describe('CreditLedger', () => {
     expect(screen.queryByText('Given')).toBeNull();
   });
 
+  it('puts the year on the last axis day when the plan crosses a year', async () => {
+    ledger({
+      ...btc,
+      repayments: [
+        {
+          dayIndex: 0,
+          dueOn: '2026-12-31',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: null,
+          sats: 10,
+          status: 'due',
+          via: 'lightning',
+        },
+        {
+          dayIndex: 1,
+          dueOn: '2027-01-01',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: null,
+          sats: 11,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    const chart = await screen.findByRole('img', { name: /Dec 31/ });
+    expect(chart.textContent).toContain('2027');
+  });
+
+  it('draws no chart when every share is zero', async () => {
+    ledger({
+      ...btc,
+      unassignedSats: 0,
+      givers: [],
+      repayments: [
+        {
+          dayIndex: 0,
+          dueOn: '2026-09-27',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: null,
+          sats: 0,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect(await screen.findByText('Paid back')).toBeTruthy();
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('prices the bitcoin chart total in the visitor fiat when a rate exists', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo) => {
+        const url = String(input);
+        if (url.includes('/gifts/stats')) {
+          return new Response(
+            JSON.stringify({
+              totalSats: 100_000_000,
+              totalBtc: '1.00000000',
+              totalUsd: '100000.00',
+              totalChf: '80000.00',
+              totalEur: '90000.00',
+              totalPhp: '5600000.00',
+              giftCount: 1,
+              recipientCount: 1,
+              firstPaidAt: '2026-09-26T00:00:00.000Z',
+              lastPaidAt: '2026-09-26T00:00:00.000Z',
+              spendOverTime: [
+                {
+                  day: '2026-09-26',
+                  sats: 100_000_000,
+                  cumulativeSats: 100_000_000,
+                  btc: '1.00000000',
+                  cumulativeBtc: '1.00000000',
+                  usd: '100000.00',
+                  cumulativeUsd: '100000.00',
+                  chf: '80000.00',
+                  cumulativeChf: '80000.00',
+                  eur: '90000.00',
+                  cumulativeEur: '90000.00',
+                  php: '5600000.00',
+                  cumulativePhp: '5600000.00',
+                },
+              ],
+              byRecipient: [],
+              byMonth: [],
+              fx: {
+                quote: 'BTC-USD',
+                dayBasis: 'utc',
+                source: 'coinbase-exchange-daily-close',
+                quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+              },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify(btc), { status: 200 });
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    const chart = await screen.findByRole('img', { name: /Sep 27/ });
+    await waitFor(() => {
+      expect(chart.textContent).toContain('·');
+      expect(chart.textContent).toContain('$0.02');
+    });
+  });
+
   it('keeps the feed ledger closed until the visitor asks', async () => {
     ledger(btc);
     renderWithLocale(

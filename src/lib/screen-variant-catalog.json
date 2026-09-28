@@ -1332,15 +1332,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-goal-credit-open",
+    "label": "/members/[accountId] posts-open-goal-credit-open",
+    "visual": "state-members-posts-open-goal-credit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-loan-tag-open",
     "label": "/members/[accountId] posts-open-loan-tag-open",
     "visual": "state-members-posts-open-loan-tag-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:posts-open-goal-credit-open",
-    "label": "/members/[accountId] posts-open-goal-credit-open",
-    "visual": "state-members-posts-open-goal-credit-open",
+    "id": "/members/[accountId]:posts-open-donation-tag-open",
+    "label": "/members/[accountId] posts-open-donation-tag-open",
+    "visual": "state-members-posts-open-donation-tag-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2721,6 +2727,12 @@
     "id": "/messages/[id]:loan-tag-open",
     "label": "/messages/[id] loan-tag-open",
     "visual": "state-messages-id-loan-tag-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:donation-tag-open",
+    "label": "/messages/[id] donation-tag-open",
+    "visual": "state-messages-id-donation-tag-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

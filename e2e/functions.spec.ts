@@ -5492,7 +5492,7 @@ test('Function: noteKinds — a credit, a donation, and a shop each get their ta
             name: 'Cara',
             text: 'Cafe Luna\n\n#21GiftsShop',
             createdAt: '2026-08-28T10:00:00.000Z',
-            sats: 0,
+            sats: 21,
             payable: true,
             hasPhoto: false,
             role: 'basis',
@@ -5503,7 +5503,7 @@ test('Function: noteKinds — a credit, a donation, and a shop each get their ta
             name: 'Dan',
             text: 'Hello',
             createdAt: '2026-08-28T09:00:00.000Z',
-            sats: 0,
+            sats: 1,
             payable: true,
             hasPhoto: false,
             role: 'basis',
@@ -10788,6 +10788,6 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
   await expect(chart).toBeVisible();
   await expect(chart).toContainText('Sep 27');
   await expect(chart).toContainText('Sep 28');
-  await expect(page.getByText('Per day')).toBeVisible();
-  await expect(page.getByText('Still owed')).toBeVisible();
+  await expect(page.getByText('Per day', { exact: true })).toBeVisible();
+  await expect(page.getByText('Still owed', { exact: true })).toBeVisible();
 });

@@ -33,9 +33,6 @@ export function RepaymentPlanChart({
   const plotted = amounts.map((amount) => (Number.isFinite(amount) && amount > 0 ? amount : 0));
   const total = plotted.reduce((sum, amount) => sum + amount, 0);
   const maxBar = plotted.reduce((max, amount) => (amount > max ? amount : max), 0);
-  if (total <= 0 || maxBar <= 0) {
-    return null;
-  }
   const width = 640;
   const height = 148;
   const padL = 8;

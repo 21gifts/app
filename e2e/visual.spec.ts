@@ -4788,6 +4788,78 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-loan-tag-open');
   });
 
+  test('state /members posts-open-donation-tag-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Goal note at one hundred ten percent',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 23100,
+              goalSats: 21000,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: 'Donation' }).click();
+    await expect(page.getByText('A donation is a gift. It is not paid back.')).toBeVisible();
+    await shotScreen(page, 'state-members-posts-open-donation-tag-open');
+  });
+
   test('state /members posts-open-goal-credit-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
@@ -7300,6 +7372,34 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Loan' }).click();
     await expect(page.getByRole('status')).toContainText('paid back');
     await shotScreen(page, 'state-messages-id-loan-tag-open');
+  });
+
+  test('state /messages/[id] donation-tag-open', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Goal note at one hundred ten percent',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 23100,
+          goalSats: 21000,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Donation' }).click();
+    await expect(page.getByText('A donation is a gift. It is not paid back.')).toBeVisible();
+    await shotScreen(page, 'state-messages-id-donation-tag-open');
   });
 
   test('state /messages/[id] credit-ledger', async ({ page }) => {

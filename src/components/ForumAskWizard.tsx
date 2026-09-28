@@ -607,9 +607,6 @@ function PlanChart({
   totalText: string;
 }): ReactElement | null {
   const { t } = useTranslations();
-  if (amounts.length === 0 || totalText === '') {
-    return null;
-  }
   return (
     <RepaymentPlanChart
       amounts={amounts}

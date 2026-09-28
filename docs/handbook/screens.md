@@ -1891,6 +1891,12 @@ Same post as **posts-open-goal-credit**, after **Loan** is pressed. A line under
 
 ![21.gifts member posts loan tag open](images/members-posts-open-loan-tag-open.png)
 
+### Variant: posts-open-donation-tag-open
+
+Same post as **posts-open-goal-110**, after **Donation** is pressed. A line under the name says a donation is a gift and is not paid back.
+
+![21.gifts member posts donation tag open](images/members-posts-open-donation-tag-open.png)
+
 ### Variant: posts-open-goal-credit-open
 
 Same member, after **Who gave and who is paid back** is pressed on a filled credit. **Given** lists Bea. **Paid back** shows the chart and Bea's share **Due**.
@@ -3381,6 +3387,12 @@ Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`
 Same unsigned credit, after **Loan** is pressed. A line under the name says a loan is paid back.
 
 ![21.gifts public message loan tag open](images/messages-id-loan-tag-open.png)
+
+### Variant: donation-tag-open
+
+Same unsigned note as **goal-110**, after **Donation** is pressed. A line under the name says a donation is a gift and is not paid back.
+
+![21.gifts public message donation tag open](images/messages-id-donation-tag-open.png)
 
 ### Variant: credit-ledger
 

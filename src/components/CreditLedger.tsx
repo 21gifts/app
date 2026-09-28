@@ -10,7 +10,13 @@ import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
-import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 
 /**
  * Who gave what on a credit, and who is paid back how much, when, and by one bitcoin payment.
@@ -105,7 +111,13 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
-        <RepaymentChart ledger={ledger} fiat={fiat} locale={locale} />
+        <RepaymentChart
+          ledger={ledger}
+          fiat={fiat}
+          locale={locale}
+          rateDay={rateDay}
+          visitorFiat={visitorFiat}
+        />
         <div className="mt-1 flex flex-col gap-2">
           {groupsOf(ledger.repayments).map((group) => (
             <div key={group.dayIndex}>
@@ -237,10 +249,14 @@ function RepaymentChart({
   ledger,
   fiat,
   locale,
+  rateDay,
+  visitorFiat,
 }: {
   ledger: RepaymentLedger;
   fiat: FiatCode | null;
   locale: string;
+  rateDay: FiatRateDay | null;
+  visitorFiat: FiatCode;
 }): ReactElement | null {
   const { t, numberFormat } = useChartFormat();
   const groups = groupsOf(ledger.repayments);
@@ -266,9 +282,13 @@ function RepaymentChart({
           locale,
           first.dueOn === null || yearOf(first.dueOn) !== yearOf(last.dueOn),
         );
+  const bitcoin = formatBitcoin(total, numberFormat);
+  const priced = fiat === null ? satsToFiatAmount(total, rateDay, visitorFiat) : null;
   const totalText =
     fiat === null
-      ? formatBitcoin(total, numberFormat)
+      ? priced === null
+        ? bitcoin
+        : `${bitcoin} · ${formatFiatDisplay(priced, visitorFiat, numberFormat)}`
       : formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
   return <RepaymentPlanChart amounts={amounts} from={from} to={to} totalText={totalText} />;
 }

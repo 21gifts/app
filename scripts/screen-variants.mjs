@@ -1641,6 +1641,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'posts-open-donation-tag-open',
+    image: 'members-posts-open-donation-tag-open.png',
+    visual: 'state-members-posts-open-donation-tag-open',
+    needle: 'state /members posts-open-donation-tag-open',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'posts-open-photos',
     image: 'members-posts-open-photos.png',
     visual: 'state-members-posts-open-photos',
@@ -3248,6 +3255,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-loan-tag-open.png',
     visual: 'state-messages-id-loan-tag-open',
     needle: 'state /messages/[id] loan-tag-open',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'donation-tag-open',
+    image: 'messages-id-donation-tag-open.png',
+    visual: 'state-messages-id-donation-tag-open',
+    needle: 'state /messages/[id] donation-tag-open',
   },
   {
     route: '/messages/[id]',
