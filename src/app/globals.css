@@ -58,6 +58,13 @@ body {
   overflow: auto !important;
 }
 
+/* Sideways only. `overflow-y: clip` so `overflow-x: auto` does not turn the
+   other axis into a second page scroll. */
+[data-scroll-x] {
+  overflow-x: auto !important;
+  overflow-y: clip !important;
+}
+
 /* `center` first so an engine that drops `safe` still centers. */
 .shell-safe-center {
   justify-content: center;

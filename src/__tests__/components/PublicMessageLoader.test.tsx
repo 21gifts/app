@@ -566,9 +566,11 @@ describe('PublicMessageLoader', () => {
     expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
     expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
     expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
-    expect(photos[0]?.parentElement?.contains(photos[1] ?? null)).toBe(true);
-    expect(photos[0]?.parentElement?.className).toContain('flex-col');
-    expect(photos[0]?.parentElement?.className).not.toContain('overflow-');
+    const scroller = photos[0]?.parentElement?.parentElement;
+    expect(scroller?.contains(photos[1] ?? null)).toBe(true);
+    expect(scroller?.getAttribute('data-scroll-x')).toBe('');
+    expect(scroller?.className).not.toContain('overflow-');
+    expect(photos[0]?.parentElement?.className).toContain('w-[88%]');
     expect((photos[0]?.className ?? '').split(/\s+/)).toEqual(
       expect.arrayContaining(['w-full', 'max-h-80', 'object-contain']),
     );

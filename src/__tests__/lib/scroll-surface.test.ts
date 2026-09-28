@@ -105,4 +105,15 @@ describe('scroll surface', () => {
     syncScrollSurfaces();
     expect(stray.style.overflow).toBe('clip');
   });
+
+  it('keeps a sideways row scrolling and clips its vertical axis', () => {
+    const row = document.createElement('div');
+    row.setAttribute('data-scroll-x', '');
+    row.style.overflowX = 'auto';
+    row.style.overflowY = 'auto';
+    document.body.appendChild(row);
+    syncScrollSurfaces();
+    expect(row.style.overflowX).toBe('auto');
+    expect(row.style.overflowY).toBe('clip');
+  });
 });

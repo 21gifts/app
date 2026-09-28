@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Fail if production source adds a second layout scrollport.
- * The only scrolling declaration in globals.css is `overflow: auto` on
- * `[data-scrollport][data-scroll-active]`. Any other auto, scroll, or
- * overlay overflow there is a second scrollport.
+ * globals.css may scroll in two places only: `overflow: auto` on
+ * `[data-scrollport][data-scroll-active]`, and `overflow-x: auto` with
+ * `overflow-y: clip` on `[data-scroll-x]`. Anything else is a second
+ * page scroll.
  * Run from the repo root. No extra packages.
  */
 import fs from 'node:fs';
@@ -53,6 +54,7 @@ function bannedLine(line) {
 
 const SCROLL_TOKEN = new Set(['auto', 'scroll', 'overlay']);
 const ACTIVE_SELECTOR = '[data-scrollport][data-scroll-active]';
+const ROW_SELECTOR = '[data-scroll-x]';
 
 /**
  * @param {string} css
@@ -103,16 +105,12 @@ function scrollingDecls(body) {
   /** @type {{ prop: string, tokens: string[] }[]} */
   const found = [];
   // Not `--overflow`: the name must not continue an identifier.
-  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
+  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/gi;
   let match = re.exec(body);
   while (match) {
-    const tokens = match[2]
-      .replace(/\s*!important\b/g, '')
-      .trim()
-      .split(/\s+/)
-      .filter((token) => token !== '');
+    const tokens = valueTokens(match[2]);
     if (tokens.some((token) => SCROLL_TOKEN.has(token))) {
-      found.push({ prop: match[1], tokens });
+      found.push({ prop: match[1].toLowerCase(), tokens });
     }
     match = re.exec(body);
   }
@@ -120,33 +118,83 @@ function scrollingDecls(body) {
 }
 
 /**
- * The one allowed scrolling declaration is `overflow: auto` on exactly
- * `[data-scrollport][data-scroll-active]`. A second value (`clip auto`),
- * another axis, or the same declaration on a grouped selector is a second
- * scrollport.
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function valueTokens(raw) {
+  return raw
+    .replace(/\s*!important\b/gi, '')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((token) => token !== '');
+}
+
+/**
+ * Every overflow declaration, including clip, hidden, and visible.
+ *
+ * @param {string} body
+ * @returns {{ prop: string, tokens: string[] }[]}
+ */
+function allOverflowDecls(body) {
+  /** @type {{ prop: string, tokens: string[] }[]} */
+  const found = [];
+  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/gi;
+  let match = re.exec(body);
+  while (match) {
+    found.push({ prop: match[1].toLowerCase(), tokens: valueTokens(match[2]) });
+    match = re.exec(body);
+  }
+  return found;
+}
+
+/**
+ * @param {{ prop: string, tokens: string[] }[]} actual
+ * @param {{ prop: string, tokens: string[] }[]} expected
+ * @returns {boolean}
+ */
+function sameDecls(actual, expected) {
+  const key = (decl) => `${decl.prop}:${decl.tokens.join(' ')}`;
+  const left = actual.map(key).sort();
+  const right = expected.map(key).sort();
+  return left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
+/**
+ * One page rule and one sideways rule, each with exactly its allowed values.
+ * A later rule with the same selector is rejected, even when it only sets
+ * hidden or visible. Any other rule may not scroll.
  *
  * @param {string} css
  * @returns {string | null}
  */
 function globalsScrollProblem(css) {
-  const hits = [];
-  for (const rule of leafRules(stripCssComments(css))) {
-    for (const decl of scrollingDecls(rule.body)) {
-      hits.push({ selector: rule.selector, prop: decl.prop, tokens: decl.tokens });
-    }
-  }
-  const only = hits[0];
-  if (
-    hits.length === 1 &&
-    only &&
-    only.selector === ACTIVE_SELECTOR &&
-    only.prop === 'overflow' &&
-    only.tokens.length === 1 &&
-    only.tokens[0] === 'auto'
-  ) {
+  const rules = leafRules(stripCssComments(css));
+  const pages = rules.filter((rule) => rule.selector === ACTIVE_SELECTOR);
+  const rows = rules.filter((rule) => rule.selector === ROW_SELECTOR);
+  const page = pages[0];
+  const row = rows[0];
+  const pageOk =
+    pages.length === 1 &&
+    page !== undefined &&
+    sameDecls(allOverflowDecls(page.body), [{ prop: 'overflow', tokens: ['auto'] }]);
+  const rowOk =
+    rows.length === 1 &&
+    row !== undefined &&
+    sameDecls(allOverflowDecls(row.body), [
+      { prop: 'overflow-x', tokens: ['auto'] },
+      { prop: 'overflow-y', tokens: ['clip'] },
+    ]);
+  const stray = rules.some(
+    (rule) =>
+      rule.selector !== ACTIVE_SELECTOR &&
+      rule.selector !== ROW_SELECTOR &&
+      scrollingDecls(rule.body).length > 0,
+  );
+  if (pageOk && rowOk && !stray) {
     return null;
   }
-  return 'expected exactly one overflow:auto on [data-scrollport][data-scroll-active]';
+  return 'expected one overflow:auto on [data-scrollport][data-scroll-active] and one overflow-x:auto with overflow-y:clip on [data-scroll-x]';
 }
 
 function selfTest() {
@@ -190,6 +238,7 @@ function selfTest() {
     html, body { overflow: clip !important; }
     [data-scrollport] { overflow: clip !important; }
     [data-scrollport][data-scroll-active] { overflow: auto !important; }
+    [data-scroll-x] { overflow-x: auto !important; overflow-y: clip !important; }
     * { scroll-behavior: auto !important; }
     :root { --overflow: auto; }
     /* overflow: auto must not count inside a comment */
@@ -209,9 +258,19 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: clip/**/auto }',
     '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: scroll!important }',
     '[data-scrollport][data-scroll-active] { overflow: scroll!important }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x, [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } [data-scroll-x] { overflow-y: visible !important }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scrollport][data-scroll-active] { overflow: hidden } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto; overflow: hidden } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip; overflow-y: visible }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { overflow: AUTO }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { OVERFLOW: auto }',
   ];
   const gluedImportant = `
     [data-scrollport][data-scroll-active] { overflow:auto!important; }
+    [data-scroll-x] { overflow-x:auto!important; overflow-y:clip!important; }
     :root { --overflow: auto; }
   `;
   if (globalsScrollProblem(passSheet) !== null || globalsScrollProblem(gluedImportant) !== null) {

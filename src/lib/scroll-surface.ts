@@ -90,6 +90,13 @@ export function syncScrollSurfaces(): void {
     if (node === active) {
       continue;
     }
+    // A photo row may scroll sideways. Clip its vertical axis so it cannot
+    // become a second page scroll. A sideways value with a visible cross axis
+    // would compute both axes to auto.
+    if (node.hasAttribute('data-scroll-x')) {
+      node.style.setProperty('overflow-y', 'clip', 'important');
+      continue;
+    }
     const computed = getComputedStyle(node);
     const scrolling =
       isScrollingOverflow(computed.overflowY) ||
