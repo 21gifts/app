@@ -54,6 +54,7 @@ describe('ViewHistoryRoot', () => {
 
     navigation.pathname = '/notifications';
     navigation.query = 'c=abc';
+    window.history.pushState(null, '', '/notifications?c=abc');
     view.rerender(
       <ViewHistoryRoot>
         <p>child</p>

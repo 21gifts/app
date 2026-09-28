@@ -57,34 +57,79 @@ export function ChromeBackProvider({ children }: { children: ReactNode }): React
 }
 
 /**
- * Records the current pathname and search on the in-app view stack.
+ * Current in-app path from the router pathname and the live location search.
  *
- * `useSearchParams` can suspend, so the page chrome may paint before this
- * recorder commits. The layout effect records again and asks the root to
- * re-render, so the top-left arrow reads the stack that includes this view.
+ * Search is taken from `window.location` only when it still matches the
+ * pathname, so a suspended `useSearchParams` cannot delay the first record.
+ *
+ * @param pathname - Router pathname, or null before the router is ready.
+ * @returns The path to record, or `null` when there is nothing to record.
+ */
+function pathFromLocation(pathname: string | null): string | null {
+  if (typeof pathname !== 'string' || pathname === '') {
+    return null;
+  }
+  if (typeof window === 'undefined' || window.location.pathname !== pathname) {
+    return pathname;
+  }
+  const search = window.location.search;
+  if (search === '' || search === '?') {
+    return pathname;
+  }
+  return `${pathname}${search}`;
+}
+
+/**
+ * Records the current view before paint, without `useSearchParams`.
+ *
+ * A recorder that suspends does not commit before the next full navigation,
+ * so the view the visitor just saw never reaches the stack.
  *
  * @param props - Stable callback that re-renders the chrome after a record.
  * @returns `null` (side-effect only).
  */
-function RecordView({ onRecorded }: { onRecorded: () => void }): null {
+function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const query = searchParams.toString();
-  const path = query === '' ? pathname : `${pathname}?${query}`;
-  if (typeof pathname === 'string' && pathname !== '') {
+  const path = pathFromLocation(pathname);
+  if (path !== null) {
     recordCurrentView(path);
   }
   useLayoutEffect(() => {
-    if (typeof pathname === 'string' && pathname !== '') {
+    if (path !== null) {
       recordCurrentView(path);
       onRecorded();
     }
-  }, [onRecorded, path, pathname]);
+  }, [onRecorded, path]);
+  return null;
+}
+
+/**
+ * Records a search-only change. `useSearchParams` can suspend, so this is not
+ * the first record of a full navigation.
+ *
+ * @param props - Stable callback that re-renders the chrome after a record.
+ * @returns `null` (side-effect only).
+ */
+function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const query = searchParams.toString();
+  const path =
+    query === '' || typeof pathname !== 'string' || pathname === '' ? null : `${pathname}?${query}`;
+  if (path !== null) {
+    recordCurrentView(path);
+  }
+  useLayoutEffect(() => {
+    if (path !== null) {
+      recordCurrentView(path);
+      onRecorded();
+    }
+  }, [onRecorded, path]);
   useEffect(() => {
-    if (typeof pathname === 'string' && pathname !== '') {
+    if (path !== null) {
       recordCurrentView(path);
     }
-  }, [path, pathname]);
+  }, [path]);
   return null;
 }
 
@@ -101,8 +146,9 @@ export function ViewHistoryRoot({ children }: { children: ReactNode }): ReactEle
   }, []);
   return (
     <ChromeBackProvider>
+      <RecordLocation onRecorded={onRecorded} />
       <Suspense fallback={null}>
-        <RecordView onRecorded={onRecorded} />
+        <RecordQuery onRecorded={onRecorded} />
       </Suspense>
       {children}
     </ChromeBackProvider>
