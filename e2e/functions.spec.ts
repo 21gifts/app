@@ -3656,6 +3656,76 @@ test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
 });
 
+test('Function: isMacChromiumInstalledApp — Chrome app hides the passkey ceremony', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const ua =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
+    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'MacIntel' });
+    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      if (String(query).includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return false;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
+  await page.goto('/login');
+  await expect(
+    page.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
+});
+
+test('Function: MacChromiumAppPasskeyView — Chrome app shows the passkey notice', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const ua =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
+    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'MacIntel' });
+    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      if (String(query).includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return false;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
+  await page.goto('/login');
+  await expect(
+    page.getByRole('heading', { name: 'Passkeys do not work in the Chrome app' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
+});
+
 test('Function: openInSystemBrowser — Open in browser is shown in Telegram WebView', async ({
   page,
 }) => {

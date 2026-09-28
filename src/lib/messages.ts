@@ -222,6 +222,9 @@ const en = {
   'login.inAppBody':
     'Passkeys do not work inside Telegram or other in-app browsers. Open this page in Safari or Chrome to log in.',
   'login.inAppIosHint': 'On iPhone, tap the compass or Safari icon at the top right.',
+  'passkey.macAppHeading': 'Passkeys do not work in the Chrome app',
+  'passkey.macAppBody':
+    'The Mac passkey does not work in the installed Chrome app. Open 21.gifts in a Chrome tab, or add it to the Dock from Safari (File → Add to Dock).',
   'login.openInBrowser': 'Open in browser',
   'login.copyLink': 'Copy link',
   'login.linkCopied': 'Copied',
@@ -1147,6 +1150,9 @@ const de = {
     'Passkeys funktionieren in Telegram und anderen In-App-Browsern nicht. Öffnen Sie diese Seite in Safari oder Chrome, um sich anzumelden.',
   'login.inAppIosHint':
     'Tippen Sie auf dem iPhone oben rechts auf das Kompass- oder Safari-Symbol.',
+  'passkey.macAppHeading': 'Passkey geht in der Chrome-App nicht',
+  'passkey.macAppBody':
+    'Der Mac-Passkey funktioniert in der installierten Chrome-App nicht. Öffne 21.gifts in einem Chrome-Tab, oder füge die Seite in Safari zum Dock hinzu (Ablage → Zum Dock hinzufügen).',
   'login.openInBrowser': 'Im Browser öffnen',
   'login.copyLink': 'Link kopieren',
   'login.linkCopied': 'Kopiert',
@@ -2090,6 +2096,9 @@ const es = {
   'login.inAppBody':
     'Las passkeys no funcionan dentro de Telegram ni de otros navegadores integrados. Abre esta página en Safari o Chrome para iniciar sesión.',
   'login.inAppIosHint': 'En el iPhone, toca el icono de brújula o Safari arriba a la derecha.',
+  'passkey.macAppHeading': 'La clave de acceso no funciona en la app de Chrome',
+  'passkey.macAppBody':
+    'La clave de acceso del Mac no funciona en la app instalada de Chrome. Abre 21.gifts en una pestaña de Chrome, o añádela al Dock desde Safari (Archivo → Añadir al Dock).',
   'login.openInBrowser': 'Abrir en el navegador',
   'login.copyLink': 'Copiar enlace',
   'login.linkCopied': 'Copiado',
@@ -3015,6 +3024,9 @@ const fil = {
   'login.inAppBody':
     'Hindi gumagana ang mga passkey sa Telegram o sa ibang in-app browser. Buksan ang page na ito sa Safari o Chrome para mag-log in.',
   'login.inAppIosHint': 'Sa iPhone, i-tap ang compass o Safari icon sa taas-kanan.',
+  'passkey.macAppHeading': 'Hindi gumagana ang passkey sa Chrome app',
+  'passkey.macAppBody':
+    'Hindi gumagana ang Mac passkey sa naka-install na Chrome app. Buksan ang 21.gifts sa isang Chrome tab, o idagdag ito sa Dock mula sa Safari (File → Add to Dock).',
   'login.openInBrowser': 'Buksan sa browser',
   'login.copyLink': 'Kopyahin ang link',
   'login.linkCopied': 'Nakopya',

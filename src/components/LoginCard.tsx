@@ -4,15 +4,17 @@ import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
+import { MacChromiumAppPasskeyView } from '@/components/MacChromiumAppPasskeyView';
 import { Button, Card } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The `/login` card: Log in, account choice, preparing, error, or in-app
- * browser escape.
+ * The `/login` card: Log in, account choice, preparing, error, in-app
+ * browser escape, or the macOS Chrome app passkey notice.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
@@ -26,9 +28,14 @@ export function LoginCard(): ReactElement {
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
   const [inApp, setInApp] = useState(false);
+  const [macApp, setMacApp] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
+  }, []);
+
+  useEffect(() => {
+    setMacApp(isMacChromiumInstalledApp());
   }, []);
 
   useEffect(() => {
@@ -42,6 +49,8 @@ export function LoginCard(): ReactElement {
   let body: ReactElement;
   if (account !== null) {
     body = <StartingView />;
+  } else if (macApp || passkey.status === 'macApp') {
+    body = <MacChromiumAppPasskeyView />;
   } else if (inApp || passkey.status === 'unsupported') {
     body = <InAppBrowserView />;
   } else if (passkey.status === 'starting') {

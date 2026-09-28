@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchMe, finishPasskeySeed, startPasskeySeed } from '@/lib/api';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
@@ -9,12 +10,12 @@ import {
   obtainPrfFirstFromGet,
   prfEvalFirstSalt,
 } from '@/lib/prf-mnemonic';
+import { clearSessionPhrase } from '@/lib/tab-phrase';
 import {
   base64UrlToBytes,
   creationOptionsFromJSON,
   credentialToJSON,
 } from '@/lib/webauthn-browser';
-import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
@@ -36,8 +37,8 @@ export const WALLET_VISUAL_FIXTURE_MNEMONIC =
 /** Busy / idle / error for {@link useWalletPhrase}. */
 export type WalletPhraseStatus = 'idle' | 'busy' | 'error';
 
-/** User-facing error kinds for {@link useWalletPhrase}. */
-export type WalletPhraseErrorKind = 'timeout' | 'prfUnsupported' | 'generic';
+/** User-facing error kinds for {@link useWalletPhrase}. `macApp` skips WebAuthn. */
+export type WalletPhraseErrorKind = 'timeout' | 'prfUnsupported' | 'generic' | 'macApp';
 
 /** Which `/wallet` body to render. */
 export type WalletPhraseView = 'activate' | 'reveal' | 'phrase';
@@ -106,6 +107,8 @@ async function mergePrfExtension(
 /**
  * Owns recovery-phrase add / show state for the signed-in `/wallet`
  * screen. Derives the 12 words from WebAuthn PRF in component state only.
+ * Installed macOS Chrome app: `activate` / `showPhrase` set error `macApp`
+ * and do not start WebAuthn.
  *
  * @returns View, status, words, and actions.
  */
@@ -177,6 +180,11 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, []);
 
   const activate = useCallback(async () => {
+    if (isMacChromiumInstalledApp()) {
+      setError('macApp');
+      setStatus('idle');
+      return;
+    }
     if (session === null || inFlight.current || ceremonyInFlight) {
       return;
     }
@@ -263,6 +271,11 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, [fail, session, setAccount]);
 
   const showPhrase = useCallback(async () => {
+    if (isMacChromiumInstalledApp()) {
+      setError('macApp');
+      setStatus('idle');
+      return;
+    }
     if (session === null || inFlight.current || ceremonyInFlight) {
       return;
     }
@@ -312,9 +325,18 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, []);
 
   const retry = useCallback(() => {
+    if (isMacChromiumInstalledApp()) {
+      setError('macApp');
+      setStatus('idle');
+      return;
+    }
+    if (error === 'macApp') {
+      setStatus('idle');
+      return;
+    }
     setError(null);
     setStatus('idle');
-  }, []);
+  }, [error]);
 
   return {
     view,

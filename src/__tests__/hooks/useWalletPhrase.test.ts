@@ -8,6 +8,7 @@ import {
   useWalletPhrase,
 } from '@/hooks/useWalletPhrase';
 import { fetchMe, finishPasskeySeed, postWalletBackupSeen, startPasskeySeed } from '@/lib/api';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { obtainPrfFirst, obtainPrfFirstFromGet, mnemonicFromPrfFirst } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
@@ -44,6 +45,10 @@ vi.mock('@/lib/webauthn-browser', () => ({
   base64UrlToBytes: vi.fn((value: string) => new TextEncoder().encode(value)),
 }));
 
+vi.mock('@/lib/mac-chromium-app', () => ({
+  isMacChromiumInstalledApp: vi.fn(() => false),
+}));
+
 const account = {
   id: 'acc_1',
   linkingKey: null as string | null,
@@ -77,6 +82,7 @@ beforeEach(() => {
   clearSessionPhrase();
   resetWalletCeremonyLock();
   useAuthStore.setState({ session: 'tok', account });
+  vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
   vi.mocked(startPasskeySeed)
     .mockReset()
     .mockResolvedValue({
@@ -735,5 +741,64 @@ describe('useWalletPhrase', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(result.current.error).toBeNull();
+  });
+});
+
+describe('useWalletPhrase macOS Chrome app', () => {
+  it('activate sets macApp and does not call credentials', async () => {
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBe('macApp');
+    expect(result.current.status).toBe('idle');
+    expect(navigator.credentials.create).not.toHaveBeenCalled();
+    expect(navigator.credentials.get).not.toHaveBeenCalled();
+    expect(startPasskeySeed).not.toHaveBeenCalled();
+  });
+
+  it('showPhrase sets macApp and does not call credentials', async () => {
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(result.current.error).toBe('macApp');
+    expect(result.current.status).toBe('idle');
+    expect(navigator.credentials.create).not.toHaveBeenCalled();
+    expect(navigator.credentials.get).not.toHaveBeenCalled();
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+  });
+
+  it('retry while the detector is true leaves error macApp', async () => {
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBe('macApp');
+    act(() => {
+      result.current.retry();
+    });
+    expect(result.current.error).toBe('macApp');
+    expect(result.current.status).toBe('idle');
+    expect(navigator.credentials.create).not.toHaveBeenCalled();
+  });
+
+  it('retry keeps macApp after the detector turns false', async () => {
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(true);
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBe('macApp');
+    vi.mocked(isMacChromiumInstalledApp).mockReturnValue(false);
+    act(() => {
+      result.current.retry();
+    });
+    expect(result.current.error).toBe('macApp');
+    expect(result.current.status).toBe('idle');
+    expect(navigator.credentials.create).not.toHaveBeenCalled();
   });
 });

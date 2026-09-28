@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
+import { MacChromiumAppPasskeyView } from '@/components/MacChromiumAppPasskeyView';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -26,7 +28,8 @@ function isAlreadyClaimedError(message: string | null): boolean {
  * Public passkey claim control under the `/view/[viewKey]` profile card.
  * Unclaimed profiles (`hasPasskey` false) show the yellow Activate banner in a
  * real browser even when another session is signed in. In Telegram or another
- * in-app browser, shows the shared escape card on mount instead.
+ * in-app browser, shows the shared escape card on mount instead. In the
+ * installed macOS Chrome app, shows the passkey notice instead of Activate.
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
  * @returns Yellow activate banner, in-app escape card, spinner, error copy, or `null` when claimed.
@@ -46,9 +49,14 @@ export function ViewProfileClaim({
   const claimAttemptedRef = useRef(false);
   const claimedLoginRef = useRef(false);
   const [inApp, setInApp] = useState(false);
+  const [macApp, setMacApp] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
+  }, []);
+
+  useEffect(() => {
+    setMacApp(isMacChromiumInstalledApp());
   }, []);
 
   useEffect(() => {
@@ -63,6 +71,14 @@ export function ViewProfileClaim({
 
   if (hasPasskey) {
     return null;
+  }
+
+  if (macApp || passkey.status === 'macApp') {
+    return (
+      <Card>
+        <MacChromiumAppPasskeyView />
+      </Card>
+    );
   }
 
   const claimLabel = t('view.claim');
