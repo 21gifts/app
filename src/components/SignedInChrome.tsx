@@ -132,8 +132,12 @@ export function SignedInChrome(): ReactElement {
     void resyncPushSubscription(session).catch(() => undefined);
   }, [session]);
 
+  // Stay in the sheet host while closed. Moving the portal back to the
+  // trigger remounts the panel, and the iOS install sheet is state on
+  // that panel. `rootEl` is null on the first render, so the server and
+  // the hydration pass both skip the portal.
   const sheetHost =
-    open && narrow && typeof document !== 'undefined'
+    rootEl !== null && narrow && typeof document !== 'undefined'
       ? document.querySelector('[data-menu-sheet-host]')
       : null;
   // `querySelector` is already an element or null. Do not touch `HTMLElement`:
@@ -145,10 +149,9 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  const panelClass =
-    open && narrow
-      ? 'w-full rounded-xl border border-app-border bg-app-card p-2'
-      : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
+  const panelClass = narrow
+    ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
+    : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
     <div ref={setRootEl} className="relative">

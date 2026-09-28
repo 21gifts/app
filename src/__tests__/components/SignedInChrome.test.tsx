@@ -694,6 +694,31 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
+  it('keeps the iOS install sheet when a narrow menu closes', async () => {
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
+    const restore = stubMatchMedia(true);
+    try {
+      renderWithLocale(
+        <AppShell mode="fill" topRight={<SignedInChrome />}>
+          <p>Note</p>
+        </AppShell>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+      expectMenuClosed();
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      expect(menuPanel()).toBe(panel);
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      expect(panel.className).toContain('w-full');
+      expect(panel.className).toContain('hidden');
+      expect(panel.className).not.toContain('absolute');
+    } finally {
+      restore();
+    }
+  });
+
   it('shows the introduce overlay when onboarding is done and hasPosted is false', () => {
     const account = useAuthStore.getState().account;
     if (account === null) {
@@ -808,6 +833,11 @@ describe('SignedInChrome', () => {
       expect(document.documentElement.dataset['menuSheet']).toBeUndefined();
       expect(scroll.read()).toBe(80);
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Menu' }));
+      expect(menuPanel()).toBe(panel);
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      expect(panel.className).toContain('hidden');
+      expect(panel.className).toContain('w-full');
+      expect(panel.className).not.toContain('absolute');
     } finally {
       restore();
     }
