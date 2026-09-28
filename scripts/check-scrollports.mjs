@@ -134,62 +134,70 @@ function valueTokens(raw) {
 }
 
 /**
- * The sideways row must clip vertically. Otherwise `overflow-x: auto` makes
- * the other axis scroll too.
+ * Every overflow declaration, including clip, hidden, and visible.
  *
  * @param {string} body
- * @returns {boolean}
+ * @returns {{ prop: string, tokens: string[] }[]}
  */
-function clipsY(body) {
-  const re = /(?:^|[^-\w])overflow-y\s*:\s*([^;]+)/g;
-  const match = re.exec(body);
-  if (match === null) {
-    return false;
+function allOverflowDecls(body) {
+  /** @type {{ prop: string, tokens: string[] }[]} */
+  const found = [];
+  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
+  let match = re.exec(body);
+  while (match) {
+    found.push({ prop: match[1], tokens: valueTokens(match[2]) });
+    match = re.exec(body);
   }
-  const tokens = valueTokens(match[1]);
-  return tokens.length === 1 && tokens[0] === 'clip' && re.exec(body) === null;
+  return found;
 }
 
 /**
- * Allowed scrolling is the page port plus one sideways row. A second value,
- * another axis, or a grouped selector is a second page scroll.
+ * @param {{ prop: string, tokens: string[] }[]} actual
+ * @param {{ prop: string, tokens: string[] }[]} expected
+ * @returns {boolean}
+ */
+function sameDecls(actual, expected) {
+  const key = (decl) => `${decl.prop}:${decl.tokens.join(' ')}`;
+  const left = actual.map(key).sort();
+  const right = expected.map(key).sort();
+  return left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
+/**
+ * One page rule and one sideways rule, each with exactly its allowed values.
+ * A later rule with the same selector is rejected, even when it only sets
+ * hidden or visible. Any other rule may not scroll.
  *
  * @param {string} css
  * @returns {string | null}
  */
 function globalsScrollProblem(css) {
   const rules = leafRules(stripCssComments(css));
-  const hits = [];
-  for (const rule of rules) {
-    for (const decl of scrollingDecls(rule.body)) {
-      hits.push({ selector: rule.selector, prop: decl.prop, tokens: decl.tokens });
-    }
-  }
-  const page = hits.filter(
-    (hit) =>
-      hit.selector === ACTIVE_SELECTOR &&
-      hit.prop === 'overflow' &&
-      hit.tokens.length === 1 &&
-      hit.tokens[0] === 'auto',
+  const pages = rules.filter((rule) => rule.selector === ACTIVE_SELECTOR);
+  const rows = rules.filter((rule) => rule.selector === ROW_SELECTOR);
+  const page = pages[0];
+  const row = rows[0];
+  const pageOk =
+    pages.length === 1 &&
+    page !== undefined &&
+    sameDecls(allOverflowDecls(page.body), [{ prop: 'overflow', tokens: ['auto'] }]);
+  const rowOk =
+    rows.length === 1 &&
+    row !== undefined &&
+    sameDecls(allOverflowDecls(row.body), [
+      { prop: 'overflow-x', tokens: ['auto'] },
+      { prop: 'overflow-y', tokens: ['clip'] },
+    ]);
+  const stray = rules.some(
+    (rule) =>
+      rule.selector !== ACTIVE_SELECTOR &&
+      rule.selector !== ROW_SELECTOR &&
+      scrollingDecls(rule.body).length > 0,
   );
-  const row = hits.filter(
-    (hit) =>
-      hit.selector === ROW_SELECTOR &&
-      hit.prop === 'overflow-x' &&
-      hit.tokens.length === 1 &&
-      hit.tokens[0] === 'auto',
-  );
-  const rowRule = rules.find((rule) => rule.selector === ROW_SELECTOR);
-  if (
-    hits.length === 2 &&
-    page.length === 1 &&
-    row.length === 1 &&
-    rowRule !== undefined &&
-    clipsY(rowRule.body)
-  ) {
+  if (pageOk && rowOk && !stray) {
     return null;
   }
-  return 'expected overflow:auto on [data-scrollport][data-scroll-active] and overflow-x:auto with overflow-y:clip on [data-scroll-x]';
+  return 'expected one overflow:auto on [data-scrollport][data-scroll-active] and one overflow-x:auto with overflow-y:clip on [data-scroll-x]';
 }
 
 function selfTest() {
@@ -256,6 +264,8 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto }',
     '[data-scrollport][data-scroll-active] { overflow: auto } .x, [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } [data-scroll-x] { overflow-y: visible !important }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scrollport][data-scroll-active] { overflow: hidden } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
   ];
   const gluedImportant = `
     [data-scrollport][data-scroll-active] { overflow:auto!important; }
