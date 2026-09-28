@@ -1183,9 +1183,9 @@
 Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place, text, an optional 21.gifts username, then a summary. **Post** on the summary is the only submit. **Cancel** on the photo step drops the draft and closes. Later steps use **Back**. Photos, place, text, and the username can each be left empty; an empty summary still follows the forum rule that a note needs text or media.
 
 - **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. The summary shows the photo count (stills plus a video), the place name or coordinates, the text, and `@username`, or **None** when that part was skipped.
-- **Inputs:** `posting`, `draft` / `onDraftChange`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `place` / `onPlaceChange`, `username` / `onUsernameChange`, `onSubmit`, `onCancel`, `resetToken` (closes the wizard after a successful send), `maxLength`.
-- **Returns / side effects:** React tree. No network. File selection calls `onPickFiles`. **Post** calls `onSubmit`. **Cancel** calls `onCancel`.
-- **Used by:** `ForumBoard` when `shopComposer` is set.
+- **Inputs:** `posting`, `draft` / `onDraftChange`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `place` / `onPlaceChange`, `username` / `onUsernameChange`, `onSubmit`, `onCancel`, `resetToken` (closes the wizard after a successful send), `maxLength`. Optional `mode` (`create` default, or `edit`), `submitLabel`, `keptMedia`, `onRemoveKept`, and `imagesOnly`.
+- **Returns / side effects:** React tree. No network. File selection calls `onPickFiles`. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). **Cancel** on the photo step calls `onCancel`.
+- **Used by:** `ForumBoard` when `shopComposer` is set, and `ShopNoteEditControl` in edit mode.
 
 ## Function: ForumAskWizard
 
@@ -1374,9 +1374,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopNoteEditControl
 
-- **Purpose:** Moderator-only pencil on a listed shop note. Opens a text editor and the edit history. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
-- **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved body).
-- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The open panel edits the visible text (the shop tag is not shown), **Save** / **Cancel**, and **History** loaded when the panel opens. Save calls `setMessageShopText`. A failed save keeps the panel open. History rows show who, when, and the field (text, place, or account).
+- **Purpose:** Moderator-only pencil on a listed shop note. Opens the same five steps as adding a shop, already filled in, plus the edit history. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
+- **Inputs:** `message` (top-level shop note), `onUpdated` (the saved note), optional `existingPhotos`, optional `existingVideoUrl`, and optional `startOpen`.
+- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The summary button is **Save changes**. It writes only the text, place, account, or stills that changed. A video stays. Stills are not replaced unless every current still loaded. A failed save keeps the panel open. History rows show who, when, and the field (text, place, or account).
 - **Used by:** `ForumBoard` when `shopNoteEdit` and `onShopNoteUpdated` are set (`ForumLoader` for a moderator on every feed), `ShopTable`, and `PlacesMapScreen` for a pin with `shop: true`.
 
 ## Function: ShopAccountControl
@@ -2681,8 +2681,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: PATCH
 
-- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`. `/forum/messages/[id]/shop-account` re-exports `proxyMessagesShopAccountPatch`. `/forum/messages/[id]/text` re-exports `proxyMessagesTextPatch`.
-- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place`, `/forum/messages/[id]/shop-account`, and `/forum/messages/[id]/text`, also async route `params` with the message id.
+- **Purpose:** Shared App Router PATCH export name. `/forum/messages/[id]/place` re-exports `proxyMessagesPlacePatch`. `/forum/messages/[id]/shop-account` re-exports `proxyMessagesShopAccountPatch`. `/forum/messages/[id]/text` re-exports `proxyMessagesTextPatch`. `/forum/messages/[id]/photos` re-exports `proxyMessagesPhotosPatch`.
+- **Inputs:** Incoming `Request`. For `/forum/messages/[id]/place`, `/forum/messages/[id]/shop-account`, `/forum/messages/[id]/text`, and `/forum/messages/[id]/photos`, also async route `params` with the message id.
 - **Returns / side effects:** Upstream api `Response`.
 - **Used by:** Same-origin forum staff place save (`setMessagePlace`), shop-account save (`setMessageShopAccount`), and shop-note text save (`setMessageShopText`).
 

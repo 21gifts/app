@@ -396,6 +396,7 @@ export function ForumLoader({
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [photoEpoch, setPhotoEpoch] = useState(0);
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
@@ -1178,7 +1179,7 @@ export function ForumLoader({
     return () => {
       cancelled = true;
     };
-  }, [feed, photoIdsKey, session]);
+  }, [feed, photoEpoch, photoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -2516,6 +2517,21 @@ export function ForumLoader({
           ? {
               shopNoteEdit: true as const,
               onShopNoteUpdated: (updated: ForumMessage) => {
+                setPhotoUrls((prev) => {
+                  const prefix = `${updated.id}:`;
+                  let changed = false;
+                  const next = { ...prev };
+                  for (const [key, url] of Object.entries(next)) {
+                    if (!key.startsWith(prefix)) {
+                      continue;
+                    }
+                    URL.revokeObjectURL(url);
+                    delete next[key];
+                    changed = true;
+                  }
+                  return changed ? next : prev;
+                });
+                setPhotoEpoch((n) => n + 1);
                 setMessages((prev) =>
                   prev!.map((row) => {
                     if (row.id !== updated.id) {

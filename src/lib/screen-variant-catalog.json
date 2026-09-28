@@ -3276,6 +3276,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:add-photos",
+    "label": "/shops add-photos",
+    "visual": "state-shops-add-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-text",
+    "label": "/shops add-text",
+    "visual": "state-shops-add-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-user",
+    "label": "/shops add-user",
+    "visual": "state-shops-add-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-summary",
+    "label": "/shops add-summary",
+    "visual": "state-shops-add-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:table-more",
     "label": "/shops table-more",
     "visual": "state-shops-table-more",

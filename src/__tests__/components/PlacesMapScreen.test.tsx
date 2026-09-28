@@ -448,9 +448,9 @@ describe('PlacesMapScreen', () => {
     vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
     await saveOpened('Cafe Sur');
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+      expect(screen.queryByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeNull();
     });
-    expect(screen.getByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
     await waitFor(() => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);

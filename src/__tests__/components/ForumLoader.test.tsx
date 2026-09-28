@@ -1449,8 +1449,22 @@ describe('ForumLoader', () => {
     });
     fetchMock.mockResolvedValue(
       forumPage([
-        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
-        { ...SAMPLE, id: 'shop2', text: 'Other stall\n\n#21GiftsShop', sats: 5 },
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+        },
+        {
+          ...SAMPLE,
+          id: 'shop2',
+          text: 'Other stall\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+        },
       ]),
     );
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -1459,6 +1473,8 @@ describe('ForumLoader', () => {
       id: 'shop1',
       text: 'Cafe Sol\n\n#21GiftsShop',
       sats: 5,
+      hasPhoto: true,
+      photoCount: 1,
       place: { lat: 1, lng: 2, label: 'Stall' },
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
@@ -1486,8 +1502,11 @@ describe('ForumLoader', () => {
       id: 'shop1',
       text: 'Cafe Norte\n\n#21GiftsShop',
       sats: 5,
+      hasPhoto: true,
+      photoCount: 1,
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
@@ -1500,6 +1519,9 @@ describe('ForumLoader', () => {
       expect(within(card).getByText('Cafe Norte')).toBeTruthy();
     });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+    await waitFor(() => {
+      expect(photoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
   });
 
   it('does not put a staff place control on living-room notes', async () => {

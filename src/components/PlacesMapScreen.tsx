@@ -315,7 +315,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                           return current;
                         }
                         if (pin === undefined) {
-                          return current;
+                          return current.filter((row) => row.id !== updated.id);
                         }
                         return current.map((row) =>
                           row.id === updated.id

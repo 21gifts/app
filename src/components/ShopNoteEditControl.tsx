@@ -15,9 +15,9 @@ import {
   setMessageShopText,
   type ShopNoteEdit,
 } from '@/lib/api';
-import type { ForumMessage, ForumPlacePin } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { ensureShopHashtag, isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -158,6 +158,7 @@ export function ShopNoteEditControl({
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
+  const [photosReady, setPhotosReady] = useState(false);
   const ownedPhotoUrls = useRef<string[]>([]);
   const openEditorRef = useRef<(() => void) | null>(null);
 
@@ -201,8 +202,8 @@ export function ShopNoteEditControl({
     setSaveError(false);
     setHistory(null);
     setHistoryError(false);
-    let photos = [...existingPhotos];
-    if (photos.length === 0 && message.photoCount > 0) {
+    let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
+    if (photos.length < message.photoCount) {
       try {
         const loaded: string[] = [];
         for (let index = 0; index < message.photoCount; index += 1) {
@@ -214,11 +215,13 @@ export function ShopNoteEditControl({
         photos = loaded;
       } catch {
         revokeOwnedPhotos();
+        setPhotosReady(false);
         setSaveError(true);
         setOpen(true);
         return;
       }
     }
+    setPhotosReady(true);
     const video =
       existingVideoUrl ??
       (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
@@ -256,7 +259,14 @@ export function ShopNoteEditControl({
       }
     }
     if (prepared.length > 0) {
-      setPhotoDrafts((current) => current.concat(prepared));
+      setPhotoDrafts((current) => {
+        const keptCount = kept.filter((item) => item.kind === 'photo').length;
+        const room = 10 - keptCount - current.length;
+        if (room <= 0) {
+          return current;
+        }
+        return current.concat(prepared.slice(0, room));
+      });
     }
   }
 
@@ -264,20 +274,40 @@ export function ShopNoteEditControl({
     setSaving(true);
     setSaveError(false);
     try {
+      const keptPhotos = kept.filter((item) => item.kind === 'photo');
+      const hasMedia =
+        keptPhotos.length > 0 ||
+        photoDrafts.length > 0 ||
+        message.hasVideo ||
+        kept.some((item) => item.kind === 'video');
+      if (draft.trim() === '' && !hasMedia) {
+        setSaveError(true);
+        return;
+      }
+      if (ensureShopHashtag(draft).length > FORUM_MESSAGE_MAX_LENGTH) {
+        setSaveError(true);
+        return;
+      }
+      const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
+      if (photosChanged && !photosReady) {
+        setSaveError(true);
+        return;
+      }
       let latest = message;
       if (draft !== stripShopHashtag(message.text)) {
         latest = await setMessageShopText(token, message.id, draft);
+        onUpdated(latest);
       }
       if (!placesEqual(place, message.place ?? null)) {
         latest = await setMessagePlace(token, message.id, place);
+        onUpdated(latest);
       }
       const nextUser = usernameOf(username);
       const prevUser = message.shopAccount?.username ?? '';
       if (nextUser !== prevUser) {
         latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
+        onUpdated(latest);
       }
-      const keptPhotos = kept.filter((item) => item.kind === 'photo');
-      const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
       if (photosChanged) {
         const stills = [];
         for (const item of keptPhotos) {
@@ -293,6 +323,7 @@ export function ShopNoteEditControl({
           });
         }
         latest = await setMessageShopPhotos(token, message.id, stills);
+        onUpdated(latest);
       }
       onUpdated(latest);
       setOpen(false);
@@ -360,7 +391,7 @@ export function ShopNoteEditControl({
                 setOpen(false);
               }}
               resetToken={0}
-              maxLength={8000}
+              maxLength={FORUM_MESSAGE_MAX_LENGTH - '\n\n#21GiftsShop'.length}
               submitLabel={t('shops.saveChanges')}
               keptMedia={kept}
               onRemoveKept={(index) => {

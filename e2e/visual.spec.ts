@@ -15879,6 +15879,26 @@ test.describe('shops screens', () => {
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account-error');
   });
+
+  test('shops add steps', async ({ page }) => {
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await shotScreen(page, 'state-shops-add-photos');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await shotScreen(page, 'state-shops-add-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await shotScreen(page, 'state-shops-add-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await shotScreen(page, 'state-shops-add-summary');
+  });
 });
 
 test.describe('contact screens', () => {
