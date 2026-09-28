@@ -2012,6 +2012,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'picture-too-large',
+    image: 'profile-picture-too-large.png',
+    visual: 'state-profile-picture-too-large',
+    needle: 'state-profile-picture-too-large',
+  },
+  {
+    route: '/profile',
     id: 'picture-save-error',
     image: 'profile-picture-save-error.png',
     visual: 'state-profile-picture-save-error',

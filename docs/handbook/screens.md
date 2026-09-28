@@ -2368,6 +2368,12 @@ Choosing a file that is not a JPEG, PNG, or WebP for the profile photo. Alert **
 
 ![21.gifts profile picture unsupported](images/profile-picture-unsupported.png)
 
+### Variant: picture-too-large
+
+Choosing a photo whose encoded JPEG is over 1 MB. Alert **Keep photos under 1 MB**. Both add buttons stay. Needle `state-profile-picture-too-large`.
+
+![21.gifts profile picture too large](images/profile-picture-too-large.png)
+
 ### Variant: picture-save-error
 
 PUT `/pictures/me` answers 500 after a JPEG is chosen. Alert **Could not save. Please try again.** The profile-photo button stays. Needle `state-profile-picture-save-error`.

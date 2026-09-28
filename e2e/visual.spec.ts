@@ -8899,6 +8899,24 @@ test.describe('profile activity chart variants', () => {
     await shotScreen(page, 'state-profile-picture-unsupported');
   });
 
+  test('profile picture-too-large', async ({ page }) => {
+    // state-profile-picture-too-large
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await shotScreen(page, 'state-profile-picture-too-large');
+  });
+
   test('profile picture-save-error', async ({ page }) => {
     // state-profile-picture-save-error
     await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
