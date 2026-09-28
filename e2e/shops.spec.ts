@@ -300,7 +300,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
   await expect(post).toBeEnabled();
   await post.evaluate((element) => {
-    element.click();
+    (element as unknown as { click: () => void }).click();
   });
   const invoiceReq = await invoiced;
   const parsed = invoiceReq.postDataJSON() as { text?: string };
@@ -522,7 +522,7 @@ test('Function: setMessageShopPhotos — moderator save replaces stills', async 
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/photos'),
   );
   await save.evaluate((element) => {
-    element.click();
+    (element as unknown as { click: () => void }).click();
   });
   const photosReq = await patched;
   expect(photosReq.postDataJSON()).toEqual({ photos: [] });
@@ -575,7 +575,7 @@ test('Function: setMessageShopText — moderator save updates the shop note', as
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/text'),
   );
   await save.evaluate((element) => {
-    element.click();
+    (element as unknown as { click: () => void }).click();
   });
   const textReq = await patched;
   expect(textReq.postDataJSON()).toEqual({ text: 'Cafe Sol' });

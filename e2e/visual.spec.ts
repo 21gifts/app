@@ -15934,6 +15934,9 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-add-user');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(
+      page.locator('form').getByRole('button', { name: 'Post', exact: true }),
+    ).toBeEnabled();
     await shotScreen(page, 'state-shops-add-summary');
   });
 });
