@@ -5427,6 +5427,158 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
+test('Function: noteKinds — a credit, a donation, and a shop each get their tag', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-loan',
+            name: 'Ada',
+            text: 'Need help with a train ticket',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 21000,
+            goalRepayable: true,
+            goalTermDays: 30,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+          {
+            id: 'm-gift',
+            name: 'Bea',
+            text: 'For the hall',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 0,
+            goalSats: 21000,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+          {
+            id: 'm-shop',
+            name: 'Cara',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+          {
+            id: 'm-plain',
+            name: 'Dan',
+            text: 'Hello',
+            createdAt: '2026-08-28T09:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Donation', expanded: false })).toBeVisible();
+  await expect(page.getByRole('link', { name: '#Shop' })).toBeVisible();
+  await expect(page.getByText('Hello')).toBeVisible();
+  await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
+});
+
+test('Function: MessageKindTags — pressing Loan explains the credit', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-loan',
+            name: 'Ada',
+            text: 'Need help with a train ticket',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            goalSats: 21000,
+            goalRepayable: true,
+            goalTermDays: 30,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  const loan = page.getByRole('button', { name: 'Loan' });
+  await loan.click();
+  await expect(page.getByRole('status')).toContainText('paid back');
+  await loan.click();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+
 test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

@@ -387,7 +387,11 @@ const en = {
   'forum.askDonation': 'Donation',
   'forum.askCredit': 'Credit',
   'forum.askObligationLabel': 'Donation or credit',
-  'forum.askRepay': 'To be repaid.',
+  'forum.tag.loan': 'Loan',
+  'forum.tag.loanHint':
+    'A loan is paid back. Each person who gives is paid back what they gave.',
+  'forum.tag.donation': 'Donation',
+  'forum.tag.donationHint': 'A donation is a gift. It is not paid back.',
   'forum.creditCurrencyTitle': 'How the amount is fixed',
   'forum.creditInBitcoin':
     'This credit is fixed in bitcoin. Payments stay in bitcoin, with no conversion.',
@@ -1306,7 +1310,11 @@ const de = {
   'forum.askDonation': 'Spende',
   'forum.askCredit': 'Kredit',
   'forum.askObligationLabel': 'Spende oder Kredit',
-  'forum.askRepay': 'Zurückzuzahlen.',
+  'forum.tag.loan': 'Darlehen',
+  'forum.tag.loanHint':
+    'Ein Darlehen wird zurückgezahlt. Wer gibt, bekommt das Gegebene zurück.',
+  'forum.tag.donation': 'Spende',
+  'forum.tag.donationHint': 'Eine Spende ist ein Geschenk. Sie wird nicht zurückgezahlt.',
   'forum.creditCurrencyTitle': 'Wie der Betrag festgelegt ist',
   'forum.creditInBitcoin':
     'Dieser Kredit ist in Bitcoin festgelegt. Die Zahlungen bleiben in Bitcoin, ohne Umrechnung.',
@@ -2238,7 +2246,11 @@ const es = {
   'forum.askDonation': 'Donación',
   'forum.askCredit': 'Crédito',
   'forum.askObligationLabel': 'Donación o crédito',
-  'forum.askRepay': 'Hay que devolverlo.',
+  'forum.tag.loan': 'Préstamo',
+  'forum.tag.loanHint':
+    'Un préstamo se devuelve. Quien aporta recibe de vuelta lo que dio.',
+  'forum.tag.donation': 'Donación',
+  'forum.tag.donationHint': 'Una donación es un regalo. No se devuelve.',
   'forum.creditCurrencyTitle': 'Cómo queda fijado el importe',
   'forum.creditInBitcoin':
     'Este crédito queda fijado en bitcoin. Los pagos siguen en bitcoin, sin conversión.',
@@ -3159,7 +3171,11 @@ const fil = {
   'forum.askDonation': 'Donasyon',
   'forum.askCredit': 'Utang',
   'forum.askObligationLabel': 'Donasyon o utang',
-  'forum.askRepay': 'Dapat ibalik.',
+  'forum.tag.loan': 'Pautang',
+  'forum.tag.loanHint':
+    'Ang pautang ay ibinabalik. Ang nagbigay ay makakabalik ng ibinigay.',
+  'forum.tag.donation': 'Donasyon',
+  'forum.tag.donationHint': 'Ang donasyon ay regalo. Hindi ito ibinabalik.',
   'forum.creditCurrencyTitle': 'Paano nakapirmi ang halaga',
   'forum.creditInBitcoin':
     'Ang pautang na ito ay nakapirmi sa bitcoin. Ang bayad ay nananatili sa bitcoin, walang palitan.',

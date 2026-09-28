@@ -4677,7 +4677,7 @@ test.describe('onboarding screens', () => {
               id: '44444444-4444-4444-8444-444444444444',
               accountId: memberId,
               name: 'Carol',
-              text: 'Goal note to be repaid',
+              text: 'Need help with a train ticket',
               createdAt: '2026-08-02T10:00:00.000Z',
               sats: 10500,
               goalSats: 21000,
@@ -4704,12 +4704,12 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
-    await expect(page.getByText('Goal note to be repaid')).toBeVisible();
-    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
-    await page.getByText('Goal note to be repaid').scrollIntoViewIfNeeded();
+    await page.getByText('Need help with a train ticket').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-credit');
   });
 
@@ -7062,7 +7062,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id,
           name: 'Ada',
-          text: 'Goal note to be repaid',
+          text: 'Need help with a train ticket',
           createdAt: '2026-08-28T12:00:00.000Z',
           sats: 10500,
           goalSats: 21000,
@@ -7076,7 +7076,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/messages/${id}`);
-    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
@@ -7096,7 +7096,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           id,
           name: 'Ada',
-          text: 'Goal note to be repaid',
+          text: 'Need help with a train ticket',
           createdAt: '2026-08-28T12:00:00.000Z',
           sats: 21,
           goalSats: 21,
@@ -9740,7 +9740,7 @@ test.describe('welcome forum variants', () => {
             {
               id: 'm-goal-credit',
               name: 'Ada',
-              text: 'Goal note to be repaid',
+              text: 'Need help with a train ticket',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 10500,
               goalSats: 21000,
@@ -9756,7 +9756,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
-    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
@@ -9812,7 +9812,7 @@ test.describe('welcome forum variants', () => {
             {
               id: 'm-goal-credit',
               name: 'Ada',
-              text: 'Goal note to be repaid',
+              text: 'Need help with a train ticket',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 10500,
               goalSats: 21000,
@@ -10254,7 +10254,7 @@ test.describe('welcome forum variants', () => {
       'aria-pressed',
       'true',
     );
-    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview');
@@ -10281,7 +10281,7 @@ test.describe('welcome forum variants', () => {
       'aria-pressed',
       'true',
     );
-    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText('9 of 9')).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview-daily');
   });
@@ -10307,7 +10307,7 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Your message').fill('Need help with a train ticket');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('9 of 9')).toBeVisible();
-    await expect(page.getByText('To be repaid.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/\$33\.33 per day for 29 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview-fiat');
   });

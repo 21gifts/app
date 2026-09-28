@@ -2900,6 +2900,48 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('explains a loan and a donation from the tag beside the name', () => {
+    const onToggleExpand = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, goalSats: 21000, goalRepayable: true, text: 'Train ticket' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Loan' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.getByRole('status').textContent).toContain('paid back');
+    rerender(
+      <ForumBoard
+        messages={[{ ...SAMPLE, goalSats: 21000, text: 'Train ticket' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Loan' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Donation' }));
+    expect(screen.getByRole('status').textContent).toContain('not paid back');
+  });
+
   it('shows a #Shop pill on a top-level shop note and hides the raw hashtag', () => {
     renderWithLocale(
       <ForumBoard

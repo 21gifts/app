@@ -341,7 +341,7 @@ describe('ForumAskWizard', () => {
     expect(onAskCadenceChange).toHaveBeenCalledWith('once');
   });
 
-  it('starts with Donation pressed and shows To be repaid when Credit is selected', () => {
+  it('starts with Donation pressed and shows a Loan tag when Credit is selected', () => {
     const onAskObligationChange = vi.fn();
     const { rerender } = renderWithLocale(
       <ForumAskWizard
@@ -370,7 +370,12 @@ describe('ForumAskWizard', () => {
         askObligation="credit"
       />,
     );
-    expect(screen.getByText('To be repaid.')).toBeTruthy();
+    const loan = screen.getByRole('button', { name: 'Loan' });
+    expect(loan.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(loan);
+    expect(screen.getByRole('status').textContent).toContain('paid back');
+    fireEvent.click(loan);
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('returns to the amount step when Credit is chosen on the preview', () => {
@@ -409,7 +414,7 @@ describe('ForumAskWizard', () => {
     expect(screen.getByText('9 of 9')).toBeTruthy();
   });
 
-  it('does not show To be repaid on a donation preview', () => {
+  it('shows a Donation tag on a donation preview', () => {
     renderWithLocale(
       <ForumAskWizard
         step={4}
@@ -419,10 +424,11 @@ describe('ForumAskWizard', () => {
         draft="Need help"
       />,
     );
-    expect(screen.getByRole('button', { name: 'Donation' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.queryByText('To be repaid.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Donation', pressed: true })).toBeTruthy();
+    const donation = screen.getByRole('button', { name: 'Donation', expanded: false });
+    fireEvent.click(donation);
+    expect(screen.getByRole('status').textContent).toContain('not paid back');
+    expect(screen.queryByRole('button', { name: 'Loan' })).toBeNull();
   });
 
   it('clicks Credit on step 1 without an obligation callback', () => {
@@ -547,6 +553,6 @@ describe('ForumAskWizard', () => {
         draft="Hello"
       />,
     );
-    expect(screen.getByText('To be repaid.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Loan' })).toBeTruthy();
   });
 });

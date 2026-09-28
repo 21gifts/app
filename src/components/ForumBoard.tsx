@@ -65,6 +65,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
@@ -1107,7 +1108,14 @@ export function ForumBoard({
                 className="cursor-pointer text-left"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <MessageKindTags
+                    kinds={noteKinds({
+                      parentId: message.parentId,
+                      text: message.text,
+                      goalSats: message.goalSats,
+                      goalRepayable: message.goalRepayable,
+                    })}
+                  >
                     {typeof message.accountId === 'string' && message.accountId !== '' ? (
                       <button
                         type="button"
@@ -1148,17 +1156,7 @@ export function ForumBoard({
                         {t('forum.via.nostr')}
                       </button>
                     ) : null}
-                    {shopNote ? (
-                      <Link
-                        href="/shops"
-                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted no-underline"
-                        onClick={stopCardToggle}
-                        onKeyDown={stopCardToggle}
-                      >
-                        {t('forum.shopTag')}
-                      </Link>
-                    ) : null}
-                  </div>
+                  </MessageKindTags>
                   <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                     {formatForumTime(message.createdAt, locale)}
                   </time>

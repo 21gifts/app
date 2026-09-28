@@ -114,7 +114,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountEur - Payment EUR snapshot used for a EUR fiat percent.
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
  * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
- * @param goalRepayable - Credit ask; shows `forum.askRepay` under the label.
+ * @param goalRepayable - Credit ask. The loan tag sits beside the author, not in this bar.
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
  * @param ledgerCollapsed - Feed lists hide the ledger behind a control. The note page leaves this false.
@@ -225,9 +225,6 @@ export function ForumGoalBar({
         {frozenViewer}
         {liveViewer}
       </p>
-      {goalRepayable === true ? (
-        <p className="text-xs font-medium text-app-muted">{t('forum.askRepay')}</p>
-      ) : null}
       {goalRepayable === true && typeof goalTermDays === 'number' ? (
         <CreditPlanLines
           goalCurrency={goalCurrency}

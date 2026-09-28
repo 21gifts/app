@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
+import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
@@ -411,7 +412,15 @@ export function ForumAskWizard({
       {step === 4 ? (
         <>
           <div className="rounded-2xl border border-app-border bg-app-card-muted px-4 py-3">
-            <p className="text-sm font-medium text-app-fg">{authorName}</p>
+            <MessageKindTags
+              kinds={noteKinds({
+                text: draft,
+                goalSats: parsedAsk ?? undefined,
+                goalRepayable: askObligation === 'credit' ? true : undefined,
+              })}
+            >
+              <p className="text-sm font-medium text-app-fg">{authorName}</p>
+            </MessageKindTags>
             {draft.trim() !== '' ? (
               <p className="mt-2 whitespace-pre-wrap text-sm text-app-fg">{draft}</p>
             ) : null}

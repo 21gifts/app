@@ -549,7 +549,7 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: goal-50
 
-On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). This ask is not a credit, so the bar does not say **To be repaid.** Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). A **Donation** tag sits beside the name. Pressing it explains that a donation is not paid back. The bar does not repeat that sentence. Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
 
 ![21.gifts welcome goal 50](images/welcome-goal-50.png)
 
@@ -579,7 +579,7 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ### Variant: goal-credit
 
-On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50**. Under the ask: **To be repaid.** and **To repay per day: ₿700 · $0.70 per day for 30 days.** Progress bar at **50%**. The list of givers stays behind **Who gave and who is paid back**. Composer **Send a post** / **Ask for money** pill visible.
+On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50**. A **Loan** tag beside the name explains the credit when pressed. Under the ask: **To repay per day: ₿700 · $0.70 per day for 30 days.** Progress bar at **50%**. The list of givers stays behind **Who gave and who is paid back**. Composer **Send a post** / **Ask for money** pill visible.
 
 ![21.gifts welcome goal credit](images/welcome-goal-credit.png)
 
@@ -705,25 +705,25 @@ Credit, step **8 of 9**. Heading **Write a message**. The message can be empty; 
 
 ### Variant: ask-credit-preview
 
-Credit, step **9 of 9**, bitcoin, after the message **Need help with a train ticket**. Heading **Preview**. **One-time** and **Credit** are pressed. The card shows the author, the message, and the goal bar at **0%**: **Ask ₿21'000 · $21.00**, **To be repaid.** and **To repay per day: ₿700 · $0.70 per day for 30 days.** **Post** is the only submit. It sends `goalRepayable: true` and `goalTermDays: 30` with the ask amount. The counter reads **9 of 9**.
+Credit, step **9 of 9**, bitcoin, after the message **Need help with a train ticket**. Heading **Preview**. **One-time** and **Credit** are pressed. The card shows the author, the message, and the goal bar at **0%**: **Ask ₿21'000 · $21.00**, a **Loan** tag, and **To repay per day: ₿700 · $0.70 per day for 30 days.** **Post** is the only submit. It sends `goalRepayable: true` and `goalTermDays: 30` with the ask amount. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit preview](images/welcome-ask-credit-preview.png)
 
 ### Variant: ask-credit-preview-daily
 
-Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same bitcoin ask and message. The goal bar still shows **To be repaid.** and the daily bitcoin plan with the visitor's fiat. **Post** is the only submit. One-time / Daily is not stored.
+Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same bitcoin ask and message. The preview shows a **Loan** tag and the daily bitcoin plan with the visitor's fiat. **Post** is the only submit. One-time / Daily is not stored.
 
 ![21.gifts welcome ask credit preview daily](images/welcome-ask-credit-preview-daily.png)
 
 ### Variant: ask-credit-preview-fiat
 
-Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The goal bar shows the dollar amount, **To be repaid.**, and the daily dollar plan (**$33.33** for 29 days, then **$33.43** on the last day). **Post** is the only submit. The counter reads **9 of 9**.
+Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The preview shows a **Loan** tag, the dollar amount, and the daily dollar plan (**$33.33** for 29 days, then **$33.43** on the last day). **Post** is the only submit. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit preview fiat](images/welcome-ask-credit-preview-fiat.png)
 
 ### Variant: ask-credit-posting
 
-Credit, step **9 of 9**, while **Post** is in flight. The preview still shows the bitcoin credit (**To be repaid.**, **₿700 · $0.70 per day for 30 days**). **Post** is disabled and a spinner replaces the label. The counter reads **9 of 9**.
+Credit, step **9 of 9**, while **Post** is in flight. The preview still shows the bitcoin credit (a **Loan** tag, **₿700 · $0.70 per day for 30 days**). **Post** is disabled and a spinner replaces the label. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit posting](images/welcome-ask-credit-posting.png)
 
@@ -1857,7 +1857,7 @@ Identity card; posts pressed; the listed English post is defined as **$1.50** wi
 
 ### Variant: posts-open-goal-credit
 
-Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, **To be repaid.** and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Who gave and who is paid back**.
+Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Who gave and who is paid back**.
 
 ![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
 
@@ -3336,7 +3336,7 @@ Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'00
 
 ### Variant: goal-credit
 
-Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, **To be repaid.** and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. No composer Ask.
+Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. No composer Ask.
 
 ![21.gifts public message credit goal](images/messages-id-goal-credit.png)
 
