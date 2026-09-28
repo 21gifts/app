@@ -351,7 +351,7 @@ app/
 │   ├── visual.spec.ts           # Linux Chromium screenshot baselines (single source for handbook images)
 │   └── visual.spec.ts-snapshots/
 ├── public/                      # Static assets served from /
-│   ├── sw.js                    # Push-only service worker (no cache/offline in v1)
+│   ├── sw.js                    # Push-only service worker (no asset/offline cache; short-lived push-open path)
 │   └── handbook-images/         # Built from visual baselines (gitignored *.png; keep .gitkeep)
 ├── next.config.ts               # output: 'standalone'
 ├── vitest.config.ts             # 100% coverage threshold

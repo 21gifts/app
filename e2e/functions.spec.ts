@@ -2875,7 +2875,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
   });
   await page.goto('/notifications');
   await page.getByRole('button', { name: /Bob replied/ }).click();
-  await expect(page).toHaveURL(/\/messages\/p1$/);
+  await expect(page).toHaveURL(/\/messages\/r1$/);
 });
 
 test('Function: markAllNotificationsRead — list fetch POSTs read-all', async ({ page }) => {
@@ -8952,10 +8952,40 @@ test('Function: push service worker — GET /sw.js is the push worker', async ({
   expect(body).toContain('navigator.setAppBadge');
   expect(body).toContain('showNotification');
   expect(body).toContain('isDeviceSunday');
+  expect(body).toContain('21gifts-push-open');
   expect(body.indexOf("payload.type !== 'conversation'")).toBeGreaterThan(-1);
   expect(body.indexOf("payload.type !== 'conversation'")).toBeLessThan(
     body.indexOf('showNotification'),
   );
+});
+
+test('Function: PushOpenListener — welcome heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.evaluate(async () => {
+    const cache = await caches.open('21gifts-push-open');
+    await cache.put(
+      new URL('/push-open/e2e-push', location.origin).href,
+      new Response(
+        JSON.stringify({
+          url: '/messages/note-1?from=https://21.gifts/welcome',
+          at: Date.now(),
+          id: 'e2e-push',
+        }),
+        { headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+  });
+  await page.reload();
+  await expect(page).toHaveURL(/\/messages\/note-1\?from=https:\/\/21\.gifts\/welcome$/);
 });
 
 test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({
