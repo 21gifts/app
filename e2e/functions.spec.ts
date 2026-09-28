@@ -8518,6 +8518,11 @@ test('Function: push service worker — GET /sw.js is the push worker', async ({
   const body = await res.text();
   expect(body).toContain('navigator.setAppBadge');
   expect(body).toContain('showNotification');
+  expect(body).toContain('isDeviceSunday');
+  expect(body.indexOf("payload.type !== 'conversation'")).toBeGreaterThan(-1);
+  expect(body.indexOf("payload.type !== 'conversation'")).toBeLessThan(
+    body.indexOf('showNotification'),
+  );
 });
 
 test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({
