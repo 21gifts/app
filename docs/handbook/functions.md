@@ -2220,7 +2220,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Info text in the installed macOS Chrome, Chromium, or Edge app. It says the QR code works with the phone that has the passkey, and that Touch ID on this Mac is available in a Chrome tab or by adding the site to the Dock from Safari. The passkey buttons stay on screen.
 - **Inputs:** None. Uses useTranslations for passkey.macAppHeading and passkey.macAppBody.
 - **Returns / side effects:** A heading and a paragraph. No buttons and no WebAuthn call.
-- **Used by:** `LoginCard` and `WalletScreenView` on `/wallet/phrase` only. Not on the public profile or the wallet receive page.
+- **Used by:** `LoginCard` (idle and account choice) and `WalletScreenView` on `/wallet/phrase` until the 12 words are shown. Not on the public profile or the wallet receive page. Not a screenshot variant.
 
 ## Function: isInAppBrowser
 

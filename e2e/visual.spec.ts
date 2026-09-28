@@ -9,39 +9,6 @@ async function chooseForumView(page: Page, name: string): Promise<void> {
 }
 
 /**
- * Make the page look like the installed macOS Chrome app.
- *
- * @param page - Playwright page.
- */
-async function installMacChromiumApp(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const ua =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
-    Object.defineProperty(navigator, 'platform', { configurable: true, get: () => 'MacIntel' });
-    Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
-    const original = window.matchMedia.bind(window);
-    window.matchMedia = (query) => {
-      if (String(query).includes('display-mode: standalone')) {
-        return {
-          matches: true,
-          media: query,
-          onchange: null,
-          addListener() {},
-          removeListener() {},
-          addEventListener() {},
-          removeEventListener() {},
-          dispatchEvent() {
-            return false;
-          },
-        } as MediaQueryList;
-      }
-      return original(query);
-    };
-  });
-}
-
-/**
  * Stable map for visual baselines. Live Google tiles are not a baseline:
  * they depend on a key, billing, and the network. The stub paints a fixed
  * surface and, when the app drops a marker, a fixed pin.
@@ -1534,33 +1501,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-prf-unsupported');
   });
 
-  test('wallet phrase mac-app', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name.startsWith('mobile'), 'Mac Chrome app is not a phone');
-    await installMacChromiumApp(page);
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: 'ada@walletofsatoshi.com',
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.goto('/wallet/phrase');
-    await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-phrase-mac-app');
-  });
-
   test('screen /stats', async ({ page }) => {
     await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {
@@ -1744,15 +1684,6 @@ test.describe('login variant baselines', () => {
       page.getByRole('heading', { name: 'Open this page in your browser' }),
     ).toBeVisible();
     await shotScreen(page, 'state-login-in-app');
-  });
-
-  test('login mac-app', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name.startsWith('mobile'), 'Mac Chrome app is not a phone');
-    await installMacChromiumApp(page);
-    await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
-    await shotScreen(page, 'state-login-mac-app');
   });
 
   test('login language-open', async ({ page }) => {

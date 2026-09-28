@@ -72,9 +72,15 @@ export function LoginCard(): ReactElement {
     body = <StartView onLogin={passkey.login} />;
   }
 
+  const showMacNote =
+    macApp &&
+    !inApp &&
+    account === null &&
+    (passkey.status === 'idle' || passkey.status === 'choice');
+
   return (
     <Card surface={false}>
-      {macApp && !inApp ? <MacChromiumAppPasskeyNote /> : null}
+      {showMacNote ? <MacChromiumAppPasskeyNote /> : null}
       {body}
     </Card>
   );

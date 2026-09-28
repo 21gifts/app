@@ -213,7 +213,7 @@ export function WalletScreenView({
           {t('wallet.title')}
         </h1>
       ) : null}
-      {surface === 'phrase' ? macNote : null}
+      {surface === 'phrase' && !showGrid ? macNote : null}
       {surface === 'phrase' ? phraseBody : entryBody}
     </Card>
   );

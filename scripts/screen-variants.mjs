@@ -150,15 +150,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
-    id: 'mac-app',
-    image: 'login-mac-app.png',
-    visual: 'state-login-mac-app',
-    needle: 'Passkey in the Chrome app',
-    // The installed Chrome app is a Mac window. A phone never shows this note.
-    combos: ['desktop-light', 'desktop-dark'],
-  },
-  {
-    route: '/login',
     id: 'language-open',
     image: 'login-language.png',
     visual: 'state-login-language',
@@ -282,15 +273,6 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-prf-unsupported.png',
     visual: 'state-wallet-prf-unsupported',
     needle: 'This browser cannot create a recovery phrase. Try another browser or device.',
-  },
-  {
-    route: '/wallet/phrase',
-    id: 'mac-app',
-    image: 'wallet-phrase-mac-app.png',
-    visual: 'state-wallet-phrase-mac-app',
-    needle: 'Passkey in the Chrome app',
-    // Same Mac-only window as /login mac-app. No phone baseline.
-    combos: ['desktop-light', 'desktop-dark'],
   },
   {
     route: '/setup/name',

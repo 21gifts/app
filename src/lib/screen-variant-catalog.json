@@ -66,12 +66,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/login:mac-app",
-    "label": "/login mac-app",
-    "visual": "state-login-mac-app",
-    "combos": ["desktop-light", "desktop-dark"]
-  },
-  {
     "id": "/login:language-open",
     "label": "/login language-open",
     "visual": "state-login-language",
@@ -178,12 +172,6 @@
     "label": "/wallet/phrase prf-unsupported",
     "visual": "state-wallet-prf-unsupported",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/wallet/phrase:mac-app",
-    "label": "/wallet/phrase mac-app",
-    "visual": "state-wallet-phrase-mac-app",
-    "combos": ["desktop-light", "desktop-dark"]
   },
   {
     "id": "/setup/name:default",

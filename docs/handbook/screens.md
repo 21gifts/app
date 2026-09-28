@@ -197,7 +197,7 @@ Account that can already show a phrase. Open **Advanced functions** shows **Show
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
-- **What the user sees:** Same signed-in chrome as `/wallet`. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** runs PRF get of that id, without `credentials.create` and without seed/begin. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
+- **What the user sees:** Same signed-in chrome as `/wallet`. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** runs PRF get of that id, without `credentials.create` and without seed/begin. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**. In the installed macOS Chrome app, the note **Passkey in the Chrome app** sits above **Add recovery phrase** or **Show recovery phrase**, and is hidden once the 12 words are on screen. It is not a screenshot variant, because the visual rig is not that Mac app.
 - **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, and only after **Advanced functions** on `/wallet`. **Try again** clears the error. Back hides the 12 words, or returns to the previous page. A tab with no previous page opens `/wallet`.
 - **Calls:** `AppShell`, `WalletScreenView` `surface="phrase"`, `WalletPhraseScreen`, `WalletPhrasePage`, `useWalletPhrase`, `OnboardingGate`.
 
@@ -237,16 +237,10 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 
-### Variant: mac-app
-
-Installed macOS Chrome app, desktop only. Heading **Wallet**, the note **Passkey in the Chrome app**, and **Add recovery phrase** still on the page. No receive QR. A phone does not show this note.
-
-![21.gifts wallet phrase mac app](images/wallet-phrase-mac-app.png)
-
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **What the user sees:** Chrome is the page-frame header (`HomeWordmark` and the light language switcher inside the rounded sheet; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. In the installed macOS Chrome app, idle and account-choice show the note **Passkey in the Chrome app** above the buttons: the QR code works, Touch ID on this Mac is a Chrome tab or Safari. The buttons stay. That note is not a screenshot variant, because the visual rig is not that Mac app. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `openInSystemBrowser`.
 
@@ -285,12 +279,6 @@ After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
 
 ![21.gifts login in-app](images/login-in-app.png)
-
-### Variant: mac-app
-
-Installed macOS Chrome app, desktop only. Note **Passkey in the Chrome app** above **Log in**. The QR code still starts from **Log in**. Touch ID on this Mac is the Chrome tab or Safari. A phone does not show this note.
-
-![21.gifts login mac app](images/login-mac-app.png)
 
 ### Variant: language-open
 
