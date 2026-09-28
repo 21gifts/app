@@ -395,6 +395,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'renew-ok',
+    image: 'welcome-renew-ok.png',
+    visual: 'state-welcome-renew-ok',
+    needle: 'state /welcome renew-ok',
+  },
+  {
+    route: '/welcome',
     id: 'sunday',
     image: 'welcome-sunday.png',
     visual: 'state-welcome-sunday',

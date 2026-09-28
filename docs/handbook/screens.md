@@ -482,6 +482,12 @@ The renew ceremony failed and has not been acknowledged. The same blocking layer
 
 ![21.gifts welcome renew failed](images/welcome-renew-failed.png)
 
+### Variant: renew-ok
+
+The seed exists (`walletRequired` true). The blocking dialog is gone. The living room is usable.
+
+![21.gifts welcome renew ok](images/welcome-renew-ok.png)
+
 ### Variant: sunday
 
 Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.

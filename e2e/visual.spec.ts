@@ -1949,6 +1949,39 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-renew-failed');
   });
 
+  test('state /welcome renew-ok', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          passkeyCredentialId: 'cred-seed',
+          passkeyRenewFailed: false,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Renew passkey' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-renew-ok');
+  });
+
   test('state /welcome sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
