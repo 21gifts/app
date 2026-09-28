@@ -33,12 +33,13 @@ function writeShopsHash(view: ShopsView): void {
  * Shops page body: heading, lead, and a Post / Map / Table pill.
  *
  * `/shops#map` and `/shops#table` open that view. A missing or unknown hash opens Post.
+ * The view stays unset until the hash is read, so the post list, map, and table mount only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
  */
 export function ShopsScreen(): ReactElement {
   const { t } = useTranslations();
-  const [view, setView] = useState<ShopsView>('post');
+  const [view, setView] = useState<ShopsView | null>(null);
 
   useLayoutEffect(() => {
     const apply = (): void => {
@@ -62,7 +63,7 @@ export function ShopsScreen(): ReactElement {
         {t('shops.heading')}
       </h1>
       <p className="text-center text-sm text-app-fg">{t('shops.lead')}</p>
-      <ShopsViewSwitch value={view} onChange={selectView} />
+      {view !== null ? <ShopsViewSwitch value={view} onChange={selectView} /> : null}
       {view === 'post' ? <ForumLoader feed="shops" /> : null}
       {view === 'map' ? (
         <Suspense>

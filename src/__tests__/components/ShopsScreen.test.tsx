@@ -3,8 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopsScreen } from '@/components/ShopsScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const forumLoader = vi.hoisted(() => vi.fn());
+
 vi.mock('@/components/ForumLoader', () => ({
-  ForumLoader: ({ feed }: { feed: string }) => <div data-testid="forum-loader" data-feed={feed} />,
+  ForumLoader: ({ feed }: { feed: string }) => {
+    forumLoader();
+    return <div data-testid="forum-loader" data-feed={feed} />;
+  },
 }));
 
 vi.mock('@/components/PlacesMapScreen', () => ({
@@ -18,6 +23,7 @@ vi.mock('@/components/ShopTable', () => ({
 afterEach(() => {
   cleanup();
   window.history.replaceState(null, '', window.location.pathname);
+  forumLoader.mockClear();
 });
 
 describe('ShopsScreen', () => {
@@ -53,6 +59,7 @@ describe('ShopsScreen', () => {
     renderWithLocale(<ShopsScreen />);
     expect(await screen.findByTestId('places-map-screen')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
+    expect(forumLoader).not.toHaveBeenCalled();
     act(() => {
       window.history.replaceState(null, '', `${window.location.pathname}#nope`);
       window.dispatchEvent(new HashChangeEvent('hashchange'));

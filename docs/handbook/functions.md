@@ -1275,8 +1275,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: ShopsScreen
 
 - **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`.
-- **Inputs:** Catalog via `useTranslations`. View state starts at post. `/shops#map` and `/shops#table` open that view; `/shops#post`, a missing hash, or an unknown hash open Post. Choosing an option writes the same hash. Post clears it.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The map and table fetch only after their option is selected.
+- **Inputs:** Catalog via `useTranslations`. The view stays unset until the hash is read. `/shops#map` and `/shops#table` open that view; `/shops#post`, a missing hash, or an unknown hash open Post. Choosing an option writes the same hash. Post clears it.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The post list, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
 - **Used by:** `ShopsPage`.
 
 ## Function: ShopsViewSwitch
