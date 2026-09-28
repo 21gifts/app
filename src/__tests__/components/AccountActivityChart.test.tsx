@@ -207,6 +207,18 @@ describe('AccountActivityChart', () => {
     expect(screen.queryByText(formatFiatTick(1.2, 'CHF'))).toBeNull();
   });
 
+  it('draws the CHF amount when one cumulative is still a number', () => {
+    const mixed: SpendPoint[] = [
+      { ...day('2026-06-01', 500, '0.48', 500), cumulativeChf: null, chf: null },
+      day('2026-06-03', 1500, '1.43', 1000),
+    ];
+    renderWithLocale(<AccountActivityChart received={mixed} />, 'en', 'ch', 'CHF');
+    clickChartScale('CHF');
+    expect(screen.getByRole('img', { name: 'Given and received in CHF' })).toBeTruthy();
+    expect(screen.queryByText('\u2014')).toBeNull();
+    expect(screen.getByText(formatFiatTick(1.2, 'CHF'))).toBeTruthy();
+  });
+
   it('draws the satoshi chart when usd is null and sats are positive', () => {
     const nullUsd: SpendPoint[] = [
       { ...day('2026-06-01', 21, '0.02', 21), usd: null, cumulativeUsd: null },
