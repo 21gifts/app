@@ -2333,13 +2333,220 @@ describe('InboxScreen', () => {
     }
   });
 
+  it('does not attach history when a scroll is 80px short of the end', async () => {
+    const htmlScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
+    const htmlClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    const htmlScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    let stick = false;
+    let stored = 0;
+    const columnBottom = 3000;
+    const queued: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      queued.push(cb);
+      return queued.length;
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
+      configurable: true,
+      get() {
+        return stored;
+      },
+      set(value: number) {
+        if (stick) {
+          stored = value;
+        }
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 2000;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get() {
+        return 400;
+      },
+    });
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function mockRect(this: HTMLElement) {
+        const bottom = this.hasAttribute('data-scrollport') ? 400 : columnBottom;
+        const top = this.hasAttribute('data-scrollport') ? 0 : 20;
+        return {
+          bottom,
+          top,
+          left: 0,
+          right: 10,
+          width: 10,
+          height: Math.max(0, bottom - top),
+          x: 0,
+          y: top,
+          toJSON() {
+            return {};
+          },
+        } as DOMRect;
+      });
+    const messages = Array.from({ length: 10 }, (_, index) => ({
+      ...MESSAGE,
+      id: `m${index + 1}`,
+      text: `Message ${index + 1}`,
+    }));
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    try {
+      const view = renderWithLocale(
+        <AppShell mode="fill">
+          <InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />
+        </AppShell>,
+      );
+      const scroller = view.container.querySelector('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('expected AppShell scroller');
+      }
+      expect(queued.length).toBeGreaterThan(0);
+      expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+      stick = true;
+      stored = 1520;
+      await act(async () => {
+        scroller.dispatchEvent(new Event('scroll'));
+      });
+      expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+    } finally {
+      rectSpy.mockRestore();
+      vi.unstubAllGlobals();
+      vi.stubGlobal('location', locationStub);
+      if (htmlScrollTop === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollTop');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollTop', htmlScrollTop);
+      }
+      if (htmlClientHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'clientHeight', htmlClientHeight);
+      }
+      if (htmlScrollHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', htmlScrollHeight);
+      }
+    }
+  });
+
+  it('arms history when the pin itself brings the column end into view', async () => {
+    const htmlScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
+    const htmlClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    const htmlScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    let stick = false;
+    let stored = 0;
+    const queued: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      queued.push(cb);
+      return queued.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
+      configurable: true,
+      get() {
+        return stored;
+      },
+      set(value: number) {
+        if (stick) {
+          stored = value;
+        }
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 2000;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get() {
+        return 400;
+      },
+    });
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function mockRect(this: HTMLElement) {
+        const bottom = this.hasAttribute('data-scrollport') ? 400 : stored >= 1600 ? 100 : 3000;
+        const top = this.hasAttribute('data-scrollport') ? 0 : 20;
+        return {
+          bottom,
+          top,
+          left: 0,
+          right: 10,
+          width: 10,
+          height: Math.max(0, bottom - top),
+          x: 0,
+          y: top,
+          toJSON() {
+            return {};
+          },
+        } as DOMRect;
+      });
+    const messages = Array.from({ length: 10 }, (_, index) => ({
+      ...MESSAGE,
+      id: `m${index + 1}`,
+      text: `Message ${index + 1}`,
+    }));
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    try {
+      renderWithLocale(
+        <AppShell mode="fill">
+          <InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />
+        </AppShell>,
+      );
+      expect(queued.length).toBeGreaterThan(0);
+      expect(stored).toBe(0);
+      expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+      const before = queued.length;
+      const frame = queued[queued.length - 1];
+      if (frame === undefined) {
+        throw new Error('expected a pin frame');
+      }
+      stick = true;
+      await act(async () => {
+        frame(0);
+      });
+      expect(stored).toBe(1600);
+      expect(queued.length).toBe(before);
+      expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m8"]'));
+    } finally {
+      rectSpy.mockRestore();
+      vi.unstubAllGlobals();
+      vi.stubGlobal('location', locationStub);
+      if (htmlScrollTop === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollTop');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollTop', htmlScrollTop);
+      }
+      if (htmlClientHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'clientHeight', htmlClientHeight);
+      }
+      if (htmlScrollHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', htmlScrollHeight);
+      }
+    }
+  });
+
   it('retries the pin on the next frame and cancels it on unmount', async () => {
     const htmlScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
     const htmlClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
     const queued: FrameRequestCallback[] = [];
     let stick = false;
     let stored = 0;
-    const columnBottom = 3000;
+    let columnBottom = 3000;
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       queued.push(cb);
       return queued.length;
@@ -2429,6 +2636,7 @@ describe('InboxScreen', () => {
       });
       expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
       stick = true;
+      columnBottom = 100;
       await act(async () => {
         queued[queued.length - 1]?.(0);
       });

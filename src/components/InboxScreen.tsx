@@ -179,10 +179,6 @@ function threadEndInView(column: HTMLElement, scroller: HTMLElement): boolean {
   if (scroller.scrollHeight <= scroller.clientHeight + 1) {
     return true;
   }
-  const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
-  if (distance <= STUCK_TO_BOTTOM_PX) {
-    return true;
-  }
   const columnRect = column.getBoundingClientRect();
   const scrollerRect = scroller.getBoundingClientRect();
   return columnRect.bottom <= scrollerRect.bottom + 1 && columnRect.bottom > scrollerRect.top;
