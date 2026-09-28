@@ -14598,6 +14598,48 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map');
   });
 
+  test('shops map staff', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+              shop: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-staff');
+  });
+
   test('shops map with key', async ({ page }) => {
     await seedAda(page);
     await installBaselineMap(page);
@@ -14792,6 +14834,36 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
     await expect(page.getByRole('link', { name: '@luna' })).toBeVisible();
     await shotScreen(page, 'state-shops-table');
+  });
+
+  test('shops table staff', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-staff');
   });
 
   const shopTableRow = {

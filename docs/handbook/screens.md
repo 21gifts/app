@@ -1662,6 +1662,12 @@ The **Map** option is selected. The post composer is gone. The place list is vis
 
 ![21.gifts shops map](images/shops-map.png)
 
+### Variant: map-staff
+
+A moderator session. **Map** is selected. The pin is a shop, so **Edit shop note** sits beside **Ada · Happyland**. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map staff](images/shops-map-staff.png)
+
 ### Variant: map-with-key
 
 **Map** is selected and a map key is set. The stub map surface is in the frame, still without a second **Map** heading. The place list stays.
@@ -1709,6 +1715,12 @@ The **Map** option is selected. The post composer is gone. The place list is vis
 The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland**, operator **@luna**.
 
 ![21.gifts shops table](images/shops-table.png)
+
+### Variant: table-staff
+
+A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Cafe Luna**. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table staff](images/shops-table-staff.png)
 
 ### Variant: table-more
 
@@ -1844,7 +1856,7 @@ A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000
 
 ### Variant: staff-place
 
-A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place** and **Add an account**. The map panel is closed. The account panel is closed.
+A moderator session. One Cafe Luna shop note with no pin. **Edit shop note** is on the note. The note footer shows **Add a place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place](images/shops-staff-place.png)
 

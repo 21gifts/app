@@ -3825,6 +3825,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-staff',
+    image: 'shops-map-staff.png',
+    visual: 'state-shops-map-staff',
+    needle: "shotScreen(page, 'state-shops-map-staff')",
+  },
+  {
+    route: '/shops',
     id: 'map-with-key',
     image: 'shops-map-with-key.png',
     visual: 'state-shops-map-with-key',
@@ -3878,6 +3885,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-table.png',
     visual: 'state-shops-table',
     needle: "shotScreen(page, 'state-shops-table')",
+  },
+  {
+    route: '/shops',
+    id: 'table-staff',
+    image: 'shops-table-staff.png',
+    visual: 'state-shops-table-staff',
+    needle: "shotScreen(page, 'state-shops-table-staff')",
   },
   {
     route: '/shops',
