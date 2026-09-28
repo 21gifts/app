@@ -67,8 +67,9 @@ function appendUnseenMessages(
  * {@link CONVERSATION_LIVE_POLL_MS} and unseen messages are appended; a hidden
  * tab does not poll; a failed poll keeps the thread. Other signed-in visitors
  * and a missing account see forbidden copy and do not fetch. Renders
- * nothing without a session. Back to the moderation hub is the page
- * chrome (no in-card back).
+ * nothing without a session. The top-left arrow returns to the previous
+ * in-app view in this tab, or `/welcome` when this tab has none. There is
+ * no in-card back.
  *
  * @returns The group thread, forbidden copy, or `null` without a session.
  */

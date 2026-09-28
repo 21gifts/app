@@ -1148,7 +1148,7 @@ Handbook states: default, map, map-with-key, map-pin, map-pin-with-key, map-coor
 
 ### `/rules`
 
-App shell via `RulesPageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. **h1-lg** Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, CTA pair **Contact 21.gifts** primary + **Back to the forum** secondary). B′ overlines and ticks as in Color.
+App shell via `RulesPageChrome`. Unsigned: one top-left arrow (`ProfileChromeLeft`, wordmark href `/`) + LanguageSwitcher. Signed-in: the same arrow (`ProfileChromeLeft`) + `SignedInChrome`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. **h1-lg** Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, and one CTA **Contact 21.gifts** to `/contact`). There is no second back in the document. B′ overlines and ticks as in Color.
 
 ### `/messages`
 
@@ -1156,7 +1156,7 @@ Fill `AppShell` `align="center"`; `MessagesChromeLeft` + `SignedInChrome`. `Mess
 
 ### `/messages/[id]` — public note
 
-App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, a MapPin link when the top-level note has a place (label, or coordinates when the label is null; not on replies), amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate; number format from the cookie, otherwise the locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated: **Log in** or **Back to the forum** as `text-app-fg underline underline-offset-2`. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
+App shell via `PublicMessageChrome`. Unsigned: Wordmark href `/` + LanguageSwitcher `tone="light"`. Signed-in: `ProfileChromeLeft` + `SignedInChrome`. Unsigned `PublicMessageLoader` stack: public note card (`Card md`), photo/video `rounded-xl`, a MapPin link when the top-level note has a place (label, or coordinates when the label is null; not on replies), amount `formatBitcoin` as text plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate; number format from the cookie, otherwise the locale default), no pay, no composer, no copy, no FiatPicker. Signed-in mounts `PublicMessageThread` (`ForumBoard` `composerHidden`, auto-expand): same per-note footer as `/welcome` (React on the root note, copy on the note and on every nested reply, Gift on a payable nested reply, reply composer, staff delete). Hydrated and signed out: **Log in** (`login.submit`) as `text-app-fg underline underline-offset-2`. There is no second back link under the thread. Loading / missing / error (`role="alert"` `text-app-danger`) + **Try again**.
 
 ### `/view/[viewKey]`
 
