@@ -411,7 +411,6 @@ const en = {
   'forum.creditPlanTitle': 'How repayment works',
   'forum.creditPlanBody':
     'Repayment is due every day. It starts the day after the credit has been paid in full. If it takes 10 days for the credit to be given, repayment starts on day 11.',
-  'forum.creditInterest': 'Interest 0%. Only interest-free credits are offered for now.',
   'forum.creditDaily': 'To repay per day: {plan}',
   'forum.creditPlanEven': '{amount} per day for {days} days',
   'forum.creditPlanLast': '{amount} per day for {earlier} days, then {last} on the last day',
@@ -1331,7 +1330,6 @@ const de = {
   'forum.creditPlanTitle': 'Wie die Rückzahlung funktioniert',
   'forum.creditPlanBody':
     'Die Rückzahlung hat täglich zu erfolgen. Sie wird am Folgetag fällig, nachdem der Kredit zu 100 % bezahlt worden ist. Dauert es 10 Tage, bis der Kredit gegeben ist, beginnt die Rückzahlungspflicht am Tag 11.',
-  'forum.creditInterest': 'Zinssatz 0 %. Zum Start gibt es nur zinsfreie Kredite.',
   'forum.creditDaily': 'Pro Tag zurückzuzahlen: {plan}',
   'forum.creditPlanEven': '{amount} pro Tag über {days} Tage',
   'forum.creditPlanLast': '{amount} pro Tag über {earlier} Tage, am letzten Tag {last}',
@@ -2264,7 +2262,6 @@ const es = {
   'forum.creditPlanTitle': 'Cómo funciona la devolución',
   'forum.creditPlanBody':
     'La devolución es diaria. Empieza el día después de que el crédito se haya pagado por completo. Si dar el crédito tarda 10 días, la devolución empieza el día 11.',
-  'forum.creditInterest': 'Interés 0 %. Por ahora solo hay créditos sin interés.',
   'forum.creditDaily': 'A devolver por día: {plan}',
   'forum.creditPlanEven': '{amount} por día durante {days} días',
   'forum.creditPlanLast': '{amount} por día durante {earlier} días y {last} el último día',
@@ -3186,7 +3183,6 @@ const fil = {
   'forum.creditPlanTitle': 'Paano ang pagbabayad',
   'forum.creditPlanBody':
     'Araw-araw dapat magbayad. Magsisimula ito sa araw pagkatapos mabayaran nang buo ang pautang. Kung 10 araw bago maibigay ang pautang, magsisimula ang bayad sa ika-11 araw.',
-  'forum.creditInterest': 'Interes 0%. Sa simula, walang interes na pautang lamang.',
   'forum.creditDaily': 'Ibabalik bawat araw: {plan}',
   'forum.creditPlanEven': '{amount} bawat araw sa loob ng {days} araw',
   'forum.creditPlanLast': '{amount} bawat araw sa loob ng {earlier} araw, at {last} sa huling araw',

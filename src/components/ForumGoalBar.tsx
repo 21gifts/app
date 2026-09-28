@@ -115,7 +115,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
  * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
  * @param goalRepayable - Credit ask; shows `forum.askRepay` under the label.
- * @param goalTermDays - Repayment days. With `goalRepayable`, also shows 0% interest and the daily plan.
+ * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
  * @param ledgerCollapsed - Feed lists hide the ledger behind a control. The note page leaves this false.
  * @returns The bar, or `null`.
@@ -342,7 +342,6 @@ function CreditPlanLines({
         });
   return (
     <div className="text-xs text-app-muted">
-      <p>{t('forum.creditInterest')}</p>
       <p>{t('forum.creditDaily', { plan })}</p>
     </div>
   );

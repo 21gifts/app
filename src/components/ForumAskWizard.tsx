@@ -667,7 +667,6 @@ function CreditPhasePanel({
       {phase === 'plan' ? (
         <div className="flex flex-col gap-2 text-sm text-app-fg">
           <p>{t('forum.creditPlanBody')}</p>
-          <p>{t('forum.creditInterest')}</p>
           <p>{t('forum.creditDaily', { plan: planText })}</p>
         </div>
       ) : null}
@@ -682,7 +681,6 @@ function CreditPhasePanel({
             })}
           </p>
           <p>{t('forum.creditPlanBody')}</p>
-          <p>{t('forum.creditInterest')}</p>
           <p>{t('forum.creditDaily', { plan: planText })}</p>
         </div>
       ) : null}

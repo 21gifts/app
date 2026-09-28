@@ -470,14 +470,14 @@ describe('ForumAskWizard', () => {
     expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
     fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
     expect(screen.getByText(/day 11/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/Amount owed: ₿21'000/)).toBeTruthy();
     expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
     expect(screen.getByText(/rising bitcoin price/)).toBeTruthy();
     expect(screen.getByText(/Repayment term: 10 days/)).toBeTruthy();
-    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'I want to take this credit.' }));
     expect(screen.getByText(/I can repay the amount owed on this plan/)).toBeTruthy();

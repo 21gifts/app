@@ -4706,7 +4706,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Goal note to be repaid')).toBeVisible();
     await expect(page.getByText('To be repaid.')).toBeVisible();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await page.getByText('Goal note to be repaid').scrollIntoViewIfNeeded();
@@ -7077,7 +7077,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('To be repaid.')).toBeVisible();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
@@ -9757,7 +9757,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByText('To be repaid.')).toBeVisible();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-credit');
@@ -10084,7 +10084,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/day 11/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-plan-btc');
   });
@@ -10104,7 +10104,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-plan-fiat');
   });
 
@@ -10125,7 +10125,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
     await expect(page.getByText(/Repayment term: 30 days/)).toBeVisible();
     await expect(page.getByText(/day 11/)).toBeVisible();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'I want to take this credit.' })).toBeVisible();
     await expect(page.getByRole('checkbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-confirm-want');
@@ -10255,7 +10255,7 @@ test.describe('welcome forum variants', () => {
       'true',
     );
     await expect(page.getByText('To be repaid.')).toBeVisible();
-    await expect(page.getByText(/Interest 0%/)).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview');
   });
