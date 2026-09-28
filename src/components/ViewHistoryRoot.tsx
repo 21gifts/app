@@ -69,7 +69,11 @@ function pathFromLocation(pathname: string | null): string | null {
   if (typeof pathname !== 'string' || pathname === '') {
     return null;
   }
-  if (typeof window === 'undefined' || window.location.pathname !== pathname) {
+  /* v8 ignore next 3 -- SSR has no location */
+  if (typeof window === 'undefined') {
+    return pathname;
+  }
+  if (window.location.pathname !== pathname) {
     return pathname;
   }
   const search = window.location.search;

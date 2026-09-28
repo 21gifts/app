@@ -52,6 +52,23 @@ describe('ViewHistoryRoot', () => {
     );
     expect(previousViewPath()).toBeNull();
 
+    window.history.pushState(null, '', '/shops');
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(window.location.search).toBe('');
+    expect(previousViewPath()).toBeNull();
+
+    window.history.pushState(null, '', '/shops?');
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(previousViewPath()).toBeNull();
+
     navigation.pathname = '/notifications';
     navigation.query = 'c=abc';
     window.history.pushState(null, '', '/notifications?c=abc');
