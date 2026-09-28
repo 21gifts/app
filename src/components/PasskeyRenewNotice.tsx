@@ -85,9 +85,14 @@ export function PasskeyRenewNotice(): ReactElement | null {
     if (session === null) {
       return;
     }
+    const token = session;
     setBusy(true);
     try {
-      setAccount(await postPasskeyRenewAck(session));
+      const next = await postPasskeyRenewAck(token);
+      // Logout during the request must not restore this account.
+      if (useAuthStore.getState().session === token) {
+        setAccount(next);
+      }
     } catch {
       // Stay on the failure step until the acknowledgement is stored.
     } finally {

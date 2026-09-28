@@ -3094,8 +3094,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Guided blocking renew while `walletRequired` is false: explain, confirm, device passkey prompt, then a success or failure confirmation.
 - **Inputs:** None. Reads the auth store and translations. `?visual=renew-passkey` and `?visual=renew-ok` force those steps for screenshots.
-- **Returns / side effects:** No dismiss control on the explanation. **Continue** starts the ceremony. Success stores the account only after **OK**. A failure is acknowledged with **OK** and the dialog closes. It does not start again. Null once success is confirmed or a failure was acknowledged.
-- **Used by:** `AppShell` when `walletRequired === false`.
+- **Returns / side effects:** No dismiss control on the explanation. **Continue** starts the ceremony. Cancelling the device prompt returns to the explanation and is not a logged failure. Success stores the account only after **OK**. Failure **OK** stores the acknowledged account only while that same session is still current, then the dialog closes and does not start again. Null once success is confirmed, a failure was acknowledged, or `passkeyRenewClosed` is true.
+- **Used by:** `AppShell` when `walletRequired === false` and `passkeyRenewClosed` is not true.
 
 ## Function: proxyMePasskeyRenewReportPost
 

@@ -2051,6 +2051,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathName === '/me/passkey-renew/ack') {
       account.passkeyRenewFailed = false;
+      account.passkeyRenewClosed = true;
     }
     json(res, 200, account);
     return;

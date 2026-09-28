@@ -130,6 +130,31 @@ describe('PasskeyRenewNotice', () => {
     expect(screen.getByText('You do not need to do anything now.', { exact: false })).toBeTruthy();
   });
 
+  it('does not apply the acknowledgement when the session is gone', async () => {
+    let resolveAck: (value: Account) => void = () => {};
+    vi.mocked(postPasskeyRenewAck).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveAck = resolve;
+        }),
+    );
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, passkeyRenewFailed: true },
+    });
+    renderWithLocale(<PasskeyRenewNotice />);
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => {
+      expect(postPasskeyRenewAck).toHaveBeenCalledWith('tok');
+    });
+    useAuthStore.setState({ session: null, account: null });
+    resolveAck({ ...account, passkeyRenewFailed: false, passkeyRenewClosed: true });
+    await waitFor(() => {
+      expect(useAuthStore.getState().account).toBeNull();
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+  });
+
   it('does not acknowledge a failure without a session', () => {
     useAuthStore.setState({
       session: null,
