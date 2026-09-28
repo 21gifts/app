@@ -158,7 +158,6 @@ export function PasskeyRenewNotice(): ReactElement | null {
         onClick={() => {
           void onConfirm();
         }}
-        icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
       >
         {t('passkeyRenew.confirm')}
       </Button>
