@@ -1,6 +1,6 @@
 'use client';
 
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -55,7 +55,7 @@ function ProfileImages({
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [pictureSettled, setPictureSettled] = useState(false);
   const [bannerSettled, setBannerSettled] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<'picture' | 'banner' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const pictureInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -120,7 +120,7 @@ function ProfileImages({
   }, []);
 
   const saveFile = (file: File, wide: boolean): void => {
-    setSaving(true);
+    setSaving(wide ? 'banner' : 'picture');
     setError(null);
     void (async () => {
       try {
@@ -147,7 +147,7 @@ function ProfileImages({
       } catch {
         setError(t('profile.about.error'));
       } finally {
-        setSaving(false);
+        setSaving(null);
       }
     })();
   };
@@ -193,8 +193,14 @@ function ProfileImages({
           type="button"
           variant="secondary"
           size="lg"
-          disabled={saving}
-          icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
+          disabled={saving !== null}
+          icon={
+            saving === 'banner' ? (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImagePlus aria-hidden="true" className="h-4 w-4" />
+            )
+          }
           onClick={() => {
             bannerInputRef.current?.click();
           }}
@@ -215,8 +221,14 @@ function ProfileImages({
           type="button"
           variant="secondary"
           size="md"
-          disabled={saving}
-          icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
+          disabled={saving !== null}
+          icon={
+            saving === 'picture' ? (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImagePlus aria-hidden="true" className="h-4 w-4" />
+            )
+          }
           onClick={() => {
             pictureInputRef.current?.click();
           }}
@@ -235,7 +247,7 @@ function ProfileImages({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
-        disabled={saving}
+        disabled={saving !== null}
         onChange={onBannerFile}
       />
       <input
@@ -244,7 +256,7 @@ function ProfileImages({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
-        disabled={saving}
+        disabled={saving !== null}
         onChange={onPictureFile}
       />
     </div>

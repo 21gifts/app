@@ -907,6 +907,33 @@ describe('ProfileScreen', () => {
     expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
   });
 
+  it('shows a spinner on the picture button while that save is in flight', async () => {
+    let release: () => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockReturnValue(
+      new Promise((resolve) => {
+        release = () => {
+          resolve(undefined);
+        };
+      }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    const button = await screen.findByRole('button', { name: 'Add a profile photo' });
+    const input = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([1])], 'shot.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(button.hasAttribute('disabled')).toBe(true);
+      expect(button.querySelector('.animate-spin')).toBeTruthy();
+    });
+    await act(async () => {
+      release();
+    });
+  });
+
   it('ignores a rejected fetchMember after unmount', async () => {
     let rejectMember: (err: Error) => void = () => undefined;
     vi.mocked(fetchMember).mockReturnValue(

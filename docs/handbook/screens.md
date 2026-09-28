@@ -2344,6 +2344,42 @@ Owner card with three different pictures at once. Stub GET `/pictures/me` with a
 
 ![21.gifts profile images](images/profile-images.png)
 
+### Variant: photo-only
+
+Round profile photo only. Stub GET `/pictures/me` with the square portrait. No wide image, so **Add a wide image** sits above the round photo. Needle `state-profile-photo-only`.
+
+![21.gifts profile photo only](images/profile-photo-only.png)
+
+### Variant: banner-only
+
+Wide image only. Stub GET `/banners/me` with the wide scene. No profile photo, so **Add a profile photo** sits under the banner. Needle `state-profile-banner-only`.
+
+![21.gifts profile banner only](images/profile-banner-only.png)
+
+### Variant: banner-not-wide
+
+Choosing a square portrait for the wide image. Alert **Use an image at least 640 px wide and at least 1.5 times as wide as it is tall**. Both add buttons stay. Needle `state-profile-banner-not-wide`.
+
+![21.gifts profile banner not wide](images/profile-banner-not-wide.png)
+
+### Variant: picture-unsupported
+
+Choosing a file that is not a JPEG, PNG, or WebP for the profile photo. Alert **Use a JPEG, PNG, or WebP photo**. Both add buttons stay. Needle `state-profile-picture-unsupported`.
+
+![21.gifts profile picture unsupported](images/profile-picture-unsupported.png)
+
+### Variant: picture-save-error
+
+PUT `/pictures/me` answers 500 after a JPEG is chosen. Alert **Could not save. Please try again.** The profile-photo button stays. Needle `state-profile-picture-save-error`.
+
+![21.gifts profile picture save error](images/profile-picture-save-error.png)
+
+### Variant: picture-saving
+
+The profile-photo button is disabled and shows a spinner while PUT `/pictures/me` has not answered. Needle `state-profile-picture-saving`.
+
+![21.gifts profile picture saving](images/profile-picture-saving.png)
+
 ### Variant: images-editing
 
 Owner editor opened from variant **images**. The same three stubs are loaded (square portrait, wide scene, About me photo) and the seed is `aboutMe: 'I build on Bitcoin'` with `aboutMeHasPhoto: true`. **Edit About me** opens the textarea. The editor shows the round profile photo beside **Remove profile photo**, the wide image beside **Remove wide image**, and the About me photo beside **Remove photo**. The three icon-only attaches remain: **Add a photo** (`profile.about.attach`), **Add a profile photo** (`profile.about.portrait`), and **Add a wide image** (`profile.about.banner`). Needle `Remove profile photo`.

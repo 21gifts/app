@@ -8823,6 +8823,129 @@ test.describe('profile activity chart variants', () => {
     await shotScreen(page, 'state-profile-images');
   });
 
+  test('profile photo-only', async ({ page }) => {
+    // state-profile-photo-only
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await openProfile(page);
+    await expect(page.getByAltText('Profile photo')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+    await expect(page.getByAltText('Wide profile image')).toHaveCount(0);
+    await shotScreen(page, 'state-profile-photo-only');
+  });
+
+  test('profile banner-only', async ({ page }) => {
+    // state-profile-banner-only
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
+      });
+    });
+    await openProfile(page);
+    await expect(page.getByAltText('Wide profile image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await expect(page.getByAltText('Profile photo')).toHaveCount(0);
+    await shotScreen(page, 'state-profile-banner-only');
+  });
+
+  test('profile banner-not-wide', async ({ page }) => {
+    // state-profile-banner-not-wide
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await expect(
+      page.getByText(
+        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-banner-not-wide');
+  });
+
+  test('profile picture-unsupported', async ({ page }) => {
+    // state-profile-picture-unsupported
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await page.locator('input[name="profile-photo"]').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('hello'),
+    });
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await shotScreen(page, 'state-profile-picture-unsupported');
+  });
+
+  test('profile picture-save-error', async ({ page }) => {
+    // state-profile-picture-save-error
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await openProfile(page);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-profile-picture-save-error');
+  });
+
+  test('profile picture-saving', async ({ page }) => {
+    // state-profile-picture-saving
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    let release: (() => void) | undefined;
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await openProfile(page);
+    const button = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(button).toBeVisible();
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(button).toBeDisabled();
+    await expect(button.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-profile-picture-saving');
+    release?.();
+  });
+
   test('profile images-editing', async ({ page }) => {
     await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
     await stubProfileStats(page, EMPTY_ACTIVITY);
