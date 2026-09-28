@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopsScreen } from '@/components/ShopsScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -15,7 +15,10 @@ vi.mock('@/components/ShopTable', () => ({
   ShopTable: () => <div data-testid="shop-table" />,
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.history.replaceState(null, '', window.location.pathname);
+});
 
 describe('ShopsScreen', () => {
   it('shows the heading, lead, and shops forum feed', () => {
@@ -38,5 +41,27 @@ describe('ShopsScreen', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Table' }));
     expect(screen.getByTestId('shop-table')).toBeTruthy();
     expect(screen.queryByTestId('places-map-screen')).toBeNull();
+    expect(window.location.hash).toBe('#table');
+    fireEvent.click(screen.getByRole('tab', { name: 'Post' }));
+    expect(window.location.hash).toBe('');
+  });
+
+  it('opens the map from /shops#map and ignores an unknown hash', async () => {
+    window.location.hash = '#map';
+    renderWithLocale(<ShopsScreen />);
+    expect(await screen.findByTestId('places-map-screen')).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Map', selected: true })).toBeTruthy();
+    window.location.hash = '#nope';
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(screen.getByRole('tab', { name: 'Map', selected: true })).toBeTruthy();
+  });
+
+  it('opens the table from /shops#table', async () => {
+    window.location.hash = '#TABLE';
+    renderWithLocale(<ShopsScreen />);
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: 'Table', selected: true })).toBeTruthy();
+    });
+    expect(screen.getByTestId('shop-table')).toBeTruthy();
   });
 });
