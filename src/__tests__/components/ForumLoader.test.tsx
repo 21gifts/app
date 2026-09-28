@@ -9439,7 +9439,10 @@ describe('forum feed pages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
       expect(repayMock).toHaveBeenCalledTimes(2);
-      expect(screen.getByRole('button', { name: "Pay today's repayment" })).toBeDisabled();
+      expect(
+        (screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
     });
   });
 
