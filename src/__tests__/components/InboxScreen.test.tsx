@@ -2131,6 +2131,208 @@ describe('InboxScreen', () => {
     }
   });
 
+  it('sticks again when a scroll lands on the last pin offset', () => {
+    class FakeResizeObserver {
+      static callback: ResizeObserverCallback | null = null;
+
+      constructor(callback: ResizeObserverCallback) {
+        FakeResizeObserver.callback = callback;
+      }
+
+      observe(): void {}
+
+      unobserve(): void {}
+
+      disconnect(): void {}
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 1200;
+      },
+    });
+    try {
+      const { container } = renderWithLocale(
+        <AppShell mode="fill">
+          <InboxScreen {...inboxScreenProps()} />
+        </AppShell>,
+      );
+      const scroller = container.querySelector('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('expected AppShell scroller');
+      }
+      Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+      Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 1200 });
+      scroller.scrollTop = 0;
+      scroller.dispatchEvent(new Event('scroll'));
+      scrollTo.mockClear();
+      FakeResizeObserver.callback?.([], {} as ResizeObserver);
+      expect(scrollTo).not.toHaveBeenCalled();
+      scroller.scrollTop = 1200;
+      scroller.dispatchEvent(new Event('scroll'));
+      FakeResizeObserver.callback?.([], {} as ResizeObserver);
+      expect(scrollTo).toHaveBeenCalledWith(0, 1200);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.stubGlobal('location', locationStub);
+    }
+  });
+
+  it('keeps the bottom pin when a pin echo is above the grown thread', () => {
+    class FakeResizeObserver {
+      static callback: ResizeObserverCallback | null = null;
+
+      constructor(callback: ResizeObserverCallback) {
+        FakeResizeObserver.callback = callback;
+      }
+
+      observe(): void {}
+
+      unobserve(): void {}
+
+      disconnect(): void {}
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    let height = 1200;
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return height;
+      },
+    });
+    try {
+      const { container } = renderWithLocale(
+        <AppShell mode="fill">
+          <InboxScreen {...inboxScreenProps()} />
+        </AppShell>,
+      );
+      const scroller = container.querySelector('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('expected AppShell scroller');
+      }
+      Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 400 });
+      height = 2000;
+      scroller.scrollTop = 1200;
+      scroller.dispatchEvent(new Event('scroll'));
+      scrollTo.mockClear();
+      FakeResizeObserver.callback?.([], {} as ResizeObserver);
+      expect(scrollTo).toHaveBeenCalledWith(0, 2000);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.stubGlobal('location', locationStub);
+    }
+  });
+
+  it('attaches history when a scroll reaches the end before the pin sticks', async () => {
+    const htmlScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
+    const htmlClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    let stick = false;
+    let stored = 0;
+    let columnBottom = 3000;
+    const queued: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      queued.push(cb);
+      return queued.length;
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
+      configurable: true,
+      get() {
+        return stored;
+      },
+      set(value: number) {
+        if (stick) {
+          stored = value;
+        }
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 2000;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get() {
+        return 400;
+      },
+    });
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function mockRect(this: HTMLElement) {
+        const bottom = this.hasAttribute('data-scrollport') ? 400 : columnBottom;
+        const top = this.hasAttribute('data-scrollport') ? 0 : 20;
+        return {
+          bottom,
+          top,
+          left: 0,
+          right: 10,
+          width: 10,
+          height: Math.max(0, bottom - top),
+          x: 0,
+          y: top,
+          toJSON() {
+            return {};
+          },
+        } as DOMRect;
+      });
+    const messages = Array.from({ length: 10 }, (_, index) => ({
+      ...MESSAGE,
+      id: `m${index + 1}`,
+      text: `Message ${index + 1}`,
+    }));
+    const nearStartRef = vi.fn((node: HTMLLIElement | null): void => {
+      void node;
+    });
+    try {
+      const view = renderWithLocale(
+        <AppShell mode="fill">
+          <InboxScreen {...inboxScreenProps({ messages, nearStartRef })} />
+        </AppShell>,
+      );
+      const scroller = view.container.querySelector('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('expected AppShell scroller');
+      }
+      expect(queued.length).toBeGreaterThan(0);
+      expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+      stick = true;
+      stored = 1520;
+      columnBottom = 100;
+      await act(async () => {
+        scroller.dispatchEvent(new Event('scroll'));
+      });
+      expect(nearStartRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m8"]'));
+    } finally {
+      rectSpy.mockRestore();
+      vi.unstubAllGlobals();
+      vi.stubGlobal('location', locationStub);
+      if (htmlScrollTop === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollTop');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollTop', htmlScrollTop);
+      }
+      if (htmlClientHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'clientHeight', htmlClientHeight);
+      }
+    }
+  });
+
   it('retries the pin on the next frame and cancels it on unmount', async () => {
     const htmlScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
     const htmlClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
@@ -2204,7 +2406,10 @@ describe('InboxScreen', () => {
       if (!(scroller instanceof HTMLElement)) {
         throw new Error('expected AppShell scroller');
       }
-      scroller.dispatchEvent(new Event('scroll'));
+      await act(async () => {
+        scroller.dispatchEvent(new Event('scroll'));
+      });
+      expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
       const stale = queued[queued.length - 1];
       if (stale === undefined) {
         throw new Error('expected a pin frame');

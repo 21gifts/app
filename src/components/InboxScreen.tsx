@@ -542,8 +542,11 @@ function ConversationListItem({
  * list is not left at the thread offset. A supplied `nearStartRef` is attached
  * to the eighth grouped bubble from the start, or the first bubble when fewer
  * than eight render, only after the thread end is in view or the thread fits,
- * so loaders can prepend older pages without changing the newest id. The
- * history observer root is the active page scrollport when one is mounted.
+ * so loaders can prepend older pages without changing the newest id. A scroll
+ * event attaches that ref only when the end is already in view; the pin's own
+ * write does not. Landing again on the last pin offset sticks when that
+ * offset is within 80px of the bottom. The history observer root is the
+ * active page scrollport when one is mounted.
  *
  * @param props - List/thread/composer state from {@link InboxLoader} or
  *   {@link ModeratorGroupScreen}.
@@ -652,12 +655,24 @@ export function InboxScreen({
       const current = resolveThreadScroller(scroller);
       threadScrollRef.current.scrollHeight = current.scrollHeight;
       threadScrollRef.current.scrollTop = current.scrollTop;
-      if (pinningRef.current || current.scrollTop === lastPinTopRef.current) {
+      if (pinningRef.current) {
         return;
       }
       const distance = current.scrollHeight - current.scrollTop - current.clientHeight;
-      stuckToBottomRef.current = distance <= STUCK_TO_BOTTOM_PX;
-      if (armedForOpenId !== openId) {
+      const atBottom = distance <= STUCK_TO_BOTTOM_PX;
+      if (current.scrollTop === lastPinTopRef.current) {
+        if (atBottom) {
+          stuckToBottomRef.current = true;
+        }
+      } else {
+        stuckToBottomRef.current = atBottom;
+      }
+      const column = threadColumnRef.current;
+      /* v8 ignore next 3 -- the open-thread column ref is set before scroll */
+      if (column === null) {
+        return;
+      }
+      if (armedForOpenId !== openId && threadEndInView(column, current)) {
         setArmedForOpenId(openId);
       }
     };
