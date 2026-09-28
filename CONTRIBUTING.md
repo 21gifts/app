@@ -49,6 +49,7 @@ npm run dev    # → http://localhost:3000
 ```
 app/
 ├── src/
+│   ├── middleware.ts            # /map redirects to /shops#map and keeps the query string
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
@@ -83,8 +84,6 @@ app/
 │   │   │       └── route.ts     # POST /contact/submit → api POST /contact
 │   │   ├── shops/
 │   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
-│   │   ├── map/
-│   │   │   └── page.tsx         # GET /map — signed-in map of forum notes that have a pin
 │   │   ├── maps/
 │   │   │   └── key/route.ts     # GET /maps/key — browser map key or null
 │   │   ├── gifts/
@@ -238,9 +237,11 @@ app/
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap row (data-scroll-x, 88% peek, chip, dots)
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
-│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading + ForumLoader feed=shops, Card surface false)
+│   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
+│   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
+│   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
-│   │   ├── PlacesMapScreen.tsx  # Signed-in /map body (every note that has a pin)
+│   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
 │   │   ├── InboxScreen.tsx      # signed-in conversation list + thread composer

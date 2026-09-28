@@ -561,14 +561,11 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
-  it('closes the menu when Map is clicked', () => {
+  it('does not offer a Map page in the menu', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
-    const map = screen.getByRole('link', { name: 'Map' });
-    expect(map.getAttribute('href')).toBe('/map');
-    fireEvent.click(map);
-    expectMenuClosed();
+    expect(screen.queryByRole('link', { name: 'Map' })).toBeNull();
   });
 
   it('dispatches the forum home event instead of navigating when Home is already current', () => {

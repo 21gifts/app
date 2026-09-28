@@ -2886,6 +2886,120 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:map",
+    "label": "/shops map",
+    "visual": "state-shops-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-with-key",
+    "label": "/shops map-with-key",
+    "visual": "state-shops-map-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-pin",
+    "label": "/shops map-pin",
+    "visual": "state-shops-map-pin",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-pin-with-key",
+    "label": "/shops map-pin-with-key",
+    "visual": "state-shops-map-pin-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords",
+    "label": "/shops map-coords",
+    "visual": "state-shops-map-coords",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords-pin",
+    "label": "/shops map-coords-pin",
+    "visual": "state-shops-map-coords-pin",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords-with-key",
+    "label": "/shops map-coords-with-key",
+    "visual": "state-shops-map-coords-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-coords-pin-with-key",
+    "label": "/shops map-coords-pin-with-key",
+    "visual": "state-shops-map-coords-pin-with-key",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table",
+    "label": "/shops table",
+    "visual": "state-shops-table",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-more",
+    "label": "/shops table-more",
+    "visual": "state-shops-table-more",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-next",
+    "label": "/shops table-next",
+    "visual": "state-shops-table-next",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-more-error",
+    "label": "/shops table-more-error",
+    "visual": "state-shops-table-more-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-more-empty",
+    "label": "/shops table-more-empty",
+    "visual": "state-shops-table-more-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-empty",
+    "label": "/shops table-empty",
+    "visual": "state-shops-table-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-loading",
+    "label": "/shops table-loading",
+    "visual": "state-shops-table-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-error",
+    "label": "/shops table-error",
+    "visual": "state-shops-table-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-empty",
+    "label": "/shops map-empty",
+    "visual": "state-shops-map-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-loading",
+    "label": "/shops map-loading",
+    "visual": "state-shops-map-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-error",
+    "label": "/shops map-error",
+    "visual": "state-shops-map-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:empty",
     "label": "/shops empty",
     "visual": "state-shops-empty",
@@ -3045,72 +3159,6 @@
     "id": "/shops:staff-place-error",
     "label": "/shops staff-place-error",
     "visual": "state-shops-staff-place-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:default",
-    "label": "/map default",
-    "visual": "screen-map",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:pin",
-    "label": "/map pin",
-    "visual": "state-map-pin",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:with-key",
-    "label": "/map with-key",
-    "visual": "state-map-with-key",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:pin-with-key",
-    "label": "/map pin-with-key",
-    "visual": "state-map-pin-with-key",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:coords",
-    "label": "/map coords",
-    "visual": "state-map-coords",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:coords-pin",
-    "label": "/map coords-pin",
-    "visual": "state-map-coords-pin",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:coords-with-key",
-    "label": "/map coords-with-key",
-    "visual": "state-map-coords-with-key",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:coords-pin-with-key",
-    "label": "/map coords-pin-with-key",
-    "visual": "state-map-coords-pin-with-key",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:empty",
-    "label": "/map empty",
-    "visual": "state-map-empty",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:loading",
-    "label": "/map loading",
-    "visual": "state-map-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/map:error",
-    "label": "/map error",
-    "visual": "state-map-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

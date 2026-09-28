@@ -475,10 +475,10 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); **Map** (`/map`, lucide `Map`, `nav.map`); **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`); User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero, plus the default fiat when a gift-day rate exists; **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`); User Profile with same-line given/received `ArrowUpRight`/`ArrowDownLeft` amounts only when that side is non-zero, plus the default fiat when a gift-day rate exists; **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Trust Chain**; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useAccountTotals`, `useUnreadCount(open)` (default write-badge: writes the home-screen badge), `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel is an in-tree `absolute` sibling of the Menu button (not a body portal). `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), **Map** (`/map`, lucide `Map`, `nav.map`), **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero, plus the default fiat when a gift-day rate exists (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member, **Wallet** (`/wallet`, lucide `Wallet`, `wallet.title`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
-- **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ShopsPage`, `MapPage`, `PosPage`, `ProfilePage`, `GrantsPage`, `FundingApplyPage`, `WalletPage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel is an in-tree `absolute` sibling of the Menu button (not a body portal). `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`), Profile link (`/profile`) with same-line given/received amounts only when that side is non-zero, plus the default fiat when a gift-day rate exists (`aria-label`/`title` from `profile.given` / `profile.received`; both-zero omits the totals cluster; loading still `forum.loading`), **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member, **Wallet** (`/wallet`, lucide `Wallet`, `wallet.title`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ShopsPage`, `PosPage`, `ProfilePage`, `GrantsPage`, `FundingApplyPage`, `WalletPage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
 
@@ -1216,19 +1216,19 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** React element. No network.
 - **Used by:** `ContactLoader`.
 
-## Function: MapPage
+## Function: middleware
 
-- **Purpose:** Next.js page for `/map`. Flow `AppShell` (`align="start"`) with `ProfileChromeLeft` + `SignedInChrome`, `OnboardingGate` `screen="welcome"`, and `PlacesMapScreen`. No `route.ts` beside the page.
-- **Inputs:** None.
-- **Returns / side effects:** The map screen.
+- **Purpose:** Send an old `/map` address to the shops map. There is no map page.
+- **Inputs:** The incoming request whose path is `/map`.
+- **Returns / side effects:** Redirect to `/shops#map`. A query string such as `?pin=` is kept (`/shops?pin=#map`).
 - **Used by:** Route `/map`.
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text.
-- **Inputs:** Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. Fetches places and `/maps/key`.
-- **Used by:** `MapPage`.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. `embedded` returns that body without the heading or card.
+- **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
+- **Used by:** `ShopsScreen`.
 
 ## Function: fetchPlaces
 
@@ -1274,10 +1274,24 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopsScreen
 
-- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, then `ForumLoader` `feed="shops"`.
-- **Inputs:** Catalog via `useTranslations`.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}` wrapping the shops forum. No network of its own.
+- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`.
+- **Inputs:** Catalog via `useTranslations`. The view stays unset until the hash is read. `/shops#map` and `/shops#table` open that view; `/shops#post`, a missing hash, or an unknown hash open Post. Choosing an option writes the same hash. Post clears it.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The post list, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
 - **Used by:** `ShopsPage`.
+
+## Function: ShopsViewSwitch
+
+- **Purpose:** Neutral `SegmentedControl` labelled **Shop view** that switches the shops page between post, map, and table.
+- **Inputs:** `value` (`post`, `map`, or `table`) and `onChange`.
+- **Returns / side effects:** A `SegmentedControl` `tone="neutral"`. The pressed option uses the app button fill. No network.
+- **Used by:** `ShopsScreen`.
+
+## Function: ShopTable
+
+- **Purpose:** Table of shop notes with name, place, and operator.
+- **Inputs:** Session from `useAuthStore`. Catalog via `useTranslations`.
+- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` (label, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash (shops.missing). **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session.
+- **Used by:** `ShopsScreen`.
 
 ## Function: isShopNote
 
