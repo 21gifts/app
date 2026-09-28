@@ -1,4 +1,5 @@
-/* Push-only service worker for 21.gifts. No cache/offline strategy in v1. */
+/* Push-only service worker for 21.gifts. No asset or offline cache.
+   A notification click stores a short-lived 21gifts-push-open path. */
 
 self.addEventListener('install', () => {
   self.skipWaiting();

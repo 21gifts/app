@@ -22,7 +22,9 @@ function isPushOpenPath(url: string): boolean {
 }
 
 /**
- * Read and delete the path the service worker stored for this click.
+ * Read the path the service worker stored for this click.
+ *
+ * An unusable record is deleted. A usable path stays until the page follows it.
  *
  * @param now - Clock in milliseconds, used to drop a stale or future record.
  * @returns The path, or `null` when there is nothing safe to open.
@@ -118,8 +120,8 @@ export function PushOpenListener(): null {
 
     const pull = (): void => {
       void takePendingPushOpen(Date.now()).then((url) => {
-        if (url !== null) {
-          openUrl(url);
+        if (url !== null && !cancelled) {
+          router.push(url);
           void forgetPendingPushOpen();
         }
       });
