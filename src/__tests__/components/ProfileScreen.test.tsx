@@ -658,6 +658,8 @@ describe('ProfileScreen', () => {
     expect(portrait.className).toContain('rounded-full');
     expect(portrait.className).toContain('absolute');
     expect(banner.className).toContain('aspect-[5/2]');
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
     expect(screen.queryByAltText('About me photo')).toBeNull();
   });
 
@@ -670,6 +672,8 @@ describe('ProfileScreen', () => {
     expect(portrait.className).toContain('mx-auto');
     expect(portrait.className).not.toContain('absolute');
     expect(screen.queryByAltText('Wide profile image')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
   });
 
   it('shows only the wide image when the profile photo is missing', async () => {
@@ -679,6 +683,8 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
     expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
   });
 
   it('ignores a profile response that is not an image', async () => {
@@ -691,6 +697,8 @@ describe('ProfileScreen', () => {
       expect(fetchProfilePhoto).toHaveBeenCalled();
       expect(fetchWideBanner).toHaveBeenCalled();
     });
+    expect(await screen.findByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
     expect(screen.queryByAltText('Profile photo')).toBeNull();
     expect(screen.queryByAltText('Wide profile image')).toBeNull();
     cleanup();
@@ -702,17 +710,16 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(fetchWideBanner).toHaveBeenCalled();
     });
+    expect(await screen.findByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
     expect(screen.queryByAltText('Profile photo')).toBeNull();
     expect(screen.queryByAltText('Wide profile image')).toBeNull();
   });
 
-  it('leaves the header empty when neither picture loads', async () => {
+  it('offers a button for each missing picture', async () => {
     renderWithLocale(<ProfileScreen />);
-    await screen.findByRole('heading', { name: 'Profile' });
-    await waitFor(() => {
-      expect(fetchProfilePhoto).toHaveBeenCalled();
-      expect(fetchWideBanner).toHaveBeenCalled();
-    });
+    expect(await screen.findByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
     expect(screen.queryByAltText('Profile photo')).toBeNull();
     expect(screen.queryByAltText('Wide profile image')).toBeNull();
   });
@@ -786,7 +793,9 @@ describe('ProfileScreen', () => {
     vi.mocked(putWideBanner).mockResolvedValue(undefined);
     renderWithLocale(<ProfileScreen />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const inputs = document.querySelectorAll('input[type="file"]');
+    const inputs = [...document.querySelectorAll('input[type="file"]')].filter(
+      (input) => input.getAttribute('name') === null,
+    );
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
       type: 'image/jpeg',
     });
@@ -802,6 +811,66 @@ describe('ProfileScreen', () => {
       expect(putWideBanner).toHaveBeenCalledWith('tok', {
         contentType: 'image/jpeg',
         data: 'pic',
+      });
+    });
+  });
+
+  it('saves a profile photo from the empty-slot button', async () => {
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'pic',
+        previewUrl: 'data:image/jpeg;base64,pic',
+      },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a profile photo' });
+    const input = document.querySelector('input[name="profile-photo"]');
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(prepareForumPhoto).toHaveBeenCalledWith(file);
+      expect(putProfilePhoto).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'pic',
+      });
+    });
+  });
+
+  it('saves a wide image from the empty-slot button and explains a portrait', async () => {
+    vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'notWide' });
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    const input = document.querySelector('input[name="profile-banner"]');
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'tall.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    expect(
+      await screen.findByText(
+        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
+      ),
+    ).toBeTruthy();
+    expect(putWideBanner).not.toHaveBeenCalled();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'wide',
+        previewUrl: 'data:image/jpeg;base64,wide',
+      },
+    });
+    vi.mocked(putWideBanner).mockResolvedValue(undefined);
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(prepareForumPhoto).toHaveBeenCalledWith(file, { wide: true });
+      expect(putWideBanner).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'wide',
       });
     });
   });
