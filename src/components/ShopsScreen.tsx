@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, type ReactElement } from 'react';
+import { Suspense, useLayoutEffect, useState, type ReactElement } from 'react';
 import { ForumLoader } from '@/components/ForumLoader';
 import { PlacesMapScreen } from '@/components/PlacesMapScreen';
 import { ShopTable } from '@/components/ShopTable';
@@ -40,7 +40,7 @@ export function ShopsScreen(): ReactElement {
   const { t } = useTranslations();
   const [view, setView] = useState<ShopsView>('post');
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const apply = (): void => {
       setView(shopsViewFromHash(window.location.hash) ?? 'post');
     };
