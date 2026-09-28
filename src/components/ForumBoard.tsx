@@ -65,6 +65,7 @@ import {
   visibleForumMessages,
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
@@ -234,6 +235,12 @@ export interface ForumBoardProps {
   payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
+  /** Signed-in account id, used to show repayment only on the author's credit. */
+  viewerAccountId?: string | null;
+  /** Requests today's repayment invoice for the author's own funded credit. */
+  onRepay?: (messageId: string) => void;
+  /** Failure of today's repayment, shown without the gift amount form. */
+  repayNotice?: { messageId: string; error: Exclude<ForumPayError, null> | null } | null;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Unit the pay field is actually showing. */
@@ -685,6 +692,9 @@ export function ForumBoard({
   replyPayPreview = null,
   payWaiting,
   onPayOpen,
+  viewerAccountId = null,
+  onRepay,
+  repayNotice = null,
   onPayDraftChange,
   onPayUnitChange,
   onPaySubmit,
@@ -1098,7 +1108,14 @@ export function ForumBoard({
                 className="cursor-pointer text-left"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <MessageKindTags
+                    kinds={noteKinds({
+                      parentId: message.parentId,
+                      text: message.text,
+                      goalSats: message.goalSats,
+                      goalRepayable: message.goalRepayable,
+                    })}
+                  >
                     {typeof message.accountId === 'string' && message.accountId !== '' ? (
                       <button
                         type="button"
@@ -1139,17 +1156,7 @@ export function ForumBoard({
                         {t('forum.via.nostr')}
                       </button>
                     ) : null}
-                    {shopNote ? (
-                      <Link
-                        href="/shops"
-                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted no-underline"
-                        onClick={stopCardToggle}
-                        onKeyDown={stopCardToggle}
-                      >
-                        {t('forum.shopTag')}
-                      </Link>
-                    ) : null}
-                  </div>
+                  </MessageKindTags>
                   <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                     {formatForumTime(message.createdAt, locale)}
                   </time>
@@ -1274,6 +1281,8 @@ export function ForumBoard({
                   amountPhp={message.amountPhp}
                   goalRepayable={message.goalRepayable}
                   goalTermDays={message.goalTermDays}
+                  messageId={message.id}
+                  ledgerCollapsed={truncate}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-5">
@@ -1307,6 +1316,39 @@ export function ForumBoard({
                   >
                     <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
                   </IconButton>
+                ) : null}
+                {onRepay !== undefined &&
+                viewerAccountId !== null &&
+                message.accountId === viewerAccountId &&
+                message.parentId === undefined &&
+                message.goalRepayable === true &&
+                typeof message.goalSats === 'number' &&
+                message.sats >= message.goalSats &&
+                message.deletedAt === undefined ? (
+                  <SundayWritingGate notice="zap">
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-app-fg underline"
+                      disabled={payBusy || payInvoice?.messageId === message.id}
+                      onClick={(event) => {
+                        stopCardToggle(event);
+                        onRepay(message.id);
+                      }}
+                    >
+                      {t('forum.repayToday')}
+                    </button>
+                  </SundayWritingGate>
+                ) : null}
+                {repayNotice?.messageId === message.id && repayNotice.error !== null ? (
+                  <p role="alert" className="text-xs text-app-danger">
+                    {t(
+                      repayNotice.error === 'rateLimit'
+                        ? 'forum.payErrorRateLimit'
+                        : repayNotice.error === 'authorWallet'
+                          ? 'forum.payErrorAuthorWallet'
+                          : 'forum.payErrorRequest',
+                    )}
+                  </p>
                 ) : null}
                 {message.parentId !== undefined &&
                 message.payable &&

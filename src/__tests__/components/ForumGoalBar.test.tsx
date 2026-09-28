@@ -198,19 +198,14 @@ describe('ForumGoalBar', () => {
     expect(container.querySelector('svg[aria-hidden="true"]')).toBeNull();
   });
 
-  it('shows To be repaid when goalRepayable is true', () => {
+  it('does not write the loan as a sentence under the ask', () => {
     renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} goalRepayable />);
     expect(screen.getByText('Ask')).toBeTruthy();
-    expect(screen.getByText('To be repaid.')).toBeTruthy();
-  });
-
-  it('does not show To be repaid when goalRepayable is absent', () => {
-    renderWithLocale(<ForumGoalBar sats={0} goalSats={21000} />);
-    expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.queryByText('To be repaid.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Loan' })).toBeNull();
   });
 
-  it('shows the interest-free daily plan for a bitcoin credit and a dollar credit', () => {
+  it('shows the daily plan for a bitcoin credit and a dollar credit', () => {
     const { rerender } = renderWithLocale(
       <ForumGoalBar
         sats={0}
@@ -220,7 +215,7 @@ describe('ForumGoalBar', () => {
         rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
       />,
     );
-    expect(screen.getByText(/Interest 0%/)).toBeTruthy();
+    expect(screen.queryByText(/Interest 0%/)).toBeNull();
     expect(screen.getByText(/₿100 · \$0\.10 per day for 30 days/)).toBeTruthy();
     rerender(
       <ForumGoalBar
