@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PasskeyRenewNotice } from '@/components/PasskeyRenewNotice';
 import { postPasskeyRenewAck } from '@/lib/api';
@@ -43,11 +43,14 @@ afterEach(() => {
 });
 
 describe('PasskeyRenewNotice', () => {
-  it('shows the renew bar and hides the dialog until a failure is open', () => {
+  it('blocks the page with the renew dialog and no failure copy', () => {
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<PasskeyRenewNotice />);
-    expect(screen.getByRole('button', { name: 'Renew passkey' })).toBeTruthy();
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(
+      screen.getByText('You need to renew your passkey before you can continue.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
   });
 
   it('starts the ceremony from the bar and stores a successful account', async () => {
@@ -60,9 +63,11 @@ describe('PasskeyRenewNotice', () => {
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<PasskeyRenewNotice />);
     fireEvent.click(screen.getByRole('button', { name: 'Renew passkey' }));
-    await screen.findByRole('button', { name: 'Renew passkey' });
+    await waitFor(() => {
+      expect(useAuthStore.getState().account).toEqual(next);
+    });
     expect(renewPasskey).toHaveBeenCalledWith('tok');
-    expect(useAuthStore.getState().account).toEqual(next);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows the failure dialog and hides it after OK', async () => {
@@ -78,7 +83,10 @@ describe('PasskeyRenewNotice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     await screen.findByRole('button', { name: 'Renew passkey' });
     expect(postPasskeyRenewAck).toHaveBeenCalledWith('tok');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      screen.queryByText('You can try again later. You do not need to do anything now.'),
+    ).toBeNull();
+    expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
   it('keeps the dialog when acknowledgement fails', async () => {

@@ -472,13 +472,13 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: renew
 
-Signed in, no seed yet (`walletRequired` false). A **Renew passkey** bar sits under the frame header. The failure dialog is closed.
+Signed in, no seed yet (`walletRequired` false). A blocking dialog covers the page. There is no close control. **Renew passkey** is the only action.
 
 ![21.gifts welcome renew](images/welcome-renew.png)
 
 ### Variant: renew-failed
 
-The renew ceremony failed and has not been acknowledged. The dialog says it did not work, a later try is possible, and nothing is required now. **OK** is the only action. The bar stays underneath.
+The renew ceremony failed and has not been acknowledged. The same blocking layer shows that it did not work. **OK** hides that text. The renew dialog comes back, because there is still no seed.
 
 ![21.gifts welcome renew failed](images/welcome-renew-failed.png)
 

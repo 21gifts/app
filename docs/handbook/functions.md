@@ -3092,9 +3092,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: PasskeyRenewNotice
 
-- **Purpose:** Top bar "Renew passkey" and the failure dialog for a member with `walletRequired === false`.
+- **Purpose:** Blocking dialog that forces passkey renewal while `walletRequired` is false.
 - **Inputs:** None. Reads the auth store and translations.
-- **Returns / side effects:** The bar. The dialog appears when `passkeyRenewFailed` is true. OK acknowledges it. A failed ack leaves the dialog up.
+- **Returns / side effects:** A foreground dialog with no dismiss control. The only action is Renew passkey. An unacknowledged failure replaces it until OK; the force dialog then returns. Null once the account has a seed.
 - **Used by:** `AppShell` when `walletRequired === false`.
 
 ## Function: proxyMePasskeyRenewReportPost

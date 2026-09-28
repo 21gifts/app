@@ -2,24 +2,28 @@
 
 import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { renewPasskey } from '@/lib/passkey-renew';
+import { Button, Card } from '@/components/ui';
 import { postPasskeyRenewAck } from '@/lib/api';
+import { renewPasskey } from '@/lib/passkey-renew';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Top-of-frame bar for a signed-in member who has no seed passkey yet, plus
- * the one-time failure dialog. Mount only when `walletRequired === false`.
+ * Blocking foreground dialog for a signed-in member who has no seed yet.
+ * There is no dismiss control. The only way through is a successful renew.
+ * An unacknowledged failure replaces that dialog until OK; the force dialog
+ * returns afterwards because the account still has no seed.
  *
- * @returns The renew bar, and the failure dialog when the api still has an
- * unacknowledged failure.
+ * Mount only when `walletRequired === false`.
+ *
+ * @returns The blocking dialog, or nothing once the account has a seed.
  */
-export function PasskeyRenewNotice(): ReactElement {
+export function PasskeyRenewNotice(): ReactElement | null {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [busy, setBusy] = useState(false);
-  const showDialog = account?.passkeyRenewFailed === true;
+  const failed = account?.passkeyRenewFailed === true;
 
   async function onRenew(): Promise<void> {
     if (session === null) {
@@ -28,7 +32,7 @@ export function PasskeyRenewNotice(): ReactElement {
     setBusy(true);
     try {
       const result = await renewPasskey(session);
-      if (result.outcome === 'ok') {
+      if (result.outcome === 'ok' || result.outcome === 'stored') {
         setAccount(result.account);
       }
     } finally {
@@ -44,51 +48,60 @@ export function PasskeyRenewNotice(): ReactElement {
     try {
       setAccount(await postPasskeyRenewAck(session));
     } catch {
-      // Leave the dialog up until the acknowledgement is stored.
+      // Leave the failure dialog up until the acknowledgement is stored.
     } finally {
       setBusy(false);
     }
   }
 
+  if (account?.walletRequired !== false) {
+    return null;
+  }
+
   return (
-    <>
-      <div className="flex-none px-8 pb-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => {
-            void onRenew();
-          }}
-          className="w-full rounded-2xl border border-app-border bg-app-card px-4 py-3 text-left text-sm font-medium text-app-fg"
-        >
-          {t('passkeyRenew.banner')}
-        </button>
-      </div>
-      {showDialog ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="passkey-renew-failed-title"
-          className="absolute inset-0 z-50 flex items-center justify-center bg-app-card/80 px-8"
-        >
-          <div className="w-full max-w-sm rounded-2xl border border-app-border bg-app-card p-6 text-app-fg">
-            <h2 id="passkey-renew-failed-title" className="text-base font-medium">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={failed ? 'passkey-renew-failed-title' : 'passkey-renew-title'}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
+    >
+      <Card>
+        {failed ? (
+          <>
+            <h2 id="passkey-renew-failed-title" className="text-lg font-semibold text-app-fg">
               {t('passkeyRenew.failedTitle')}
             </h2>
-            <p className="mt-2 text-sm">{t('passkeyRenew.failedBody')}</p>
-            <button
+            <p className="text-sm text-app-muted">{t('passkeyRenew.failedBody')}</p>
+            <Button
               type="button"
+              size="lg"
               disabled={busy}
               onClick={() => {
                 void onOk();
               }}
-              className="mt-4 rounded-xl border border-app-border px-4 py-2 text-sm font-medium"
             >
               {t('passkeyRenew.ok')}
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </>
+            </Button>
+          </>
+        ) : (
+          <>
+            <h2 id="passkey-renew-title" className="text-lg font-semibold text-app-fg">
+              {t('passkeyRenew.banner')}
+            </h2>
+            <p className="text-sm text-app-muted">{t('passkeyRenew.forceBody')}</p>
+            <Button
+              type="button"
+              size="lg"
+              disabled={busy}
+              onClick={() => {
+                void onRenew();
+              }}
+            >
+              {t('passkeyRenew.banner')}
+            </Button>
+          </>
+        )}
+      </Card>
+    </div>
   );
 }

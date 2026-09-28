@@ -1907,9 +1907,11 @@ test.describe('onboarding screens', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(
+      page.getByText('You need to renew your passkey before you can continue.'),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Renew passkey' })).toBeVisible();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-renew');
   });
 
@@ -1939,7 +1941,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await expect(page.getByRole('button', { name: 'Renew passkey' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible();
     await expect(
       page.getByText('You can try again later. You do not need to do anything now.'),
     ).toBeVisible();

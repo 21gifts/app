@@ -488,6 +488,7 @@ const en = {
   'wallet.addPhraseHint':
     'This creates a recovery phrase on this device. Your existing login passkey stays.',
   'passkeyRenew.banner': 'Renew passkey',
+  'passkeyRenew.forceBody': 'You need to renew your passkey before you can continue.',
   'passkeyRenew.failedTitle': 'That did not work',
   'passkeyRenew.failedBody': 'You can try again later. You do not need to do anything now.',
   'passkeyRenew.ok': 'OK',
@@ -1418,6 +1419,7 @@ const de = {
   'wallet.addPhraseHint':
     'Dadurch entsteht ein Wiederherstellungssatz auf diesem Gerät. Ihr vorhandener Anmelde-Passkey bleibt.',
   'passkeyRenew.banner': 'Passkey erneuern',
+  'passkeyRenew.forceBody': 'Du musst deinen Passkey erneuern, bevor du weitermachen kannst.',
   'passkeyRenew.failedTitle': 'Das hat nicht funktioniert',
   'passkeyRenew.failedBody':
     'Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
@@ -2360,6 +2362,7 @@ const es = {
   'wallet.addPhraseHint':
     'Esto crea una frase de recuperación en este dispositivo. Tu passkey de inicio de sesión se mantiene.',
   'passkeyRenew.banner': 'Renovar passkey',
+  'passkeyRenew.forceBody': 'Tienes que renovar tu passkey antes de poder continuar.',
   'passkeyRenew.failedTitle': 'Eso no funcionó',
   'passkeyRenew.failedBody': 'Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
   'passkeyRenew.ok': 'OK',
@@ -3292,6 +3295,7 @@ const fil = {
   'wallet.addPhraseHint':
     'Lumilikha ito ng recovery phrase sa device na ito. Mananatili ang kasalukuyang login passkey mo.',
   'passkeyRenew.banner': 'I-renew ang passkey',
+  'passkeyRenew.forceBody': 'Kailangan mong i-renew ang passkey bago ka makapagpatuloy.',
   'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
   'passkeyRenew.failedBody': 'Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
   'passkeyRenew.ok': 'OK',
