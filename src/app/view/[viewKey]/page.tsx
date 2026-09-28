@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { HomeWordmark } from '@/components/HomeWordmark';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
 
@@ -23,7 +24,11 @@ export default async function ViewProfilePage({
 }): Promise<ReactElement> {
   const { viewKey } = await params;
   return (
-    <AppShell mode="fill" topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
+    <AppShell
+      mode="fill"
+      topLeft={<ProfileChromeLeft wordmark={<HomeWordmark />} />}
+      topRight={<LanguageSwitcher tone="light" />}
+    >
       <ViewProfileLoader viewKey={viewKey} />
     </AppShell>
   );

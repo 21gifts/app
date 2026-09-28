@@ -376,14 +376,14 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. Signed-in visitors are sent to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Signed-in visitors are sent to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
 
 - **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
 - **Used by:**
   - **Route `/donate`**
   - **Home CTA `home.ctaSend`**
@@ -400,7 +400,7 @@
 
 - **Purpose:** Next.js page for `/setup/address`.
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `AddressSetup`.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` top-left (non-link `Wordmark` span) and `SignedInChrome` top-right, and `OnboardingGate` around `AddressSetup`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
 - **Used by:** Route `/setup/address`.
 
 ## Function: RulesSetup
@@ -449,14 +449,14 @@
 
 - **Purpose:** Next.js page for `/setup/username`.
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `UsernameSetup`.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` top-left (non-link `Wordmark` span) and `SignedInChrome` top-right, and `OnboardingGate` around `UsernameSetup`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
 - **Used by:** Route `/setup/username`.
 
 ## Function: NameSetupPage
 
 - **Purpose:** Next.js page for `/setup/name`.
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `Wordmark` top-left, `SignedInChrome` top-right, and `OnboardingGate` around `NameSetup`.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` top-left (non-link `Wordmark` span) and `SignedInChrome` top-right, and `OnboardingGate` around `NameSetup`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
 - **Used by:** Route `/setup/name`.
 
 ## Function: openInSystemBrowser
@@ -489,10 +489,10 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared signed-in top-left chrome: one icon-only arrow (44px, ArrowLeft) plus `Wordmark`. The arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. An ask-wizard override replaces the history link with a button. Optional `onBackClick` runs on an unmodified click (wallet hides the words or closes Advanced functions before leaving). Optional `wordmarkHref` defaults to `/welcome`.
-- **Inputs:** Optional `onBackClick` and `wordmarkHref`; catalog via `useTranslations`; previous path via `previousViewPath`.
-- **Returns / side effects:** A link (`profile.back` when this tab has no earlier view, otherwise `nav.back`) or the override button, and a wordmark link. The first client render matches SSR (`/welcome`, `profile.back`). An unmodified primary click calls `onBackClick` or `goToPreviousView` and does not follow the href. Modified clicks follow the href. No network.
-- **Used by:** `ProfilePage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `GrantsPage`, `FundingApplyPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
+- **Purpose:** Shared top-left chrome: one icon-only arrow (44px, ArrowLeft) plus a wordmark. The arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. An ask-wizard override replaces the history link with a button. Optional `onBackClick` runs on an unmodified click (wallet hides the words or closes Advanced functions before leaving). Optional `wordmark` replaces the default wordmark. Optional `wordmarkHref` defaults to `/welcome` and is ignored when `wordmark` is set. `tone="dark"` is the ink marketing header. `hideWithoutHistory` omits the arrow only when this tab has no earlier view and no wizard override.
+- **Inputs:** Optional `onBackClick`, `wordmark`, `wordmarkHref`, `tone`, and `hideWithoutHistory`; catalog via `useTranslations`; previous path via `previousViewPath`.
+- **Returns / side effects:** A link (`profile.back` when this tab has no earlier view, otherwise `nav.back`), the override button, or no arrow when `hideWithoutHistory` has neither history nor an override, plus the wordmark. The first client render matches SSR (`/welcome`, `profile.back`) unless `hideWithoutHistory` hides that arrow. An unmodified primary click calls `onBackClick` or `goToPreviousView` and does not follow the href. Modified clicks follow the href. No network.
+- **Used by:** `ProfilePage`, `WelcomePage`, `MarketingHeader`, `LoginPage`, `DonatePage`, `PayLinkScreen`, `ViewProfilePage`, `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `GrantsPage`, `FundingApplyPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
 
 ## Function: resetWalletReturn
 
@@ -785,7 +785,7 @@
 
 - **Purpose:** Labeled pill link matching `Button` anatomy (`primary` / `secondary` / `accent`, `sm` / `md` / `lg`, `tone` `app` or `dark`).
 - **Inputs:** `href`, optional `variant` / `size` / `tone` / `icon` / `className`, `children` label.
-- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`https:`). No network. Used on marketing CTAs, donate **Open the forum**, 404 **Back home**, and rules nav.
+- **Returns / side effects:** A Next.js `<Link>` for path hrefs, or a native `<a>` for protocol hrefs (`https:`). No network. Used on marketing CTAs, donate **Open the forum**, and rules nav. The 404 page does not use it as a second back control.
 - **Used by:** `Home`, `MarketingHeader`, `DonatePage`, `NotFound`, `RulesDocument`.
 
 ## Function: SegmentedControl
@@ -965,7 +965,7 @@
 - **Purpose:** Text brand mark `21.gifts` (header 17px/700, footer 15px/700). Link when `href` is set; otherwise a `<span>` (marketing footer).
 - **Inputs:** optional `href`, optional `tone` (`app` / `dark`), optional `size` (`header` / `footer`, default `header`), optional `className`, optional `onClick` forwarded to the link only.
 - **Returns / side effects:** A Next.js `<Link>` or `<span>`. No network.
-- **Used by:** `HomeWordmark`, `ForumHomeWordmark`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/address pages, unsigned `PublicMessageChrome` / `RulesPageChrome`, and `AppShell` top-left.
+- **Used by:** `HomeWordmark`, `ForumHomeWordmark`, `MarketingFooter`, `ProfileChromeLeft`, `RulesSetup`, setup name/username/address pages, and `RulesPageChrome`.
 
 ## Function: ForumHomeWordmark
 
@@ -979,11 +979,11 @@
 - **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
 - **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Uses `useHydrateSession` and `useAuthStore`.
 - **Returns / side effects:** A client `Wordmark` link. Hydrates the session; no other network of its own.
-- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`.
+- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`, `PayLinkScreen`.
 
 ## Function: PublicMessageChrome
 
-- **Purpose:** Client chrome wrapper for public `/messages/[id]`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise keeps unsigned chrome (`Wordmark` → `/`, light `LanguageSwitcher`).
+- **Purpose:** Client chrome wrapper for public `/messages/[id]`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
 - **Inputs:** `children` (thread body from `PublicMessagePage` — `PublicMessageLoader`). Uses `useHydrateSession` and `useAuthStore` for `session`.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with the matching top-left / top-right slots around `children`. No network beyond session hydration.
 - **Used by:** `PublicMessagePage`.
@@ -992,7 +992,7 @@
 
 - **Purpose:** Next.js page for `/messages/[id]` — public HTML note by UUID. Unsigned visitors see a read-only thread. Signed-in React on the root note, copy, reply, and Gift on a payable nested reply run through `PublicMessageLoader` → `PublicMessageThread`. No `OnboardingGate`, top-level composer, or envelope. Wrapped in `PublicMessageChrome` (signed-in or unsigned chrome depending on hydrated session).
 - **Inputs:** Dynamic route params (`id`).
-- **Returns / side effects:** `PublicMessageLoader` inside `PublicMessageChrome` (chrome is no longer always unsigned Wordmark + LanguageSwitcher). Also exports `generateMetadata` for per-note Open Graph / Twitter tags.
+- **Returns / side effects:** `PublicMessageLoader` inside `PublicMessageChrome` (chrome is no longer always unsigned Wordmark + LanguageSwitcher). Also exports `generateMetadata` for per-note Open Graph / Twitter tags. Unsigned chrome is `ProfileChromeLeft` with wordmark href `/`, not a bare wordmark.
 - **Used by:** Route `/messages/[id]`.
 
 ## Function: generateMetadata
@@ -1035,7 +1035,7 @@
 
 - **Purpose:** Next.js page for `/view/[viewKey]` — public read-only profile by view key. No `OnboardingGate`, no `SignedInChrome`.
 - **Inputs:** Dynamic route params (`viewKey`).
-- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `HomeWordmark` top-left (`/` unsigned, `/welcome` when a session is hydrated) and light `LanguageSwitcher` top-right; body is `ViewProfileLoader`.
+- **Returns / side effects:** Exports `metadata.referrer = 'no-referrer'`. `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and light `LanguageSwitcher` top-right; body is `ViewProfileLoader`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The card itself has no back control.
 - **Used by:** Route `/view/[viewKey]`.
 
 ## Function: ViewProfileLoader
@@ -1105,7 +1105,7 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ForumHomeWordmark` top-left, `WelcomeTopRight` (the member menu when a session exists, otherwise a link to `/login`), and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`.
+- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, `WelcomeTopRight` (the member menu when a session exists, otherwise a link to `/login`), and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
@@ -2478,7 +2478,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the gift-day rate is usable, and **Pay**, no amount field). **Pay** is the width of the invoice QR plate, centered, not the page column. Desktop shows the invoice QR. A smartphone does not (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
+- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the gift-day rate is usable, and **Pay**, no amount field). **Pay** is the width of the invoice QR plate, centered, not the page column. Desktop shows the invoice QR. A smartphone does not (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage
@@ -2588,7 +2588,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated), section nav (How / Happyland / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. Happyland links to the existing `/#happyland` photo essay from any marketing page. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
+- **Purpose:** Sticky marketing header with one top-left arrow (`ProfileChromeLeft` `tone="dark"`) beside `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated). The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The wordmark is not that control. Section nav (How / Happyland / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. Happyland links to the existing `/#happyland` photo essay from any marketing page. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
 - **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
 - **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound` (no extra props).
@@ -2604,7 +2604,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Async app-wide 404 screen with marketing chrome and a localized link home.
 - **Inputs:** None. Calls `getRequestLocale()` for body/back-link copy; awaits `MarketingFooter()`.
-- **Returns / side effects:** 404 element with `MarketingHeader` and awaited footer (not rendered as JSX child).
+- **Returns / side effects:** 404 element with `MarketingHeader` (the only back control is that header arrow) and awaited footer (not rendered as JSX child). No **Back home** button.
 - **Used by:** Next.js `not-found.tsx`.
 
 ## Function: POST

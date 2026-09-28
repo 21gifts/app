@@ -2,6 +2,7 @@
 
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
@@ -424,7 +425,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
 
   return (
-    <PageChrome topLeft={<HomeWordmark />} topRight={<LanguageSwitcher tone="light" />}>
+    <PageChrome
+      topLeft={<ProfileChromeLeft wordmark={<HomeWordmark />} />}
+      topRight={<LanguageSwitcher tone="light" />}
+    >
       <Card maxWidth="xl" surface={false}>
         {invalid ? <GiftGlyph /> : profile !== null ? <ShopStickerIcon /> : null}
 

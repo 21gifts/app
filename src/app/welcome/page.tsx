@@ -3,47 +3,16 @@
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { ForumHomeWordmark } from '@/components/ForumHomeWordmark';
-import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { OnboardingGate } from '@/components/OnboardingGate';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useTranslations } from '@/components/LocaleProvider';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { PageChrome } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
-const BACK_CLASS =
-  'inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg';
-
 function WelcomeTopLeft(): ReactElement {
-  const { t } = useTranslations();
-  const { override } = useChromeBack();
-  return (
-    <>
-      {override === null ? null : (
-        <button
-          type="button"
-          className={BACK_CLASS}
-          aria-label={t('forum.askBack')}
-          onClick={override.onClick}
-        >
-          <svg
-            aria-hidden="true"
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m12 19-7-7 7-7" />
-            <path d="M19 12H5" />
-          </svg>
-        </button>
-      )}
-      <ForumHomeWordmark />
-    </>
-  );
+  return <ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />;
 }
 
 function WelcomeTopRight(): ReactElement {

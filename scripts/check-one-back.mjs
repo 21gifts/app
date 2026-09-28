@@ -83,12 +83,23 @@ for (const file of files) {
     source.includes('forum.askBack') &&
     rel !== 'src/lib/messages.ts' &&
     rel !== 'src/components/ForumAskWizard.tsx' &&
-    rel !== 'src/components/ViewHistoryRoot.tsx' &&
-    rel !== 'src/app/welcome/page.tsx'
+    rel !== 'src/components/ViewHistoryRoot.tsx'
   ) {
     failures.push(
-      `${rel}: forum.askBack is only allowed in messages, ForumAskWizard, ViewHistoryRoot, and welcome`,
+      `${rel}: forum.askBack is only allowed in messages, ForumAskWizard, and ViewHistoryRoot`,
     );
+  }
+  if (source.includes('notFound.back') && rel !== 'src/lib/messages.ts') {
+    failures.push(`${rel}: notFound.back is only allowed in src/lib/messages.ts`);
+  }
+  if (/topLeft=\{<(?:Wordmark|HomeWordmark)\b/.test(source)) {
+    failures.push(`${rel}: topLeft must be ProfileChromeLeft, not a bare wordmark`);
+  }
+  if (rel === 'src/components/MarketingHeader.tsx' && !source.includes('<ProfileChromeLeft')) {
+    failures.push(`${rel}: the marketing header must use ProfileChromeLeft`);
+  }
+  if (rel === 'src/app/welcome/page.tsx' && !source.includes('hideWithoutHistory')) {
+    failures.push(`${rel}: /welcome must hide the arrow only when this tab has no earlier view`);
   }
 }
 

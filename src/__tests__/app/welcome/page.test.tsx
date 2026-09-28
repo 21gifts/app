@@ -3,6 +3,7 @@ import { useLayoutEffect, type ReactElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import WelcomePage from '@/app/welcome/page';
 import { ChromeBackProvider, useChromeBack } from '@/components/ViewHistoryRoot';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -20,6 +21,7 @@ vi.mock('@/components/SignedInChrome', () => ({
 
 afterEach(() => {
   cleanup();
+  resetViewHistory();
   useAuthStore.setState({ session: null, account: null });
 });
 
@@ -30,6 +32,8 @@ describe('WelcomePage', () => {
     expect(screen.getByTestId('welcome-screen')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe('/login');
     expect(screen.queryByTestId('signed-in-chrome')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
   it('renders the signed-in chrome when a session exists', () => {
@@ -58,5 +62,13 @@ describe('WelcomePage', () => {
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns to the previous view when this tab has one', () => {
+    recordCurrentView('/shops');
+    recordCurrentView('/welcome');
+    renderWithLocale(<WelcomePage />);
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
   });
 });

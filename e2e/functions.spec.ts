@@ -2466,6 +2466,10 @@ test('Function: MarketingLayout — landing has marketing chrome', async ({ page
 test('Function: MarketingHeader — landing shows the wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: PwaInstall — iPhone Safari shows the install control', async ({ page }) => {
@@ -3576,6 +3580,20 @@ test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ pag
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
+test('Function: previousViewPath is shops when welcome follows shops', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveCount(1);
+  await expect(back).toHaveAttribute('href', '/shops');
+  const origin = new URL(page.url()).origin;
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+});
+
 test('Function: useChromeBack shows one chrome Back on the ask step', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
@@ -3759,6 +3777,11 @@ test('Function: HandbookCopyLink — copy link marks the button copied', async (
 test('Function: NotFound — unknown path is 404', async ({ page }) => {
   await page.goto('/404');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back home' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: LoginPage — login heading is visible', async ({ page }) => {
@@ -7671,6 +7694,10 @@ test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page
 test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ page }) => {
   await page.goto('/donate');
   await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', async ({ page }) => {

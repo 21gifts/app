@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { useLayoutEffect, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
+import { ChromeBackProvider, useChromeBack } from '@/components/ViewHistoryRoot';
 import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -70,5 +72,50 @@ describe('ProfileChromeLeft', () => {
     fireEvent.click(back, { altKey: true });
     fireEvent.click(back, { button: 1 });
     expect(onBackClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a custom wordmark and ignores wordmarkHref', () => {
+    renderWithLocale(
+      <ProfileChromeLeft wordmarkHref="/" wordmark={<span>Custom mark</span>} tone="dark" />,
+    );
+    const back = screen.getByRole('link', { name: 'Back to the forum' });
+    expect(back.className).toContain('text-paper/70');
+    expect(screen.getByText('Custom mark')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: '21.gifts' })).toBeNull();
+  });
+
+  it('omits the arrow when hideWithoutHistory has no earlier view', () => {
+    renderWithLocale(<ProfileChromeLeft hideWithoutHistory />);
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
+  });
+
+  it('shows the previous view when hideWithoutHistory still has history', () => {
+    recordCurrentView('/shops');
+    recordCurrentView('/welcome');
+    renderWithLocale(<ProfileChromeLeft hideWithoutHistory />);
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+  });
+
+  it('keeps the ask-wizard button when hideWithoutHistory has no earlier view', () => {
+    const onClick = vi.fn();
+    function Arm(): ReactElement {
+      const { setOverride } = useChromeBack();
+      useLayoutEffect(() => {
+        setOverride({ labelKey: 'forum.askBack', onClick });
+      }, [setOverride]);
+      return <ProfileChromeLeft hideWithoutHistory />;
+    }
+
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Arm />
+      </ChromeBackProvider>,
+    );
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });
