@@ -8206,6 +8206,56 @@ test.describe('profile activity chart variants', () => {
     await shotScreen(page, 'state-profile-images');
   });
 
+  test('profile images-editing', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.route(/\/banners\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
+      });
+    });
+    await page.route(/\/me\/about\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Edit About me' }).click();
+    const about = page.getByRole('textbox', { name: 'About me' });
+    const removePortrait = page.getByRole('button', { name: 'Remove profile photo' });
+    const removeBanner = page.getByRole('button', { name: 'Remove wide image' });
+    await expect(about).toBeVisible();
+    await expect(removePortrait).toBeVisible();
+    await expect(removeBanner).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    const addPhoto = page.getByRole('button', { name: 'Add a photo' });
+    await expect(addPhoto).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+    await addPhoto.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await expect(addPhoto).toBeInViewport();
+    await expect(about).toBeInViewport();
+    await expect(removePortrait).toBeInViewport();
+    await expect(removeBanner).toBeInViewport();
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('img')].every((img) => img.complete && img.naturalWidth > 0),
+    );
+    await shotScreen(page, 'state-profile-images-editing');
+  });
+
   test('profile about-editing', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, EMPTY_ACTIVITY);

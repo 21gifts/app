@@ -545,9 +545,9 @@
 
 ## Function: AboutMeSection
 
-- **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo is a `max-h-40` cover, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`, attach a JPEG/PNG/WebP with ImagePlus (`prepareForumPhoto`, no video), preview, and remove. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
+- **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo is a `max-h-40` cover, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`. The editor has three separate attaches, each its own ImagePlus and remove: the About me photo (JPEG/PNG/WebP via `prepareForumPhoto`, no video), the round profile photo, and the wide image. Each previews on its own. A portrait is never stored as the wide image. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
 - **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `messageId` (stored About me note id; omitted or blank keeps `LinkedText`), optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `loadPicture` / `onSavePicture` for the round profile photo and optional `loadBanner` / `onSaveBanner` for the wide image (neither is the About me note photo; a non-image blob stays empty), optional `startEditing` to open the owner editor on mount.
-- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save. Loads a blob URL when `hasPhoto` and `loadPhoto` are set; revokes it on unmount.
+- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save, `onSavePicture` when the profile photo changes, and `onSaveBanner` when the wide image changes. Loads a blob URL when `hasPhoto` and `loadPhoto` are set and revokes it on unmount. Loads and revokes the profile-photo and wide-image blob URLs the same way when `loadPicture` or `loadBanner` is set.
 - **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), `FundingApplyScreen` on `/grants/apply`.
 
 ## Function: PushToggle
@@ -2703,14 +2703,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** `PUT /pictures/me` with `{ photo }` for the signed-in account. `null` clears the profile photo. Does not change the wide image or the About me note.
 - **Inputs:** Session token, JPEG payload or `null`.
 - **Returns / side effects:** Resolves on 2xx. Throws the save error otherwise.
-- **Used by:** Profile editor.
+- **Used by:** `ProfileScreen` via `AboutMeSection` `onSavePicture`.
 
 ## Function: fetchProfilePhoto
 
 - **Purpose:** `GET /pictures/me` bytes for the signed-in account.
 - **Inputs:** Session token.
 - **Returns / side effects:** Blob. Throws the load error on failure or an empty body.
-- **Used by:** Profile editor.
+- **Used by:** `ProfileScreen` (resting header `ProfileImages` and `AboutMeSection` `loadPicture`).
 
 ## Function: proxyProfilePhotoGet
 
@@ -2731,14 +2731,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** `PUT /banners/me` with `{ photo }` for the signed-in account. `null` clears the wide image. Does not change the About me photo.
 - **Inputs:** Session token, JPEG payload or `null`.
 - **Returns / side effects:** Resolves on 2xx. Throws the save error otherwise.
-- **Used by:** Profile About me editor.
+- **Used by:** `ProfileScreen` via `AboutMeSection` `onSaveBanner`.
 
 ## Function: fetchWideBanner
 
 - **Purpose:** `GET /banners/me` bytes for the signed-in account.
 - **Inputs:** Session token.
 - **Returns / side effects:** Blob. Throws the load error on failure or an empty body.
-- **Used by:** Profile About me editor.
+- **Used by:** `ProfileScreen` (resting header `ProfileImages` and `AboutMeSection` `loadBanner`).
 
 ## Function: proxyWideBannerGet
 
