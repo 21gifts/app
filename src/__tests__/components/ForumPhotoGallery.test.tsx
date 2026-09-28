@@ -138,6 +138,28 @@ describe('ForumPhotoGallery', () => {
     expect(screen.getByText('2/2')).toBeTruthy();
   });
 
+  it('sets scrollLeft when the row has no scrollTo', () => {
+    renderWithLocale(<ForumPhotoGallery photos={PHOTOS} alt="Photo from Ada" />);
+    const photos = screen.getAllByAltText('Photo from Ada');
+    const scroller = photos[0]?.parentElement?.parentElement as HTMLElement;
+    const slide = photos[0]?.parentElement as HTMLElement;
+    Object.defineProperty(scroller, 'scrollTo', { configurable: true, value: undefined });
+    vi.spyOn(slide, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 0,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => undefined,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
+    expect(scroller.scrollLeft).toBe(200);
+    expect(screen.getByText('2/2')).toBeTruthy();
+  });
+
   it('scrolls without smooth motion when reduced motion is preferred', () => {
     const scrollTo = vi.fn();
     vi.spyOn(window, 'matchMedia').mockImplementation(
