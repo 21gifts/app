@@ -261,6 +261,26 @@ describe('useWalletPhrase', () => {
     fetchMock.mockRestore();
   });
 
+  it('omits a PRF failure whose name and message are not strings', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce({ name: 1, message: false });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('generic');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.seed.ceremony')).toEqual([
+      { event: 'client.passkey.seed.ceremony', stage: 'seed' },
+    ]);
+    fetchMock.mockRestore();
+  });
+
   it('maps seed begin 409 to generic and does not finish', async () => {
     vi.mocked(startPasskeySeed).mockRejectedValueOnce(
       new Error('Failed to start passkey seed: 409'),

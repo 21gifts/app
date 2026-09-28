@@ -174,6 +174,33 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('omits a PRF failure whose name and message are not strings', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce({ name: 1, message: false });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('error');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
+      { event: 'client.passkey.register.ceremony', stage: 'register' },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
   it('registers a passkey and stores the session', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
