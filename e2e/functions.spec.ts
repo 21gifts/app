@@ -5377,6 +5377,117 @@ test('Function: revealReplyForm — expanded reply stays inside the shell', asyn
   expect(inside).toBe(true);
 });
 
+test('Function: revealPaySheet — paying a reaction keeps the note on screen', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 520 });
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m1\/invoice$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello from Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 1,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/messages/**/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/public-messages\//, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello from Ada',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 1,
+        payable: true,
+        hasPhoto: false,
+        photoCount: 0,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByText('Hello from Ada').click();
+  const field = page.getByLabel('Your reaction');
+  await field.fill('This is my answer');
+  await page.getByLabel('Amount').fill('21');
+  await field.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  const back = page.getByRole('button', { name: 'Back' });
+  await expect(back).toBeVisible();
+  await expect(field).toHaveValue('This is my answer');
+  const noteStillVisible = await page.getByText('Hello from Ada').evaluate((node) => {
+    const scroller = node.closest('[data-scrollport]');
+    if (!(scroller instanceof HTMLElement)) {
+      return false;
+    }
+    const note = node.getBoundingClientRect();
+    const shell = scroller.getBoundingClientRect();
+    return note.top >= shell.top - 1 && note.top <= shell.bottom;
+  });
+  expect(noteStillVisible).toBe(true);
+  const backIsLeft = await back.evaluate((node) => {
+    const sheet = node.closest('[data-pay-sheet]');
+    if (!(sheet instanceof HTMLElement)) {
+      return false;
+    }
+    const button = node.getBoundingClientRect();
+    const card = sheet.getBoundingClientRect();
+    return button.left < card.left + card.width / 2;
+  });
+  expect(backIsLeft).toBe(true);
+});
+
 test('Function: ForumAskWizard — welcome loads', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

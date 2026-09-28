@@ -426,18 +426,20 @@ function ForumPaySheet({
       <form
         onSubmit={handlePaySubmit}
         onClick={onInteract}
+        data-pay-sheet=""
         className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10"
       >
-        <IconButton
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-label={t('forum.payBack')}
-          onClick={onPayCancel}
-          className="absolute left-2 top-2"
-        >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
+        <div className="absolute left-2 top-2">
+          <IconButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={t('forum.payBack')}
+            onClick={onPayCancel}
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+        </div>
         <AmountEntry
           label={t('forum.payAmountLabel')}
           placeholder={t('forum.payAmountPlaceholder')}
@@ -483,18 +485,20 @@ function ForumPaySheet({
   return (
     <div
       onClick={onInteract}
+      data-pay-sheet=""
       className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
     >
-      <IconButton
-        type="button"
-        size="sm"
-        variant="ghost"
-        aria-label={t('forum.payBack')}
-        onClick={onPayCancel}
-        className="absolute left-2 top-2"
-      >
-        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-      </IconButton>
+      <div className="absolute left-2 top-2">
+        <IconButton
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label={t('forum.payBack')}
+          onClick={onPayCancel}
+        >
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
+      </div>
       <p className="px-10 text-center text-sm text-app-muted">
         {t('forum.payConfirm', {
           amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
@@ -561,6 +565,39 @@ export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElem
   if (overflow > 0) {
     scroller.scrollTop += overflow + 12;
   }
+}
+
+/**
+ * Pulls a pay sheet back into the shell only when its top sits above the shell.
+ *
+ * A sheet that starts below the fold is left alone so the note above it stays
+ * on screen. A missing scroller or sheet leaves the scroll position unchanged.
+ *
+ * @param scroller - App shell scroller, or null when the board is not inside one.
+ * @param sheet - Pay sheet element, or null when no sheet is open.
+ * @returns void
+ */
+export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement | null): void {
+  if (scroller === null || sheet === null) {
+    return;
+  }
+  const shell = scroller.getBoundingClientRect();
+  const box = sheet.getBoundingClientRect();
+  // A sheet that starts below the fold stays put. Pulling it to the top
+  // would scroll the note off screen.
+  if (box.top < shell.top) {
+    scroller.scrollTop -= shell.top - box.top;
+  }
+}
+
+/**
+ * The open pay sheet inside the board, if one is mounted.
+ *
+ * @param root - Board root, or null before mount.
+ * @returns The sheet element, or null.
+ */
+function paySheetElement(root: HTMLElement | null): HTMLElement | null {
+  return root?.querySelector<HTMLElement>('[data-pay-sheet]') ?? null;
 }
 
 /**
@@ -697,21 +734,58 @@ export function ForumBoard({
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const shownReplies = replies === null ? -1 : replies.length;
+  const scrollBeforeSheet = useRef<number | null>(null);
+  const sheetWasOpen = useRef(false);
+  useEffect(() => {
+    if (scroller === null) {
+      return;
+    }
+    const remember = (): void => {
+      if (!sheetWasOpen.current) {
+        scrollBeforeSheet.current = scroller.scrollTop;
+      }
+    };
+    remember();
+    scroller.addEventListener('scroll', remember);
+    return () => {
+      scroller.removeEventListener('scroll', remember);
+    };
+  }, [scroller]);
   useLayoutEffect(() => {
     const field = replyComposerRef.current;
     const form = field === null ? null : field.form;
-    revealReplyForm(scroller, form);
-    if (form === null || scroller === null || typeof ResizeObserver === 'undefined') {
+    const sheet = paySheetElement(rootRef.current);
+    if (sheet !== null) {
+      if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
+        scroller.scrollTop = scrollBeforeSheet.current;
+      }
+      sheetWasOpen.current = true;
+      revealPaySheet(scroller, sheet);
+    } else {
+      sheetWasOpen.current = false;
+      revealReplyForm(scroller, form);
+    }
+    if (scroller === null || typeof ResizeObserver === 'undefined') {
       return;
     }
     const observer = new ResizeObserver(() => {
+      const liveSheet = paySheetElement(rootRef.current);
+      if (liveSheet !== null) {
+        revealPaySheet(scroller, liveSheet);
+        return;
+      }
       revealReplyForm(scroller, form);
     });
-    observer.observe(form);
+    if (sheet !== null) {
+      observer.observe(sheet);
+    }
+    if (form !== null) {
+      observer.observe(form);
+    }
     return () => {
       observer.disconnect();
     };
-  }, [expandedId, repliesLoading, scroller, shownReplies]);
+  }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -963,6 +1037,8 @@ export function ForumBoard({
           const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
+          const replyPayLocked =
+            payInvoice !== null && payMessageId === message.id && payHost !== 'composer';
           const copied = copiedId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
@@ -1542,7 +1618,11 @@ export function ForumBoard({
                           placeholder={t('forum.payAmountPlaceholder')}
                           value={replyAmountDraft}
                           disabled={
-                            replyPosting || repliesLoading || repliesError || replies === null
+                            replyPayLocked ||
+                            replyPosting ||
+                            repliesLoading ||
+                            repliesError ||
+                            replies === null
                           }
                           rateDay={rateDay}
                           onValueChange={(next) => onReplyAmountDraftChange?.(next)}
@@ -1560,7 +1640,11 @@ export function ForumBoard({
                             maxLength={FORUM_MESSAGE_MAX_LENGTH}
                             rows={1}
                             disabled={
-                              replyPosting || repliesLoading || repliesError || replies === null
+                              replyPayLocked ||
+                              replyPosting ||
+                              repliesLoading ||
+                              repliesError ||
+                              replies === null
                             }
                             className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
                           />
@@ -1569,7 +1653,11 @@ export function ForumBoard({
                             size="lg"
                             variant="primary"
                             disabled={
-                              replyPosting || repliesLoading || repliesError || replies === null
+                              replyPayLocked ||
+                              replyPosting ||
+                              repliesLoading ||
+                              repliesError ||
+                              replies === null
                             }
                             aria-label={t('forum.post')}
                           >

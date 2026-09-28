@@ -2261,6 +2261,365 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-external');
   });
 
+  const REACTION_ANSWER = 'This is my answer';
+  const REACTION_NOTE_TEXT = 'Thank you so much to all donors.';
+  const REACTION_NOTE = {
+    id: 'm-bob',
+    accountId: 'acc_bob',
+    name: 'Bob',
+    text: REACTION_NOTE_TEXT,
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 1000,
+    payable: true,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 1,
+  };
+  const REACTION_REPLY = {
+    id: 'r-platform',
+    accountId: 'acc_platform',
+    name: '21.gifts',
+    text: 'Glad it reached you.',
+    createdAt: '2026-08-28T12:05:00.000Z',
+    sats: 1000,
+    payable: false,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+
+  /** True when `locator` lies fully inside the app scrollport. */
+  async function insideShell(locator: Locator): Promise<boolean> {
+    return locator.evaluate((node) => {
+      const scroller = node.closest('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        return false;
+      }
+      const box = node.getBoundingClientRect();
+      const shell = scroller.getBoundingClientRect();
+      return box.height > 0 && box.top >= shell.top - 1 && box.bottom <= shell.bottom + 1;
+    });
+  }
+
+  /** Signed-in basis Ada, one foreign note, and the replies passed in. */
+  async function installReactionThread(page: Page, replies: unknown[]): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'basis',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          forumLawsDismissed: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [REACTION_NOTE] }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: replies }),
+      });
+    });
+  }
+
+  /** Expand Bob's note and type a 21-sat reaction. */
+  async function fillReaction(page: Page): Promise<void> {
+    await page.goto('/welcome');
+    await page.getByText(REACTION_NOTE_TEXT).click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeVisible();
+    await page.getByLabel('Amount').fill('21');
+    await field.fill(REACTION_ANSWER);
+    await expect(page.getByText('$0.02')).toBeVisible();
+  }
+
+  test('state /welcome reaction-draft', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await fillReaction(page);
+    const fiat = page.getByText('$0.02');
+    await fiat.evaluate((node) => {
+      node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
+    expect(await insideShell(page.getByText('Glad it reached you.'))).toBe(true);
+    expect(await insideShell(fiat)).toBe(true);
+    expect(await insideShell(page.getByLabel('Your reaction'))).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await shotScreen(page, 'state-welcome-reaction-draft');
+  });
+
+  test('state /welcome reaction-submitting', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async () => {
+      // Hold the invoice so the send control stays on its spinner.
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    await expect(form.getByRole('button', { name: 'Post' })).toBeDisabled();
+    expect(await insideShell(form.getByRole('button', { name: 'Post' }))).toBe(true);
+    await shotScreen(page, 'state-welcome-reaction-submitting');
+  });
+
+  test('state /welcome reaction-pay', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(page.getByText(/Pay ₿21/)).toBeVisible();
+    expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await shotScreen(page, 'state-welcome-reaction-pay');
+  });
+
+  test('state /welcome reaction-pay-sheet', async ({ page }, testInfo) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    const waiting = page.getByText('Waiting for payment…');
+    if (!(await insideShell(waiting))) {
+      await waiting.evaluate((node) => {
+        node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    }
+    const mobile = testInfo.project.name.startsWith('mobile');
+    const payControl = mobile
+      ? page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })
+      : page.getByRole('img', { name: 'Bitcoin payment QR code' });
+    if (mobile) {
+      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    }
+    expect(await insideShell(page.getByRole('button', { name: 'Back' }))).toBe(true);
+    expect(await insideShell(page.getByText(/Pay ₿21/))).toBe(true);
+    expect(await insideShell(payControl)).toBe(true);
+    expect(await insideShell(waiting)).toBe(true);
+    await shotScreen(page, 'state-welcome-reaction-pay-sheet');
+  });
+
+  test('state /welcome reaction-pay-kept', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toHaveValue(REACTION_ANSWER);
+    await expect(field).toBeDisabled();
+    await field.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    expect(await insideShell(field)).toBe(true);
+    expect(await insideShell(page.getByText('$0.02').last())).toBe(true);
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await shotScreen(page, 'state-welcome-reaction-pay-kept');
+  });
+
+  test('state /welcome reaction-error', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const alert = page.getByText('Could not post your message');
+    await expect(alert).toBeVisible();
+    await alert.evaluate((node) => {
+      node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    expect(await insideShell(alert)).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await shotScreen(page, 'state-welcome-reaction-error');
+  });
+
+  test('state /welcome reaction-rate-limit', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Too many payments. Please wait a moment and try again.',
+        }),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const alert = page.getByText('Too many messages. Please wait a moment and try again.');
+    await expect(alert).toBeVisible();
+    await alert.evaluate((node) => {
+      node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    expect(await insideShell(alert)).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await shotScreen(page, 'state-welcome-reaction-rate-limit');
+  });
+
+  test('state /welcome reaction-paid', async ({ page }) => {
+    let replyFetches = 0;
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'basis',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddressVerified: false,
+          forumLawsDismissed: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [REACTION_NOTE] }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      replyFetches += 1;
+      const messages = [REACTION_REPLY];
+      if (replyFetches > 1) {
+        messages.push({
+          id: 'r-ada',
+          accountId: 'acc_e2e',
+          name: 'Ada',
+          text: REACTION_ANSWER,
+          createdAt: '2026-08-28T12:06:00.000Z',
+          sats: 21,
+          payable: false,
+          hasPhoto: false,
+          photoCount: 0,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        });
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
+    });
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...REACTION_NOTE, sats: 1021, replyCount: 2 }),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const posted = page.getByText(REACTION_ANSWER);
+    await expect(posted).toBeVisible();
+    await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await posted.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    expect(await insideShell(posted)).toBe(true);
+    await shotScreen(page, 'state-welcome-reaction-paid');
+  });
+
   test('state /welcome quoted-note', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

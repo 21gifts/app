@@ -1037,6 +1037,54 @@ On **All**, expand Ada's note. The thread shows two replies from **Robin**, who 
 
 ![21.gifts welcome expanded external](images/welcome-expanded-external.png)
 
+### Variant: reaction-draft
+
+On **Active**, expand Bob's note. Ada, a basis member, has typed **21** in **Amount** (the line under it shows **$0.02**) and **This is my answer** in **Your reaction**. Bob's note and the existing **21.gifts** reply stay on screen. **Post** is still enabled.
+
+![21.gifts welcome reaction draft](images/welcome-reaction-draft.png)
+
+### Variant: reaction-submitting
+
+Same draft, with the payment request still in flight. The reply **Post** control is disabled and shows its spinner. The typed sentence and **21** stay in the fields.
+
+![21.gifts welcome reaction submitting](images/welcome-reaction-submitting.png)
+
+### Variant: reaction-pay
+
+The invoice has been minted. The pay sheet is open under the note, and the note text is still inside the window (the page does not jump the note away). The reply field still contains **This is my answer**.
+
+![21.gifts welcome reaction pay](images/welcome-reaction-pay.png)
+
+### Variant: reaction-pay-sheet
+
+The same open payment, scrolled so the sheet itself is in the window. **Back** is at the top left. The line reads **Pay ₿21**. Desktop shows the Bitcoin payment QR; a phone shows **Pay** and no QR. **Waiting for payment…** is visible.
+
+![21.gifts welcome reaction pay sheet](images/welcome-reaction-pay-sheet.png)
+
+### Variant: reaction-pay-kept
+
+The same open payment, scrolled so the reply composer is in the window. **Your reaction** is disabled and still says **This is my answer**. **Amount** is still **21**, with **$0.02** under it.
+
+![21.gifts welcome reaction pay kept](images/welcome-reaction-pay-kept.png)
+
+### Variant: reaction-error
+
+The payment request failed. The alert says **Could not post your message**. The typed sentence is still in the field, and no pay sheet is open.
+
+![21.gifts welcome reaction error](images/welcome-reaction-error.png)
+
+### Variant: reaction-rate-limit
+
+The payment request was rate-limited. The alert says **Too many messages. Please wait a moment and try again.** The typed sentence is still in the field.
+
+![21.gifts welcome reaction rate limit](images/welcome-reaction-rate-limit.png)
+
+### Variant: reaction-paid
+
+The payment was detected. Ada's reply **This is my answer** is in the thread, and the composer is empty again.
+
+![21.gifts welcome reaction paid](images/welcome-reaction-paid.png)
+
 ### Variant: quoted-note
 
 Signed-in founder Cyrill, living-room laws dismissed, Active. Only Riana Rosello's paid 21-sat verified note is in the list; the card is expanded. Cyrill's reply shows `just for information:` and a nested technical-note post (photo, caption starting **A Quick Technical Note**, Founder pill, ₿43). The raw `https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec` URL is not visible.
