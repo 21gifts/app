@@ -8767,10 +8767,8 @@ test.describe('profile activity chart variants', () => {
       });
     });
     const pictures = page.waitForResponse((response) => response.url().endsWith('/pictures/me'));
-    const banners = page.waitForResponse((response) => response.url().endsWith('/banners/me'));
     await openProfile(page);
     await pictures;
-    await banners;
     await expect(page.getByText('I build on Bitcoin')).toBeVisible();
     await expect(page.getByAltText('About me photo')).toBeVisible();
     await expect(page.getByAltText('Profile photo')).toHaveCount(0);
@@ -8789,13 +8787,6 @@ test.describe('profile activity chart variants', () => {
         body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
       });
     });
-    await page.route(/\/banners\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'image/jpeg',
-        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
-      });
-    });
     await page.route(/\/me\/about\/photo$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -8804,13 +8795,11 @@ test.describe('profile activity chart variants', () => {
       });
     });
     await openProfile(page);
-    const banner = page.getByAltText('Wide profile image');
     const portrait = page.getByAltText('Profile photo');
     const about = page.getByAltText('About me photo');
-    await expect(banner).toBeVisible();
+    await expect(page.getByAltText('Wide profile image')).toHaveCount(0);
     await expect(portrait).toBeVisible();
     await expect(about).toBeVisible();
-    await expect(banner).toBeInViewport();
     await expect(portrait).toBeInViewport();
     await expect(about).toBeInViewport();
     await page.waitForFunction(() =>
@@ -8829,13 +8818,6 @@ test.describe('profile activity chart variants', () => {
         body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
       });
     });
-    await page.route(/\/banners\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'image/jpeg',
-        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
-      });
-    });
     await page.route(/\/me\/about\/photo$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -8847,22 +8829,18 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Edit About me' }).click();
     const about = page.getByRole('textbox', { name: 'About me' });
     const removePortrait = page.getByRole('button', { name: 'Remove profile photo' });
-    const removeBanner = page.getByRole('button', { name: 'Remove wide image' });
     await expect(about).toBeVisible();
     await expect(removePortrait).toBeVisible();
-    await expect(removeBanner).toBeVisible();
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
     const addPhoto = page.getByRole('button', { name: 'Add a photo' });
     await expect(addPhoto).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
     await addPhoto.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await expect(addPhoto).toBeInViewport();
     await expect(about).toBeInViewport();
     await expect(removePortrait).toBeInViewport();
-    await expect(removeBanner).toBeInViewport();
     await page.waitForFunction(() =>
       [...document.querySelectorAll('img')].every((img) => img.complete && img.naturalWidth > 0),
     );
@@ -8876,6 +8854,7 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await shotScreen(page, 'state-profile-about-editing');
   });
 
