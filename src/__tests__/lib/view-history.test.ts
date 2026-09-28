@@ -147,6 +147,27 @@ describe('recordCurrentView', () => {
     expect(stored()?.stack).toEqual(['/shops', '/notifications']);
   });
 
+  it('does not stamp the history entry being left when stampHistory is false', () => {
+    pushView('/shops');
+    expect((window.history.state as { giftsView?: unknown }).giftsView).toBe(0);
+    recordCurrentView('/notifications', false);
+    expect((window.history.state as { giftsView?: unknown }).giftsView).toBe(0);
+    expect(previousViewPath()).toBe('/shops');
+    recordCurrentView('/notifications');
+    expect((window.history.state as { giftsView?: unknown }).giftsView).toBe(1);
+  });
+
+  it('drops a stored stack that contains an unsafe path', () => {
+    sessionStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify({ stack: ['/shops', '//evil.example'], cursor: 1 }),
+    );
+    dropSlot();
+    expect(previousViewPath()).toBeNull();
+    expect(readSlot()).toBeUndefined();
+    resetViewHistory();
+  });
+
   it('stamps a repeated path when the history entry has no giftsView yet', () => {
     pushView('/shops');
     setGiftsView(undefined);

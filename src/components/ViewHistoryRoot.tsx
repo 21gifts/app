@@ -97,7 +97,7 @@ function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
   const pathname = usePathname();
   const path = pathFromLocation(pathname);
   if (path !== null) {
-    recordCurrentView(path);
+    recordCurrentView(path, false);
   }
   useLayoutEffect(() => {
     if (path !== null) {
@@ -127,7 +127,7 @@ function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
         ? pathname
         : `${pathname}?${query}`;
   if (path !== null) {
-    recordCurrentView(path);
+    recordCurrentView(path, false);
   }
   useLayoutEffect(() => {
     if (path !== null) {

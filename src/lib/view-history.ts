@@ -183,7 +183,16 @@ function readStoredMemory(): StoredViewHistory | null {
     if (!Array.isArray(record.stack) || typeof record.cursor !== 'number') {
       return null;
     }
-    const stack = record.stack.filter((entry): entry is string => typeof entry === 'string');
+    const stack: string[] = [];
+    for (const entry of record.stack) {
+      if (typeof entry !== 'string') {
+        continue;
+      }
+      if (!isSafeViewPath(entry)) {
+        return null;
+      }
+      stack.push(entry);
+    }
     if (!Number.isInteger(record.cursor) || record.cursor < 0 || record.cursor >= stack.length) {
       return stack.length === 0 ? { stack: [], cursor: 0, base: 0 } : null;
     }
@@ -225,6 +234,12 @@ function writeStoredMemory(memory: StoredViewHistory | null): void {
  *
  * @param absolute - `cursor` plus how many entries have been dropped.
  */
+function stampCommitted(stampHistory: boolean, absolute: number): void {
+  if (stampHistory) {
+    stampGiftsView(absolute);
+  }
+}
+
 function stampGiftsView(absolute: number): void {
   /* v8 ignore next 3 -- SSR has no history */
   if (typeof window === 'undefined') {
@@ -349,9 +364,12 @@ export function previousViewPath(): string | null {
  * one-shot target, which steps the cursor back. Caps the stack at 50.
  *
  * @param path - Candidate in-app path (pathname, optionally with query).
+ * @param stampHistory - When false, update the stack but do not write
+ * `giftsView`. The render-phase recorder uses false so the history entry
+ * being left keeps its stamp until the router commits the next one.
  * @returns void
  */
-export function recordCurrentView(path: string): void {
+export function recordCurrentView(path: string, stampHistory = true): void {
   if (!isSafeViewPath(path)) {
     return;
   }
@@ -366,7 +384,7 @@ export function recordCurrentView(path: string): void {
   if (!slot.anchored && arriveFromBack(slot, path)) {
     slot.historyLength = length;
     slot.anchored = true;
-    stampGiftsView(slot.cursor + slot.base);
+    stampCommitted(stampHistory, slot.cursor + slot.base);
     writeStoredMemory(slot);
     return;
   }
@@ -385,13 +403,13 @@ export function recordCurrentView(path: string): void {
     slot.cursor = index;
     slot.historyLength = length;
     slot.anchored = true;
-    stampGiftsView(slot.cursor + slot.base);
+    stampCommitted(stampHistory, slot.cursor + slot.base);
     writeStoredMemory(slot);
     return;
   }
   if (slot.stack[slot.cursor] === path) {
     if (stamped !== slot.cursor) {
-      stampGiftsView(slot.cursor + slot.base);
+      stampCommitted(stampHistory, slot.cursor + slot.base);
     }
     slot.historyLength = length;
     slot.anchored = true;
@@ -415,7 +433,7 @@ export function recordCurrentView(path: string): void {
   }
   slot.historyLength = length;
   slot.anchored = true;
-  stampGiftsView(slot.cursor + slot.base);
+  stampCommitted(stampHistory, slot.cursor + slot.base);
   writeStoredMemory(slot);
 }
 

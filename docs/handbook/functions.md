@@ -560,8 +560,8 @@
 ## Function: recordCurrentView
 
 - **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view. The first path of a new document is a push, unless it is the arrow's one-shot target, which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50. A dropped entry keeps its absolute stamp, so browser back still finds it.
-- **Inputs:** A pathname, optionally with a query string.
-- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor`, plus `base` after a capped drop). Stamps `giftsView` with `history.replaceState` without pushing a history entry. A thrown storage write leaves the slot intact. No network.
+- **Inputs:** A pathname, optionally with a query string. Optional `stampHistory` defaults to true. False updates the stack and does not write `giftsView`, so the history entry being left keeps its stamp.
+- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor`, plus `base` after a capped drop). When `stampHistory` is true, stamps `giftsView` with `history.replaceState` without pushing a history entry. A stored stack that contains an unsafe path is ignored. A thrown storage write leaves the slot intact. No network.
 - **Used by:** `ViewHistoryRoot`.
 
 ## Function: resetViewHistory
@@ -575,7 +575,7 @@
 
 - **Purpose:** Record the current pathname and search on the in-app view stack and provide the chrome back override. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Inputs:** `children` — the page tree.
-- **Returns / side effects:** `ChromeBackProvider` around `children`. A location recorder writes the current view during render and from a layout effect, using `window.location.search` when it matches the pathname, so a full navigation is stored before the load event. A suspended search recorder updates a query-only change, including a cleared query as the pathname alone, and re-renders the tree so the top-left arrow reads that path. No network.
+- **Returns / side effects:** `ChromeBackProvider` around `children`. A location recorder writes the stack during render without stamping history, and stamps `giftsView` from a layout effect after the router commits the history entry, using `window.location.search` when it matches the pathname, so a full navigation is stored before the load event. A suspended search recorder updates a query-only change, including a cleared query as the pathname alone, and re-renders the tree so the top-left arrow reads that path. No network.
 - **Used by:** `RootLayout`, inside `ThemeProvider`, beside `RememberWalletReturn`.
 
 ## Function: useChromeBack
