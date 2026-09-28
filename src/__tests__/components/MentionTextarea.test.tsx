@@ -187,6 +187,38 @@ describe('MentionTextarea', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('gives each open field its own list id', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    renderWithLocale(
+      <>
+        <MentionTextarea
+          value="@"
+          onChange={() => undefined}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+        <MentionTextarea
+          value="@"
+          onChange={() => undefined}
+          ariaLabel="Your reaction"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      </>,
+    );
+    const boxes = screen.getAllByRole('textbox');
+    for (const box of boxes) {
+      fireEvent.change(box, { target: { value: '@', selectionStart: 1, selectionEnd: 1 } });
+      fireEvent.select(box);
+    }
+    const lists = await screen.findAllByRole('listbox', { name: 'People' });
+    expect(lists).toHaveLength(2);
+    expect(lists[0]?.id).not.toBe(lists[1]?.id);
+    expect(lists[0]?.id).not.toBe('');
+  });
+
   it('opens the list above the field when the composer sits near the bottom', async () => {
     search.mockResolvedValue(PEOPLE);
     useAuthStore.setState({ session: 'sess', account: null });
@@ -265,6 +297,8 @@ describe('MentionTextarea', () => {
       '@ada '.length,
     );
     expect(screen.queryByRole('listbox')).toBeNull();
+    typeInto('@');
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
   });
 
   it('places the caret after an inserted name and hides a failed prefix search', async () => {

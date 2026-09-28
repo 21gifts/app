@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -76,6 +77,7 @@ export function MentionTextarea({
 }: MentionTextareaProps): ReactElement {
   const session = useAuthStore((state) => state.session);
   const { t } = useTranslations();
+  const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const localRef = useRef<HTMLTextAreaElement>(null);
   const pendingCaret = useRef<number | null>(null);
@@ -98,6 +100,7 @@ export function MentionTextarea({
         : seed.filter((row) => row.username.toLowerCase().startsWith(mention.query));
   const shown = mention !== null && mention.query !== '' && remote !== null ? remote : filtered;
   const open = mention !== null && closedKey !== tokenKey && shown.length > 0;
+  const activeIndex = Math.min(highlight, Math.max(shown.length - 1, 0));
 
   useEffect(() => {
     if (disabled || session === null) {
@@ -134,6 +137,7 @@ export function MentionTextarea({
         .then((rows) => {
           if (!cancelled) {
             setRemote(rows);
+            setHighlight(0);
           }
         })
         .catch(() => {
@@ -151,6 +155,12 @@ export function MentionTextarea({
   useEffect(() => {
     setHighlight(0);
   }, [tokenKey]);
+
+  useEffect(() => {
+    if (mention === null && closedKey !== null) {
+      setClosedKey(null);
+    }
+  }, [mention, closedKey]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -193,9 +203,9 @@ export function MentionTextarea({
       }
       setClosedKey(tokenKey);
     };
-    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('mousedown', onPointer, true);
     return () => {
-      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('mousedown', onPointer, true);
     };
   }, [open, tokenKey]);
 
@@ -243,7 +253,7 @@ export function MentionTextarea({
     }
     if (event.key === 'Enter') {
       event.preventDefault();
-      const account = shown[highlight];
+      const account = shown[activeIndex];
       if (account !== undefined) {
         insertAt(mention, account);
       }
@@ -275,8 +285,8 @@ export function MentionTextarea({
           }
         }}
         aria-label={ariaLabel}
-        aria-controls={open ? 'forum-mention-suggest' : undefined}
-        aria-activedescendant={open ? `forum-mention-option-${String(highlight)}` : undefined}
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={open ? `${listId}-${String(activeIndex)}` : undefined}
         {...(placeholder === undefined ? {} : { placeholder })}
         value={value}
         onChange={(event) => {
@@ -300,7 +310,7 @@ export function MentionTextarea({
       />
       {open ? (
         <ul
-          id="forum-mention-suggest"
+          id={listId}
           role="listbox"
           aria-label={t('forum.mentionSuggest')}
           className={`absolute left-0 right-0 z-50 rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${
@@ -311,12 +321,12 @@ export function MentionTextarea({
             <li key={account.id} role="presentation">
               <button
                 type="button"
-                id={`forum-mention-option-${String(index)}`}
+                id={`${listId}-${String(index)}`}
                 role="option"
-                aria-selected={index === highlight}
+                aria-selected={index === activeIndex}
                 aria-label={`@${account.username}`}
                 className={
-                  index === highlight ? `${OPTION_ROW_CLASS} bg-app-hover` : OPTION_ROW_CLASS
+                  index === activeIndex ? `${OPTION_ROW_CLASS} bg-app-hover` : OPTION_ROW_CLASS
                 }
                 onMouseDown={(event) => {
                   event.preventDefault();
