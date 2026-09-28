@@ -151,6 +151,7 @@ describe('MemberProfileLoader', () => {
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
+    expect(screen.queryByText('Could not load gifts.')).toBeNull();
   });
 
   it('still shows the card when activity fails', async () => {
@@ -158,6 +159,18 @@ describe('MemberProfileLoader', () => {
     vi.mocked(fetchMemberActivity).mockRejectedValue(new Error('activity down'));
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(await screen.findByText('Could not load gifts.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('shows empty gifts copy while activity is still loading', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(fetchMemberActivity).mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByText('Could not load gifts.')).toBeNull();
+    expect(screen.queryByText('Loading…')).toBeNull();
   });
 
   it('fetches activity when lightningAddress is null', async () => {

@@ -81,11 +81,11 @@ const OTHER_ACTIVITY: AccountActivity = {
 
 /** Mounts {@link useAccountTotals} for assertions. */
 function Probe(): ReactElement {
-  const { donatedSats, receivedSats, donateOverTime, receiveOverTime, loading } =
+  const { donatedSats, receivedSats, donateOverTime, receiveOverTime, loading, failed } =
     useAccountTotals();
   const state = loading ? 'loading' : 'ready';
   return (
-    <p>{`${state}:${donatedSats}:${receivedSats}:${donateOverTime.length}:${receiveOverTime.length}`}</p>
+    <p>{`${state}:${donatedSats}:${receivedSats}:${donateOverTime.length}:${receiveOverTime.length}:${failed ? '1' : '0'}`}</p>
   );
 }
 
@@ -123,7 +123,7 @@ describe('useAccountTotals', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:0:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:0:0:0:0')).toBeTruthy();
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -152,7 +152,7 @@ describe('useAccountTotals', () => {
     });
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('tok');
   });
@@ -181,7 +181,7 @@ describe('useAccountTotals', () => {
     });
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('tok');
   });
@@ -190,7 +190,7 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValue(ACTIVITY);
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('tok');
   });
@@ -199,8 +199,29 @@ describe('useAccountTotals', () => {
     fetchMock.mockRejectedValue(new Error('Could not load gift stats. Please try again.'));
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:0:0:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:0:0:0:1')).toBeTruthy();
     });
+  });
+
+  it('clears failed when a later fetch on the same mount succeeds', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
+    fetchMock.mockResolvedValueOnce(ACTIVITY);
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:0:0:0:0:1')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState((state) => ({
+        account:
+          state.account === null
+            ? null
+            : { ...state.account, lightningAddress: 'bob@walletofsatoshi.com' },
+      }));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('reports loading while the fetch is in flight', async () => {
@@ -211,12 +232,12 @@ describe('useAccountTotals', () => {
       }),
     );
     renderWithLocale(<Probe />);
-    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0:0')).toBeTruthy();
     await act(async () => {
       resolve(ACTIVITY);
     });
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
   });
 
@@ -232,21 +253,21 @@ describe('useAccountTotals', () => {
 
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
 
     await act(async () => {
       useAuthStore.setState({ session: 'tok2' });
     });
 
-    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0:0')).toBeTruthy();
 
     await act(async () => {
       resolveOther(OTHER_ACTIVITY);
     });
 
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0:0')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledWith('tok2');
   });
@@ -256,7 +277,7 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValueOnce(OTHER_ACTIVITY);
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
     await act(async () => {
       useAuthStore.setState((state) => ({
@@ -267,7 +288,7 @@ describe('useAccountTotals', () => {
       }));
     });
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0:0')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -283,7 +304,7 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValueOnce(OTHER_ACTIVITY);
 
     renderWithLocale(<Probe />);
-    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0:0')).toBeTruthy();
 
     await act(async () => {
       useAuthStore.setState({ session: 'tok2' });
@@ -294,7 +315,7 @@ describe('useAccountTotals', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0:0')).toBeTruthy();
     });
   });
 
@@ -309,7 +330,7 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValueOnce(OTHER_ACTIVITY);
 
     renderWithLocale(<Probe />);
-    expect(screen.getByText('loading:0:0:0:0')).toBeTruthy();
+    expect(screen.getByText('loading:0:0:0:0:0')).toBeTruthy();
 
     await act(async () => {
       useAuthStore.setState({ session: 'tok2' });
@@ -320,7 +341,7 @@ describe('useAccountTotals', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('ready:0:500:0:0')).toBeTruthy();
+      expect(screen.getByText('ready:0:500:0:0:0')).toBeTruthy();
     });
   });
 
@@ -328,14 +349,14 @@ describe('useAccountTotals', () => {
     fetchMock.mockResolvedValue(ACTIVITY);
     renderWithLocale(<Probe />);
     await waitFor(() => {
-      expect(screen.getByText('ready:2100:1000:1:1')).toBeTruthy();
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
     });
 
     await act(async () => {
       useAuthStore.setState({ session: null });
     });
 
-    expect(screen.getByText('ready:0:0:0:0')).toBeTruthy();
+    expect(screen.getByText('ready:0:0:0:0:0')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

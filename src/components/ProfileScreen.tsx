@@ -130,7 +130,8 @@ function ProfileImages({
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
  * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`
- * without a chart FiatPicker; the only FiatPicker on the card is
+ * without a chart FiatPicker (including while activity is in flight); a failed
+ * activity fetch shows `profile.chartError`. The only FiatPicker on the card is
  * {@link FiatPreferenceSwitcher}. Menu totals stay in `SignedInChrome`.
  *
  * @returns The identity card.
@@ -138,7 +139,7 @@ function ProfileImages({
 export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
-  const { receiveOverTime, donateOverTime } = useAccountTotals();
+  const { receiveOverTime, donateOverTime, failed } = useAccountTotals();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -202,7 +203,7 @@ export function ProfileScreen(): ReactElement {
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('profile.title')}
       </h1>
-      <AccountActivityChart received={receiveOverTime} donated={donateOverTime} />
+      <AccountActivityChart received={receiveOverTime} donated={donateOverTime} failed={failed} />
       {account !== null && session !== null ? (
         <AboutMeSection
           mode="owner"

@@ -13,7 +13,8 @@ const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 /**
  * Client loader for `/view/[viewKey]`: validates the key, fetches the public
  * profile, then given/received activity for the chart (even when the Lightning
- * Address is blank). Does not use `useAuthStore`.
+ * Address is blank). An activity fetch failure keeps the card and sets
+ * `activityFailed`. Does not use `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.
  * @returns Loading, missing, error, or the read-only profile card with activate/claim control.
@@ -26,6 +27,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
   const [profile, setProfile] = useState<ViewProfile | null>(null);
   const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
   const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
+  const [activityFailed, setActivityFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
       setProfile(null);
       setReceived([]);
       setDonated([]);
+      setActivityFailed(false);
       return;
     }
 
@@ -42,6 +45,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     setProfile(null);
     setReceived([]);
     setDonated([]);
+    setActivityFailed(false);
 
     void (async () => {
       try {
@@ -57,6 +61,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         setStatus('ready');
         setReceived([]);
         setDonated([]);
+        setActivityFailed(false);
 
         try {
           const activity = await fetchViewActivity(viewKey);
@@ -65,12 +70,14 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
           }
           setReceived(activity.receivedOverTime);
           setDonated(activity.donatedOverTime);
+          setActivityFailed(false);
         } catch {
           if (cancelled) {
             return;
           }
           setReceived([]);
           setDonated([]);
+          setActivityFailed(true);
         }
       } catch {
         if (!cancelled) {
@@ -119,6 +126,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         viewKey={viewKey}
         received={received}
         donated={donated}
+        activityFailed={activityFailed}
       />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={readyProfile.hasPasskey} />
     </div>

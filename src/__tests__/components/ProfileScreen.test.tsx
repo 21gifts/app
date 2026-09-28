@@ -254,6 +254,15 @@ describe('ProfileScreen', () => {
     expect(screen.queryByLabelText('Given ₿0')).toBeNull();
   });
 
+  it('says the gifts could not be loaded when activity fails', async () => {
+    vi.mocked(fetchAccountActivity).mockRejectedValue(new Error('down'));
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByText('Could not load gifts.')).toBeTruthy();
+    expect(screen.queryByText('No gifts yet.')).toBeNull();
+    expect(screen.queryByText('Loading…')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
   it('shows a series day tick after activity loads', async () => {
     const seriesActivity: AccountActivity = {
       donatedSats: 0,

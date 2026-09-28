@@ -15,7 +15,8 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
  * Public read-only identity card matching signed-in profile chrome without
  * edit or message actions; chart never replaced by `forum.loading`.
  *
- * @param props - Public profile, view key, and both activity series for the chart.
+ * @param props - Public profile, view key, both activity series, and optional
+ *   `activityFailed` for the chart.
  * @returns The presentational card.
  */
 export function ViewProfileScreen({
@@ -23,11 +24,13 @@ export function ViewProfileScreen({
   viewKey,
   received,
   donated = [],
+  activityFailed = false,
 }: {
   profile: ViewProfile;
   viewKey: string;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  activityFailed?: boolean;
 }): ReactElement {
   const { t } = useTranslations();
   /* v8 ignore next -- SSR: no window */
@@ -54,7 +57,7 @@ export function ViewProfileScreen({
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('profile.title')}
       </h1>
-      <AccountActivityChart received={received} donated={donated} />
+      <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
       <AboutMeSection
         mode="public"
         aboutMe={profile.aboutMe}

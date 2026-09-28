@@ -562,7 +562,7 @@ complete section:
   screenshot-gated screen; the list in `scripts/screen-variants.mjs` is the
   source of truth. Omitting a gated state from the list is an undeclared
   deviation. `HANDBOOK_DOC_ROUTES` keep `## Screen:` prose and e2e `page.goto`
-  only — no `### Variant:`, no goldens, not in `SCREEN_VARIANTS`)
+  only — no `### Variant:`, no goldens, not in `SCREEN_VARIANTS`) The `profile.chartError` chart-slot exception under Screenshot baselines is not a separate variant.
 - Functions: `## Function: name` (one per `export function`,
   `export default function`, exported callable const, or `export class`)
 - Endpoints: `## Endpoint: METHOD /path` (one per `src/app/**/route.ts` HTTP export)
@@ -635,6 +635,8 @@ hides, or replaces visible content. Each of those results needs a handbook
 variant, an e2e needle, a `shotScreen` call, and a Playwright Linux baseline
 for every combo in `BASELINE_COMBOS`, in the same PR. Shipping only the idle
 or closed shot is an undeclared deviation and is rejected.
+
+`profile.chartError` on `/profile`, `/members/[accountId]`, and `/view/[viewKey]` is the same chart slot as `profile.chartEmpty`: one sentence, no new control, and no layout change. It is not its own screenshot variant. The default variant prose may name it. Unit tests cover the sentence, the alert role, and that in-flight and successful empty stay `profile.chartEmpty`. Other error states, including `/stats` `error`, stay their own variants. This exception does not cover a button press or any other control.
 
 An icon-only status mark is a control when pressing it reveals or hides the
 sentence that names it. That pressed result is its own distinct UI state. The

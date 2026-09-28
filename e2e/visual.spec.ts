@@ -731,6 +731,13 @@ async function seedShopStickerMember(page: Page): Promise<void> {
       }),
     });
   });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText('carol@21.gifts')).toBeVisible();
@@ -4221,6 +4228,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('About me')).toBeVisible();
@@ -4302,6 +4316,13 @@ test.describe('onboarding screens', () => {
             },
           ],
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -4398,6 +4419,13 @@ test.describe('onboarding screens', () => {
         ),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
@@ -4483,6 +4511,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
@@ -4561,6 +4596,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
@@ -4650,6 +4692,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Goal note to be repaid')).toBeVisible();
@@ -4757,6 +4806,13 @@ test.describe('onboarding screens', () => {
         ),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
@@ -4841,6 +4897,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
@@ -4906,6 +4969,13 @@ test.describe('onboarding screens', () => {
     await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
       await held;
       await route.abort();
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -4976,6 +5046,13 @@ test.describe('onboarding screens', () => {
       await held;
       await route.abort();
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 reactions' }).click();
@@ -5040,6 +5117,13 @@ test.describe('onboarding screens', () => {
     await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
       await route.abort();
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
@@ -5102,6 +5186,13 @@ test.describe('onboarding screens', () => {
     });
     await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
       await route.abort();
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -5185,6 +5276,13 @@ test.describe('onboarding screens', () => {
             },
           ],
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5271,6 +5369,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '3 reactions' }).click();
@@ -5318,6 +5423,13 @@ test.describe('onboarding screens', () => {
           postCount: 0,
           replyCount: 0,
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5376,6 +5488,13 @@ test.describe('onboarding screens', () => {
     await page.route(`**/forum/members/${memberId}`, async (route) => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-members-error');
@@ -5420,6 +5539,13 @@ test.describe('onboarding screens', () => {
           postCount: 0,
           replyCount: 0,
         }),
+      });
+    });
+    await page.route(`**/forum/members/${ownId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${ownId}`);
@@ -5508,6 +5634,13 @@ test.describe('onboarding screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5609,6 +5742,13 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
@@ -5670,6 +5810,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
     await expect(page.getByText('Moderator functions')).toBeVisible();
@@ -5722,6 +5869,13 @@ test.describe('onboarding screens', () => {
             appointedBy: null,
           },
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5784,6 +5938,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByText('Moderator functions').click();
     await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
@@ -5829,6 +5990,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(
       page.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
@@ -5872,6 +6040,13 @@ test.describe('onboarding screens', () => {
           replyCount: 0,
           fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
