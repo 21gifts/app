@@ -2137,7 +2137,7 @@ describe('InboxScreen', () => {
     const queued: FrameRequestCallback[] = [];
     let stick = false;
     let stored = 0;
-    let columnBottom = 3000;
+    const columnBottom = 3000;
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       queued.push(cb);
       return queued.length;
