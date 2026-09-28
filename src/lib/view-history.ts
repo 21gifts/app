@@ -223,7 +223,7 @@ function writeStoredMemory(memory: StoredViewHistory | null): void {
 /**
  * Stamp `giftsView` on the current history entry without pushing.
  *
- * @param cursor - Index into the in-app stack.
+ * @param absolute - `cursor` plus how many entries have been dropped.
  */
 function stampGiftsView(absolute: number): void {
   /* v8 ignore next 3 -- SSR has no history */
