@@ -950,7 +950,7 @@ describe('AboutMeSection', () => {
     fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe(
-        'Use an image at least 1.5 times as wide as it is tall',
+        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
       );
     });
     prepareMock.mockResolvedValue({
@@ -1393,6 +1393,35 @@ describe('AboutMeSection', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
     });
+  });
+
+  it('still shows a stored profile photo when the new file is rejected', async () => {
+    let resolveLoad: (blob: Blob) => void = () => undefined;
+    const loadPicture = vi.fn(
+      () =>
+        new Promise<Blob>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    prepareMock.mockResolvedValue({ ok: false, error: 'tooLarge' });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={loadPicture}
+        onSavePicture={vi.fn()}
+      />,
+    );
+    openEditor();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    });
+    await act(async () => {
+      resolveLoad(new Blob([new Uint8Array([9])], { type: 'image/jpeg' }));
+    });
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
   });
 
   it('keeps a saved profile photo when an older load finishes later', async () => {

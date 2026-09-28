@@ -524,7 +524,8 @@ const en = {
   'profile.about.banner': 'Add a wide image',
   'profile.about.removeBanner': 'Remove wide image',
   'profile.about.bannerAlt': 'Wide profile image',
-  'profile.about.errorNotWide': 'Use an image at least 1.5 times as wide as it is tall',
+  'profile.about.errorNotWide':
+    'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
   'profile.about.removePhoto': 'Remove photo',
   'profile.about.previewAlt': 'Selected photo',
   'profile.about.photoAlt': 'About me photo',
@@ -1419,7 +1420,8 @@ const de = {
   'profile.about.banner': 'Breites Bild hinzufügen',
   'profile.about.removeBanner': 'Breites Bild entfernen',
   'profile.about.bannerAlt': 'Breites Profilbild',
-  'profile.about.errorNotWide': 'Das Bild muss mindestens 1,5-mal so breit wie hoch sein',
+  'profile.about.errorNotWide':
+    'Das Bild muss mindestens 640 px breit und mindestens 1,5-mal so breit wie hoch sein',
   'profile.about.removePhoto': 'Foto entfernen',
   'profile.about.previewAlt': 'Ausgewähltes Foto',
   'profile.about.photoAlt': 'Über-mich-Foto',
@@ -2323,7 +2325,8 @@ const es = {
   'profile.about.banner': 'Añadir una imagen ancha',
   'profile.about.removeBanner': 'Quitar la imagen ancha',
   'profile.about.bannerAlt': 'Imagen ancha del perfil',
-  'profile.about.errorNotWide': 'La imagen debe ser al menos 1,5 veces más ancha que alta',
+  'profile.about.errorNotWide':
+    'La imagen debe tener al menos 640 px de ancho y ser al menos 1,5 veces más ancha que alta',
   'profile.about.removePhoto': 'Quitar foto',
   'profile.about.previewAlt': 'Foto seleccionada',
   'profile.about.photoAlt': 'Foto de Sobre mí',
@@ -3217,7 +3220,8 @@ const fil = {
   'profile.about.banner': 'Magdagdag ng malapad na larawan',
   'profile.about.removeBanner': 'Alisin ang malapad na larawan',
   'profile.about.bannerAlt': 'Malapad na larawan ng profile',
-  'profile.about.errorNotWide': 'Ang larawan ay dapat 1.5 beses na mas malapad kaysa sa taas',
+  'profile.about.errorNotWide':
+    'Ang larawan ay dapat hindi bababa sa 640 px ang lapad at 1.5 beses na mas malapad kaysa sa taas',
   'profile.about.removePhoto': 'Alisin ang litrato',
   'profile.about.previewAlt': 'Napiling litrato',
   'profile.about.photoAlt': 'Litrato ng Tungkol sa akin',

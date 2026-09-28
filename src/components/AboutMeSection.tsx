@@ -419,7 +419,6 @@ export function AboutMeSection({
     if (file === undefined || onSavePicture === undefined) {
       return;
     }
-    pictureGeneration.current += 1;
     const generation = photoGeneration.current + 1;
     photoGeneration.current = generation;
     setPreparingPhoto(true);
@@ -437,6 +436,7 @@ export function AboutMeSection({
           );
           return;
         }
+        pictureGeneration.current += 1;
         await onSavePicture({ contentType: result.photo.contentType, data: result.photo.data });
         if (generation !== photoGeneration.current) {
           return;
@@ -466,7 +466,6 @@ export function AboutMeSection({
     if (file === undefined || onSaveBanner === undefined) {
       return;
     }
-    bannerGeneration.current += 1;
     const generation = photoGeneration.current + 1;
     photoGeneration.current = generation;
     setPreparingPhoto(true);
@@ -486,6 +485,7 @@ export function AboutMeSection({
           );
           return;
         }
+        bannerGeneration.current += 1;
         await onSaveBanner({ contentType: result.photo.contentType, data: result.photo.data });
         if (generation !== photoGeneration.current) {
           return;
@@ -587,117 +587,121 @@ export function AboutMeSection({
       {mode === 'owner' && editing ? (
         <SundayWritingGate>
           <div className="flex flex-col items-stretch gap-3">
-            <div className="flex items-start gap-2">
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={saving || preparingPhoto}
-                aria-label={t('profile.about.attach')}
-                title={t('profile.about.attach')}
-                onClick={() => {
-                  fileInputRef.current?.click();
-                }}
-              >
-                <ImagePlus aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                disabled={saving}
-                onChange={handleFileChange}
-              />
-              {onSavePicture !== undefined ? (
-                <>
-                  <IconButton
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    disabled={saving || preparingPhoto}
-                    aria-label={t('profile.about.portrait')}
-                    title={t('profile.about.portrait')}
-                    onClick={() => {
-                      pictureInputRef.current?.click();
-                    }}
-                  >
-                    <ImagePlus aria-hidden="true" className="h-4 w-4" />
-                  </IconButton>
-                  <input
-                    ref={pictureInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    disabled={saving}
-                    onChange={handlePictureChange}
-                  />
-                </>
-              ) : null}
-              {onSaveBanner !== undefined ? (
-                <>
-                  <IconButton
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    disabled={saving || preparingPhoto}
-                    aria-label={t('profile.about.banner')}
-                    title={t('profile.about.banner')}
-                    onClick={() => {
-                      bannerInputRef.current?.click();
-                    }}
-                  >
-                    <ImagePlus aria-hidden="true" className="h-4 w-4" />
-                  </IconButton>
-                  <input
-                    ref={bannerInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    disabled={saving}
-                    onChange={handleBannerChange}
-                  />
-                </>
-              ) : null}
-              <label htmlFor={textareaId} className="sr-only">
-                {t('profile.about.heading')}
-              </label>
-              <textarea
-                id={textareaId}
-                value={draft}
-                maxLength={ABOUT_ME_MAX_LENGTH}
-                disabled={saving}
-                onChange={(event) => setDraft(event.target.value)}
-                className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
-              />
-              <IconButton
-                type="button"
-                variant="primary"
-                size="md"
-                disabled={saving || preparingPhoto}
-                aria-label={t('profile.about.save')}
-                title={t('profile.about.save')}
-                onClick={() => {
-                  void saveEdit();
-                }}
-              >
-                {saving ? (
-                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check aria-hidden="true" className="h-4 w-4" />
-                )}
-              </IconButton>
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={saving}
-                aria-label={t('profile.about.cancel')}
-                title={t('profile.about.cancel')}
-                onClick={cancelEdit}
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-start gap-2">
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.attach')}
+                  title={t('profile.about.attach')}
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={saving}
+                  onChange={handleFileChange}
+                />
+                {onSavePicture !== undefined ? (
+                  <>
+                    <IconButton
+                      type="button"
+                      variant="secondary"
+                      size="md"
+                      disabled={saving || preparingPhoto}
+                      aria-label={t('profile.about.portrait')}
+                      title={t('profile.about.portrait')}
+                      onClick={() => {
+                        pictureInputRef.current?.click();
+                      }}
+                    >
+                      <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                    <input
+                      ref={pictureInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={saving}
+                      onChange={handlePictureChange}
+                    />
+                  </>
+                ) : null}
+                {onSaveBanner !== undefined ? (
+                  <>
+                    <IconButton
+                      type="button"
+                      variant="secondary"
+                      size="md"
+                      disabled={saving || preparingPhoto}
+                      aria-label={t('profile.about.banner')}
+                      title={t('profile.about.banner')}
+                      onClick={() => {
+                        bannerInputRef.current?.click();
+                      }}
+                    >
+                      <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                    <input
+                      ref={bannerInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={saving}
+                      onChange={handleBannerChange}
+                    />
+                  </>
+                ) : null}
+              </div>
+              <div className="flex items-start gap-2">
+                <label htmlFor={textareaId} className="sr-only">
+                  {t('profile.about.heading')}
+                </label>
+                <textarea
+                  id={textareaId}
+                  value={draft}
+                  maxLength={ABOUT_ME_MAX_LENGTH}
+                  disabled={saving}
+                  onChange={(event) => setDraft(event.target.value)}
+                  className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
+                />
+                <IconButton
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.save')}
+                  title={t('profile.about.save')}
+                  onClick={() => {
+                    void saveEdit();
+                  }}
+                >
+                  {saving ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check aria-hidden="true" className="h-4 w-4" />
+                  )}
+                </IconButton>
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving}
+                  aria-label={t('profile.about.cancel')}
+                  title={t('profile.about.cancel')}
+                  onClick={cancelEdit}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
             </div>
             {pictureUrl !== null ? (
               <div className="flex items-center gap-2">
